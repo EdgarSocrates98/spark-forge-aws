@@ -1,0 +1,16 @@
+[
+  {
+    "kind": "tf.resource",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 1, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {"attribute_count": 1},
+    "attrs": {"resource_type": "aws_glue_job", "resource_name": "rtm"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "extractor": "terraform@0.1.0"}
+  },
+  {
+    "kind": "tf.attribute",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 2, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {},
+    "attrs": {"key": "name", "value": "rtm-valid", "literal": false, "present": true, "block": "root"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "extractor": "terraform@0.1.0"}
+  }
+]

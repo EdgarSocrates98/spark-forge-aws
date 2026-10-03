@@ -1,0 +1,130 @@
+[
+  {
+    "id": "f_79eb94",
+    "schema_version": 1,
+    "kind": "flink.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "checkpoint_count": 1,
+      "fact_count": 4
+    },
+    "attrs": {
+      "artifact": "flink"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_49064a",
+    "schema_version": 1,
+    "kind": "flink.checkpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "duration_ms": 12000,
+      "state_size_bytes": 8388608
+    },
+    "attrs": {
+      "checkpoint_id": 9,
+      "status": "FAILED",
+      "type": null,
+      "externalized": null
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_3bb5fa",
+    "schema_version": 1,
+    "kind": "flink.job",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "parallelism": 2
+    },
+    "attrs": {
+      "job_id": "job-002",
+      "name": "payments",
+      "runtime_version": "1.19.2"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_6fae57",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "source_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_6fae57",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sink_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  }
+]

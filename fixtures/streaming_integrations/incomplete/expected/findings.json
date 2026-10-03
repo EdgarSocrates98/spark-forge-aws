@@ -1,0 +1,240 @@
+[
+  {
+    "rule_id": "SF-STREAM-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Checkpoint de streaming sem contexto operacional suficiente",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "checkpoint_context_missing:orders:path",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_b75e73",
+      "f_ddf20c"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O dump não permite relacionar query, localização, storage e observações temporais do checkpoint. Sem essa identidade, série ou contexto, o Forge não conclui backlog, crescimento de estado, atraso de watermark ou compatibilidade de restart.",
+    "proposed_change": [
+      "Declarar query_name, checkpoint path, storage, state store e schema version.",
+      "Anexar ao menos duas observações pareadas com trigger, batch duration, backlog e estado quando aplicável."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar checkpoint sem provar compatibilidade pode causar replay, perda de estado ou retomada incorreta."
+    ],
+    "tradeoffs": [
+      "Metadados e séries temporais exigem retenção e sanitização operacional."
+    ],
+    "validation": [
+      "Reanalisar dump sanitizado e correlacionar a identidade com progress e runtime detectado."
+    ],
+    "rollback": [
+      "Reverter somente declaração ou recomendação; preservar checkpoint original e evidência de replay."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.checkpoint",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAM-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Kafka Connect sem configuração e estado operacional completos",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "kafka_connect_context_missing:orders-source:offsets",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_559ec3",
+      "f_9e0f4a"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O artefato não traz configuração, modo do worker, status, tasks ou offsets suficientes para julgar um connector. A ausência não prova falha nem saúde, e não autoriza afirmar exactly-once, DLQ ou recuperação.",
+    "proposed_change": [
+      "Capturar config sanitizada, status, tasks, offsets e política de erro/DLQ em uma mesma janela.",
+      "Separar connector source/sink, converter, SMT e worker runtime."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Copiar credenciais de connector para o artefato cria exposição e não melhora o diagnóstico."
+    ],
+    "tradeoffs": [
+      "Dump completo aumenta superfície de segredo; redaction é obrigatório."
+    ],
+    "validation": [
+      "Comparar status de connector e tasks com offsets e erros do mesmo instante."
+    ],
+    "rollback": [
+      "Remover apenas conclusão sem evidência; manter dump sanitizado para replay da análise."
+    ],
+    "sources": [
+      {
+        "url": "https://kafka.apache.org/documentation/#connect_rest",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "kafka.connect",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "security.verify_access_chain"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAM-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Topologia Kafka Streams sem state stores e tópicos internos declarados",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "kafka_streams_context_missing:orders-enrichment:changelog_topics",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_712034",
+      "f_3f4e35"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A topologia não pode ser comparada com Spark ou Flink sem saber state stores, changelog, repartition, joins, windows e processing guarantee. Kafka Streams continua candidato arquitetural, não diagnóstico automático.",
+    "proposed_change": [
+      "Declarar application id, garantia de processamento, state stores, changelog e repartition topics.",
+      "Registrar joins/windows e requisito de interactive query quando presentes."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Confundir ordering por partição com ordering global produz decisão arquitetural errada."
+    ],
+    "tradeoffs": [
+      "Topologia mais explícita exige inventário dos tópicos internos e retenção."
+    ],
+    "validation": [
+      "Reconciliar topologia declarada com métricas, configurações e consumer groups observados."
+    ],
+    "rollback": [
+      "Reverter a recomendação de plataforma sem alterar topologia ou tópicos internos."
+    ],
+    "sources": [
+      {
+        "url": "https://kafka.apache.org/documentation/streams/",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "kafka.streams",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAM-010",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Evento OpenLineage sem Job, Run ou datasets completos",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "openlineage_context_missing:orders-enrichment:run",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_7831bc"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O evento não traz identidade mínima de Job/Run e entradas/saídas. O Forge não fabrica lineage a partir do nome de uma tabela ou trata facet ausente como prova de impacto.",
+    "proposed_change": [
+      "Emitir evento sanitizado com eventType, producer, job, run, inputs, outputs e facets relevantes.",
+      "Correlacionar OpenLineage com facts de Spark/Flink/transport somente por identidade declarada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Lineage parcial pode esconder consumidor ou impacto de mudança."
+    ],
+    "tradeoffs": [
+      "Instrumentação adiciona armazenamento e governança de metadados, não necessariamente dados de negócio."
+    ],
+    "validation": [
+      "Verificar unicidade de Job/Run e correspondência de datasets com artefatos analisados."
+    ],
+    "rollback": [
+      "Remover apenas vínculo não comprovado; preservar evento original e sua procedência."
+    ],
+    "sources": [
+      {
+        "url": "https://openlineage.io/docs/spec/object-model/",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "lineage.openlineage",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

@@ -988,8 +988,12 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `context_expand` (2026-09-26): todas declaram caminho local e passam
         # pelo mesmo predicado de confinamento. A tool de decisao bounded
         # (2026-09-28) nao declara caminho e leva o total de tools para 114,
-        # sem mover `SEM_CAMINHO`.
-        assert len(TOOLS) - len(sem_caminho) == 106
+        # sem mover `SEM_CAMINHO`. `analyze_streaming` (2026-10-01) e
+        # `analyze_transport` (2026-10-02) e `analyze_flink` (2026-10-02) declaram `path`, portanto acrescentam
+        # entradas ao lado que declara caminho.
+        # The platform and Forge Lab analyzers add path-bearing read-only
+        # capabilities; the exception set remains explicit and unchanged.
+        assert len(TOOLS) - len(sem_caminho) == 125
 
 
 class TestAImposicaoNoDespacho:

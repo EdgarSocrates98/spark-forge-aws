@@ -1,0 +1,108 @@
+[
+  {
+    "id": "f_ac6f91",
+    "schema_version": 1,
+    "kind": "schema.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "provider": "confluent",
+      "subject": "payments-value",
+      "format": "JSON"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "artifact_sha256": "db88a32f5aa7f8f3d5a649e87fe4d0f934d379a92095d78c731eb77bdc1e379c",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_25aaba",
+    "schema_version": 1,
+    "kind": "schema.definition",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "payments-value",
+      "snippet": ""
+    },
+    "measures": {
+      "field_count": 1
+    },
+    "attrs": {
+      "subject": "payments-value",
+      "type": "record",
+      "fields": {
+        "id": "string"
+      },
+      "field_names": [
+        "id"
+      ],
+      "required_fields": [
+        "id"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "artifact_sha256": "db88a32f5aa7f8f3d5a649e87fe4d0f934d379a92095d78c731eb77bdc1e379c",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_6b4c1d",
+    "schema_version": 1,
+    "kind": "schema.registry",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "payments-value",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "registry": "payments",
+      "provider": "confluent",
+      "subject": "payments-value",
+      "format": "JSON"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "artifact_sha256": "db88a32f5aa7f8f3d5a649e87fe4d0f934d379a92095d78c731eb77bdc1e379c",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_5a61ac",
+    "schema_version": 1,
+    "kind": "schema.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "compatibility_not_declared",
+      "subject": "payments-value"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_unresolved\\input\\contract.json",
+      "artifact_sha256": "db88a32f5aa7f8f3d5a649e87fe4d0f934d379a92095d78c731eb77bdc1e379c",
+      "extractor": "schema_registry@0.1.0"
+    }
+  }
+]

@@ -211,6 +211,7 @@ _FACT_SUBJECT: dict[str, Any] = {
                 "table",
                 "job_run",
                 "plan_node",
+                "snapshot",
             ],
         },
         "file": {"type": "string"},
@@ -984,6 +985,209 @@ _ANALYZE_CALL_GRAPH_SCHEMA: dict[str, Any] = {
         "items": {"type": "array", "items": _FACT_ITEM},
         "provenance": _PROVENANCE_MAP,
         "schema_version": _ENVELOPE_SCHEMA_VERSION,
+    },
+}
+
+_PLATFORM_GRAPH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["graph", "impact"],
+    "properties": {
+        "graph": {
+            "type": "object",
+            "required": [
+                "schema_version",
+                "platform",
+                "nodes",
+                "edges",
+                "provenance",
+                "unresolved",
+                "fingerprint",
+            ],
+            "properties": {
+                "schema_version": {"type": "integer"},
+                "platform": {"type": "string"},
+                "nodes": {"type": "array", "items": {"type": "object"}},
+                "edges": {"type": "array", "items": {"type": "object"}},
+                "provenance": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        },
+        "impact": {
+            "type": ["object", "null"],
+            "properties": {
+                "root": {"type": "string"},
+                "direction": {"type": "string"},
+                "max_depth": {"type": "integer"},
+                "changed_attribute": {"type": ["string", "null"]},
+                "direct": {"type": "array", "items": {"type": "string"}},
+                "transitive": {"type": "array", "items": {"type": "string"}},
+                "affected": {"type": "array", "items": {"type": "string"}},
+                "paths": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+            },
+        },
+    },
+}
+
+_PLATFORM_ECOSYSTEM_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["ecosystem"],
+    "properties": {
+        "ecosystem": {
+            "type": "object",
+            "required": ["ecosystem", "systems", "reliability", "integrations", "unresolved", "fingerprint"],
+            "properties": {
+                "ecosystem": {"type": "string"},
+                "systems": {"type": "array", "items": {"type": "object"}},
+                "reliability": {"type": "array", "items": {"type": "object"}},
+                "integrations": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_FORGE_LAB_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["lab"],
+    "properties": {
+        "lab": {
+            "type": "object",
+            "required": [
+                "schema_version",
+                "lab",
+                "mode",
+                "readiness",
+                "components",
+                "topology_order",
+                "scenarios",
+                "unresolved",
+                "fingerprint",
+            ],
+            "properties": {
+                "schema_version": {"type": "integer"},
+                "lab": {"type": "string"},
+                "mode": {"type": "string"},
+                "readiness": {"type": "string"},
+                "components": {"type": "array", "items": {"type": "object"}},
+                "topology_order": {"type": "array", "items": {"type": "string"}},
+                "scenarios": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_LAKEHOUSE_CATALOG_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["catalog"],
+    "properties": {
+        "catalog": {
+            "type": "object",
+            "required": [
+                "schema_version",
+                "topology",
+                "catalogs",
+                "engines",
+                "tables",
+                "bindings",
+                "provenance",
+                "unresolved",
+                "fingerprint",
+            ],
+            "properties": {
+                "schema_version": {"type": "integer"},
+                "topology": {"type": "string"},
+                "catalogs": {"type": "array", "items": {"type": "object"}},
+                "engines": {"type": "array", "items": {"type": "object"}},
+                "tables": {"type": "array", "items": {"type": "object"}},
+                "bindings": {"type": "array", "items": {"type": "object"}},
+                "provenance": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_DBT_ARTIFACTS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["dbt"],
+    "properties": {
+        "dbt": {
+            "type": "object",
+            "required": ["project", "manifest_schema", "resources", "catalog_nodes", "run_results", "unresolved", "fingerprint"],
+            "properties": {
+                "project": {"type": "string"},
+                "manifest_schema": {"type": "string"},
+                "resources": {"type": "array", "items": {"type": "object"}},
+                "catalog_nodes": {"type": "array", "items": {"type": "object"}},
+                "run_results": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_DUCKDB_MICROSCOPE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["duckdb"],
+    "properties": {
+        "duckdb": {
+            "type": "object",
+            "required": ["database", "read_only", "objects", "queries", "comparisons", "unresolved", "fingerprint"],
+            "properties": {
+                "database": {"type": "string"},
+                "read_only": {"const": True},
+                "objects": {"type": "array", "items": {"type": "object"}},
+                "queries": {"type": "array", "items": {"type": "object"}},
+                "comparisons": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_DATA_OBSERVABILITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["observability"],
+    "properties": {
+        "observability": {
+            "type": "object",
+            "required": ["service", "slo_reports", "incidents", "dependencies", "blast_radius", "unresolved", "fingerprint"],
+            "properties": {
+                "service": {"type": "string"},
+                "slo_reports": {"type": "array", "items": {"type": "object"}},
+                "incidents": {"type": "array", "items": {"type": "object"}},
+                "dependencies": {"type": "array", "items": {"type": "object"}},
+                "blast_radius": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_ORCHESTRATION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["orchestration"],
+    "properties": {
+        "orchestration": {
+            "type": "object",
+            "required": ["topology", "orchestrators", "workflows", "unresolved", "fingerprint"],
+            "properties": {
+                "topology": {"type": "string"},
+                "orchestrators": {"type": "array", "items": {"type": "object"}},
+                "workflows": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
     },
 }
 
@@ -5559,6 +5763,338 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_streaming": {
+        "description": (
+            "Extrai facts determinísticos da superfície Structured Streaming: fonte "
+            "PySpark via AST estático ou registros JSON/JSONL de StreamingQueryProgress. "
+            "Nunca importa, executa código ou consulta checkpoint interno. A análise "
+            "preserva pontos cegos, unidades e ordem observada; não atribui severidade "
+            "nem inventa tendência com uma única observação."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório a analisar."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["source", "progress"],
+                    "description": "Fonte PySpark ou progresso JSON/JSONL.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts streaming extraídos, ou erro se o path ou tipo de artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_transport": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de Kafka, MSK ou "
+            "Kinesis. Preserva topic/partition/group/lag, versão/broker/security, "
+            "stream/shard/metrics e unresolved quando o artefato não responde. Não chama "
+            "broker, AWS ou CloudWatch e não diagnostica hot partition sem distribuição."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["kafka", "msk", "kinesis"],
+                    "description": "Vocabulário do dump a analisar.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts de transporte extraídos, ou erro se o path ou artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_flink": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de Apache Flink "
+            "ou Managed Flink. Preserva job/operator/checkpoint/state, application/config "
+            "e unresolved. Mantém namespaces separados: Flink upstream não prova capacidade "
+            "do serviço AWS. Não chama runtime, AWS ou CloudWatch."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["flink", "managed_flink"],
+                    "description": "Vocabulário do dump a analisar.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts Flink extraídos, ou erro se o path ou artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_cdc": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de eventos CDC, "
+            "Debezium ou AWS DMS. Preserva posições, chaves, operações, transações, "
+            "snapshot/CDC seam, configurações, endpoints, mappings, estatísticas e "
+            "unresolved. Não chama Kafka, DMS, Glue ou banco de dados."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["cdc", "debezium", "dms"],
+                    "description": "Vocabulário do dump a analisar.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts CDC extraídos, ou erro se o path ou artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_schema_registry": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL salvos de AWS Glue "
+            "Schema Registry, Confluent ou contrato equivalente. Preserva registry, "
+            "subject, formato, versão, campos, política de compatibilidade, diff "
+            "estrutural, auto-registro e unresolved. Compatibilidade é proxy do "
+            "artefato: não chama registry, Kafka ou consumidor."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts de schema extraídos, ou erro se o path não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_event_driven": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON salvos de EventBridge rules/Pipes, "
+            "SQS e SNS. Preserva targets, retry/DLQ, redrive, subscriptions e unresolved; "
+            "não chama AWS nem conclui entrega, replay ou idempotência sem evidência."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts event-driven extraídos, ou erro se o path não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_streaming_ops": {
+        "description": (
+            "Extrai facts declarados de SLO, FinOps, segurança, serving e lakehouse "
+            "para workloads streaming. Preserva métricas e contexto declarados, "
+            "redige campos secret-like, exige contexto para custo e nunca inventa "
+            "SLO, preço ou efetividade de controle de segurança."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts declarados de operação streaming, ou erro se o path não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_streaming_integrations": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL sanitizados para checkpoint "
+            "Structured Streaming, Kafka Connect, Kafka Streams e OpenLineage. Mede séries "
+            "de backlog/estado quando declaradas, preserva status/tarefas/topologia e emite "
+            "unresolved para contexto ausente. Não consulta Kafka, AWS, Spark ou OpenLineage "
+            "e nunca copia secrets."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts de integrações de streaming, ou erro se o path não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_streaming_composition": {
+        "description": (
+            "Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. "
+            "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
+            "produz link quando a correspondência é observada sem ambiguidade. Preserva "
+            "ids dos facts de origem, operações Iceberg, lag/iterator age, avaliação "
+            "SLO de progress/sink/Kafka/Kinesis, janela temporal pareada e unresolved. `streaming_sink` liga "
+            "num_output_rows ao batch por batch_id; `sink_name` pode desambiguar descrições. Modes temporal e iceberg_temporal exigem "
+            "`max_skew_seconds` declarado. "
+            "Mode pipeline aceita contrato JSON declarativo com selectors exatos por kind/attrs e preserva unresolved para zero ou múltiplos matches. "
+            "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_paths", "mode"],
+            "properties": {
+                "facts_paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "description": "Arquivos de facts produzidos por analyzers; repetível.",
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["iceberg", "iceberg_temporal", "observability", "slo", "temporal", "pipeline"],
+                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline.",
+                },
+                "table": {"type": "string", "description": "Tabela Iceberg declarada."},
+                "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
+                "slo_name": {"type": "string", "description": "Nome do SLO declarado; obrigatório quando há mais de uma declaração."},
+                "transport_key": {
+                    "type": "string",
+                    "description": "Grupo/topic Kafka ou stream Kinesis declarado.",
+                },
+                "max_skew_seconds": {
+                    "type": "number",
+                    "description": "Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
+                },
+                "pipeline_path": {
+                    "type": "string",
+                    "description": "Arquivo JSON do contrato declarativo de nós/arestas; obrigatório no mode=pipeline.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts compostos, unresolved nomeado ou erro se algum arquivo não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_glue_streaming": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de AWS Glue "
+            "Streaming e Real-Time Mode. Preserva runtime, modo, fonte, restrições "
+            "observadas, capacidade e unresolved quando a medida faltar. Não chama "
+            "Glue, Kafka, Kinesis ou CloudWatch."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts Glue Streaming extraídos, ou erro se o path for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_catalog_schema": {
         "description": (
             "Extrai facts de um dump JSON ja coletado do Glue Data Catalog "
@@ -6624,6 +7160,172 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(
             _ANALYZE_FACTS_SCHEMA,
             "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_platform_graph": {
+        "description": (
+            "Analisa um Metadata Graph de plataforma declarado em JSON/YAML e calcula "
+            "lineage impact bounded. Suporta entidades de dataset, job, run, producer, "
+            "consumer, contract, owner, SLO, schema, dashboard, metric, model, service, "
+            "topic, stream, catalog, orchestrator, feature e vector index. IDs são a "
+            "única chave de junção; arestas não são inferidas por label. Conflitos, "
+            "endpoints ausentes e atributo não observado permanecem em unresolved. "
+            "Opera offline e read-only; não consulta AWS, Kafka, Flink, dbt ou catálogo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON ou YAML do grafo."},
+                "changed_node": {"type": "string"},
+                "changed_attribute": {"type": "string"},
+                "direction": {
+                    "type": "string",
+                    "enum": ["downstream", "upstream", "both"],
+                },
+                "max_depth": {"type": "integer", "minimum": 0},
+                "max_items": {"type": "integer", "minimum": 1},
+            },
+        },
+        "outputSchema": _may_fail(
+            _PLATFORM_GRAPH_SCHEMA,
+            "Grafo de plataforma e impacto bounded, ou erro se o manifesto for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_platform_ecosystem": {
+        "description": (
+            "Normaliza inventário de serving/OLAP, conectores de ingestão e CDC, "
+            "AI Data Engineering e radar Beam/DataHub/OpenMetadata. Preserva owner, "
+            "evidence, bindings e Connector Reliability Model (idempotência, "
+            "checkpoint, retry, DLQ, rate limit, schema, freshness e recovery). "
+            "Radar permanece opcional; ausências ficam unresolved. Não instala nem "
+            "consulta os produtos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML do inventário de ecossistema."}},
+        },
+        "outputSchema": _may_fail(
+            _PLATFORM_ECOSYSTEM_SCHEMA,
+            "Inventário de ecossistema e reliability model, ou erro se inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_forge_lab": {
+        "description": (
+            "Descreve a topologia declarativa do Forge Lab/Digital Twin, incluindo "
+            "Kafka, Flink, Spark, Iceberg REST, Polaris, MinIO, PostgreSQL, Debezium "
+            "e Prometheus, ordem de dependências e cenários de falha. É offline e "
+            "read-only: não executa Docker, não mata broker, não reinicia CDC e não "
+            "muta dados. Cenários exigem confirmação do operador fora desta tool."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON ou YAML da topologia Forge Lab."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FORGE_LAB_SCHEMA,
+            "Topologia e cenários do Forge Lab, ou erro se o manifesto for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_lakehouse_catalog": {
+        "description": (
+            "Analisa topologia declarada de Glue, Iceberg REST, Polaris, S3 Tables, "
+            "Lake Formation e integrações futuras, relacionando engines, tabelas e "
+            "bindings com evidence. Não negocia protocolo, não consulta catálogos e "
+            "não cria recursos. Recusa campos de segredo e mantém referências ou "
+            "compatibilidade não resolvidas em unresolved."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON ou YAML da topologia de catalog."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _LAKEHOUSE_CATALOG_SCHEMA,
+            "Topologia de catalogs e engines, ou erro se o manifesto for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_dbt_artifacts": {
+        "description": (
+            "Normaliza manifest.json, catalog.json e run_results.json do dbt em "
+            "recursos, dependências, colunas, materialization, testes, exposições "
+            "e resultados. Não importa nem executa dbt; referência ausente vira "
+            "unresolved e não sucesso implícito."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Diretório dbt ou manifest.json."}},
+        },
+        "outputSchema": _may_fail(
+            _DBT_ARTIFACTS_SCHEMA,
+            "Artefatos dbt normalizados, ou erro se o manifest for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_duckdb_microscope": {
+        "description": (
+            "Lê bundle offline de microscópio DuckDB com objetos Parquet/Iceberg, "
+            "colunas, estatísticas, snapshots, EXPLAIN e comparações SQL declaradas. "
+            "Só aceita consultas read-only; não instala DuckDB, não executa SQL e "
+            "não altera banco ou arquivos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Bundle JSON/YAML do microscópio."}},
+        },
+        "outputSchema": _may_fail(
+            _DUCKDB_MICROSCOPE_SCHEMA,
+            "Bundle DuckDB read-only normalizado, ou erro se houver SQL mutável.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_data_observability": {
+        "description": (
+            "Avalia SLI/SLO, freshness, completeness, latency, lag, throughput e "
+            "availability a partir de medições exportadas. Calcula compliance e "
+            "error budget, preserva incidentes/MTTR, dependências e blast radius "
+            "declarado. Não consulta Prometheus, CloudWatch ou OTel live; ausência "
+            "de medição vira unresolved."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML de observabilidade."}},
+        },
+        "outputSchema": _may_fail(
+            _DATA_OBSERVABILITY_SCHEMA,
+            "Relatório SRE e SLO, ou erro se o artefato for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_orchestration": {
+        "description": (
+            "Normaliza um inventário de Airflow, Dagster, Step Functions e Control-M "
+            "com schedules, sensors, retries, backoff, pools, concurrency, backfill, "
+            "idempotência e dependências. Não dispara workflow nem executa backfill; "
+            "propriedade ausente ou referência inválida permanece unresolved."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML do control plane."}},
+        },
+        "outputSchema": _may_fail(
+            _ORCHESTRATION_SCHEMA,
+            "Mapa de orquestração normalizado, ou erro se o artefato for inválido.",
         ),
         "annotations": _READ_ONLY,
     },
@@ -9088,6 +9790,109 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_streaming_integrations": {
+        "description": (
+            "Coleta snapshots read-only para o contrato streaming_integrations: prefixo "
+            "de checkpoint Spark em S3, Glue Streaming, Kinesis, MSK e DMS. O coletor "
+            "grava apenas no manifesto local, redige chaves secret-like e é offline-first. "
+            "Kafka Connect, Kafka Streams e OpenLineage não possuem API AWS universal; "
+            "sem artefato/endpoint próprio eles permanecem unresolved no analyzer."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "now"],
+            "additionalProperties": False,
+            "properties": {
+                "repo": {"type": "string"},
+                "checkpoint_s3_uri": {"type": "string"},
+                "glue_job_name": {"type": "string"},
+                "kinesis_stream_name": {"type": "string"},
+                "msk_cluster_arn": {"type": "string"},
+                "dms_task_arn": {"type": "string"},
+                "region_name": {"type": "string"},
+                "max_objects": {"type": "integer", "minimum": 1, "maximum": 500},
+                "max_shards": {"type": "integer", "minimum": 1, "maximum": 500},
+                "metrics_start": {
+                    "type": "string",
+                    "description": "Início ISO 8601 da janela CloudWatch Kinesis.",
+                },
+                "metrics_end": {
+                    "type": "string",
+                    "description": "Fim ISO 8601 da janela CloudWatch Kinesis.",
+                },
+                "metrics_period": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 86400,
+                    "description": "Período em segundos; múltiplo de 60.",
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato streaming coletado ou cache hit local, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
+    "sparkforge_collect_schema_registry": {
+        "description": (
+            "Coleta metadata, compatibilidade declarada e latest schema version do AWS Glue "
+            "Schema Registry usando somente list/get. Grava artifact local com manifesto, "
+            "limite de definição e cache offline-first; nunca cria, registra, atualiza ou "
+            "exclui registry/schema/version."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "now"],
+            "additionalProperties": False,
+            "properties": {
+                "repo": {"type": "string"},
+                "registry_name": {"type": "string"},
+                "schema_name": {"type": "string"},
+                "schema_arn": {"type": "string"},
+                "region_name": {"type": "string"},
+                "max_schemas": {"type": "integer", "minimum": 1, "maximum": 500},
+                "max_definition_bytes": {"type": "integer", "minimum": 1, "maximum": 170000},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artifact Glue Schema Registry coletado ou cache hit local, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
+    "sparkforge_collect_managed_flink": {
+        "description": (
+            "Coleta a descrição de uma aplicação do Managed Service for Apache Flink via "
+            "kinesisanalyticsv2.DescribeApplication, sempre com IncludeAdditionalDetails=false. "
+            "Registra runtime, status, versão, checkpoint, paralelismo, VPC, logging e "
+            "configuração observados; com janela explícita, consulta cinco métricas de "
+            "aplicação em AWS/KinesisAnalytics. Job plan, código e conectores ficam "
+            "unresolved e nunca são inferidos. Somente leitura AWS; grava apenas "
+            "artifact/manifesto local e usa cache offline-first."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "application_name", "now"],
+            "additionalProperties": False,
+            "properties": {
+                "repo": {"type": "string"},
+                "application_name": {"type": "string", "minLength": 1, "maxLength": 128},
+                "region_name": {"type": "string"},
+                "metrics_start": {"type": "string", "description": "Início ISO 8601 da janela CloudWatch."},
+                "metrics_end": {"type": "string", "description": "Fim ISO 8601 da janela CloudWatch."},
+                "metrics_period": {"type": "integer", "minimum": 60, "maximum": 86400},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artifact Managed Flink coletado ou cache hit local, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_cloudwatch": {
         "description": (
             "Baixa as metricas de observabilidade Glue via `cloudwatch.get_metric_data` "
@@ -10049,6 +10854,117 @@ def _h_analyze_pyspark(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_streaming(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_transport(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_transport(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_flink(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_flink(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_cdc(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_cdc(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_schema_registry(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_schema_registry(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_event_driven(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_event_driven(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_streaming_ops(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming_ops(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_streaming_integrations(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming_integrations(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_streaming_composition(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming_composition(
+        args["facts_paths"],
+        mode=args["mode"],
+        table=args.get("table", ""),
+        query_name=args.get("query_name", ""),
+        slo_name=args.get("slo_name", ""),
+        transport_key=args.get("transport_key", ""),
+        max_skew_seconds=args.get("max_skew_seconds"),
+        pipeline_path=args.get("pipeline_path"),
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_glue_streaming(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_glue_streaming(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
     return _core.judge_findings(
         facts=args.get("facts"),
@@ -10521,6 +11437,45 @@ def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_platform_graph(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_platform_graph(
+        args["path"],
+        changed_node=args.get("changed_node"),
+        changed_attribute=args.get("changed_attribute"),
+        direction=args.get("direction", "downstream"),
+        max_depth=args.get("max_depth", 3),
+        max_items=args.get("max_items", 500),
+    )
+
+
+def _h_analyze_platform_ecosystem(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_platform_ecosystem(args["path"])
+
+
+def _h_analyze_forge_lab(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_forge_lab(args["path"])
+
+
+def _h_analyze_lakehouse_catalog(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_lakehouse_catalog(args["path"])
+
+
+def _h_analyze_dbt_artifacts(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_dbt_artifacts(args["path"])
+
+
+def _h_analyze_duckdb_microscope(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_duckdb_microscope(args["path"])
+
+
+def _h_analyze_data_observability(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_data_observability(args["path"])
+
+
+def _h_analyze_orchestration(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_orchestration(args["path"])
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -10835,6 +11790,49 @@ def _h_collect_glue_job(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_glue_job(args["repo"], job_name=args["job_name"], now=args["now"])
 
 
+def _h_collect_streaming_integrations(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_streaming_integrations(
+        args["repo"],
+        now=args["now"],
+        checkpoint_s3_uri=args.get("checkpoint_s3_uri", ""),
+        glue_job_name=args.get("glue_job_name", ""),
+        kinesis_stream_name=args.get("kinesis_stream_name", ""),
+        msk_cluster_arn=args.get("msk_cluster_arn", ""),
+        dms_task_arn=args.get("dms_task_arn", ""),
+        region_name=args.get("region_name", ""),
+        max_objects=args.get("max_objects", 500),
+        max_shards=args.get("max_shards", 500),
+        metrics_start=args.get("metrics_start", ""),
+        metrics_end=args.get("metrics_end", ""),
+        metrics_period=args.get("metrics_period", 60),
+    )
+
+
+def _h_collect_schema_registry(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_schema_registry(
+        args["repo"],
+        now=args["now"],
+        registry_name=args.get("registry_name", ""),
+        schema_name=args.get("schema_name", ""),
+        schema_arn=args.get("schema_arn", ""),
+        region_name=args.get("region_name", ""),
+        max_schemas=args.get("max_schemas", 100),
+        max_definition_bytes=args.get("max_definition_bytes", 170_000),
+    )
+
+
+def _h_collect_managed_flink(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_managed_flink(
+        args["repo"],
+        now=args["now"],
+        application_name=args["application_name"],
+        region_name=args.get("region_name", ""),
+        metrics_start=args.get("metrics_start", ""),
+        metrics_end=args.get("metrics_end", ""),
+        metrics_period=args.get("metrics_period", 60),
+    )
+
+
 def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_cloudwatch(
         args["repo"],
@@ -11053,6 +12051,16 @@ _HANDLERS = {
     "sparkforge_runtime_detect": _h_runtime_detect,
     "sparkforge_knowledge_path": _h_knowledge_path,
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
+    "sparkforge_analyze_streaming": _h_analyze_streaming,
+    "sparkforge_analyze_transport": _h_analyze_transport,
+    "sparkforge_analyze_flink": _h_analyze_flink,
+    "sparkforge_analyze_cdc": _h_analyze_cdc,
+    "sparkforge_analyze_schema_registry": _h_analyze_schema_registry,
+    "sparkforge_analyze_event_driven": _h_analyze_event_driven,
+    "sparkforge_analyze_streaming_ops": _h_analyze_streaming_ops,
+    "sparkforge_analyze_streaming_integrations": _h_analyze_streaming_integrations,
+    "sparkforge_analyze_streaming_composition": _h_analyze_streaming_composition,
+    "sparkforge_analyze_glue_streaming": _h_analyze_glue_streaming,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
@@ -11079,6 +12087,14 @@ _HANDLERS = {
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_dq_ai": _h_analyze_dq_ai,
     "sparkforge_analyze_graph": _h_analyze_graph,
+    "sparkforge_analyze_platform_graph": _h_analyze_platform_graph,
+    "sparkforge_analyze_platform_ecosystem": _h_analyze_platform_ecosystem,
+    "sparkforge_analyze_forge_lab": _h_analyze_forge_lab,
+    "sparkforge_analyze_lakehouse_catalog": _h_analyze_lakehouse_catalog,
+    "sparkforge_analyze_dbt_artifacts": _h_analyze_dbt_artifacts,
+    "sparkforge_analyze_duckdb_microscope": _h_analyze_duckdb_microscope,
+    "sparkforge_analyze_data_observability": _h_analyze_data_observability,
+    "sparkforge_analyze_orchestration": _h_analyze_orchestration,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
@@ -11134,6 +12150,9 @@ _HANDLERS = {
     "sparkforge_telemetry_export": _h_telemetry_export,
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
+    "sparkforge_collect_streaming_integrations": _h_collect_streaming_integrations,
+    "sparkforge_collect_schema_registry": _h_collect_schema_registry,
+    "sparkforge_collect_managed_flink": _h_collect_managed_flink,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_lakeformation": _h_collect_lakeformation,

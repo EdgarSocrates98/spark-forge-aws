@@ -1,0 +1,66 @@
+schema_version: 1
+policy:
+  forbid_latest: true
+  digest_required_for_run: true
+  source_of_truth: lab/versions.yaml
+defaults:
+  kafka:
+    image: apache/kafka
+    tag: "4.3.1"
+    role: transport
+  spark:
+    image: apache/spark
+    tag: "4.2.0"
+    role: processor
+  flink:
+    image: flink
+    tag: "2.3.0"
+    role: processor
+  iceberg_rest:
+    image: apache/iceberg-rest-fixture
+    tag: "1"
+    role: catalog_fast
+  polaris:
+    image: apache/polaris
+    tag: "1.8.0"
+    role: catalog_platform
+  postgres:
+    image: postgres
+    tag: "17"
+    role: cdc_source
+  debezium:
+    image: quay.io/debezium/connect
+    tag: "3.2"
+    role: cdc_capture
+  minio:
+    image: minio/minio
+    tag: "RELEASE.2025-10-15T17-29-55Z"
+    role: object_store
+  prometheus:
+    image: prom/prometheus
+    tag: "3.8.0"
+    role: metrics
+  otel_collector:
+    image: otel/opentelemetry-collector
+    tag: "0.139.0"
+    role: telemetry
+  toxiproxy:
+    image: shopify/toxiproxy
+    tag: "2.12.0"
+    role: fault_injection
+compatibility:
+  - id: spark-iceberg-rest
+    engine: spark
+    catalog: iceberg_rest
+    status: declared_unmeasured
+    evidence_required: [lab_run, runtime_versions]
+  - id: flink-iceberg-rest
+    engine: flink
+    catalog: iceberg_rest
+    status: declared_unmeasured
+    evidence_required: [lab_run, runtime_versions]
+  - id: multi-engine-polaris
+    engines: [spark, flink, trino, duckdb]
+    catalog: polaris
+    status: declared_unmeasured
+    evidence_required: [lab_run, runtime_versions]

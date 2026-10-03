@@ -1,0 +1,160 @@
+[
+  {
+    "id": "f_2b8c83",
+    "schema_version": 1,
+    "kind": "event_driven.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 5
+    },
+    "attrs": {
+      "sections": [
+        "eventbridge",
+        "sns",
+        "sqs"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_bed684",
+    "schema_version": 1,
+    "kind": "eventbridge.pipe",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-pipe",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-pipe",
+      "state": "RUNNING",
+      "source_type": "sqs",
+      "target_type": "lambda",
+      "enrichment_declared": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_437ff4",
+    "schema_version": 1,
+    "kind": "eventbridge.rule",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-rule",
+      "snippet": ""
+    },
+    "measures": {
+      "target_count": 1
+    },
+    "attrs": {
+      "name": "orders-rule",
+      "state": "ENABLED",
+      "target_types": [
+        "sqs"
+      ],
+      "event_pattern_declared": true,
+      "retry_declared": false,
+      "dead_letter_declared": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_82928a",
+    "schema_version": 1,
+    "kind": "sns.subscription",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-events",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "topic": "orders-events",
+      "protocol": "sqs",
+      "endpoint_type": "arn",
+      "redrive_declared": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_c6e8d6",
+    "schema_version": 1,
+    "kind": "sns.topic",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-events",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-events"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_fe337a",
+    "schema_version": 1,
+    "kind": "sqs.queue",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {
+      "visibility_timeout_seconds": 60
+    },
+    "attrs": {
+      "name": "orders",
+      "fifo": false,
+      "redrive_declared": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
+      "extractor": "event_driven@0.1.0"
+    }
+  }
+]

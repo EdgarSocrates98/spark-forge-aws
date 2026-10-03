@@ -1,0 +1,49 @@
+[
+  {
+    "id": "f_c2616c",
+    "schema_version": 1,
+    "kind": "msk.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_unresolved\\input\\unknown.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "artifact_type": "msk"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_unresolved\\input\\unknown.json",
+      "artifact_sha256": "90b87b7798214d060e2910dcede102c4f42ae09a643855c954010a9b5f6c8cb6",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_253c51",
+    "schema_version": 1,
+    "kind": "msk.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_unresolved\\input\\unknown.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_shape"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_unresolved\\input\\unknown.json",
+      "artifact_sha256": "90b87b7798214d060e2910dcede102c4f42ae09a643855c954010a9b5f6c8cb6",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

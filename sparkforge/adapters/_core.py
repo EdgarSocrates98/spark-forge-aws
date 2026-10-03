@@ -43,6 +43,9 @@ from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect import live_graph as collect_live_graph
 from sparkforge.collect import parquet_footer as collect_parquet
+from sparkforge.collect import streaming as collect_streaming
+from sparkforge.collect import schema_registry as collect_schema_registry_collector
+from sparkforge.collect import managed_flink as collect_managed_flink_collector
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
 from sparkforge.controlm import migration as _ctm_migration
@@ -104,6 +107,25 @@ from sparkforge.facts.emr_serverless import (
     extract_emr_serverless_tree,
 )
 from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge.facts.event_driven import extract_event_driven_path, extract_event_driven_tree
+from sparkforge.facts.streaming_ops import (
+    extract_streaming_ops_path,
+    extract_streaming_ops_tree,
+)
+from sparkforge.facts.streaming_integrations import (
+    extract_streaming_integrations_path,
+    extract_streaming_integrations_tree,
+)
+from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
+from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
+from sparkforge.facts.schema_registry import (
+    extract_schema_registry_path,
+    extract_schema_registry_tree,
+)
+from sparkforge.facts.glue_streaming import (
+    extract_glue_streaming_path,
+    extract_glue_streaming_tree,
+)
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_dq_advanced import (
@@ -144,6 +166,12 @@ from sparkforge.facts.sfn_history import (
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge.facts.streaming import (
+    extract_streaming_progress_path,
+    extract_streaming_progress_tree,
+)
+from sparkforge.facts.streaming_composition import build_streaming_composition
+from sparkforge.facts.transport import extract_transport_path, extract_transport_tree
 from sparkforge.facts.stepfunctions import (
     extract_stepfunctions_path,
     extract_stepfunctions_tree,
@@ -186,6 +214,32 @@ from sparkforge.migration.version_path import (
 )
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.reporting.dq_ai import build_dq_ai_report
+from sparkforge.platform.graph import (
+    PlatformGraphError,
+    analyze_platform_graph as _analyze_platform_graph,
+)
+from sparkforge.platform.ecosystem import (
+    PlatformEcosystemError,
+    analyze_platform_ecosystem as _analyze_platform_ecosystem,
+)
+from sparkforge.lab.spec import ForgeLabError, analyze_forge_lab as _analyze_forge_lab
+from sparkforge.catalog.contract import (
+    LakehouseCatalogError,
+    analyze_lakehouse_catalog as _analyze_lakehouse_catalog,
+)
+from sparkforge.analytics.dbt import DbtArtifactsError, analyze_dbt_artifacts as _analyze_dbt_artifacts
+from sparkforge.analytics.duckdb import (
+    DuckDBMicroscopeError,
+    analyze_duckdb_microscope as _analyze_duckdb_microscope,
+)
+from sparkforge.observability.sre import (
+    DataObservabilityError,
+    analyze_data_observability as _analyze_data_observability,
+)
+from sparkforge.orchestration.topology import (
+    OrchestrationError,
+    analyze_orchestration as _analyze_orchestration,
+)
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -967,6 +1021,305 @@ def analyze_pyspark(
     }
     declarar_no_envelope(resultado, procedencias, versao_do_schema)
     return resultado
+
+
+def analyze_streaming(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a superfície streaming de código ou de progresso observado.
+
+    A forma do envelope é a mesma dos demais verbos de facts. Para fonte AST,
+    facts PySpark não-streaming ficam fora de ``items`` mas seus pontos cegos
+    ``pyspark.unresolved`` continuam contados, para um filtro de domínio não
+    transformar análise parcial em lista vazia aparentemente limpa.
+    """
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise streaming: {path}\n"
+            "  Aponte para fonte PySpark ou JSON/JSONL de StreamingQueryProgress."
+        )
+    if artifact == "source":
+        all_facts = _extract_facts(path)
+        facts = [fact for fact in all_facts if fact.kind.startswith("streaming.")]
+        result = _facts_page(facts, None, kind, limit, cursor, detail_level)
+        unresolved_facts = [fact for fact in all_facts if fact.kind == "pyspark.unresolved"]
+        result["unresolved"] = len(unresolved_facts)
+        result["unresolved_at"] = [
+            {
+                "file": fact.subject.get("file", ""),
+                "line": fact.subject.get("line", 0),
+                "reason": fact.attrs.get("reason", ""),
+            }
+            for fact in unresolved_facts
+        ]
+        return result
+    if artifact == "progress":
+        facts = (
+            extract_streaming_progress_tree(target, repo_root=target)
+            if target.is_dir()
+            else extract_streaming_progress_path(target, repo_root=target.parent)
+        )
+        return _facts_page(
+            facts, "streaming.progress.unresolved", kind, limit, cursor, detail_level
+        )
+    raise AdapterError(
+        f"Artefato streaming desconhecido: {artifact}. Use `source` ou `progress`."
+    )
+
+
+def analyze_streaming_composition(
+    facts_paths: list[str],
+    *,
+    mode: str,
+    table: str = "",
+    query_name: str = "",
+    slo_name: str = "",
+    transport_key: str = "",
+    max_skew_seconds: float | None = None,
+    pipeline_path: str | None = None,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Compõe facts já extraídos de streaming, transporte e Iceberg.
+
+    Este verbo não reabre artefatos de origem. Os nomes informados pelo
+    chamador são declarações de identidade; a composição só produz link quando
+    os facts confirmam essa identidade sem ambiguidade.
+    """
+    if not facts_paths:
+        raise AdapterError(
+            "Informe ao menos um arquivo de facts para composição streaming.\n"
+            "  Gere-os com `sparkforge analyze streaming`, `analyze transport` ou `analyze iceberg`."
+        )
+    facts = _merge_facts_files(
+        facts_paths,
+        producer="sparkforge analyze <streaming|transport|iceberg> --out {path}",
+    )
+    pipeline: Mapping[str, Any] | None = None
+    if mode == "pipeline":
+        if not pipeline_path:
+            raise AdapterError("Informe --pipeline-path quando mode=pipeline.")
+        contract_path = Path(pipeline_path)
+        if not contract_path.exists():
+            raise AdapterError(f"Caminho nao encontrado para contrato de pipeline: {pipeline_path}")
+        try:
+            pipeline = json.loads(contract_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise AdapterError(f"Contrato de pipeline invalido: {pipeline_path}: {exc}") from exc
+    composed = build_streaming_composition(
+        facts,
+        mode=mode,
+        table=table,
+        query_name=query_name,
+        slo_name=slo_name,
+        transport_key=transport_key,
+        max_skew_seconds=max_skew_seconds,
+        pipeline=pipeline,
+    )
+    return _facts_page(
+        composed,
+        "streaming.composition.unresolved",
+        kind,
+        limit,
+        cursor,
+        detail_level,
+    )
+
+
+def analyze_transport(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de dumps Kafka, MSK ou Kinesis.
+
+    O domínio é obrigatório para impedir que um dump de serviço seja
+    reinterpretado com o vocabulário de outro. Collector live não pertence a
+    este verbo.
+    """
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise de transporte: {path}")
+    if artifact not in {"kafka", "msk", "kinesis"}:
+        raise AdapterError(
+            f"Artefato de transporte desconhecido: {artifact}. Use `kafka`, `msk` ou `kinesis`."
+        )
+    facts = (
+        extract_transport_tree(target, artifact_type=artifact)
+        if target.is_dir()
+        else extract_transport_path(target, artifact_type=artifact)
+    )
+    return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_flink(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de dumps Apache Flink ou Managed Flink."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise Flink: {path}")
+    if artifact not in {"flink", "managed_flink"}:
+        raise AdapterError(
+            f"Artefato Flink desconhecido: {artifact}. Use `flink` ou `managed_flink`."
+        )
+    facts = (
+        extract_flink_tree(target, artifact=artifact)
+        if target.is_dir()
+        else extract_flink_path(target, artifact=artifact)
+    )
+    return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_cdc(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de CDC, Debezium ou AWS DMS."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise CDC: {path}")
+    if artifact not in {"cdc", "debezium", "dms"}:
+        raise AdapterError(
+            f"Artefato CDC desconhecido: {artifact}. Use `cdc`, `debezium` ou `dms`."
+        )
+    facts = (
+        extract_cdc_tree(target, artifact=artifact)
+        if target.is_dir()
+        else extract_cdc_path(target, artifact=artifact)
+    )
+    return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_schema_registry(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de contratos e evolução de schemas."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise Schema Registry: {path}")
+    facts = (
+        extract_schema_registry_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_schema_registry_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "schema.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_event_driven(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extract offline facts from EventBridge, SQS and SNS configuration dumps."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise event-driven: {path}")
+    facts = (
+        extract_event_driven_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_event_driven_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "event_driven.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_streaming_ops(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extract declared streaming SLO, FinOps, security and serving facts."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise streaming-ops: {path}")
+    facts = (
+        extract_streaming_ops_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_streaming_ops_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "streaming_ops.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_streaming_integrations(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extract checkpoint, Kafka Connect/Streams and OpenLineage facts."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise streaming-integrations: {path}")
+    facts = (
+        extract_streaming_integrations_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_streaming_integrations_path(target, repo_root=target.parent)
+    )
+    return _facts_page(
+        facts,
+        "streaming_integrations.unresolved",
+        kind,
+        limit,
+        cursor,
+        detail_level,
+    )
+
+
+def analyze_glue_streaming(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise Glue Streaming: {path}")
+    facts = (
+        extract_glue_streaming_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_glue_streaming_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "glue.streaming.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1999,6 +2352,115 @@ def analyze_graph(
 ) -> dict[str, Any]:
     facts = _extract_graph_facts(path)
     return _facts_page(facts, "graph.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze platform-graph
+# --------------------------------------------------------------------------- #
+
+
+def analyze_platform_graph(
+    path: str,
+    *,
+    changed_node: str | None = None,
+    changed_attribute: str | None = None,
+    direction: str = "downstream",
+    max_depth: int = 3,
+    max_items: int = 500,
+) -> dict[str, Any]:
+    """Analyze explicit platform metadata and bounded lineage impact offline."""
+    try:
+        return _analyze_platform_graph(
+            path,
+            changed_node=changed_node,
+            changed_attribute=changed_attribute,
+            direction=direction,
+            max_depth=max_depth,
+            max_items=max_items,
+        )
+    except PlatformGraphError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+def analyze_platform_ecosystem(path: str) -> dict[str, Any]:
+    """Analyze serving, ingestion, AI and optional radar inventory offline."""
+    try:
+        return _analyze_platform_ecosystem(path)
+    except PlatformEcosystemError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze forge-lab
+# --------------------------------------------------------------------------- #
+
+
+def analyze_forge_lab(path: str) -> dict[str, Any]:
+    """Describe a Forge Lab manifest without starting or mutating services."""
+    try:
+        return _analyze_forge_lab(path)
+    except ForgeLabError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze lakehouse-catalog
+# --------------------------------------------------------------------------- #
+
+
+def analyze_lakehouse_catalog(path: str) -> dict[str, Any]:
+    """Describe catalog/engine bindings without contacting a catalog."""
+    try:
+        return _analyze_lakehouse_catalog(path)
+    except LakehouseCatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze analytics engineering artifacts
+# --------------------------------------------------------------------------- #
+
+
+def analyze_dbt_artifacts(path: str) -> dict[str, Any]:
+    """Normalize dbt artifacts without importing or executing dbt."""
+    try:
+        return _analyze_dbt_artifacts(path)
+    except DbtArtifactsError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+def analyze_duckdb_microscope(path: str) -> dict[str, Any]:
+    """Read a read-only DuckDB microscope bundle without importing DuckDB."""
+    try:
+        return _analyze_duckdb_microscope(path)
+    except DuckDBMicroscopeError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze data-observability
+# --------------------------------------------------------------------------- #
+
+
+def analyze_data_observability(path: str) -> dict[str, Any]:
+    """Evaluate exported SLO/incident evidence without querying observability APIs."""
+    try:
+        return _analyze_data_observability(path)
+    except DataObservabilityError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze orchestration
+# --------------------------------------------------------------------------- #
+
+
+def analyze_orchestration(path: str) -> dict[str, Any]:
+    """Normalize declared orchestration controls without triggering workloads."""
+    try:
+        return _analyze_orchestration(path)
+    except OrchestrationError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
 
 
 # --------------------------------------------------------------------------- #
@@ -7490,6 +7952,178 @@ def collect_emr_eks(
     try:
         entry = collect_aws.collect_emr_eks(virtual_cluster_id, job_run_id, Path(repo), now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_streaming_integrations(
+    repo: str,
+    *,
+    now: str,
+    checkpoint_s3_uri: str = "",
+    glue_job_name: str = "",
+    kinesis_stream_name: str = "",
+    msk_cluster_arn: str = "",
+    dms_task_arn: str = "",
+    region_name: str = "",
+    max_objects: int = 500,
+    max_shards: int = 500,
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
+) -> dict[str, Any]:
+    """Coleta snapshots read-only de integrações streaming e registra manifesto."""
+    rel_path = collect_streaming.streaming_integrations_path(
+        checkpoint_s3_uri=checkpoint_s3_uri,
+        glue_job_name=glue_job_name,
+        kinesis_stream_name=kinesis_stream_name,
+        msk_cluster_arn=msk_cluster_arn,
+        dms_task_arn=dms_task_arn,
+        metrics_start=metrics_start,
+        metrics_end=metrics_end,
+        metrics_period=metrics_period,
+    )
+    command_parts = ["sparkforge collect streaming-integrations --repo <repo>"]
+    for option, value in (
+        ("--checkpoint-s3-uri", checkpoint_s3_uri),
+        ("--glue-job", glue_job_name),
+        ("--kinesis-stream", kinesis_stream_name),
+        ("--msk-cluster-arn", msk_cluster_arn),
+        ("--dms-task-arn", dms_task_arn),
+        ("--region", region_name),
+    ):
+        if value:
+            command_parts.append(f"{option} {value}")
+    if max_objects != 500:
+        command_parts.append(f"--max-objects {max_objects}")
+    if max_shards != 500:
+        command_parts.append(f"--max-shards {max_shards}")
+    if metrics_start:
+        command_parts.append(f"--metrics-start {metrics_start}")
+    if metrics_end:
+        command_parts.append(f"--metrics-end {metrics_end}")
+    if metrics_period != 60:
+        command_parts.append(f"--metrics-period {metrics_period}")
+    command_parts.append(f"--now {now}")
+    command = " ".join(command_parts)
+    try:
+        entry = collect_streaming.collect_streaming_integrations(
+            Path(repo),
+            now=now,
+            checkpoint_s3_uri=checkpoint_s3_uri,
+            glue_job_name=glue_job_name,
+            kinesis_stream_name=kinesis_stream_name,
+            msk_cluster_arn=msk_cluster_arn,
+            dms_task_arn=dms_task_arn,
+            region_name=region_name,
+            max_objects=max_objects,
+            max_shards=max_shards,
+            metrics_start=metrics_start,
+            metrics_end=metrics_end,
+            metrics_period=metrics_period,
+            collect_command=command,
+        )
+    except ValueError as exc:
+        raise AdapterError(f"collect streaming-integrations: {exc}", exit_code=2) from exc
+    except (CollectorUnavailable, collect_streaming.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_schema_registry(
+    repo: str,
+    *,
+    now: str,
+    registry_name: str = "",
+    schema_name: str = "",
+    schema_arn: str = "",
+    region_name: str = "",
+    max_schemas: int = 100,
+    max_definition_bytes: int = 170_000,
+) -> dict[str, Any]:
+    """Coleta latest schema/metadata do Glue Registry e registra manifesto."""
+    rel_path = collect_schema_registry_collector.schema_registry_path(
+        registry_name=registry_name, schema_name=schema_name, schema_arn=schema_arn
+    )
+    command_parts = ["sparkforge collect schema-registry --repo <repo>"]
+    for option, value in (
+        ("--registry-name", registry_name),
+        ("--schema-name", schema_name),
+        ("--schema-arn", schema_arn),
+        ("--region", region_name),
+    ):
+        if value:
+            command_parts.append(f"{option} {value}")
+    if max_schemas != 100:
+        command_parts.append(f"--max-schemas {max_schemas}")
+    if max_definition_bytes != 170_000:
+        command_parts.append(f"--max-definition-bytes {max_definition_bytes}")
+    command_parts.append(f"--now {now}")
+    command = " ".join(command_parts)
+    try:
+        entry = collect_schema_registry_collector.collect_schema_registry(
+            Path(repo),
+            now=now,
+            registry_name=registry_name,
+            schema_name=schema_name,
+            schema_arn=schema_arn,
+            region_name=region_name,
+            max_schemas=max_schemas,
+            max_definition_bytes=max_definition_bytes,
+            collect_command=command,
+        )
+    except ValueError as exc:
+        raise AdapterError(f"collect schema-registry: {exc}", exit_code=2) from exc
+    except (CollectorUnavailable, collect_schema_registry_collector.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_managed_flink(
+    repo: str,
+    *,
+    application_name: str,
+    now: str,
+    region_name: str = "",
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
+) -> dict[str, Any]:
+    """Coleta descrição read-only e, opcionalmente, métricas temporais Managed Flink."""
+    rel_path = collect_managed_flink_collector.managed_flink_path(
+        application_name=application_name,
+        region_name=region_name,
+        metrics_start=metrics_start,
+        metrics_end=metrics_end,
+        metrics_period=metrics_period,
+    )
+    command_parts = [
+        "sparkforge collect managed-flink --repo <repo>",
+        f"--application-name {application_name}",
+    ]
+    if region_name:
+        command_parts.append(f"--region {region_name}")
+    if metrics_start:
+        command_parts.append(f"--metrics-start {metrics_start}")
+    if metrics_end:
+        command_parts.append(f"--metrics-end {metrics_end}")
+    if metrics_start or metrics_end:
+        command_parts.append(f"--metrics-period {metrics_period}")
+    command_parts.append(f"--now {now}")
+    try:
+        entry = collect_managed_flink_collector.collect_managed_flink(
+            Path(repo),
+            application_name=application_name,
+            now=now,
+            region_name=region_name,
+            metrics_start=metrics_start,
+            metrics_end=metrics_end,
+            metrics_period=metrics_period,
+            collect_command=" ".join(command_parts),
+        )
+    except ValueError as exc:
+        raise AdapterError(f"collect managed-flink: {exc}", exit_code=2) from exc
+    except (CollectorUnavailable, collect_managed_flink_collector.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
 

@@ -1,0 +1,122 @@
+[
+  {
+    "rule_id": "SF-SCHEMA-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Evolução de schema incompatível com modo declarado",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_7005ca"
+    ],
+    "measured": {
+      "changed_field_count": 3
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O diff estrutural observado viola o modo de compatibilidade declarado. O finding não prova impacto em todo consumidor; prova que o contrato capturado não sustenta a evolução no modo escolhido.",
+    "proposed_change": [
+      "Revisar remoção, tipo e obrigatoriedade com todos os consumidores.",
+      "Testar registro e leitura da nova versão em ambiente controlado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Publicar schema incompatível pode quebrar consumidores ou replay."
+    ],
+    "tradeoffs": [
+      "Compatibilidade mais restrita pode limitar evolução e exigir novo subject."
+    ],
+    "validation": [
+      "Executar testes de compatibilidade contra schema anterior e consumidores declarados."
+    ],
+    "rollback": [
+      "Reverter registro para versão anterior preservando eventos e evidência."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "contract.review_compatibility",
+      "target": "schema.compatibility",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.read_result",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-SCHEMA-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Registro automático de schema sem aprovação explícita",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_a62e6f"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O artefato declara auto-registro. Isso pode ser adequado em ambientes controlados, mas não prova revisão, compatibilidade ou ownership do contrato antes da publicação.",
+    "proposed_change": [
+      "Declarar política de aprovação, owner e modo de compatibilidade.",
+      "Separar registro de desenvolvimento e produção e testar rejeição."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Produtores podem publicar mudança incompatível sem revisão."
+    ],
+    "tradeoffs": [
+      "Aprovação prévia aumenta governança e latência de deploy."
+    ],
+    "validation": [
+      "Verificar audit trail, owner e tentativa de registro incompatível."
+    ],
+    "rollback": [
+      "Desligar auto-registro conforme procedimento operacional aprovado."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/schema-registry-works.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "contract.require_review",
+      "target": "schema.auto_register",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "security.identity_access",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

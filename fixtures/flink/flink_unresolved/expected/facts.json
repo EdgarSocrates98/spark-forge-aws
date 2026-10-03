@@ -1,0 +1,147 @@
+[
+  {
+    "id": "f_cd0a1f",
+    "schema_version": 1,
+    "kind": "flink.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "checkpoint_count": 0,
+      "fact_count": 5
+    },
+    "attrs": {
+      "artifact": "flink"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "artifact_sha256": "c1587e4f207a9064ff745ca92cfac96c96a906b76096065c37a89f3d467e608e",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_2c6347",
+    "schema_version": 1,
+    "kind": "flink.job",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_id": "job-003",
+      "name": "partial-dump"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "artifact_sha256": "c1587e4f207a9064ff745ca92cfac96c96a906b76096065c37a89f3d467e608e",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_f7612c",
+    "schema_version": 1,
+    "kind": "flink.operator",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator_id": "source",
+      "name": "Source",
+      "uid": null,
+      "type": null
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "artifact_sha256": "c1587e4f207a9064ff745ca92cfac96c96a906b76096065c37a89f3d467e608e",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_3d5971",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "source_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "artifact_sha256": "c1587e4f207a9064ff745ca92cfac96c96a906b76096065c37a89f3d467e608e",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_3d5971",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sink_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "artifact_sha256": "c1587e4f207a9064ff745ca92cfac96c96a906b76096065c37a89f3d467e608e",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_3d5971",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "checkpoint_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_unresolved\\input\\dump.json",
+      "artifact_sha256": "c1587e4f207a9064ff745ca92cfac96c96a906b76096065c37a89f3d467e608e",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  }
+]

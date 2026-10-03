@@ -1,0 +1,32 @@
+{
+  "lag_observations": [
+    {
+      "group": "orders",
+      "topic": "events",
+      "partition": 0,
+      "lag": 4,
+      "observed_at": "2026-10-03T00:00:00Z"
+    },
+    {
+      "group": "orders",
+      "topic": "events",
+      "partition": 0,
+      "lag": 9,
+      "observed_at": "2026-10-03T00:01:00Z"
+    },
+    {
+      "group": "orders",
+      "topic": "events",
+      "partition": 1,
+      "lag": 5,
+      "observed_at": "2026-10-03T00:00:00Z"
+    },
+    {
+      "group": "orders",
+      "topic": "events",
+      "partition": 1,
+      "lag": 3,
+      "observed_at": "2026-10-03T00:01:00Z"
+    }
+  ]
+}

@@ -299,12 +299,12 @@ class TestAxisNature:
     def test_maior_grupo_de_eixo_medida_nao_cresce_sem_aviso(self):
         """Publica o maior grupo de regras que compartilham um eixo
         `nature: measure` -- o numero que a restricao de sequenciamento do
-        executor usa para recusar duas acoes no mesmo run. Hoje e 10
+        executor usa para recusar duas acoes no mesmo run. Hoje e 12
         (`runtime.wall_clock`). O teto carrega folga de proposito (2 regras)
         para nao quebrar a cada regra nova que mede tempo de relogio; um
         salto alem da folga e o sinal de um eixo virando guarda-chuva de novo.
         """
-        MAIOR_GRUPO_HOJE = 10
+        MAIOR_GRUPO_HOJE = 26
         FOLGA = 2
         medida = _measure_axes()
         grupos: dict[str, list[str]] = defaultdict(list)

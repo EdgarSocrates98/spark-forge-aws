@@ -135,6 +135,33 @@
     }
   },
   {
+    "id": "f_431f20",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos",
+      "snapshot_id": 1
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 1,
+      "committed_at": "2026-07-30T03:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_6886f1",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",

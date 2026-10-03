@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_9f85ba",
+    "schema_version": 1,
+    "kind": "schema.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_invalid\\input\\broken.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_json"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_invalid\\input\\broken.json",
+      "artifact_sha256": "399e3a204fff1d08912ea79db5a52249c44636acab91c6fbead9c8ee6335a2d3",
+      "extractor": "schema_registry@0.1.0"
+    }
+  }
+]

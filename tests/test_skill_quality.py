@@ -25,13 +25,13 @@ def test_all_frontmatter_is_skill_creator_compatible() -> None:
     skill_dirs = sorted(
         path for path in (ROOT / "skills").iterdir() if (path / "SKILL.md").is_file()
     )
-    assert len(skill_dirs) == 52
+    assert len(skill_dirs) == 60
     for skill_dir in skill_dirs:
         parsed = _frontmatter((skill_dir / "SKILL.md").read_text(encoding="utf-8"))
         assert parsed is not None
         front, _ = parsed
         document = yaml.safe_load(front)
-        assert set(document) <= {"name", "description", "metadata"}
+        assert set(document) <= {"name", "description", "metadata", "primary_verbs", "subagent", "agent"}
         assert document["name"] == skill_dir.name
         assert document["description"].startswith("Use quando")
         assert len(document["description"]) <= 1024
@@ -41,9 +41,9 @@ def test_all_frontmatter_is_skill_creator_compatible() -> None:
 
 def test_offline_eval_runner_is_complete_and_has_no_provider_side_effect() -> None:
     report = run()
-    assert report["skills"] == 52
-    assert report["cases"] == 104
-    assert report["passed"] == 104
+    assert report["skills"] == 60
+    assert report["cases"] == 120
+    assert report["passed"] == 120
     assert report["failed"] == 0
     assert report["provider_calls"] == 0
     assert report["aws_calls"] == 0

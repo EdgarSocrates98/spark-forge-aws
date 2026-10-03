@@ -1,0 +1,245 @@
+[
+  {
+    "id": "f_464eeb",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_7ddbb2",
+    "schema_version": 1,
+    "kind": "kafka.cluster",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "cluster_id": "cluster-1",
+      "version": "4.0.0",
+      "security_protocol": "SASL_SSL"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_f79c7d",
+    "schema_version": 1,
+    "kind": "kafka.config",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "topic": "events",
+      "key": "cleanup.policy",
+      "value": "compact"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_f79c7d",
+    "schema_version": 1,
+    "kind": "kafka.config",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "topic": "events",
+      "key": "retention.ms",
+      "value": "86400000"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_fdcbde",
+    "schema_version": 1,
+    "kind": "kafka.consumer_group",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "member_count": 2
+    },
+    "attrs": {
+      "group": "orders",
+      "state": "STABLE"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_f36ab5",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "current_offset": 10,
+      "log_end_offset": 14,
+      "lag": 4
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_3e4ab4",
+    "schema_version": 1,
+    "kind": "kafka.partition",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "leader": 1,
+      "replication_factor": 2,
+      "isr_count": 2
+    },
+    "attrs": {
+      "topic": "events",
+      "replicas": [
+        1,
+        2
+      ],
+      "isr": [
+        1,
+        2
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_eccc35",
+    "schema_version": 1,
+    "kind": "kafka.partition",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 1,
+      "leader": 2,
+      "replication_factor": 2,
+      "isr_count": 1
+    },
+    "attrs": {
+      "topic": "events",
+      "replicas": [
+        1,
+        2
+      ],
+      "isr": [
+        2
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_acc587",
+    "schema_version": 1,
+    "kind": "kafka.topic",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition_count": 2
+    },
+    "attrs": {
+      "name": "events"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_positive\\input\\dump.json",
+      "artifact_sha256": "f91120a0fb37c5e3b041bf64937bdf301d2deb4e9d75794d5e2cf377b84042aa",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

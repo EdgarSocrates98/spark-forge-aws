@@ -8,6 +8,48 @@ from sparkforge.adapters.tools import TOOLS
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_streaming_coverage_mentions_slo_evaluation():
+    text = _read("docs/streaming/prompt-coverage.md")
+    assert "STREAMING_SLO_EVALUATION" in text
+    assert "mode=slo" in text
+    assert "SF-STREAM-011" in text
+    assert "SF-STREAM-012" in text
+
+
+def test_streaming_transport_slo_coverage_mentions_transport_key():
+    text = _read("docs/streaming/prompt-coverage.md")
+    assert "STREAMING_SLO_TRANSPORT_EVALUATION" in text
+    assert "transport_key" in text
+    assert "kafka.lag" in text
+    assert "kinesis.shard" in text
+
+
+def test_streaming_sink_slo_coverage_mentions_batch_link():
+    text = _read("docs/streaming/prompt-coverage.md")
+    assert "STREAMING_SINK_SLO_EVALUATION" in text
+    assert "num_output_rows" in text
+    assert "batch_id" in text
+    assert "sink_name" in text
+
+
+def test_streaming_progress_observability_depth_coverage():
+    text = _read("docs/streaming/prompt-coverage.md")
+    reliability = _read("knowledge/streaming-reliability.md")
+    assert "STREAMING_PROGRESS_OBSERVABILITY_DEPTH" in text
+    assert "watermark_stalled" in reliability
+    assert "state_memory_growth_observed" in reliability
+
+
+def test_streaming_slo_latency_freshness_coverage():
+    text = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/streaming-operations.md")
+    skill = _read("skills/review-structured-streaming/SKILL.md")
+    assert "STREAMING_SLO_LATENCY_FRESHNESS" in text
+    assert "statistic=p95" in knowledge
+    assert "freshness_ms" in knowledge
+    assert "nearest-rank" in skill
+
+
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
 
@@ -48,6 +90,67 @@ def _section(text: str, heading: str) -> str:
     rest = text[start + len(heading) :]
     end = rest.find("\n## ")
     return rest if end == -1 else rest[:end]
+
+
+def test_manifest_counts_match_measurements():
+    manifest = json.loads(_read("manifest.json"))
+    from sparkforge.rules.loader import load_catalog
+
+    skills = {
+        path.name
+        for path in (ROOT / "skills").iterdir()
+        if path.is_dir() and (path / "SKILL.md").is_file()
+    }
+    assert manifest["knowledge_base"]["rule_count"] == len(load_catalog())
+    assert len(manifest["tools"]) == len(TOOLS)
+    assert set(manifest["skills"]) == skills
+
+
+def test_streaming_glue_cross_artifact_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/glue-streaming-rtm.md")
+    skill = _read("skills/review-glue-streaming/SKILL.md")
+    assert "Terraform cross-artifact" in coverage
+    assert "glue.streaming.terraform_link" in knowledge
+    assert "source_fact_ids" in skill
+
+
+def test_streaming_glue_runtime_observation_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/glue-streaming-rtm.md")
+    skill = _read("skills/review-glue-streaming/SKILL.md")
+    assert "STREAMING_GLUE_RUNTIME_OBSERVATION" in coverage
+    assert "glue.streaming.runtime_link" in coverage
+    assert "glue.streaming.runtime.unresolved" in knowledge
+    assert "analyze glue-job-runs" in skill
+
+
+def test_glue_source_sink_artifacts_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/glue-streaming-rtm.md")
+    skill = _read("skills/review-glue-streaming/SKILL.md")
+    readme = _read("README.md")
+    sdd = _read("docs/sdd/STREAMING_GLUE_SOURCE_SINK_ARTIFACTS/design.md")
+    assert "glue.streaming.source" in coverage
+    assert "glue.streaming.sink" in coverage
+    assert "source_metrics_missing" in knowledge
+    assert "glue.streaming.source" in skill
+    assert "glue.streaming.sink" in readme
+    assert "STREAMING_GLUE_SOURCE_SINK_ARTIFACTS" in sdd
+
+
+def test_flink_source_sink_artifacts_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/flink-streaming.md")
+    skill = _read("skills/analyze-flink-job/SKILL.md")
+    readme = _read("README.md")
+    sdd = _read("docs/sdd/STREAMING_FLINK_SOURCE_SINK_ARTIFACTS/design.md")
+    assert "flink.source" in coverage
+    assert "flink.sink" in coverage
+    assert "source_metrics_missing" in knowledge
+    assert "delivery_semantics" in skill
+    assert "num_records_in" in readme
+    assert "STREAMING_FLINK_SOURCE_SINK_ARTIFACTS" in sdd
 
 
 class TestReadme:

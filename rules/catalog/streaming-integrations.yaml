@@ -1,0 +1,138 @@
+catalog_version: 1
+schema_version: 1
+area: SF-STREAM
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-STREAM-007
+    category: streaming_checkpoint
+    title: Checkpoint de streaming sem contexto operacional suficiente
+    requires_facts: [streaming_integrations.unresolved]
+    when:
+      all:
+        - fact: streaming_integrations.unresolved
+          expr: 'attrs.domain == "checkpoint"'
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump não permite relacionar query, localização, storage e observações
+      temporais do checkpoint. Sem essa identidade, série ou contexto, o Forge
+      não conclui backlog, crescimento de estado, atraso de watermark ou
+      compatibilidade de restart.
+    proposed_change:
+      - Declarar query_name, checkpoint path, storage, state store e schema version.
+      - Anexar ao menos duas observações pareadas com trigger, batch duration, backlog e estado quando aplicável.
+    risks: ["Trocar checkpoint sem provar compatibilidade pode causar replay, perda de estado ou retomada incorreta."]
+    tradeoffs: ["Metadados e séries temporais exigem retenção e sanitização operacional."]
+    validation: ["Reanalisar dump sanitizado e correlacionar a identidade com progress e runtime detectado."]
+    rollback: ["Reverter somente declaração ou recomendação; preservar checkpoint original e evidência de replay."]
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.checkpoint
+      direction: add
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts, runtime.wall_clock]
+      depends_on: []
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/streaming-integrations.md}]
+
+  - id: SF-STREAM-008
+    category: kafka_connect
+    title: Kafka Connect sem configuração e estado operacional completos
+    requires_facts: [streaming_integrations.unresolved]
+    when:
+      all:
+        - fact: streaming_integrations.unresolved
+          expr: 'attrs.domain == "kafka_connect"'
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O artefato não traz configuração, modo do worker, status, tasks ou
+      offsets suficientes para julgar um connector. A ausência não prova falha
+      nem saúde, e não autoriza afirmar exactly-once, DLQ ou recuperação.
+    proposed_change:
+      - Capturar config sanitizada, status, tasks, offsets e política de erro/DLQ em uma mesma janela.
+      - Separar connector source/sink, converter, SMT e worker runtime.
+    risks: ["Copiar credenciais de connector para o artefato cria exposição e não melhora o diagnóstico."]
+    tradeoffs: ["Dump completo aumenta superfície de segredo; redaction é obrigatório."]
+    validation: ["Comparar status de connector e tasks com offsets e erros do mesmo instante."]
+    rollback: ["Remover apenas conclusão sem evidência; manter dump sanitizado para replay da análise."]
+    action:
+      kind: measurement.collect_baseline
+      target: kafka.connect
+      direction: add
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts, security.verify_access_chain]
+      depends_on: []
+    sources:
+      - {url: "https://kafka.apache.org/documentation/#connect_rest", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/streaming-integrations.md}]
+
+  - id: SF-STREAM-009
+    category: kafka_streams
+    title: Topologia Kafka Streams sem state stores e tópicos internos declarados
+    requires_facts: [streaming_integrations.unresolved]
+    when:
+      all:
+        - fact: streaming_integrations.unresolved
+          expr: 'attrs.domain == "kafka_streams"'
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A topologia não pode ser comparada com Spark ou Flink sem saber state
+      stores, changelog, repartition, joins, windows e processing guarantee.
+      Kafka Streams continua candidato arquitetural, não diagnóstico automático.
+    proposed_change:
+      - Declarar application id, garantia de processamento, state stores, changelog e repartition topics.
+      - Registrar joins/windows e requisito de interactive query quando presentes.
+    risks: ["Confundir ordering por partição com ordering global produz decisão arquitetural errada."]
+    tradeoffs: ["Topologia mais explícita exige inventário dos tópicos internos e retenção."]
+    validation: ["Reconciliar topologia declarada com métricas, configurações e consumer groups observados."]
+    rollback: ["Reverter a recomendação de plataforma sem alterar topologia ou tópicos internos."]
+    action:
+      kind: measurement.collect_baseline
+      target: kafka.streams
+      direction: add
+      requires_absent: []
+      moves: [runtime.wall_clock, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://kafka.apache.org/documentation/streams/", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/streaming-integrations.md}]
+
+  - id: SF-STREAM-010
+    category: openlineage
+    title: Evento OpenLineage sem Job, Run ou datasets completos
+    requires_facts: [streaming_integrations.unresolved]
+    when:
+      all:
+        - fact: streaming_integrations.unresolved
+          expr: 'attrs.domain == "openlineage"'
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O evento não traz identidade mínima de Job/Run e entradas/saídas. O Forge
+      não fabrica lineage a partir do nome de uma tabela ou trata facet ausente
+      como prova de impacto.
+    proposed_change:
+      - Emitir evento sanitizado com eventType, producer, job, run, inputs, outputs e facets relevantes.
+      - Correlacionar OpenLineage com facts de Spark/Flink/transport somente por identidade declarada.
+    risks: ["Lineage parcial pode esconder consumidor ou impacto de mudança."]
+    tradeoffs: ["Instrumentação adiciona armazenamento e governança de metadados, não necessariamente dados de negócio."]
+    validation: ["Verificar unicidade de Job/Run e correspondência de datasets com artefatos analisados."]
+    rollback: ["Remover apenas vínculo não comprovado; preservar evento original e sua procedência."]
+    action:
+      kind: measurement.collect_baseline
+      target: lineage.openlineage
+      direction: add
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://openlineage.io/docs/spec/object-model/", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/streaming-integrations.md}]

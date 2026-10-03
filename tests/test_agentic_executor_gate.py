@@ -219,9 +219,9 @@ class TestPolitica:
             "reason": "debate_gate.yaml: quebrada de proposito",
         }
 
-    def test_reversibilidade_do_catalogo_tem_os_setenta(self):
+    def test_reversibilidade_do_catalogo_tem_os_setenta_seis(self):
         mapa = gate.load_reversibility()
-        assert len(mapa) == 70
+        assert len(mapa) == 76
         assert all(isinstance(v, bool) for v in mapa.values())
 
 

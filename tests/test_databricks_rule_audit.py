@@ -107,6 +107,10 @@ EXCECOES = {
         "o passo com DynamicFrame e condicional a leitura via DynamicFrame, que so "
         "existe no Glue; os demais passos da regra sao neutros"
     ),
+    "SF-GLUESTREAM-001": (
+        "a regra revisa a configuração específica do Glue Streaming; o equivalente "
+        "neutro é a ausência de uma capacidade homônima fora do runtime AWS"
+    ),
 }
 
 

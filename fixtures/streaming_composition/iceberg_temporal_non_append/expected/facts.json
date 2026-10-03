@@ -1,0 +1,334 @@
+[
+  {
+    "id": "f_1cbd84",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "declared": "2"
+    },
+    "provenance": {
+      "artifact": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "artifact_sha256": "e693d06a5a0d4eab40709c7b1995873546df11b1a424b8287c81b81c16a30347",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_eda491",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "symbol": "db.events",
+      "snapshot_id": 1
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 1,
+      "committed_at": "2026-10-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "artifact_sha256": "e693d06a5a0d4eab40709c7b1995873546df11b1a424b8287c81b81c16a30347",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_d58982",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "symbol": "db.events",
+      "snapshot_id": 2
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 2,
+      "committed_at": "2026-10-01T00:00:05+00:00",
+      "operation": "replace"
+    },
+    "provenance": {
+      "artifact": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "artifact_sha256": "e693d06a5a0d4eab40709c7b1995873546df11b1a424b8287c81b81c16a30347",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f32534",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "snapshot_count": 2,
+      "span_hours": 0.001388888888888889
+    },
+    "attrs": {
+      "operations": [
+        "append",
+        "replace"
+      ],
+      "oldest": "2026-10-01T00:00:00+00:00",
+      "newest": "2026-10-01T00:00:05+00:00"
+    },
+    "provenance": {
+      "artifact": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "artifact_sha256": "e693d06a5a0d4eab40709c7b1995873546df11b1a424b8287c81b81c16a30347",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_07a4c4",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "section_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+      "artifact_sha256": "e693d06a5a0d4eab40709c7b1995873546df11b1a424b8287c81b81c16a30347",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_052e61",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "iceberg_temporal",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 9,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "iceberg_temporal",
+      "table": "db.events",
+      "query_name": "orders-query",
+      "transport_key": null,
+      "max_skew_seconds": 0
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_77186f",
+    "schema_version": 1,
+    "kind": "streaming.iceberg.temporal",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query->db.events",
+      "snippet": ""
+    },
+    "measures": {
+      "progress_observation_count": 2,
+      "snapshot_observation_count": 2,
+      "paired_observation_count": 2,
+      "progress_timestamped_count": 2,
+      "snapshot_timestamped_count": 2,
+      "max_skew_seconds": 0.0,
+      "non_append_snapshot_count": 1
+    },
+    "attrs": {
+      "table": "db.events",
+      "query_name": "orders-query",
+      "operations": [
+        "append",
+        "replace"
+      ],
+      "non_append_observed": true,
+      "temporal_window_complete": true,
+      "max_skew_seconds_declared": 0.0,
+      "source_fact_ids": [
+        "f_22fa05",
+        "f_6e22f5",
+        "f_d58982",
+        "f_eda491"
+      ],
+      "progress_window_start": "2026-10-01T00:00:00Z",
+      "progress_window_end": "2026-10-01T00:00:05Z",
+      "snapshot_window_start": "2026-10-01T00:00:00+00:00",
+      "snapshot_window_end": "2026-10-01T00:00:05+00:00",
+      "link_kind": "declared_temporal_window",
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "E:/projetos/spark-forge-aws/fixtures/streaming_composition/iceberg_temporal_non_append/input/iceberg.json",
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_iceberg_temporal@0.1.0"
+    }
+  },
+  {
+    "id": "f_1b33a5",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_6e22f5",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "num_input_rows": 100,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 120.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_22fa05",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "num_input_rows": 100,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 110.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:05Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_f0ae2b",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 120.0,
+      "processed_rows_per_second_last": 110.0,
+      "observed_span_seconds": 5.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 1,
+      "all_processed_below_input": false,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  }
+]

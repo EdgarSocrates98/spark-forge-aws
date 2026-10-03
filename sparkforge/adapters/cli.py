@@ -204,6 +204,57 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
+    # Forge Lab -----------------------------------------------------------
+    # CLI-first by design. The default is a read-only plan; mutating actions
+    # require both --execute and --confirm and never become MCP actions.
+    lab_p = sub.add_parser(
+        "lab",
+        help="Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita.",
+    )
+    lab_sub = lab_p.add_subparsers(dest="lab_action", required=True)
+    lab_doctor_p = lab_sub.add_parser("doctor", help="Verifica host, registry e perfis sem iniciar serviços.")
+    lab_doctor_p.add_argument("--repo", default=".")
+    lab_sub.add_parser("profiles", help="Lista profiles e requisitos declarados.").add_argument("--repo", default=".")
+    lab_scenarios_p = lab_sub.add_parser("scenarios", help="Lista o Golden 20 e suas fidelidades.")
+    lab_scenarios_p.add_argument("--repo", default=".")
+    lab_scenarios_p.add_argument("--json", action="store_true", help="Mantido por compatibilidade; saída já é JSON.")
+    lab_verify_p = lab_sub.add_parser("verify", help="Verifica registry, Golden 20, schemas e action plans offline.")
+    lab_verify_p.add_argument("--repo", default=".")
+    for action, help_text in (("describe", "Descreve um cenário"), ("plan", "Compila cenário em actions"), ("run", "Planeja ou executa cenário")):
+        scenario_p = lab_sub.add_parser(action, help=help_text)
+        scenario_p.add_argument("scenario")
+        scenario_p.add_argument("--repo", default=".")
+        scenario_p.add_argument("--backend", choices=("compose", "testcontainers"), default="compose")
+        scenario_p.add_argument("--seed", type=int, default=None)
+        scenario_p.add_argument("--execute", action="store_true")
+        scenario_p.add_argument("--confirm", action="store_true")
+    lab_inspect_p = lab_sub.add_parser("inspect", help="Inspeciona run/receipt e verifica hash.")
+    lab_inspect_p.add_argument("path")
+    lab_inspect_p.add_argument("--repo", default=".")
+    lab_analyze_p = lab_sub.add_parser("analyze", help="Aponta artifacts capturados para análise posterior.")
+    lab_analyze_p.add_argument("path")
+    lab_analyze_p.add_argument("--repo", default=".")
+    lab_compare_p = lab_sub.add_parser("compare", help="Compara dois receipts/runs sem afirmar performance.")
+    lab_compare_p.add_argument("before")
+    lab_compare_p.add_argument("after")
+    lab_compare_p.add_argument("--repo", default=".")
+    lab_promote_p = lab_sub.add_parser("promote-fixture", help="Promove run revisado para fixture curated.")
+    lab_promote_p.add_argument("run")
+    lab_promote_p.add_argument("destination")
+    lab_promote_p.add_argument("--reviewed", action="store_true")
+    lab_promote_p.add_argument("--repo", default=".")
+    lab_reproduce_p = lab_sub.add_parser("reproduce", help="Verifica receipt e devolve plano reproduzível.")
+    lab_reproduce_p.add_argument("receipt")
+    lab_reproduce_p.add_argument("--repo", default=".")
+    for action, help_text in (("up", "Sobe profile Compose"), ("down", "Derruba projeto Compose"), ("shell", "Planeja shell de serviço"), ("gc", "Planeja coleta de runs")):
+        lifecycle_p = lab_sub.add_parser(action, help=help_text)
+        lifecycle_p.add_argument("--repo", default=".")
+        lifecycle_p.add_argument("--project", default="forge-lab")
+        lifecycle_p.add_argument("--profile", default="core")
+        lifecycle_p.add_argument("--service", default="")
+        lifecycle_p.add_argument("--execute", action="store_true")
+        lifecycle_p.add_argument("--confirm", action="store_true")
+
     # analyze pyspark ------------------------------------------------------
     analyze_p = sub.add_parser("analyze", help="Extrai facts deterministicos de codigo-fonte.")
     analyze_sub = analyze_p.add_subparsers(dest="analyze_target", required=True)
@@ -216,6 +267,189 @@ def build_parser() -> argparse.ArgumentParser:
     pyspark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     pyspark_p.add_argument("--cursor")
     _add_detail_level(pyspark_p)
+
+    streaming_p = analyze_sub.add_parser(
+        "streaming",
+        help="Extrai facts de fonte Structured Streaming ou StreamingQueryProgress.",
+    )
+    streaming_p.add_argument("--path", required=True, help="Arquivo ou diretorio a analisar.")
+    streaming_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("source", "progress"),
+        help="Tipo do artefato: fonte PySpark ou progresso JSON/JSONL.",
+    )
+    streaming_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    streaming_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    streaming_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    streaming_p.add_argument("--cursor")
+    _add_detail_level(streaming_p)
+
+    transport_p = analyze_sub.add_parser(
+        "transport",
+        help="Extrai facts offline de dumps Kafka, MSK ou Kinesis.",
+    )
+    transport_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    transport_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("kafka", "msk", "kinesis"),
+        help="Vocabulário do dump: Kafka, MSK ou Kinesis.",
+    )
+    transport_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    transport_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    transport_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    transport_p.add_argument("--cursor")
+    _add_detail_level(transport_p)
+
+    flink_p = analyze_sub.add_parser(
+        "flink",
+        help="Extrai facts offline de dumps Apache Flink ou Managed Flink.",
+    )
+    flink_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    flink_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("flink", "managed_flink"),
+        help="Vocabulário do dump: Flink upstream ou Managed Flink.",
+    )
+    flink_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    flink_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    flink_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    flink_p.add_argument("--cursor")
+    _add_detail_level(flink_p)
+
+    cdc_p = analyze_sub.add_parser(
+        "cdc",
+        help="Extrai facts offline de dumps CDC, Debezium ou AWS DMS.",
+    )
+    cdc_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    cdc_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("cdc", "debezium", "dms"),
+        help="Vocabulário do dump: eventos CDC, Debezium ou AWS DMS.",
+    )
+    cdc_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    cdc_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    cdc_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    cdc_p.add_argument("--cursor")
+    _add_detail_level(cdc_p)
+
+    schema_p = analyze_sub.add_parser(
+        "schema-registry",
+        help="Extrai facts offline de contratos e evolução de schemas.",
+    )
+    schema_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    schema_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    schema_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    schema_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    schema_p.add_argument("--cursor")
+    _add_detail_level(schema_p)
+
+    event_driven_p = analyze_sub.add_parser(
+        "event-driven",
+        help="Extrai facts offline de EventBridge/Pipes, SQS e SNS.",
+    )
+    event_driven_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON.")
+    event_driven_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    event_driven_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    event_driven_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    event_driven_p.add_argument("--cursor")
+    _add_detail_level(event_driven_p)
+
+    streaming_ops_p = analyze_sub.add_parser(
+        "streaming-ops",
+        help="Extrai facts declarados de SLO, FinOps, segurança e serving streaming.",
+    )
+    streaming_ops_p.add_argument("--path", required=True, help="Arquivo ou diretório JSON.")
+    streaming_ops_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    streaming_ops_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    streaming_ops_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    streaming_ops_p.add_argument("--cursor")
+    _add_detail_level(streaming_ops_p)
+
+    streaming_integrations_p = analyze_sub.add_parser(
+        "streaming-integrations",
+        help="Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.",
+    )
+    streaming_integrations_p.add_argument("--path", required=True, help="Arquivo ou diretório JSON/JSONL.")
+    streaming_integrations_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    streaming_integrations_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    streaming_integrations_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    streaming_integrations_p.add_argument("--cursor")
+    _add_detail_level(streaming_integrations_p)
+
+    # architecture decision support --------------------------------------
+    architecture_p = sub.add_parser(
+        "architecture",
+        help="Avalia arquitetura declarada sem escolher por preferência ou custo inventado.",
+    )
+    architecture_sub = architecture_p.add_subparsers(
+        dest="architecture_action", required=True
+    )
+    architecture_streaming_p = architecture_sub.add_parser(
+        "streaming",
+        help="Compara candidatos streaming por constraints factuais declaradas.",
+    )
+    architecture_streaming_p.add_argument(
+        "--path", required=True, help="JSON com requirements e assumptions separados."
+    )
+    architecture_streaming_p.add_argument(
+        "--out", help="Escreve o ADR e a matriz completa neste arquivo."
+    )
+
+    composition_p = analyze_sub.add_parser(
+        "streaming-composition",
+        help="Compõe facts já extraídos de streaming, transporte e Iceberg.",
+    )
+    composition_p.add_argument(
+        "--facts",
+        action="append",
+        required=True,
+        help="Arquivo de facts gerado por um analyze; repetível para unir fontes.",
+    )
+    composition_p.add_argument(
+        "--mode",
+        required=True,
+        choices=("iceberg", "iceberg_temporal", "observability", "slo", "temporal", "pipeline"),
+        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline.",
+    )
+    composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
+    composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
+    composition_p.add_argument("--slo-name", default="", help="Nome do SLO declarado; obrigatório quando há mais de uma declaração.")
+    composition_p.add_argument(
+        "--transport-key",
+        default="",
+        help="Grupo/topic Kafka ou stream Kinesis declarado; obrigatório no mode=slo de transporte.",
+    )
+    composition_p.add_argument(
+        "--max-skew-seconds",
+        type=float,
+        default=None,
+        help="Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
+    )
+    composition_p.add_argument(
+        "--pipeline-path",
+        default=None,
+        help="Contrato JSON declarativo de nós/arestas; obrigatório quando mode=pipeline.",
+    )
+    composition_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    composition_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    composition_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    composition_p.add_argument("--cursor")
+    _add_detail_level(composition_p)
+
+    glue_streaming_p = analyze_sub.add_parser(
+        "glue-streaming",
+        help="Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.",
+    )
+    glue_streaming_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    glue_streaming_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    glue_streaming_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    glue_streaming_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    glue_streaming_p.add_argument("--cursor")
+    _add_detail_level(glue_streaming_p)
 
     catalog_p = analyze_sub.add_parser(
         "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
@@ -626,6 +860,78 @@ def build_parser() -> argparse.ArgumentParser:
     graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     graph_p.add_argument("--cursor")
     _add_detail_level(graph_p)
+
+    platform_graph_p = analyze_sub.add_parser(
+        "platform-graph",
+        help="Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.",
+    )
+    platform_graph_p.add_argument(
+        "--path", required=True, help="Arquivo JSON ou YAML do Platform Intelligence Graph."
+    )
+    platform_graph_p.add_argument(
+        "--changed-node", help="ID da entidade alterada para calcular blast radius."
+    )
+    platform_graph_p.add_argument(
+        "--changed-attribute", help="Caminho de atributo declarado no nó alterado."
+    )
+    platform_graph_p.add_argument(
+        "--direction",
+        choices=("downstream", "upstream", "both"),
+        default="downstream",
+    )
+    platform_graph_p.add_argument("--max-depth", type=int, default=3)
+    platform_graph_p.add_argument("--max-items", type=int, default=500)
+    platform_graph_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    platform_ecosystem_p = analyze_sub.add_parser(
+        "platform-ecosystem",
+        help="Analisa serving, ingestion, AI Data Engineering e radar opcional.",
+    )
+    platform_ecosystem_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do inventário.")
+    platform_ecosystem_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    forge_lab_p = analyze_sub.add_parser(
+        "forge-lab",
+        help="Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.",
+    )
+    forge_lab_p.add_argument("--path", required=True, help="Arquivo YAML/JSON da topologia Forge Lab.")
+    forge_lab_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    lakehouse_catalog_p = analyze_sub.add_parser(
+        "lakehouse-catalog",
+        help="Analisa topologia declarada de catalogs, engines, tabelas e bindings.",
+    )
+    lakehouse_catalog_p.add_argument(
+        "--path", required=True, help="Arquivo JSON/YAML da topologia de catalog.")
+    lakehouse_catalog_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    dbt_p = analyze_sub.add_parser(
+        "dbt-artifacts",
+        help="Analisa manifest, catalog e run_results do dbt sem executar dbt.",
+    )
+    dbt_p.add_argument("--path", required=True, help="Diretório dbt ou manifest.json.")
+    dbt_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    duckdb_p = analyze_sub.add_parser(
+        "duckdb-microscope",
+        help="Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL.",
+    )
+    duckdb_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do microscópio DuckDB.")
+    duckdb_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    observability_p = analyze_sub.add_parser(
+        "data-observability",
+        help="Avalia SLI/SLO, error budget, incidentes e dependências offline.",
+    )
+    observability_p.add_argument("--path", required=True, help="Arquivo JSON/YAML de observabilidade.")
+    observability_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
+    orchestration_p = analyze_sub.add_parser(
+        "orchestration",
+        help="Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.",
+    )
+    orchestration_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do control plane.")
+    orchestration_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
     s3_p = analyze_sub.add_parser(
         "s3-listing",
@@ -3048,6 +3354,97 @@ def build_parser() -> argparse.ArgumentParser:
     )
     emrc_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    streaming_collect_p = collect_sub.add_parser(
+        "streaming-integrations",
+        help=(
+            "Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, "
+            "MSK e DMS; com janela explícita, coleta cinco métricas stream-level "
+            "temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved "
+            "sem endpoint proprio."
+        ),
+    )
+    streaming_collect_p.add_argument("--repo", required=True)
+    streaming_collect_p.add_argument(
+        "--checkpoint-s3-uri", default="", help="Prefixo S3 do checkpoint Spark."
+    )
+    streaming_collect_p.add_argument(
+        "--glue-job", dest="glue_job_name", default="", help="Nome do job Glue."
+    )
+    streaming_collect_p.add_argument(
+        "--kinesis-stream", dest="kinesis_stream_name", default="", help="Nome do stream Kinesis."
+    )
+    streaming_collect_p.add_argument(
+        "--msk-cluster-arn", default="", help="ARN do cluster MSK."
+    )
+    streaming_collect_p.add_argument(
+        "--dms-task-arn", default="", help="ARN da replication task DMS."
+    )
+    streaming_collect_p.add_argument(
+        "--region", dest="region_name", default="", help="Região AWS explícita, quando necessária."
+    )
+    streaming_collect_p.add_argument(
+        "--max-objects", type=int, default=500, help="Teto de objetos do checkpoint (1..500)."
+    )
+    streaming_collect_p.add_argument(
+        "--max-shards", type=int, default=500, help="Teto de shards Kinesis (1..500)."
+    )
+    streaming_collect_p.add_argument(
+        "--metrics-start",
+        default="",
+        help="Início ISO 8601 da janela CloudWatch Kinesis; exige --metrics-end.",
+    )
+    streaming_collect_p.add_argument(
+        "--metrics-end",
+        default="",
+        help="Fim ISO 8601 da janela CloudWatch Kinesis; exige --metrics-start.",
+    )
+    streaming_collect_p.add_argument(
+        "--metrics-period",
+        type=int,
+        default=60,
+        help="Período CloudWatch em segundos (60..86400, múltiplo de 60).",
+    )
+    streaming_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    schema_registry_collect_p = collect_sub.add_parser(
+        "schema-registry",
+        help="Coleta metadata e latest version read-only do AWS Glue Schema Registry.",
+    )
+    schema_registry_collect_p.add_argument("--repo", required=True)
+    schema_registry_collect_p.add_argument("--registry-name", default="", help="Nome do registry Glue.")
+    schema_registry_collect_p.add_argument("--schema-name", default="", help="Filtra schema dentro do registry.")
+    schema_registry_collect_p.add_argument("--schema-arn", default="", help="ARN do schema Glue.")
+    schema_registry_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
+    schema_registry_collect_p.add_argument("--max-schemas", type=int, default=100, help="Teto de schemas (1..500).")
+    schema_registry_collect_p.add_argument(
+        "--max-definition-bytes", type=int, default=170_000, help="Teto por definição; acima sai unresolved."
+    )
+    schema_registry_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    managed_flink_collect_p = collect_sub.add_parser(
+        "managed-flink",
+        help=(
+            "Coleta descrição read-only de uma aplicação Managed Flink; com janela "
+            "explícita, coleta cinco métricas temporais de aplicação."
+        ),
+    )
+    managed_flink_collect_p.add_argument("--repo", required=True)
+    managed_flink_collect_p.add_argument("--application-name", required=True, help="Nome da aplicação Managed Flink.")
+    managed_flink_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
+    managed_flink_collect_p.add_argument(
+        "--metrics-start", default="", help="Início ISO 8601 da janela CloudWatch Managed Flink."
+    )
+    managed_flink_collect_p.add_argument(
+        "--metrics-end", default="", help="Fim ISO 8601 da janela CloudWatch Managed Flink; exige --metrics-start."
+    )
+    managed_flink_collect_p.add_argument(
+        "--metrics-period",
+        type=int,
+        default=60,
+        help="Período CloudWatch em segundos (60..86400, múltiplo de 60).",
+    )
+    managed_flink_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     workspace_graph_p = collect_sub.add_parser(
         "workspace-graph",
         help=("Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."),
@@ -3092,6 +3489,88 @@ def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
     }
     _print(_apply_detail_level(payload, args.detail_level))
     return 0
+
+
+def _cmd_lab(args: argparse.Namespace) -> int:
+    from sparkforge.lab.cli import dispatch
+    from sparkforge.lab.contract import LabContractError
+
+    try:
+        payload = dispatch(args)
+    except LabContractError as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_streaming(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_transport(args: argparse.Namespace) -> int:
+    full = _core.analyze_transport(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_flink(args: argparse.Namespace) -> int:
+    full = _core.analyze_flink(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_cdc(args: argparse.Namespace) -> int:
+    full = _core.analyze_cdc(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_schema_registry(args: argparse.Namespace) -> int:
+    full = _core.analyze_schema_registry(
+        args.path,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_streaming_composition(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming_composition(
+        args.facts,
+        mode=args.mode,
+        table=args.table,
+        query_name=args.query_name,
+        slo_name=args.slo_name,
+        transport_key=args.transport_key,
+        max_skew_seconds=args.max_skew_seconds,
+        pipeline_path=args.pipeline_path,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_glue_streaming(args: argparse.Namespace) -> int:
+    full = _core.analyze_glue_streaming(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
 
 
 def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
@@ -3153,6 +3632,36 @@ def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
     }
     _print(_apply_detail_level(payload, args.detail_level))
     return 0
+
+
+def _cmd_analyze_event_driven(args: argparse.Namespace) -> int:
+    full = _core.analyze_event_driven(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_architecture_streaming(args: argparse.Namespace) -> int:
+    from sparkforge.architecture.streaming import analyze_streaming_architecture
+
+    try:
+        payload = analyze_streaming_architecture(args.path)
+    except ValueError as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_streaming_ops(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming_ops(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_streaming_integrations(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming_integrations(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
 
 
 def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
@@ -3679,6 +4188,93 @@ def _cmd_analyze_graph(args: argparse.Namespace) -> int:
         "items": page,
     }
     _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_platform_graph(args: argparse.Namespace) -> int:
+    payload = _core.analyze_platform_graph(
+        args.path,
+        changed_node=args.changed_node,
+        changed_attribute=args.changed_attribute,
+        direction=args.direction,
+        max_depth=args.max_depth,
+        max_items=args.max_items,
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_platform_ecosystem(args: argparse.Namespace) -> int:
+    payload = _core.analyze_platform_ecosystem(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_forge_lab(args: argparse.Namespace) -> int:
+    payload = _core.analyze_forge_lab(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_lakehouse_catalog(args: argparse.Namespace) -> int:
+    payload = _core.analyze_lakehouse_catalog(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_dbt_artifacts(args: argparse.Namespace) -> int:
+    payload = _core.analyze_dbt_artifacts(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_duckdb_microscope(args: argparse.Namespace) -> int:
+    payload = _core.analyze_duckdb_microscope(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_data_observability(args: argparse.Namespace) -> int:
+    payload = _core.analyze_data_observability(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_orchestration(args: argparse.Namespace) -> int:
+    payload = _core.analyze_orchestration(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
     return 0
 
 
@@ -4823,6 +5419,55 @@ def _cmd_collect_emr_eks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_streaming_integrations(args: argparse.Namespace) -> int:
+    payload = _core.collect_streaming_integrations(
+        args.repo,
+        now=args.now,
+        checkpoint_s3_uri=args.checkpoint_s3_uri,
+        glue_job_name=args.glue_job_name,
+        kinesis_stream_name=args.kinesis_stream_name,
+        msk_cluster_arn=args.msk_cluster_arn,
+        dms_task_arn=args.dms_task_arn,
+        region_name=args.region_name,
+        max_objects=args.max_objects,
+        max_shards=args.max_shards,
+        metrics_start=args.metrics_start,
+        metrics_end=args.metrics_end,
+        metrics_period=args.metrics_period,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_schema_registry(args: argparse.Namespace) -> int:
+    payload = _core.collect_schema_registry(
+        args.repo,
+        now=args.now,
+        registry_name=args.registry_name,
+        schema_name=args.schema_name,
+        schema_arn=args.schema_arn,
+        region_name=args.region_name,
+        max_schemas=args.max_schemas,
+        max_definition_bytes=args.max_definition_bytes,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_managed_flink(args: argparse.Namespace) -> int:
+    payload = _core.collect_managed_flink(
+        args.repo,
+        application_name=args.application_name,
+        region_name=args.region_name,
+        metrics_start=args.metrics_start,
+        metrics_end=args.metrics_end,
+        metrics_period=args.metrics_period,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_workspace_graph(args: argparse.Namespace) -> int:
     payload = _core.collect_workspace_graph(
         args.repo,
@@ -5221,7 +5866,19 @@ def _cmd_autonomy_show(args: argparse.Namespace) -> int:
 
 
 _DISPATCH = {
+    ("lab", None): _cmd_lab,
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
+    ("analyze", "streaming"): _cmd_analyze_streaming,
+    ("analyze", "transport"): _cmd_analyze_transport,
+    ("analyze", "flink"): _cmd_analyze_flink,
+    ("analyze", "cdc"): _cmd_analyze_cdc,
+    ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
+    ("analyze", "event-driven"): _cmd_analyze_event_driven,
+    ("analyze", "streaming-ops"): _cmd_analyze_streaming_ops,
+    ("analyze", "streaming-integrations"): _cmd_analyze_streaming_integrations,
+    ("architecture", "streaming"): _cmd_architecture_streaming,
+    ("analyze", "streaming-composition"): _cmd_analyze_streaming_composition,
+    ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
@@ -5248,6 +5905,14 @@ _DISPATCH = {
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "dq-ai"): _cmd_analyze_dq_ai,
     ("analyze", "graph"): _cmd_analyze_graph,
+    ("analyze", "platform-graph"): _cmd_analyze_platform_graph,
+    ("analyze", "platform-ecosystem"): _cmd_analyze_platform_ecosystem,
+    ("analyze", "forge-lab"): _cmd_analyze_forge_lab,
+    ("analyze", "lakehouse-catalog"): _cmd_analyze_lakehouse_catalog,
+    ("analyze", "dbt-artifacts"): _cmd_analyze_dbt_artifacts,
+    ("analyze", "duckdb-microscope"): _cmd_analyze_duckdb_microscope,
+    ("analyze", "data-observability"): _cmd_analyze_data_observability,
+    ("analyze", "orchestration"): _cmd_analyze_orchestration,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
@@ -5356,6 +6021,9 @@ _DISPATCH = {
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
+    ("collect", "streaming-integrations"): _cmd_collect_streaming_integrations,
+    ("collect", "schema-registry"): _cmd_collect_schema_registry,
+    ("collect", "managed-flink"): _cmd_collect_managed_flink,
     ("collect", "workspace-graph"): _cmd_collect_workspace_graph,
     ("collect", "verify"): _cmd_collect_verify,
     # agentic
@@ -5370,7 +6038,9 @@ _DISPATCH = {
     ("journal", "verify"): _cmd_journal_verify,
 }
 
-_FORA_DOS_ARGS_DO_JOURNAL = frozenset({"command", "subcommand", "analyze_target", "dq_ai_action"})
+_FORA_DOS_ARGS_DO_JOURNAL = frozenset(
+    {"command", "subcommand", "analyze_target", "dq_ai_action", "architecture_action"}
+)
 
 
 def _tool_da_cli(comando: str, sub_action: str | None) -> str:
@@ -5407,7 +6077,8 @@ def _com_journal(tool: str, handler: Any, args: argparse.Namespace) -> int:
 
 def _dispatch(args: argparse.Namespace) -> int:
     sub_action = (
-        getattr(args, "analyze_target", None)
+        getattr(args, "lab_action", None)
+        or getattr(args, "analyze_target", None)
         or getattr(args, "case_action", None)
         or getattr(args, "funcval_action", None)
         or getattr(args, "sdd_action", None)
@@ -5436,6 +6107,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "dq_ai_action", None)
         or getattr(args, "context_action", None)
         or getattr(args, "decision_action", None)
+        or getattr(args, "architecture_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

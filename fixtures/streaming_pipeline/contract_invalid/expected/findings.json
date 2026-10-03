@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-STREAM-015",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Pipeline declarado sem evidência completa",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:unresolved:unsupported_schema_version:contract",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_67af1a"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O contrato declarativo de pipeline não encontrou exatamente um Fact para um node, ou uma aresta ficou sem endpoints verificados. Isso evidencia um ponto cego de identidade ou de coleta no artefato fornecido; não prova que a topologia real esteja quebrada, saudável, completa ou causalmente ligada.",
+    "proposed_change": [
+      "Confirmar contrato, kind, atributos escalares e identidade declarada de cada node.",
+      "Coletar o artefato offline correspondente ao selector ausente ou ambíguo.",
+      "Reexecutar composição e só então correlacionar latência, backlog, commits e resultado funcional."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Relaxar selector para eliminar unresolved pode ligar fatos de pipelines diferentes.",
+      "Tratar coexistência de múltiplos matches como identidade pode produzir falsa topologia."
+    ],
+    "tradeoffs": [
+      "Contratos explícitos exigem manutenção de identidade, mas tornam a ausência auditável.",
+      "Selectors exatos preservam precisão ao custo de exigir coleta compatível."
+    ],
+    "validation": [
+      "Confirmar que cada node tem zero ou um match e que cada edge tem dois endpoints verificados.",
+      "Preservar source_fact_ids, provenance e o contrato usado na reexecução.",
+      "Validar contagem, schema, chaves e agregados do resultado depois de qualquer mudança."
+    ],
+    "rollback": [
+      "Reverter somente o ajuste do contrato ou da coleta e preservar o artefato unresolved para auditoria."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-03"
+      },
+      {
+        "url": "https://openlineage.io/docs/spec/object-model",
+        "retrieved": "2026-10-03"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.pipeline",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

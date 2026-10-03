@@ -1,0 +1,48 @@
+[
+  {
+    "id": "f_156b8e",
+    "schema_version": 1,
+    "kind": "event_driven.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\invalid_artifact\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 1
+    },
+    "attrs": {
+      "sections": []
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\invalid_artifact\\input\\architecture.json",
+      "artifact_sha256": "2df05a869019fa9c234f416c0438cc7aaecc8d9892b11a23e6ba000bdea3a605",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_948041",
+    "schema_version": 1,
+    "kind": "event_driven.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\invalid_artifact\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_eventbridge_rules"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\invalid_artifact\\input\\architecture.json",
+      "artifact_sha256": "2df05a869019fa9c234f416c0438cc7aaecc8d9892b11a23e6ba000bdea3a605",
+      "extractor": "event_driven@0.1.0"
+    }
+  }
+]

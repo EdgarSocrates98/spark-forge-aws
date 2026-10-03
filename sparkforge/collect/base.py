@@ -69,6 +69,13 @@ ARTIFACT_KINDS = (
     # artefato so nao saberia representar.
     "glue_resource_link",
     "workspace_graph",
+    # Contrato composto de evidência para streaming: o coletor agrega apenas
+    # snapshots read-only de serviços AWS e metadados do checkpoint S3. Kafka
+    # Connect, Kafka Streams e OpenLineage continuam sendo entradas de endpoint
+    # próprio; quando não chegam no contrato, o extrator publica unresolved.
+    "streaming_integrations",
+    "schema_registry",
+    "managed_flink_application",
     "source",
 )
 

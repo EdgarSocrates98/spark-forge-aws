@@ -1,0 +1,103 @@
+[
+  {
+    "id": "f_23cfdc",
+    "schema_version": 1,
+    "kind": "kinesis.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kinesis"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "artifact_sha256": "8e81305b5b42fb2146807e47bedb970d3c12b93de367312f986a0d6871704268",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_437567",
+    "schema_version": 1,
+    "kind": "kinesis.metric",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "value": 1200
+    },
+    "attrs": {
+      "name": "GetRecords.IteratorAgeMilliseconds",
+      "unit": "Milliseconds"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "artifact_sha256": "8e81305b5b42fb2146807e47bedb970d3c12b93de367312f986a0d6871704268",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_206d36",
+    "schema_version": 1,
+    "kind": "kinesis.shard",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "iterator_age_ms": 1200,
+      "incoming_bytes": 100,
+      "record_count": 3
+    },
+    "attrs": {
+      "shard_id": "shardId-000",
+      "stream_name": "events"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "artifact_sha256": "8e81305b5b42fb2146807e47bedb970d3c12b93de367312f986a0d6871704268",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_8aa17a",
+    "schema_version": 1,
+    "kind": "kinesis.stream",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "stream_name": "events",
+      "stream_mode": "ON_DEMAND",
+      "status": "ACTIVE"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",
+      "artifact_sha256": "8e81305b5b42fb2146807e47bedb970d3c12b93de367312f986a0d6871704268",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

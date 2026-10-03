@@ -1,0 +1,7 @@
+{
+  "skill_name": "analyze-flink-job",
+  "evals": [
+    {"id": "complete", "prompt": "Revise dump Flink offline.", "expected_output": "facts anchored by fact_id and unresolved preserved; validation and rollback included.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "runtime"]},
+    {"id": "blind-spot", "prompt": "Review missing checkpoint metric.", "expected_output": "name missing evidence and request artifact before recommendation.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "no invented threshold"]}
+  ]
+}

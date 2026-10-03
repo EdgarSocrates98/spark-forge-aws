@@ -1,0 +1,6 @@
+{"connector":{"name":"orders-cdc","engine":"postgres","version":"16"}}
+{"op":"r","key":{"id":1},"after":{"id":1,"status":"new"},"source":{"lsn":10,"txId":"tx-1","table":"orders","snapshot":"true"},"tombstone":false}
+{"op":"c","key":{"id":1},"after":{"id":1,"status":"paid"},"source":{"lsn":11,"txId":"tx-1","table":"orders","snapshot":"last"},"tombstone":false}
+{"op":"d","key":{"id":1},"before":{"id":1,"status":"paid"},"source":{"lsn":12,"txId":"tx-2","table":"orders"},"tombstone":false}
+{"op":"d","key":{"id":1},"before":{"id":1,"status":"paid"},"source":{"lsn":12,"txId":"tx-2","table":"orders"},"tombstone":false}
+{"op":"u","key":{"id":2},"before":{"id":2,"status":"new"},"after":{"id":2,"status":"paid"},"source":{"lsn":13,"txId":"tx-3","table":"orders"},"ddl":"ALTER TABLE orders ADD COLUMN channel"}

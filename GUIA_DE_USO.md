@@ -15,6 +15,163 @@ Abra a ferramenta no repositório que contém:
 
 Cole ou invoque o conteúdo de `PROMPT_INICIAL_MESTRE.md`.
 
+## 1.1 Forge Lab / Digital Twin
+
+Para construir evidência reproduzível de um caso streaming ou batch, consulte o
+[guia operacional do Forge Lab](docs/guia/forge-lab.md). O caminho mínimo é:
+
+```bash
+sparkforge lab doctor
+sparkforge lab verify --repo .
+sparkforge lab scenarios --json --repo .
+sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+```
+
+O Lab é plan-only por padrão. `run`, `up`, `down`, `shell` e `gc` só podem
+mutar ambiente local com `--execute --confirm`; execução AWS é tier separado e
+recusada pelo core offline. O Golden 20, receipts, oracle independente e limites
+de prova estão descritos no [contrato do produto](docs/knowledge/forge-lab-product.md).
+
+## 1.2 Streaming, CDC e SLO observado
+
+Para um caso streaming, use `streaming-realtime-architect` ou
+`cdc-contract-reviewer` conforme a rota devolvida por `sparkforge next-step`.
+Extraia progress, transporte, checkpoint, CDC, Flink ou Glue separadamente e
+componha somente depois. A avaliação SLO offline usa a mesma superfície para
+progress Structured Streaming e para `kafka.lag`/`kinesis.shard`:
+
+```bash
+sparkforge analyze streaming --path progress.jsonl --artifact progress --out progress.facts.json
+sparkforge analyze transport --path kafka.json --artifact kafka --out transport.facts.json
+sparkforge analyze streaming-ops --path slo-contract.json --out slo-contract.facts.json
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out slo-evaluation.facts.json
+
+# saída do sink Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+```
+
+`met`/`violated` valem apenas para a série diretamente observada, com identidade,
+unidade, timestamps e janela coberta. Sink usa `num_output_rows` e exige vínculo
+único com batch por `batch_id`/`query_name`; `streaming.slo.unresolved` permanece
+na saída quando falta evidência. `statistic: p95` usa nearest-rank sobre a
+amostra e `freshness_ms` exige `timestamp` + `eventTime.max`; isso continua
+offline e não prova consulta live, causalidade, custo ou latência end-to-end.
+
+Para declarar a composição cross-engine de um pipeline, use selectors exatos e
+facts já extraídos:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
+  --facts iceberg-facts.json --mode pipeline \
+  --pipeline-path orders-pipeline.json --out pipeline-facts.json
+```
+
+O contrato só verifica node com um match de `kind`/atributos e edge com dois
+endpoints verificados. Zero ou múltiplos matches permanecem
+`streaming.pipeline.unresolved`; isso não é topologia descoberta nem prova de
+latência, throughput, causalidade, exactly-once ou saúde.
+
+Para revisar drift entre Glue Streaming efetivo e Terraform, use os facts já
+extraídos e o compositor geral:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+O vínculo exige `aws_glue_job.name` literal e único. O resultado preserva
+`glue.streaming.terraform_link`, `source_fact_ids`, `drifts` e
+`unresolved_fields`; compare `glue_version`, RTM, linguagem e workers. Drift
+vira `SF-GLUESTREAM-004`; identidade ou parâmetro ausente vira
+`SF-GLUESTREAM-005`. Isso continua evidência offline, não prova que o job em
+produção executa com a configuração declarada.
+
+Se houver histórico terminal sanitizado, componha-o com a definição efetiva:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+Leia `glue.streaming.runtime_link`, `observed_run_ids`, `drifts` e
+`source_fact_ids`. `SF-GLUESTREAM-006` é drift entre definição e run;
+`SF-GLUESTREAM-007` é evidência insuficiente. Duração e DPU continuam facts de
+execução, não latência de evento ou saúde do streaming.
+
+O mesmo dump pode declarar endpoints em `stream.sources`/`source` e
+`stream.sinks`/`sink`. O analyzer emite `glue.streaming.source` e
+`glue.streaming.sink` com atributos escalares e medidas presentes, e emite
+`glue.streaming.unresolved` quando o bloco está ausente, inválido ou não traz
+métrica. Não derive endpoint de `source_type`; não trate contador ou commit como
+throughput, saúde ou exactly-once sem janela e timestamp.
+
+Para coletar contratos do Glue Schema Registry, use a operação read-only com
+identidade de registry ou schema. Ela pagina resultados, captura metadata e
+latest version, grava manifesto/cache local e limita a definição; não executa
+create, update ou delete na AWS:
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
+sparkforge analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+Definição ausente, inválida ou acima do limite é `unresolved`, não contrato
+inventado. Veja [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md)
+e a [referência da tool MCP](referencia/tools/sparkforge_collect_schema_registry.md).
+
+Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
+de correlacionar com checkpoint, operator e transporte:
+
+```bash
+sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge judge --facts flink.facts.json --show-skipped
+```
+
+O resultado pode conter `flink.source`, `flink.sink` e `flink.metric` com identidade,
+connector, `delivery_semantics` e medidas observadas. Contadores não viram
+throughput sem timestamp/janela; ausência dos blocos vira
+`flink.unresolved` (`source_metrics_missing`/`sink_metrics_missing`). Pontos
+em `metrics`/`metrics.observations` precisam de nome, valor numérico e timestamp
+textual para emitir `flink.metric`; inválidos ficam unresolved. Isso não prova
+exactly-once nem saúde. Para Managed Flink use `--artifact managed_flink`;
+os namespaces não se completam. O upstream segue sem collector live ou série
+longa; a janela temporal bounded do serviço gerenciado publica
+`managed_flink.metric`.
+
+Para coletar observabilidade temporal bounded sem misturar namespaces, use os
+collectors read-only existentes com as duas pontas da janela:
+
+```bash
+sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+O primeiro preserva cinco métricas stream-level como `kinesis.metric`; o
+segundo preserva cinco métricas application-level do namespace
+`AWS/KinesisAnalytics` como `managed_flink.metric`. Observações, unidade,
+estatística, timestamp, raw e lacunas permanecem no artifact. Ausência ou
+resposta inválida é `unresolved`, nunca zero; enhanced/shard-level, dimensões
+detalhadas Managed Flink, job plan, replay, benchmark e saúde end-to-end ficam
+fora do contrato.
+
 ## 2. Claude Code
 
 Use o agente:
@@ -45,9 +202,9 @@ perfis deste repositório sem nenhuma configuração adicional:
 
 | O que | Onde | Como o Devin lê |
 |---|---|---|
-| Os 8 coordenadores | `.agents/agents/<nome>.md` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*), no layout *flat file* documentado |
-| Os mesmos 8 | `.claude/agents/<nome>.md` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
-| As 20 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
+| Os 14 coordenadores | `.agents/agents/<nome>.md` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*), no layout *flat file* documentado |
+| Os mesmos 14 | `.claude/agents/<nome>.md` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
+| As 60 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
 | Os 5 executores | `.agents/agents/executors/<nome>.md` | **a fonte não documenta este layout.** Ver abaixo |
 
 **Os cinco executores não estão num layout de descoberta documentado, e isto é medição,
@@ -294,7 +451,7 @@ sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
 verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
 ao vivo que não foi observada.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 115 tools fazem (recontado em 2026-10-01)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 136 tools fazem (recontado em 2026-10-03)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
@@ -353,9 +510,9 @@ Ou selecione o agente **Glue Incremental Performance Architect**.
 ## 5. Coordenador e playbook: como entrar sem escolher à mão
 
 Qual coordenador usar não é escolha manual. `sparkforge next-step` (CLI) ou
-`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-010` de
+`sparkforge_next_step` (MCP) consulta as rotas `AGENT-*` de
 `rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
-fase da investigação e área do achado dominante. Há oito coordenadores, cada um com
+fase da investigação e área do achado dominante. Há 14 coordenadores, cada um com
 executores declarados: ver a tabela em `AGENTS.md`.
 
 Dois deles não são sobre performance de código, e é por isso que quem procura só

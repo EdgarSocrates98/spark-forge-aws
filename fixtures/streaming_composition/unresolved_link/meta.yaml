@@ -1,0 +1,5 @@
+mode: iceberg
+table: db.events
+query_name: ""
+expects_findings: []
+expects_kinds: [iceberg.format_version, iceberg.snapshot, iceberg.snapshots_summary, iceberg.table_analyzed, streaming.composition.analyzed, streaming.composition.unresolved, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series]

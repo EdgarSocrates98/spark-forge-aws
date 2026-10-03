@@ -53,6 +53,60 @@
     }
   },
   {
+    "id": "f_c364ba",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_cego",
+      "snapshot_id": 301
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 301,
+      "committed_at": "2026-07-01T00:00:00+00:00",
+      "operation": "replace"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "bc26bdbf309723f2daaa014f7ff43d514831684c59501d59dbec9e31f183efe1",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_404597",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_cego",
+      "snapshot_id": 302
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 302,
+      "committed_at": "2026-07-20T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "bc26bdbf309723f2daaa014f7ff43d514831684c59501d59dbec9e31f183efe1",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_9a3287",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",

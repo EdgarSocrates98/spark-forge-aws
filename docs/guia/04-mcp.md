@@ -11,6 +11,11 @@ muda **quem** chama: em vez de você digitar o comando, o assistente chama a too
 
 Termos novos estão no [glossário](01-conceitos.md).
 
+O estado atual da superfície, das waves de streaming, do Forge Lab e da economia
+observada está em [`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). A página
+de referência de tools é gerada do código; este manual explica o contrato de
+uso e os limites de autorização.
+
 ## Receita rápida (Claude Code)
 
 Rode na raiz do repositório clonado:
@@ -163,6 +168,97 @@ Variáveis de ambiente opcionais:
 | `SPARKFORGE_CATALOG` | Usar um catálogo de regras fora do pacote. Aponte para um diretório real |
 | `SPARKFORGE_PACKS` | Carregar Forge Packs. Ver [packs e conhecimento](usos/packs-e-conhecimento.md) |
 | `SPARKFORGE_RUN_ID` | Agrupar as chamadas numa medição. Ver [economia de contexto](usos/economia-de-contexto.md) |
+
+## Exemplo: SLO observado de streaming
+
+Use a tool `sparkforge_analyze_streaming_composition` com o mesmo contrato da
+CLI. O servidor não consulta AWS, Kafka, Kinesis ou Spark; ele compõe os facts
+que o cliente já salvou:
+
+```json
+{
+  "facts_paths": ["slo-contract.facts.json", "progress.facts.json"],
+  "mode": "slo",
+  "slo_name": "output-rows",
+  "query_name": "orders-query",
+  "sink_name": "orders-sink",
+  "detail_level": "summary"
+}
+```
+
+O envelope preserva `source_fact_ids` e devolve `streaming.slo.evaluation` com
+`met`/`violated`, ou `streaming.slo.unresolved` quando identidade, unidade,
+timestamps, janela ou série única não estão provados. Sink usa
+`num_output_rows`/`rows` e timestamp do batch ligado por `batch_id`; Kafka usa
+`kafka.lag` em `records`; Kinesis usa `kinesis.shard` em `ms`. `statistic: p95`
+publica `observed_p95` por nearest-rank; `freshness_ms` exige
+`timestamp` + `eventTime.max`. O modo não agrega partições, shards ou sinks e
+não prova saúde end-to-end.
+A mesma chamada pode usar `query_name` para progress Structured Streaming; detalhes de campos
+estão na [referência MCP](referencia/tools/sparkforge_analyze_streaming_composition.md).
+
+### Glue Streaming efetivo e Terraform
+
+Não há uma ferramenta MCP nova para essa correlação. Use a ferramenta existente
+`sparkforge_fuse` com `facts_paths` contendo os dois resultados de análise, e
+depois `sparkforge_judge`:
+
+```json
+{
+  "facts_paths": ["glue.facts.json", "terraform.facts.json"],
+  "detail_level": "summary"
+}
+```
+
+O compositor publica `glue.streaming.terraform_link` quando encontra um
+`aws_glue_job.name` literal único. Ele preserva `source_fact_ids` e compara
+`glue_version`, RTM, linguagem e workers; divergências chegam em
+`SF-GLUESTREAM-004`, enquanto identidade ou valores não resolvidos chegam em
+`SF-GLUESTREAM-005`. A correlação é offline e não prova estado aplicado na AWS.
+
+Para observar execução terminal sem nova ferramenta MCP, passe também o arquivo
+de facts produzido por `analyze glue-job-runs` ao mesmo `sparkforge_fuse`:
+
+```json
+{
+  "facts_paths": ["glue.facts.json", "runs.facts.json"],
+  "detail_level": "summary"
+}
+```
+
+O resultado acrescenta `glue.streaming.runtime_link` ou
+`glue.streaming.runtime.unresolved` e preserva `observed_run_ids`, `drifts` e
+`source_fact_ids`. `SF-GLUESTREAM-006/007` não afirmam latência, saúde, custo
+ou corretude funcional.
+
+### Glue Streaming: source e sink
+
+`sparkforge_analyze_glue_streaming` continua sendo a única ferramenta MCP.
+Quando o dump traz `stream.sources`/`source` e `stream.sinks`/`sink`, o envelope
+preserva `glue.streaming.source` e `glue.streaming.sink` com atributos
+escalares e medidas presentes. Ausência ou shape inválido aparece como
+`glue.streaming.unresolved`; a ferramenta não infere endpoint, throughput,
+saúde ou semântica exactly-once.
+
+### Apache Flink: source e sink
+
+Use a ferramenta existente `sparkforge_analyze_flink`; a evolução não adiciona
+tool MCP. Para Apache Flink, informe `artifact: flink` e analise o mesmo dump
+offline:
+
+```json
+{
+  "path": "flink-dump.json",
+  "artifact": "flink",
+  "detail_level": "summary"
+}
+```
+
+O envelope pode conter `flink.source` e `flink.sink`, preservando apenas
+identidade e medidas presentes em `sources`/`source` e `sinks`/`sink`.
+`flink.unresolved` nomeia ausência ou formato inválido; o tool não consulta
+Flink/AWS e não prova exactly-once, throughput ou saúde. Use
+`artifact: managed_flink` para o namespace gerenciado, sem misturar os fatos.
 
 ## Como verificar que funciona
 
@@ -375,6 +471,46 @@ uma, está no [índice de tools](referencia/tools/README.md).
 | `economy_report`, `telemetry_export` | Medição do contexto consumido. Ver [economia de contexto](usos/economia-de-contexto.md) |
 | `knowledge_*`, `pack_list` | Conhecimento versionado e Forge Packs. Ver [packs e conhecimento](usos/packs-e-conhecimento.md) |
 | `release_*`, `migration_assess`, `runtime_detect`, `glue_*`, `iceberg_*`, `lakeformation_*`, `controlm_*` | Versões de runtime, migração e eixos específicos de cada serviço |
+
+### Glue Schema Registry
+
+O comando correspondente é `collect schema-registry`; a tool
+`sparkforge_collect_schema_registry` é read-only: chama apenas operações
+`list/get` do Glue Schema Registry, grava o artifact local e registra manifesto
+com cache/offline-first. A coleta busca a versão mais recente observada e aceita
+`registry_name`, `schema_name` ou `schema_arn`; `max_schemas` e
+`max_definition_bytes` mantêm custo de contexto e cardinalidade limitados.
+Ausência ou definição fora do limite permanece `unresolved`; nenhuma operação de
+criação, registro, atualização ou exclusão é oferecida.
+
+### Managed Flink
+
+`sparkforge_collect_managed_flink` chama somente
+`kinesisanalyticsv2.DescribeApplication` com `IncludeAdditionalDetails=false`.
+Recebe `repo`, `application_name`, `region_name` opcional, `metrics_start`,
+`metrics_end`, `metrics_period` e `now`; grava artifact local
+`managed_flink_application`, manifesto, SHA e comando de recoleta. O retorno
+normaliza runtime, status, versão, checkpoint, paralelismo, VPC e logging.
+Quando a janela temporal é declarada, o mesmo handler chama somente
+`cloudwatch.get_metric_data` e consulta cinco métricas de aplicação no namespace
+`AWS/KinesisAnalytics`, preservando observações, `observed_at`, unidade,
+estatística e missing. Métricas ausentes, status parcial e shape inválido são
+`unresolved`; job plan, código, conectores efetivos, Task/Operator/Parallelism,
+replay, benchmark, SLO e causalidade continuam fora.
+
+### Métricas temporais Kinesis
+
+`sparkforge_collect_streaming_integrations` aceita `metrics_start`,
+`metrics_end` e `metrics_period` junto de `kinesis_stream_name`. A janela é
+obrigatória nas duas pontas; o período padrão é 60 segundos e deve ser múltiplo
+de 60 entre 60 e 86400. O mesmo handler usado pela CLI chama somente
+`cloudwatch.get_metric_data` para cinco métricas stream-level do namespace
+`AWS/Kinesis`, preservando observações normalizadas e resposta bruta no
+artifact. `kinesis.metric` facts carregam `stat`, `unit` e `observed_at`.
+
+Resultados ausentes ou incompletos são `unresolved`, nunca zero. Não há coleta
+de enhanced/shard-level metrics, reshard history, KCL/EFO, replay, causalidade
+ou SLO automático.
 
 ## Problemas comuns
 

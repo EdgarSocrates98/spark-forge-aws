@@ -1,0 +1,5 @@
+{
+  "eventbridge_rules": [
+    {"name": "orders-rule", "state": "ENABLED", "event_pattern": {"source": ["orders"]}, "targets": []}
+  ]
+}

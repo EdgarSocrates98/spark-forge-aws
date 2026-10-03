@@ -480,6 +480,46 @@ rules:
       coordenador que não vê a medição de execução mandaria a pergunta para quem não tem
       a evidência que a responde.
 
+  - id: AGENT-090
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em Structured Streaming
+    when:
+      all:
+        - {findings_area: SF-STREAM, count_gt: 0}
+    recommended_agent: spark-performance-architect
+    reason: >
+      O achado veio de código Structured Streaming ou de StreamingQueryProgress.
+      A próxima pergunta precisa correlacionar source, sink, checkpoint, state,
+      watermark e série observada com runtime e resultado; o coordinator já
+      possui o ciclo de baseline, plano, execução, validação funcional e rollback.
+
+  - id: AGENT-091
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em Apache Flink ou Managed Flink
+    when:
+      all:
+        - {findings_area: SF-FLINK, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado veio de checkpoint, operator, state ou métrica de Flink. A
+      investigação precisa separar Flink upstream de Managed Flink, confirmar
+      runtime e correlacionar backpressure, state, source, sink, observabilidade
+      e resultado antes de propor uma única variável experimental.
+
+  - id: AGENT-097
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado em composição streaming, Iceberg ou observabilidade
+    when:
+      any:
+        - {findings_area: SF-STREAMICE, count_gt: 0}
+        - {findings_area: SF-STREAMOBS, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado depende de um vínculo declarado entre progresso, transporte e
+      Iceberg. O coordenador streaming é o destino que consegue separar
+      correlação de causalidade, confirmar a janela temporal, cruzar source,
+      sink, state e consumidor e preservar validação funcional e rollback.
+
   # `SF-ENV` POR ÚLTIMO, e a razão é que ela é a área que TRÊS coordenadores declaram:
   # `glue-infra-reviewer`, `emr-infra-reviewer` e `glue-incremental-performance-architect`.
   # A posição resolve o empate sem inventar condição de runtime: quando há qualquer
@@ -859,6 +899,82 @@ rules:
       ficou sem desfecho quando o relogio do Task ou o da execucao parou. O conserto
       mora na definicao ASL, no prazo declarado e no tratamento de abort -- os
       artefatos de infraestrutura que este coordenador ja le --, e nao no codigo do job.
+
+  - id: AGENT-092
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em AWS Glue Streaming ou Real-Time Mode
+    when:
+      all:
+        - {findings_area: SF-GLUESTREAM, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado depende das restricoes declaradas do job Glue Streaming/RTM e de
+      medidas de capacidade que não podem ser inferidas do nome da fonte ou de
+      workers. O especialista streaming correlaciona essa definição com
+      transporte, checkpoint, observabilidade e validação funcional antes de
+      propor qualquer mudança.
+
+  - id: AGENT-093
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em eventos CDC ou contrato de replicação
+    when:
+      all:
+        - {findings_area: SF-CDC, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende de posição de origem, chave, transação, operação,
+      snapshot/CDC seam ou delete observado no artefato de mudança. O
+      especialista correlaciona a semântica com consumidor, contrato e
+      validação funcional sem declarar exatamente-once por configuração.
+
+  - id: AGENT-094
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em configuração Debezium
+    when:
+      all:
+        - {findings_area: SF-DEBEZIUM, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende da configuração ou status Debezium observado, incluindo
+      schema history, tombstones, snapshot e transações. O especialista
+      separa configuração de prova de comportamento e nomeia o artefato de
+      consumidor que ainda falta.
+
+  - id: AGENT-095
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em tarefa AWS DMS
+    when:
+      all:
+        - {findings_area: SF-DMS, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende de task, endpoint, table mappings, estatísticas ou
+      posição de corte DMS. O especialista revisa o escopo e a transição
+      Full Load + CDC sem expor segredos nem mutar AWS.
+
+  - id: AGENT-096
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em Schema Registry ou data contract
+    when:
+      all:
+        - {findings_area: SF-SCHEMA, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende da definição, versão, diff ou política de compatibilidade
+      observada no contrato. O especialista separa proxy estrutural de prova
+      end-to-end e exige owner, consumidores e validação antes da publicação.
+
+  - id: AGENT-098
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em arquitetura event-driven
+    when:
+      all:
+        - {findings_area: SF-EVENT, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado depende da cadeia de evento, target, retry, redrive ou DLQ
+      observados. O especialista separa configuração de prova de entrega,
+      replay e idempotência e pede métricas ou runbook quando faltarem.
 
 fallback:
   recommended_skill: sparkforge-diagnose

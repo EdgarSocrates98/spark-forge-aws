@@ -21,6 +21,7 @@
             "task",
             "tf_resource",
             "table",
+            "snapshot",
             "job_run",
             "plan_node"
           ]

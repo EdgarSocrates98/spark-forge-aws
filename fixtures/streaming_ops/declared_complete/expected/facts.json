@@ -1,0 +1,212 @@
+[
+  {
+    "id": "f_06f453",
+    "schema_version": 1,
+    "kind": "streaming.finops",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "glue_worker_hours",
+      "snippet": ""
+    },
+    "measures": {
+      "value": 12.5
+    },
+    "attrs": {
+      "metric": "glue_worker_hours",
+      "unit": "worker_hour",
+      "period": "2026-10-01T00:00:00Z/2026-10-01T01:00:00Z",
+      "region": "us-east-1",
+      "tier": "standard",
+      "source": "billing_export"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_ad855e",
+    "schema_version": 1,
+    "kind": "streaming.lakehouse",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "events_hudi",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "events_hudi",
+      "format": "hudi",
+      "mode": "mor",
+      "change_feed": true,
+      "checkpoint": true,
+      "schema_evolution": "declared",
+      "features": [
+        "clustering",
+        "incremental_query"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_67816e",
+    "schema_version": 1,
+    "kind": "streaming.lakehouse",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders_delta",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders_delta",
+      "format": "delta",
+      "mode": "append",
+      "change_feed": true,
+      "checkpoint": true,
+      "schema_evolution": "additive",
+      "features": [
+        "merge",
+        "streaming_reads"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_d25b87",
+    "schema_version": 1,
+    "kind": "streaming.security",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "0",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "transport": "tls",
+      "auth": "iam",
+      "tls": true,
+      "kms": true,
+      "vpc": true,
+      "secrets_manager": false,
+      "cross_account": false,
+      "resource_policy": true,
+      "system": "msk",
+      "source": "kafka"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_2424aa",
+    "schema_version": 1,
+    "kind": "streaming.serving",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "redshift",
+      "snippet": ""
+    },
+    "measures": {
+      "latency_target_ms": 5000
+    },
+    "attrs": {
+      "name": "redshift",
+      "system": "redshift_streaming",
+      "source": "kinesis",
+      "mode": "materialized_view",
+      "schema": "analytics.v1",
+      "consumer_count": 3
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_41637b",
+    "schema_version": 1,
+    "kind": "streaming.slo",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "end_to_end_latency",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 5000
+    },
+    "attrs": {
+      "name": "end_to_end_latency",
+      "metric": "p95_end_to_end_latency",
+      "operator": "lt",
+      "unit": "ms",
+      "window": "5m",
+      "source": "cloudwatch"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_cd193f",
+    "schema_version": 1,
+    "kind": "streaming_ops.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 6
+    },
+    "attrs": {
+      "sections": [
+        "finops",
+        "lakehouse",
+        "security",
+        "serving",
+        "slo"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\declared_complete\\input\\contract.json",
+      "artifact_sha256": "c69f765bf7beee0efdc3a199a63c710114f5c78432b578ad46eba9d5c241f589",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  }
+]

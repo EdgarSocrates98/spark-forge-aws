@@ -1,0 +1,7 @@
+mode: temporal
+transport_key: missing-group
+query_name: missing-query
+max_skew_seconds: 3
+expects_pairs: 0
+expects_kinds: [kafka.analyzed, kafka.consumer_group, kafka.lag, streaming.composition.analyzed, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series, streaming.temporal.unresolved]
+expects_findings: []

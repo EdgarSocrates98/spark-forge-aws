@@ -1,0 +1,86 @@
+[
+  {
+    "id": "f_f26b4a",
+    "schema_version": 1,
+    "kind": "event_driven.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_with_target\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 2
+    },
+    "attrs": {
+      "sections": [
+        "eventbridge",
+        "sqs"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_with_target\\input\\architecture.json",
+      "artifact_sha256": "55d74baf3b5356de0bd9c7c4f1c5a5e8c9a4622500ebc2f4cca05090c00ef915",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_99e91e",
+    "schema_version": 1,
+    "kind": "eventbridge.rule",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_with_target\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-rule",
+      "snippet": ""
+    },
+    "measures": {
+      "target_count": 1
+    },
+    "attrs": {
+      "name": "orders-rule",
+      "state": "ENABLED",
+      "target_types": [
+        "sqs"
+      ],
+      "event_pattern_declared": true,
+      "retry_declared": true,
+      "dead_letter_declared": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_with_target\\input\\architecture.json",
+      "artifact_sha256": "55d74baf3b5356de0bd9c7c4f1c5a5e8c9a4622500ebc2f4cca05090c00ef915",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_c5dfc5",
+    "schema_version": 1,
+    "kind": "sqs.queue",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_with_target\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {
+      "visibility_timeout_seconds": 60
+    },
+    "attrs": {
+      "name": "orders",
+      "fifo": true,
+      "redrive_declared": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_with_target\\input\\architecture.json",
+      "artifact_sha256": "55d74baf3b5356de0bd9c7c4f1c5a5e8c9a4622500ebc2f4cca05090c00ef915",
+      "extractor": "event_driven@0.1.0"
+    }
+  }
+]

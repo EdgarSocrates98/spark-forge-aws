@@ -16,6 +16,7 @@ EXPECTED_KINDS = {
     "iceberg.unresolved",
     "iceberg.table_analyzed",
     "iceberg.format_version",
+    "iceberg.snapshot",
 }
 
 
@@ -34,7 +35,7 @@ def test_kind_namespace_is_complete_and_documented():
     # 9 desde `iceberg.format_version` (2026-09-02). A lista acima e MANUAL de
     # proposito: derivar `EXPECTED_KINDS` de `EMITTED_KINDS` faria o teste
     # concordar consigo mesmo, e um kind acrescentado por engano passaria.
-    assert len(EMITTED_KINDS) == 9
+    assert len(EMITTED_KINDS) == 10
     assert EXTRACTOR_ID.startswith("iceberg_metadata@")
 
 
@@ -110,6 +111,23 @@ class TestDeleteFilesSummary:
 
 
 class TestSnapshotsSummary:
+    def test_snapshot_observation_facts_preserve_identity_and_timestamp(self):
+        payload = {
+            "table": "db.t",
+            "snapshots": [
+                {"snapshot_id": 101, "committed_at": "2026-01-01T00:00:00Z", "operation": "append"},
+                {"snapshot_id": 102, "committed_at": "2026-01-01T00:00:05Z", "operation": "replace"},
+                {"snapshot_id": 103, "operation": "delete"},
+            ],
+        }
+        snapshots = facts_of("iceberg.snapshot", extract_iceberg_metadata(payload, "dump.json"))
+        assert len(snapshots) == 3
+        by_id = {fact.subject["snapshot_id"]: fact for fact in snapshots}
+        assert by_id[101].attrs["committed_at"] == "2026-01-01T00:00:00+00:00"
+        assert by_id[101].attrs["timestamp_observed"] is True
+        assert by_id[102].attrs["operation"] == "replace"
+        assert by_id[103].attrs["timestamp_observed"] is False
+
     def test_span_hours_and_operations(self):
         payload = {
             "table": "db.t",

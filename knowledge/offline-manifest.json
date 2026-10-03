@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "ea6ba489a4df8a68ddaba55158b99d8ad4c798fe42dfacf5458db13d5182415a"
+      "sha256": "c1315dd2c7d5534060ead0835fe6ddaa7fcdb1f92d8f2d736d76f52ce863257b"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -42,6 +42,11 @@
       "path": "knowledge/athena/performance.md",
       "title": "performance",
       "sha256": "bc76127d18a4fbfc6e97ae538671b9f275fadd4d46f00c57ad9197d422e8a777"
+    },
+    {
+      "path": "knowledge/cdc-replication.md",
+      "title": "cdc-replication",
+      "sha256": "84bd7ca8ed6becdd6c180f1ae6ee7b977d888210bff4bf915909747a6b8bde91"
     },
     {
       "path": "knowledge/controlm/automation-api-matrix.md",
@@ -122,6 +127,21 @@
       "path": "knowledge/emr/runtime-matrix.md",
       "title": "runtime-matrix",
       "sha256": "2db72d37e099d14d8fbe9e47f38c4f931b058fa3bd8568cbed6deac635851618"
+    },
+    {
+      "path": "knowledge/event-driven-architecture.md",
+      "title": "event-driven-architecture",
+      "sha256": "87e703f670c3b74b5587862a43775902b482f4f4d1d8eaea569d7c3006f30464"
+    },
+    {
+      "path": "knowledge/flink-streaming.md",
+      "title": "flink-streaming",
+      "sha256": "c2d17a9fa9036c82181793ac7916343f6b96ad1afcbbe23b4db3352c721432c3"
+    },
+    {
+      "path": "knowledge/glue-streaming-rtm.md",
+      "title": "glue-streaming-rtm",
+      "sha256": "7b7cd3a2c071d4a6ec891d5c40c21449075307bbae431ea41db64e8d6e82b6a9"
     },
     {
       "path": "knowledge/glue/dq-advanced-matrix.md",
@@ -274,9 +294,44 @@
       "sha256": "871c8c2faa0ac33f2c663b7a482a45b2d88ae92dd1cd8a54f8c93f3061b5f191"
     },
     {
+      "path": "knowledge/streaming-format-serving-matrix.md",
+      "title": "streaming-format-serving-matrix",
+      "sha256": "e738b403769aa5ccc1765fe1a405ee552bd0f057251535a29c4bc0fc30fc00f0"
+    },
+    {
+      "path": "knowledge/streaming-integrations.md",
+      "title": "streaming-integrations",
+      "sha256": "4fe56bed43a3dec01385dc1f0ed0124a9848740c407f8bb19a5b71469361b901"
+    },
+    {
+      "path": "knowledge/streaming-lakehouse-observability.md",
+      "title": "streaming-lakehouse-observability",
+      "sha256": "e5ea70b24d83c33a5d26e429dfe2d4f535d13c456bfc1f52d48bc850582ca5d0"
+    },
+    {
+      "path": "knowledge/streaming-operations.md",
+      "title": "streaming-operations",
+      "sha256": "eeb94f43ac9154ad0c62c4e10fc39bbfcbd97fd0a737a32d7001032c789e0944"
+    },
+    {
+      "path": "knowledge/streaming-pipeline-diagnostics.md",
+      "title": "streaming-pipeline-diagnostics",
+      "sha256": "cd1e250de4daac9325e292d7fd663c71bd1de2907c6a5fc5712a2490de0355f0"
+    },
+    {
+      "path": "knowledge/streaming-realtime-candidate-matrix.md",
+      "title": "streaming-realtime-candidate-matrix",
+      "sha256": "b9532d5d36726cfbb0a5812f2c23e1005193f1d707dd45d4055ff0dd80aed212"
+    },
+    {
       "path": "knowledge/streaming-reliability.md",
       "title": "streaming-reliability",
-      "sha256": "f0df97cca35dfabba8fda91ced92ad0b503e671721de2f5e3399d7b62d526a05"
+      "sha256": "0e482b130000bd5f2216a6f452da0b2acf22caf1aec60f2afd0318f933344ed8"
+    },
+    {
+      "path": "knowledge/streaming/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "4b0a06a6aad0087aa17cf44545c06dce8e74e5dca7aa41891772c6908325ffba"
     },
     {
       "path": "knowledge/terraform-data-platform.md",
@@ -292,6 +347,11 @@
       "path": "knowledge/tool-specialization-matrix.md",
       "title": "tool-specialization-matrix",
       "sha256": "d161eb6344bf4be9820f5f58cc72943cb5e8664c5d5c9c1abadb2e9e6e255d3d"
+    },
+    {
+      "path": "knowledge/transport-diagnostics.md",
+      "title": "transport-diagnostics",
+      "sha256": "c7db2ea98a58effb8a3dd42ab1dfdb40b3ec6ef99638d2b36e0c353eac866d77"
     }
   ]
 }

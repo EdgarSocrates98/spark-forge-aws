@@ -1,0 +1,5 @@
+mode: slo
+slo_name: throughput
+query_name: orders-query
+expects_findings: []
+expects_kinds: [streaming.composition.analyzed, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series, streaming.slo, streaming.slo.evaluation, streaming_ops.analyzed]

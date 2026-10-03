@@ -1,0 +1,120 @@
+[
+  {
+    "rule_id": "SF-STREAM-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "SLO de streaming ausente ou sem target declarado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_6984df"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O contrato analisado não fornece target mensurável para um SLO de streaming. O Forge não inventa p95, freshness, lag, RPO, RTO, disponibilidade ou tolerância a perda.",
+    "proposed_change": [
+      "Declarar métrica, operador, target, unidade, janela e fonte do SLO.",
+      "Coletar série temporal pareada antes de afirmar atendimento."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Um target sem janela, unidade ou fonte pode induzir comparação inválida."
+    ],
+    "tradeoffs": [
+      "SLO explícito exige instrumentação e retenção de métricas."
+    ],
+    "validation": [
+      "Comparar observações na mesma janela, unidade, workload e runtime."
+    ],
+    "rollback": [
+      "Reverter somente a declaração incorreta; preservar histórico de métricas."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.slo",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAM-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Medição de custo streaming sem contexto de atribuição",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_6984df"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Há uma medição ou declaração FinOps sem unidade, período, região ou fonte suficiente. O fato não pode virar custo comparável, atribuição de causa ou economia.",
+    "proposed_change": [
+      "Declarar usage, unidade, região, período, tier e fonte da medição.",
+      "Separar custo observado de atribuição e hipótese de otimização."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Atribuir custo sem janela ou região pode orientar redução errada."
+    ],
+    "tradeoffs": [
+      "Contexto adicional aumenta disciplina de coleta e armazenamento."
+    ],
+    "validation": [
+      "Reconciliar medida com billing ou métrica de uso do mesmo período."
+    ],
+    "rollback": [
+      "Retirar a atribuição não comprovada e manter somente a medição bruta."
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/aws-cost-management/aws-cost-and-usage-reporting/",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.finops",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

@@ -1,0 +1,2 @@
+expects_findings: [SF-STREAM-015]
+expects_kinds: [streaming.pipeline.unresolved]

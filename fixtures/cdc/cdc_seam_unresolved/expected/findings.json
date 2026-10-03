@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-CDC-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Junção snapshot-CDC sem posição inicial observada",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_55c2e8"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O artefato declara full load + CDC, mas não traz a posição que liga a carga inicial ao log de mudanças. A ausência impede provar que nenhum intervalo ficou entre os dois lados.",
+    "proposed_change": [
+      "Coletar timestamp ou posição de log usada no corte e o checkpoint do consumidor.",
+      "Reconciliar contagem, chave e valores no intervalo de transição."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Recomeçar CDC sem posição pode perder ou repetir mudanças."
+    ],
+    "tradeoffs": [
+      "Guardar a posição de corte aumenta rastreabilidade operacional."
+    ],
+    "validation": [
+      "Executar replay do intervalo com uma chave de negócio declarada."
+    ],
+    "rollback": [
+      "Parar o cutover e retornar ao caminho anterior com posição preservada."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "cdc.snapshot_cdc_seam",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

@@ -1,0 +1,113 @@
+[
+  {
+    "id": "f_30491b",
+    "schema_version": 1,
+    "kind": "fusion.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "enriched_count": 0,
+      "unmatched_projection_count": 0,
+      "unmatched_predicate_count": 0,
+      "tables_known": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf9a8e",
+    "schema_version": 1,
+    "kind": "glue.job_run.analyzed",
+    "subject": {
+      "type": "job_run",
+      "job_name": "orders-stream",
+      "symbol": "orders-stream"
+    },
+    "measures": {
+      "runs_analyzed": 1
+    },
+    "attrs": {
+      "path": ".sparkforge/artifacts/glue_job_run"
+    },
+    "provenance": {
+      "artifact": "analyzed.json",
+      "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "extractor": "glue_job_run@0.1.0"
+    }
+  },
+  {
+    "id": "f_cd26a0",
+    "schema_version": 1,
+    "kind": "glue.streaming.job",
+    "subject": {
+      "type": "source_location",
+      "file": "effective.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-stream",
+      "snippet": ""
+    },
+    "measures": {
+      "worker_count": 4
+    },
+    "attrs": {
+      "name": "orders-stream",
+      "mode": "REAL_TIME",
+      "glue_version": "6.0",
+      "worker_type": "G.1X"
+    },
+    "provenance": {
+      "artifact": "effective.json",
+      "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_bf5fef",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "unresolved",
+      "snippet": ""
+    },
+    "measures": {
+      "run_count": 1,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "job_name": "orders-stream",
+      "reason": "run_facts_missing",
+      "unresolved_fields": [
+        "glue_version",
+        "worker_count",
+        "worker_type"
+      ],
+      "source_fact_ids": [
+        "f_cd26a0",
+        "f_cf9a8e"
+      ]
+    },
+    "provenance": {
+      "extractor": "streaming_glue_runtime@0.1.0",
+      "artifact": "<fusion>",
+      "source_fact_ids": [
+        "f_cd26a0",
+        "f_cf9a8e"
+      ]
+    }
+  }
+]

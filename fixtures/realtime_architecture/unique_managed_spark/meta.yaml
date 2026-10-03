@@ -1,0 +1,3 @@
+artifact: input/requirements.json
+expected_status: selected
+expected_selected: glue_streaming

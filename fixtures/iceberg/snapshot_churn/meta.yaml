@@ -10,6 +10,7 @@ runtime:
   python: '3.11'
   iceberg: 1.7.1
 expects_kinds:
+- iceberg.snapshot
 - iceberg.format_version
 - iceberg.snapshots_summary
 - iceberg.table_analyzed

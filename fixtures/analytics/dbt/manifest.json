@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "project_name": "synthetic_analytics",
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/manifest/v11.json"
+  },
+  "nodes": {
+    "model.synthetic.orders": {
+      "unique_id": "model.synthetic.orders",
+      "resource_type": "model",
+      "name": "orders",
+      "package_name": "synthetic",
+      "relation_name": "analytics.orders",
+      "depends_on": {"nodes": ["source.synthetic.postgres.orders"]},
+      "config": {"materialized": "incremental", "incremental_strategy": "merge", "unique_key": ["order_id"]},
+      "columns": {"order_id": {"data_type": "BIGINT"}, "amount": {"data_type": "DECIMAL"}},
+      "tags": ["orders"]
+    },
+    "source.synthetic.postgres.orders": {
+      "unique_id": "source.synthetic.postgres.orders",
+      "resource_type": "source",
+      "name": "orders",
+      "package_name": "synthetic",
+      "relation_name": "raw.orders",
+      "depends_on": {"nodes": []},
+      "columns": {"order_id": {"data_type": "BIGINT"}}
+    },
+    "test.synthetic.orders_not_null": {
+      "unique_id": "test.synthetic.orders_not_null",
+      "resource_type": "test",
+      "name": "orders_not_null",
+      "package_name": "synthetic",
+      "depends_on": {"nodes": ["model.synthetic.orders"]}
+    }
+  },
+  "exposures": {
+    "exposure.synthetic.orders_dashboard": {
+      "unique_id": "exposure.synthetic.orders_dashboard",
+      "resource_type": "exposure",
+      "name": "orders_dashboard",
+      "depends_on": {"nodes": ["model.synthetic.orders"]}
+    }
+  }
+}

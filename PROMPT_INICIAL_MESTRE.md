@@ -44,7 +44,7 @@ Nesta ordem, sempre:
    não chegam ao seu contexto sozinhas — abra o arquivo.
 4. **Deixe `next_step` decidir a rota.** Não escolha a próxima skill por
    julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`,
-   incluindo as rotas `AGENT-001`…`AGENT-008` que indicam qual dos oito
+   incluindo as rotas `AGENT-*` que indicam qual dos 14
    coordenadores (`agents/*.md`) usar a partir da fase do case e do achado
    dominante. **Três plataformas despacham:** Claude Code, o **Devin CLI** e o
    **Devin Local agent** do Devin Desktop (com o toggle *Subagents (Preview)*
@@ -109,6 +109,34 @@ Depois acione, conforme as evidências:
   consequência e quanto custa, nunca se o dado está correto
 
 Não ignore uma Skill relevante. Registre quais Skills foram usadas, quais não foram necessárias e por quê.
+
+Para workloads streaming, CDC e real-time, acrescente conforme o artefato:
+
+- `review-structured-streaming` e `analyze-streaming-composition` — source/progress,
+  checkpoint, watermark, sink, transporte, Iceberg e correlação temporal offline;
+- `review-streaming-operations` — contrato declarado de SLO, FinOps, segurança,
+  serving e lakehouse;
+- `review-cdc-replication` — Debezium, Kafka Connect, AWS DMS, Schema Registry,
+  posições, transações, tombstones e seam snapshot/CDC;
+- `analyze-flink-job`, `review-glue-streaming` e `design-realtime-data-architecture` —
+  Flink/Managed Flink, Glue Streaming/RTM e decisão arquitetural por constraints.
+  Quando houver janela CloudWatch, preserve os cinco fatos temporais de Kinesis ou
+  os cinco fatos application-level de Managed Flink antes de julgar. Não use
+  `managed_flink.metric` como evidência de Apache Flink upstream: o contrato
+  upstream só emite `flink.metric` quando o dump traz observação explícita com
+  nome, valor numérico e timestamp textual; não há collector live.
+
+Quando houver declaração SLO e facts já extraídos, `analyze-streaming-composition --mode slo`
+avalia progress Structured Streaming ou métricas diretamente observadas de Kafka/Kinesis.
+Ele não calcula p95/freshness, não consulta endpoints live e não prova saúde end-to-end;
+ausência de evidência sai `streaming.slo.unresolved`.
+
+Quando for necessário correlacionar CDC, transporte, processador e sink, use
+`analyze-streaming-composition --mode pipeline --pipeline-path <contract.json>`.
+O contrato exige selectors exatos por `kind`/atributos escalares e match único;
+nodes/edges sem evidência ficam `streaming.pipeline.unresolved`. Isso preserva
+proveniência e `source_fact_ids`, mas não descobre topologia nem prova latência,
+throughput, causalidade, exactly-once ou saúde end-to-end.
 
 ## Contexto do problema
 

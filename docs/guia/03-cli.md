@@ -225,7 +225,7 @@ comando.
 |---|---|---|
 | `analyze` | Extrai facts determinísticos de um artefato. Cada subcomando é um tipo de artefato: `pyspark`, `event-log`, `plan`, `terraform`, `iceberg`, `sql`, `catalog-schema`, `parquet-footer` e outros. | [analyze](referencia/cli/analyze.md) |
 | `collect` | Baixa artefatos reais da AWS (event log, job Glue, CloudWatch, metadata Iceberg, Athena, EMR e outros). Precisa de credenciais AWS e do extra `aws`. | [collect](referencia/cli/collect.md) |
-| `fuse` | Correlaciona facts de SQL com o schema do catálogo, antes do `judge`. | [fuse](referencia/cli/fuse.md) |
+| `fuse` | Correlaciona facts de SQL com o schema do catálogo, ou facts de Glue Streaming efetivo com Terraform, antes do `judge`. | [fuse](referencia/cli/fuse.md) |
 
 ### Julgar
 
@@ -252,6 +252,139 @@ comando.
 | `root-cause` | Ordena os achados por consequência declarada e nomeia a lacuna. | [root-cause](referencia/cli/root-cause.md) |
 | `arbitrate` | Arbitra findings já julgados e grava claims, evidências e contradições no blackboard do case. Grava no disco. | [arbitrate](referencia/cli/arbitrate.md) |
 | `debate` | Conduz e arbitra o protocolo de debate do case. Não gera argumento. | [debate](referencia/cli/debate.md) |
+| `analyze streaming-composition` | Compõe progress Structured Streaming, transporte ou Iceberg; `--mode slo` avalia SLO observado em progress, sink, Kafka ou Kinesis. | [analyze](referencia/cli/analyze.md) |
+
+## Avaliar SLO observado de streaming
+
+Extraia os contratos e as observações separadamente. O compositor preserva os
+`fact_id` de origem e não consulta runtime live:
+
+```bash
+# Progress Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+# Saída do sink Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
+# Transporte Kafka/Kinesis
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+
+sparkforge judge --facts transport-slo.facts.json --show-skipped
+```
+
+Para sink, `query_name` identifica a query, `sink_name` desambigua o sink e
+`num_output_rows` usa a unidade canônica `rows`; o timestamp vem do batch único
+ligado por `batch_id`. Para Kafka, `transport_key` identifica grupo/topic e a unidade canônica é
+`records` sobre `kafka.lag`. Para Kinesis, identifica stream e a unidade é `ms`
+para `iterator_age_ms` em `kinesis.shard`. O resultado resolvido informa
+`streaming.slo.evaluation` com `met` ou `violated`; falta de identidade,
+timestamps, cobertura da janela, unidade ou série única produz
+`streaming.slo.unresolved`. Séries de grupos, topics, partições ou shards
+misturados são recusadas, nunca agregadas silenciosamente.
+
+Esse modo aceita `statistic: p95` por nearest-rank e `freshness_ms` quando o
+progress traz `timestamp` + `eventTime.max` timezone-aware; não consulta
+CloudWatch/Kafka live nem prova disponibilidade, causalidade, custo ou saúde
+end-to-end. Ausência de finding não significa SLO atendido; reporte também
+todo `*.unresolved`.
+
+### Correlacionar Glue Streaming efetivo com Terraform
+
+Extraia a definição efetiva do job e o módulo Terraform no mesmo pool de facts.
+O `fuse` liga apenas um `aws_glue_job` cujo `name` seja literal e único:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+O fact `glue.streaming.terraform_link` compara versão Glue, RTM, linguagem e
+workers. `drifts` alimenta `SF-GLUESTREAM-004`; `unresolved_fields` ou a falta
+de identidade alimenta `SF-GLUESTREAM-005`. O resultado mantém
+`source_fact_ids`; não substitui evidência de execução, capacidade, custo ou
+validação funcional.
+
+### Glue Streaming efetivo e runs terminais
+
+Com um diretório de runs Glue já coletado, use o analyzer existente e o mesmo
+compositor:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+O link literal compara `glue_version`, `worker_type` e `worker_count`, mantém
+`observed_run_ids`/`source_fact_ids` e separa `SF-GLUESTREAM-006` de
+`SF-GLUESTREAM-007`. Sem run ou eixo comparável, a saída é unresolved; não
+interprete `execution_time_s` ou DPU como latência de evento.
+
+### Endpoints Glue Streaming
+
+`analyze glue-streaming` preserva endpoints declarados no bloco `stream` sem
+novo comando:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+```
+
+Leia `glue.streaming.source` e `glue.streaming.sink` para identidade,
+connector e medidas numéricas observadas. `glue.streaming.unresolved` nomeia
+ausência, formato inválido ou falta de métrica; nenhum campo é preenchido com
+zero. Source/sink do dump não provam execução live, throughput, saúde,
+exactly-once ou capacidade.
+
+### Analisar endpoints Apache Flink
+
+`analyze flink` mantém source e sink como facts independentes quando o dump os
+declara. Não há novo comando: `--artifact managed_flink` continua selecionando
+o namespace do serviço gerenciado.
+
+```bash
+sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge judge --facts flink.facts.json --show-skipped
+```
+
+O resultado pode conter `flink.source` e `flink.sink`, com identidade,
+connector, `delivery_semantics` e métricas numéricas observadas. Contadores não
+são throughput sem timestamp/janela. Source/sink ausente ou inválido aparece
+em `flink.unresolved` com razão nomeada; nenhum valor é preenchido com zero.
+Consulte `fact_id` e correlacione com checkpoint, operator e transporte antes
+de propor mudança.
+
+O mesmo artifact pode declarar `metrics` ou `metrics.observations`. Cada ponto
+precisa de nome, valor numérico e `observed_at`/`timestamp` textual para emitir
+`flink.metric`; shape inválido, valor não numérico ou timestamp ausente/inválido
+emite `flink.unresolved`. A métrica upstream é uma observação explícita, não
+health, SLO, causalidade ou série longa. Não misture com
+`managed_flink.metric`, que nasce da janela CloudWatch bounded do serviço
+gerenciado. O contrato completo está em
+[`knowledge/flink-streaming.md`](../../knowledge/flink-streaming.md) e no
+[ship SDD](../sdd/STREAMING_FLINK_TEMPORAL_METRICS/ship.md).
+
+### Forge Lab / Digital Twin
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `lab doctor` | Verifica host, registry e profiles sem iniciar serviços. | [lab](referencia/cli/lab.md) |
+| `lab verify` | Valida registry, Golden 20, schemas e planos de ações offline. | [lab](referencia/cli/lab.md) |
+| `lab scenarios`, `describe`, `profiles` | Lista e explica cenários, fidelidades, perfis e requisitos declarados. | [lab](referencia/cli/lab.md) |
+| `lab plan`, `run` | Compila ou executa um cenário; a execução mutável exige `--execute --confirm`. | [lab](referencia/cli/lab.md) |
+| `lab inspect`, `analyze`, `compare`, `reproduce` | Inspeciona evidências, analisa artifacts, compara receipts e recria planos. | [lab](referencia/cli/lab.md) |
+| `lab promote-fixture` | Promove run revisado para fixture somente com receipt válido e `--reviewed`. | [lab](referencia/cli/lab.md) |
+| `lab up`, `down`, `shell`, `gc` | Planeja lifecycle Compose; mutação local exige `--execute --confirm`. | [lab](referencia/cli/lab.md) |
 
 ### Estado da investigação
 
@@ -624,6 +757,71 @@ sparkforge collect glue-job --repo . --job-name <nome> --now <ISO8601>
 Ele baixa a definição real do job pela API do Glue, para comparar com o que o
 Terraform declara. Confira as opções de cada coletor em
 [referencia/cli/collect.md](referencia/cli/collect.md) antes de rodar.
+
+Para Glue Schema Registry, a coleta é read-only e registra a versão mais recente
+observada junto com metadata e definição:
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events \
+  --max-schemas 100 --now <ISO8601>
+sparkforge analyze schema-registry \
+  --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+`--schema-name` filtra um schema; `--schema-arn` consulta por ARN. Os limites
+`--max-schemas` e `--max-definition-bytes` evitam downloads ilimitados e
+preservam `unresolved` quando a evidência não cabe no contrato. O collector
+nunca cria, registra, atualiza ou exclui objetos no registry.
+
+Para obter uma janela temporal de métricas do Kinesis, combine o stream com as
+duas pontas ISO 8601. O período padrão é 60 segundos e precisa ser múltiplo de
+60 entre 60 e 86400:
+
+```bash
+sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+sparkforge analyze transport \
+  --artifact kinesis \
+  --path .sparkforge/artifacts/streaming_integrations/kinesis_orders__metrics_*.json
+```
+
+O collector consulta cinco métricas stream-level do CloudWatch e preserva
+observações, unidade, estatística, timestamp e lacunas. Ausência não vira zero;
+enhanced/shard-level, reshard history, KCL/EFO, replay e causalidade continuam
+fora do contrato.
+
+Para obter a configuração observada de uma aplicação Managed Flink, use a
+coleta somente leitura abaixo. Ela não pede detalhes adicionais, portanto não
+baixa código nem job plan:
+
+```bash
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 --now <ISO8601>
+sparkforge analyze flink \
+  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
+  --artifact managed_flink
+```
+
+O artifact preserva runtime, status, versão, checkpoint, paralelismo, VPC e
+logging observados. Para uma janela bounded de CloudWatch, use:
+
+```bash
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+O collector consulta cinco métricas de aplicação do namespace
+`AWS/KinesisAnalytics`, preserva `observed_at`, unidade, estatística, respostas
+e `metrics_missing`, e alimenta `managed_flink.metric`. As pontas precisam ser
+timezone-aware; período é múltiplo de 60 entre 60 e 86400. Ausência, status
+parcial e shape inválido são `unresolved`, nunca zero. Task/Operator/Parallelism,
+custom metrics, conectores, job plan, replay, benchmark, SLO, causalidade,
+custo e saúde continuam fora do contrato.
 
 ## Próximos passos
 
