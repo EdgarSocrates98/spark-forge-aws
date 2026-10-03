@@ -17,8 +17,8 @@ O inventário de commits, features e provas compartilhadas está em
 |---|---|---|---|
 | Structured Streaming | `diagnosable` | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | progress series agora resume span, duração, memória do state e watermark com `SF-STREAM-013`/`SF-STREAM-014`; execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`, e cross-artifact permanece unresolved quando artefato não existe |
 | Spark Real-Time | `version-aware` parcial | `knowledge/streaming/runtime-matrix.md` revalidada; separação upstream/runtime gerenciado e limite de `Trigger.RealTime` | capability no runtime observado, guard executável e prova de latência continuam `N/A + motivo` sem workload/runtime |
-| Kafka | `fact-aware` parcial | `facts/transport.py` preserva timestamps observados; `facts/streaming_temporal.py`, modo `analyze streaming-composition --mode temporal`, fixtures e regra `SF-STREAMOBS-002` pareiam progresso e lag em dumps | Connect REST, série temporal live de broker/grupo e segurança completa |
-| Amazon MSK | `version-aware` parcial | `msk.cluster` em `facts/transport.py`, `collect streaming-integrations`, `knowledge/transport-diagnostics.md`, `knowledge/streaming/runtime-matrix.md` | snapshot regional/broker-type, configuração/rede/segurança/lag temporal |
+| Kafka | `fact-aware` parcial | `facts/transport.py` preserva `lag_observations`, compõe `kafka.lag.series` e mantém `kafka.unresolved`; `SF-STREAMOBS-002/003/004`, goldens ISR/lag, analyzer, knowledge, skill e coordenador | Connect REST, série temporal live de broker/grupo e segurança completa |
+| Amazon MSK | `version-aware` parcial | `msk.cluster` e transporte observado em `facts/transport.py`, `collect streaming-integrations`, `SF-STREAMOBS-003/004`, `knowledge/transport-diagnostics.md`, `knowledge/streaming/runtime-matrix.md` | snapshot regional/broker-type, configuração/rede/segurança e collector temporal live |
 | Kafka Connect | `fact-aware` parcial | `kafka.connect`, `kafka.connect.task`, `SF-STREAM-008`, fixtures e `sparkforge_analyze_streaming_integrations` | collector REST live, offsets/erros temporais e validação funcional |
 | Kafka Streams | `fact-aware` parcial | `kafka.streams`, `kafka.streams.state_store`, `SF-STREAM-009`, fixtures e `sparkforge_analyze_streaming_integrations` | métricas/topologia live e decisão composta contra Spark/Flink |
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline; collector temporal consulta cinco métricas stream-level do CloudWatch com janela explícita e o analyzer entrega `kinesis.metric` | enhanced/shard-level e reshard history, KCL/EFO, endpoint live de consumidores e série de longa duração |
@@ -97,6 +97,12 @@ O inventário de commits, features e provas compartilhadas está em
   Não agrega grupos/shards, não usa CloudWatch live e não prova saúde
   end-to-end; `STREAMING_SLO_LATENCY_FRESHNESS` adiciona p95/freshness offline
   sem alterar esse limite live.
+- `STREAMING_KAFKA_TRANSPORT_EVIDENCE`: estende o analyzer offline com ISR
+  observado e série explícita de lag por identidade, `SF-STREAMOBS-003/004`,
+  unresolved fail-closed, goldens positivos/não-monotônicos, proteção contra
+  inferência a partir de snapshot legado, skill, coordenador e cobertura
+  auditada. Não coleta broker/consumer live nem atribui causa, SLO, throughput,
+  custo ou saúde.
 
 ## Fechamentos adicionados nesta atualização
 

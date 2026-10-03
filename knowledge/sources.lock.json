@@ -3476,16 +3476,25 @@
         "knowledge/transport-diagnostics.md"
       ],
       "pinned": false,
-      "retrieved": [],
-      "rules": []
+      "retrieved": [
+        "2026-10-03"
+      ],
+      "rules": [
+        "SF-STREAMOBS-003"
+      ]
     },
     "https://kafka.apache.org/40/operations/basic-kafka-operations/": {
       "docs": [
         "knowledge/transport-diagnostics.md"
       ],
       "pinned": false,
-      "retrieved": [],
-      "rules": []
+      "retrieved": [
+        "2026-10-03"
+      ],
+      "rules": [
+        "SF-STREAMOBS-003",
+        "SF-STREAMOBS-004"
+      ]
     },
     "https://kafka.apache.org/community/downloads/": {
       "docs": [

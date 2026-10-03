@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **71 features**:
+O status atual registra **72 features**:
 
-- **69** em `ship/done`;
+- **70** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -60,6 +60,7 @@ STREAMING_SLO_TRANSPORT_EVALUATION,
 STREAMING_SINK_SLO_EVALUATION,
 STREAMING_PROGRESS_OBSERVABILITY_DEPTH,
 STREAMING_SLO_LATENCY_FRESHNESS,
+STREAMING_KAFKA_TRANSPORT_EVIDENCE,
 STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
@@ -97,8 +98,10 @@ do wheel e de uma CLI real do host.
 - Structured Streaming: source/progress, watermark, state, sink, checkpoint e
   review evidence-first.
 - Transporte: Kafka, MSK, Kinesis, lag, partições, shards, métricas e identidade
-  declarada para composição. Kinesis também tem coleta temporal bounded via
-  CloudWatch no collector existente, com cinco métricas stream-level, fatos
+  declarada para composição. Kafka agora preserva `lag_observations`, compõe
+  `kafka.lag.series` por identidade e julga ISR deficit/lag crescente com
+  `SF-STREAMOBS-003/004`, sem reinterpretar snapshot legado. Kinesis também tem
+  coleta temporal bounded via CloudWatch no collector existente, com cinco métricas stream-level, fatos
   `kinesis.metric`, janela explícita e `unresolved` fail-closed.
 - Flink e Managed Flink, Glue Streaming e Glue Real-Time Mode, com matrizes de
   runtime e limites managed/upstream.

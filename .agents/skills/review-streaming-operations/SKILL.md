@@ -46,6 +46,25 @@ sparkforge judge --facts streaming-operations-facts.json
 5. Leia cada `streaming_ops.unresolved` antes de julgar. Proponha o artefato ou
    experimento que destrava cada lacuna.
 
+### Kafka/MSK transport evidence
+
+Para dump sanitizado de Kafka ou MSK, rode o analyzer de transporte antes da
+composição:
+
+```bash
+sparkforge analyze transport --artifact kafka --path kafka-dump.json \
+  --out kafka-facts.json
+sparkforge judge --facts kafka-facts.json --show-skipped
+```
+
+Leia `kafka.partition` para ISR observado e `kafka.lag.series` para uma série
+explícita por `group/topic/partition`. `SF-STREAMOBS-003` só dispara quando o
+`replication_factor` observado supera `isr_count`; `SF-STREAMOBS-004` exige pelo
+menos duas observações timestampadas e lag crescente em todos os passos. Lag
+legado em `consumer_groups[].offsets` é snapshot, não tendência. Ausência ou
+timestamp inválido permanece `kafka.unresolved`; não invente causa, throughput,
+SLO ou saúde do consumidor.
+
 ## Limites
 
 - declaração de controle não prova eficácia em runtime;

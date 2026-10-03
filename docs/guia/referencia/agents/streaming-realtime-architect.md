@@ -47,6 +47,20 @@ Para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage, use
 `sparkforge_judge`; ausência de endpoint, credencial ou série temporal fica
 `unresolved`.
 
+Para transporte Kafka/MSK, use `sparkforge_analyze_transport` e depois
+`sparkforge_judge`. Confirme `kafka.partition` antes de apontar déficit de ISR;
+`SF-STREAMOBS-003` exige `replication_factor > isr_count`. Para backlog temporal,
+aceite somente `kafka.lag.series` composto de `lag_observations` explícitas por
+`group/topic/partition`; `SF-STREAMOBS-004` exige duas observações ordenadas e
+crescimento monotônico. Snapshot de offsets, ordem de arquivo, nome de tópico ou
+nome de serviço não provam tendência, causa ou saúde.
+
+Para completar evidência de transporte gerenciada, use
+`sparkforge_collect_schema_registry` para contrato de schema Glue e
+`sparkforge_collect_managed_flink` para configuração/telemetria temporal Managed
+Flink; ambas são coletas read-only, registram artefato local e preservam
+`unresolved` quando AWS ou métrica não responde.
+
 Para operações e composição multi-engine, use `sparkforge_analyze_streaming_ops`,
 `sparkforge_analyze_streaming_composition` e `sparkforge_collect_streaming_integrations`;
 quando houver progresso Structured Streaming e metadata Iceberg na mesma janela,

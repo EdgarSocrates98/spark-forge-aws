@@ -12,6 +12,33 @@ separam `kafka.topic`, `kafka.partition`, `kafka.consumer_group` e `kafka.lag`.
 limiares nem diagnóstico automático. Sem distribuição por partition, o Forge
 deve pedir o artefato faltante antes de falar em hot partition.
 
+Quando `replication_factor > isr_count` em `kafka.partition`, o judge pode emitir
+`SF-STREAMOBS-003`: replicação degradada observada naquela partição. A regra não
+afirma indisponibilidade, perda de dados, causa ou violação de
+`min.insync.replicas` sem esses campos.
+
+Para tendência, o dump pode declarar uma lista top-level `lag_observations`:
+
+```json
+{
+  "lag_observations": [
+    {"group": "orders", "topic": "events", "partition": 0, "lag": 4,
+     "observed_at": "2026-10-03T00:00:00Z"},
+    {"group": "orders", "topic": "events", "partition": 0, "lag": 9,
+     "observed_at": "2026-10-03T00:01:00Z"}
+  ]
+}
+```
+
+O analyzer emite um `kafka.lag` por observação válida e compõe um
+`kafka.lag.series` por `group/topic/partition`, com `observation_count`,
+`first_lag`, `last_lag`, `delta_lag`, span temporal, `monotonic_increase` e
+`observation_fact_ids`. Com pelo menos duas observações em ordem e crescimento
+monotônico, `SF-STREAMOBS-004` solicita baseline de backlog. Um snapshot legado
+em `consumer_groups[].offsets` continua sendo uma medida pontual: não gera
+série. Timestamp ausente, ingênuo, inválido ou série insuficiente permanece
+`kafka.unresolved`; nenhuma tendência é inferida pela ordem do arquivo.
+
 Um consumer group com lag observado não prova causa. É necessário correlacionar
 estado do grupo, assignment, producer rate, consumer rate, backlog temporal e
 progresso da engine. Kafka documenta offsets por partition e o comando de
