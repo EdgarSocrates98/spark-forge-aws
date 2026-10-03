@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "0f639b199f04d00de2d09b0bbbc9f25d895ad821d85a4e63b941c75c077ea610"
+      "sha256": "7d7b762184d017a77a0d9f6fa4fd39529f02aabdc9e2fc5aaeadff2fa201ceeb"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -286,7 +286,7 @@
     {
       "path": "knowledge/glue-streaming-rtm.md",
       "title": "glue-streaming-rtm",
-      "sha256": "c7dfb005438e3469a632e1abe699d2c66be912f75032a699ffccff4d1f64438b"
+      "sha256": "7b7cd3a2c071d4a6ec891d5c40c21449075307bbae431ea41db64e8d6e82b6a9"
     },
     {
       "path": "knowledge/streaming-reliability.md",

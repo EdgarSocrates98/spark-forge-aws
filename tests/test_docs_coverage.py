@@ -111,6 +111,20 @@ def test_streaming_glue_runtime_observation_coverage():
     assert "analyze glue-job-runs" in skill
 
 
+def test_glue_source_sink_artifacts_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/glue-streaming-rtm.md")
+    skill = _read("skills/review-glue-streaming/SKILL.md")
+    readme = _read("README.md")
+    sdd = _read("docs/sdd/STREAMING_GLUE_SOURCE_SINK_ARTIFACTS/design.md")
+    assert "glue.streaming.source" in coverage
+    assert "glue.streaming.sink" in coverage
+    assert "source_metrics_missing" in knowledge
+    assert "glue.streaming.source" in skill
+    assert "glue.streaming.sink" in readme
+    assert "STREAMING_GLUE_SOURCE_SINK_ARTIFACTS" in sdd
+
+
 def test_flink_source_sink_artifacts_coverage():
     coverage = _read("docs/streaming/prompt-coverage.md")
     knowledge = _read("knowledge/flink-streaming.md")

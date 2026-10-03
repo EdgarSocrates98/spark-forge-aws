@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_GLUE_SOURCE_SINK_ARTIFACTS/design.md
-  sha256: ""
+  sha256: "29de989529b2eda32a53280bd3d3f55a981d12f4844e853dadd54a5ec02af1aa"
 tasks:
   - id: T1
     files: [tests/test_facts_glue_streaming.py, sparkforge/facts/glue_streaming.py]

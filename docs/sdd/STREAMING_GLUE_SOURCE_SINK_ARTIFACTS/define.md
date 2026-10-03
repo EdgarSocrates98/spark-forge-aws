@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_GLUE_SOURCE_SINK_ARTIFACTS/explore.md
-  sha256: ""
+  sha256: "74b33c41709ec07a9861d82ac4c35fce9b9a8f7e4001c8a4a1b58f9dff2e5c97"
 hypothesis:
   claim: "Facts explícitos de source e sink tornam endpoints Glue Streaming auditáveis e nomeiam o blind spot quando o dump não contém métricas específicas."
   prediction: "Um dump com sources/sinks produzirá facts independentes com atributos escalares e medidas numéricas presentes; ausência ou formato inválido produzirá unresolved sem converter campos ausentes em zero."

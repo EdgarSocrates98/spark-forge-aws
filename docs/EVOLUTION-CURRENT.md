@@ -1,8 +1,8 @@
 # SparkForge AWS — mapa de evolução atual
 
-**Atualizado em:** 2026-10-02  
-**Base técnica de referência:** `6084a17`; fechamento documental corrente:
-`aa6e133`
+**Atualizado em:** 2026-10-03
+**Base técnica de referência:** `pending`; fechamento documental corrente:
+`pending`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
@@ -35,15 +35,15 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **65 features** após este fechamento:
-**63 `ship/done`**, uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e
+`sparkforge sdd status --repo .` encontrou **66 features** após este fechamento:
+**64 `ship/done`**, uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e
 uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
 | Frente | Features entregues | Estado documentado |
 |---|---|---|
 | Nova janela / Data Platform Control Plane | `PLATFORM_INTELLIGENCE_GRAPH`, `PLATFORM_INTELLIGENCE_EVALS`, `OPEN_LAKEHOUSE_CATALOG`, `DATA_OBSERVABILITY_SRE`, `ORCHESTRATION_CONTROL_PLANE`, `ANALYTICS_ENGINEERING_MICROSCOPE`, `DATA_PLATFORM_ECOSYSTEM`, além dos fechamentos de decisão e governança | Entregue; ativação produtiva do Decision Plane continua opt-in e `shadow` por padrão |
-| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_GLUE_CROSS_ARTIFACT`, `STREAMING_GLUE_RUNTIME_OBSERVATION`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; Flink agora preserva `flink.source`/`flink.sink` e nomeia ausência como unresolved; Glue Streaming compara configuração efetiva com Terraform por nome literal único nos eixos versão, RTM, linguagem e workers, e também com runs terminais nos eixos `glue_version`, `worker_type` e `worker_count`, distinguindo drift de unresolved; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; evidência live, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
+| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`, `STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_GLUE_CROSS_ARTIFACT`, `STREAMING_GLUE_RUNTIME_OBSERVATION`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; Flink preserva `flink.source`/`flink.sink` e nomeia ausência como unresolved; Glue Streaming agora preserva `glue.streaming.source`/`glue.streaming.sink` com atributos escalares e medidas observadas, além de comparar configuração efetiva com Terraform por nome literal único e runs terminais nos eixos de runtime, distinguindo drift de unresolved; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; evidência live, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
 | Forge Lab | `FORGE_LAB_PRODUCT` | Entregue e verificado offline; `FORGE_LAB_DIGITAL_TWIN` permanece como registro SDD separado em `plan/ready` |
 | Economia observada | `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`, `TOKEN_ESTIMATE_UNICO`, `AGENTIC_ECONOMY_COMPLETION` | Entregue; bytes, tokens do provider e custo continuam eixos independentes |
 | Governança | `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS`, `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` e famílias Lake Formation relacionadas | Entregue offline, fail-closed e com gates focados |
@@ -71,8 +71,9 @@ Ainda não são claims de capacidade de produção:
   e validação end-to-end;
 - atribuição de FinOps por transport/process/runtime/sink e eficácia runtime de
   IAM/KMS/VPC/resource policies;
-- Glue Streaming agora tem observação offline de runs terminais; collector live
-  adicional, source/sink e validação funcional continuam `N/A + motivo`.
+- Glue Streaming agora tem observação offline de runs terminais e facts
+  explícitos de source/sink; collector live adicional e validação funcional
+  continuam `N/A + motivo`.
 - Apache Flink agora tem facts explícitos de source/sink e unresolved para
   ausência/formato inválido; runtime observado, savepoints, métricas temporais,
   exactly-once e validação funcional continuam `N/A + motivo`.
@@ -128,7 +129,7 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Forge Lab | `valid: true`, 11 componentes, 20 cenários, 240 ações |
 | Coleta atual de testes | 14396 testes coletados em 2026-10-02; esta frente não executou a suíte completa |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
-| Docs de streaming | 147 passed em sync/render/agent/docs coverage antes desta wave; Flink source/sink acrescenta cobertura documental e 83 testes no lote de facts/goldens/kinds; observação Glue runtime acrescenta 9 testes de contrato e 5 goldens/docs/corpus; inclui sink SLO, progress observability depth, p95/freshness SLO, referências geradas e mirrors |
+| Docs de streaming | cobertura documental Glue source/sink adicionada nesta wave; Flink source/sink acrescentou 83 testes no lote de facts/goldens/kinds; observação Glue runtime acrescentou 9 testes de contrato e 5 goldens/docs/corpus; inclui sink SLO, progress observability depth, p95/freshness SLO, referências geradas e mirrors |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
 | Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; p95/freshness: 74 testes focados no lote combinado e 1 golden novo; snippet measure adicional: 4 passed |
 | Janela temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge e 793 gates de runtime-scope |

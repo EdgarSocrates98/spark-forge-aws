@@ -1,15 +1,35 @@
 # AWS Glue Streaming e Real-Time Mode
 
-Status: conhecimento versionado em 2026-10-02. O documento descreve claims da
+Status: conhecimento versionado em 2026-10-03. O documento descreve claims da
 documentação oficial; a análise do Forge só afirma o que o dump traz.
 
 ## Contrato observado
 
 Um dump offline pode declarar `glue_version`, `command`, `DefaultArguments` e
 um bloco `stream` com fonte, modo, operações e capacidade. O extrator preserva
-esses campos em `glue.streaming.*`; campo ausente vira `glue.streaming.unresolved`.
+esses campos em `glue.streaming.job` e pode preservar endpoints declarados em
+`glue.streaming.source`/`glue.streaming.sink`; campo ausente vira
+`glue.streaming.unresolved`.
 Ele não chama Glue, Kafka, CloudWatch nem infere partições a partir de worker
 type ou nome de serviço.
+
+### Source e sink explícitos
+
+O bloco `stream` pode declarar `sources`/`source` e `sinks`/`sink` como objeto
+ou lista. O analyzer preserva identidade, tipo, connector, topic/stream/table,
+formato, região, grupo, posição inicial, checkpoint e semântica de entrega
+somente quando esses valores escalares estão presentes. Medidas aceitas são
+fechadas por papel: partições/shards, lag/backlog, contadores de registros,
+taxa, duração de batch e, no sink, commits e falhas.
+
+`glue.streaming.source` e `glue.streaming.sink` são evidência do dump, não
+prova de que o endpoint está ativo. Ausência de bloco, forma inválida, registro
+inválido ou falta de medidas aparece em `glue.streaming.unresolved` com razão
+nomeada. Campos aninhados são descartados; valores ausentes nunca viram zero.
+Contadores não viram throughput sem timestamp e janela; `pending_commits` não
+prova atraso de commit. Os motivos de ausência mais comuns são
+`source_metrics_missing` e `sink_metrics_missing`. Nenhuma regra de saúde é
+disparada por endpoint isolado.
 
 ## RTM
 

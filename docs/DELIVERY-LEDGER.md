@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **65 features**:
+O status atual registra **66 features**:
 
-- **63** em `ship/done`;
+- **64** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -50,7 +50,7 @@ SDD_EVAL, SDD_MIGRATION, SDD_OPERATOR, SDD_OPERATOR_DURAVEL, SDD_SKILLS,
 SDD_SKILLS_REVISAO, SFN_HISTORY, SFN_TENTATIVA, SF_STUBS,
 SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_FLINK_SOURCE_SINK_ARTIFACTS,
-STREAMING_GLUE_RTM,
+STREAMING_GLUE_SOURCE_SINK_ARTIFACTS, STREAMING_GLUE_RTM,
 STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
 STREAMING_ICEBERG_TEMPORAL,
 STREAMING_SLO_EVALUATION,
@@ -103,6 +103,11 @@ do wheel e de uma CLI real do host.
   `glue.job_run` por nome literal nos eixos `glue_version`, `worker_type` e
   `worker_count`; `SF-GLUESTREAM-006` sinaliza drift e
   `SF-GLUESTREAM-007` preserva ausência de run, identidade ou campo.
+- Glue Streaming source/sink: `glue.streaming.source` e
+  `glue.streaming.sink` preservam endpoints declarados no dump, atributos
+  escalares e medidas numéricas observadas; `glue.streaming.unresolved`
+  nomeia ausência, shape inválido ou métrica ausente. Não há rule, collector
+  live ou conclusão de saúde nesta wave.
 - CDC: Debezium, AWS DMS, eventos, posições, transações, tombstones, schema
   history, seams snapshot/CDC e blind spots.
 - Schema Registry/data contracts: compatibilidade, evolução, diff estrutural,
@@ -193,6 +198,7 @@ do wheel e de uma CLI real do host.
 | `2b17519` | documentação transversal, skill/mirrors, knowledge, locks, ledgers e status da observação Glue Streaming |
 | `6084a17` | facts explícitos `flink.source`/`flink.sink`, unresolved nomeado, testes unitários e goldens Flink |
 | `aa6e133` | SDD explore/define/design/plan/build/ship, docs, skill/mirrors, knowledge, manifest offline, surface lock, status e cobertura do contrato Flink source/sink |
+| `pending` | SDD e contrato offline de `glue.streaming.source`/`glue.streaming.sink`, testes, goldens e documentação transversal |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

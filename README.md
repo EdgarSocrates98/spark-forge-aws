@@ -50,7 +50,7 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 59 extratores emitem 365 kinds distintos de fact, e só `collect *` toca a AWS. O
+Os 59 extratores emitem 367 kinds distintos de fact, e só `collect *` toca a AWS. O
 catálogo tem **218** regras de diagnóstico em YAML, **218 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
@@ -222,6 +222,32 @@ sparkforge judge --facts runtime.facts.json --show-skipped
 `source_fact_ids`. `SF-GLUESTREAM-006` aponta drift; `SF-GLUESTREAM-007`
 mantém ausência de run/identidade/campo como unresolved. Duração e DPU do run
 não são latência, saúde ou custo atribuído.
+
+### Glue Streaming: source e sink explícitos
+
+O mesmo analyzer também preserva `glue.streaming.source` e
+`glue.streaming.sink` quando `stream.sources`/`source` e `stream.sinks`/`sink`
+estão declarados como objeto ou lista. Identidade, connector, topic/stream/table
+e medidas de partições, shards, lag, registros, commits ou falhas são mantidos
+somente quando observados. Estruturas desconhecidas são descartadas e campos
+ausentes não viram zero; ausência ou forma inválida vira
+`glue.streaming.unresolved` com razão nomeada. Esses facts não provam execução
+live, throughput, saúde, exactly-once, capacidade ou validação funcional.
+Detalhes em [`knowledge/glue-streaming-rtm.md`](knowledge/glue-streaming-rtm.md)
+e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
+
+### Glue Streaming: source e sink explícitos
+
+O mesmo analyzer também preserva `glue.streaming.source` e
+`glue.streaming.sink` quando `stream.sources`/`source` e `stream.sinks`/`sink`
+estão declarados como objeto ou lista. Identidade, connector, topic/stream/table
+e medidas de partições, shards, lag, registros, commits ou falhas são mantidos
+somente quando observados. Estruturas desconhecidas são descartadas e campos
+ausentes não viram zero; ausência ou forma inválida vira
+`glue.streaming.unresolved` com razão nomeada. Esses facts não provam execução
+live, throughput, saúde, exactly-once, capacidade ou validação funcional.
+Detalhes em [`knowledge/glue-streaming-rtm.md`](knowledge/glue-streaming-rtm.md)
+e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:

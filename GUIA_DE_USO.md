@@ -93,6 +93,13 @@ Leia `glue.streaming.runtime_link`, `observed_run_ids`, `drifts` e
 `SF-GLUESTREAM-007` é evidência insuficiente. Duração e DPU continuam facts de
 execução, não latência de evento ou saúde do streaming.
 
+O mesmo dump pode declarar endpoints em `stream.sources`/`source` e
+`stream.sinks`/`sink`. O analyzer emite `glue.streaming.source` e
+`glue.streaming.sink` com atributos escalares e medidas presentes, e emite
+`glue.streaming.unresolved` quando o bloco está ausente, inválido ou não traz
+métrica. Não derive endpoint de `source_type`; não trate contador ou commit como
+throughput, saúde ou exactly-once sem janela e timestamp.
+
 Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
 de correlacionar com checkpoint, operator e transporte:
 

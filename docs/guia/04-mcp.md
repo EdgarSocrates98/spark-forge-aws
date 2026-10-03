@@ -231,6 +231,15 @@ O resultado acrescenta `glue.streaming.runtime_link` ou
 `source_fact_ids`. `SF-GLUESTREAM-006/007` não afirmam latência, saúde, custo
 ou corretude funcional.
 
+### Glue Streaming: source e sink
+
+`sparkforge_analyze_glue_streaming` continua sendo a única ferramenta MCP.
+Quando o dump traz `stream.sources`/`source` e `stream.sinks`/`sink`, o envelope
+preserva `glue.streaming.source` e `glue.streaming.sink` com atributos
+escalares e medidas presentes. Ausência ou shape inválido aparece como
+`glue.streaming.unresolved`; a ferramenta não infere endpoint, throughput,
+saúde ou semântica exactly-once.
+
 ### Apache Flink: source e sink
 
 Use a ferramenta existente `sparkforge_analyze_flink`; a evolução não adiciona

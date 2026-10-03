@@ -17,28 +17,33 @@ Use quando houver dump JSON/JSONL de AWS Glue Streaming ou Real-Time Mode e for 
 Analise somente dumps de definição ou configuração de AWS Glue Streaming já
 salvos. O analyzer é offline: não chama Glue, Kafka, Kinesis ou CloudWatch e
 não transforma campo ausente em zero. Separe Glue Streaming micro-batch de
-Real-Time Mode e declare o runtime observado.
+Real-Time Mode, declare o runtime observado e diferencie o job dos endpoints
+`glue.streaming.source`/`glue.streaming.sink`.
 
 ### Procedimento
 
 1. Rode `sparkforge analyze glue-streaming --path <dump.json-ou-diretorio>`.
 2. Preserve `glue.streaming.unresolved` e confirme o que falta antes de julgar.
 3. Rode `sparkforge judge --facts <facts.json> --show-skipped`.
-4. Para RTM, confira explicitamente Glue 6.0, Scala, Kafka, stateless, output
+4. Leia `glue.streaming.source` e `glue.streaming.sink` como observações do
+   dump. Confirme identidade, connector, medidas, unidade e timestamp quando
+   houver; ausência ou falta de medida permanece unresolved. Não derive
+   endpoint de `source_type`, worker ou nome de serviço.
+5. Para RTM, confira explicitamente Glue 6.0, Scala, Kafka, stateless, output
    Update, ausência de `foreachBatch`, ausência de auto scaling e capacidade de
    partições/task slots. Não derive uma medida da quantidade de workers.
-5. Se houver Terraform, rode também `sparkforge analyze terraform` e depois
+6. Se houver Terraform, rode também `sparkforge analyze terraform` e depois
    `sparkforge fuse --facts <glue-facts> --facts <terraform-facts>`. Leia
    `glue.streaming.terraform_link`, `source_fact_ids`, `drifts` e
    `unresolved_fields`; `SF-GLUESTREAM-004` aponta drift e
    `SF-GLUESTREAM-005` aponta identidade/campo não resolvido.
-6. Se houver histórico terminal, rode `sparkforge analyze glue-job-runs` e
+7. Se houver histórico terminal, rode `sparkforge analyze glue-job-runs` e
    componha-o com a definição via `sparkforge fuse`. Leia
    `glue.streaming.runtime_link`, `observed_run_ids`, `source_fact_ids`,
    `drifts` e `unresolved_fields`; `SF-GLUESTREAM-006` aponta drift de
    `glue_version`, `worker_type` ou `worker_count`, e `SF-GLUESTREAM-007`
    aponta ausência de identidade, run ou eixo comparável.
-7. Correlacione com código, métricas, checkpoint e validação funcional quando
+8. Correlacione com código, métricas, checkpoint e validação funcional quando
    esses artefatos existirem. Um dump de configuração ou um link com drift
    resolvido não prova comportamento produtivo nem causalidade.
 
@@ -47,6 +52,8 @@ Real-Time Mode e declare o runtime observado.
 - Não coletar ou alterar AWS, job, worker, broker, stream ou checkpoint.
 - Não declarar suporte ou incompatibilidade sem a versão/rule/fact observado.
 - Não afirmar latência, custo, throughput ou ganho sem baseline comparável.
+- Não tratar `glue.streaming.source`/`sink` como prova de saúde, exactly-once,
+  capacidade ou execução live; contadores precisam de janela e timestamp.
 - Não declarar equivalência funcional: valide contagem, schema, chave e agregados.
 
 ### Entrega

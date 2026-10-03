@@ -1,6 +1,6 @@
 # Cobertura auditada de `prompt_evo_streaming.md`
 
-Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
+Data da auditoria: 2026-10-03. Esta matriz foi escrita depois de executar
 `sparkforge sdd status`, `sparkforge sdd check` nas features de streaming e
 `sparkforge code sync`; ela mede artefatos existentes, não menções em Markdown.
 
@@ -24,7 +24,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline | CloudWatch temporal live, reshard history, KCL/EFO e série de longa duração |
 | Apache Flink | `version-aware` parcial | `facts/flink.py` emite `flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`, `flink.state` e `flink.unresolved`; `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures/goldens, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
 | Managed Service for Apache Flink | `version-aware` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures, mesmo analyzer e matriz com `UNRESOLVED` explícito | matriz AWS por região/release, IAM/VPC/CloudWatch temporal e validação funcional |
-| Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py`, `facts/streaming_glue_cross.py`, `facts/streaming_glue_runtime.py`, `glue.job_run`, `fuse`, regras `SF-GLUESTREAM`, fixtures match/drift/unresolved de definição→Terraform e definição→run, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | collector live adicional, source/sink e validação funcional |
+| Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py` emite `glue.streaming.job`, `glue.streaming.source`, `glue.streaming.sink`, runtime, analyzed e unresolved; `facts/streaming_glue_cross.py`, `facts/streaming_glue_runtime.py`, `glue.job_run`, `fuse`, regras `SF-GLUESTREAM`, fixtures match/drift/unresolved de definição→Terraform e definição→run, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | collector live adicional e validação funcional; source/sink agora têm contrato offline explícito, sem prova temporal/live |
 | Glue Real-Time Mode | `version-aware` parcial | namespace `glue.streaming.*`, restrições/capacidade observadas, rules, unresolved e matriz Glue 6.0 com constraints | collector live, cross-artifact e validação funcional |
 | CDC | `diagnosable` parcial | `facts/cdc.py`, regras `SF-CDC`, fixtures de evento/connector/seam/unresolved, CLI/MCP e `review-cdc-replication` | collector/replay temporal, cross-artifact com consumidor e validação funcional |
 | AWS DMS | `diagnosable` parcial | namespace `dms.*`, `collect streaming-integrations`, task/endpoint/mapping/stats/unresolved, rules e fixtures | matriz de versões, logs temporais e recovery funcional |
@@ -104,6 +104,13 @@ O inventário de commits, features e provas compartilhadas está em
   connector, delivery semantics e medidas numéricas de `sources`/`source` e
   `sinks`/`sink`; ausência ou formato inválido vira `flink.unresolved` com
   razão nomeada. Feature SDD: `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`.
+- **Sources e sinks Glue Streaming explícitos:** `glue_streaming.py` preserva
+  endpoints declarados em `stream.sources`/`source` e `stream.sinks`/`sink` como
+  `glue.streaming.source`/`glue.streaming.sink`, filtra atributos escalares e
+  medidas observadas e nomeia ausência, shape inválido ou falta de métrica em
+  `glue.streaming.unresolved`. Não cria regra, surface nova, collector live ou
+  prova de throughput/saúde. Feature SDD:
+  `STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`.
 - `STREAMING_CDC`: facts de Debezium, DMS, eventos, seams e blind spots,
   regras, fixtures, CLI/MCP, skill, routing e ship SDD.
 - `STREAMING_GLUE_RTM`: contrato offline de Glue Streaming e Real-Time Mode,
@@ -170,7 +177,7 @@ O inventário de commits, features e provas compartilhadas está em
   causa e benchmark continuam fora.
 
 Todos os itens acima passaram os gates globais de skills, referências, surface,
-números correntes e bundle offline em 2026-10-02. Isso fecha contratos offline e
+números correntes e bundle offline em 2026-10-03. Isso fecha contratos offline e
 documentação; não converte lacunas de execução, replay, benchmark ou endpoint
 live em capacidade comprovada.
 
@@ -179,7 +186,7 @@ live em capacidade comprovada.
 | Wave | Escopo | Critério de fechamento |
 |---|---|---|
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, source/sink explícitos, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
-| E | Glue Streaming + RTM | collector live adicional, source/sink, validação funcional e capability evidence; observação offline definição→run entregue com `SF-GLUESTREAM-006/007`; cross-artifact efetivo→Terraform entregue com `SF-GLUESTREAM-004/005` |
+| E | Glue Streaming + RTM | **source/sink offline explícitos entregues** com `glue.streaming.source`/`sink` e unresolved; collector live adicional, validação funcional e capability evidence permanecem lacunas; observação offline definição→run entregue com `SF-GLUESTREAM-006/007`; cross-artifact efetivo→Terraform entregue com `SF-GLUESTREAM-004/005` |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, SLO sobre progress/sink/Kafka/Kinesis com janela coberta, p95/freshness offline, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, endpoint live, latência end-to-end implícita, correlação de longo período e atribuição continuam lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |

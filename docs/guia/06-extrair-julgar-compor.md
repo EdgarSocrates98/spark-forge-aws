@@ -109,6 +109,16 @@ O vínculo literal `glue.streaming.runtime_link` compara `glue_version`,
 Ausência de run ou campo não prova consistência; duração e DPU não são
 latência de evento, custo atribuído ou saúde do streaming.
 
+## Glue Streaming: endpoints do artefato
+
+O analyzer do job também lê `stream.sources`/`source` e `stream.sinks`/`sink`.
+Ele emite `glue.streaming.source` e `glue.streaming.sink` somente com
+identidade, connector, atributos escalares e medidas presentes no dump. O
+fact `glue.streaming.unresolved` nomeia endpoint ausente, shape inválido ou
+métrica não coletada. A extração não consulta Glue e não deriva endpoint de
+`source_type`; contadores, lag e commits exigem timestamp/janela para qualquer
+interpretação temporal.
+
 ## Apache Flink: endpoints explícitos
 
 O extrator offline também lê `sources`/`source` e `sinks`/`sink` no dump
@@ -198,7 +208,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 59 extratores emitem 365 kinds distintos de fact (recontado em 2026-10-03),
+Os 59 extratores emitem 367 kinds distintos de fact (recontado em 2026-10-03),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -352,7 +362,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 365 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 367 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

@@ -331,6 +331,21 @@ O link literal compara `glue_version`, `worker_type` e `worker_count`, mantém
 `SF-GLUESTREAM-007`. Sem run ou eixo comparável, a saída é unresolved; não
 interprete `execution_time_s` ou DPU como latência de evento.
 
+### Endpoints Glue Streaming
+
+`analyze glue-streaming` preserva endpoints declarados no bloco `stream` sem
+novo comando:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+```
+
+Leia `glue.streaming.source` e `glue.streaming.sink` para identidade,
+connector e medidas numéricas observadas. `glue.streaming.unresolved` nomeia
+ausência, formato inválido ou falta de métrica; nenhum campo é preenchido com
+zero. Source/sink do dump não provam execução live, throughput, saúde,
+exactly-once ou capacidade.
+
 ### Analisar endpoints Apache Flink
 
 `analyze flink` mantém source e sink como facts independentes quando o dump os

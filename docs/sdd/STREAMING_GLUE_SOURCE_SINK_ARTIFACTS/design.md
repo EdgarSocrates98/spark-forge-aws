@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_GLUE_SOURCE_SINK_ARTIFACTS/define.md
-  sha256: ""
+  sha256: "8394911db5ccb3a8b239b1434e4fafb07c110eb1def792bedd5f01557d213890"
 files:
   - {path: tests/test_facts_glue_streaming.py, action: modify, reason: "Cobrir objeto/lista, aliases, campos escalares, ausência e formato inválido."}
   - {path: sparkforge/facts/glue_streaming.py, action: modify, reason: "Emitir facts explícitos de source/sink e unresolved nomeado."}
