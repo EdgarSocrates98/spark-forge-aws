@@ -277,7 +277,7 @@ do wheel e de uma CLI real do host.
 | `8019b0f` | build/ship SDD, contagens e documentação transversal do contrato Flink temporal |
 | `912eeb9` | restamp final do ship Flink temporal; base corrente de `STATUS.md` e `EVOLUTION-CURRENT.md` |
 | `09fc1d3` | pipeline end-to-end declarado: composição exata cross-engine, regra de unresolved, fixtures, docs, mirrors, locks e SDD |
-| `PENDENTE` | fechamento SDD do Forge Lab Digital Twin: build/ship, contrato topológico offline e documentação de limites; substituir pelo hash do commit documental |
+| `24bee8b` | fechamento SDD do Forge Lab Digital Twin: build/ship, contrato topológico offline e documentação de limites |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
