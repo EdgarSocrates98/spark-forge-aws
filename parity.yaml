@@ -1409,7 +1409,7 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
-  - name: collect Managed Flink application configuration read-only
+  - name: collect Managed Flink configuration and bounded temporal metrics read-only
     tools: [sparkforge_collect_managed_flink]
     cli: [collect managed-flink]
     knowledge: [knowledge/flink-streaming.md]

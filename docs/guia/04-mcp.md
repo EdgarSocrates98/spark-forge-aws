@@ -487,11 +487,16 @@ criação, registro, atualização ou exclusão é oferecida.
 
 `sparkforge_collect_managed_flink` chama somente
 `kinesisanalyticsv2.DescribeApplication` com `IncludeAdditionalDetails=false`.
-Recebe `repo`, `application_name`, `region_name` opcional e `now`; grava artifact
-local `managed_flink_application`, manifesto, SHA e comando de recoleta. O
-retorno normaliza runtime, status, versão, checkpoint, paralelismo, VPC e
-logging. Métricas temporais, job plan, código e conectores efetivos não são
-inventados: saem como unresolved e exigem evidência complementar.
+Recebe `repo`, `application_name`, `region_name` opcional, `metrics_start`,
+`metrics_end`, `metrics_period` e `now`; grava artifact local
+`managed_flink_application`, manifesto, SHA e comando de recoleta. O retorno
+normaliza runtime, status, versão, checkpoint, paralelismo, VPC e logging.
+Quando a janela temporal é declarada, o mesmo handler chama somente
+`cloudwatch.get_metric_data` e consulta cinco métricas de aplicação no namespace
+`AWS/KinesisAnalytics`, preservando observações, `observed_at`, unidade,
+estatística e missing. Métricas ausentes, status parcial e shape inválido são
+`unresolved`; job plan, código, conectores efetivos, Task/Operator/Parallelism,
+replay, benchmark, SLO e causalidade continuam fora.
 
 ### Métricas temporais Kinesis
 

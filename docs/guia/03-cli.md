@@ -795,8 +795,23 @@ sparkforge analyze flink \
 ```
 
 O artifact preserva runtime, status, versão, checkpoint, paralelismo, VPC e
-logging observados. Métricas temporais e conectores efetivos permanecem
-`unresolved` e exigem CloudWatch/job plan ou artefato próprio.
+logging observados. Para uma janela bounded de CloudWatch, use:
+
+```bash
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+O collector consulta cinco métricas de aplicação do namespace
+`AWS/KinesisAnalytics`, preserva `observed_at`, unidade, estatística, respostas
+e `metrics_missing`, e alimenta `managed_flink.metric`. As pontas precisam ser
+timezone-aware; período é múltiplo de 60 entre 60 e 86400. Ausência, status
+parcial e shape inválido são `unresolved`, nunca zero. Task/Operator/Parallelism,
+custom metrics, conectores, job plan, replay, benchmark, SLO, causalidade,
+custo e saúde continuam fora do contrato.
 
 ## Próximos passos
 

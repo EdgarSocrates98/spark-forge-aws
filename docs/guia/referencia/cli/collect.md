@@ -326,6 +326,9 @@ sparkforge collect managed-flink --help
 | `--repo` | sim | texto |  |  |  |
 | `--application-name` | sim | texto |  |  | Nome da aplicação Managed Flink. |
 | `--region` | não | texto |  | `` | Região AWS explícita. |
+| `--metrics-start` | não | texto |  | `` | Início ISO 8601 da janela CloudWatch Managed Flink. |
+| `--metrics-end` | não | texto |  | `` | Fim ISO 8601 da janela CloudWatch Managed Flink; exige --metrics-start. |
+| `--metrics-period` | não | texto |  | `60` | Período CloudWatch em segundos (60..86400, múltiplo de 60). |
 | `--now` | sim | texto |  |  | Timestamp ISO 8601. |
 
 ### Tool MCP equivalente

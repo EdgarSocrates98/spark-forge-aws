@@ -291,6 +291,7 @@
     },
     "https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html": {
       "docs": [
+        "knowledge/flink-streaming.md",
         "knowledge/transport-diagnostics.md"
       ],
       "pinned": false,
@@ -2425,9 +2426,19 @@
       "retrieved": [],
       "rules": []
     },
+    "https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions-viewing.html": {
+      "docs": [
+        "knowledge/flink-streaming.md",
+        "knowledge/streaming/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions.html": {
       "docs": [
-        "knowledge/flink-streaming.md"
+        "knowledge/flink-streaming.md",
+        "knowledge/streaming/runtime-matrix.md"
       ],
       "pinned": false,
       "retrieved": [],

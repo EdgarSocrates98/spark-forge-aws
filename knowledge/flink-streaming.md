@@ -90,9 +90,41 @@ Esse collector é somente leitura na AWS e grava apenas o artifact/manifesto
 local. `DescribeApplication` não é evidência de métricas temporais, job plan,
 código executado, conectores efetivos, IAM efetivo ou latência; o artifact
 publica `managed_flink_metrics_not_observed` e
-`managed_flink_connectors_not_observed` como unresolved. Job plan exige uma
-coleta explicitamente autorizada de detalhes adicionais; métricas exigem
-CloudWatch/artefato temporal próprio.
+`managed_flink_connectors_not_observed` como unresolved quando a janela não é
+declarada. Job plan exige uma coleta explicitamente autorizada de detalhes
+adicionais; métricas exigem CloudWatch/artefato temporal próprio.
+
+### Janela CloudWatch read-only
+
+Para medir uma janela bounded, acrescente `--metrics-start <ISO8601>` e
+`--metrics-end <ISO8601>`; `--metrics-period <segundos>` é opcional, padrão 60,
+com múltiplo de 60 entre 60 e 86400:
+
+```bash
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+sparkforge analyze flink \
+  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1__metrics_*.json \
+  --artifact managed_flink
+```
+
+Com `cloudwatch.get_metric_data`, o collector consulta exatamente cinco
+métricas de aplicação no namespace `AWS/KinesisAnalytics`, todas com dimensão
+`Application`: `cpuUtilization` (`Average`, `Percent`),
+`heapMemoryUtilization` (`Average`, `Percent`), `lastCheckpointDuration`
+(`Maximum`, `Milliseconds`), `lastCheckpointSize` (`Maximum`, `Bytes`) e
+`numberOfFailedCheckpoints` (`Maximum`, `Count`). O artifact preserva queries,
+respostas brutas, observações com `observed_at`, status e `metrics_missing`;
+`managed_flink.metric` facts carregam `name`, `stat`, `unit` e timestamp.
+
+Paginação tem teto; janela sem timezone, período inválido, resultado ausente,
+shape inconsistente, status não completo ou valor inválido viram
+`managed_flink.unresolved`. Ausência nunca vira zero. Task/Operator/Parallelism,
+custom metrics, dimensões de connector, job plan, replay, benchmark, SLO,
+causalidade, custo e estado live continuam fora deste collector.
 
 ## Fontes
 
@@ -101,5 +133,7 @@ CloudWatch/artefato temporal próprio.
 * https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/metrics/
 * https://docs.aws.amazon.com/managed-flink/latest/java/troubleshooting-checkpoints.html
 * https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions.html
+* https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions-viewing.html
 * https://docs.aws.amazon.com/managed-flink/latest/java/performance-monitoring.html
 * https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_DescribeApplication.html
+* https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html

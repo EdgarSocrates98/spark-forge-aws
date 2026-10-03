@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **69 features**:
+O status atual registra **70 features**:
 
-- **67** em `ship/done`;
+- **68** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -54,6 +54,7 @@ STREAMING_GLUE_SOURCE_SINK_ARTIFACTS, STREAMING_GLUE_RTM,
 STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
 STREAMING_ICEBERG_TEMPORAL,
 STREAMING_KINESIS_TEMPORAL_METRICS,
+STREAMING_MANAGED_FLINK_TEMPORAL_METRICS,
 STREAMING_SLO_EVALUATION,
 STREAMING_SLO_TRANSPORT_EVALUATION,
 STREAMING_SINK_SLO_EVALUATION,
@@ -124,6 +125,13 @@ do wheel e de uma CLI real do host.
   de `DescribeApplication`, artifact versionado, cache offline-first, manifesto
   SHA-256, CLI/MCP, análise `managed_flink.*` e unresolved para métricas,
   conectores, job plan, IAM efetivo e validação funcional.
+  `STREAMING_MANAGED_FLINK_TEMPORAL_METRICS` amplia o mesmo collector com janela
+  CloudWatch bounded para cinco métricas de aplicação (`cpuUtilization`,
+  `heapMemoryUtilization`, `lastCheckpointDuration`, `lastCheckpointSize` e
+  `numberOfFailedCheckpoints`), facts `managed_flink.metric`, timestamps,
+  unidade/estatística, missing/unresolved e cache temporal offline. Dimensões
+  Task/Operator/Parallelism, job plan, conectores, IAM efetivo, série longa e
+  validação funcional continuam fora.
 - Checkpoints, Kafka Connect, Kafka Streams e OpenLineage como facts separados;
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
 - Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
@@ -224,6 +232,12 @@ do wheel e de uma CLI real do host.
 | `0bbf17d` | collector Kinesis/CloudWatch stream-level, janela, paginação, normalização e testes T1 |
 | `226d8f6` | facts `kinesis.metric` temporais e handoff para analyzer |
 | `f23956d` | propagação CLI/MCP, schema e paridade do collector existente |
+| `48a85c9` | SDD define/design/plan da coleta temporal bounded Managed Flink |
+| `119cb0a` | ajuste do SDD para o handoff temporal ao analyzer |
+| `fd65960` | collector Managed Flink com queries CloudWatch temporais bounded |
+| `14e6bec` | facts `managed_flink.metric` e unresolved temporal |
+| `a151d3f` | propagação temporal por adapters CLI/MCP, parity e manifesto |
+| `b2ac759` | prova de cache temporal offline e restamp do SDD |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -233,7 +247,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14487** coletados em 2026-10-03; lote Kinesis/transport/docs/reachability/fixtures: **964 passed** agregados após corrigir o exercitador de snippet; suíte completa não executada |
+| Coleta atual de testes | **14492** coletados em 2026-10-03; lote Kinesis/transport/docs/reachability/fixtures: **964 passed** agregados após corrigir o exercitador de snippet; suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes |
@@ -250,10 +264,11 @@ AWS ou eficácia de uma recomendação em produção.
 1. Execução/replay/benchmark funcional Spark e Flink dependem de workload e runtime; Glue Streaming agora tem observação offline de runs, mas não collector live adicional.
 2. Kafka Connect REST, Kafka Streams runtime, OpenLineage live e métricas
    temporais de broker/grupo exigem endpoint, credencial e janela.
-3. A janela temporal curta offline, a coleta Kinesis stream-level bounded e as
-   avaliações SLO sobre progress, sink e transporte estão entregues; enhanced/
-   shard-level, reshard, KCL/EFO, FinOps atribuído, latência end-to-end sem
-   medida explícita e SLO de longo período ainda exigem coleta pareada live.
+3. A janela temporal curta offline, as coletas Kinesis stream-level e Managed
+   Flink application-level bounded e as avaliações SLO sobre progress, sink e
+   transporte estão entregues; enhanced/shard-level, dimensões detalhadas do
+   Flink, reshard, KCL/EFO, FinOps atribuído, latência end-to-end sem medida
+   explícita e SLO de longo período ainda exigem coleta pareada live.
 4. IAM/KMS/VPC/resource policies e snapshots regionais/managed runtime precisam
    do artefato correspondente.
 5. `FORGE_LAB_DIGITAL_TWIN` não é ship enquanto não houver build/ship próprio.

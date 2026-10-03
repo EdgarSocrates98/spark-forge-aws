@@ -90,6 +90,7 @@
     "Kafka",
     "Amazon MSK",
     "Kinesis Data Streams",
+    "Managed Service for Apache Flink",
     "CDC",
     "Debezium",
     "AWS DMS",

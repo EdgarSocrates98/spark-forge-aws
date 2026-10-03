@@ -15,7 +15,7 @@ Data da revalidação: 2026-10-02.
 | Apache Kafka | upstream | `VERIFIED` | 4.3.1 é release suportada; 4.2.2 e 4.1.2 também estão na lista suportada | Compatibilidade de clientes, brokers e conectores depende da combinação efetiva |
 | Amazon MSK | serviço gerenciado | `UNRESOLVED` | A AWS mantém tabela própria de versões suportadas e datas de fim de suporte | Este checkout não contém snapshot regional/broker-type da tabela; coletar `describe-cluster` e conferir a página atual antes de aplicar guard |
 | Apache Flink | upstream | `VERIFIED` | 2.3.0 é a release estável mais recente | Conector, Java, state backend e deployment precisam ser observados no job |
-| Managed Service for Apache Flink | serviço gerenciado | `UNRESOLVED` | Não derivar release do Flink upstream | A aplicação e a região precisam fornecer runtime, configuração, IAM/VPC e métricas; não há matriz AWS local suficiente |
+| Managed Service for Apache Flink | serviço gerenciado | `UNRESOLVED` | Não derivar release do Flink upstream | A aplicação e a região precisam fornecer runtime, configuração, IAM/VPC e métricas; collector bounded cobre cinco métricas de aplicação quando `metrics_start`/`metrics_end` são declarados; release regional, dimensões detalhadas e validação funcional continuam unresolved |
 | AWS Glue Streaming | serviço gerenciado | `VERIFIED` | Glue 6.0 documenta Structured Streaming e RTM | Workers, partições e runtime efetivo continuam dependentes do job/run |
 | AWS Glue Real-Time Mode | capability gerenciada | `VERIFIED` com escopo | Glue 6.0; Kafka; Scala; stateless; output `Update`; sem auto scaling | Kinesis e operações stateful não devem ser presumidos como compatíveis; capacidade exige partições e task slots observados |
 | Kinesis Data Streams | serviço | `N/A + motivo` | Não possui release de engine equivalente; é serviço regional | Capacidade, resharding, KCL/EFO e série longa exigem coleta temporal; o collector SparkForge cobre somente cinco métricas stream-level bounded do CloudWatch quando a janela é declarada |
@@ -42,4 +42,6 @@ Data da revalidação: 2026-10-02.
 - https://docs.aws.amazon.com/en_en/msk/latest/developerguide/version-support.html
 - https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html
 - https://docs.aws.amazon.com/managed-flink/latest/java/what-is.html
+- https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions.html
+- https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions-viewing.html
 - https://iceberg.apache.org/docs/latest/spark-structured-streaming/

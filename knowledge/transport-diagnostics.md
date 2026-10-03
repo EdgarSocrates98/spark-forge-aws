@@ -57,6 +57,24 @@ resultado ausente e shape inválido ficam `unresolved`. A coleta não habilita
 enhanced shard-level metrics, não reduz ausência a zero e não cria threshold,
 causa, SLO ou economia.
 
+### Managed Flink: janela CloudWatch read-only
+
+`collect managed-flink --application-name <nome>` aceita as mesmas pontas
+`--metrics-start <ISO8601>` e `--metrics-end <ISO8601>`, além de
+`--metrics-period <segundos>`. A janela chama `cloudwatch.get_metric_data` no
+namespace `AWS/KinesisAnalytics`, com dimensão `Application` igual ao nome da
+aplicação e `ScanBy=TimestampAscending`. O contrato consulta cinco métricas de
+aplicação: `cpuUtilization`, `heapMemoryUtilization`, `lastCheckpointDuration`,
+`lastCheckpointSize` e `numberOfFailedCheckpoints`, com estatística/unidade
+declaradas no artifact.
+
+O artifact composto preserva `managed_flink.metrics.observations`, definições,
+respostas raw, timestamps timezone-aware quando fornecidos pelo SDK,
+`metrics_missing` e `unresolved`. Ausência não é zero; o collector não julga
+threshold, SLO, causa, custo ou saúde. Métricas Task/Operator/Parallelism,
+custom/connector metrics, job plan, replay e benchmark exigem evidência
+separada.
+
 ## SLO observado de transporte
 
 `sparkforge analyze streaming-composition --mode slo` pode avaliar um SLO

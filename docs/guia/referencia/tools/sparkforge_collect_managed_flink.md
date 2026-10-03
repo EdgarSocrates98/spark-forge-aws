@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Coleta a descrição de uma aplicação do Managed Service for Apache Flink via kinesisanalyticsv2.DescribeApplication, sempre com IncludeAdditionalDetails=false. Registra runtime, status, versão, checkpoint, paralelismo, VPC, logging e configuração observados; job plan, código, métricas temporais e conectores ficam unresolved e nunca são inferidos. Somente leitura AWS; grava apenas artifact/manifesto local e usa cache offline-first.
+Coleta a descrição de uma aplicação do Managed Service for Apache Flink via kinesisanalyticsv2.DescribeApplication, sempre com IncludeAdditionalDetails=false. Registra runtime, status, versão, checkpoint, paralelismo, VPC, logging e configuração observados; com janela explícita, consulta cinco métricas de aplicação em AWS/KinesisAnalytics. Job plan, código e conectores ficam unresolved e nunca são inferidos. Somente leitura AWS; grava apenas artifact/manifesto local e usa cache offline-first.
 
 ## Parâmetros
 
@@ -15,6 +15,9 @@ Coleta a descrição de uma aplicação do Managed Service for Apache Flink via 
 | `application_name` | string | sim |  |
 | `now` | string | sim | Timestamp ISO 8601. |
 | `repo` | string | sim |  |
+| `metrics_end` | string | não | Fim ISO 8601 da janela CloudWatch. |
+| `metrics_period` | integer | não |  |
+| `metrics_start` | string | não | Início ISO 8601 da janela CloudWatch. |
 | `region_name` | string | não |  |
 
 ## Na CLI
@@ -23,7 +26,7 @@ Coleta a descrição de uma aplicação do Managed Service for Apache Flink via 
 
 ## Capacidade
 
-collect Managed Flink application configuration read-only
+collect Managed Flink configuration and bounded temporal metrics read-only
 
 ## Anotações MCP
 
