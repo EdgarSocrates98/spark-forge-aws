@@ -192,6 +192,7 @@ do wheel e de uma CLI real do host.
 | `79a38db` | facts, fuse, regras, fixtures, goldens e SDD da observação Glue Streaming→runs |
 | `2b17519` | documentação transversal, skill/mirrors, knowledge, locks, ledgers e status da observação Glue Streaming |
 | `6084a17` | facts explícitos `flink.source`/`flink.sink`, unresolved nomeado, testes unitários e goldens Flink |
+| `aa6e133` | SDD explore/define/design/plan/build/ship, docs, skill/mirrors, knowledge, manifest offline, surface lock, status e cobertura do contrato Flink source/sink |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
