@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **68 features**:
+O status atual registra **69 features**:
 
-- **66** em `ship/done`;
+- **67** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -53,6 +53,7 @@ STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_FLINK_SOURCE_SINK_ARTIFACTS,
 STREAMING_GLUE_SOURCE_SINK_ARTIFACTS, STREAMING_GLUE_RTM,
 STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
 STREAMING_ICEBERG_TEMPORAL,
+STREAMING_KINESIS_TEMPORAL_METRICS,
 STREAMING_SLO_EVALUATION,
 STREAMING_SLO_TRANSPORT_EVALUATION,
 STREAMING_SINK_SLO_EVALUATION,
@@ -95,7 +96,9 @@ do wheel e de uma CLI real do host.
 - Structured Streaming: source/progress, watermark, state, sink, checkpoint e
   review evidence-first.
 - Transporte: Kafka, MSK, Kinesis, lag, partições, shards, métricas e identidade
-  declarada para composição.
+  declarada para composição. Kinesis também tem coleta temporal bounded via
+  CloudWatch no collector existente, com cinco métricas stream-level, fatos
+  `kinesis.metric`, janela explícita e `unresolved` fail-closed.
 - Flink e Managed Flink, Glue Streaming e Glue Real-Time Mode, com matrizes de
   runtime e limites managed/upstream.
 - Glue Streaming efetivo versus Terraform: `fuse` compara por nome literal único
@@ -217,6 +220,10 @@ do wheel e de uma CLI real do host.
 | `9db68e8` | portas CLI/MCP, parity, manifest e surface do coletor Managed Flink |
 | `9581720` | prova de handoff do artifact Managed Flink para o analyzer e preservação da identidade observada |
 | `302969a` | documentação transversal, SDD ship, referências geradas, locks, contagens e limites do coletor Managed Flink |
+| `8769dc7` | SDD explore/define/design/plan da coleta temporal bounded de métricas Kinesis |
+| `0bbf17d` | collector Kinesis/CloudWatch stream-level, janela, paginação, normalização e testes T1 |
+| `226d8f6` | facts `kinesis.metric` temporais e handoff para analyzer |
+| `f23956d` | propagação CLI/MCP, schema e paridade do collector existente |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -226,11 +233,11 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14483** coletados em 2026-10-03; lote focado do coletor/docs/gates: **60 passed** (inclui 5 testes Managed Flink); suíte completa não executada |
+| Coleta atual de testes | **14487** coletados em 2026-10-03; lote Kinesis/transport/docs/reachability/fixtures: **964 passed** agregados após corrigir o exercitador de snippet; suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes |
-| Evidência temporal | 980 testes focados; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
+| Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; snippet measure corrigido e verde; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |
 
@@ -243,10 +250,10 @@ AWS ou eficácia de uma recomendação em produção.
 1. Execução/replay/benchmark funcional Spark e Flink dependem de workload e runtime; Glue Streaming agora tem observação offline de runs, mas não collector live adicional.
 2. Kafka Connect REST, Kafka Streams runtime, OpenLineage live e métricas
    temporais de broker/grupo exigem endpoint, credencial e janela.
-3. A janela temporal curta offline e as avaliações SLO sobre progress, sink e
-   transporte estão entregues; CloudWatch temporal, reshard, KCL/EFO, FinOps
-   atribuído, latência end-to-end sem medida explícita e SLO de longo período
-   ainda exigem coleta pareada live.
+3. A janela temporal curta offline, a coleta Kinesis stream-level bounded e as
+   avaliações SLO sobre progress, sink e transporte estão entregues; enhanced/
+   shard-level, reshard, KCL/EFO, FinOps atribuído, latência end-to-end sem
+   medida explícita e SLO de longo período ainda exigem coleta pareada live.
 4. IAM/KMS/VPC/resource policies e snapshots regionais/managed runtime precisam
    do artefato correspondente.
 5. `FORGE_LAB_DIGITAL_TWIN` não é ship enquanto não houver build/ship próprio.

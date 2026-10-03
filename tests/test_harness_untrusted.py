@@ -98,6 +98,8 @@ def _derivados_de_facts(pool):
         runtime_detect,
         streaming_composition,
         streaming_iceberg_temporal,
+        streaming_glue_cross,
+        streaming_glue_runtime,
         streaming_slo,
         streaming_temporal,
         timeout_diagnosis,
@@ -119,6 +121,11 @@ def _derivados_de_facts(pool):
     yield "streaming_iceberg_temporal", streaming_iceberg_temporal.build_streaming_iceberg_temporal(
         pool, table="<unresolved>", query_name="<unresolved>", max_skew_seconds=0
     )
+    # Glue cross-artifact e runtime observation derivam somente de facts. A
+    # lista explícita mantém a medida fail-closed quando um novo derivador
+    # declara EMITTED_KINDS mas não possui extract_*_path/tree.
+    yield "streaming_glue_cross", streaming_glue_cross.build_streaming_glue_cross_artifact(pool)
+    yield "streaming_glue_runtime", streaming_glue_runtime.build_streaming_glue_runtime_observation(pool)
     yield "streaming_slo", streaming_slo.build_streaming_slo(
         pool, slo_name="<unresolved>", query_name="<unresolved>"
     )

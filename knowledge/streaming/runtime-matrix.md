@@ -18,7 +18,7 @@ Data da revalidação: 2026-10-02.
 | Managed Service for Apache Flink | serviço gerenciado | `UNRESOLVED` | Não derivar release do Flink upstream | A aplicação e a região precisam fornecer runtime, configuração, IAM/VPC e métricas; não há matriz AWS local suficiente |
 | AWS Glue Streaming | serviço gerenciado | `VERIFIED` | Glue 6.0 documenta Structured Streaming e RTM | Workers, partições e runtime efetivo continuam dependentes do job/run |
 | AWS Glue Real-Time Mode | capability gerenciada | `VERIFIED` com escopo | Glue 6.0; Kafka; Scala; stateless; output `Update`; sem auto scaling | Kinesis e operações stateful não devem ser presumidos como compatíveis; capacidade exige partições e task slots observados |
-| Kinesis Data Streams | serviço | `N/A + motivo` | Não possui release de engine equivalente; é serviço regional | Capacidade, resharding, iterator age e throughput exigem coleta temporal |
+| Kinesis Data Streams | serviço | `N/A + motivo` | Não possui release de engine equivalente; é serviço regional | Capacidade, resharding, KCL/EFO e série longa exigem coleta temporal; o collector SparkForge cobre somente cinco métricas stream-level bounded do CloudWatch quando a janela é declarada |
 | Apache Iceberg | formato/sink | `N/A + motivo` | Compatibilidade é por engine, catálogo e versão do formato | A combinação Spark/Glue/Iceberg deve vir do runtime e metadata observados |
 
 ## Regras de leitura

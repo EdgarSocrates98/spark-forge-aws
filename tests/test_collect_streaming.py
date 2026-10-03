@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -294,3 +295,20 @@ def test_cli_and_mcp_streaming_temporal_collection_match(monkeypatch, tmp_path, 
     assert cli_payload["kind"] == mcp_payload["kind"] == "streaming_integrations"
     assert cli_payload["path"] == mcp_payload["path"]
     assert cli_payload["sha256"] == mcp_payload["sha256"]
+
+
+def test_kinesis_temporal_docs_state_window_and_limits():
+    root = Path(__file__).parents[1]
+    knowledge = (root / "knowledge/transport-diagnostics.md").read_text(encoding="utf-8")
+    integrations = (root / "knowledge/streaming-integrations.md").read_text(encoding="utf-8")
+    coverage = (root / "docs/streaming/prompt-coverage.md").read_text(encoding="utf-8")
+    cli = (root / "docs/guia/03-cli.md").read_text(encoding="utf-8")
+    mcp = (root / "docs/guia/04-mcp.md").read_text(encoding="utf-8")
+
+    for text in (knowledge, integrations, coverage, cli, mcp):
+        assert "metrics_start" in text or "--metrics-start" in text
+        assert "metrics_end" in text or "--metrics-end" in text
+        assert "enhanced" in text.lower()
+        assert "unresolved" in text
+    assert "GetRecords.IteratorAgeMilliseconds" in knowledge
+    assert "STREAMING_KINESIS_TEMPORAL_METRICS" in coverage

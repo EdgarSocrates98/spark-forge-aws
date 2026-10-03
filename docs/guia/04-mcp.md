@@ -493,6 +493,20 @@ retorno normaliza runtime, status, versão, checkpoint, paralelismo, VPC e
 logging. Métricas temporais, job plan, código e conectores efetivos não são
 inventados: saem como unresolved e exigem evidência complementar.
 
+### Métricas temporais Kinesis
+
+`sparkforge_collect_streaming_integrations` aceita `metrics_start`,
+`metrics_end` e `metrics_period` junto de `kinesis_stream_name`. A janela é
+obrigatória nas duas pontas; o período padrão é 60 segundos e deve ser múltiplo
+de 60 entre 60 e 86400. O mesmo handler usado pela CLI chama somente
+`cloudwatch.get_metric_data` para cinco métricas stream-level do namespace
+`AWS/Kinesis`, preservando observações normalizadas e resposta bruta no
+artifact. `kinesis.metric` facts carregam `stat`, `unit` e `observed_at`.
+
+Resultados ausentes ou incompletos são `unresolved`, nunca zero. Não há coleta
+de enhanced/shard-level metrics, reshard history, KCL/EFO, replay, causalidade
+ou SLO automático.
+
 ## Problemas comuns
 
 | Sintoma | Causa provável | Como resolver |

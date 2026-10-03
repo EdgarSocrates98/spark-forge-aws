@@ -399,6 +399,9 @@ sparkforge collect streaming-integrations --help
 | `--region` | não | texto |  | `` | Região AWS explícita, quando necessária. |
 | `--max-objects` | não | texto |  | `500` | Teto de objetos do checkpoint (1..500). |
 | `--max-shards` | não | texto |  | `500` | Teto de shards Kinesis (1..500). |
+| `--metrics-start` | não | texto |  | `` | Início ISO 8601 da janela CloudWatch Kinesis; exige --metrics-end. |
+| `--metrics-end` | não | texto |  | `` | Fim ISO 8601 da janela CloudWatch Kinesis; exige --metrics-start. |
+| `--metrics-period` | não | texto |  | `60` | Período CloudWatch em segundos (60..86400, múltiplo de 60). |
 | `--now` | sim | texto |  |  | Timestamp ISO 8601. |
 
 ### Tool MCP equivalente

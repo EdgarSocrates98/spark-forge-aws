@@ -47,15 +47,29 @@ As fontes suportadas são:
 - `--checkpoint-s3-uri`: lista limitada de objetos do diretório de checkpoint;
 - `--glue-job`: snapshot de `glue.get_job`;
 - `--kinesis-stream`: `describe_stream_summary` e `list_shards`;
+- `--metrics-start` + `--metrics-end`: janela explícita para métricas temporais
+  de stream Kinesis via CloudWatch `get_metric_data`;
+- `--metrics-period`: período em segundos, entre 60 e 86400 e múltiplo de 60;
 - `--msk-cluster-arn`: `describe_cluster_v2`, com fallback explícito;
 - `--dms-task-arn`: `describe_replication_tasks` filtrado por ARN.
 
 São chamadas de leitura. Valores secret-like são redigidos antes da escrita
 local. O cache só é aceito quando o arquivo local e o hash do manifesto batem.
-Lag temporal, replay, throughput e reachability continuam `unresolved` porque
-exigem uma janela de métricas, logs ou endpoint específico. Kafka Connect,
-Kafka Streams e OpenLineage não têm uma API AWS universal: devem entrar por
-export próprio, e não por uma coleta inventada.
+Quando as duas pontas da janela são fornecidas com `--kinesis-stream`, o
+collector também consulta apenas métricas stream-level do namespace
+`AWS/Kinesis`: `IncomingBytes`, `IncomingRecords`,
+`GetRecords.IteratorAgeMilliseconds`, `ReadProvisionedThroughputExceeded` e
+`WriteProvisionedThroughputExceeded`. O artifact preserva valor, unidade,
+estatística, timestamp observado, janela, período, resposta bruta e paginação;
+ausência, shape inválido ou status incompleto vira `unresolved`, nunca zero.
+O contrato usa somente a dimensão `StreamName` e não habilita nem simula
+métricas enhanced por shard.
+
+Sem janela, lag temporal, replay, throughput e reachability continuam
+`unresolved`. Mesmo com janela, a coleta não prova causalidade, saúde
+end-to-end, reshard history, KCL/EFO, replay ou limiar operacional. Kafka
+Connect, Kafka Streams e OpenLineage não têm uma API AWS universal: devem entrar
+por export próprio, e não por uma coleta inventada.
 
 Fontes oficiais:
 
@@ -67,3 +81,5 @@ Fontes oficiais:
   https://kafka.apache.org/documentation/streams/
 - OpenLineage object model:
   https://openlineage.io/docs/spec/object-model/
+- Amazon CloudWatch `GetMetricData` API:
+  https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html

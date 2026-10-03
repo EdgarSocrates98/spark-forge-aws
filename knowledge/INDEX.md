@@ -27,7 +27,7 @@ O inventário completo das features, commits e provas está em
 | Arquivo | Conteúdo |
 |---|---|
 | [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC have offline contracts, enquanto live/replay/runtime sem artefato seguem unresolved |
-| [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; coleta live, credenciais e eficácia runtime permanecem unresolved |
+| [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; collector read-only também coleta janela bounded de métricas stream-level Kinesis, enquanto endpoints Connect/Streams/OpenLineage e eficácia runtime permanecem unresolved |
 | [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards, metrics and observed transport SLO; blind spots remain explicit |
 | [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg, incluindo snapshots granulares e janela temporal; preserva procedência, não infere causalidade e nomeia pontos cegos |
 | [`streaming-realtime-candidate-matrix.md`](streaming-realtime-candidate-matrix.md) | Matriz offline de candidatos Spark, Glue, Flink, Kafka Streams, Iceberg e Redshift; separa requirements de assumptions e recusa vencedor sem eliminação factual |

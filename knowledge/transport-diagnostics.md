@@ -38,6 +38,25 @@ AWS publica métricas em nível de stream e, quando habilitadas, em nível de
 shard; o analyzer não transforma stream-level em shard-level nem inventa uma
 distribuição.
 
+### Janela CloudWatch read-only
+
+`collect streaming-integrations --kinesis-stream <stream>` pode receber
+`--metrics-start <ISO8601> --metrics-end <ISO8601>` e, opcionalmente,
+`--metrics-period <segundos>`. Isso chama `cloudwatch.get_metric_data` com
+namespace `AWS/Kinesis`, dimensão somente `StreamName`, `ScanBy=TimestampAscending`
+e cinco queries bounded: `IncomingBytes` (`Sum`, `Bytes`), `IncomingRecords`
+(`Sum`, `Count`), `GetRecords.IteratorAgeMilliseconds` (`Maximum`,
+`Milliseconds`), `ReadProvisionedThroughputExceeded` (`Average`, `Count`) e
+`WriteProvisionedThroughputExceeded` (`Average`, `Count`). O período precisa
+ser múltiplo de 60 entre 60 e 86400 segundos.
+
+O artifact grava `kinesis.metrics.observations` como pontos com nome, valor,
+unidade, estatística e `observed_at`, além da janela, definições de query,
+respostas brutas e `metrics_missing`. Paginação é limitada; status incompleto,
+resultado ausente e shape inválido ficam `unresolved`. A coleta não habilita
+enhanced shard-level metrics, não reduz ausência a zero e não cria threshold,
+causa, SLO ou economia.
+
 ## SLO observado de transporte
 
 `sparkforge analyze streaming-composition --mode slo` pode avaliar um SLO
@@ -79,3 +98,4 @@ de versão sem os artefatos adicionais.
 * https://docs.aws.amazon.com/msk/latest/developerguide/consumer-lag.html
 * https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html
 * https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html
+* https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html

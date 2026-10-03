@@ -20,6 +20,9 @@ Coleta snapshots read-only para o contrato streaming_integrations: prefixo de ch
 | `kinesis_stream_name` | string | não |  |
 | `max_objects` | integer | não |  |
 | `max_shards` | integer | não |  |
+| `metrics_end` | string | não | Fim ISO 8601 da janela CloudWatch Kinesis. |
+| `metrics_period` | integer | não | Período em segundos; múltiplo de 60. |
+| `metrics_start` | string | não | Início ISO 8601 da janela CloudWatch Kinesis. |
 | `msk_cluster_arn` | string | não |  |
 | `region_name` | string | não |  |
 

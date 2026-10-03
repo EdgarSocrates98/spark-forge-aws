@@ -21,7 +21,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Amazon MSK | `version-aware` parcial | `msk.cluster` em `facts/transport.py`, `collect streaming-integrations`, `knowledge/transport-diagnostics.md`, `knowledge/streaming/runtime-matrix.md` | snapshot regional/broker-type, configuração/rede/segurança/lag temporal |
 | Kafka Connect | `fact-aware` parcial | `kafka.connect`, `kafka.connect.task`, `SF-STREAM-008`, fixtures e `sparkforge_analyze_streaming_integrations` | collector REST live, offsets/erros temporais e validação funcional |
 | Kafka Streams | `fact-aware` parcial | `kafka.streams`, `kafka.streams.state_store`, `SF-STREAM-009`, fixtures e `sparkforge_analyze_streaming_integrations` | métricas/topologia live e decisão composta contra Spark/Flink |
-| Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline | CloudWatch temporal live, reshard history, KCL/EFO e série de longa duração |
+| Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline; collector temporal consulta cinco métricas stream-level do CloudWatch com janela explícita e o analyzer entrega `kinesis.metric` | enhanced/shard-level e reshard history, KCL/EFO, endpoint live de consumidores e série de longa duração |
 | Apache Flink | `version-aware` parcial | `facts/flink.py` emite `flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`, `flink.state` e `flink.unresolved`; `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures/goldens, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
 | Managed Service for Apache Flink | `version-aware` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures, mesmo analyzer, matriz com `UNRESOLVED` explícito e collector read-only `collect managed-flink`/`DescribeApplication` com cache, manifesto, runtime, versão, checkpoint, paralelismo, VPC e logging | matriz AWS por região/release, IAM/VPC efetivo, job plan/conectores, CloudWatch temporal e validação funcional |
 | Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py` emite `glue.streaming.job`, `glue.streaming.source`, `glue.streaming.sink`, runtime, analyzed e unresolved; `facts/streaming_glue_cross.py`, `facts/streaming_glue_runtime.py`, `glue.job_run`, `fuse`, regras `SF-GLUESTREAM`, fixtures match/drift/unresolved de definição→Terraform e definição→run, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | collector live adicional e validação funcional; source/sink agora têm contrato offline explícito, sem prova temporal/live |
@@ -44,7 +44,9 @@ O inventário de commits, features e provas compartilhadas está em
 - Wave B: Structured Streaming source/progress facts, três rules, CLI/MCP,
   fixtures e knowledge.
 - Wave C parcial: dumps offline Kafka/MSK/Kinesis, facts específicos,
-  unresolved, fixtures, CLI/MCP e locks.
+  unresolved, fixtures, CLI/MCP e locks; Kinesis agora também tem coleta
+  read-only temporal bounded de cinco métricas stream-level do CloudWatch,
+  preservando observações e lacunas sem inferir zero.
 - Wave D: dumps offline Flink/Managed Flink, namespaces separados, regras de
   checkpoint/backpressure, source/sink explícitos, unresolved, fixtures, CLI/MCP,
   skill, especialista, routing e SDD ship. Source/sink continuam offline e não
@@ -76,8 +78,10 @@ O inventário de commits, features e provas compartilhadas está em
 - Wave K parcial: collector AWS read-only para checkpoint S3, Glue Streaming,
   Kinesis, MSK, DMS, Glue Schema Registry e Managed Flink
   `DescribeApplication`, com redaction, cache por hash, manifesto, CLI/MCP e
-  testes com clientes falsos. Connect REST, Kafka Streams runtime, OpenLineage
-  live, lag temporal, replay e benchmark continuam `N/A + motivo`.
+  testes com clientes falsos. Kinesis tem janela CloudWatch bounded para
+  `IncomingBytes`, `IncomingRecords`, iterator age e contadores de throughput
+  excedido; enhanced/shard-level, Connect REST, Kafka Streams runtime,
+  OpenLineage live, reshard history, replay e benchmark continuam `N/A + motivo`.
 - Wave L: workflow dedicado `review-structured-streaming`, eval, validador de
   evidence, coordenador, mirrors e SDD ship para source/progress/checkpoint;
   execução Spark, replay e benchmark continuam `N/A + motivo` por dependerem de
@@ -182,6 +186,12 @@ O inventário de commits, features e provas compartilhadas está em
   exige campo explícito. Golden, CLI/MCP, knowledge, skills e SDD cobrem o
   contrato offline; collector live, latência end-to-end sem medida explícita,
   causa e benchmark continuam fora.
+- `STREAMING_KINESIS_TEMPORAL_METRICS`: estende o collector existente sem nova
+  tool com janela explícita `metrics_start/metrics_end/metrics_period`, cinco métricas stream-level
+  oficiais do CloudWatch, paginação bounded, artifact normalizado, facts
+  `kinesis.metric`, paridade CLI/MCP e unresolved fail-closed. Não habilita
+  enhanced shard metrics, não coleta reshard history/KCL/EFO e não cria SLO,
+  threshold, causalidade ou claim de throughput.
 
 Todos os itens acima passaram os gates globais de skills, referências, surface,
 números correntes e bundle offline em 2026-10-03. Isso fecha contratos offline e
@@ -199,7 +209,7 @@ live em capacidade comprovada.
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |
 | I | Delta/Hudi/Redshift and P2 knowledge | **matrizes e facts declarativos entregues**: compatibilidade e serving são knowledge-aware; evals/collectors/benchmark continuam P1/P2 |
 | J | security, failure fixtures, integration, performance, packaging and all gates | **contratos offline entregues**: Connect/OpenLineage/checkpoint/Streams, failure goldens, CLI/MCP, SDD e gates; faltam runtime temporal, replay, benchmark e integração live |
-| K | collectors read-only AWS | **entregue parcialmente**: checkpoint S3, Glue, Kinesis, MSK, DMS, Glue Schema Registry e Managed Flink `DescribeApplication`; cache, redaction, manifesto, limites, CLI/MCP e testes; histórico completo, métricas temporais e endpoints Connect/Streams/OpenLineage permanecem fora por dependerem de artefatos/endpoint próprios |
+| K | collectors read-only AWS | **entregue parcialmente**: checkpoint S3, Glue, Kinesis, MSK, DMS, Glue Schema Registry e Managed Flink `DescribeApplication`; cache, redaction, manifesto, limites, CLI/MCP e testes; Kinesis stream-level temporal bounded foi entregue, enquanto enhanced/shard-level, histórico completo, KCL/EFO e endpoints Connect/Streams/OpenLineage permanecem fora por dependerem de artefatos/endpoint próprios |
 
 ## Regra de conclusão
 

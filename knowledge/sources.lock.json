@@ -289,6 +289,14 @@
       ],
       "sha256": "19a38945af86b3f9593c2902e94558228093be9a6b0357efa455f12ae6c67324"
     },
+    "https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html": {
+      "docs": [
+        "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://clickhouse.com/docs/en/integrations/kafka/kafka-table-engine": {
       "docs": [
         "knowledge/streaming-format-serving-matrix.md"

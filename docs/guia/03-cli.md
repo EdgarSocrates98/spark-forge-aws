@@ -763,6 +763,25 @@ sparkforge analyze schema-registry \
 preservam `unresolved` quando a evidência não cabe no contrato. O collector
 nunca cria, registra, atualiza ou exclui objetos no registry.
 
+Para obter uma janela temporal de métricas do Kinesis, combine o stream com as
+duas pontas ISO 8601. O período padrão é 60 segundos e precisa ser múltiplo de
+60 entre 60 e 86400:
+
+```bash
+sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+sparkforge analyze transport \
+  --artifact kinesis \
+  --path .sparkforge/artifacts/streaming_integrations/kinesis_orders__metrics_*.json
+```
+
+O collector consulta cinco métricas stream-level do CloudWatch e preserva
+observações, unidade, estatística, timestamp e lacunas. Ausência não vira zero;
+enhanced/shard-level, reshard history, KCL/EFO, replay e causalidade continuam
+fora do contrato.
+
 Para obter a configuração observada de uma aplicação Managed Flink, use a
 coleta somente leitura abaixo. Ela não pede detalhes adicionais, portanto não
 baixa código nem job plan:
