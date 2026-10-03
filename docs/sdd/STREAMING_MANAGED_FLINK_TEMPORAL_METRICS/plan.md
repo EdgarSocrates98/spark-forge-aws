@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/design.md
-  sha256: "5a9fcf97d2307a938ce5d015580cf5568f9bfa1dccf3d6c0757f7ada174e10b7"
+  sha256: "783091539e9e4393596f5bb0ca85cb8d9775790d4e1d88cbcfecccbb75dcbe45"
 tasks:
   - id: T1
     files: [tests/test_collect_managed_flink.py, sparkforge/collect/managed_flink.py]
@@ -40,11 +40,13 @@ métricas, dimensão `Application`, paginação limitada, normalização de
 timestamps, missing/status/unresolved e path que inclui janela. Rodar o teste
 AC1/AC2 vermelho antes do collector e verde depois.
 
-## T2 — analyzer temporal
+## T2 — analyzer temporal (guarda de regressão)
 
 Alimentar o artifact coletado no analyzer `managed_flink`, confirmando que as
 observações normalizadas viram `managed_flink.metric` com unidade, estatística e
-`observed_at`, sem alterar fatos `flink.*`. Rodar o teste AC3 vermelho e verde.
+`observed_at`, sem alterar fatos `flink.*`. Como o extrator já aceitava facts
+metric genéricos antes desta feature, a tarefa é uma guarda que passa antes e
+depois da mudança; rodar o teste e registrar a execução verde.
 
 ## T3 — CLI/MCP
 
