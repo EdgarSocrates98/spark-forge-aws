@@ -183,6 +183,7 @@ do wheel e de uma CLI real do host.
 | `34eb790` | documentação, mirrors, locks e ship report de p95/freshness SLO |
 | `ebb567d` | SDD explore/define/design/plan de correlação Glue Streaming/Terraform |
 | `e8d42eb` | facts, fuse, regras, fixtures e goldens de cross-artifact Glue |
+| `cdc0556` | ship SDD, guias, knowledge, skill, mirrors, referências, locks e ledgers do cross-artifact Glue |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

@@ -2,7 +2,7 @@
 
 **Atualizado em:** 2026-10-02  
 **Base técnica de referência:** `e8d42eb`; fechamento documental corrente:
-`34eb790` (será restampado após este fechamento)
+`cdc0556`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
