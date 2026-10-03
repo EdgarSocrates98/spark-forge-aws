@@ -137,7 +137,10 @@ Quando source ou sink não aparece, o extrator publica
 `flink.unresolved` com `source_metrics_missing` ou `sink_metrics_missing`;
 formato inválido recebe razão própria. O analyzer não infere exactly-once,
 saúde, causalidade ou capacidade. `managed_flink.*` continua namespace separado
-e exige `--artifact managed_flink`.
+e exige `--artifact managed_flink`. Apache Flink upstream ainda não possui
+collector live, série temporal genérica ou fact `flink.metric`; observabilidade
+temporal bounded pertence ao collector Managed Flink e não completa os facts
+upstream.
 
 ## Sequência mínima
 

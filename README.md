@@ -176,7 +176,7 @@ Detalhe em
 [cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
 [referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
 
-### Apache Flink: source e sink como evidência separada
+### Apache Flink: endpoints explícitos e limite temporal
 
 O analyzer offline de Flink preserva `flink.source` e `flink.sink` quando o dump
 traz `sources`/`source` e `sinks`/`sink`. Identidade, connector,
@@ -188,6 +188,12 @@ throughput sem timestamp e janela. Ausência ou formato inválido publica
 capacidade; correlacione os facts com checkpoint, operator, runtime e série
 temporal. Detalhes em [`knowledge/flink-streaming.md`](knowledge/flink-streaming.md)
 e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
+
+O contrato upstream ainda não possui collector live, série temporal genérica ou
+fact `flink.metric`. A coleta temporal bounded entregue nesta evolução pertence
+ao namespace Managed Flink: `managed_flink.metric`, cinco métricas de aplicação
+do CloudWatch e janela explícita. Não misture os namespaces nem use o contrato
+Managed para afirmar runtime, saúde ou comportamento do Flink upstream.
 
 ### Métricas temporais bounded de Kinesis e Managed Flink
 

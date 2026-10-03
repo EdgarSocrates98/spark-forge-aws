@@ -127,7 +127,10 @@ connector, `delivery_semantics` e medidas observadas. Contadores não viram
 throughput sem timestamp/janela; ausência dos blocos vira
 `flink.unresolved` (`source_metrics_missing`/`sink_metrics_missing`). Isso não
 prova exactly-once nem saúde. Para Managed Flink use `--artifact managed_flink`;
-os namespaces não se completam.
+os namespaces não se completam. O contrato upstream ainda não possui collector
+live, série temporal genérica ou `flink.metric`; a janela temporal bounded
+entregue nesta evolução é exclusiva de Managed Flink e publica
+`managed_flink.metric`.
 
 Para coletar observabilidade temporal bounded sem misturar namespaces, use os
 collectors read-only existentes com as duas pontas da janela:

@@ -45,6 +45,20 @@ Quando `sources`/`source` ou `sinks`/`sink` não aparecem, o extrator publica
 Formato inválido e registro vazio também têm razões nomeadas. Nenhuma medida
 ausente é preenchida com zero.
 
+## Métricas temporais upstream versus Managed Flink
+
+O contrato upstream (`--artifact flink`) não inclui collector live, série
+temporal genérica ou fact `flink.metric`. Um dump sem timestamp e janela não
+prova throughput, latência, tendência, SLO ou saúde; não converta contador,
+backpressure isolado ou ausência de campo em conclusão temporal. Para obter
+observabilidade temporal upstream, o operador ainda precisa fornecer um
+artefato compatível e uma evolução de contrato específica.
+
+Managed Flink tem contrato separado: uma janela CloudWatch bounded do collector
+read-only alimenta `managed_flink.metric` com nome, valor observado, unidade,
+estatística e `observed_at`. Esses facts não completam o namespace `flink.*` e
+também não provam saúde, causalidade, custo ou tendência longa.
+
 ## Backpressure
 
 Uma medida positiva de `backpressured_ratio` ou `backpressured_ms` é sinal
@@ -87,12 +101,13 @@ sparkforge analyze flink \
 ```
 
 Esse collector é somente leitura na AWS e grava apenas o artifact/manifesto
-local. `DescribeApplication` não é evidência de métricas temporais, job plan,
+local. `DescribeApplication` sem janela não é evidência de métricas temporais,
+job plan,
 código executado, conectores efetivos, IAM efetivo ou latência; o artifact
 publica `managed_flink_metrics_not_observed` e
 `managed_flink_connectors_not_observed` como unresolved quando a janela não é
 declarada. Job plan exige uma coleta explicitamente autorizada de detalhes
-adicionais; métricas exigem CloudWatch/artefato temporal próprio.
+adicionais; métricas exigem a janela CloudWatch ou artefato temporal próprio.
 
 ### Janela CloudWatch read-only
 

@@ -22,7 +22,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Kafka Connect | `fact-aware` parcial | `kafka.connect`, `kafka.connect.task`, `SF-STREAM-008`, fixtures e `sparkforge_analyze_streaming_integrations` | collector REST live, offsets/erros temporais e validação funcional |
 | Kafka Streams | `fact-aware` parcial | `kafka.streams`, `kafka.streams.state_store`, `SF-STREAM-009`, fixtures e `sparkforge_analyze_streaming_integrations` | métricas/topologia live e decisão composta contra Spark/Flink |
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline; collector temporal consulta cinco métricas stream-level do CloudWatch com janela explícita e o analyzer entrega `kinesis.metric` | enhanced/shard-level e reshard history, KCL/EFO, endpoint live de consumidores e série de longa duração |
-| Apache Flink | `version-aware` parcial | `facts/flink.py` emite `flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`, `flink.state` e `flink.unresolved`; `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures/goldens, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
+| Apache Flink | `version-aware` parcial | `facts/flink.py` emite `flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`, `flink.state` e `flink.unresolved`; `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures/goldens, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais genéricas e validação funcional |
 | Managed Service for Apache Flink | `version-aware` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures, mesmo analyzer, matriz com `UNRESOLVED` explícito e collector read-only `collect managed-flink`/`DescribeApplication` com cache, manifesto, runtime, versão, checkpoint, paralelismo, VPC, logging e janela CloudWatch bounded para cinco métricas de aplicação | matriz AWS por região/release, IAM/VPC efetivo, job plan/conectores, dimensões Task/Operator/Parallelism, série longa e validação funcional |
 | Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py` emite `glue.streaming.job`, `glue.streaming.source`, `glue.streaming.sink`, runtime, analyzed e unresolved; `facts/streaming_glue_cross.py`, `facts/streaming_glue_runtime.py`, `glue.job_run`, `fuse`, regras `SF-GLUESTREAM`, fixtures match/drift/unresolved de definição→Terraform e definição→run, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | collector live adicional e validação funcional; source/sink agora têm contrato offline explícito, sem prova temporal/live |
 | Glue Real-Time Mode | `version-aware` parcial | namespace `glue.streaming.*`, restrições/capacidade observadas, rules, unresolved e matriz Glue 6.0 com constraints | collector live, cross-artifact e validação funcional |
@@ -49,8 +49,11 @@ O inventário de commits, features e provas compartilhadas está em
   preservando observações e lacunas sem inferir zero.
 - Wave D: dumps offline Flink/Managed Flink, namespaces separados, regras de
   checkpoint/backpressure, source/sink explícitos, unresolved, fixtures, CLI/MCP,
-  skill, especialista, routing e SDD ship. Source/sink continuam offline e não
-  provam throughput, exactly-once ou saúde sem janela temporal.
+  skill, especialista, routing e SDD ship. Managed Flink também tem collector
+  read-only de configuração e janela CloudWatch bounded para cinco métricas de
+  aplicação. Source/sink upstream continuam offline; runtime observado,
+  savepoints, métricas temporais genéricas upstream, throughput, exactly-once e
+  saúde continuam sem prova quando o artefato não os traz.
 - Wave F parcial: Schema Registry/data contracts com registro, definição,
   compatibilidade declarada, diff estrutural, auto-register, unresolved,
   fixtures, analyzer CLI/MCP, skill, routing e SDD ship, além de coletor AWS
@@ -200,6 +203,11 @@ O inventário de commits, features e provas compartilhadas está em
   dimensões Task/Operator/Parallelism, custom/connector metrics, job plan,
   replay ou benchmark, nem cria SLO, threshold, causalidade ou claim de saúde.
 
+- Limite upstream explícito: `analyze flink --artifact flink` continua restrito
+  a job/operator/source/sink/checkpoint/state e seus `unresolved`; não há
+  collector live, série temporal genérica ou fact `flink.metric` nesta wave.
+  Não use os fatos `managed_flink.metric` para completar esse namespace.
+
 Todos os itens acima passaram os gates globais de skills, referências, surface,
 números correntes e bundle offline em 2026-10-03. Isso fecha contratos offline e
 documentação; não converte lacunas de execução, replay, benchmark ou endpoint
@@ -209,7 +217,7 @@ live em capacidade comprovada.
 
 | Wave | Escopo | Critério de fechamento |
 |---|---|---|
-| D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, source/sink explícitos, unresolved, rules, fixtures, analyzer, skill, specialist, routing, collector read-only Managed Flink para descrição/configuração e cinco métricas de aplicação CloudWatch com janela bounded; runtime regional/efetivo, job plan/conectores, dimensões detalhadas, série longa e validação funcional permanecem lacunas |
+| D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, source/sink explícitos, unresolved, rules, fixtures, analyzer, skill, specialist, routing, collector read-only Managed Flink para descrição/configuração e cinco métricas de aplicação CloudWatch com janela bounded; no upstream permanecem collector/matriz observada de runtime, savepoints e métricas temporais genéricas; no Managed Flink permanecem runtime regional/efetivo, job plan/conectores, dimensões detalhadas, série longa e validação funcional |
 | E | Glue Streaming + RTM | **source/sink offline explícitos entregues** com `glue.streaming.source`/`sink` e unresolved; collector live adicional, validação funcional e capability evidence permanecem lacunas; observação offline definição→run entregue com `SF-GLUESTREAM-006/007`; cross-artifact efetivo→Terraform entregue com `SF-GLUESTREAM-004/005` |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist, routing e coletor read-only latest do Glue; histórico completo, matriz completa, consumidores cross-artifact e validação funcional permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, SLO sobre progress/sink/Kafka/Kinesis com janela coberta, p95/freshness offline, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, endpoint live, latência end-to-end implícita, correlação de longo período e atribuição continuam lacunas |

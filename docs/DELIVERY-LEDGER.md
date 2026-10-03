@@ -175,9 +175,10 @@ do wheel e de uma CLI real do host.
 - Mirrors `.claude`, `.agents` e `.github` sincronizados a partir de `skills/` e
   `agents/`; bundle offline com hashes conferidos.
 - Auditoria documental de 2026-10-03 propagou a entrega temporal para README,
-  guia operacional raiz, prompt mestre, help da CLI, referências geradas e
-  `analyze-flink-job`; o contrato permanece sem tool MCP nova e com CLI/MCP
-  paritários.
+  guia operacional raiz, prompt mestre, prompt coverage, knowledge Flink,
+  guias de operação, help da CLI, referências geradas e `analyze-flink-job`;
+  também explicitou que o contrato upstream não tem métrica temporal genérica.
+  O contrato permanece sem tool MCP nova e com CLI/MCP paritários.
 
 ## Commits de fechamento por fase
 
@@ -244,6 +245,9 @@ do wheel e de uma CLI real do host.
 | `b2ac759` | prova de cache temporal offline e restamp do SDD |
 | `da8ebce` | documentação transversal, locks, contadores e build report Managed Flink temporal |
 | `2ee4663` | ship SDD e fechamento do contrato temporal Managed Flink |
+| `bab0aac` | ledgers apontados para o contrato temporal Managed Flink em `ship` |
+| `5954cde` | histórico de fontes vigiadas e limites do contrato temporal Flink |
+| `2bc1da5` | auditoria documental transversal de Kinesis/Managed Flink temporal, CLI, skill, mirrors e referências |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

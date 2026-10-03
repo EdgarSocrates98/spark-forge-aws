@@ -191,7 +191,8 @@ com zero. Ausência, formato inválido e registro vazio ficam em
 Provas focadas: 8 testes unitários e 83 testes de facts/goldens/cobertura de
 kinds; cobertura documental específica, mirrors, offline bundle, surface lock,
 status numbers e SDD check passaram. Runtime observado, savepoints, métricas
-temporais, throughput, exactly-once e validação funcional permanecem fora. A
+temporais genéricas upstream, throughput, exactly-once e validação funcional
+permanecem fora; Managed Flink tem contrato temporal bounded separado. A
 suíte completa não foi executada.
 
 ## Atualização corrente — Managed Flink collector e mapa integrado das waves (2026-10-03)
@@ -293,8 +294,9 @@ O contrato está em
 
 ## Auditoria documental transversal — **CONCLUÍDA** (2026-10-03)
 
-README, `GUIA_DE_USO.md`, prompt mestre, help da CLI, referências geradas,
-`analyze-flink-job` e seus espelhos agora descrevem a mesma entrega temporal:
+README, `GUIA_DE_USO.md`, prompt mestre, prompt coverage, knowledge Flink,
+guias operacionais, help da CLI, referências geradas, `analyze-flink-job` e seus
+espelhos agora descrevem a mesma entrega temporal:
 janela bounded, cinco métricas Kinesis, cinco métricas application-level Managed
 Flink, facts preservados, `unresolved` fail-closed e limites de prova. Não houve
 criação de superfície MCP; a documentação aponta para os collectors existentes

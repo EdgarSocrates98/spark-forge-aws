@@ -66,6 +66,11 @@ repositório:
 Nenhum dos dois inventa número. Os dois chamam a CLI ou as tools MCP do SparkForge
 e citam a evidência (`fact_id`) de cada afirmação.
 
+Para Flink, use `analyze-flink-job` com o `--artifact` correto. O perfil mantém
+Apache Flink upstream e Managed Flink separados: a janela CloudWatch bounded e
+`managed_flink.metric` pertencem ao serviço gerenciado; não há contrato temporal
+genérico upstream nesta versão.
+
 ## Coordenadores e executores
 
 Há dois tipos de agent:

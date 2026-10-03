@@ -38,6 +38,8 @@ capacidade, versão ou comportamento do outro.
    `*.unresolved` antes de julgar. `flink.source`/`flink.sink` preservam
    somente identidade e métricas explicitamente observadas; ausência vira
    `source_metrics_missing`/`sink_metrics_missing`, nunca zero.
+   O contrato upstream não emite uma série temporal genérica nem
+   `flink.metric`; não use `managed_flink.metric` para completar esse domínio.
    Quando o artifact Managed Flink veio de uma janela CloudWatch bounded,
    `managed_flink.metric` preserva `name`, `stat`, `unit` e `observed_at`.
    Esses pontos continuam observações isoladas: não são automaticamente
