@@ -216,6 +216,7 @@ do wheel e de uma CLI real do host.
 | `9f0d911` | collector read-only Managed Flink, normalização, redaction, cache, manifesto e testes T1 |
 | `9db68e8` | portas CLI/MCP, parity, manifest e surface do coletor Managed Flink |
 | `9581720` | prova de handoff do artifact Managed Flink para o analyzer e preservação da identidade observada |
+| `302969a` | documentação transversal, SDD ship, referências geradas, locks, contagens e limites do coletor Managed Flink |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
