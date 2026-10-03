@@ -40,6 +40,16 @@ def test_streaming_progress_observability_depth_coverage():
     assert "state_memory_growth_observed" in reliability
 
 
+def test_streaming_slo_latency_freshness_coverage():
+    text = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/streaming-operations.md")
+    skill = _read("skills/review-structured-streaming/SKILL.md")
+    assert "STREAMING_SLO_LATENCY_FRESHNESS" in text
+    assert "statistic=p95" in knowledge
+    assert "freshness_ms" in knowledge
+    assert "nearest-rank" in skill
+
+
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
 

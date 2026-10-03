@@ -33,14 +33,31 @@ O status `met` significa que todos os valores observados passaram no comparador;
 `violated` significa que ao menos um não passou. O fact preserva
 `source_fact_ids`, extremos, contagem, janela e `causal_inference: false`.
 
+Quando a declaração inclui `statistic: p95` (`statistic=p95`), o comparador usa o percentil
+nearest-rank determinístico: ordena os valores, escolhe a posição
+`ceil(0.95 * n)` (indexada a partir de 1) e publica `observed_p95`. O p95 é
+calculado sobre a série diretamente observada, sem interpolação, intervalo de
+confiança ou threshold inventado; duas observações continuam sendo amostra
+pequena, não prova de comportamento de longo prazo.
+
+`metric: freshness_ms` pode ser observado diretamente por `freshnessMs` ou
+derivado em cada batch como `progress.timestamp - eventTime.max`, somente
+quando ambos são ISO timezone-aware e a diferença não é negativa. Isso mede
+atraso de event time observado, não prova latência end-to-end.
+`metric: end_to_end_latency_ms` só é aceito quando o progress traz
+`endToEndLatencyMs` explicitamente; `batchDuration`, watermark e freshness não
+são substitutos semânticos.
+
 Declaração, identidade, source, métrica, unidade, timestamp, quantidade ou
 cobertura ausente produzem `streaming.slo.unresolved`. Para transporte, a
 série precisa ser diretamente observada, timestampada com timezone e cobrir a
 janela; o Forge não agrega grupos/shards, usa ordem do arquivo, preenche
 timestamp, converte unidade ou transforma `kinesis.metric` sem timestamp em
 série. Para sink, batch ausente, batch ambíguo ou sink sem identidade suficiente
-também permanece unresolved. O Forge não calcula p95 de uma taxa, não usa nome de janela como prova
-de cobertura e não consulta CloudWatch/Kafka live. `SF-STREAM-011` julga
+também permanece unresolved. Métrica, statistic, unidade, timestamp ou
+`eventTime.max` ausentes/ inválidos permanecem unresolved; o Forge não usa
+nome de janela como prova de cobertura e não consulta CloudWatch/Kafka live.
+`SF-STREAM-011` julga
 somente violação observada; `SF-STREAM-012` torna a lacuna explícita. Nenhum
 dos dois atribui causa, custo, disponibilidade ou resultado funcional.
 

@@ -291,9 +291,11 @@ timestamps, cobertura da janela, unidade ou série única produz
 `streaming.slo.unresolved`. Séries de grupos, topics, partições ou shards
 misturados são recusadas, nunca agregadas silenciosamente.
 
-Esse modo não calcula p95/freshness, não consulta CloudWatch/Kafka live, não
-prova disponibilidade, causalidade, custo ou saúde end-to-end. Ausência de
-finding não significa SLO atendido; reporte também todo `*.unresolved`.
+Esse modo aceita `statistic: p95` por nearest-rank e `freshness_ms` quando o
+progress traz `timestamp` + `eventTime.max` timezone-aware; não consulta
+CloudWatch/Kafka live nem prova disponibilidade, causalidade, custo ou saúde
+end-to-end. Ausência de finding não significa SLO atendido; reporte também
+todo `*.unresolved`.
 
 ### Forge Lab / Digital Twin
 

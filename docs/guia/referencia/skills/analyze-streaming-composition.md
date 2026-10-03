@@ -89,8 +89,10 @@ duas observações timestampadas e span observado igual ou maior que a janela
 declarada. `streaming.slo.evaluation` informa `met` ou `violated`;
 `streaming.slo.unresolved` informa a barreira sem transformar ausência em
 sucesso. `SF-STREAM-011` julga violação observada; `SF-STREAM-012` julga a
-lacuna estrutural. O compositor não agrega grupos/shards/sinks, calcula
-p95/freshness, converte unidades, usa ordem do arquivo ou consulta
+lacuna estrutural. `statistic: p95` publica `observed_p95` por nearest-rank
+`ceil(0.95*n)`; `freshness_ms` usa `timestamp - eventTime.max` quando ambos
+estão válidos, e end-to-end latency exige medida explícita. O compositor não
+agrega grupos/shards/sinks, converte unidades, usa ordem do arquivo ou consulta
 CloudWatch/Kafka live.
 
 5. Julgue o arquivo composto:

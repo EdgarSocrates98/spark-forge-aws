@@ -59,8 +59,9 @@ sparkforge analyze streaming-composition \
 `met`/`violated` valem apenas para a série diretamente observada, com identidade,
 unidade, timestamps e janela coberta. Sink usa `num_output_rows` e exige vínculo
 único com batch por `batch_id`/`query_name`; `streaming.slo.unresolved` permanece
-na saída quando falta evidência. Não há p95/freshness, consulta live,
-causalidade, custo ou prova end-to-end.
+na saída quando falta evidência. `statistic: p95` usa nearest-rank sobre a
+amostra e `freshness_ms` exige `timestamp` + `eventTime.max`; isso continua
+offline e não prova consulta live, causalidade, custo ou latência end-to-end.
 
 ## 2. Claude Code
 

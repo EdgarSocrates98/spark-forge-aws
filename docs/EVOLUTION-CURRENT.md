@@ -1,8 +1,8 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-02  
-**Base técnica de referência:** `0ea23e1`; fechamento documental corrente:
-`d4106b6`
+**Base técnica de referência:** `4ba8177`; fechamento documental corrente:
+`aedae77`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
@@ -34,15 +34,15 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **61 features** após este fechamento:
-**59 `ship/done`**, uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e
+`sparkforge sdd status --repo .` encontrou **62 features** após este fechamento:
+**60 `ship/done`**, uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e
 uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
 | Frente | Features entregues | Estado documentado |
 |---|---|---|
 | Nova janela / Data Platform Control Plane | `PLATFORM_INTELLIGENCE_GRAPH`, `PLATFORM_INTELLIGENCE_EVALS`, `OPEN_LAKEHOUSE_CATALOG`, `DATA_OBSERVABILITY_SRE`, `ORCHESTRATION_CONTROL_PLANE`, `ANALYTICS_ENGINEERING_MICROSCOPE`, `DATA_PLATFORM_ECOSYSTEM`, além dos fechamentos de decisão e governança | Entregue; ativação produtiva do Decision Plane continua opt-in e `shadow` por padrão |
-| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_FLINK_PLATFORM`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis e separa `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; `streaming.progress.series` agora resume span, duração, memória de state e watermark, com `SF-STREAM-013/014` para sintomas observados; evidência live, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
+| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; `streaming.progress.series` resume span, duração, memória de state e watermark, com `SF-STREAM-013/014` para sintomas observados; evidência live, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
 | Forge Lab | `FORGE_LAB_PRODUCT` | Entregue e verificado offline; `FORGE_LAB_DIGITAL_TWIN` permanece como registro SDD separado em `plan/ready` |
 | Economia observada | `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`, `TOKEN_ESTIMATE_UNICO`, `AGENTIC_ECONOMY_COMPLETION` | Entregue; bytes, tokens do provider e custo continuam eixos independentes |
 | Governança | `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS`, `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` e famílias Lake Formation relacionadas | Entregue offline, fail-closed e com gates focados |
@@ -60,8 +60,10 @@ Ainda não são claims de capacidade de produção:
   dois pares observados;
 - avaliação SLO offline: `mode=slo` compara métricas diretamente observadas em
   batches, sinks (`num_output_rows`) ou transporte (`kafka.lag`/`kinesis.shard`),
-  com identidade, unidade e janela cobertas; sink exige vínculo único com batch
-  por `batch_id`/`query_name`; não calcula p95/freshness nem prova saúde end-to-end;
+  com identidade, unidade e janela cobertas; aceita `statistic=p95` por
+  nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`; sink exige
+  vínculo único com batch por `batch_id`/`query_name`; não prova disponibilidade,
+  causalidade ou saúde end-to-end;
 - endpoint live de Kafka Connect, Kafka Streams, OpenLineage e métricas temporais
   de broker/grupo;
 - replay funcional, execução Spark/Flink real, benchmark de latência/throughput
@@ -120,9 +122,9 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Forge Lab | `valid: true`, 11 componentes, 20 cenários, 240 ações |
 | Coleta atual de testes | 14396 testes coletados em 2026-10-02; esta frente não executou a suíte completa |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
-| Docs de streaming | 147 passed em sync/render/agent/docs coverage; inclui sink SLO, progress observability depth, referências geradas e mirrors |
+| Docs de streaming | 147 passed em sync/render/agent/docs coverage; inclui sink SLO, progress observability depth, p95/freshness SLO, referências geradas e mirrors |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
-| Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; snippet measure adicional: 4 passed |
+| Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; p95/freshness: 74 testes focados no lote combinado e 1 golden novo; snippet measure adicional: 4 passed |
 | Janela temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge e 769 gates de runtime-scope |
 | Claims e proveniência | 174 passed, 5 skipped |
 | Checks globais | skills, referências, surface lock, status numbers, bundle offline e claims sem divergência |

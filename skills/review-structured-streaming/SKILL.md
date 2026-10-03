@@ -33,8 +33,10 @@ somente com artefatos salvos.
 2. Rode `sparkforge analyze streaming --artifact progress --path <progress.jsonl-ou-dir>`
    para batches, input/processed rate, duração, event time, sink e state
    observados. O fact `streaming.progress.series` também resume, quando completos,
-   span temporal, duração de batch, memória total do state e watermark. Série
-   insuficiente deve permanecer `streaming.progress.unresolved`.
+   span temporal, duração de batch, memória total do state e watermark. Quando
+   `eventTime.max` e `timestamp` são timezone-aware, cada batch pode publicar
+   `freshness_ms`; `end_to_end_latency_ms` só aparece se o progress o declarar
+   explicitamente. Série insuficiente deve permanecer `streaming.progress.unresolved`.
 3. Quando houver checkpoint ou integrações declaradas, rode
    `sparkforge analyze streaming-integrations --path <dump.json-ou-dir>`.
    Metadados internos de checkpoint só podem ser interpretados quando formato
@@ -44,8 +46,10 @@ somente com artefatos salvos.
    rules que ficaram fora de escopo ou sem evidência.
 5. Correlacione query, progresso, transporte, checkpoint, sink e validação
    funcional. `processedRowsPerSecond < inputRowsPerSecond`, `watermark_stalled`
-   e `state_memory_growth_observed` são sintomas observados, não causas; duas
-   amostras não provam tendência de longo prazo.
+    e `state_memory_growth_observed` são sintomas observados, não causas; duas
+    amostras não provam tendência de longo prazo. Para SLO, `statistic=p95`
+    usa nearest-rank `ceil(0.95*n)` sem interpolação; leia `observed_p95` como
+    resumo da amostra, não como prova de saúde live.
 6. Para qualquer mudança, defina uma variável primária, baseline, contagem,
    schema, chave e agregados de validação, risco e rollback. Não alegue ganho,
    custo, throughput ou exactly-once sem evidência compatível.
@@ -57,7 +61,8 @@ somente com artefatos salvos.
 - Não transforma ausência de checkpoint, watermark, offset, sink ou métrica em
   zero; emita ou preserve `*.unresolved`.
 - Não transforma `watermark_stalled` em freshness violada nem crescimento de
-  memória em leak; ambos exigem contexto e validação adicionais.
+  memória em leak; ambos exigem contexto e validação adicionais. Freshness só
+  é comparada quando `timestamp` e `eventTime.max` estão pareados e válidos.
 - Código estático não prova backlog, latência, capacidade, semântica end-to-end
   nem resultado funcional.
 - Não recomenda intervalo de trigger, número de partições, workers ou state TTL
@@ -91,8 +96,10 @@ externa ao operador responsável.
 
 `streaming.progress.series` exige série válida; `streaming.progress.unresolved`
 nomeia ausência ou medida temporal inválida. Static source facts não são
-medidas de execução. `SF-STREAM-013` e `SF-STREAM-014` consomem somente os
-flags observados de watermark e memória, com runtime fact presente.
+medidas de execução. `streaming.slo` aceita `statistic=all|p95`,
+`freshness_ms` e latência end-to-end apenas quando observadas. `SF-STREAM-013`
+e `SF-STREAM-014` consomem somente os flags observados de watermark e memória,
+com runtime fact presente.
 
 ## Red flags
 

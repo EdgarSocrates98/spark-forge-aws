@@ -190,8 +190,10 @@ O envelope preserva `source_fact_ids` e devolve `streaming.slo.evaluation` com
 `met`/`violated`, ou `streaming.slo.unresolved` quando identidade, unidade,
 timestamps, janela ou série única não estão provados. Sink usa
 `num_output_rows`/`rows` e timestamp do batch ligado por `batch_id`; Kafka usa
-`kafka.lag` em `records`; Kinesis usa `kinesis.shard` em `ms`. O modo não calcula
-p95/freshness, não agrega partições, shards ou sinks e não prova saúde end-to-end.
+`kafka.lag` em `records`; Kinesis usa `kinesis.shard` em `ms`. `statistic: p95`
+publica `observed_p95` por nearest-rank; `freshness_ms` exige
+`timestamp` + `eventTime.max`. O modo não agrega partições, shards ou sinks e
+não prova saúde end-to-end.
 A mesma chamada pode usar `query_name` para progress Structured Streaming; detalhes de campos
 estão na [referência MCP](referencia/tools/sparkforge_analyze_streaming_composition.md).
 

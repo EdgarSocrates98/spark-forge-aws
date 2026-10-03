@@ -66,9 +66,11 @@ O primeiro caminho compara `streaming.progress.batch`; o segundo avalia
 `batch_id`/`query_name`; o terceiro compara `kafka.lag` (`records`) ou
 `kinesis.shard` (`ms`, `iterator_age_ms`). O fact
 `streaming.slo.evaluation` informa `met` ou `violated` somente para a janela
-observada. Falta de identidade, unidade, timestamp, janela coberta ou série
-única produz `streaming.slo.unresolved`. O compositor preserva os facts de
-origem, não calcula p95/freshness, não consulta endpoints live e não prova
+observada. `statistic: p95` publica `observed_p95` por nearest-rank; o progress
+publica `freshness_ms` somente com `timestamp` + `eventTime.max`, e latência
+end-to-end exige medida explícita. Falta de identidade, unidade, timestamp,
+janela coberta ou série única produz `streaming.slo.unresolved`. O compositor
+preserva os facts de origem, não consulta endpoints live e não prova
 causalidade, custo ou saúde end-to-end.
 
 ## Sequência mínima

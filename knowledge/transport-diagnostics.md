@@ -54,9 +54,10 @@ O resultado preserva `source_fact_ids`, `transport_key`, `observation_source` e
 unidade, timestamp ou cobertura ausente produz `streaming.slo.unresolved` e
 `SF-STREAM-012`; violação observada produz `SF-STREAM-011`.
 
-Esse caminho não prova freshness, p95, disponibilidade, sink health, causa,
-custo ou estado live. `kinesis.metric` sem timestamp não vira série por ordem
-do arquivo, e CloudWatch não é consultado pelo compositor.
+Esse diagnóstico de transporte isolado não prova freshness, disponibilidade,
+sink health, causa, custo ou estado live. A avaliação SLO separada aceita p95
+nearest-rank sobre a série observada, mas `kinesis.metric` sem timestamp não
+vira série por ordem do arquivo, e CloudWatch não é consultado pelo compositor.
 
 ## Blind spots e sequência operacional
 

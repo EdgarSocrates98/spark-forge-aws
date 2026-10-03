@@ -165,12 +165,14 @@ sparkforge analyze streaming-composition \
 
 Sink usa `num_output_rows` em `rows` e só é resolvido quando há um batch único
 com `batch_id`, `query_name` e timestamp. Kafka usa `kafka.lag` em `records`;
-Kinesis usa `kinesis.shard` em `ms` para `iterator_age_ms`. A avaliação exige
+Kinesis usa `kinesis.shard` em `ms` para `iterator_age_ms`. `statistic: p95`
+calcula nearest-rank sobre a série observada; `freshness_ms` usa
+`timestamp - eventTime.max`, e end-to-end latency exige campo explícito. A avaliação exige
 identidade, unidade canônica, timestamps e janela declarada coberta; séries
 misturadas, janela incompleta ou evidência ausente saem como
 `streaming.slo.unresolved`. `met` e `violated` significam somente o comparador
-observado no artefato: não são p95, freshness, disponibilidade, causalidade ou
-saúde end-to-end. Detalhe em
+observado no artefato: não são disponibilidade, causalidade ou saúde end-to-end.
+Detalhe em
 [cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
 [referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
 

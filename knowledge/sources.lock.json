@@ -4020,10 +4020,13 @@
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-10-01"
+        "2026-10-01",
+        "2026-10-02"
       ],
       "rules": [
-        "SF-STREAM-003"
+        "SF-STREAM-003",
+        "SF-STREAM-013",
+        "SF-STREAM-014"
       ]
     },
     "https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.lastProgress.html": {
@@ -4179,6 +4182,8 @@
         "SF-STREAM-007",
         "SF-STREAM-011",
         "SF-STREAM-012",
+        "SF-STREAM-013",
+        "SF-STREAM-014",
         "SF-STREAMICE-002",
         "SF-STREAMOBS-001",
         "SF-STREAMOBS-002"

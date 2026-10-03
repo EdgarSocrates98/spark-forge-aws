@@ -13,12 +13,12 @@
   },
   "skills": {
     "document_count": 60,
-    "total_bytes": 669692,
-    "by_name_sha256": "9d7bab89e4474c771632f04329987fd17c77720dc40c2011c059f3f0b048f760"
+    "total_bytes": 670413,
+    "by_name_sha256": "fff79bb58b4269fda7cfae0e06547a2be3e7cee301b63e5ffb5b0e7c90f059e1"
   },
   "knowledge": {
     "document_count": 72,
-    "total_bytes": 599849,
-    "by_name_sha256": "0c690df7eab14919336692f2a292ca3c43d9905c931fe2af2737ed6162e125f8"
+    "total_bytes": 600952,
+    "by_name_sha256": "312c5f33398a92d29d915b77d9a0e9eef75bb5d752583e2fdc1a53b5902e2fb0"
   }
 }

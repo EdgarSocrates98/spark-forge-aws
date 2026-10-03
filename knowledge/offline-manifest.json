@@ -321,7 +321,7 @@
     {
       "path": "knowledge/streaming-operations.md",
       "title": "streaming-operations",
-      "sha256": "9211efaaca5fca781d82c380721d121f53c3cb73492ea9d4ecc2e901cf84a201"
+      "sha256": "eeb94f43ac9154ad0c62c4e10fc39bbfcbd97fd0a737a32d7001032c789e0944"
     },
     {
       "path": "knowledge/streaming-integrations.md",
@@ -331,7 +331,7 @@
     {
       "path": "knowledge/transport-diagnostics.md",
       "title": "transport-diagnostics",
-      "sha256": "23144d35272079f95fcab9728838f4b6b16dadbf79a5fca14dc1168d39aa7733"
+      "sha256": "ff0f8bdd84de6faaa3334ca875b647c929200753574d1374a927aacaf996d605"
     },
     {
       "path": "knowledge/terraform-data-platform.md",
