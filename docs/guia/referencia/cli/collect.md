@@ -21,10 +21,10 @@ Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).
 | [`sparkforge collect iam-access`](#sparkforge-collect-iam-access) | Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao. |
 | [`sparkforge collect iceberg-metadata`](#sparkforge-collect-iceberg-metadata) | Consulta metadata tables Iceberg de uma tabela via Athena. |
 | [`sparkforge collect lakeformation`](#sparkforge-collect-lakeformation) | Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela. |
-| [`sparkforge collect managed-flink`](#sparkforge-collect-managed-flink) | Coleta descrição read-only de uma aplicação Managed Flink. |
+| [`sparkforge collect managed-flink`](#sparkforge-collect-managed-flink) | Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação. |
 | [`sparkforge collect parquet-footer`](#sparkforge-collect-parquet-footer) | Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow. |
 | [`sparkforge collect schema-registry`](#sparkforge-collect-schema-registry) | Coleta metadata e latest version read-only do AWS Glue Schema Registry. |
-| [`sparkforge collect streaming-integrations`](#sparkforge-collect-streaming-integrations) | Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio. |
+| [`sparkforge collect streaming-integrations`](#sparkforge-collect-streaming-integrations) | Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio. |
 | [`sparkforge collect verify`](#sparkforge-collect-verify) | Verifica presenca e integridade de todos os artefatos do manifesto. |
 | [`sparkforge collect workspace-graph`](#sparkforge-collect-workspace-graph) | Coleta grafo live limitado aos cloud_resources declarados no workspace manifest. |
 
@@ -313,7 +313,7 @@ sparkforge collect lakeformation --help
 
 ## `sparkforge collect managed-flink`
 
-Coleta descrição read-only de uma aplicação Managed Flink.
+Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação.
 
 ```bash
 sparkforge collect managed-flink --help
@@ -383,7 +383,7 @@ sparkforge collect schema-registry --help
 
 ## `sparkforge collect streaming-integrations`
 
-Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio.
+Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio.
 
 ```bash
 sparkforge collect streaming-integrations --help

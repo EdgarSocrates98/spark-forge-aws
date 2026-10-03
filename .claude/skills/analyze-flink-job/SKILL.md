@@ -45,6 +45,10 @@ capacidade, versão ou comportamento do outro.
    `*.unresolved` antes de julgar. `flink.source`/`flink.sink` preservam
    somente identidade e métricas explicitamente observadas; ausência vira
    `source_metrics_missing`/`sink_metrics_missing`, nunca zero.
+   Quando o artifact Managed Flink veio de uma janela CloudWatch bounded,
+   `managed_flink.metric` preserva `name`, `stat`, `unit` e `observed_at`.
+   Esses pontos continuam observações isoladas: não são automaticamente
+   saúde, SLO, causalidade, custo ou tendência.
 3. Julgue fatos observados:
 
    ```bash
@@ -70,6 +74,7 @@ capacidade, versão ou comportamento do outro.
 
 - Não inferir exactly-once a partir de checkpoint presente.
 - Não transformar backpressure isolado em incidente sem série comparável.
+- Não transformar uma métrica temporal isolada em saúde, SLO ou tendência.
 - Não misturar Apache Flink com Managed Flink.
 - Não afirmar ganho, custo ou limiar sem medição e `fact_id`.
 - Não executar alteração no job, cluster, application ou AWS.

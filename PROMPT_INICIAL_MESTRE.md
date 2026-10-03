@@ -120,6 +120,8 @@ Para workloads streaming, CDC e real-time, acrescente conforme o artefato:
   posições, transações, tombstones e seam snapshot/CDC;
 - `analyze-flink-job`, `review-glue-streaming` e `design-realtime-data-architecture` —
   Flink/Managed Flink, Glue Streaming/RTM e decisão arquitetural por constraints.
+  Quando houver janela CloudWatch, preserve os cinco fatos temporais de Kinesis ou
+  os cinco fatos application-level de Managed Flink antes de julgar.
 
 Quando houver declaração SLO e facts já extraídos, `analyze-streaming-composition --mode slo`
 avalia progress Structured Streaming ou métricas diretamente observadas de Kafka/Kinesis.

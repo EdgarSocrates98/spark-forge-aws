@@ -291,6 +291,15 @@ gates finais estão registrados no `ship.md`; suíte completa não foi executada
 O contrato está em
 [`docs/sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/ship.md`](../sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/ship.md).
 
+## Auditoria documental transversal — **CONCLUÍDA** (2026-10-03)
+
+README, `GUIA_DE_USO.md`, prompt mestre, help da CLI, referências geradas,
+`analyze-flink-job` e seus espelhos agora descrevem a mesma entrega temporal:
+janela bounded, cinco métricas Kinesis, cinco métricas application-level Managed
+Flink, facts preservados, `unresolved` fail-closed e limites de prova. Não houve
+criação de superfície MCP; a documentação aponta para os collectors existentes
+e mantém a separação upstream/managed.
+
 ## Atualização corrente — Decision Plane shadow mode (2026-09-28)
 
 Foi entregue uma camada declarativa de decisão em shadow mode. O contrato é

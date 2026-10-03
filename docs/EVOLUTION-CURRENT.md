@@ -74,9 +74,11 @@ Ainda não são claims de capacidade de produção:
 - Glue Streaming agora tem observação offline de runs terminais e facts
   explícitos de source/sink; collector live adicional e validação funcional
   continuam `N/A + motivo`.
-- Apache Flink agora tem facts explícitos de source/sink e unresolved para
-  ausência/formato inválido; runtime observado, savepoints, métricas temporais,
-  exactly-once e validação funcional continuam `N/A + motivo`.
+- Apache Flink upstream agora tem facts explícitos de source/sink e unresolved
+  para ausência/formato inválido; runtime observado, savepoints, métricas
+  temporais upstream, exactly-once e validação funcional continuam `N/A + motivo`.
+  Managed Flink tem, separadamente, janela CloudWatch bounded de cinco métricas
+  application-level em `managed_flink.metric`.
 - snapshots regionais/managed runtime ausentes, que devem sair `unresolved`.
 - Kinesis agora possui coleta temporal bounded no collector existente. Ela exige
   `metrics_start`, `metrics_end` e período válido, consulta somente as cinco

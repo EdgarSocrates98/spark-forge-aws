@@ -174,6 +174,10 @@ do wheel e de uma CLI real do host.
   Forge Lab, governança, AWS e plataformas de agentes.
 - Mirrors `.claude`, `.agents` e `.github` sincronizados a partir de `skills/` e
   `agents/`; bundle offline com hashes conferidos.
+- Auditoria documental de 2026-10-03 propagou a entrega temporal para README,
+  guia operacional raiz, prompt mestre, help da CLI, referências geradas e
+  `analyze-flink-job`; o contrato permanece sem tool MCP nova e com CLI/MCP
+  paritários.
 
 ## Commits de fechamento por fase
 

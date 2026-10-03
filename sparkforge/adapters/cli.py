@@ -3353,7 +3353,9 @@ def build_parser() -> argparse.ArgumentParser:
         "streaming-integrations",
         help=(
             "Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, "
-            "MSK e DMS; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio."
+            "MSK e DMS; com janela explícita, coleta cinco métricas stream-level "
+            "temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved "
+            "sem endpoint proprio."
         ),
     )
     streaming_collect_p.add_argument("--repo", required=True)
@@ -3416,7 +3418,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     managed_flink_collect_p = collect_sub.add_parser(
         "managed-flink",
-        help="Coleta descrição read-only de uma aplicação Managed Flink.",
+        help=(
+            "Coleta descrição read-only de uma aplicação Managed Flink; com janela "
+            "explícita, coleta cinco métricas temporais de aplicação."
+        ),
     )
     managed_flink_collect_p.add_argument("--repo", required=True)
     managed_flink_collect_p.add_argument("--application-name", required=True, help="Nome da aplicação Managed Flink.")

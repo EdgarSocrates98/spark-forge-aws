@@ -189,6 +189,32 @@ capacidade; correlacione os facts com checkpoint, operator, runtime e série
 temporal. Detalhes em [`knowledge/flink-streaming.md`](knowledge/flink-streaming.md)
 e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
+### Métricas temporais bounded de Kinesis e Managed Flink
+
+Os collectors read-only existentes também aceitam uma janela CloudWatch
+explícita. Kinesis preserva cinco métricas stream-level como `kinesis.metric`;
+Managed Flink preserva cinco métricas application-level no namespace
+`AWS/KinesisAnalytics` como `managed_flink.metric`:
+
+```bash
+sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+Os artifacts preservam observações, unidade, estatística, timestamp, respostas
+raw, paginação bounded e lacunas. Janela inválida, resposta parcial, shape
+inválido ou métrica ausente vira `unresolved`, nunca zero. Isso não habilita
+enhanced/shard-level Kinesis, dimensões Task/Operator/Parallelism, job plan,
+replay, SLO, causalidade, custo ou claim de saúde.
+
 ### Glue Streaming: efetivo versus Terraform
 
 Quando o caso inclui a definição efetiva do job e o Terraform do mesmo ambiente,

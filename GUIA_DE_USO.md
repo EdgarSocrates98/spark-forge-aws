@@ -129,6 +129,30 @@ throughput sem timestamp/janela; ausência dos blocos vira
 prova exactly-once nem saúde. Para Managed Flink use `--artifact managed_flink`;
 os namespaces não se completam.
 
+Para coletar observabilidade temporal bounded sem misturar namespaces, use os
+collectors read-only existentes com as duas pontas da janela:
+
+```bash
+sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+O primeiro preserva cinco métricas stream-level como `kinesis.metric`; o
+segundo preserva cinco métricas application-level do namespace
+`AWS/KinesisAnalytics` como `managed_flink.metric`. Observações, unidade,
+estatística, timestamp, raw e lacunas permanecem no artifact. Ausência ou
+resposta inválida é `unresolved`, nunca zero; enhanced/shard-level, dimensões
+detalhadas Managed Flink, job plan, replay, benchmark e saúde end-to-end ficam
+fora do contrato.
+
 ## 2. Claude Code
 
 Use o agente:
