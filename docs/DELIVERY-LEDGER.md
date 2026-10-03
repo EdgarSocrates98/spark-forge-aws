@@ -176,6 +176,7 @@ do wheel e de uma CLI real do host.
 | `d4106b6` | ship SDD, knowledge, skills, mirrors, referências, manifests, surface lock, status e documentação transversal |
 | `aedae77` | SDD explore/define/design/plan de p95 e freshness SLO |
 | `4ba8177` | facts, compositor, testes e golden de `statistic=p95`, `freshness_ms` e latência explícita |
+| `34eb790` | documentação, mirrors, locks e ship report de p95/freshness SLO |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
