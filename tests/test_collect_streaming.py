@@ -162,6 +162,35 @@ def test_kinesis_temporal_metrics_are_collected_and_normalized(monkeypatch, tmp_
     assert fake.clients["cloudwatch"].calls[0]["ScanBy"] == "TimestampAscending"
 
 
+def test_kinesis_temporal_metrics_feed_transport_analyzer(monkeypatch, tmp_path):
+    fake = FakeBoto3()
+    monkeypatch.setattr(streaming, "require_boto3", lambda: fake)
+    entry = streaming.collect_streaming_integrations(
+        tmp_path,
+        now="2026-10-02T00:10:00Z",
+        kinesis_stream_name="orders",
+        metrics_start="2026-10-02T00:00:00Z",
+        metrics_end="2026-10-02T00:05:00Z",
+        metrics_period=60,
+    )
+
+    from sparkforge.facts.transport import extract_transport_path
+
+    facts = extract_transport_path(tmp_path / entry.path, artifact_type="kinesis")
+    metric_facts = [fact for fact in facts if fact.kind == "kinesis.metric"]
+    assert len(metric_facts) == 10
+    assert {fact.attrs["name"] for fact in metric_facts} == {
+        "IncomingBytes",
+        "IncomingRecords",
+        "GetRecords.IteratorAgeMilliseconds",
+        "ReadProvisionedThroughputExceeded",
+        "WriteProvisionedThroughputExceeded",
+    }
+    assert all(fact.attrs["observed_at"].endswith("+00:00") for fact in metric_facts)
+    assert all(fact.attrs["stream_name"] == "orders" for fact in metric_facts)
+    assert not any(fact.attrs.get("reason") == "kinesis_metric_missing" for fact in facts)
+
+
 def test_offline_hit_does_not_touch_aws(monkeypatch, tmp_path):
     fake = FakeBoto3()
     monkeypatch.setattr(streaming, "require_boto3", lambda: fake)

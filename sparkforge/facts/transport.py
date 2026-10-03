@@ -298,6 +298,8 @@ def _msk_record(data: dict[str, Any], artifact: str, line: int, provenance: dict
 
 def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
     facts: list[Fact] = []
+    if isinstance(data.get("kinesis"), dict):
+        data = data["kinesis"]
     stream = _as_dict(data.get("stream")) or _as_dict(data.get("streamDescription")) or data
     def _alias(*keys: str) -> Any:
         return next((stream[key] for key in keys if key in stream), None)
@@ -373,7 +375,10 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
             )
     metrics = data.get("metrics", stream.get("metrics"))
     if isinstance(metrics, dict):
-        metrics = [{"name": name, "value": value} for name, value in metrics.items()]
+        observations = metrics.get("observations")
+        metrics = observations if isinstance(observations, list) else [
+            {"name": name, "value": value} for name, value in metrics.items()
+        ]
     if isinstance(metrics, list):
         for metric in metrics:
             if not isinstance(metric, dict):
@@ -387,7 +392,11 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
                     line,
                     provenance,
                     measures=measures,
-                    attrs={key: metric[key] for key in ("name", "unit", "stream_name", "shard_id") if key in metric},
+                    attrs={
+                        key: metric[key]
+                        for key in ("name", "unit", "stream_name", "shard_id", "stat", "observed_at")
+                        if key in metric
+                    },
                 )
             )
     if not facts:
