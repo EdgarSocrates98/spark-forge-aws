@@ -15,6 +15,7 @@ acceptance:
   - id: AC1
     statement: "O contrato valida componentes mínimos, dependências e cenários de falha, preservando unresolved para referências ausentes."
     verified_by: {kind: test, ref: "tests/test_forge_lab.py::test_forge_lab_validates_topology_and_scenarios"}
+    guard: "A implementação foi construída em fases anteriores sob a regra do plano de executar a suíte apenas após o fechamento do Forge Lab; não existe red histórico verificável para este teste e o gate não deve aceitar um exit inventado."
   - id: AC2
     statement: "O analisador retorna perfil offline, componentes, ordem topológica e cenários sem executar Docker ou sistemas externos."
     verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml"}

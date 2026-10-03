@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/FORGE_LAB_DIGITAL_TWIN/define.md
-  sha256: "c9eee1f32498be5e85fad37f1162e500a48291738f2c706e60f1e22f75268dd4"
+  sha256: "64d91ea569a716657c45cfa28e09c10816bdf16bc2130a1de29315d9268a925e"
 files:
   - {path: sparkforge/lab/__init__.py, action: create, reason: "API do contrato offline do Forge Lab."}
   - {path: sparkforge/lab/spec.py, action: create, reason: "Loader, validação e descrição determinística da topologia."}

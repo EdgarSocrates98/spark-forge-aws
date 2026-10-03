@@ -70,6 +70,27 @@ ship Forge Lab: não foi reexecutado após o contrato temporal upstream de Flink
 Ele valida contratos e regressões locais; não é claim de performance, custo,
 capacidade cloud ou execução real do laboratório.
 
+## Atualização corrente — Forge Lab Digital Twin — **CONCLUÍDA** (2026-10-03)
+
+`FORGE_LAB_DIGITAL_TWIN` fecha o contrato topológico read-only que faltava ao
+produto: `labs/forge-lab/lab.yaml` declara nove componentes mínimos (transporte,
+processamento, lakehouse, catálogo, CDC e observabilidade), dependências e sete
+cenários de falha com `action`, `target`, `expected_evidence` e confirmação
+obrigatória. `labs/forge-lab/compose.yaml` permanece blueprint parametrizado por
+imagens e profiles; o analisador não executa Docker, não mata broker, não reinicia
+CDC e não altera dados.
+
+`sparkforge analyze forge-lab --path labs/forge-lab/lab.yaml` retorna
+`offline_spec_only`, readiness unresolved até validação do operador, ordem
+topológica determinística, fingerprint e `unresolved`. `tests/test_forge_lab.py`
+passou com **3 testes**. O build/ship SDD está em
+[`docs/sdd/FORGE_LAB_DIGITAL_TWIN/ship.md`](../sdd/FORGE_LAB_DIGITAL_TWIN/ship.md).
+
+O contrato não prova disponibilidade de imagens, execução L1/L2/L3, throughput,
+latência, custo, semântica AWS ou exactly-once. O gate `check_vnext_claims.py`
+reportou 27 divergências em provas command históricas de `docs/vnext/` e
+`docs/harness/`; elas ficam nomeadas, sem regeneração silenciosa.
+
 ## Atualização corrente — Streaming End-to-End Pipeline — **CONCLUÍDA** (2026-10-03)
 
 `STREAMING_END_TO_END_PIPELINE` adiciona `mode=pipeline` ao compositor
@@ -279,11 +300,10 @@ O índice consolidado da evolução está em
 `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md` e
 `prompt_evo_forge_lab.md`, com os limites que continuam `unresolved`.
 
-O SDD corrente encontrou **73 features**: **71 `ship/done`**, uma em
-`plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e uma em `ship/draft`
-(`INTEGRACAO_USUARIO`). Templates não entram na contagem. A feature de produto
-Forge Lab está fechada em `FORGE_LAB_PRODUCT`; a pasta Digital Twin é registro
-SDD separado e não deve ser contada como segundo ship.
+O SDD corrente encontrou **73 features**: **72 `ship/done`** e uma em
+`ship/draft` (`INTEGRACAO_USUARIO`). Templates não entram na contagem. As duas
+features Forge Lab estão fechadas em `FORGE_LAB_PRODUCT` e
+`FORGE_LAB_DIGITAL_TWIN`.
 
 Esta atualização adiciona `glue.streaming.source` e `glue.streaming.sink` ao
 extrator Glue Streaming, com unresolved para ausência, shape inválido ou falta

@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/FORGE_LAB_DIGITAL_TWIN/design.md
-  sha256: "cae41fffd13234115251fb4cf0347ec73cedef26819b05ea2bc4076ebfe24913"
+  sha256: "5f31ec5b3a12de463f6b77b6ef32e318cf1d92cea2222b5cf2f8cff9fd15580b"
 tasks:
   - id: T1
     files: [sparkforge/lab/__init__.py, sparkforge/lab/spec.py, labs/forge-lab/lab.yaml, tests/test_forge_lab.py]
