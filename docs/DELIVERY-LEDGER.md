@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **66 features**:
+O status atual registra **67 features**:
 
-- **64** em `ship/done`;
+- **65** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -61,7 +61,8 @@ STREAMING_SLO_LATENCY_FRESHNESS,
 STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
-STREAMING_SCHEMA_REGISTRY, STREAMING_STRUCTURED_REVIEW,
+STREAMING_SCHEMA_REGISTRY, STREAMING_SCHEMA_REGISTRY_COLLECTOR,
+STREAMING_STRUCTURED_REVIEW,
 STREAMING_TEMPORAL_EVIDENCE, STREAMING_TRANSPORT_DIAGNOSTICS,
 TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH,
 TOKEN_ESTIMATE_UNICO, TOOLS_OK
@@ -111,7 +112,10 @@ do wheel e de uma CLI real do host.
 - CDC: Debezium, AWS DMS, eventos, posições, transações, tombstones, schema
   history, seams snapshot/CDC e blind spots.
 - Schema Registry/data contracts: compatibilidade, evolução, diff estrutural,
-  auto-register e políticas ausentes.
+  auto-register e políticas ausentes; o coletor read-only do Glue Registry
+  adiciona paginação, metadata, latest version, definição limitada, cache,
+  manifesto, unresolved e portas CLI/MCP. Histórico completo, matriz regional,
+  consumidores cross-artifact e validação funcional continuam fora.
 - Checkpoints, Kafka Connect, Kafka Streams e OpenLineage como facts separados;
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
 - Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
@@ -200,6 +204,8 @@ do wheel e de uma CLI real do host.
 | `aa6e133` | SDD explore/define/design/plan/build/ship, docs, skill/mirrors, knowledge, manifest offline, surface lock, status e cobertura do contrato Flink source/sink |
 | `f1c9538` | SDD e contrato offline de `glue.streaming.source`/`glue.streaming.sink`, testes, goldens e documentação transversal |
 | `44248f2` | correção documental: remoção de seção Glue source/sink duplicada no README |
+| `a92b388` | coletor read-only Glue Schema Registry, artefato versionado, paginação, cache, redaction, unresolved e SDD inicial |
+| `1abd428` | portas CLI/MCP, parity, referências de superfície e contrato MCP de subject snapshot |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -209,10 +215,10 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | 14396 testes coletados em 2026-10-02; suíte completa não executada nesta frente |
+| Coleta atual de testes | contagem histórica de 14396 em 2026-10-02; nesta frente, lote do coletor/superfície/golden: **25 passed**, e suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
-| Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
+| Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes |
 | Evidência temporal | 980 testes focados; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |

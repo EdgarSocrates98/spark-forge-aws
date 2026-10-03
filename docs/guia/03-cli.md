@@ -748,6 +748,21 @@ Ele baixa a definição real do job pela API do Glue, para comparar com o que o
 Terraform declara. Confira as opções de cada coletor em
 [referencia/cli/collect.md](referencia/cli/collect.md) antes de rodar.
 
+Para Glue Schema Registry, a coleta é read-only e registra a versão mais recente
+observada junto com metadata e definição:
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events \
+  --max-schemas 100 --now <ISO8601>
+sparkforge analyze schema-registry \
+  --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+`--schema-name` filtra um schema; `--schema-arn` consulta por ARN. Os limites
+`--max-schemas` e `--max-definition-bytes` evitam downloads ilimitados e
+preservam `unresolved` quando a evidência não cabe no contrato. O collector
+nunca cria, registra, atualiza ou exclui objetos no registry.
+
 ## Próximos passos
 
 - [Conceitos](01-conceitos.md): o glossário de fact, finding, recusa e os

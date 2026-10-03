@@ -44,3 +44,22 @@ redação de dados sensíveis.
 Runtime de registry e formato devem ser declarados no dump. O extrator não
 converte ausência em default nem afirma que AWS Glue e Confluent têm semântica
 idêntica.
+
+## Coleta AWS read-only
+
+Quando a fonte é o Glue Schema Registry, use o collector somente de leitura:
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events \
+  --max-schemas 100 --now <ISO8601>
+sparkforge analyze schema-registry \
+  --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+O collector chama apenas `get_registry`, `list_schemas`, `get_schema` e
+`get_schema_version` para obter a versão mais recente observada. O manifesto
+registra SHA-256, região, timestamp e comando de recoleta; o cache íntegro não
+volta à AWS. `--max-schemas` e `--max-definition-bytes` são limites explícitos:
+truncamento por cardinalidade ou definição ausente/excessiva vira
+`unresolved`, nunca uma definição parcial. Criar, registrar, atualizar ou
+excluir schema não faz parte do collector.

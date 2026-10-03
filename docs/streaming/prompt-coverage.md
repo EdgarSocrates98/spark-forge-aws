@@ -29,7 +29,7 @@ O inventário de commits, features e provas compartilhadas está em
 | CDC | `diagnosable` parcial | `facts/cdc.py`, regras `SF-CDC`, fixtures de evento/connector/seam/unresolved, CLI/MCP e `review-cdc-replication` | collector/replay temporal, cross-artifact com consumidor e validação funcional |
 | AWS DMS | `diagnosable` parcial | namespace `dms.*`, `collect streaming-integrations`, task/endpoint/mapping/stats/unresolved, rules e fixtures | matriz de versões, logs temporais e recovery funcional |
 | Debezium | `diagnosable` parcial | namespace `debezium.*`, config/status/schema-history/tombstone/unresolved, rules e fixtures | collector Kafka Connect, matriz de versões, offsets/DLQ e replay funcional |
-| Schema Registry/data contracts | `diagnosable` parcial | `facts/schema_registry.py`, `rules/catalog/schema_registry.yaml`, fixtures `schema_registry`, `sparkforge_analyze_schema_registry`, `review-cdc-replication` | collectors/live registry, matriz completa de formato/versão, consumidores cross-artifact e validação funcional |
+| Schema Registry/data contracts | `diagnosable` parcial | `facts/schema_registry.py`, `rules/catalog/schema_registry.yaml`, fixtures `schema_registry`, `sparkforge_analyze_schema_registry`, coletor read-only `collect/schema_registry.py`, `collect schema-registry`, `sparkforge_collect_schema_registry`, manifesto/cache/limites, `knowledge/schema-registry-data-contracts.md`, `review-cdc-replication` | histórico completo de versões, matriz completa de formato/versão, consumidores cross-artifact e validação funcional |
 | Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py` emite `iceberg.snapshot`, `facts/streaming_iceberg_temporal.py` compõe janela `StreamingQueryProgress`→`committed_at`, `analyze streaming-composition --mode iceberg_temporal`, regras `streaming_iceberg.yaml`, fixtures e goldens; avaliação SLO observada existe no progress e sink por `mode=slo` | collectors/live lineage, SLO específico de commit, FinOps e validação causal/funcional permanecem lacunas |
 | Delta/Hudi | `knowledge-aware` parcial | `streaming_ops.lakehouse`, `knowledge/streaming-format-serving-matrix.md`, fixtures e matriz de formatos | runtime/feature compatibility e collectors ficam P1/P2 |
 | Event-driven architecture | `diagnosable` parcial | `facts/event_driven.py`, regras `SF-EVENT`, fixtures, `analyze event-driven`, MCP, skill, routing e SDD | collector live, Step Functions, teste temporal de entrega/replay e decisão vs streaming |
@@ -51,7 +51,8 @@ O inventário de commits, features e provas compartilhadas está em
   provam throughput, exactly-once ou saúde sem janela temporal.
 - Wave F parcial: Schema Registry/data contracts com registro, definição,
   compatibilidade declarada, diff estrutural, auto-register, unresolved,
-  fixtures, CLI/MCP, skill, routing e SDD ship.
+  fixtures, analyzer CLI/MCP, skill, routing e SDD ship, além de coletor AWS
+  read-only de metadata/latest version com cache, manifesto e limites.
 - Wave G parcial: composição offline entre streaming, Iceberg e observabilidade
   de Kafka/Kinesis, com identidade declarada, facts linkados, unresolved,
   rules evidence-driven, CLI/MCP, skill, routing, fixtures e SDD.
@@ -73,9 +74,10 @@ O inventário de commits, features e provas compartilhadas está em
   benchmark e eficácia end-to-end permanecem
   `N/A + motivo` por dependerem de endpoint, credencial, janela e workload reais.
 - Wave K parcial: collector AWS read-only para checkpoint S3, Glue Streaming,
-  Kinesis, MSK e DMS, com redaction, cache por hash, manifesto, CLI/MCP e
-  testes com clientes falsos. Connect REST, Kafka Streams runtime, OpenLineage
-  live, lag temporal, replay e benchmark continuam `N/A + motivo`.
+  Kinesis, MSK, DMS e Glue Schema Registry, com redaction, cache por hash,
+  manifesto, CLI/MCP e testes com clientes falsos. Connect REST, Kafka Streams
+  runtime, OpenLineage live, lag temporal, replay e benchmark continuam
+  `N/A + motivo`.
 - Wave L: workflow dedicado `review-structured-streaming`, eval, validador de
   evidence, coordenador, mirrors e SDD ship para source/progress/checkpoint;
   execução Spark, replay e benchmark continuam `N/A + motivo` por dependerem de
@@ -119,6 +121,11 @@ O inventário de commits, features e provas compartilhadas está em
   workers, emitindo drift ou blind spot sem inferir aplicação.
 - `STREAMING_SCHEMA_REGISTRY`: contrato/diff estrutural de compatibilidade,
   auto-register, políticas ausentes, fixtures, analyzer e ship SDD.
+- `STREAMING_SCHEMA_REGISTRY_COLLECTOR`: coleta read-only do Glue Schema Registry
+  com paginação, registry/schema metadata, latest schema version, definição
+  opcional limitada, unresolved, cache offline-first, manifesto, CLI/MCP,
+  knowledge e referências geradas. Histórico completo, matriz regional e
+  consumidores cross-artifact seguem fora.
 - `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`: checkpoint metadata, Kafka
   Connect, Kafka Streams e OpenLineage com facts separados e limites
   temporais preservados.
@@ -187,12 +194,12 @@ live em capacidade comprovada.
 |---|---|---|
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, source/sink explícitos, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | **source/sink offline explícitos entregues** com `glue.streaming.source`/`sink` e unresolved; collector live adicional, validação funcional e capability evidence permanecem lacunas; observação offline definição→run entregue com `SF-GLUESTREAM-006/007`; cross-artifact efetivo→Terraform entregue com `SF-GLUESTREAM-004/005` |
-| F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
+| F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist, routing e coletor read-only latest do Glue; histórico completo, matriz completa, consumidores cross-artifact e validação funcional permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, SLO sobre progress/sink/Kafka/Kinesis com janela coberta, p95/freshness offline, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, endpoint live, latência end-to-end implícita, correlação de longo período e atribuição continuam lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |
 | I | Delta/Hudi/Redshift and P2 knowledge | **matrizes e facts declarativos entregues**: compatibilidade e serving são knowledge-aware; evals/collectors/benchmark continuam P1/P2 |
 | J | security, failure fixtures, integration, performance, packaging and all gates | **contratos offline entregues**: Connect/OpenLineage/checkpoint/Streams, failure goldens, CLI/MCP, SDD e gates; faltam runtime temporal, replay, benchmark e integração live |
-| K | collectors read-only AWS | **entregue parcialmente**: checkpoint S3, Glue, Kinesis, MSK e DMS; cache, redaction, manifesto, CLI/MCP e testes; endpoints Connect/Streams/OpenLineage permanecem fora por não haver API AWS universal |
+| K | collectors read-only AWS | **entregue parcialmente**: checkpoint S3, Glue, Kinesis, MSK, DMS e Glue Schema Registry; cache, redaction, manifesto, limites, CLI/MCP e testes; histórico completo e endpoints Connect/Streams/OpenLineage permanecem fora por não haver API AWS universal |
 
 ## Regra de conclusão
 

@@ -38,7 +38,7 @@ O inventário completo das features, commits e provas está em
 | [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, explicit sources/sinks, checkpoints, state, service configuration, connectors, metrics and unresolved blind spots |
 | [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, explicit source/sink endpoints, RTM restrictions, observed capacity, terminal-run correlation and unresolved blind spots |
 | [`cdc-replication.md`](cdc-replication.md) | Offline CDC/Debezium/AWS DMS contract: operations, positions, keys, transactions, snapshot/CDC seam, tombstones, schema history, endpoints, mappings and unresolved blind spots |
-| [`schema-registry-data-contracts.md`](schema-registry-data-contracts.md) | Schema Registry compatibility, evolution, versions and data-contract governance |
+| [`schema-registry-data-contracts.md`](schema-registry-data-contracts.md) | Schema Registry compatibility, evolution, versions, data-contract governance and Glue read-only latest-version collection with cache/manifest/unresolved limits |
 | [`spark/execution-model.md`](spark/execution-model.md) | Como Spark executa: lazy eval, actions, jobs/stages/tasks, fronteiras de shuffle, codegen, o que quebra pushdown |
 | [`spark/config-reference.md`](spark/config-reference.md) | Configs com nome exato, default e significado — AQE, shuffle, broadcast, leitura de arquivos |
 | [`spark/shuffle-join-skew.md`](spark/shuffle-join-skew.md) | Estratégias físicas de join, custo de shuffle, diagnóstico e tratamento de skew |

@@ -472,6 +472,17 @@ uma, está no [índice de tools](referencia/tools/README.md).
 | `knowledge_*`, `pack_list` | Conhecimento versionado e Forge Packs. Ver [packs e conhecimento](usos/packs-e-conhecimento.md) |
 | `release_*`, `migration_assess`, `runtime_detect`, `glue_*`, `iceberg_*`, `lakeformation_*`, `controlm_*` | Versões de runtime, migração e eixos específicos de cada serviço |
 
+### Glue Schema Registry
+
+O comando correspondente é `collect schema-registry`; a tool
+`sparkforge_collect_schema_registry` é read-only: chama apenas operações
+`list/get` do Glue Schema Registry, grava o artifact local e registra manifesto
+com cache/offline-first. A coleta busca a versão mais recente observada e aceita
+`registry_name`, `schema_name` ou `schema_arn`; `max_schemas` e
+`max_definition_bytes` mantêm custo de contexto e cardinalidade limitados.
+Ausência ou definição fora do limite permanece `unresolved`; nenhuma operação de
+criação, registro, atualização ou exclusão é oferecida.
+
 ## Problemas comuns
 
 | Sintoma | Causa provável | Como resolver |

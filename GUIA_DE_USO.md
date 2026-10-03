@@ -100,6 +100,20 @@ O mesmo dump pode declarar endpoints em `stream.sources`/`source` e
 métrica. Não derive endpoint de `source_type`; não trate contador ou commit como
 throughput, saúde ou exactly-once sem janela e timestamp.
 
+Para coletar contratos do Glue Schema Registry, use a operação read-only com
+identidade de registry ou schema. Ela pagina resultados, captura metadata e
+latest version, grava manifesto/cache local e limita a definição; não executa
+create, update ou delete na AWS:
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
+sparkforge analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+Definição ausente, inválida ou acima do limite é `unresolved`, não contrato
+inventado. Veja [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md)
+e a [referência da tool MCP](referencia/tools/sparkforge_collect_schema_registry.md).
+
 Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
 de correlacionar com checkpoint, operator e transporte:
 
@@ -394,7 +408,7 @@ sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
 verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
 ao vivo que não foi observada.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 134 tools fazem (recontado em 2026-10-02)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 135 tools fazem (recontado em 2026-10-03)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 

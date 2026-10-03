@@ -236,6 +236,23 @@ live, throughput, saúde, exactly-once, capacidade ou validação funcional.
 Detalhes em [`knowledge/glue-streaming-rtm.md`](knowledge/glue-streaming-rtm.md)
 e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
+### Glue Schema Registry: coleta read-only
+
+O coletor `sparkforge collect schema-registry` consulta somente
+`get_registry`, `list_schemas`, `get_schema` e `get_schema_version`, preserva a
+latest schema version observada e grava artefato com manifesto SHA-256. É
+offline-first, pagina e limita quantidade/bytes; definição ausente, inválida ou
+acima do limite fica `unresolved`. Não cria, atualiza ou exclui registry,
+schema ou version.
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
+sparkforge analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+Detalhes em [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md),
+na [referência CLI](docs/guia/referencia/cli/collect.md) e na [referência MCP](docs/guia/referencia/tools/sparkforge_collect_schema_registry.md).
+
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:
 
@@ -251,7 +268,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **134 tools MCP**.
+(`sparkforge/adapters/_core.py`), e o servidor publica **135 tools MCP**.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|
