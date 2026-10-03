@@ -206,6 +206,7 @@ do wheel e de uma CLI real do host.
 | `44248f2` | correção documental: remoção de seção Glue source/sink duplicada no README |
 | `a92b388` | coletor read-only Glue Schema Registry, artefato versionado, paginação, cache, redaction, unresolved e SDD inicial |
 | `1abd428` | portas CLI/MCP, parity, referências de superfície e contrato MCP de subject snapshot |
+| `33d1c33` | documentação transversal, build/ship SDD, manifest offline, referências, surface lock e ledger do coletor |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
