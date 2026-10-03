@@ -21,6 +21,7 @@ Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).
 | [`sparkforge collect iam-access`](#sparkforge-collect-iam-access) | Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao. |
 | [`sparkforge collect iceberg-metadata`](#sparkforge-collect-iceberg-metadata) | Consulta metadata tables Iceberg de uma tabela via Athena. |
 | [`sparkforge collect lakeformation`](#sparkforge-collect-lakeformation) | Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela. |
+| [`sparkforge collect managed-flink`](#sparkforge-collect-managed-flink) | Coleta descrição read-only de uma aplicação Managed Flink. |
 | [`sparkforge collect parquet-footer`](#sparkforge-collect-parquet-footer) | Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow. |
 | [`sparkforge collect schema-registry`](#sparkforge-collect-schema-registry) | Coleta metadata e latest version read-only do AWS Glue Schema Registry. |
 | [`sparkforge collect streaming-integrations`](#sparkforge-collect-streaming-integrations) | Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio. |
@@ -309,6 +310,27 @@ sparkforge collect lakeformation --help
 ### Tool MCP equivalente
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
+
+## `sparkforge collect managed-flink`
+
+Coleta descrição read-only de uma aplicação Managed Flink.
+
+```bash
+sparkforge collect managed-flink --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | sim | texto |  |  |  |
+| `--application-name` | sim | texto |  |  | Nome da aplicação Managed Flink. |
+| `--region` | não | texto |  | `` | Região AWS explícita. |
+| `--now` | sim | texto |  |  | Timestamp ISO 8601. |
+
+### Tool MCP equivalente
+
+[`sparkforge_collect_managed_flink`](../tools/sparkforge_collect_managed_flink.md)
 
 ## `sparkforge collect parquet-footer`
 

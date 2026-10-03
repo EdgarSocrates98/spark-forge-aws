@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_MANAGED_FLINK_COLLECTOR/design.md
-  sha256: "b498a164af5bcf7606d7965343d4e8c461dfa520504ed4dae33a347768887872"
+  sha256: "1d7c509019d63beef8709d8dcf920142e99f82e4987037576b2e0b9124180952"
 tasks:
   - id: T1
     files: [tests/test_collect_managed_flink.py, sparkforge/collect/managed_flink.py, sparkforge/collect/base.py]

@@ -69,6 +69,31 @@ ser unresolved e nomear o artefato que destrava a pergunta.
 5. Alterar uma variável principal por experimento, com rollback e proxies de
    contagem, schema, chave declarada e agregados.
 
+## Coleta Managed Flink read-only
+
+Para uma aplicação AWS, `sparkforge collect managed-flink` chama somente
+`kinesisanalyticsv2.DescribeApplication` com `IncludeAdditionalDetails=false`.
+O artifact local normaliza nome/ARN, status, runtime, versão da aplicação,
+role, checkpoint, paralelismo, VPC, logging, localização do código sem copiar
+`TextContent` e configuração de criptografia. O manifesto registra SHA,
+comando de recoleta e cache offline-first.
+
+```bash
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 --now <ISO8601>
+sparkforge analyze flink \
+  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
+  --artifact managed_flink
+```
+
+Esse collector é somente leitura na AWS e grava apenas o artifact/manifesto
+local. `DescribeApplication` não é evidência de métricas temporais, job plan,
+código executado, conectores efetivos, IAM efetivo ou latência; o artifact
+publica `managed_flink_metrics_not_observed` e
+`managed_flink_connectors_not_observed` como unresolved. Job plan exige uma
+coleta explicitamente autorizada de detalhes adicionais; métricas exigem
+CloudWatch/artefato temporal próprio.
+
 ## Fontes
 
 * https://nightlies.apache.org/flink/flink-docs-stable/docs/learn-flink/fault_tolerance/
@@ -77,3 +102,4 @@ ser unresolved e nomear o artefato que destrava a pergunta.
 * https://docs.aws.amazon.com/managed-flink/latest/java/troubleshooting-checkpoints.html
 * https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions.html
 * https://docs.aws.amazon.com/managed-flink/latest/java/performance-monitoring.html
+* https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_DescribeApplication.html

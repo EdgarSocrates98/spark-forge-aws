@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **67 features**:
+O status atual registra **68 features**:
 
-- **65** em `ship/done`;
+- **66** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -62,6 +62,7 @@ STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
 STREAMING_SCHEMA_REGISTRY, STREAMING_SCHEMA_REGISTRY_COLLECTOR,
+STREAMING_MANAGED_FLINK_COLLECTOR,
 STREAMING_STRUCTURED_REVIEW,
 STREAMING_TEMPORAL_EVIDENCE, STREAMING_TRANSPORT_DIAGNOSTICS,
 TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH,
@@ -116,6 +117,10 @@ do wheel e de uma CLI real do host.
   adiciona paginação, metadata, latest version, definição limitada, cache,
   manifesto, unresolved e portas CLI/MCP. Histórico completo, matriz regional,
   consumidores cross-artifact e validação funcional continuam fora.
+- Managed Flink: `STREAMING_MANAGED_FLINK_COLLECTOR` adiciona coleta read-only
+  de `DescribeApplication`, artifact versionado, cache offline-first, manifesto
+  SHA-256, CLI/MCP, análise `managed_flink.*` e unresolved para métricas,
+  conectores, job plan, IAM efetivo e validação funcional.
 - Checkpoints, Kafka Connect, Kafka Streams e OpenLineage como facts separados;
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
 - Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
@@ -207,6 +212,10 @@ do wheel e de uma CLI real do host.
 | `a92b388` | coletor read-only Glue Schema Registry, artefato versionado, paginação, cache, redaction, unresolved e SDD inicial |
 | `1abd428` | portas CLI/MCP, parity, referências de superfície e contrato MCP de subject snapshot |
 | `33d1c33` | documentação transversal, build/ship SDD, manifest offline, referências, surface lock e ledger do coletor |
+| `fb1ba70` | SDD explore/define/design/plan e plano TDD do coletor Managed Flink |
+| `9f0d911` | collector read-only Managed Flink, normalização, redaction, cache, manifesto e testes T1 |
+| `9db68e8` | portas CLI/MCP, parity, manifest e surface do coletor Managed Flink |
+| `9581720` | prova de handoff do artifact Managed Flink para o analyzer e preservação da identidade observada |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -216,7 +225,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | contagem histórica de 14396 em 2026-10-02; nesta frente, lote do coletor/superfície/golden: **25 passed**, e suíte completa não executada |
+| Coleta atual de testes | **14483** coletados em 2026-10-03; lote focado do coletor/docs/gates: **60 passed** (inclui 5 testes Managed Flink); suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes |

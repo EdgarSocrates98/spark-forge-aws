@@ -19,6 +19,12 @@ files:
   - {path: knowledge/flink-streaming.md, action: modify, reason: "Procedimento Managed Flink, API observada e blind spots."}
   - {path: docs/streaming/prompt-coverage.md, action: modify, reason: "Atualizar lacuna Managed Flink com collector entregue e limites restantes."}
   - {path: docs/surface.lock.json, action: modify, reason: "Lock da superfície após nova tool."}
+  - {path: knowledge/offline-manifest.json, action: modify, reason: "Hash do knowledge atualizado para o bundle offline."}
+  - {path: knowledge/sources.lock.json, action: modify, reason: "Fonte oficial do DescribeApplication registrada."}
+  - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice gerado da referência CLI/MCP."}
+  - {path: docs/guia/referencia/cli/collect.md, action: modify, reason: "Referência gerada do novo verbo collect."}
+  - {path: docs/guia/referencia/tools/README.md, action: modify, reason: "Índice gerado da nova tool."}
+  - {path: docs/guia/referencia/tools/sparkforge_collect_managed_flink.md, action: create, reason: "Contrato gerado da tool MCP."}
   - {path: docs/guia/03-cli.md, action: modify, reason: "Uso do verbo collect managed-flink."}
   - {path: docs/guia/04-mcp.md, action: modify, reason: "Uso MCP e limites da coleta."}
 decisions:

@@ -1,0 +1,35 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# `sparkforge_collect_managed_flink`
+
+**Efeito:** Acessa a AWS (lê a conta) e grava o artefato em disco local.
+
+## O que faz
+
+Coleta a descrição de uma aplicação do Managed Service for Apache Flink via kinesisanalyticsv2.DescribeApplication, sempre com IncludeAdditionalDetails=false. Registra runtime, status, versão, checkpoint, paralelismo, VPC, logging e configuração observados; job plan, código, métricas temporais e conectores ficam unresolved e nunca são inferidos. Somente leitura AWS; grava apenas artifact/manifesto local e usa cache offline-first.
+
+## Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `application_name` | string | sim |  |
+| `now` | string | sim | Timestamp ISO 8601. |
+| `repo` | string | sim |  |
+| `region_name` | string | não |  |
+
+## Na CLI
+
+[`sparkforge collect managed-flink`](../cli/collect.md)
+
+## Capacidade
+
+collect Managed Flink application configuration read-only
+
+## Anotações MCP
+
+| Anotação | Valor |
+|---|---|
+| `destructiveHint` | `false` |
+| `idempotentHint` | `true` |
+| `openWorldHint` | `true` |
+| `readOnlyHint` | `false` |

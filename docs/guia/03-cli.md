@@ -763,6 +763,22 @@ sparkforge analyze schema-registry \
 preservam `unresolved` quando a evidência não cabe no contrato. O collector
 nunca cria, registra, atualiza ou exclui objetos no registry.
 
+Para obter a configuração observada de uma aplicação Managed Flink, use a
+coleta somente leitura abaixo. Ela não pede detalhes adicionais, portanto não
+baixa código nem job plan:
+
+```bash
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 --now <ISO8601>
+sparkforge analyze flink \
+  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
+  --artifact managed_flink
+```
+
+O artifact preserva runtime, status, versão, checkpoint, paralelismo, VPC e
+logging observados. Métricas temporais e conectores efetivos permanecem
+`unresolved` e exigem CloudWatch/job plan ou artefato próprio.
+
 ## Próximos passos
 
 - [Conceitos](01-conceitos.md): o glossário de fact, finding, recusa e os

@@ -2409,6 +2409,14 @@
       ],
       "sha256": "e421723e8bd89d33c14b3729e0e7b174807a20481729be983660fd0f876d9323"
     },
+    "https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_DescribeApplication.html": {
+      "docs": [
+        "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions.html": {
       "docs": [
         "knowledge/flink-streaming.md"

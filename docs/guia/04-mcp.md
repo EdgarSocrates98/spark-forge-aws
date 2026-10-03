@@ -483,6 +483,16 @@ com cache/offline-first. A coleta busca a versão mais recente observada e aceit
 Ausência ou definição fora do limite permanece `unresolved`; nenhuma operação de
 criação, registro, atualização ou exclusão é oferecida.
 
+### Managed Flink
+
+`sparkforge_collect_managed_flink` chama somente
+`kinesisanalyticsv2.DescribeApplication` com `IncludeAdditionalDetails=false`.
+Recebe `repo`, `application_name`, `region_name` opcional e `now`; grava artifact
+local `managed_flink_application`, manifesto, SHA e comando de recoleta. O
+retorno normaliza runtime, status, versão, checkpoint, paralelismo, VPC e
+logging. Métricas temporais, job plan, código e conectores efetivos não são
+inventados: saem como unresolved e exigem evidência complementar.
+
 ## Problemas comuns
 
 | Sintoma | Causa provável | Como resolver |
