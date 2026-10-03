@@ -47,6 +47,7 @@ from sparkforge.facts import (
     funcval,
     fusion,
     glue_dq_advanced,
+    glue_job_run,
     glue_streaming,
     # `iam_access` entra nas DUAS listas no MESMO commit da fixture
     # `fixtures/iam_access/`.
@@ -195,6 +196,7 @@ EXTRACTORS = {
     # nomeando os seis.
     "graph": graph,
     "glue_dq_advanced": glue_dq_advanced,
+    "glue_job_run": glue_job_run,
     "glue_streaming": glue_streaming,
     "dqdl_validator": dqdl_validator,
     "dq_ai_assessment": dq_ai_assessment,

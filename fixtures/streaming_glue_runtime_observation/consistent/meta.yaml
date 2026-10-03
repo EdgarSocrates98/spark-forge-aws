@@ -3,6 +3,9 @@ description: Effective Glue Streaming definition matches terminal run observatio
 expects_kinds:
   - glue.streaming.job
   - glue.job_run
+  - glue.job_run.distribution
+  - glue.job_run.outcome
+  - glue.job_run.unresolved
   - glue.streaming.runtime_link
   - spark.timeout.unresolved
   - fusion.summary
