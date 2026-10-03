@@ -88,6 +88,50 @@
     },
     "measures": {},
     "attrs": {
+      "reason": "source_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_missing_capacity\\input\\job.json",
+      "artifact_sha256": "4a1ebd316027339620a8f46892675cc9bb2b9194b0b9c6db3cdfb6182984d8ae",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_cfa609",
+    "schema_version": 1,
+    "kind": "glue.streaming.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_missing_capacity\\input\\job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sink_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_missing_capacity\\input\\job.json",
+      "artifact_sha256": "4a1ebd316027339620a8f46892675cc9bb2b9194b0b9c6db3cdfb6182984d8ae",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_cfa609",
+    "schema_version": 1,
+    "kind": "glue.streaming.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_missing_capacity\\input\\job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
       "reason": "partition_capacity"
     },
     "provenance": {

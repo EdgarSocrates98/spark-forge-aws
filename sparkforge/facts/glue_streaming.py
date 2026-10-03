@@ -19,6 +19,8 @@ EXTRACTOR_ID = "glue_streaming@0.1.0"
 EMITTED_KINDS = frozenset(
     {
         "glue.streaming.job",
+        "glue.streaming.source",
+        "glue.streaming.sink",
         "glue.streaming.runtime",
         "glue.streaming.unresolved",
         "glue.streaming.analyzed",
@@ -71,6 +73,83 @@ def _bool(value: Any) -> bool | None:
 
 def _text(value: Any) -> str | None:
     return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _value(data: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in data and data[key] is not None:
+            return data[key]
+    return None
+
+
+def _numbers(data: dict[str, Any], keys: tuple[str, ...]) -> dict[str, int | float]:
+    result: dict[str, int | float] = {}
+    for key in keys:
+        value = _number(data.get(key))
+        if value is not None:
+            result[key] = value
+    return result
+
+
+def _endpoint_facts(
+    stream: dict[str, Any],
+    artifact: str,
+    line: int,
+    provenance: dict[str, Any],
+    *,
+    plural_key: str,
+    singular_key: str,
+    role: str,
+    kind: str,
+    measure_keys: tuple[str, ...],
+) -> list[Fact]:
+    """Extract explicit Glue Streaming source/sink records fail-closed."""
+    raw = stream.get(plural_key, stream.get(singular_key))
+    if raw is None:
+        return [_unresolved(artifact, line, provenance, f"{role}_metrics_missing")]
+    if isinstance(raw, dict):
+        records: list[Any] = [raw]
+    elif isinstance(raw, list):
+        records = raw
+    else:
+        return [_unresolved(artifact, line, provenance, f"{plural_key}_not_a_list")]
+    if not records:
+        return [_unresolved(artifact, line, provenance, f"{role}_metrics_missing")]
+
+    facts: list[Fact] = []
+    for record in records:
+        if not isinstance(record, dict):
+            facts.append(_unresolved(artifact, line, provenance, f"invalid_{role}_record"))
+            continue
+        attrs = {
+            f"{role}_id": _value(record, f"{role}_id", f"{role}Id", "id"),
+            "name": _value(record, "name", f"{role}_name", f"{role}Name"),
+            "type": _value(record, "type", f"{role}_type", f"{role}Type"),
+            "connector": _value(record, "connector", "connector_type", f"{role}_connector"),
+            "topic": _value(record, "topic", "topic_name"),
+            "stream": _value(record, "stream", "stream_name"),
+            "table": _value(record, "table", "table_name"),
+            "format": _value(record, "format", "data_format"),
+            "region": _value(record, "region", "aws_region"),
+            "consumer_group": _value(record, "consumer_group", "consumerGroup"),
+            "delivery_semantics": _value(record, "delivery_semantics", "deliverySemantics"),
+            "starting_position": _value(record, "starting_position", "startingPosition"),
+            "checkpoint_location": _value(record, "checkpoint_location", "checkpointLocation"),
+            "enabled": _value(record, "enabled"),
+        }
+        attrs = {
+            key: value
+            for key, value in attrs.items()
+            if isinstance(value, (str, bool)) and (not isinstance(value, str) or value.strip())
+        }
+        measures = _numbers(record, measure_keys)
+        if attrs or measures:
+            facts.append(_fact(kind, artifact, line, provenance, measures=measures, attrs=attrs))
+            if not measures:
+                facts.append(_unresolved(artifact, line, provenance, f"{role}_metrics_missing"))
+        else:
+            facts.append(_unresolved(artifact, line, provenance, f"{role}_fields_missing"))
+    return facts
 
 
 def _records(text: str, artifact: str) -> tuple[list[tuple[int, Any]], list[tuple[int, str]]]:
@@ -154,6 +233,53 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
     facts = [
         _fact("glue.streaming.job", artifact, line, provenance, measures=measures, attrs=attrs, symbol=attrs["name"]),
     ]
+    facts.extend(
+        _endpoint_facts(
+            stream,
+            artifact,
+            line,
+            provenance,
+            plural_key="sources",
+            singular_key="source",
+            role="source",
+            kind="glue.streaming.source",
+            measure_keys=(
+                "partition_count",
+                "shard_count",
+                "lag",
+                "lag_records",
+                "backlog",
+                "backlog_records",
+                "num_records_in",
+                "num_records_out",
+                "records_per_second",
+                "batch_duration_ms",
+            ),
+        )
+    )
+    facts.extend(
+        _endpoint_facts(
+            stream,
+            artifact,
+            line,
+            provenance,
+            plural_key="sinks",
+            singular_key="sink",
+            role="sink",
+            kind="glue.streaming.sink",
+            measure_keys=(
+                "num_records_in",
+                "num_records_out",
+                "pending_commits",
+                "commit_duration_ms",
+                "commit_failures",
+                "write_failures",
+                "failed_writes",
+                "records_per_second",
+                "batch_duration_ms",
+            ),
+        )
+    )
     if glue_version is not None:
         facts.append(_fact("glue.streaming.runtime", artifact, line, provenance, attrs={"glue_version": glue_version}))
     missing = [key for key, value in {"language": language, "source_type": source_type, "output_mode": output_mode, "stateful": stateful, "foreach_batch": foreach_batch}.items() if value is None]

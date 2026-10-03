@@ -3,3 +3,4 @@ expects_kinds:
   - glue.streaming.analyzed
   - glue.streaming.job
   - glue.streaming.runtime
+  - glue.streaming.unresolved
