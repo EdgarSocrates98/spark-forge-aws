@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_GLUE_CROSS_ARTIFACT/design.md
-  sha256: "009b66612409d831ed3f58bef9feb006d950aa6e94c3293d516faf61bb46eefb"
+  sha256: "d790a6dcf9da0690b1ed96bd4b69383bcb537546ca431c0942aa5ee23517382a"
 tasks:
   - id: T1
     files: [sparkforge/facts/streaming_glue_cross.py, tests/test_streaming_glue_cross_artifact.py]
@@ -21,7 +21,7 @@ tasks:
     covers: [AC3]
     test: {path: tests/test_streaming_glue_cross_artifact.py, name: test_cross_artifact_rules_are_evidence_backed}
   - id: T4
-    files: [fixtures/streaming_glue_cross_artifact, tests/test_streaming_glue_cross_artifact.py]
+    files: [fixtures/streaming_glue_cross_artifact, scripts/regen_streaming_glue_cross_artifact.py, tests/test_streaming_glue_cross_artifact.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_streaming_glue_cross_artifact.py, name: test_fixture_goldens_cover_match_drift_and_unresolved}
   - id: T5

@@ -1,0 +1,60 @@
+[
+  {
+    "rule_id": "SF-GLUESTREAM-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Cross-artifact Glue Streaming não resolvido",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "rtm-valid",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_3a65b3"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A composição recebeu um job Glue e Terraform, mas não pôde provar uma identidade literal única ou um campo comparável. A ausência não prova consistência, divergência ou capacidade suficiente.",
+    "proposed_change": [
+      "Preservar o nome literal do job e valores Terraform necessários no artefato sanitizado.",
+      "Resolver o motivo nomeado e reextrair antes de julgar drift."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Casar pelo nome do recurso ou preencher campo ausente pode ligar o job errado e gerar finding falso."
+    ],
+    "tradeoffs": [
+      "Coletar mais evidência aumenta payload local, mas mantém a decisão reauditable."
+    ],
+    "validation": [
+      "Reexecutar `fuse` com os dois conjuntos de facts e confirmar que a recusa desapareceu ou mudou de motivo."
+    ],
+    "rollback": [
+      "Não há mutação; descartar o artefato incompleto conforme a política de retenção."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "glue.streaming.terraform_identity",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

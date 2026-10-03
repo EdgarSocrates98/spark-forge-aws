@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "glue.streaming.job",
+    "subject": {"type": "source_location", "file": "effective.json", "line": 1, "col": 0, "symbol": "rtm-valid", "snippet": ""},
+    "measures": {"worker_count": 4},
+    "attrs": {"name": "rtm-valid", "mode": "REAL_TIME", "glue_version": "6.0", "language": "SCALA"},
+    "provenance": {"artifact": "effective.json", "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "extractor": "glue_streaming@0.1.0"}
+  }
+]

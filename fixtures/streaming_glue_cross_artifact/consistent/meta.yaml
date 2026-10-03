@@ -1,0 +1,8 @@
+name: consistent
+description: Glue effective job and Terraform agree on observed contract axes.
+expects_kinds:
+  - glue.streaming.job
+  - tf.resource
+  - tf.attribute
+  - glue.streaming.terraform_link
+  - fusion.summary

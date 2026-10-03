@@ -12,6 +12,7 @@ files:
   - {path: sparkforge/facts/fusion.py, action: modify, reason: "invocar derivação somente quando os kinds fonte existirem"}
   - {path: rules/catalog/glue-streaming.yaml, action: modify, reason: "julgar drift e blind spot cross-artifact"}
   - {path: fixtures/streaming_glue_cross_artifact, action: create, reason: "goldens de match, drift e identidade/valor unresolved"}
+  - {path: scripts/regen_streaming_glue_cross_artifact.py, action: create, reason: "regenerar goldens deterministicamente a partir dos inputs"}
   - {path: tests/test_streaming_glue_cross_artifact.py, action: create, reason: "contrato, regra, guarda e idempotência"}
   - {path: knowledge/glue-streaming-rtm.md, action: modify, reason: "explicar comparação efetiva→IaC e limites"}
   - {path: skills/review-glue-streaming/SKILL.md, action: modify, reason: "orientar reextração e leitura do link"}

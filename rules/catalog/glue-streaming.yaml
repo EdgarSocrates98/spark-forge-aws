@@ -129,3 +129,83 @@ rules:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
     knowledge_refs:
       - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-004
+    category: glue_streaming
+    title: Drift entre job Glue Streaming observado e Terraform
+    requires_facts: [glue.streaming.terraform_link]
+    when:
+      all:
+        - fact: glue.streaming.terraform_link
+          expr: measures.divergence_count > 0
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O job efetivo salvo e o recurso aws_glue_job Terraform têm pelo menos
+      um eixo literal divergente entre Glue version, habilitação RTM, linguagem
+      ou número de workers. O link prova diferença declarada entre artefatos,
+      não qual lado será aplicado nem o comportamento da execução.
+    proposed_change:
+      - Reextrair os dois artefatos e revisar somente os campos listados em drifts.
+      - Confirmar qual fonte representa estado desejado e qual representa estado efetivo antes de alterar IaC ou job.
+      - Validar runtime, capacidade e resultado funcional em janela equivalente depois da reconciliação.
+    risks:
+      - Alinhar Terraform ao dump efetivo pode codificar uma configuração já obsoleta.
+      - Alterar RTM, linguagem ou workers pode mudar compatibilidade, capacidade ou semântica do job.
+    tradeoffs:
+      - Reconciliar drift reduz ambiguidade de operação, mas exige escolher a fonte de verdade do ambiente.
+    validation:
+      - Comparar novamente os quatro eixos após a mudança e manter os source_fact_ids da nova extração.
+      - Executar validação funcional com contagem, schema, chaves e agregados; não usar ausência de drift como prova de saúde.
+    rollback:
+      - Reverter o diff Terraform ou a configuração efetiva para o último estado aprovado e preservar os dois artefatos.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.terraform_contract
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.engine_version, runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-005
+    category: glue_streaming
+    title: Cross-artifact Glue Streaming não resolvido
+    requires_facts: [glue.streaming.cross.unresolved]
+    when:
+      all:
+        - fact: glue.streaming.cross.unresolved
+          expr: attrs.reason != ""
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A composição recebeu um job Glue e Terraform, mas não pôde provar uma
+      identidade literal única ou um campo comparável. A ausência não prova
+      consistência, divergência ou capacidade suficiente.
+    proposed_change:
+      - Preservar o nome literal do job e valores Terraform necessários no artefato sanitizado.
+      - Resolver o motivo nomeado e reextrair antes de julgar drift.
+    risks:
+      - Casar pelo nome do recurso ou preencher campo ausente pode ligar o job errado e gerar finding falso.
+    tradeoffs:
+      - Coletar mais evidência aumenta payload local, mas mantém a decisão reauditable.
+    validation:
+      - Reexecutar `fuse` com os dois conjuntos de facts e confirmar que a recusa desapareceu ou mudou de motivo.
+    rollback:
+      - Não há mutação; descartar o artefato incompleto conforme a política de retenção.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.streaming.terraform_identity
+      direction: investigate
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}

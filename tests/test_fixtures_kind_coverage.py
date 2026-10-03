@@ -82,6 +82,7 @@ from sparkforge.facts import (
     streaming_integrations,
     streaming_ops,
     streaming_slo,
+    streaming_glue_cross,
     sfn_history,
     spark_plan,
     streaming,
@@ -252,6 +253,7 @@ EXTRACTORS = {
     "streaming_integrations": streaming_integrations,
     "streaming_ops": streaming_ops,
     "streaming_slo": streaming_slo,
+    "streaming_glue_cross": streaming_glue_cross,
     "flink": flink,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
