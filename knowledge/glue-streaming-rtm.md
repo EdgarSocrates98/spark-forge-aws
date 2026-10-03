@@ -25,6 +25,31 @@ O Forge transforma configuração observada em Finding apenas quando o artifact
 contract contém o campo correspondente. Se `partition_count` ou `task_slots`
 faltar, o resultado é unresolved — nunca zero, “suficiente” ou “insuficiente”.
 
+## Glue efetivo e Terraform
+
+Quando o operador possui os dois artefatos, extraia-os separadamente e passe os
+facts pelo compositor já existente:
+
+```text
+sparkforge analyze glue-streaming --path job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out tf.facts.json
+sparkforge fuse --facts glue.facts.json --facts tf.facts.json --out fused.json
+sparkforge judge --facts fused.json --show-skipped
+```
+
+O `fuse` casa somente `glue.streaming.job.attrs.name` com um
+`tf.attribute` literal `name` de um `aws_glue_job`. O resultado
+`glue.streaming.terraform_link` compara apenas quatro eixos que os dois
+artefatos podem observar: `glue_version`, habilitação RTM, `language` e
+`worker_count`. `source_fact_ids` mantém a trilha para reextração; o resumo não
+reproduz o HCL nem o dump inteiro.
+
+`SF-GLUESTREAM-004` aponta drift literal entre configuração efetiva e IaC.
+`SF-GLUESTREAM-005` aponta identidade ou campo não resolvido. Nome de recurso,
+valor interpolado, ausência de atributo e ausência de execução não são tratados
+como igualdade. O link não prova `terraform apply`, runtime live, capacidade,
+latência, custo ou resultado funcional.
+
 ## Glue Streaming comum
 
 Glue Streaming usa Spark Structured Streaming e documenta fontes como Kinesis,

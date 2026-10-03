@@ -33,9 +33,14 @@ Real-Time Mode e declare o runtime observado.
 4. Para RTM, confira explicitamente Glue 6.0, Scala, Kafka, stateless, output
    Update, ausência de `foreachBatch`, ausência de auto scaling e capacidade de
    partições/task slots. Não derive uma medida da quantidade de workers.
-5. Correlacione com Terraform, código, métricas, checkpoint e validação
-   funcional quando esses artefatos existirem. Um dump de configuração não
-   prova comportamento produtivo nem causalidade.
+5. Se houver Terraform, rode também `sparkforge analyze terraform` e depois
+   `sparkforge fuse --facts <glue-facts> --facts <terraform-facts>`. Leia
+   `glue.streaming.terraform_link`, `source_fact_ids`, `drifts` e
+   `unresolved_fields`; `SF-GLUESTREAM-004` aponta drift e
+   `SF-GLUESTREAM-005` aponta identidade/campo não resolvido.
+6. Correlacione com código, métricas, checkpoint e validação funcional quando
+   esses artefatos existirem. Um dump de configuração ou um link com drift
+   resolvido não prova comportamento produtivo nem causalidade.
 
 ## Limites
 
@@ -69,8 +74,9 @@ blind spots; toda recomendação traz `validation` e `rollback`.
 
 ## Red flags
 
-Worker count não é task capacity; RTM não é micro-batch; configuração não prova
-backlog, latência ou resultado funcional.
+Worker count não é task capacity; RTM não é micro-batch; resource name não é
+identidade de job; configuração alinhada não prova backlog, latência ou resultado
+funcional.
 
 ## Contrato de qualidade SparkForge (v1)
 

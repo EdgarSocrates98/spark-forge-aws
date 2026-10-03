@@ -73,6 +73,25 @@ janela coberta ou série única produz `streaming.slo.unresolved`. O compositor
 preserva os facts de origem, não consulta endpoints live e não prova
 causalidade, custo ou saúde end-to-end.
 
+## Glue Streaming efetivo versus Terraform
+
+Para detectar drift de configuração, extraia os dois lados e reutilize a
+composição geral de facts:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+O vínculo exige correspondência literal e única entre o nome efetivo e
+`aws_glue_job.name`. `glue.streaming.terraform_link` compara quatro eixos:
+`glue_version`, RTM, `language` e `worker_count`; `source_fact_ids` permite
+voltar aos fatos, `drifts` registra divergência e `unresolved_fields` conserva
+lacunas. `SF-GLUESTREAM-004` e `SF-GLUESTREAM-005` são findings P1. Nenhum
+resultado desse fluxo infere execução, custo, capacidade ou correção funcional.
+
 ## Sequência mínima
 
 ```bash
@@ -142,7 +161,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 57 extratores emitem 359 kinds distintos de fact (recontado em 2026-10-02),
+Os 58 extratores emitem 361 kinds distintos de fact (recontado em 2026-10-02),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -296,7 +315,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 359 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 361 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

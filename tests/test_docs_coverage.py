@@ -92,6 +92,15 @@ def _section(text: str, heading: str) -> str:
     return rest if end == -1 else rest[:end]
 
 
+def test_streaming_glue_cross_artifact_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/glue-streaming-rtm.md")
+    skill = _read("skills/review-glue-streaming/SKILL.md")
+    assert "Terraform cross-artifact" in coverage
+    assert "glue.streaming.terraform_link" in knowledge
+    assert "source_fact_ids" in skill
+
+
 class TestReadme:
     README = None
 

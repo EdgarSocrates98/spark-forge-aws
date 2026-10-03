@@ -197,6 +197,25 @@ não prova saúde end-to-end.
 A mesma chamada pode usar `query_name` para progress Structured Streaming; detalhes de campos
 estão na [referência MCP](referencia/tools/sparkforge_analyze_streaming_composition.md).
 
+### Glue Streaming efetivo e Terraform
+
+Não há uma ferramenta MCP nova para essa correlação. Use a ferramenta existente
+`sparkforge_fuse` com `facts_paths` contendo os dois resultados de análise, e
+depois `sparkforge_judge`:
+
+```json
+{
+  "facts_paths": ["glue.facts.json", "terraform.facts.json"],
+  "detail_level": "summary"
+}
+```
+
+O compositor publica `glue.streaming.terraform_link` quando encontra um
+`aws_glue_job.name` literal único. Ele preserva `source_fact_ids` e compara
+`glue_version`, RTM, linguagem e workers; divergências chegam em
+`SF-GLUESTREAM-004`, enquanto identidade ou valores não resolvidos chegam em
+`SF-GLUESTREAM-005`. A correlação é offline e não prova estado aplicado na AWS.
+
 ## Como verificar que funciona
 
 **Sem cliente nenhum.** Monte o servidor em Python:

@@ -24,7 +24,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline | CloudWatch temporal live, reshard history, KCL/EFO e série de longa duração |
 | Apache Flink | `version-aware` parcial | `facts/flink.py`, `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
 | Managed Service for Apache Flink | `version-aware` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures, mesmo analyzer e matriz com `UNRESOLVED` explícito | matriz AWS por região/release, IAM/VPC/CloudWatch temporal e validação funcional |
-| Glue Streaming | `version-aware` parcial | `facts/glue_streaming.py`, regras RTM, fixtures, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | job/Terraform cross-artifact, runtime observado/collector, source/sink e validação funcional |
+| Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py`, `facts/streaming_glue_cross.py`, `fuse`, regras `SF-GLUESTREAM`, fixtures match/drift/unresolved, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | runtime observado/collector, source/sink e validação funcional |
 | Glue Real-Time Mode | `version-aware` parcial | namespace `glue.streaming.*`, restrições/capacidade observadas, rules, unresolved e matriz Glue 6.0 com constraints | collector live, cross-artifact e validação funcional |
 | CDC | `diagnosable` parcial | `facts/cdc.py`, regras `SF-CDC`, fixtures de evento/connector/seam/unresolved, CLI/MCP e `review-cdc-replication` | collector/replay temporal, cross-artifact com consumidor e validação funcional |
 | AWS DMS | `diagnosable` parcial | namespace `dms.*`, `collect streaming-integrations`, task/endpoint/mapping/stats/unresolved, rules e fixtures | matriz de versões, logs temporais e recovery funcional |
@@ -89,10 +89,15 @@ O inventário de commits, features e provas compartilhadas está em
 
 ## Fechamentos adicionados nesta atualização
 
+- **Terraform cross-artifact de Glue Streaming:** `fuse` correlaciona a
+  definição efetiva com `aws_glue_job.name` literal único, compara versão,
+  RTM, linguagem e workers, e emite drift ou unresolved com rastreabilidade.
 - `STREAMING_CDC`: facts de Debezium, DMS, eventos, seams e blind spots,
   regras, fixtures, CLI/MCP, skill, routing e ship SDD.
 - `STREAMING_GLUE_RTM`: contrato offline de Glue Streaming e Real-Time Mode,
-  restrições de estado, capacidade e runtime, com unresolved explícito.
+  restrições de estado, capacidade e runtime, com unresolved explícito; a
+  composição efetivo→Terraform compara `glue_version`, RTM, linguagem e
+  workers, emitindo drift ou blind spot sem inferir aplicação.
 - `STREAMING_SCHEMA_REGISTRY`: contrato/diff estrutural de compatibilidade,
   auto-register, políticas ausentes, fixtures, analyzer e ship SDD.
 - `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`: checkpoint metadata, Kafka
@@ -162,7 +167,7 @@ live em capacidade comprovada.
 | Wave | Escopo | Critério de fechamento |
 |---|---|---|
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
-| E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
+| E | Glue Streaming + RTM | runtime observado/collector, source/sink, validação funcional e capability evidence; cross-artifact efetivo→Terraform entregue com `SF-GLUESTREAM-004/005` |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, SLO sobre progress/sink/Kafka/Kinesis com janela coberta, p95/freshness offline, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, endpoint live, latência end-to-end implícita, correlação de longo período e atribuição continuam lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |

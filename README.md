@@ -50,8 +50,8 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 57 extratores emitem 359 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **214** regras de diagnóstico em YAML, **214 delas executáveis** (todas), cada uma
+Os 58 extratores emitem 361 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **216** regras de diagnóstico em YAML, **216 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
@@ -175,6 +175,25 @@ observado no artefato: não são disponibilidade, causalidade ou saúde end-to-e
 Detalhe em
 [cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
 [referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
+
+### Glue Streaming: efetivo versus Terraform
+
+Quando o caso inclui a definição efetiva do job e o Terraform do mesmo ambiente,
+extraia os dois artefatos e componha os facts antes de julgar:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+`fuse` só liga `aws_glue_job` por `name` literal único. O fact
+`glue.streaming.terraform_link` compara `glue_version`, Real-Time Mode,
+linguagem e workers, preserva `source_fact_ids` e distingue `drifts` de
+`unresolved_fields`. `SF-GLUESTREAM-004` sinaliza divergência; `SF-GLUESTREAM-005`
+registra identidade ou valor não resolvido. Esse contrato não prova execução,
+capacidade, custo, latência ou validação funcional.
 
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:

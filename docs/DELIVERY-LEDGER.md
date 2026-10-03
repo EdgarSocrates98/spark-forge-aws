@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **62 features**:
+O status atual registra **63 features**:
 
-- **60** em `ship/done`;
+- **61** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -50,6 +50,7 @@ SDD_EVAL, SDD_MIGRATION, SDD_OPERATOR, SDD_OPERATOR_DURAVEL, SDD_SKILLS,
 SDD_SKILLS_REVISAO, SFN_HISTORY, SFN_TENTATIVA, SF_STUBS,
 SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_GLUE_RTM,
+STREAMING_GLUE_CROSS_ARTIFACT,
 STREAMING_ICEBERG_TEMPORAL,
 STREAMING_SLO_EVALUATION,
 STREAMING_SLO_TRANSPORT_EVALUATION,
@@ -94,6 +95,9 @@ do wheel e de uma CLI real do host.
   declarada para composição.
 - Flink e Managed Flink, Glue Streaming e Glue Real-Time Mode, com matrizes de
   runtime e limites managed/upstream.
+- Glue Streaming efetivo versus Terraform: `fuse` compara por nome literal único
+  versão, RTM, linguagem e workers; `SF-GLUESTREAM-004` sinaliza drift e
+  `SF-GLUESTREAM-005` preserva identidade/valor unresolved.
 - CDC: Debezium, AWS DMS, eventos, posições, transações, tombstones, schema
   history, seams snapshot/CDC e blind spots.
 - Schema Registry/data contracts: compatibilidade, evolução, diff estrutural,
@@ -177,6 +181,8 @@ do wheel e de uma CLI real do host.
 | `aedae77` | SDD explore/define/design/plan de p95 e freshness SLO |
 | `4ba8177` | facts, compositor, testes e golden de `statistic=p95`, `freshness_ms` e latência explícita |
 | `34eb790` | documentação, mirrors, locks e ship report de p95/freshness SLO |
+| `ebb567d` | SDD explore/define/design/plan de correlação Glue Streaming/Terraform |
+| `e8d42eb` | facts, fuse, regras, fixtures e goldens de cross-artifact Glue |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

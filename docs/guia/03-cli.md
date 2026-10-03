@@ -225,7 +225,7 @@ comando.
 |---|---|---|
 | `analyze` | Extrai facts determinísticos de um artefato. Cada subcomando é um tipo de artefato: `pyspark`, `event-log`, `plan`, `terraform`, `iceberg`, `sql`, `catalog-schema`, `parquet-footer` e outros. | [analyze](referencia/cli/analyze.md) |
 | `collect` | Baixa artefatos reais da AWS (event log, job Glue, CloudWatch, metadata Iceberg, Athena, EMR e outros). Precisa de credenciais AWS e do extra `aws`. | [collect](referencia/cli/collect.md) |
-| `fuse` | Correlaciona facts de SQL com o schema do catálogo, antes do `judge`. | [fuse](referencia/cli/fuse.md) |
+| `fuse` | Correlaciona facts de SQL com o schema do catálogo, ou facts de Glue Streaming efetivo com Terraform, antes do `judge`. | [fuse](referencia/cli/fuse.md) |
 
 ### Julgar
 
@@ -296,6 +296,24 @@ progress traz `timestamp` + `eventTime.max` timezone-aware; não consulta
 CloudWatch/Kafka live nem prova disponibilidade, causalidade, custo ou saúde
 end-to-end. Ausência de finding não significa SLO atendido; reporte também
 todo `*.unresolved`.
+
+### Correlacionar Glue Streaming efetivo com Terraform
+
+Extraia a definição efetiva do job e o módulo Terraform no mesmo pool de facts.
+O `fuse` liga apenas um `aws_glue_job` cujo `name` seja literal e único:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+O fact `glue.streaming.terraform_link` compara versão Glue, RTM, linguagem e
+workers. `drifts` alimenta `SF-GLUESTREAM-004`; `unresolved_fields` ou a falta
+de identidade alimenta `SF-GLUESTREAM-005`. O resultado mantém
+`source_fact_ids`; não substitui evidência de execução, capacidade, custo ou
+validação funcional.
 
 ### Forge Lab / Digital Twin
 

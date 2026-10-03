@@ -63,6 +63,23 @@ na saída quando falta evidência. `statistic: p95` usa nearest-rank sobre a
 amostra e `freshness_ms` exige `timestamp` + `eventTime.max`; isso continua
 offline e não prova consulta live, causalidade, custo ou latência end-to-end.
 
+Para revisar drift entre Glue Streaming efetivo e Terraform, use os facts já
+extraídos e o compositor geral:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+O vínculo exige `aws_glue_job.name` literal e único. O resultado preserva
+`glue.streaming.terraform_link`, `source_fact_ids`, `drifts` e
+`unresolved_fields`; compare `glue_version`, RTM, linguagem e workers. Drift
+vira `SF-GLUESTREAM-004`; identidade ou parâmetro ausente vira
+`SF-GLUESTREAM-005`. Isso continua evidência offline, não prova que o job em
+produção executa com a configuração declarada.
+
 ## 2. Claude Code
 
 Use o agente:
