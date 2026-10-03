@@ -423,6 +423,12 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
     else:
         facts.append(_unresolved(artifact, line, provenance, "managed_flink", "metrics_missing"))
 
+    declared_unresolved = data.get("unresolved")
+    if isinstance(declared_unresolved, list):
+        for reason in declared_unresolved:
+            if isinstance(reason, str) and reason.strip():
+                facts.append(_unresolved(artifact, line, provenance, "managed_flink", reason.strip()))
+
     facts.append(
         _fact(
             "managed_flink.analyzed",

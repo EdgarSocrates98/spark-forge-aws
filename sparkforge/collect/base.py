@@ -75,6 +75,7 @@ ARTIFACT_KINDS = (
     # próprio; quando não chegam no contrato, o extrator publica unresolved.
     "streaming_integrations",
     "schema_registry",
+    "managed_flink_application",
     "source",
 )
 
