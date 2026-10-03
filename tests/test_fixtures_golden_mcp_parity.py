@@ -166,6 +166,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_collect_streaming_integrations": (
         "2026-10-02: coleta AWS declarada para integrações streaming"
     ),
+    "sparkforge_collect_schema_registry": (
+        "2026-10-03: coleta read-only do Glue Schema Registry com latest version e manifesto"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
@@ -313,6 +316,54 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "ele (DATABRICKS_PHOTON_PLAN TX), sem mudar o enum"
     ),
 }
+# `Fact.subject.type` tambem ancora snapshots Iceberg. O campo ja era emitido
+# pelos analyzers; o enum do contrato MCP ficou atrasado. A expansao e declarada
+# por tool porque o golden legado precisa continuar congelado.
+_FACT_SUBJECT_SNAPSHOT_TOOLS = (
+    "sparkforge_analyze_athena_workgroup",
+    "sparkforge_analyze_call_graph",
+    "sparkforge_analyze_catalog_schema",
+    "sparkforge_analyze_cloudwatch",
+    "sparkforge_analyze_cloudwatch_logs",
+    "sparkforge_analyze_consumers",
+    "sparkforge_analyze_controlm_jobs",
+    "sparkforge_analyze_data_quality",
+    "sparkforge_analyze_emr_cluster",
+    "sparkforge_analyze_emr_eks",
+    "sparkforge_analyze_emr_serverless",
+    "sparkforge_analyze_error_signatures",
+    "sparkforge_analyze_event_log",
+    "sparkforge_analyze_glue_job_runs",
+    "sparkforge_analyze_glue_resource_link",
+    "sparkforge_analyze_graph",
+    "sparkforge_analyze_iam_access",
+    "sparkforge_analyze_iceberg",
+    "sparkforge_analyze_lakeformation_grants",
+    "sparkforge_analyze_parquet_footer",
+    "sparkforge_analyze_plan",
+    "sparkforge_analyze_pyspark",
+    "sparkforge_analyze_s3_listing",
+    "sparkforge_analyze_sql",
+    "sparkforge_analyze_sql_metrics",
+    "sparkforge_analyze_terraform",
+    "sparkforge_analyze_terraform_diff",
+    "sparkforge_benchmark",
+    "sparkforge_funcval_compare",
+    "sparkforge_funcval_plan",
+    "sparkforge_fuse",
+)
+_FACT_SUBJECT_SNAPSHOT_PATH = (
+    "outputSchema.oneOf[0].properties.items.items.properties.subject.properties.type.enum"
+)
+REESCRITAS_DEPOIS_DO_GOLDEN.update(
+    {
+        (name, _FACT_SUBJECT_SNAPSHOT_PATH): (
+            "2026-10-03: facts Iceberg publicam subject.type=snapshot; o contrato MCP passou "
+            "a aceitar o tipo observado sem regravar golden legado"
+        )
+        for name in _FACT_SUBJECT_SNAPSHOT_TOOLS
+    }
+)
 # Chamadas gravadas cujo CONTEUDO mudou porque o catalogo mudou, e nao o SDK.
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
 # dois lados antes de comparar; todo o resto da chamada continua byte a byte, e
@@ -543,7 +594,7 @@ class TestHandshakeLegado:
         }
         # 8 -> 10 em 2026-09-18: o enum `reason` do `skipped` do judge cresceu com
         # `databricks.photon.unresolved`, e a descricao dele passou a nomea-lo.
-        assert reescritas == {"stdio": 10, "http": 10}
+        assert reescritas == {"stdio": 41, "http": 41}
         # A chamada declarada: o texto serializado, alvo, direcao e os dois
         # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
         # que mudou sem registro.

@@ -211,6 +211,7 @@ _FACT_SUBJECT: dict[str, Any] = {
                 "table",
                 "job_run",
                 "plan_node",
+                "snapshot",
             ],
         },
         "file": {"type": "string"},
@@ -9815,6 +9816,34 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_schema_registry": {
+        "description": (
+            "Coleta metadata, compatibilidade declarada e latest schema version do AWS Glue "
+            "Schema Registry usando somente list/get. Grava artifact local com manifesto, "
+            "limite de definição e cache offline-first; nunca cria, registra, atualiza ou "
+            "exclui registry/schema/version."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "now"],
+            "additionalProperties": False,
+            "properties": {
+                "repo": {"type": "string"},
+                "registry_name": {"type": "string"},
+                "schema_name": {"type": "string"},
+                "schema_arn": {"type": "string"},
+                "region_name": {"type": "string"},
+                "max_schemas": {"type": "integer", "minimum": 1, "maximum": 500},
+                "max_definition_bytes": {"type": "integer", "minimum": 1, "maximum": 170000},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artifact Glue Schema Registry coletado ou cache hit local, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_cloudwatch": {
         "description": (
             "Baixa as metricas de observabilidade Glue via `cloudwatch.get_metric_data` "
@@ -11726,6 +11755,19 @@ def _h_collect_streaming_integrations(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_schema_registry(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_schema_registry(
+        args["repo"],
+        now=args["now"],
+        registry_name=args.get("registry_name", ""),
+        schema_name=args.get("schema_name", ""),
+        schema_arn=args.get("schema_arn", ""),
+        region_name=args.get("region_name", ""),
+        max_schemas=args.get("max_schemas", 100),
+        max_definition_bytes=args.get("max_definition_bytes", 170_000),
+    )
+
+
 def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_cloudwatch(
         args["repo"],
@@ -12044,6 +12086,7 @@ _HANDLERS = {
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_streaming_integrations": _h_collect_streaming_integrations,
+    "sparkforge_collect_schema_registry": _h_collect_schema_registry,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_lakeformation": _h_collect_lakeformation,

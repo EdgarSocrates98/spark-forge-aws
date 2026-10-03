@@ -3383,6 +3383,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     streaming_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    schema_registry_collect_p = collect_sub.add_parser(
+        "schema-registry",
+        help="Coleta metadata e latest version read-only do AWS Glue Schema Registry.",
+    )
+    schema_registry_collect_p.add_argument("--repo", required=True)
+    schema_registry_collect_p.add_argument("--registry-name", default="", help="Nome do registry Glue.")
+    schema_registry_collect_p.add_argument("--schema-name", default="", help="Filtra schema dentro do registry.")
+    schema_registry_collect_p.add_argument("--schema-arn", default="", help="ARN do schema Glue.")
+    schema_registry_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
+    schema_registry_collect_p.add_argument("--max-schemas", type=int, default=100, help="Teto de schemas (1..500).")
+    schema_registry_collect_p.add_argument(
+        "--max-definition-bytes", type=int, default=170_000, help="Teto por definição; acima sai unresolved."
+    )
+    schema_registry_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     workspace_graph_p = collect_sub.add_parser(
         "workspace-graph",
         help=("Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."),
@@ -5373,6 +5388,21 @@ def _cmd_collect_streaming_integrations(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_schema_registry(args: argparse.Namespace) -> int:
+    payload = _core.collect_schema_registry(
+        args.repo,
+        now=args.now,
+        registry_name=args.registry_name,
+        schema_name=args.schema_name,
+        schema_arn=args.schema_arn,
+        region_name=args.region_name,
+        max_schemas=args.max_schemas,
+        max_definition_bytes=args.max_definition_bytes,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_workspace_graph(args: argparse.Namespace) -> int:
     payload = _core.collect_workspace_graph(
         args.repo,
@@ -5927,6 +5957,7 @@ _DISPATCH = {
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
     ("collect", "streaming-integrations"): _cmd_collect_streaming_integrations,
+    ("collect", "schema-registry"): _cmd_collect_schema_registry,
     ("collect", "workspace-graph"): _cmd_collect_workspace_graph,
     ("collect", "verify"): _cmd_collect_verify,
     # agentic

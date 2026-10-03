@@ -44,6 +44,7 @@ from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect import live_graph as collect_live_graph
 from sparkforge.collect import parquet_footer as collect_parquet
 from sparkforge.collect import streaming as collect_streaming
+from sparkforge.collect import schema_registry as collect_schema_registry_collector
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
 from sparkforge.controlm import migration as _ctm_migration
@@ -7996,6 +7997,55 @@ def collect_streaming_integrations(
     except ValueError as exc:
         raise AdapterError(f"collect streaming-integrations: {exc}", exit_code=2) from exc
     except (CollectorUnavailable, collect_streaming.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_schema_registry(
+    repo: str,
+    *,
+    now: str,
+    registry_name: str = "",
+    schema_name: str = "",
+    schema_arn: str = "",
+    region_name: str = "",
+    max_schemas: int = 100,
+    max_definition_bytes: int = 170_000,
+) -> dict[str, Any]:
+    """Coleta latest schema/metadata do Glue Registry e registra manifesto."""
+    rel_path = collect_schema_registry_collector.schema_registry_path(
+        registry_name=registry_name, schema_name=schema_name, schema_arn=schema_arn
+    )
+    command_parts = ["sparkforge collect schema-registry --repo <repo>"]
+    for option, value in (
+        ("--registry-name", registry_name),
+        ("--schema-name", schema_name),
+        ("--schema-arn", schema_arn),
+        ("--region", region_name),
+    ):
+        if value:
+            command_parts.append(f"{option} {value}")
+    if max_schemas != 100:
+        command_parts.append(f"--max-schemas {max_schemas}")
+    if max_definition_bytes != 170_000:
+        command_parts.append(f"--max-definition-bytes {max_definition_bytes}")
+    command_parts.append(f"--now {now}")
+    command = " ".join(command_parts)
+    try:
+        entry = collect_schema_registry_collector.collect_schema_registry(
+            Path(repo),
+            now=now,
+            registry_name=registry_name,
+            schema_name=schema_name,
+            schema_arn=schema_arn,
+            region_name=region_name,
+            max_schemas=max_schemas,
+            max_definition_bytes=max_definition_bytes,
+            collect_command=command,
+        )
+    except ValueError as exc:
+        raise AdapterError(f"collect schema-registry: {exc}", exit_code=2) from exc
+    except (CollectorUnavailable, collect_schema_registry_collector.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
 

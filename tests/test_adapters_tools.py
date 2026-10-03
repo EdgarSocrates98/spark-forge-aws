@@ -136,6 +136,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_streaming_integrations",
+            "sparkforge_collect_schema_registry",
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
@@ -216,6 +217,7 @@ class TestToolSurface:
             "sparkforge_collect_emr_serverless",
             "sparkforge_collect_emr_eks",
             "sparkforge_collect_streaming_integrations",
+            "sparkforge_collect_schema_registry",
         }
 
     def test_every_open_world_tool_also_writes_locally(self):
@@ -3277,6 +3279,47 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "repo": str(tmp_path),
                 "kinesis_stream_name": "orders",
                 "now": "2026-10-02T00:00:00Z",
+            },
+        )
+
+    if name == "sparkforge_collect_schema_registry":
+        from sparkforge.collect import schema_registry as collect_schema_registry
+
+        class _Glue:
+            def get_registry(self, **kwargs):
+                return {"RegistryName": kwargs["RegistryId"]["RegistryName"]}
+
+            def list_schemas(self, **kwargs):
+                return {"Schemas": [{"SchemaName": "orders", "RegistryName": "events"}]}
+
+            def get_schema(self, **kwargs):
+                return {
+                    "SchemaName": kwargs["SchemaId"]["SchemaName"],
+                    "RegistryName": "events",
+                    "DataFormat": "AVRO",
+                }
+
+            def get_schema_version(self, **kwargs):
+                return {
+                    "SchemaVersionId": "00000000-0000-0000-0000-000000000001",
+                    "VersionNumber": 1,
+                    "Status": "AVAILABLE",
+                    "SchemaDefinition": '{"type":"record","name":"orders","fields":[]}',
+                }
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "glue"
+                return _Glue()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_schema_registry, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "registry_name": "events",
+                "now": "2026-10-03T00:00:00Z",
             },
         )
 
