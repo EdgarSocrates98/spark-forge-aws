@@ -91,6 +91,11 @@ from sparkforge.facts.streaming_glue_cross import (
     EMITTED_KINDS as GLUE_CROSS_EMITTED_KINDS,
     build_streaming_glue_cross_artifact,
 )
+from sparkforge.facts.streaming_glue_runtime import (
+    EMITTED_KINDS as GLUE_RUNTIME_EMITTED_KINDS,
+    SOURCE_KINDS as GLUE_RUNTIME_SOURCE_KINDS,
+    build_streaming_glue_runtime_observation,
+)
 from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
 from sparkforge.facts.timeout_diagnosis import SOURCE_KINDS as TIMEOUT_SOURCE_KINDS
 from sparkforge.facts.timeout_diagnosis import extract_timeout_diagnosis
@@ -657,6 +662,22 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
                 f"{sorted(desconhecidos_glue_cross)}"
             )
         for fact in derivados_glue_cross:
+            combined[fact.id] = fact
+
+    # A definicao efetiva e o historico terminal usam subjects diferentes;
+    # o link runtime precisa nascer antes do judge. A guarda preserva o
+    # contrato de fuse: pools sem Glue Streaming e sem runs nao mudam.
+    if any(f.kind in GLUE_RUNTIME_SOURCE_KINDS for f in facts):
+        derivados_glue_runtime = build_streaming_glue_runtime_observation(facts)
+        desconhecidos_glue_runtime = {
+            f.kind for f in derivados_glue_runtime
+        } - GLUE_RUNTIME_EMITTED_KINDS
+        if desconhecidos_glue_runtime:
+            raise AssertionError(
+                "kind fora do namespace de streaming_glue_runtime: "
+                f"{sorted(desconhecidos_glue_runtime)}"
+            )
+        for fact in derivados_glue_runtime:
             combined[fact.id] = fact
 
     return sort_facts(combined.values())

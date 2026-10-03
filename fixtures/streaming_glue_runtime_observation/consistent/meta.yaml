@@ -1,0 +1,8 @@
+name: consistent
+description: Effective Glue Streaming definition matches terminal run observations.
+expects_kinds:
+  - glue.streaming.job
+  - glue.job_run
+  - glue.streaming.runtime_link
+  - spark.timeout.unresolved
+  - fusion.summary

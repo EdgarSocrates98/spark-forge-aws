@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "glue.job_run",
+    "subject": {"type": "job_run", "job_name": "orders-stream", "job_run_id": "jr-1", "symbol": "jr-1"},
+    "measures": {"number_of_workers": 4, "execution_time_s": 60},
+    "attrs": {"state": "SUCCEEDED", "glue_version": "6.0", "worker_type": "G.1X"},
+    "provenance": {"artifact": "jr-1.json", "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "extractor": "glue_job_run@0.1.0"}
+  }
+]

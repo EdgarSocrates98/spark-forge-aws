@@ -101,6 +101,16 @@ def test_streaming_glue_cross_artifact_coverage():
     assert "source_fact_ids" in skill
 
 
+def test_streaming_glue_runtime_observation_coverage():
+    coverage = _read("docs/streaming/prompt-coverage.md")
+    knowledge = _read("knowledge/glue-streaming-rtm.md")
+    skill = _read("skills/review-glue-streaming/SKILL.md")
+    assert "STREAMING_GLUE_RUNTIME_OBSERVATION" in coverage
+    assert "glue.streaming.runtime_link" in coverage
+    assert "glue.streaming.runtime.unresolved" in knowledge
+    assert "analyze glue-job-runs" in skill
+
+
 class TestReadme:
     README = None
 

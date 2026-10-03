@@ -122,6 +122,9 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
     stateful = _bool(stream.get("stateful"))
     foreach_batch = _bool(stream.get("foreach_batch"))
     autoscaling = _bool(stream.get("autoscaling"))
+    worker_type = _text(
+        job.get("worker_type", job.get("WorkerType", stream.get("worker_type")))
+    )
     attrs = {
         "name": _text(job.get("name", job.get("Name"))) or "",
         "mode": mode,
@@ -135,6 +138,7 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
         "stateful": stateful,
         "foreach_batch": foreach_batch,
         "autoscaling": autoscaling,
+        "worker_type": worker_type,
     }.items():
         if value is not None:
             attrs[key] = value
@@ -143,7 +147,7 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
         for key, value in {
             "partition_count": stream.get("partition_count"),
             "task_slots": stream.get("task_slots"),
-            "worker_count": stream.get("worker_count", job.get("number_of_workers", job.get("NumberOfWorkers"))),
+        "worker_count": stream.get("worker_count", job.get("number_of_workers", job.get("NumberOfWorkers"))),
         }.items()
         if (number := _number(value)) is not None
     }

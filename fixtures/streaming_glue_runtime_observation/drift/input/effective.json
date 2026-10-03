@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "glue.streaming.job",
+    "subject": {"type": "source_location", "file": "effective.json", "line": 1, "col": 0, "symbol": "orders-stream", "snippet": ""},
+    "measures": {"worker_count": 4},
+    "attrs": {"name": "orders-stream", "mode": "REAL_TIME", "glue_version": "6.0", "worker_type": "G.1X"},
+    "provenance": {"artifact": "effective.json", "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "extractor": "glue_streaming@0.1.0"}
+  }
+]
