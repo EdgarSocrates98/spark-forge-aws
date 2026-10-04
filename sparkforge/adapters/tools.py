@@ -10879,7 +10879,24 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "db_path": {"type": "string"},
             },
         },
-        "outputSchema": _may_fail({"type": "object"}, "Run ausente ou banco local indisponivel."),
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "run": {"type": "object"},
+                    "spans": {"type": "object"},
+                    "context": {"type": "object"},
+                    "models": {"type": "object"},
+                    "evidence": {"type": "object"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                    "waste": {"type": "array", "items": {"type": "object"}},
+                },
+            },
+            "Run ausente ou banco local indisponivel.",
+        ),
         "annotations": _READ_ONLY,
     },
     "sparkforge_agentops_compare": {
@@ -10898,7 +10915,23 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "db_path": {"type": "string"},
             },
         },
-        "outputSchema": _may_fail({"type": "object"}, "Run ausente ou banco local indisponivel."),
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "run_a": {"type": "string"},
+                    "run_b": {"type": "string"},
+                    "delta": {"type": "object"},
+                    "quality": {"type": "object"},
+                    "left": {"type": "object"},
+                    "right": {"type": "object"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Run ausente ou banco local indisponivel.",
+        ),
         "annotations": _READ_ONLY,
     },
     "sparkforge_agentops_baseline": {
@@ -10918,7 +10951,20 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "db_path": {"type": "string"},
             },
         },
-        "outputSchema": _may_fail({"type": "object"}, "Baseline ou run indisponivel."),
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "path": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "report": {"type": "object"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Baseline ou run indisponivel.",
+        ),
         "annotations": _WRITE_IDEMPOTENT,
     },
     "sparkforge_doctor_agentic": {

@@ -2213,6 +2213,43 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             {"ref": started["refs"][0]["uri"], "max_bytes": 5000, "repo": str(tmp_path)},
         )
 
+    if name == "sparkforge_context_inspect":
+        return call_tool(
+            name,
+            {
+                "payload": {
+                    "items": [
+                        {"item_id": "f1", "kind": "fact", "critical": True, "evidence_refs": ["f1"]}
+                    ],
+                    "required_evidence_refs": ["f1"],
+                },
+                "observed_provider_tokens": 1,
+            },
+        )
+
+    if name == "sparkforge_agentops_inspect":
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
+
+    if name == "sparkforge_agentops_compare":
+        return call_tool(
+            name,
+            {"repo": str(tmp_path), "run_a": "missing-a", "run_b": "missing-b"},
+        )
+
+    if name == "sparkforge_agentops_baseline":
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "action": "save",
+                "run_id": "missing-run",
+                "baseline_path": str(tmp_path / "baseline.json"),
+            },
+        )
+
+    if name == "sparkforge_doctor_agentic":
+        return call_tool(name, {"repo": str(tmp_path)})
+
     if name == "sparkforge_case_get":
         _open_case(tmp_path)
         return call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
