@@ -1,0 +1,87 @@
+[
+  {
+    "id": "f_6178f0",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0d41954c048041d93d844c7d3e03e963b6c9e558b1eefe7082e6cf3d7a854422",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_b68b2c",
+    "schema_version": 1,
+    "kind": "kafka.partition",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "leader": 1,
+      "replication_factor": 3,
+      "isr_count": 2
+    },
+    "attrs": {
+      "topic": "events",
+      "replicas": [
+        1,
+        2,
+        3
+      ],
+      "isr": [
+        1,
+        2
+      ]
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0d41954c048041d93d844c7d3e03e963b6c9e558b1eefe7082e6cf3d7a854422",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_bee7e4",
+    "schema_version": 1,
+    "kind": "kafka.topic",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition_count": 1
+    },
+    "attrs": {
+      "name": "events"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0d41954c048041d93d844c7d3e03e963b6c9e558b1eefe7082e6cf3d7a854422",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

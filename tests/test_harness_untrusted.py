@@ -96,6 +96,13 @@ def _derivados_de_facts(pool):
         lakeformation_missing_grant,
         run_cost,
         runtime_detect,
+        streaming_composition,
+        streaming_glue_cross,
+        streaming_glue_runtime,
+        streaming_iceberg_temporal,
+        streaming_pipeline,
+        streaming_slo,
+        streaming_temporal,
         timeout_diagnosis,
         utilization,
     )
@@ -106,6 +113,35 @@ def _derivados_de_facts(pool):
     yield "funcval", funcval.build_plan(pool)
     yield "benchmark", benchmark.build_benchmark(pool, pool)
     yield "runtime_detect", runtime_detect.detect_runtime({})[1]
+    yield "streaming_composition", streaming_composition.build_streaming_composition(
+        pool, mode="observability", transport_key="<unresolved>"
+    )
+    yield "streaming_temporal", streaming_temporal.build_streaming_temporal_diagnostics(
+        pool, query_name="<unresolved>", transport_key="<unresolved>", max_skew_seconds=0
+    )
+    yield "streaming_iceberg_temporal", streaming_iceberg_temporal.build_streaming_iceberg_temporal(
+        pool, table="<unresolved>", query_name="<unresolved>", max_skew_seconds=0
+    )
+    # Glue cross-artifact e runtime observation derivam somente de facts. A
+    # lista explícita mantém a medida fail-closed quando um novo derivador
+    # declara EMITTED_KINDS mas não possui extract_*_path/tree.
+    yield "streaming_glue_cross", streaming_glue_cross.build_streaming_glue_cross_artifact(pool)
+    yield (
+        "streaming_glue_runtime",
+        streaming_glue_runtime.build_streaming_glue_runtime_observation(pool),
+    )
+    yield "streaming_pipeline", streaming_pipeline.build_streaming_pipeline(
+        pool,
+        {
+            "schema_version": 1,
+            "pipeline_id": "<unresolved>",
+            "nodes": [{"id": "node", "selector": {"kind": "<unresolved>"}}],
+            "edges": [],
+        },
+    )
+    yield "streaming_slo", streaming_slo.build_streaming_slo(
+        pool, slo_name="<unresolved>", query_name="<unresolved>"
+    )
     # `run_cost` deriva custo a partir de `glue.job_run`, e nao de caminho.
     # O pool pode nao ter run nenhum: a chamada devolve lista vazia, e isso
     # ainda conta como exercitado -- o que a medida precisa saber e que o

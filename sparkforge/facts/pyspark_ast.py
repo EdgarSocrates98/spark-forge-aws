@@ -47,6 +47,18 @@ EMITTED_KINDS = frozenset(
         "pyspark.unresolved",
         "pyspark.module_analyzed",
         "pyspark.glue_context_init",
+        "streaming.source",
+        "streaming.sink",
+        "streaming.checkpoint",
+        "streaming.trigger",
+        "streaming.output_mode",
+        "streaming.watermark",
+        "streaming.stateful_operation",
+        "streaming.join",
+        "streaming.dedup",
+        "streaming.foreach_batch",
+        "streaming.query",
+        "streaming.module_analyzed",
     }
 )
 
@@ -101,6 +113,11 @@ _CACHE_METHODS = frozenset({"cache", "persist"})
 _EXPLODE_FUNCS = frozenset({"explode", "posexplode", "explode_outer", "posexplode_outer"})
 _DEDUP_METHODS = frozenset({"dropDuplicates", "distinct", "drop_duplicates"})
 _UDF_FUNCS = frozenset({"udf", "pandas_udf"})
+_STREAMING_SINK_TERMINALS = frozenset({"start", "toTable"})
+_STREAMING_STATEFUL_METHODS = frozenset(
+    {"count", "agg", "applyInPandasWithState", "mapGroupsWithState", "flatMapGroupsWithState"}
+)
+_STREAMING_DEDUP_METHODS = frozenset({"dropDuplicates", "dropDuplicatesWithinWatermark"})
 
 
 class _Context:
@@ -207,6 +224,72 @@ def _chain_root_call(node: ast.Call, ctx: _Context) -> bool:
     return True
 
 
+def _streaming_root_names(tree: ast.AST) -> set[str]:
+    """Names assigned from a Structured Streaming reader or transformation.
+
+    This is deliberately a shallow data-flow signal. It lets a later
+    ``events.join(other)`` carry streaming provenance without pretending that
+    the static AST can resolve arbitrary Python aliases or function returns.
+    Unknown flows remain ordinary PySpark facts, not guessed streaming facts.
+    """
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        value = node.value
+        if not isinstance(value, ast.Call):
+            continue
+        methods, root = _chain_methods(value)
+        is_streaming = "readStream" in methods
+        if not is_streaming and isinstance(root, ast.Name) and root.id in names:
+            is_streaming = True
+        if not is_streaming:
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        for target in targets:
+            if isinstance(target, ast.Name):
+                names.add(target.id)
+    return names
+
+
+def _streaming_chain_option(calls: list[ast.Call], key: str) -> Any | None:
+    for call in calls:
+        if not isinstance(call.func, ast.Attribute) or call.func.attr != "option":
+            continue
+        if len(call.args) < 2 or _literal(call.args[0]) != key:
+            continue
+        return _literal(call.args[1])
+    return None
+
+
+def _streaming_chain_literal(calls: list[ast.Call], method: str) -> Any | None:
+    for call in calls:
+        if not isinstance(call.func, ast.Attribute) or call.func.attr != method:
+            continue
+        if call.args:
+            return _literal(call.args[0])
+    return None
+
+
+def _streaming_fact(
+    kind: str,
+    node: ast.Call,
+    methods: list[str],
+    path: str,
+    ctx: _Context,
+    lines: list[str],
+    provenance: dict[str, Any],
+    *,
+    attrs: dict[str, Any] | None = None,
+) -> Fact:
+    return Fact(
+        kind=kind,
+        subject=_subject(node, path, ctx, lines),
+        attrs={"methods": methods, **(attrs or {})},
+        provenance=provenance,
+    )
+
+
 def extract_source(source: str, path: str) -> list[Fact]:
     """Extrai Facts de `source`. `path` e usado como ancora e procedencia."""
     sha = hashlib.sha256(source.encode("utf-8")).hexdigest()
@@ -235,6 +318,8 @@ def extract_source(source: str, path: str) -> list[Fact]:
             and isinstance(n.func, ast.Attribute)
             and n.func.attr == "unpersist"
         }
+        streaming_names = _streaming_root_names(tree)
+        streaming_fact_count = 0
 
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
@@ -326,6 +411,27 @@ def extract_source(source: str, path: str) -> list[Fact]:
 
             if method == "join":
                 facts.append(_join_fact(node, path, ctx, lines, provenance))
+                _, join_root = _chain_methods(node)
+                if (
+                    isinstance(join_root, ast.Name)
+                    and join_root.id in streaming_names
+                ) or any(
+                    isinstance(arg, ast.Name) and arg.id in streaming_names
+                    for arg in node.args
+                ):
+                    facts.append(
+                        _streaming_fact(
+                            "streaming.join",
+                            node,
+                            methods,
+                            path,
+                            ctx,
+                            lines,
+                            provenance,
+                            attrs={"streaming_lineage": True},
+                        )
+                    )
+                    streaming_fact_count += 1
 
             if method in _DEDUP_METHODS:
                 facts.append(
@@ -336,6 +442,191 @@ def extract_source(source: str, path: str) -> list[Fact]:
                         provenance=provenance,
                     )
                 )
+                if "readStream" in methods or (
+                    isinstance(root, ast.Name) and root.id in streaming_names
+                ):
+                    facts.append(
+                        _streaming_fact(
+                            "streaming.dedup",
+                            node,
+                            methods,
+                            path,
+                            ctx,
+                            lines,
+                            provenance,
+                            attrs={"method": method, "has_explicit_columns": bool(node.args)},
+                        )
+                    )
+                    streaming_fact_count += 1
+
+            streaming_lineage = "readStream" in methods or (
+                isinstance(root, ast.Name) and root.id in streaming_names
+            )
+            chain_calls = _chain_calls(node)
+            if streaming_lineage and method in {"load", "table"} and "readStream" in methods:
+                facts.append(
+                    _streaming_fact(
+                        "streaming.source",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={
+                            "format": _streaming_chain_literal(chain_calls, "format") or method,
+                            "target": _target_literal(node),
+                        },
+                    )
+                )
+                streaming_fact_count += 1
+
+            if streaming_lineage and method == "withWatermark":
+                facts.append(
+                    _streaming_fact(
+                        "streaming.watermark",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={
+                            "event_time_column": _literal(node.args[0]) if node.args else None,
+                            "delay": _literal(node.args[1]) if len(node.args) > 1 else None,
+                        },
+                    )
+                )
+                streaming_fact_count += 1
+
+            if streaming_lineage and method in _STREAMING_STATEFUL_METHODS and "groupBy" in methods:
+                facts.append(
+                    _streaming_fact(
+                        "streaming.stateful_operation",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={"operation": method},
+                    )
+                )
+                streaming_fact_count += 1
+
+            if streaming_lineage and method == "option":
+                key = _literal(node.args[0]) if node.args else None
+                if key == "checkpointLocation" and "writeStream" in methods:
+                    facts.append(
+                        _streaming_fact(
+                            "streaming.checkpoint",
+                            node,
+                            methods,
+                            path,
+                            ctx,
+                            lines,
+                            provenance,
+                            attrs={
+                                "configured": len(node.args) > 1,
+                                "location": _literal(node.args[1]) if len(node.args) > 1 else None,
+                            },
+                        )
+                    )
+                    streaming_fact_count += 1
+
+            if streaming_lineage and method == "outputMode" and "writeStream" in methods:
+                facts.append(
+                    _streaming_fact(
+                        "streaming.output_mode",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={"mode": _literal(node.args[0]) if node.args else None},
+                    )
+                )
+                streaming_fact_count += 1
+
+            if streaming_lineage and method == "trigger" and "writeStream" in methods:
+                facts.append(
+                    _streaming_fact(
+                        "streaming.trigger",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={
+                            "args": [_literal(arg) for arg in node.args],
+                            "kwargs": {
+                                kw.arg: _literal(kw.value)
+                                for kw in node.keywords
+                                if kw.arg is not None
+                            },
+                        },
+                    )
+                )
+                streaming_fact_count += 1
+
+            if streaming_lineage and method == "foreachBatch" and "writeStream" in methods:
+                facts.append(
+                    _streaming_fact(
+                        "streaming.foreach_batch",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={"callback_literal": _literal(node.args[0]) if node.args else None},
+                    )
+                )
+                streaming_fact_count += 1
+
+            if "writeStream" in methods and method in _STREAMING_SINK_TERMINALS:
+                facts.append(
+                    _streaming_fact(
+                        "streaming.sink",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={
+                            "format": _streaming_chain_literal(chain_calls, "format"),
+                            "output_mode": _streaming_chain_literal(chain_calls, "outputMode"),
+                            "checkpoint_configured": _streaming_chain_option(
+                                chain_calls, "checkpointLocation"
+                            )
+                            is not None,
+                            "target": _target_literal(node),
+                        },
+                    )
+                )
+                facts.append(
+                    _streaming_fact(
+                        "streaming.query",
+                        node,
+                        methods,
+                        path,
+                        ctx,
+                        lines,
+                        provenance,
+                        attrs={
+                            "checkpoint_configured": _streaming_chain_option(
+                                chain_calls, "checkpointLocation"
+                            )
+                            is not None,
+                            "trigger_configured": any(m == "trigger" for m in methods),
+                            "output_mode": _streaming_chain_literal(chain_calls, "outputMode"),
+                        },
+                    )
+                )
+                streaming_fact_count += 2
 
             # read/write NAO sao gateados por `_chain_root_call`: ao contrario de
             # `pyspark.chain` (que descreve a expressao fluente inteira e por isso
@@ -469,6 +760,28 @@ def extract_source(source: str, path: str) -> list[Fact]:
                 provenance=provenance,
             )
         )
+        if streaming_fact_count or "readStream" in {
+            method
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Attribute)
+            for method in (node.attr,)
+        }:
+            facts.append(
+                Fact(
+                    kind="streaming.module_analyzed",
+                    subject={
+                        "type": "source_location",
+                        "file": path,
+                        "line": 0,
+                        "col": 0,
+                        "symbol": "",
+                        "snippet": "",
+                    },
+                    measures={"streaming_fact_count": streaming_fact_count},
+                    attrs={"parsed": True, "read_stream_seen": True},
+                    provenance=provenance,
+                )
+            )
 
         unknown = {f.kind for f in facts} - EMITTED_KINDS
         if unknown:

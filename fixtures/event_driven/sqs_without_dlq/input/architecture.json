@@ -1,0 +1,13 @@
+{
+  "eventbridge_rules": [
+    {"name": "orders-rule", "state": "ENABLED", "event_pattern": {"source": ["orders"]}, "targets": [{"type": "sqs"}]}
+  ],
+  "eventbridge_pipes": [
+    {"name": "orders-pipe", "state": "RUNNING", "source": {"type": "sqs"}, "target": {"type": "lambda"}}
+  ],
+  "sqs_queues": [
+    {"name": "orders", "fifo": false, "visibility_timeout": 60}
+  ],
+  "sns_topics": [{"name": "orders-events"}],
+  "sns_subscriptions": [{"topic": "orders-events", "protocol": "sqs", "endpoint": "arn:aws:sqs:us-east-1:111111111111:orders"}]
+}

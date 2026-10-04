@@ -251,6 +251,28 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         "decision receipt": "local receipt verification; no MCP surface.",
         "decision shadow": "local shadow evaluation; no MCP surface.",
         "decision validate": "local contract validation; no MCP surface.",
+        "architecture streaming": (
+            "CLI-only offline decision engine; no MCP surface by design."
+        ),
+        # Forge Lab lifecycle is intentionally CLI-first. The read-only
+        # topology analyzer remains a normal MCP capability; these commands
+        # manage local runs, receipts and guarded Docker plans.
+        "lab analyze": "local Forge Lab artifact analysis; no MCP surface by design.",
+        "lab compare": "local receipt comparison; no MCP surface by design.",
+        "lab describe": "local scenario description; no MCP surface by design.",
+        "lab doctor": "local host/registry diagnosis; no MCP surface by design.",
+        "lab down": "guarded local Compose lifecycle; no MCP surface by design.",
+        "lab gc": "guarded local Forge Lab cleanup; no MCP surface by design.",
+        "lab inspect": "local run/receipt inspection; no MCP surface by design.",
+        "lab plan": "offline Forge Lab action planning; no MCP surface by design.",
+        "lab profiles": "local profile declaration listing; no MCP surface by design.",
+        "lab promote-fixture": "reviewed local fixture promotion; no MCP surface by design.",
+        "lab reproduce": "local receipt reproduction plan; no MCP surface by design.",
+        "lab run": "guarded local Forge Lab execution; no MCP surface by design.",
+        "lab scenarios": "local Golden 20 scenario listing; no MCP surface by design.",
+        "lab shell": "guarded local service shell; no MCP surface by design.",
+        "lab up": "guarded local Compose lifecycle; no MCP surface by design.",
+        "lab verify": "offline Forge Lab contract verification; no MCP surface by design.",
     }
 
     def _subcomandos(self, parser):

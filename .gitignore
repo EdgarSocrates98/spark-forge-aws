@@ -91,3 +91,6 @@ test-runs/
 
 .spark-forge/
 .sparkforge/
+
+.pytest_temp
+.pytest*

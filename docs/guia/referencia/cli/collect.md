@@ -21,7 +21,10 @@ Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).
 | [`sparkforge collect iam-access`](#sparkforge-collect-iam-access) | Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao. |
 | [`sparkforge collect iceberg-metadata`](#sparkforge-collect-iceberg-metadata) | Consulta metadata tables Iceberg de uma tabela via Athena. |
 | [`sparkforge collect lakeformation`](#sparkforge-collect-lakeformation) | Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela. |
+| [`sparkforge collect managed-flink`](#sparkforge-collect-managed-flink) | Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação. |
 | [`sparkforge collect parquet-footer`](#sparkforge-collect-parquet-footer) | Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow. |
+| [`sparkforge collect schema-registry`](#sparkforge-collect-schema-registry) | Coleta metadata e latest version read-only do AWS Glue Schema Registry. |
+| [`sparkforge collect streaming-integrations`](#sparkforge-collect-streaming-integrations) | Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio. |
 | [`sparkforge collect verify`](#sparkforge-collect-verify) | Verifica presenca e integridade de todos os artefatos do manifesto. |
 | [`sparkforge collect workspace-graph`](#sparkforge-collect-workspace-graph) | Coleta grafo live limitado aos cloud_resources declarados no workspace manifest. |
 
@@ -308,6 +311,30 @@ sparkforge collect lakeformation --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
+## `sparkforge collect managed-flink`
+
+Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação.
+
+```bash
+sparkforge collect managed-flink --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | sim | texto |  |  |  |
+| `--application-name` | sim | texto |  |  | Nome da aplicação Managed Flink. |
+| `--region` | não | texto |  | `` | Região AWS explícita. |
+| `--metrics-start` | não | texto |  | `` | Início ISO 8601 da janela CloudWatch Managed Flink. |
+| `--metrics-end` | não | texto |  | `` | Fim ISO 8601 da janela CloudWatch Managed Flink; exige --metrics-start. |
+| `--metrics-period` | não | texto |  | `60` | Período CloudWatch em segundos (60..86400, múltiplo de 60). |
+| `--now` | sim | texto |  |  | Timestamp ISO 8601. |
+
+### Tool MCP equivalente
+
+[`sparkforge_collect_managed_flink`](../tools/sparkforge_collect_managed_flink.md)
+
 ## `sparkforge collect parquet-footer`
 
 Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow.
@@ -328,6 +355,61 @@ sparkforge collect parquet-footer --help
 ### Tool MCP equivalente
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
+
+## `sparkforge collect schema-registry`
+
+Coleta metadata e latest version read-only do AWS Glue Schema Registry.
+
+```bash
+sparkforge collect schema-registry --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | sim | texto |  |  |  |
+| `--registry-name` | não | texto |  | `` | Nome do registry Glue. |
+| `--schema-name` | não | texto |  | `` | Filtra schema dentro do registry. |
+| `--schema-arn` | não | texto |  | `` | ARN do schema Glue. |
+| `--region` | não | texto |  | `` | Região AWS explícita. |
+| `--max-schemas` | não | texto |  | `100` | Teto de schemas (1..500). |
+| `--max-definition-bytes` | não | texto |  | `170000` | Teto por definição; acima sai unresolved. |
+| `--now` | sim | texto |  |  | Timestamp ISO 8601. |
+
+### Tool MCP equivalente
+
+[`sparkforge_collect_schema_registry`](../tools/sparkforge_collect_schema_registry.md)
+
+## `sparkforge collect streaming-integrations`
+
+Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio.
+
+```bash
+sparkforge collect streaming-integrations --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | sim | texto |  |  |  |
+| `--checkpoint-s3-uri` | não | texto |  | `` | Prefixo S3 do checkpoint Spark. |
+| `--glue-job` | não | texto |  | `` | Nome do job Glue. |
+| `--kinesis-stream` | não | texto |  | `` | Nome do stream Kinesis. |
+| `--msk-cluster-arn` | não | texto |  | `` | ARN do cluster MSK. |
+| `--dms-task-arn` | não | texto |  | `` | ARN da replication task DMS. |
+| `--region` | não | texto |  | `` | Região AWS explícita, quando necessária. |
+| `--max-objects` | não | texto |  | `500` | Teto de objetos do checkpoint (1..500). |
+| `--max-shards` | não | texto |  | `500` | Teto de shards Kinesis (1..500). |
+| `--metrics-start` | não | texto |  | `` | Início ISO 8601 da janela CloudWatch Kinesis; exige --metrics-end. |
+| `--metrics-end` | não | texto |  | `` | Fim ISO 8601 da janela CloudWatch Kinesis; exige --metrics-start. |
+| `--metrics-period` | não | texto |  | `60` | Período CloudWatch em segundos (60..86400, múltiplo de 60). |
+| `--now` | sim | texto |  |  | Timestamp ISO 8601. |
+
+### Tool MCP equivalente
+
+[`sparkforge_collect_streaming_integrations`](../tools/sparkforge_collect_streaming_integrations.md)
 
 ## `sparkforge collect verify`
 

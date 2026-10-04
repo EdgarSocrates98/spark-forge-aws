@@ -1,0 +1,293 @@
+catalog_version: 1
+schema_version: 1
+area: SF-GLUESTREAM
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-GLUESTREAM-001
+    category: glue_streaming
+    title: Glue Real-Time Mode com requisito observado incompatível
+    requires_facts: [glue.streaming.job]
+    when:
+      all:
+        - fact: glue.streaming.job
+          expr: >-
+            attrs.mode == "REAL_TIME" and
+            (attrs.language != "SCALA" or attrs.source_type != "KAFKA" or
+             attrs.stateful == True or attrs.output_mode != "UPDATE" or
+             attrs.foreach_batch == True)
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O dump observado marca Real-Time Mode e também traz pelo menos uma
+      propriedade incompatível com as restrições documentadas do Glue 6.0:
+      linguagem Scala, fonte Kafka, operação stateless, output Update e uso
+      direto de streaming sem foreachBatch. O achado não substitui a
+      confirmação da versão/runtime efetivos.
+    proposed_change:
+      - Confirmar Glue 6.0, tipo gluestreaming e argumento de habilitação no job efetivo.
+      - Remover ou substituir somente a restrição observada após validar requisito funcional.
+      - Se o workload for stateful, Kafka não for a fonte ou PySpark for necessário, avaliar micro-batch.
+    risks:
+      - Migrar para RTM pode alterar semântica de state, output e recuperação.
+      - Trocar modo sem validar consumidores pode perder latência ou resultado esperado.
+    tradeoffs:
+      - RTM reduz latência em uma classe restrita de workload, mas reduz opções de operação.
+    validation:
+      - Reextrair a definição do job e confirmar cada requisito contra a versão observada.
+      - Executar teste controlado com contagem, schema, chaves, agregados e comportamento do sink.
+      - Comparar latência somente com janelas, volume e fonte equivalentes.
+    rollback:
+      - Reverter o argumento/configuração RTM e restaurar o modo anterior preservando checkpoint e evidência.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.rtm_constraints
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.engine_version, correctness.write_result, runtime.wall_clock]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-002
+    category: glue_streaming
+    title: Capacidade de partições Kafka para Glue RTM não observada
+    requires_facts: [glue.streaming.job, glue.streaming.unresolved]
+    when:
+      all:
+        - fact: glue.streaming.job
+          expr: 'attrs.mode == "REAL_TIME" and attrs.source_type == "KAFKA"'
+        - fact: glue.streaming.unresolved
+          where: {attrs.reason: partition_capacity}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job observado é RTM sobre Kafka, mas o artefato não traz partições e
+      task slots suficientes para comparar cobertura. A ausência não prova
+      insuficiência nem segurança; impede medir se todas as partições têm slot.
+    proposed_change:
+      - Coletar partições da fonte e task slots efetivos do job, sem preencher valores por nome de worker.
+      - Comparar as duas medidas na mesma janela e declarar a unidade.
+    risks:
+      - Escalar antes de medir partições pode aumentar custo sem responder ao risco.
+    tradeoffs:
+      - Coleta adicional aumenta evidência e custo operacional de retenção.
+    validation:
+      - Reexecutar análise com ambas as medidas observadas e julgar novamente.
+    rollback:
+      - Não há mutação proposta; descartar apenas o artefato coletado se a política de retenção exigir.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.streaming.rtm.partition_capacity
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-003
+    category: glue_streaming
+    title: Auto Scaling declarado junto com Glue RTM
+    requires_facts: [glue.streaming.job]
+    when:
+      all:
+        - fact: glue.streaming.job
+          expr: 'attrs.mode == "REAL_TIME" and attrs.autoscaling == True'
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump traz RTM e auto scaling habilitado no mesmo job. A documentação
+      oficial declara que auto scaling não é compatível com RTM; o fato não
+      mede impacto operacional desta aplicação.
+    proposed_change:
+      - Confirmar se auto scaling está efetivamente aplicado, não apenas declarado.
+      - Avaliar worker count fixo com partições observadas antes de qualquer alteração.
+    risks:
+      - Fixar workers sem medir partições pode deixar capacidade insuficiente ou ociosa.
+    tradeoffs:
+      - Worker count fixo troca elasticidade por previsibilidade da execução RTM.
+    validation:
+      - Comparar partições, task slots, backlog e latência antes e depois da mudança.
+    rollback:
+      - Restaurar a configuração anterior preservando métricas e resultado funcional.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.rtm.autoscaling
+      direction: remove
+      requires_absent: []
+      moves: [runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-004
+    category: glue_streaming
+    title: Drift entre job Glue Streaming observado e Terraform
+    requires_facts: [glue.streaming.terraform_link]
+    when:
+      all:
+        - fact: glue.streaming.terraform_link
+          expr: measures.divergence_count > 0
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O job efetivo salvo e o recurso aws_glue_job Terraform têm pelo menos
+      um eixo literal divergente entre Glue version, habilitação RTM, linguagem
+      ou número de workers. O link prova diferença declarada entre artefatos,
+      não qual lado será aplicado nem o comportamento da execução.
+    proposed_change:
+      - Reextrair os dois artefatos e revisar somente os campos listados em drifts.
+      - Confirmar qual fonte representa estado desejado e qual representa estado efetivo antes de alterar IaC ou job.
+      - Validar runtime, capacidade e resultado funcional em janela equivalente depois da reconciliação.
+    risks:
+      - Alinhar Terraform ao dump efetivo pode codificar uma configuração já obsoleta.
+      - Alterar RTM, linguagem ou workers pode mudar compatibilidade, capacidade ou semântica do job.
+    tradeoffs:
+      - Reconciliar drift reduz ambiguidade de operação, mas exige escolher a fonte de verdade do ambiente.
+    validation:
+      - Comparar novamente os quatro eixos após a mudança e manter os source_fact_ids da nova extração.
+      - Executar validação funcional com contagem, schema, chaves e agregados; não usar ausência de drift como prova de saúde.
+    rollback:
+      - Reverter o diff Terraform ou a configuração efetiva para o último estado aprovado e preservar os dois artefatos.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.terraform_contract
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.engine_version, runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-005
+    category: glue_streaming
+    title: Cross-artifact Glue Streaming não resolvido
+    requires_facts: [glue.streaming.cross.unresolved]
+    when:
+      all:
+        - fact: glue.streaming.cross.unresolved
+          expr: attrs.reason != ""
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A composição recebeu um job Glue e Terraform, mas não pôde provar uma
+      identidade literal única ou um campo comparável. A ausência não prova
+      consistência, divergência ou capacidade suficiente.
+    proposed_change:
+      - Preservar o nome literal do job e valores Terraform necessários no artefato sanitizado.
+      - Resolver o motivo nomeado e reextrair antes de julgar drift.
+    risks:
+      - Casar pelo nome do recurso ou preencher campo ausente pode ligar o job errado e gerar finding falso.
+    tradeoffs:
+      - Coletar mais evidência aumenta payload local, mas mantém a decisão reauditable.
+    validation:
+      - Reexecutar `fuse` com os dois conjuntos de facts e confirmar que a recusa desapareceu ou mudou de motivo.
+    rollback:
+      - Não há mutação; descartar o artefato incompleto conforme a política de retenção.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.streaming.terraform_identity
+      direction: investigate
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-006
+    category: glue_streaming
+    title: Drift entre definição Glue Streaming e runs terminais observados
+    requires_facts: [glue.streaming.runtime_link]
+    when:
+      all:
+        - fact: glue.streaming.runtime_link
+          expr: measures.divergence_count > 0
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Os runs terminais observados divergem da definição efetiva do job em
+      pelo menos um eixo literal de runtime ou capacidade: Glue version,
+      worker type ou worker count. O link prova diferença entre artefatos; não
+      prova latência, saúde, throughput, custo ou resultado funcional.
+    proposed_change:
+      - Reextrair definição efetiva e runs terminais do mesmo job literal.
+      - Investigar somente os eixos listados em drifts antes de alterar configuração.
+      - Validar runtime, capacidade e resultado funcional em janela comparável após reconciliação.
+    risks:
+      - O run pode pertencer a uma revisão operacional diferente da definição salva.
+      - Alinhar capacidade ou versão pode alterar compatibilidade e semântica do workload.
+    tradeoffs:
+      - Reconciliação reduz ambiguidade de operação, mas exige preservar os artefatos de cada observação.
+    validation:
+      - Reexecutar fuse com nova definição e novos runs e confirmar os source_fact_ids.
+      - Medir latência, custo e corretude separadamente; ausência de drift não prova saúde.
+    rollback:
+      - Reverter a alteração de configuração para o último estado aprovado e preservar o run observado.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.runtime_contract
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.engine_version, runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-007
+    category: glue_streaming
+    title: Observação de runtime Glue Streaming não resolvida
+    requires_facts: [glue.streaming.runtime.unresolved]
+    when:
+      all:
+        - fact: glue.streaming.runtime.unresolved
+          expr: attrs.reason != ""
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A composição recebeu definição Glue Streaming ou histórico de runs, mas
+      não pôde provar uma identidade literal única, uma execução observada ou
+      todos os eixos comparáveis. A ausência não prova consistência, drift,
+      capacidade suficiente ou saúde do streaming.
+    proposed_change:
+      - Preservar o nome literal do job, run id e campos de runtime no dump sanitizado.
+      - Resolver o motivo nomeado e reextrair antes de julgar divergência.
+    risks:
+      - Casar por nome parcial ou preencher campo ausente pode ligar o run errado e gerar finding falso.
+    tradeoffs:
+      - Coletar mais evidência aumenta payload local, mas mantém a decisão reauditável.
+    validation:
+      - Reexecutar fuse e confirmar que a recusa desapareceu ou mudou de motivo.
+      - Tratar duração e DPU como observações de execução, nunca como latência de evento sem medição própria.
+    rollback:
+      - Não há mutação; descartar ou reter o artefato incompleto conforme política local.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.streaming.runtime_observation
+      direction: investigate
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}

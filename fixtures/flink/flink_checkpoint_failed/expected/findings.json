@@ -1,0 +1,68 @@
+[
+  {
+    "rule_id": "SF-FLINK-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Falha de checkpoint observada no job Flink",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_33cbd4"
+    ],
+    "measured": {
+      "duration_ms": 12000,
+      "state_size_bytes": 8388608
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O dump contém um checkpoint cujo status observado é FAILED. Isso prova falha naquele checkpoint, mas não identifica sozinho causa, impacto no resultado ou estratégia de recuperação.",
+    "proposed_change": [
+      "Correlacionar o checkpoint com logs do job, duração, state size e causa registrada.",
+      "Confirmar a política de restart, externalização e replay antes de alterar a configuração.",
+      "Reexecutar uma amostra controlada e validar o resultado funcional."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reiniciar ou trocar checkpoint pode alterar o ponto de retomada e gerar replay.",
+      "Remover checkpoint externalizado pode eliminar evidência de recuperação."
+    ],
+    "tradeoffs": [
+      "Retenção maior de checkpoints aumenta armazenamento e operação."
+    ],
+    "validation": [
+      "Confirmar causa e timestamp no artefato de execução correspondente.",
+      "Testar parada, retomada e replay com sink idempotente.",
+      "Comparar contagem, chaves, schema e agregados do resultado."
+    ],
+    "rollback": [
+      "Reverter a alteração de configuração e preservar o checkpoint anterior para replay controlado."
+    ],
+    "sources": [
+      {
+        "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/state/checkpoints/",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "flink.checkpoint.failure",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

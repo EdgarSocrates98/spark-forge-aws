@@ -12,33 +12,51 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze athena-workgroup`](#sparkforge-analyze-athena-workgroup) | Extrai facts de um dump JSON de workgroups do Athena. |
 | [`sparkforge analyze call-graph`](#sparkforge-analyze-call-graph) | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos. |
 | [`sparkforge analyze catalog-schema`](#sparkforge-analyze-catalog-schema) | Extrai facts de um dump JSON do Glue Data Catalog. |
+| [`sparkforge analyze cdc`](#sparkforge-analyze-cdc) | Extrai facts offline de dumps CDC, Debezium ou AWS DMS. |
 | [`sparkforge analyze cloudwatch`](#sparkforge-analyze-cloudwatch) | Extrai facts de um artefato de metricas do CloudWatch ja coletado. |
 | [`sparkforge analyze cloudwatch-logs`](#sparkforge-analyze-cloudwatch-logs) | Extrai facts do LOG do run ja coletado do CloudWatch Logs. |
 | [`sparkforge analyze consumers`](#sparkforge-analyze-consumers) | Extrai facts do inventario declarado de consumidores de tabela. |
 | [`sparkforge analyze controlm-jobs`](#sparkforge-analyze-controlm-jobs) | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem. |
+| [`sparkforge analyze data-observability`](#sparkforge-analyze-data-observability) | Avalia SLI/SLO, error budget, incidentes e dependências offline. |
 | [`sparkforge analyze data-quality`](#sparkforge-analyze-data-quality) | Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa. |
+| [`sparkforge analyze dbt-artifacts`](#sparkforge-analyze-dbt-artifacts) | Analisa manifest, catalog e run_results do dbt sem executar dbt. |
 | [`sparkforge analyze dq-ai`](#sparkforge-analyze-dq-ai) | Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas. |
+| [`sparkforge analyze duckdb-microscope`](#sparkforge-analyze-duckdb-microscope) | Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL. |
 | [`sparkforge analyze emr-cluster`](#sparkforge-analyze-emr-cluster) | Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam). |
 | [`sparkforge analyze emr-eks`](#sparkforge-analyze-emr-eks) | Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump. |
 | [`sparkforge analyze emr-serverless`](#sparkforge-analyze-emr-serverless) | Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe. |
 | [`sparkforge analyze error-signatures`](#sparkforge-analyze-error-signatures) | Casa knowledge/errors/ contra os facts do case. Derivacao pura. |
+| [`sparkforge analyze event-driven`](#sparkforge-analyze-event-driven) | Extrai facts offline de EventBridge/Pipes, SQS e SNS. |
 | [`sparkforge analyze event-log`](#sparkforge-analyze-event-log) | Extrai facts de um Spark event log (.jsonl) ja coletado. |
+| [`sparkforge analyze flink`](#sparkforge-analyze-flink) | Extrai facts offline de dumps Apache Flink ou Managed Flink. |
+| [`sparkforge analyze forge-lab`](#sparkforge-analyze-forge-lab) | Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas. |
 | [`sparkforge analyze glue-job-runs`](#sparkforge-analyze-glue-job-runs) | Extrai facts de historico do diretorio de artefatos de run Glue. |
 | [`sparkforge analyze glue-resource-link`](#sparkforge-analyze-glue-resource-link) | Extrai a topologia do catalogo ja coletada: link, alvo e nome. |
+| [`sparkforge analyze glue-streaming`](#sparkforge-analyze-glue-streaming) | Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode. |
 | [`sparkforge analyze graph`](#sparkforge-analyze-graph) | Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure. |
 | [`sparkforge analyze iam-access`](#sparkforge-analyze-iam-access) | Extrai a DECISAO de IAM ja simulada, com a camada que decidiu. |
 | [`sparkforge analyze iceberg`](#sparkforge-analyze-iceberg) | Extrai facts de um dump JSON das metadata tables Iceberg. |
 | [`sparkforge analyze lakeformation-grants`](#sparkforge-analyze-lakeformation-grants) | Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings). |
+| [`sparkforge analyze lakehouse-catalog`](#sparkforge-analyze-lakehouse-catalog) | Analisa topologia declarada de catalogs, engines, tabelas e bindings. |
+| [`sparkforge analyze orchestration`](#sparkforge-analyze-orchestration) | Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M. |
 | [`sparkforge analyze parquet-footer`](#sparkforge-analyze-parquet-footer) | Extrai facts do FOOTER do Parquet ja coletado. |
 | [`sparkforge analyze plan`](#sparkforge-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
+| [`sparkforge analyze platform-ecosystem`](#sparkforge-analyze-platform-ecosystem) | Analisa serving, ingestion, AI Data Engineering e radar opcional. |
+| [`sparkforge analyze platform-graph`](#sparkforge-analyze-platform-graph) | Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos. |
 | [`sparkforge analyze pyspark`](#sparkforge-analyze-pyspark) | Extrai facts de PySpark via AST estatico (nunca importa o codigo). |
 | [`sparkforge analyze s3-listing`](#sparkforge-analyze-s3-listing) | Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel). |
+| [`sparkforge analyze schema-registry`](#sparkforge-analyze-schema-registry) | Extrai facts offline de contratos e evolução de schemas. |
 | [`sparkforge analyze sfn-history`](#sparkforge-analyze-sfn-history) | Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao. |
 | [`sparkforge analyze sql`](#sparkforge-analyze-sql) | Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark. |
 | [`sparkforge analyze sql-metrics`](#sparkforge-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
 | [`sparkforge analyze step-functions`](#sparkforge-analyze-step-functions) | Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao. |
+| [`sparkforge analyze streaming`](#sparkforge-analyze-streaming) | Extrai facts de fonte Structured Streaming ou StreamingQueryProgress. |
+| [`sparkforge analyze streaming-composition`](#sparkforge-analyze-streaming-composition) | Compõe facts já extraídos de streaming, transporte e Iceberg. |
+| [`sparkforge analyze streaming-integrations`](#sparkforge-analyze-streaming-integrations) | Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage. |
+| [`sparkforge analyze streaming-ops`](#sparkforge-analyze-streaming-ops) | Extrai facts declarados de SLO, FinOps, segurança e serving streaming. |
 | [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
 | [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
+| [`sparkforge analyze transport`](#sparkforge-analyze-transport) | Extrai facts offline de dumps Kafka, MSK ou Kinesis. |
 | [`sparkforge analyze workload`](#sparkforge-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
 
 ## `sparkforge analyze airflow-dag`
@@ -133,6 +151,30 @@ sparkforge analyze catalog-schema --help
 
 [`sparkforge_analyze_catalog_schema`](../tools/sparkforge_analyze_catalog_schema.md)
 
+## `sparkforge analyze cdc`
+
+Extrai facts offline de dumps CDC, Debezium ou AWS DMS.
+
+```bash
+sparkforge analyze cdc --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--artifact` | sim | `cdc`, `debezium`, `dms` |  |  | Vocabulário do dump: eventos CDC, Debezium ou AWS DMS. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_cdc`](../tools/sparkforge_analyze_cdc.md)
+
 ## `sparkforge analyze cloudwatch`
 
 Extrai facts de um artefato de metricas do CloudWatch ja coletado.
@@ -226,6 +268,25 @@ sparkforge analyze controlm-jobs --help
 
 [`sparkforge_analyze_controlm_jobs`](../tools/sparkforge_analyze_controlm_jobs.md)
 
+## `sparkforge analyze data-observability`
+
+Avalia SLI/SLO, error budget, incidentes e dependências offline.
+
+```bash
+sparkforge analyze data-observability --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML de observabilidade. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_data_observability`](../tools/sparkforge_analyze_data_observability.md)
+
 ## `sparkforge analyze data-quality`
 
 Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa.
@@ -249,6 +310,25 @@ sparkforge analyze data-quality --help
 
 [`sparkforge_analyze_data_quality`](../tools/sparkforge_analyze_data_quality.md)
 
+## `sparkforge analyze dbt-artifacts`
+
+Analisa manifest, catalog e run_results do dbt sem executar dbt.
+
+```bash
+sparkforge analyze dbt-artifacts --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Diretório dbt ou manifest.json. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_dbt_artifacts`](../tools/sparkforge_analyze_dbt_artifacts.md)
+
 ## `sparkforge analyze dq-ai`
 
 Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas.
@@ -271,6 +351,25 @@ sparkforge analyze dq-ai --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_dq_ai`](../tools/sparkforge_analyze_dq_ai.md), [`sparkforge_dq_ai_assess`](../tools/sparkforge_dq_ai_assess.md)
+
+## `sparkforge analyze duckdb-microscope`
+
+Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL.
+
+```bash
+sparkforge analyze duckdb-microscope --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML do microscópio DuckDB. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_duckdb_microscope`](../tools/sparkforge_analyze_duckdb_microscope.md)
 
 ## `sparkforge analyze emr-cluster`
 
@@ -364,6 +463,29 @@ sparkforge analyze error-signatures --help
 
 [`sparkforge_analyze_cloudwatch_logs`](../tools/sparkforge_analyze_cloudwatch_logs.md), [`sparkforge_analyze_error_signatures`](../tools/sparkforge_analyze_error_signatures.md)
 
+## `sparkforge analyze event-driven`
+
+Extrai facts offline de EventBridge/Pipes, SQS e SNS.
+
+```bash
+sparkforge analyze event-driven --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_event_driven`](../tools/sparkforge_analyze_event_driven.md)
+
 ## `sparkforge analyze event-log`
 
 Extrai facts de um Spark event log (.jsonl) ja coletado.
@@ -386,6 +508,49 @@ sparkforge analyze event-log --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
+
+## `sparkforge analyze flink`
+
+Extrai facts offline de dumps Apache Flink ou Managed Flink.
+
+```bash
+sparkforge analyze flink --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--artifact` | sim | `flink`, `managed_flink` |  |  | Vocabulário do dump: Flink upstream ou Managed Flink. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_flink`](../tools/sparkforge_analyze_flink.md)
+
+## `sparkforge analyze forge-lab`
+
+Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.
+
+```bash
+sparkforge analyze forge-lab --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo YAML/JSON da topologia Forge Lab. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_forge_lab`](../tools/sparkforge_analyze_forge_lab.md)
 
 ## `sparkforge analyze glue-job-runs`
 
@@ -434,6 +599,29 @@ sparkforge analyze glue-resource-link --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
+
+## `sparkforge analyze glue-streaming`
+
+Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.
+
+```bash
+sparkforge analyze glue-streaming --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_glue_streaming`](../tools/sparkforge_analyze_glue_streaming.md)
 
 ## `sparkforge analyze graph`
 
@@ -527,6 +715,44 @@ sparkforge analyze lakeformation-grants --help
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
 
+## `sparkforge analyze lakehouse-catalog`
+
+Analisa topologia declarada de catalogs, engines, tabelas e bindings.
+
+```bash
+sparkforge analyze lakehouse-catalog --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML da topologia de catalog. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_lakehouse_catalog`](../tools/sparkforge_analyze_lakehouse_catalog.md)
+
+## `sparkforge analyze orchestration`
+
+Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.
+
+```bash
+sparkforge analyze orchestration --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML do control plane. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_orchestration`](../tools/sparkforge_analyze_orchestration.md)
+
 ## `sparkforge analyze parquet-footer`
 
 Extrai facts do FOOTER do Parquet ja coletado.
@@ -573,6 +799,49 @@ sparkforge analyze plan --help
 
 [`sparkforge_analyze_plan`](../tools/sparkforge_analyze_plan.md)
 
+## `sparkforge analyze platform-ecosystem`
+
+Analisa serving, ingestion, AI Data Engineering e radar opcional.
+
+```bash
+sparkforge analyze platform-ecosystem --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML do inventário. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_platform_ecosystem`](../tools/sparkforge_analyze_platform_ecosystem.md)
+
+## `sparkforge analyze platform-graph`
+
+Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.
+
+```bash
+sparkforge analyze platform-graph --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON ou YAML do Platform Intelligence Graph. |
+| `--changed-node` | não | texto |  |  | ID da entidade alterada para calcular blast radius. |
+| `--changed-attribute` | não | texto |  |  | Caminho de atributo declarado no nó alterado. |
+| `--direction` | não | `downstream`, `upstream`, `both` |  | `downstream` |  |
+| `--max-depth` | não | texto |  | `3` |  |
+| `--max-items` | não | texto |  | `500` |  |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_platform_graph`](../tools/sparkforge_analyze_platform_graph.md)
+
 ## `sparkforge analyze pyspark`
 
 Extrai facts de PySpark via AST estatico (nunca importa o codigo).
@@ -618,6 +887,29 @@ sparkforge analyze s3-listing --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_s3_listing`](../tools/sparkforge_analyze_s3_listing.md)
+
+## `sparkforge analyze schema-registry`
+
+Extrai facts offline de contratos e evolução de schemas.
+
+```bash
+sparkforge analyze schema-registry --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_schema_registry`](../tools/sparkforge_analyze_schema_registry.md)
 
 ## `sparkforge analyze sfn-history`
 
@@ -712,6 +1004,106 @@ sparkforge analyze step-functions --help
 
 [`sparkforge_analyze_step_functions`](../tools/sparkforge_analyze_step_functions.md)
 
+## `sparkforge analyze streaming`
+
+Extrai facts de fonte Structured Streaming ou StreamingQueryProgress.
+
+```bash
+sparkforge analyze streaming --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio a analisar. |
+| `--artifact` | sim | `source`, `progress` |  |  | Tipo do artefato: fonte PySpark ou progresso JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_streaming`](../tools/sparkforge_analyze_streaming.md)
+
+## `sparkforge analyze streaming-composition`
+
+Compõe facts já extraídos de streaming, transporte e Iceberg.
+
+```bash
+sparkforge analyze streaming-composition --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--facts` | sim | texto | sim |  | Arquivo de facts gerado por um analyze; repetível para unir fontes. |
+| `--mode` | sim | `iceberg`, `iceberg_temporal`, `observability`, `slo`, `temporal`, `pipeline` |  |  | Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline. |
+| `--table` | não | texto |  | `` | Tabela Iceberg declarada. |
+| `--query-name` | não | texto |  | `` | Query Structured Streaming declarada. |
+| `--slo-name` | não | texto |  | `` | Nome do SLO declarado; obrigatório quando há mais de uma declaração. |
+| `--transport-key` | não | texto |  | `` | Grupo/topic Kafka ou stream Kinesis declarado; obrigatório no mode=slo de transporte. |
+| `--max-skew-seconds` | não | texto |  |  | Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved. |
+| `--pipeline-path` | não | texto |  |  | Contrato JSON declarativo de nós/arestas; obrigatório quando mode=pipeline. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetível. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_streaming_composition`](../tools/sparkforge_analyze_streaming_composition.md)
+
+## `sparkforge analyze streaming-integrations`
+
+Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.
+
+```bash
+sparkforge analyze streaming-integrations --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretório JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetível. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_streaming_integrations`](../tools/sparkforge_analyze_streaming_integrations.md)
+
+## `sparkforge analyze streaming-ops`
+
+Extrai facts declarados de SLO, FinOps, segurança e serving streaming.
+
+```bash
+sparkforge analyze streaming-ops --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretório JSON. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetível. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_streaming_ops`](../tools/sparkforge_analyze_streaming_ops.md)
+
 ## `sparkforge analyze terraform`
 
 Extrai facts de blocos aws_glue_job em HCL Terraform.
@@ -758,6 +1150,30 @@ sparkforge analyze terraform-diff --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_terraform_diff`](../tools/sparkforge_analyze_terraform_diff.md)
+
+## `sparkforge analyze transport`
+
+Extrai facts offline de dumps Kafka, MSK ou Kinesis.
+
+```bash
+sparkforge analyze transport --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--artifact` | sim | `kafka`, `msk`, `kinesis` |  |  | Vocabulário do dump: Kafka, MSK ou Kinesis. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_transport`](../tools/sparkforge_analyze_transport.md)
 
 ## `sparkforge analyze workload`
 

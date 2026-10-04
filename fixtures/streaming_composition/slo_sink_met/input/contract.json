@@ -1,0 +1,16 @@
+{
+  "slo": [{
+    "name": "sink-output",
+    "metric": "num_output_rows",
+    "target": 90,
+    "operator": "gte",
+    "unit": "rows",
+    "window": "5m",
+    "source": "streaming_sink",
+    "sink_name": "iceberg-orders"
+  }],
+  "finops": [],
+  "security": [],
+  "serving": [],
+  "lakehouse": []
+}

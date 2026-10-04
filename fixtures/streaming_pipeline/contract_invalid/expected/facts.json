@@ -1,0 +1,28 @@
+[
+  {
+    "id": "f_67af1a",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:unresolved:unsupported_schema_version:contract",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "pipeline_id": "orders",
+      "reason": "unsupported_schema_version",
+      "schema_version": 2
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:cdc"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  }
+]

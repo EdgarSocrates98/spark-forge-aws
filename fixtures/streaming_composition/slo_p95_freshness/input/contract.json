@@ -1,0 +1,16 @@
+{
+  "slo": [{
+    "name": "freshness",
+    "metric": "freshness_ms",
+    "target": 15000,
+    "operator": "lte",
+    "unit": "ms",
+    "window": "10m",
+    "source": "spark_progress",
+    "statistic": "p95"
+  }],
+  "finops": [],
+  "security": [],
+  "serving": [],
+  "lakehouse": []
+}

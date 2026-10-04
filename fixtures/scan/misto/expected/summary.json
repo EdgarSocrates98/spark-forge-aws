@@ -9,7 +9,7 @@
       "files": 1
     },
     "iceberg": {
-      "facts": 8,
+      "facts": 11,
       "files": 1
     },
     "pyspark": {
@@ -27,8 +27,8 @@
   },
   "dry_run": false,
   "facts": {
-    "after_fuse": 70,
-    "extracted": 67
+    "after_fuse": 73,
+    "extracted": 70
   },
   "findings": {
     "by_severity": {

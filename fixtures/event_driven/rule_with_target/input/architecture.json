@@ -1,0 +1,8 @@
+{
+  "eventbridge_rules": [
+    {"name": "orders-rule", "state": "ENABLED", "event_pattern": {"source": ["orders"]}, "targets": [{"type": "sqs", "retry_policy": {"maximum_event_age_in_seconds": 3600}, "dead_letter_config": {"arn": "arn:aws:sqs:us-east-1:111111111111:orders-dlq"}}]}
+  ],
+  "sqs_queues": [
+    {"name": "orders", "fifo": true, "redrive_policy": {"deadLetterTargetArn": "arn:aws:sqs:us-east-1:111111111111:orders-dlq", "maxReceiveCount": 5}, "visibility_timeout": 60}
+  ]
+}

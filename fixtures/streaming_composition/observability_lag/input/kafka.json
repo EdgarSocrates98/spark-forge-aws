@@ -1,0 +1,1 @@
+{"consumer_groups":[{"group":"orders-group","state":"Stable","offsets":[{"topic":"orders","partition":0,"current_offset":100,"log_end_offset":140,"lag":40}]}]}

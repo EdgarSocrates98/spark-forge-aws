@@ -1,0 +1,42 @@
+topology: synthetic-control-plane
+orchestrators:
+  - {id: airflow-prod, kind: airflow, source_ref: synthetic://airflow/dags}
+  - {id: dagster-prod, kind: dagster, source_ref: synthetic://dagster/definitions}
+  - {id: sfn-prod, kind: step_functions, source_ref: synthetic://step-functions/definitions}
+  - {id: controlm-prod, kind: controlm, source_ref: synthetic://controlm/jobs}
+workflows:
+  - id: airflow.orders_ingest
+    orchestrator_id: airflow-prod
+    kind: dag
+    schedule: "*/5 * * * *"
+    sensors: [kafka.orders]
+    retry: {max_attempts: 3, backoff: exponential}
+    concurrency: {pool: streaming, slots: 4}
+    backfill: {enabled: true, max_active_runs: 1}
+    idempotent: true
+    dependencies: []
+  - id: dagster.orders_asset
+    orchestrator_id: dagster-prod
+    kind: asset_job
+    sensors: [iceberg.orders]
+    retry: {max_attempts: 2, backoff: fixed}
+    concurrency: {pool: lakehouse, slots: 2}
+    backfill: {enabled: true, max_active_runs: 1}
+    idempotent: true
+    dependencies: [airflow.orders_ingest]
+  - id: sfn.orders_publish
+    orchestrator_id: sfn-prod
+    kind: state_machine
+    retry: {max_attempts: 4, backoff: exponential}
+    concurrency: {pool: publish, slots: 1}
+    backfill: {enabled: false, max_active_runs: 1}
+    idempotent: false
+    dependencies: [dagster.orders_asset]
+  - id: controlm.orders_reconcile
+    orchestrator_id: controlm-prod
+    kind: job
+    retry: null
+    concurrency: null
+    backfill: null
+    idempotent: null
+    dependencies: [missing.workflow]

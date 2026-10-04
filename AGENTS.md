@@ -78,7 +78,7 @@ For full/incremental AWS Glue workloads, start with `glue-incremental-performanc
 
 ## Coordinators and executors
 
-Eight coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
+Fourteen coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
 declares `rule_areas`, the `skills` it draws on, and the five `executors` it dispatches
 (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`, in
 `agents/executors/*.md`, each with an explicit `## Não faz` boundary and a
@@ -96,6 +96,8 @@ the case, decides which executor runs next, and records which one ran
 | `iceberg-performance-engineer` | dívida de data files, delete files, manifests, snapshots e manutenção de tabela Iceberg | SF-ICE, SF-PQ |
 | `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 **ou** de uma application EMR Serverless | SF-EMR, SF-EMRS, SF-ENV |
 | `data-quality-reviewer` | o job valida dado e a pergunta é se a validação está no lugar certo, se tem consequência e quanto custa | SF-DQ |
+| `streaming-realtime-architect` | diagnóstico de plataformas Flink, Managed Flink e Structured Streaming com transporte, checkpoint, state e observabilidade | SF-STREAM, SF-FLINK |
+| `cdc-contract-reviewer` | revisão de eventos CDC, Debezium/Kafka Connect, AWS DMS e contratos de mudança com posição, chave, seam, tombstone, schema history e mappings | SF-CDC, SF-DEBEZIUM, SF-DMS, SF-SCHEMA |
 
 Which coordinator to use is data, not judgment: routes in `rules/catalog/routing.yaml`
 map the case's phase and dominant finding area to a `recommended_agent`, and
@@ -104,7 +106,7 @@ inspection.
 
 **Three platforms dispatch**: Claude Code, the Devin CLI and the Devin Local agent. Devin
 reads `.agents/agents/` natively and imports `.claude/agents/*.md` — both are generated
-mirrors of `agents/`, so the eight coordinators are subagent profiles there. The five
+mirrors of `agents/`, so the fourteen coordinators are subagent profiles there. The five
 executors are not at a documented discovery layout (`executors/` is neither flat nor
 `agents/<name>/AGENT.md`), so do not presume they are published. A coordinator dispatched
 as a subagent does **not** dispatch the executors: subagents cannot spawn subagents, so
@@ -140,7 +142,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**115 tools, 42 with `detail_level`** (recounted 2026-10-01) (`summary`, `normal`, `full`).
+**136 tools, 52 with `detail_level`** (recounted 2026-10-03) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.
@@ -171,7 +173,7 @@ The Gateway preserves critical evidence, `fact_id`, `rule_id`, risks and
 of truncating silently. Context results expose `context_tree`, `execution_plan`
 and expandable refs where available.
 
-MCP remains full by default with **115 tools**. Compact MCP is explicit opt-in
+MCP remains full by default with **136 tools**. Compact MCP is explicit opt-in
 and publishes exactly **7 operations**. Full/compact adapters use the same envelope;
 surface changes require `docs/surface.lock.json` and
 `python scripts/check_surface_lock.py`.
@@ -382,6 +384,17 @@ Agents: sf-lake-formation-specialist, sf-security-reviewer.
 Subagents: none. Tools declared in this registry: none. The sixteen ephemeral contracts and the seven declared tool names left in `docs/sdd/CONFIG_OCA/` (2026-09-20): the contracts had no reader in `sparkforge/`, `scripts/` or `tests/`, and none of the seven names existed in `sparkforge.adapters.tools.TOOLS`. The six modules under `sparkforge/tools/` behind them are code and still exist.
 Teams: governance-security.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
+
+## Forge Lab / Digital Twin
+
+`lab/versions.yaml` e `lab/scenarios/golden.yaml` são a fonte declarativa do
+Forge Lab. A CLI `sparkforge lab` compila cenários em ações allowlisted,
+captura evidências e receipts e só muta Compose/Testcontainers com
+`--execute --confirm`; não há tool MCP nova nem execução AWS implícita. O
+Golden 20 foi verificado offline com 11 componentes e 240 ações. O contrato
+completo, os limites L0–L3 e o fechamento da feature estão em
+`docs/knowledge/forge-lab-product.md`, `docs/guia/forge-lab.md` e
+`docs/sdd/FORGE_LAB_PRODUCT/ship.md`.
 
 ## Skills AWS oficiais complementares
 

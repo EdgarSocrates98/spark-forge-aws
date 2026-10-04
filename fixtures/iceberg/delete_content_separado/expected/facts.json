@@ -74,6 +74,87 @@
     }
   },
   {
+    "id": "f_a9d843",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.delete_content_separado",
+      "snapshot_id": 1
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 1,
+      "committed_at": "2026-06-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "64a45cfdac7c56935c566a6c7b648acf2e8f7dae8871cd9e4553f24442e0c975",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_1c7dfa",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.delete_content_separado",
+      "snapshot_id": 2
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 2,
+      "committed_at": "2026-06-15T00:00:00+00:00",
+      "operation": "delete"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "64a45cfdac7c56935c566a6c7b648acf2e8f7dae8871cd9e4553f24442e0c975",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_98e0f3",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.delete_content_separado",
+      "snapshot_id": 3
+    },
+    "measures": {
+      "snapshot_index": 2
+    },
+    "attrs": {
+      "snapshot_index": 2,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 3,
+      "committed_at": "2026-07-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "64a45cfdac7c56935c566a6c7b648acf2e8f7dae8871cd9e4553f24442e0c975",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_5a3ed4",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",

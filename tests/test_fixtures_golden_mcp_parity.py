@@ -109,6 +109,69 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_lakeformation_architect": (
         "2026-10-01: contrato offline de arquitetura Lake Formation FGAC/FTA"
     ),
+    "sparkforge_analyze_streaming": (
+        "2026-10-01: facts offline de Structured Streaming e StreamingQueryProgress"
+    ),
+    "sparkforge_analyze_transport": (
+        "2026-10-02: facts offline de dumps Kafka, MSK e Kinesis"
+    ),
+    "sparkforge_analyze_flink": (
+        "2026-10-02: facts offline de dumps Apache Flink e Managed Flink"
+    ),
+    "sparkforge_analyze_glue_streaming": (
+        "2026-10-02: facts offline de dumps AWS Glue Streaming e Real-Time Mode"
+    ),
+    "sparkforge_analyze_cdc": (
+        "2026-10-02: facts offline de eventos CDC, Debezium e AWS DMS"
+    ),
+    "sparkforge_analyze_schema_registry": (
+        "2026-10-02: facts offline de contratos e evolução de Schema Registry"
+    ),
+    "sparkforge_analyze_data_observability": (
+        "2026-10-02: SLO, incidentes, dependências e blast radius offline"
+    ),
+    "sparkforge_analyze_dbt_artifacts": (
+        "2026-10-02: lineage, catalog e run results de artifacts dbt"
+    ),
+    "sparkforge_analyze_duckdb_microscope": (
+        "2026-10-02: objetos, queries e comparações read-only de DuckDB"
+    ),
+    "sparkforge_analyze_event_driven": (
+        "2026-10-02: topologia declarada de EventBridge, SQS e SNS"
+    ),
+    "sparkforge_analyze_forge_lab": (
+        "2026-10-02: topologia declarativa offline do Forge Lab"
+    ),
+    "sparkforge_analyze_lakehouse_catalog": (
+        "2026-10-02: bindings declarados de catálogos e engines lakehouse"
+    ),
+    "sparkforge_analyze_orchestration": (
+        "2026-10-02: controles de confiabilidade de orquestração"
+    ),
+    "sparkforge_analyze_platform_ecosystem": (
+        "2026-10-02: inventário de serving, ingestion, AI e radar"
+    ),
+    "sparkforge_analyze_platform_graph": (
+        "2026-10-02: impacto e caminhos do grafo de plataforma"
+    ),
+    "sparkforge_analyze_streaming_composition": (
+        "2026-10-02: composição offline de streaming, transporte e Iceberg"
+    ),
+    "sparkforge_analyze_streaming_integrations": (
+        "2026-10-02: contratos offline de integrações streaming"
+    ),
+    "sparkforge_analyze_streaming_ops": (
+        "2026-10-02: SLO, FinOps, segurança, serving e lakehouse streaming"
+    ),
+    "sparkforge_collect_streaming_integrations": (
+        "2026-10-02: coleta AWS declarada para integrações streaming"
+    ),
+    "sparkforge_collect_schema_registry": (
+        "2026-10-03: coleta read-only do Glue Schema Registry com latest version e manifesto"
+    ),
+    "sparkforge_collect_managed_flink": (
+        "2026-10-03: coleta read-only de DescribeApplication do Managed Flink com unresolved"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
@@ -256,6 +319,54 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "ele (DATABRICKS_PHOTON_PLAN TX), sem mudar o enum"
     ),
 }
+# `Fact.subject.type` tambem ancora snapshots Iceberg. O campo ja era emitido
+# pelos analyzers; o enum do contrato MCP ficou atrasado. A expansao e declarada
+# por tool porque o golden legado precisa continuar congelado.
+_FACT_SUBJECT_SNAPSHOT_TOOLS = (
+    "sparkforge_analyze_athena_workgroup",
+    "sparkforge_analyze_call_graph",
+    "sparkforge_analyze_catalog_schema",
+    "sparkforge_analyze_cloudwatch",
+    "sparkforge_analyze_cloudwatch_logs",
+    "sparkforge_analyze_consumers",
+    "sparkforge_analyze_controlm_jobs",
+    "sparkforge_analyze_data_quality",
+    "sparkforge_analyze_emr_cluster",
+    "sparkforge_analyze_emr_eks",
+    "sparkforge_analyze_emr_serverless",
+    "sparkforge_analyze_error_signatures",
+    "sparkforge_analyze_event_log",
+    "sparkforge_analyze_glue_job_runs",
+    "sparkforge_analyze_glue_resource_link",
+    "sparkforge_analyze_graph",
+    "sparkforge_analyze_iam_access",
+    "sparkforge_analyze_iceberg",
+    "sparkforge_analyze_lakeformation_grants",
+    "sparkforge_analyze_parquet_footer",
+    "sparkforge_analyze_plan",
+    "sparkforge_analyze_pyspark",
+    "sparkforge_analyze_s3_listing",
+    "sparkforge_analyze_sql",
+    "sparkforge_analyze_sql_metrics",
+    "sparkforge_analyze_terraform",
+    "sparkforge_analyze_terraform_diff",
+    "sparkforge_benchmark",
+    "sparkforge_funcval_compare",
+    "sparkforge_funcval_plan",
+    "sparkforge_fuse",
+)
+_FACT_SUBJECT_SNAPSHOT_PATH = (
+    "outputSchema.oneOf[0].properties.items.items.properties.subject.properties.type.enum"
+)
+REESCRITAS_DEPOIS_DO_GOLDEN.update(
+    {
+        (name, _FACT_SUBJECT_SNAPSHOT_PATH): (
+            "2026-10-03: facts Iceberg publicam subject.type=snapshot; o contrato MCP passou "
+            "a aceitar o tipo observado sem regravar golden legado"
+        )
+        for name in _FACT_SUBJECT_SNAPSHOT_TOOLS
+    }
+)
 # Chamadas gravadas cujo CONTEUDO mudou porque o catalogo mudou, e nao o SDK.
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
 # dois lados antes de comparar; todo o resto da chamada continua byte a byte, e
@@ -486,7 +597,7 @@ class TestHandshakeLegado:
         }
         # 8 -> 10 em 2026-09-18: o enum `reason` do `skipped` do judge cresceu com
         # `databricks.photon.unresolved`, e a descricao dele passou a nomea-lo.
-        assert reescritas == {"stdio": 10, "http": 10}
+        assert reescritas == {"stdio": 41, "http": 41}
         # A chamada declarada: o texto serializado, alvo, direcao e os dois
         # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
         # que mudou sem registro.

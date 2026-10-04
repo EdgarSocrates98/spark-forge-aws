@@ -1,0 +1,6 @@
+artifact: flink
+expects_kinds:
+  - flink.analyzed
+  - flink.job
+  - flink.operator
+  - flink.unresolved

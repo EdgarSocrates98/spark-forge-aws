@@ -50,7 +50,7 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 | Categoria | Quantidade | Localização | Descrição |
 |---|---|---|---|
 | **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase (Phase Loop) |
-| **Skills** | 51 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
+| **Skills** | 60 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
 | **Subagents** | 0 | — (o registro e os contratos saíram em `docs/sdd/CONFIG_OCA/`) | Não há mais contrato efêmero: nenhum módulo de `sparkforge/`, `scripts/` ou `tests/` os lia |
 | **Teams** | 1 | `config/teams-expansion.yaml` | Composições de times (governance-security) |
 | **Extratores de Fatos** | — | `sparkforge/facts/*.py` | Fatos determinísticos extraídos localmente |

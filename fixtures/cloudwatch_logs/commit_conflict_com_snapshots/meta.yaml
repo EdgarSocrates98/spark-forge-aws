@@ -21,6 +21,7 @@ runtime:
   python: "3.11"
   iceberg: "1.7.1"
 expects_kinds:
+  - iceberg.snapshot
   - cloudwatch.log_event
   - cloudwatch.logs.analyzed
   - error.signature_match

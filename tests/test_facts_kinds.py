@@ -23,6 +23,18 @@ EXPECTED_KINDS = {
     "pyspark.unresolved",
     "pyspark.module_analyzed",
     "pyspark.glue_context_init",
+    "streaming.source",
+    "streaming.sink",
+    "streaming.checkpoint",
+    "streaming.trigger",
+    "streaming.output_mode",
+    "streaming.watermark",
+    "streaming.stateful_operation",
+    "streaming.join",
+    "streaming.dedup",
+    "streaming.foreach_batch",
+    "streaming.query",
+    "streaming.module_analyzed",
 }
 
 
@@ -37,7 +49,7 @@ def one(kind, src):
 
 
 def test_kind_namespace_is_complete_and_documented():
-    """Garante que as 20 kinds (17 da spec secao 6.2 + sentinelas + `function_def`).
+    """Garante que as kinds batch e Structured Streaming estao documentadas.
 
     `pyspark.function_def` entrou na Fase 5b: sem um fact por funcao DEFINIDA,
     o grafo de chamadas so conhecia funcoes que aparecem em alguma aresta, e
@@ -46,7 +58,7 @@ def test_kind_namespace_is_complete_and_documented():
     from sparkforge.facts.pyspark_ast import EMITTED_KINDS
 
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 20
+    assert len(EMITTED_KINDS) == 32
     assert "pyspark.module_analyzed" in EMITTED_KINDS
     assert "pyspark.glue_context_init" in EMITTED_KINDS
 

@@ -87,6 +87,21 @@ from sparkforge.facts.sfn_history import build_sfn_retry_observado
 from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
 from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
 from sparkforge.facts.stepfunctions import build_sfn_glue_link
+from sparkforge.facts.streaming_glue_cross import (
+    EMITTED_KINDS as GLUE_CROSS_EMITTED_KINDS,
+)
+from sparkforge.facts.streaming_glue_cross import (
+    build_streaming_glue_cross_artifact,
+)
+from sparkforge.facts.streaming_glue_runtime import (
+    EMITTED_KINDS as GLUE_RUNTIME_EMITTED_KINDS,
+)
+from sparkforge.facts.streaming_glue_runtime import (
+    SOURCE_KINDS as GLUE_RUNTIME_SOURCE_KINDS,
+)
+from sparkforge.facts.streaming_glue_runtime import (
+    build_streaming_glue_runtime_observation,
+)
 from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
 from sparkforge.facts.timeout_diagnosis import SOURCE_KINDS as TIMEOUT_SOURCE_KINDS
 from sparkforge.facts.timeout_diagnosis import extract_timeout_diagnosis
@@ -635,6 +650,40 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
                 f"kind fora do namespace de sfn_history: {sorted(desconhecidos_historico)}"
             )
         for fact in derivados_historico:
+            combined[fact.id] = fact
+
+    # O job efetivo Glue e o aws_glue_job Terraform têm subjects diferentes;
+    # o link precisa nascer antes do judge. Guardar pelos dois kinds mantém o
+    # fuse byte a byte igual para pools sem streaming Glue e sem IaC.
+    if any(f.kind == "glue.streaming.job" for f in facts) and any(
+        f.kind == "tf.resource" for f in facts
+    ):
+        derivados_glue_cross = build_streaming_glue_cross_artifact(facts)
+        desconhecidos_glue_cross = set(
+            f.kind for f in derivados_glue_cross
+        ) - GLUE_CROSS_EMITTED_KINDS
+        if desconhecidos_glue_cross:
+            raise AssertionError(
+                "kind fora do namespace de streaming_glue_cross: "
+                f"{sorted(desconhecidos_glue_cross)}"
+            )
+        for fact in derivados_glue_cross:
+            combined[fact.id] = fact
+
+    # A definicao efetiva e o historico terminal usam subjects diferentes;
+    # o link runtime precisa nascer antes do judge. A guarda preserva o
+    # contrato de fuse: pools sem Glue Streaming e sem runs nao mudam.
+    if any(f.kind in GLUE_RUNTIME_SOURCE_KINDS for f in facts):
+        derivados_glue_runtime = build_streaming_glue_runtime_observation(facts)
+        desconhecidos_glue_runtime = {
+            f.kind for f in derivados_glue_runtime
+        } - GLUE_RUNTIME_EMITTED_KINDS
+        if desconhecidos_glue_runtime:
+            raise AssertionError(
+                "kind fora do namespace de streaming_glue_runtime: "
+                f"{sorted(desconhecidos_glue_runtime)}"
+            )
+        for fact in derivados_glue_runtime:
             combined[fact.id] = fact
 
     return sort_facts(combined.values())

@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **1112** nesta árvore (remedido em 2026-10-01 após a evolução das skills e as melhorias de decisão FGAC/FTA).
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **1260** nesta árvore (remedido em 2026-10-02 após a evolução do Forge Lab e dos registries de plataforma).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -210,14 +210,14 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **11
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 2 | 466 | 809226 | 12141 | 102 |
+| `iter_source_files` | 2 | 466 | 896097 | 13753 | 102 |
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
-| `project_items` | 1 | 193 | 376748 | 2203 | 52 |
-| `tool_class` | 1 | 187 | 401446 | 3529 | 73 |
-| `authorize` | 3 | 599 | 507883 | 4426 | 115 |
+| `project_items` | 1 | 193 | 400224 | 2204 | 52 |
+| `tool_class` | 1 | 187 | 424922 | 3529 | 73 |
+| `authorize` | 3 | 599 | 553706 | 4427 | 115 |
 
-Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2294034**;
-a saída do `grep` pelo nome, **25021**; a saída do `grep` pela definição, **427**.
+Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2473680**;
+a saída do `grep` pelo nome, **26635**; a saída do `grep` pela definição, **427**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
 `scripts/check_vnext_claims.py` não auditava: quatro dígitos entre 1900 e 2099 estão na lista de
@@ -226,8 +226,8 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1200.4 vezes.** Contra a saída de um `grep`
-pelo nome, **13.1** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
+**Contra o denominador do plano, o índice economiza 1294.4 vezes.** Contra a saída de um `grep`
+pelo nome, **13.9** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.5** vezes o que aquele `grep` custaria.
 
 **Esse último número é o resultado honesto desta medição, e ele não agrada.** Medido em bytes de
@@ -244,9 +244,9 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-`buscar(banco, "source")` devolve **50** símbolos em **11843** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **325049** bytes (remedido em 2026-10-01 após a evolução das skills e as melhorias de decisão FGAC/FTA). O `grep` pela definição contendo o fragmento continua menor
-(**13384** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+`buscar(banco, "source")` devolve **50** símbolos em **11444** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **378129** bytes (remedido em 2026-10-02 após a evolução do Forge Lab e dos registries de plataforma). O `grep` pela definição contendo o fragmento continua menor
+(**15804** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
@@ -302,7 +302,7 @@ que omite o símbolo necessário é falha, não sucesso.
 | Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as tools de coleta são de mundo aberto, e toda tool de mundo aberto também escreve localmente | `tests/test_adapters_tools.py` |
 | Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma usa objeto nu | `tests/test_adapters_tools.py` |
 | Entrada fechada a propriedade desconhecida | NÃO EXISTE | Nenhum dos schemas de entrada declara `additionalProperties: false`, que é uma constraint explícita da tool principal da SPEC. Argumento não previsto entra sem erro | — |
-| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **114** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
+| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **136** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
 | Projeção de campo na resposta | NÃO EXISTE | Medido no catálogo carregado, e não por leitura: `fields` aparece em **zero** das tools. A fase J1 entregou `detail_level`, que é a linha **acima** desta e é outra coisa — ele escolhe entre três formas fixas de item, e projeção é pedir os campos que interessam. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
 | As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |
@@ -559,7 +559,7 @@ quarta.
 índice havia economia disponível sem índice. A fase J1 entregou metade dela: controle de
 verbosidade existe hoje nas tools que devolvem facts, e procedência deixou de ser copiada fato a
 fato. A outra metade continua parada — projeção de campo não existe em tool nenhuma, paginação
-existe em **39** delas, e os três empacotadores de contexto continuam sendo três (os estimadores
+existe em **49** delas, e os três empacotadores de contexto continuam sendo três (os estimadores
 de token viraram um só em TOKEN_ESTIMATE_UNICO).
 
 Ordem que a medição sugeriu, com o que as fases J0 a J3 fizeram dela:

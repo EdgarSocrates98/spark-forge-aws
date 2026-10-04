@@ -9,6 +9,11 @@ superpowers (brainstorm, spec, plano, execução).
 | `plans/` | **congelada**: registro histórico, não recebe plano novo |
 | `STATUS.md` | **viva**: continua a fonte da verdade das fases e dos números correntes |
 
+O mapa transversal das entregas atuais está em
+[`docs/EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md); ele aponta para os SDDs
+de control plane, streaming, Forge Lab e economia observada sem reescrever o
+histórico congelado.
+
 Spec novo nasce em `docs/sdd/<FEATURE>/`, pelas skills `sdd-*` e conferido por
 `sparkforge sdd check`. O fluxo está em [`docs/sdd/README.md`](../sdd/README.md).
 

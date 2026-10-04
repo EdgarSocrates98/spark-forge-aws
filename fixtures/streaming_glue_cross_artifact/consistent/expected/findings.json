@@ -1,0 +1,64 @@
+[
+  {
+    "rule_id": "SF-GLUESTREAM-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Observação de runtime Glue Streaming não resolvida",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "unresolved",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_960fc3"
+    ],
+    "measured": {
+      "run_count": 0,
+      "unresolved_count": 3
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A composição recebeu definição Glue Streaming ou histórico de runs, mas não pôde provar uma identidade literal única, uma execução observada ou todos os eixos comparáveis. A ausência não prova consistência, drift, capacidade suficiente ou saúde do streaming.",
+    "proposed_change": [
+      "Preservar o nome literal do job, run id e campos de runtime no dump sanitizado.",
+      "Resolver o motivo nomeado e reextrair antes de julgar divergência."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Casar por nome parcial ou preencher campo ausente pode ligar o run errado e gerar finding falso."
+    ],
+    "tradeoffs": [
+      "Coletar mais evidência aumenta payload local, mas mantém a decisão reauditável."
+    ],
+    "validation": [
+      "Reexecutar fuse e confirmar que a recusa desapareceu ou mudou de motivo.",
+      "Tratar duração e DPU como observações de execução, nunca como latência de evento sem medição própria."
+    ],
+    "rollback": [
+      "Não há mutação; descartar ou reter o artefato incompleto conforme política local."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "glue.streaming.runtime_observation",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

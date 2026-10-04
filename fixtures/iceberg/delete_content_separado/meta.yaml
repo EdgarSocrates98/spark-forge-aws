@@ -19,6 +19,7 @@ proves: 'O censo por `content` em `.delete_files`, com os TRES estados no mesmo 
   '
 runtime: {}
 expects_kinds:
+- iceberg.snapshot
 - iceberg.delete_files_summary
 - iceberg.files_summary
 - iceberg.format_version

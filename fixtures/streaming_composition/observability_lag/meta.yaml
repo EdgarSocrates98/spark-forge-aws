@@ -1,0 +1,5 @@
+mode: observability
+transport_key: orders-group
+query_name: orders-query
+expects_findings: [SF-STREAMOBS-001]
+expects_kinds: [kafka.analyzed, kafka.consumer_group, kafka.lag, streaming.composition.analyzed, streaming.observability.link, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series]

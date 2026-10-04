@@ -1,0 +1,7 @@
+{
+  "task": {
+    "name": "orders-full-cdc",
+    "migration_type": "full-load-and-cdc",
+    "status": "STOPPED"
+  }
+}

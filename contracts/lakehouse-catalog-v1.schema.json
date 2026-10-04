@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge.local/contracts/lakehouse-catalog-v1.schema.json",
+  "title": "Spark Forge Open Lakehouse Catalog Topology v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "topology", "catalogs", "engines", "tables", "bindings"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "topology": {"type": "string", "minLength": 1},
+    "catalogs": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "engines": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "tables": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "bindings": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "provenance": {"type": "array", "items": {"type": "object"}},
+    "unresolved": {"type": "array", "items": {"type": "object"}}
+  },
+  "$defs": {
+    "entity": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "kind": {"type": "string"},
+        "catalog_id": {"type": "string"},
+        "engine_id": {"type": "string"},
+        "table_ids": {"type": "array", "items": {"type": "string"}},
+        "capabilities": {"type": "array", "items": {"type": "string"}},
+        "format": {"type": "string"},
+        "namespace": {"type": "string"},
+        "name": {"type": "string"},
+        "access": {"type": "array", "items": {"enum": ["read", "write"]}},
+        "evidence": {"type": "array", "items": {"type": "object"}},
+        "endpoint_ref": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

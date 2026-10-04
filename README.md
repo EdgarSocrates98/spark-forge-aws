@@ -25,6 +25,10 @@ O que ele **não** é:
 por tarefa, com receita para copiar e colar, e uma referência de cada comando, tool,
 agent e skill gerada do código.
 
+Para ver o que foi entregue nas waves de control plane, streaming, CDC, economia
+observada e Forge Lab, consulte o [mapa de evolução atual](docs/EVOLUTION-CURRENT.md)
+e o [ledger completo de entrega](docs/DELIVERY-LEDGER.md).
+
 ## Como ele pensa: extrair, julgar, compor
 
 Três etapas, e cada uma é um verbo diferente.
@@ -46,8 +50,8 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 44 extratores emitem 253 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **177** regras de diagnóstico em YAML, **177 delas executáveis** (todas), cada uma
+Os 60 extratores emitem 373 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **221** regras de diagnóstico em YAML, **221 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
@@ -109,6 +113,200 @@ O pacote instalado carrega o catálogo de regras e `knowledge/` dentro do wheel:
 clonado. Extras, verificação e erros comuns em [Instalação](docs/guia/02-instalacao.md);
 a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cli.md).
 
+## Forge Lab / Digital Twin
+
+O Forge Lab transforma cenários streaming e batch em planos de ações
+allowlisted, executa localmente somente com autorização explícita, captura
+artefatos com hash e compara a observação com um oracle independente. Compose e
+Testcontainers consomem a mesma DSL; a AWS é um tier separado e nunca é tocada
+pelo core offline.
+
+```bash
+sparkforge lab doctor
+sparkforge lab verify --repo .
+sparkforge lab scenarios --json --repo .
+sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+```
+
+O produto entregue possui registry com 11 componentes, Golden 20 com 240 ações
+compiladas, receipts, promoção revisada de fixtures, equivalência multi-engine,
+profiles de streaming/batch/CDC/lakehouse/observabilidade/chaos e tiers L0–L3.
+`verify` não inicia Docker. Execuções mutáveis exigem `--execute --confirm`; um
+run local não prova capacidade, custo, latência ou semântica AWS de produção.
+O detalhe está no [guia do Forge Lab](docs/guia/forge-lab.md) e no
+[contrato técnico](docs/knowledge/forge-lab-product.md).
+
+## SLO observado em streaming
+
+O compositor `analyze streaming-composition` pode avaliar um contrato SLO
+declarado contra facts diretamente observados, sem acessar Spark, Kafka, Kinesis
+ou AWS em modo offline. Há quatro formas de observação suportadas: progress de
+batch, saída de sink, lag Kafka e iterator age Kinesis:
+
+```bash
+# progress Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+# saída observada do sink, ligada ao batch por batch_id/query_name
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
+# lag Kafka ou iterator age Kinesis
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+```
+
+Sink usa `num_output_rows` em `rows` e só é resolvido quando há um batch único
+com `batch_id`, `query_name` e timestamp. Kafka usa `kafka.lag` em `records`;
+Kinesis usa `kinesis.shard` em `ms` para `iterator_age_ms`. `statistic: p95`
+calcula nearest-rank sobre a série observada; `freshness_ms` usa
+`timestamp - eventTime.max`, e end-to-end latency exige campo explícito. A avaliação exige
+identidade, unidade canônica, timestamps e janela declarada coberta; séries
+misturadas, janela incompleta ou evidência ausente saem como
+`streaming.slo.unresolved`. `met` e `violated` significam somente o comparador
+observado no artefato: não são disponibilidade, causalidade ou saúde end-to-end.
+Detalhe em
+[cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
+[referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
+
+### Pipeline cross-engine declarado
+
+Para correlacionar CDC, transporte, processador e sink, use um contrato JSON
+versionado com selectors exatos por `kind` e atributos escalares:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
+  --facts iceberg-facts.json --mode pipeline \
+  --pipeline-path orders-pipeline.json --out pipeline-facts.json
+```
+
+Cada node precisa de exatamente um match; zero ou múltiplos matches viram
+`streaming.pipeline.unresolved`, e edges só são verified quando os dois
+endpoints existem sem ambiguidade. O resultado preserva provenance e
+`source_fact_ids`, mas não prova topologia descoberta, latência, throughput,
+exactly-once, saúde ou causalidade. Veja
+[`knowledge/streaming-pipeline-diagnostics.md`](knowledge/streaming-pipeline-diagnostics.md).
+
+### Apache Flink: endpoints explícitos e limite temporal
+
+O analyzer offline de Flink preserva `flink.source` e `flink.sink` quando o dump
+traz `sources`/`source` e `sinks`/`sink`. Identidade, connector,
+`delivery_semantics`, contadores, backlog/lag e commits pendentes são copiados
+somente quando observados; `num_records_in`/`num_records_out` não são
+throughput sem timestamp e janela. Ausência ou formato inválido publica
+`flink.unresolved` com razão nomeada, nunca zero. O namespace
+`managed_flink.*` permanece separado. Isso não prova exactly-once, saúde ou
+capacidade; correlacione os facts com checkpoint, operator, runtime e série
+temporal. Detalhes em [`knowledge/flink-streaming.md`](knowledge/flink-streaming.md)
+e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
+
+O contrato upstream aceita pontos temporais explícitos no dump (`metrics` ou
+`metrics.observations`) e emite `flink.metric` somente quando há nome, valor
+numérico e timestamp textual. Shape ou campo inválido vira `flink.unresolved`;
+não há collector live, série longa, health ou inferência de epoch. A coleta
+temporal bounded do serviço gerenciado pertence ao namespace Managed Flink:
+`managed_flink.metric`, cinco métricas de aplicação do CloudWatch e janela
+explícita. Não misture os namespaces. O contrato versionado e seus gates estão
+em [`STREAMING_FLINK_TEMPORAL_METRICS`](docs/sdd/STREAMING_FLINK_TEMPORAL_METRICS/ship.md).
+
+### Métricas temporais bounded de Kinesis e Managed Flink
+
+Os collectors read-only existentes também aceitam uma janela CloudWatch
+explícita. Kinesis preserva cinco métricas stream-level como `kinesis.metric`;
+Managed Flink preserva cinco métricas application-level no namespace
+`AWS/KinesisAnalytics` como `managed_flink.metric`:
+
+```bash
+sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+
+sparkforge collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+Os artifacts preservam observações, unidade, estatística, timestamp, respostas
+raw, paginação bounded e lacunas. Janela inválida, resposta parcial, shape
+inválido ou métrica ausente vira `unresolved`, nunca zero. Isso não habilita
+enhanced/shard-level Kinesis, dimensões Task/Operator/Parallelism, job plan,
+replay, SLO, causalidade, custo ou claim de saúde.
+
+### Glue Streaming: efetivo versus Terraform
+
+Quando o caso inclui a definição efetiva do job e o Terraform do mesmo ambiente,
+extraia os dois artefatos e componha os facts antes de julgar:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+`fuse` só liga `aws_glue_job` por `name` literal único. O fact
+`glue.streaming.terraform_link` compara `glue_version`, Real-Time Mode,
+linguagem e workers, preserva `source_fact_ids` e distingue `drifts` de
+`unresolved_fields`. `SF-GLUESTREAM-004` sinaliza divergência; `SF-GLUESTREAM-005`
+registra identidade ou valor não resolvido. Esse contrato não prova execução,
+capacidade, custo, latência ou validação funcional.
+
+Com histórico terminal sanitizado, componha também a definição com
+`glue.job_run`:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+`glue.streaming.runtime_link` compara `glue_version`, `worker_type` e
+`worker_count` por nome literal e preserva `observed_run_ids`, `drifts` e
+`source_fact_ids`. `SF-GLUESTREAM-006` aponta drift; `SF-GLUESTREAM-007`
+mantém ausência de run/identidade/campo como unresolved. Duração e DPU do run
+não são latência, saúde ou custo atribuído.
+
+### Glue Streaming: source e sink explícitos
+
+O mesmo analyzer também preserva `glue.streaming.source` e
+`glue.streaming.sink` quando `stream.sources`/`source` e `stream.sinks`/`sink`
+estão declarados como objeto ou lista. Identidade, connector, topic/stream/table
+e medidas de partições, shards, lag, registros, commits ou falhas são mantidos
+somente quando observados. Estruturas desconhecidas são descartadas e campos
+ausentes não viram zero; ausência ou forma inválida vira
+`glue.streaming.unresolved` com razão nomeada. Esses facts não provam execução
+live, throughput, saúde, exactly-once, capacidade ou validação funcional.
+Detalhes em [`knowledge/glue-streaming-rtm.md`](knowledge/glue-streaming-rtm.md)
+e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
+
+### Glue Schema Registry: coleta read-only
+
+O coletor `sparkforge collect schema-registry` consulta somente
+`get_registry`, `list_schemas`, `get_schema` e `get_schema_version`, preserva a
+latest schema version observada e grava artefato com manifesto SHA-256. É
+offline-first, pagina e limita quantidade/bytes; definição ausente, inválida ou
+acima do limite fica `unresolved`. Não cria, atualiza ou exclui registry,
+schema ou version.
+
+```bash
+sparkforge collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
+sparkforge analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+```
+
+Detalhes em [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md),
+na [referência CLI](docs/guia/referencia/cli/collect.md) e na [referência MCP](docs/guia/referencia/tools/sparkforge_collect_schema_registry.md).
+
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:
 
@@ -124,7 +322,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **115 tools MCP**.
+(`sparkforge/adapters/_core.py`), e o servidor publica **136 tools MCP**.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|
@@ -134,13 +332,13 @@ O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mes
 | Agent Skills | `skills/`, para qualquer agente compatível com o padrão | [Referência de skills](docs/guia/referencia/skills/README.md) |
 | `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
 
-**Duas camadas de agente.** O **coordenador** (**12 coordenadores** em `agents/*.md`) lê o
+**Duas camadas de agente.** O **coordenador** (**14 coordenadores** em `agents/*.md`) lê o
 case, decide qual executor roda e registra o resultado. O **executor** (**5 executores**
 em `agents/executors/`) faz uma função só — inventário, extração, julgamento, verificação,
 síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
 as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
 desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
-traz **52 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+traz **60 skills**; as de diagnóstico e as onze de procedimento AWS estão em
 [Agents e skills](docs/guia/05-agents-e-skills.md).
 
 ## SDD próprio
@@ -218,6 +416,8 @@ e [Política de segurança](docs/guia/usos/politica-de-seguranca.md).
 | Quero... | Onde |
 |---|---|
 | Começar, com receita para copiar e colar | [`docs/guia/README.md`](docs/guia/README.md) |
+| Construir evidência reproduzível de streaming e batch | [Forge Lab / Digital Twin](docs/guia/forge-lab.md) |
+| Ver o estado consolidado das evoluções | [Mapa de evolução atual](docs/EVOLUTION-CURRENT.md) |
 | O glossário, os objetivos e os dados mínimos a juntar | [Conceitos](docs/guia/01-conceitos.md) |
 | Instalar, e usar sem o repositório clonado | [Instalação](docs/guia/02-instalacao.md) |
 | Ler a saída da CLI e seus códigos de saída | [CLI](docs/guia/03-cli.md) |

@@ -18,6 +18,7 @@ runtime:
   python: '3.10'
   iceberg: 1.0.0
 expects_kinds:
+- iceberg.snapshot
 - iceberg.files_summary
 - iceberg.format_version
 - iceberg.snapshots_summary

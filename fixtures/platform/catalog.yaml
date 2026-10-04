@@ -1,0 +1,82 @@
+schema_version: 1
+topology: synthetic-open-lakehouse
+provenance:
+  - source: fixture
+    artifact: catalog.yaml
+catalogs:
+  - id: glue-main
+    kind: glue
+    capabilities: [namespace, table_schema, permissions]
+    evidence: [{ref: synthetic://glue/catalog}]
+  - id: iceberg-rest-main
+    kind: iceberg_rest
+    capabilities: [namespace, snapshots, schema_evolution]
+    endpoint_ref: env:ICEBERG_REST_URI
+    evidence: [{ref: synthetic://iceberg/rest}]
+  - id: polaris-main
+    kind: polaris
+    capabilities: [oauth, namespaces, table_commit]
+    endpoint_ref: env:POLARIS_URI
+    evidence: [{ref: synthetic://polaris/catalog}]
+  - id: s3-tables-main
+    kind: s3_tables
+    capabilities: [aws_managed_tables]
+    evidence: [{ref: synthetic://s3-tables/catalog}]
+  - id: lakeformation-main
+    kind: lakeformation
+    capabilities: [fine_grained_access]
+    evidence: [{ref: synthetic://lakeformation/grants}]
+  - id: unity-future
+    kind: unity
+    capabilities: []
+    evidence: [{ref: synthetic://future/unity}]
+  - id: nessie-future
+    kind: nessie
+    capabilities: [branches]
+    evidence: [{ref: synthetic://future/nessie}]
+engines:
+  - id: spark-batch
+    kind: spark
+    capabilities: [batch, streaming, iceberg]
+  - id: flink-streaming
+    kind: flink
+    capabilities: [streaming, iceberg]
+  - id: trino-analytics
+    kind: trino
+    capabilities: [interactive_sql, iceberg]
+  - id: athena-analytics
+    kind: athena
+    capabilities: [interactive_sql, glue]
+  - id: duckdb-local
+    kind: duckdb
+    capabilities: [offline, parquet, iceberg]
+tables:
+  - id: iceberg-rest-main.analytics.orders
+    catalog_id: iceberg-rest-main
+    namespace: analytics
+    name: orders
+    format: iceberg
+  - id: glue-main.analytics.orders
+    catalog_id: glue-main
+    namespace: analytics
+    name: orders
+    format: iceberg
+bindings:
+  - id: binding-spark-rest-orders
+    catalog_id: iceberg-rest-main
+    engine_id: spark-batch
+    table_ids: [iceberg-rest-main.analytics.orders]
+    access: [read, write]
+    evidence: [{ref: synthetic://binding/spark-rest}]
+  - id: binding-trino-rest-orders
+    catalog_id: iceberg-rest-main
+    engine_id: trino-analytics
+    table_ids: [iceberg-rest-main.analytics.orders]
+    access: [read]
+    evidence: [{ref: synthetic://binding/trino-rest}]
+  - id: binding-athena-glue-orders
+    catalog_id: glue-main
+    engine_id: athena-analytics
+    table_ids: [glue-main.analytics.orders]
+    access: [read]
+    evidence: [{ref: synthetic://binding/athena-glue}]

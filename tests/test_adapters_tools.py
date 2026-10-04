@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import jsonschema
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from sparkforge.adapters.tools import TOOLS, call_tool
 
 JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture()
@@ -39,6 +41,16 @@ class TestToolSurface:
             "sparkforge_runtime_detect",
             "sparkforge_knowledge_path",
             "sparkforge_analyze_pyspark",
+            "sparkforge_analyze_streaming",
+            "sparkforge_analyze_transport",
+            "sparkforge_analyze_flink",
+            "sparkforge_analyze_cdc",
+            "sparkforge_analyze_schema_registry",
+            "sparkforge_analyze_event_driven",
+            "sparkforge_analyze_streaming_ops",
+            "sparkforge_analyze_streaming_integrations",
+            "sparkforge_analyze_streaming_composition",
+            "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
             "sparkforge_analyze_sql_metrics",
@@ -123,6 +135,9 @@ class TestToolSurface:
             "sparkforge_change_propose",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
+            "sparkforge_collect_streaming_integrations",
+            "sparkforge_collect_schema_registry",
+            "sparkforge_collect_managed_flink",
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
@@ -136,6 +151,16 @@ class TestToolSurface:
             "sparkforge_collect_emr_serverless",
             "sparkforge_collect_emr_eks",
             "sparkforge_collect_verify",
+            # Platform analysis surfaces were added after the original catalog
+            # fixture; keep the explicit allowlist synchronized with TOOLS.
+            "sparkforge_analyze_data_observability",
+            "sparkforge_analyze_dbt_artifacts",
+            "sparkforge_analyze_duckdb_microscope",
+            "sparkforge_analyze_forge_lab",
+            "sparkforge_analyze_lakehouse_catalog",
+            "sparkforge_analyze_orchestration",
+            "sparkforge_analyze_platform_ecosystem",
+            "sparkforge_analyze_platform_graph",
             # SPEC 56-77: SEIS tools de Code Intelligence, e nao as onze que as
             # secoes 57 a 67 listam. A justificativa por nome esta no comentario
             # de bloco de `tools.py` -- resumo: 59+61 colapsam (mesma entrada,
@@ -192,6 +217,9 @@ class TestToolSurface:
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
             "sparkforge_collect_emr_eks",
+            "sparkforge_collect_streaming_integrations",
+            "sparkforge_collect_schema_registry",
+            "sparkforge_collect_managed_flink",
         }
 
     def test_every_open_world_tool_also_writes_locally(self):
@@ -2217,9 +2245,211 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
     if name == "sparkforge_knowledge_path":
         return call_tool("sparkforge_knowledge_path", {"file": "glue/runtime-matrix.md"})
 
+    if name in {
+        "sparkforge_analyze_data_observability",
+        "sparkforge_analyze_dbt_artifacts",
+        "sparkforge_analyze_duckdb_microscope",
+        "sparkforge_analyze_forge_lab",
+        "sparkforge_analyze_lakehouse_catalog",
+        "sparkforge_analyze_orchestration",
+        "sparkforge_analyze_platform_ecosystem",
+        "sparkforge_analyze_platform_graph",
+    }:
+        fixture_by_tool = {
+            "sparkforge_analyze_data_observability": ROOT
+            / "fixtures"
+            / "observability"
+            / "sre.yaml",
+            "sparkforge_analyze_dbt_artifacts": ROOT / "fixtures" / "analytics" / "dbt",
+            "sparkforge_analyze_duckdb_microscope": ROOT
+            / "fixtures"
+            / "analytics"
+            / "duckdb"
+            / "microscope.yaml",
+            "sparkforge_analyze_forge_lab": ROOT / "labs" / "forge-lab" / "lab.yaml",
+            "sparkforge_analyze_lakehouse_catalog": ROOT / "fixtures" / "platform" / "catalog.yaml",
+            "sparkforge_analyze_orchestration": ROOT
+            / "fixtures"
+            / "orchestration"
+            / "control-plane.yaml",
+            "sparkforge_analyze_platform_ecosystem": ROOT
+            / "fixtures"
+            / "platform"
+            / "ecosystem.yaml",
+            "sparkforge_analyze_platform_graph": ROOT / "fixtures" / "platform" / "graph.yaml",
+        }
+        return call_tool(name, {"path": str(fixture_by_tool[name])})
+
     if name == "sparkforge_analyze_pyspark":
         lib = _write_job(tmp_path)
         return call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+
+    if name == "sparkforge_analyze_streaming":
+        lib = tmp_path / "streaming.py"
+        lib.write_text(
+            "query = (spark.readStream.format('rate').load()"
+            ".writeStream.format('memory').queryName('rates').start())\n",
+            encoding="utf-8",
+        )
+        return call_tool(
+            "sparkforge_analyze_streaming",
+            {"path": str(lib), "artifact": "source"},
+        )
+
+    if name == "sparkforge_analyze_transport":
+        dump = tmp_path / "transport.json"
+        dump.write_text('{"stream_name":"events","stream_mode":"ON_DEMAND"}', encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_transport",
+            {"path": str(dump), "artifact": "kinesis"},
+        )
+
+    if name == "sparkforge_analyze_flink":
+        dump = tmp_path / "flink.json"
+        dump.write_text('{"job":{"job_id":"job-1","parallelism":2}}', encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_flink",
+            {"path": str(dump), "artifact": "flink"},
+        )
+
+    if name == "sparkforge_analyze_cdc":
+        dump = tmp_path / "debezium.json"
+        dump.write_text(
+            '{"connector":{"name":"orders","connector.class":"io.debezium.connector.postgresql.PostgresConnector",'
+            '"topic.prefix":"orders","snapshot.mode":"initial","schema.history.internal":"ok"}}',
+            encoding="utf-8",
+        )
+        return call_tool(
+            "sparkforge_analyze_cdc",
+            {"path": str(dump), "artifact": "debezium"},
+        )
+
+    if name == "sparkforge_analyze_schema_registry":
+        dump = tmp_path / "schema.json"
+        dump.write_text(
+            '{"registry":{"name":"orders","provider":"glue","compatibility":"BACKWARD"},'
+            '"schema":{"name":"orders-value","format":"AVRO","definition":'
+            '{"type":"record","fields":[{"name":"id","type":"string"}]}}}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_schema_registry", {"path": str(dump)})
+
+    if name == "sparkforge_analyze_event_driven":
+        dump = tmp_path / "event_driven.json"
+        dump.write_text(
+            '{"sqs_queues":[{"name":"orders","fifo":false,"redrive_policy":{"deadLetterTargetArn":"arn:aws:sqs:us-east-1:111111111111:dlq"}}]}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_event_driven", {"path": str(dump)})
+
+    if name == "sparkforge_analyze_streaming_ops":
+        dump = tmp_path / "streaming_ops.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "slo": [
+                        {
+                            "name": "freshness",
+                            "metric": "p95",
+                            "target": 30,
+                            "unit": "s",
+                            "window": "5m",
+                            "source": "cloudwatch",
+                        }
+                    ],
+                    "finops": [
+                        {
+                            "metric": "worker_hours",
+                            "value": 2,
+                            "unit": "hours",
+                            "period": "hour",
+                            "region": "us-east-1",
+                            "tier": "standard",
+                            "source": "cur",
+                        }
+                    ],
+                    "security": [
+                        {
+                            "system": "msk",
+                            "transport": "tls",
+                            "auth": "iam",
+                            "tls": True,
+                            "kms": True,
+                            "vpc": True,
+                            "secrets_manager": True,
+                            "cross_account": False,
+                            "resource_policy": True,
+                        }
+                    ],
+                    "serving": [
+                        {
+                            "name": "redshift",
+                            "system": "redshift",
+                            "source": "iceberg",
+                            "mode": "streaming",
+                            "schema": "orders",
+                        }
+                    ],
+                    "lakehouse": [
+                        {
+                            "name": "events",
+                            "format": "iceberg",
+                            "mode": "append",
+                            "checkpoint": "s3://lake/checkpoints/events",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_streaming_ops", {"path": str(dump)})
+    if name == "sparkforge_analyze_streaming_integrations":
+        dump = tmp_path / "streaming_integrations.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "openlineage": {
+                        "eventType": "COMPLETE",
+                        "job": {"name": "job"},
+                        "run": {"runId": "run"},
+                        "inputs": [],
+                        "outputs": [],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_streaming_integrations", {"path": str(dump)})
+
+    if name == "sparkforge_analyze_streaming_composition":
+        dump = tmp_path / "streaming_facts.json"
+        source = json.loads(
+            (
+                ROOT / "fixtures/streaming_composition/iceberg_non_append/expected/facts.json"
+            ).read_text(encoding="utf-8")
+        )
+        dump.write_text(json.dumps(source), encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_streaming_composition",
+            {
+                "facts_paths": [str(dump)],
+                "mode": "iceberg",
+                "table": "db.events",
+                "query_name": "orders-query",
+            },
+        )
+
+    if name == "sparkforge_analyze_glue_streaming":
+        dump = tmp_path / "glue_streaming.json"
+        dump.write_text(
+            '{"job":{"name":"rtm","glue_version":"6.0",'
+            '"default_arguments":{"--enable-real-time-mode":"true",'
+            '"--job-language":"scala"},"stream":{"source_type":"kafka",'
+            '"partition_count":2,"task_slots":2,"stateful":false,'
+            '"output_mode":"Update","foreach_batch":false}}}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_glue_streaming", {"path": str(dump)})
 
     if name == "sparkforge_judge":
         lib = _write_job(tmp_path)
@@ -3087,6 +3317,106 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["kind"] == "parquet_footer", result
         return result
 
+    if name == "sparkforge_collect_streaming_integrations":
+        from sparkforge.collect import streaming as collect_streaming
+
+        class _Kinesis:
+            def describe_stream_summary(self, **kwargs):
+                return {"StreamDescriptionSummary": {"StreamName": kwargs["StreamName"]}}
+
+            def list_shards(self, **kwargs):
+                return {"Shards": [{"ShardId": "shard-0"}]}
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "kinesis"
+                return _Kinesis()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_streaming, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "kinesis_stream_name": "orders",
+                "now": "2026-10-02T00:00:00Z",
+            },
+        )
+
+    if name == "sparkforge_collect_schema_registry":
+        from sparkforge.collect import schema_registry as collect_schema_registry
+
+        class _Glue:
+            def get_registry(self, **kwargs):
+                return {"RegistryName": kwargs["RegistryId"]["RegistryName"]}
+
+            def list_schemas(self, **kwargs):
+                return {"Schemas": [{"SchemaName": "orders", "RegistryName": "events"}]}
+
+            def get_schema(self, **kwargs):
+                return {
+                    "SchemaName": kwargs["SchemaId"]["SchemaName"],
+                    "RegistryName": "events",
+                    "DataFormat": "AVRO",
+                }
+
+            def get_schema_version(self, **kwargs):
+                return {
+                    "SchemaVersionId": "00000000-0000-0000-0000-000000000001",
+                    "VersionNumber": 1,
+                    "Status": "AVAILABLE",
+                    "SchemaDefinition": '{"type":"record","name":"orders","fields":[]}',
+                }
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "glue"
+                return _Glue()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_schema_registry, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "registry_name": "events",
+                "now": "2026-10-03T00:00:00Z",
+            },
+        )
+
+    if name == "sparkforge_collect_managed_flink":
+        from sparkforge.collect import managed_flink as collect_managed_flink
+
+        class _ManagedFlink:
+            def describe_application(self, **kwargs):
+                return {
+                    "ApplicationDetail": {
+                        "ApplicationName": kwargs["ApplicationName"],
+                        "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:"
+                        "application/orders",
+                        "ApplicationStatus": "RUNNING",
+                        "RuntimeEnvironment": "FLINK-1_20",
+                        "ApplicationVersionId": 1,
+                    }
+                }
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "kinesisanalyticsv2"
+                return _ManagedFlink()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_managed_flink, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "application_name": "orders",
+                "region_name": "us-east-1",
+                "now": "2026-10-03T00:00:00Z",
+            },
+        )
+
     if name in (
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
@@ -3101,6 +3431,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_emr_cluster",
         "sparkforge_collect_emr_serverless",
         "sparkforge_collect_emr_eks",
+        "sparkforge_collect_managed_flink",
     ):
         assert monkeypatch is not None, f"{name} precisa de monkeypatch para o client AWS falso"
         _fake_collect_boto3(monkeypatch)

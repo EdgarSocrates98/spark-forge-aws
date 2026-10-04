@@ -43,6 +43,7 @@ from sparkforge.facts import (
     bridge,
     call_graph,
     catalog_schema,
+    cdc,
     cloudwatch,
     cloudwatch_logs,
     consumers,
@@ -51,8 +52,10 @@ from sparkforge.facts import (
     emr_cluster,
     emr_eks,
     emr_serverless,
+    event_driven,
     event_log,
     exception,
+    flink,
     funcval,
     fusion,
     glue_dq_advanced,
@@ -61,6 +64,7 @@ from sparkforge.facts import (
     # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     glue_resource_link,
+    glue_streaming,
     graph,
     host_transcript,
     # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
@@ -83,6 +87,7 @@ from sparkforge.facts import (
     run_cost,
     runtime_detect,
     s3_listing,
+    schema_registry,
     # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
     # ele aqui, `sfn.attempt` e `sfn.retry_observado` contam como orfaos e as tres
     # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
@@ -94,8 +99,18 @@ from sparkforge.facts import (
     # sem ele aqui, os cinco kinds `sfn.*` contam como orfaos e as quatro regras
     # seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     stepfunctions,
+    streaming,
+    streaming_composition,
+    streaming_glue_cross,
+    streaming_glue_runtime,
+    streaming_iceberg_temporal,
+    streaming_integrations,
+    streaming_ops,
+    streaming_pipeline,
+    streaming_slo,
     terraform,
     timeout_diagnosis,
+    transport,
     utilization,
     workload,
 )
@@ -117,6 +132,16 @@ EXTRACTORS = (
     benchmark,
     bridge,
     call_graph,
+    cdc,
+    schema_registry,
+    streaming_composition,
+    streaming_pipeline,
+    streaming_iceberg_temporal,
+    streaming_integrations,
+    streaming_ops,
+    streaming_slo,
+    streaming_glue_cross,
+    streaming_glue_runtime,
     catalog_schema,
     # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os
     # comentarios vizinhos ja descrevem: kind emitido por extrator que existe,
@@ -141,6 +166,7 @@ EXTRACTORS = (
     # `SF-CTM-001` seria forcada a `blocked_on` sobre um extrator que esta no
     # repositorio desde este mesmo commit.
     controlm_jobs,
+    flink,
     # Esta lista e manual e duplicada em `tests/test_fixtures_kind_coverage.py`:
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
     data_quality,
@@ -159,6 +185,7 @@ EXTRACTORS = (
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
     # repositorio desde a Task 2 desta fase.
     emr_serverless,
+    event_driven,
     event_log,
     # `exception` entra ANTES de a area SF-ERR existir, e de proposito: sem ele
     # aqui, os tres kinds `spark.exception*` contam como orfaos, e a primeira
@@ -195,6 +222,7 @@ EXTRACTORS = (
     funcval,
     fusion,
     glue_job_run,
+    glue_streaming,
     # `graph` pela mesma razao, uma fase depois: sem ele aqui, os seis kinds
     # `graph.*` contam como orfaos e as regras SF-GRAPH da Task 5 seriam
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
@@ -234,6 +262,8 @@ EXTRACTORS = (
     # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     sfn_history,
     spark_plan,
+    streaming,
+    transport,
     sql_literal,
     sql_metrics,
     # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:

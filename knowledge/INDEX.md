@@ -2,6 +2,13 @@
 
 Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam**. Ela não contém procedimento de investigação — isso vive em `skills/`. Não contém estado de investigação — isso vive em `.sparkforge/case.yaml`.
 
+O estado das waves que consomem esta base está em
+[`docs/EVOLUTION-CURRENT.md`](../docs/EVOLUTION-CURRENT.md). A matriz de
+streaming abaixo lista contratos offline entregues e mantém live/runtime sem
+artefato como `unresolved`.
+O inventário completo das features, commits e provas está em
+[`docs/DELIVERY-LEDGER.md`](../docs/DELIVERY-LEDGER.md).
+
 ## Regra de uso
 
 1. **Nenhum limiar aplicado sem checar a versão.** Toda tabela aqui tem coluna ou nota de versão. Config de Spark 3.5 não vale automaticamente em Spark 3.3 (Glue 4.0).
@@ -11,9 +18,28 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 
 ## Mapa
 
+### Forge Lab / Digital Twin
+| Arquivo | Conteúdo |
+|---|---|
+| [`forge-lab-product.md`](forge-lab-product.md) | Contrato do laboratório reproduzível: registry, Golden 20, Compose/Testcontainers, geradores, faults, probes, evidências, oracle, receipts, equivalência multi-engine, tiers L0–L3 e limites de prova |
+
 ### Spark / PySpark
 | Arquivo | Conteúdo |
 |---|---|
+| [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC have offline contracts, enquanto live/replay/runtime sem artefato seguem unresolved |
+| [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; collector read-only também coleta janela bounded de métricas stream-level Kinesis, enquanto endpoints Connect/Streams/OpenLineage e eficácia runtime permanecem unresolved |
+| [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards, metrics and observed transport SLO; blind spots remain explicit |
+| [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg, incluindo snapshots granulares e janela temporal; preserva procedência, não infere causalidade e nomeia pontos cegos |
+| [`streaming-pipeline-diagnostics.md`](streaming-pipeline-diagnostics.md) | Contrato declarativo de pipeline cross-engine: selectors exatos, nodes/edges verificados, provenance, unresolved para zero/múltiplos matches e limites contra topologia/latência/causalidade inventadas |
+| [`streaming-realtime-candidate-matrix.md`](streaming-realtime-candidate-matrix.md) | Matriz offline de candidatos Spark, Glue, Flink, Kafka Streams, Iceberg e Redshift; separa requirements de assumptions e recusa vencedor sem eliminação factual |
+| [`streaming/runtime-matrix.md`](streaming/runtime-matrix.md) | Releases upstream versus managed, escopos verificados, `UNRESOLVED` de serviço/região e limites de capacidade para Spark, Kafka, Flink, Glue, MSK, Kinesis e Iceberg |
+| [`streaming-operations.md`](streaming-operations.md) | Contrato offline de SLO, FinOps, segurança e redaction para streaming; separa declaração, medida, atribuição e hipótese |
+| [`streaming-format-serving-matrix.md`](streaming-format-serving-matrix.md) | Matriz arquitetural Delta/Hudi/Iceberg e serving Redshift, ClickHouse, Pinot, Druid e Trino, com compatibilidade explicitamente unresolved |
+| [`event-driven-architecture.md`](event-driven-architecture.md) | Contrato offline para EventBridge, Pipes, SQS, SNS e padrões event-driven |
+| [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, explicit sources/sinks, checkpoints, state, service configuration, bounded CloudWatch application metrics, connectors and unresolved blind spots |
+| [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, explicit source/sink endpoints, RTM restrictions, observed capacity, terminal-run correlation and unresolved blind spots |
+| [`cdc-replication.md`](cdc-replication.md) | Offline CDC/Debezium/AWS DMS contract: operations, positions, keys, transactions, snapshot/CDC seam, tombstones, schema history, endpoints, mappings and unresolved blind spots |
+| [`schema-registry-data-contracts.md`](schema-registry-data-contracts.md) | Schema Registry compatibility, evolution, versions, data-contract governance and Glue read-only latest-version collection with cache/manifest/unresolved limits |
 | [`spark/execution-model.md`](spark/execution-model.md) | Como Spark executa: lazy eval, actions, jobs/stages/tasks, fronteiras de shuffle, codegen, o que quebra pushdown |
 | [`spark/config-reference.md`](spark/config-reference.md) | Configs com nome exato, default e significado — AQE, shuffle, broadcast, leitura de arquivos |
 | [`spark/shuffle-join-skew.md`](spark/shuffle-join-skew.md) | Estratégias físicas de join, custo de shuffle, diagnóstico e tratamento de skew |

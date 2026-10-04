@@ -32,6 +32,7 @@ from sparkforge.facts import (
     bridge,
     call_graph,
     catalog_schema,
+    cdc,
     cloudwatch_logs,
     consumers,
     controlm_jobs,
@@ -39,14 +40,18 @@ from sparkforge.facts import (
     emr_cluster,
     emr_eks,
     emr_serverless,
+    event_driven,
     event_log,
     exception,
+    flink,
     funcval,
     fusion,
     glue_dq_advanced,
+    glue_job_run,
     # `iam_access` entra nas DUAS listas no MESMO commit da fixture
     # `fixtures/iam_access/`.
     glue_resource_link,
+    glue_streaming,
     graph,
     # `host_transcript` entra nas DUAS listas no MESMO commit de
     # `fixtures/host_transcript/`. E o primeiro extrator cujo artefato nao e do
@@ -72,13 +77,24 @@ from sparkforge.facts import (
     run_cost,
     runtime_detect,
     s3_listing,
+    schema_registry,
     sfn_history,
     spark_plan,
     sql_literal,
     sql_metrics,
     stepfunctions,
+    streaming,
+    streaming_composition,
+    streaming_glue_cross,
+    streaming_glue_runtime,
+    streaming_iceberg_temporal,
+    streaming_integrations,
+    streaming_ops,
+    streaming_pipeline,
+    streaming_slo,
     terraform,
     timeout_diagnosis,
+    transport,
     utilization,
     workload,
 )
@@ -115,6 +131,7 @@ EXTRACTORS = {
     "benchmark": benchmark,
     "bridge": bridge,
     "call_graph": call_graph,
+    "cdc": cdc,
     "catalog_schema": catalog_schema,
     # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
     # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
@@ -151,6 +168,7 @@ EXTRACTORS = {
     # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
     # que falhar.
     "emr_serverless": emr_serverless,
+    "event_driven": event_driven,
     "event_log": event_log,
     "exception": exception,
     # `lakeformation` entra nas DUAS listas manuais no MESMO commit de
@@ -179,6 +197,8 @@ EXTRACTORS = {
     # nomeando os seis.
     "graph": graph,
     "glue_dq_advanced": glue_dq_advanced,
+    "glue_job_run": glue_job_run,
+    "glue_streaming": glue_streaming,
     "dqdl_validator": dqdl_validator,
     "dq_ai_assessment": dq_ai_assessment,
     # `host_transcript`: ver o comentario do import. Os cinco kinds `host.*`
@@ -228,6 +248,18 @@ EXTRACTORS = {
     "runtime_detect": runtime_detect,
     "s3_listing": s3_listing,
     "spark_plan": spark_plan,
+    "streaming": streaming,
+    "transport": transport,
+    "schema_registry": schema_registry,
+    "streaming_composition": streaming_composition,
+    "streaming_pipeline": streaming_pipeline,
+    "streaming_iceberg_temporal": streaming_iceberg_temporal,
+    "streaming_integrations": streaming_integrations,
+    "streaming_ops": streaming_ops,
+    "streaming_slo": streaming_slo,
+    "streaming_glue_cross": streaming_glue_cross,
+    "streaming_glue_runtime": streaming_glue_runtime,
+    "flink": flink,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
     # sql_metrics/`), depois de o extrator e o mapa canonico ja existirem

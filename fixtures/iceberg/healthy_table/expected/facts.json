@@ -72,6 +72,87 @@
     }
   },
   {
+    "id": "f_f12a95",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo",
+      "snapshot_id": 1
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 1,
+      "committed_at": "2026-06-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_d20774",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo",
+      "snapshot_id": 2
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 2,
+      "committed_at": "2026-06-15T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_200807",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo",
+      "snapshot_id": 3
+    },
+    "measures": {
+      "snapshot_index": 2
+    },
+    "attrs": {
+      "snapshot_index": 2,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 3,
+      "committed_at": "2026-07-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_bc56d1",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",

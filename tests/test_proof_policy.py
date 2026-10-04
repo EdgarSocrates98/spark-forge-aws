@@ -51,7 +51,7 @@ def test_a_politica_real_carrega(politica):
 def test_todo_eixo_de_moves_tem_entrada_e_nenhuma_sobra(politica, regras):
     usados = eixos_usados(regras)
     assert usados == set(politica["axes"])
-    assert len(usados) == 23
+    assert len(usados) == 28
 
 
 def test_toda_fonte_aponta_para_kind_emitido(politica):

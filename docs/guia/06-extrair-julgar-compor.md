@@ -5,6 +5,10 @@ cada plataforma, por que extração e julgamento são verbos separados, e o que 
 extrator lê. A anatomia dos comandos está em [CLI](03-cli.md); o glossário, em
 [Conceitos](01-conceitos.md).
 
+As waves correntes de streaming, CDC, Forge Lab e economia observada estão
+indexadas em [`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md); este manual
+explica o fluxo operacional e não transforma contrato offline em capacidade live.
+
 ## A camada determinística
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
@@ -13,6 +17,131 @@ inclui um analisador determinístico: extração de facts via AST estático
 de regras versionado em YAML ([Conhecimento e catálogo](07-conhecimento-e-catalogo.md)),
 e um ciclo de vida de case (`.sparkforge/case.yaml`) que atravessa sessões e
 ferramentas.
+
+## Forge Lab: quando a pergunta exige experimentar
+
+Para investigar uma condição controlada de streaming ou batch, use o Forge Lab
+depois de definir o artefato e a hipótese. O Lab não substitui a cadeia
+`analyze` → `judge`: ele cria o cenário, executa a plataforma local autorizada,
+captura evidências e devolve um receipt para análise e comparação.
+
+```bash
+sparkforge lab verify --repo .
+sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+sparkforge lab run iceberg-small-files --backend compose --seed 42 \
+  --execute --confirm --repo .
+sparkforge lab analyze .sparkforge/lab/runs/<run-id> --repo .
+```
+
+O Golden 20 é compilado de `lab/scenarios/golden.yaml`; o oracle esperado é
+independente do analyzer. `verify` e `plan` são offline e não iniciam serviços.
+`run`, `up`, `down`, `shell` e `gc` só mutam ambiente local com
+`--execute --confirm`. Para o fluxo completo e os limites de L0–L3, veja o
+[guia do Forge Lab](forge-lab.md).
+
+## Composição e SLO observado de streaming
+
+Quando o caso já possui facts de progress, contrato SLO e transporte, use a
+composição offline. A identidade e os timestamps precisam vir dos artefatos:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+```
+
+O primeiro caminho compara `streaming.progress.batch`; o segundo avalia
+`streaming.progress.sink` (`num_output_rows`, `rows`) ligado ao batch por
+`batch_id`/`query_name`; o terceiro compara `kafka.lag` (`records`) ou
+`kinesis.shard` (`ms`, `iterator_age_ms`). O fact
+`streaming.slo.evaluation` informa `met` ou `violated` somente para a janela
+observada. `statistic: p95` publica `observed_p95` por nearest-rank; o progress
+publica `freshness_ms` somente com `timestamp` + `eventTime.max`, e latência
+end-to-end exige medida explícita. Falta de identidade, unidade, timestamp,
+janela coberta ou série única produz `streaming.slo.unresolved`. O compositor
+preserva os facts de origem, não consulta endpoints live e não prova
+causalidade, custo ou saúde end-to-end.
+
+## Glue Streaming efetivo versus Terraform
+
+Para detectar drift de configuração, extraia os dois lados e reutilize a
+composição geral de facts:
+
+```bash
+sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge analyze terraform --path infra/ --out terraform.facts.json
+sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+O vínculo exige correspondência literal e única entre o nome efetivo e
+`aws_glue_job.name`. `glue.streaming.terraform_link` compara quatro eixos:
+`glue_version`, RTM, `language` e `worker_count`; `source_fact_ids` permite
+voltar aos fatos, `drifts` registra divergência e `unresolved_fields` conserva
+lacunas. `SF-GLUESTREAM-004` e `SF-GLUESTREAM-005` são findings P1. Nenhum
+resultado desse fluxo infere execução, custo, capacidade ou correção funcional.
+
+## Glue Streaming efetivo versus runs terminais
+
+Com histórico sanitizado de execução, componha a definição efetiva com o
+analyzer existente de runs:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+O vínculo literal `glue.streaming.runtime_link` compara `glue_version`,
+`worker_type` e `worker_count`, preserva `observed_run_ids`, `drifts` e
+`source_fact_ids`, e separa drift de `glue.streaming.runtime.unresolved`.
+Ausência de run ou campo não prova consistência; duração e DPU não são
+latência de evento, custo atribuído ou saúde do streaming.
+
+## Glue Streaming: endpoints do artefato
+
+O analyzer do job também lê `stream.sources`/`source` e `stream.sinks`/`sink`.
+Ele emite `glue.streaming.source` e `glue.streaming.sink` somente com
+identidade, connector, atributos escalares e medidas presentes no dump. O
+fact `glue.streaming.unresolved` nomeia endpoint ausente, shape inválido ou
+métrica não coletada. A extração não consulta Glue e não deriva endpoint de
+`source_type`; contadores, lag e commits exigem timestamp/janela para qualquer
+interpretação temporal.
+
+## Apache Flink: endpoints explícitos
+
+O extrator offline também lê `sources`/`source` e `sinks`/`sink` no dump
+Apache Flink. O resultado preserva `flink.source` e `flink.sink` com identidade,
+connector, `delivery_semantics` e medidas numéricas presentes, sem copiar
+estruturas arbitrárias. `num_records_in`/`num_records_out` são contadores, não
+throughput sem timestamp e janela; `pending_commits`, backlog e lag continuam
+observações locais.
+
+```bash
+sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge judge --facts flink.facts.json --show-skipped
+```
+
+Quando source ou sink não aparece, o extrator publica
+`flink.unresolved` com `source_metrics_missing` ou `sink_metrics_missing`;
+formato inválido recebe razão própria. `metrics`/`metrics.observations` emite
+`flink.metric` somente com nome, valor numérico e timestamp textual; os demais
+casos ficam `flink.unresolved`. O analyzer não infere exactly-once, saúde,
+causalidade ou capacidade. `managed_flink.*` continua namespace separado e
+exige `--artifact managed_flink`. Apache Flink upstream não possui collector
+live nem série longa; observabilidade temporal bounded Managed não completa
+os facts upstream.
 
 ## Sequência mínima
 
@@ -83,7 +212,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 44 extratores emitem 253 kinds distintos de fact (recontado em 2026-09-25),
+Os 60 extratores emitem 373 kinds distintos de fact (recontado em 2026-10-03),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -237,7 +366,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 253 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 373 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

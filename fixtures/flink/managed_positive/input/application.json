@@ -1,0 +1,22 @@
+{
+  "application": {
+    "application_name": "orders-managed",
+    "application_arn": "arn:aws:kinesisanalytics:us-east-1:123:application/orders-managed",
+    "status": "RUNNING",
+    "runtime_version": "1.19",
+    "parallelism": 2,
+    "kpu": 2
+  },
+  "configuration": {
+    "checkpointing_enabled": true,
+    "checkpoint_interval_ms": 60000
+  },
+  "connectors": [
+    {"type": "kafka", "name": "orders-source", "region": "us-east-1"},
+    {"type": "kinesis", "name": "orders-sink", "region": "us-east-1"}
+  ],
+  "metrics": [
+    {"name": "records_in", "value": 1000, "timestamp": 1720000000},
+    {"name": "records_out", "value": 990, "timestamp": 1720000000}
+  ]
+}

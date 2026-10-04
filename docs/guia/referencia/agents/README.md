@@ -9,6 +9,7 @@ Coordenadores despacham executores em ordem; especialistas respondem uma área; 
 | Agent | O que faz |
 |---|---|
 | [`athena-query-optimizer`](athena-query-optimizer.md) | Custo ou latencia na consulta Athena e nao no job - bytes escaneados, pruning de particao, projecao de coluna, versao do engine, workgroup, layout de armazenamento. |
+| [`cdc-contract-reviewer`](cdc-contract-reviewer.md) | Especialista em CDC, Debezium/Kafka Connect, AWS DMS e contratos de mudança, separando posição, chave, snapshot/CDC seam, schema history, tombstone, mappings e unresolved sem de... |
 | [`data-quality-reviewer`](data-quality-reviewer.md) | Validacao de dado em job PySpark - PyDeequ, Great Expectations ou artesanal - se esta no lugar certo, se tem consequencia, quanto custa em passadas sobre o dado. |
 | [`emr-infra-reviewer`](emr-infra-reviewer.md) | Spark em Amazon EMR on EC2, Serverless ou on EKS com risco na infraestrutura e nao no codigo - instance fleets contra instance groups, purchasing option, managed scaling, Config... |
 | [`glue-incremental-performance-architect`](glue-incremental-performance-architect.md) | Investigacao ponta a ponta de job ou biblioteca Glue PySpark com fluxos full e incremental - latest-per-key em Iceberg bilionario, batching, OOM apos horas, carga variavel. |
@@ -20,6 +21,7 @@ Coordenadores despacham executores em ordem; especialistas respondem uma área; 
 | [`sf-security-reviewer`](sf-security-reviewer.md) | IAM, KMS, S3 e exfiltracao. |
 | [`sf-terraform-specialist`](sf-terraform-specialist.md) | Revisar ou construir Terraform para plataformas de dados. |
 | [`spark-performance-architect`](spark-performance-architect.md) | Coordena diagnostico e otimizacao de job PySpark no AWS Glue - correlaciona codigo, plano fisico, Spark UI, Parquet e Iceberg para achar o gargalo dominante antes de recomendar... |
+| [`streaming-realtime-architect`](streaming-realtime-architect.md) | Especialista em plataformas streaming Apache Flink, Managed Flink, Structured Streaming e AWS Glue Streaming/RTM, correlacionando transporte, checkpoint, state, backpressure, ob... |
 
 ## Executors
 

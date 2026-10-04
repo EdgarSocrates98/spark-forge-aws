@@ -27,6 +27,11 @@ Execute somente dentro do escopo do caso. Entregue fatos, hipoteses, incertezas,
 
 Leia e siga AGENT_PROTOCOL.md como contrato operacional.
 
+Para inventário da plataforma e coordenação de execução, use
+`sparkforge_analyze_platform_ecosystem` e `sparkforge_analyze_orchestration` sobre
+artefatos declarados. Eles descrevem integrações e controles observados; não disparam
+orchestrator nem inferem confiabilidade ausente.
+
 #### Migração entre versões de runtime
 
 Quando o caso é migrar um job de uma versão de Glue para outra, use

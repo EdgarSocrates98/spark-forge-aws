@@ -1,0 +1,361 @@
+[
+  {
+    "id": "f_ed6281",
+    "schema_version": 1,
+    "kind": "cdc.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "cdc",
+      "event_count": 5
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_efc086",
+    "schema_version": 1,
+    "kind": "cdc.connector",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-cdc",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-cdc",
+      "engine": "postgres",
+      "version": "16"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a008f",
+    "schema_version": 1,
+    "kind": "cdc.duplicate",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 5,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "occurrence": 2
+    },
+    "attrs": {
+      "source_position": "12",
+      "transaction_id": "tx-2",
+      "table": "orders"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_938513",
+    "schema_version": 1,
+    "kind": "cdc.event",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "READ",
+      "source_position": "10",
+      "transaction_id": "tx-1",
+      "table": "orders",
+      "key_fields": [
+        "id"
+      ],
+      "before_present": false,
+      "after_present": true,
+      "snapshot": "true",
+      "tombstone": false,
+      "schema_changed": false
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_a8a438",
+    "schema_version": 1,
+    "kind": "cdc.event",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "CREATE",
+      "source_position": "11",
+      "transaction_id": "tx-1",
+      "table": "orders",
+      "key_fields": [
+        "id"
+      ],
+      "before_present": false,
+      "after_present": true,
+      "snapshot": "last",
+      "tombstone": false,
+      "schema_changed": false
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_d9c2c2",
+    "schema_version": 1,
+    "kind": "cdc.event",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 4,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "DELETE",
+      "source_position": "12",
+      "transaction_id": "tx-2",
+      "table": "orders",
+      "key_fields": [
+        "id"
+      ],
+      "before_present": true,
+      "after_present": false,
+      "tombstone": false,
+      "schema_changed": false
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_acf822",
+    "schema_version": 1,
+    "kind": "cdc.event",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 5,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "DELETE",
+      "source_position": "12",
+      "transaction_id": "tx-2",
+      "table": "orders",
+      "key_fields": [
+        "id"
+      ],
+      "before_present": true,
+      "after_present": false,
+      "tombstone": false,
+      "schema_changed": false
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_8431c3",
+    "schema_version": 1,
+    "kind": "cdc.event",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 6,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "UPDATE",
+      "source_position": "13",
+      "transaction_id": "tx-3",
+      "table": "orders",
+      "key_fields": [
+        "id"
+      ],
+      "before_present": true,
+      "after_present": true,
+      "schema_changed": true
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_4dadfb",
+    "schema_version": 1,
+    "kind": "cdc.snapshot",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "state": "last"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_4dadfb",
+    "schema_version": 1,
+    "kind": "cdc.snapshot",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "state": "true"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_45aab1",
+    "schema_version": 1,
+    "kind": "cdc.transaction",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 1
+    },
+    "attrs": {
+      "transaction_id": "tx-3",
+      "tables": [
+        "orders"
+      ]
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_bd3947",
+    "schema_version": 1,
+    "kind": "cdc.transaction",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 2
+    },
+    "attrs": {
+      "transaction_id": "tx-1",
+      "tables": [
+        "orders"
+      ]
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_bd3947",
+    "schema_version": 1,
+    "kind": "cdc.transaction",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 2
+    },
+    "attrs": {
+      "transaction_id": "tx-2",
+      "tables": [
+        "orders"
+      ]
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "8b91e8c7b3b6e152d6d560de0d585f7a297b30de8c579ce2428251dd92d59e3a",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

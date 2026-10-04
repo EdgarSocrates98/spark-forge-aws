@@ -86,6 +86,137 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract Structured Streaming source and StreamingQueryProgress facts
+    tools: [sparkforge_analyze_streaming]
+    cli: [analyze streaming]
+    knowledge: [knowledge/streaming-reliability.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Kafka MSK and Kinesis transport artifact facts
+    tools: [sparkforge_analyze_transport]
+    cli: [analyze transport]
+    knowledge: [knowledge/transport-diagnostics.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Apache Flink and Managed Flink streaming artifact facts
+    tools: [sparkforge_analyze_flink]
+    cli: [analyze flink]
+    knowledge: [knowledge/flink-streaming.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract CDC, Debezium and AWS DMS replication artifact facts
+    tools: [sparkforge_analyze_cdc]
+    cli: [analyze cdc]
+    knowledge: [knowledge/cdc-replication.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Schema Registry and data-contract artifact facts
+    tools: [sparkforge_analyze_schema_registry]
+    cli: [analyze schema-registry]
+    knowledge: [knowledge/schema-registry-data-contracts.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compose streaming lakehouse and transport observability evidence
+    tools: [sparkforge_analyze_streaming_composition]
+    cli: [analyze streaming-composition]
+    knowledge:
+      - knowledge/streaming-lakehouse-observability.md
+      - rules/catalog/streaming_iceberg.yaml
+      - rules/catalog/streaming_observability.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract event-driven AWS configuration facts
+    tools: [sparkforge_analyze_event_driven]
+    cli: [analyze event-driven]
+    knowledge:
+      - knowledge/event-driven-architecture.md
+      - rules/catalog/event-driven.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: review declared streaming SLO, FinOps, security, serving and lakehouse operations
+    tools: [sparkforge_analyze_streaming_ops]
+    cli: [analyze streaming-ops]
+    knowledge:
+      - knowledge/streaming-operations.md
+      - knowledge/streaming-format-serving-matrix.md
+      - rules/catalog/streaming-operations.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze streaming checkpoints, Kafka Connect/Streams and OpenLineage artifacts
+    tools: [sparkforge_analyze_streaming_integrations]
+    cli: [analyze streaming-integrations]
+    knowledge:
+      - knowledge/streaming-integrations.md
+      - rules/catalog/streaming-integrations.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: decide realtime architecture from declared requirements and constraints
+    tools: []
+    cli: [architecture streaming]
+    knowledge: [knowledge/streaming-realtime-candidate-matrix.md]
+    platforms:
+      claude_code: [cli, files]
+      devin_desktop: [cli, files]
+      devin_cli: [cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract AWS Glue Streaming and Real-Time Mode artifact facts
+    tools: [sparkforge_analyze_glue_streaming]
+    cli: [analyze glue-streaming]
+    knowledge: [knowledge/glue-streaming-rtm.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from a Glue Data Catalog schema dump
     tools: [sparkforge_analyze_catalog_schema]
     cli: [analyze catalog-schema]
@@ -286,6 +417,94 @@ capabilities:
     tools: [sparkforge_analyze_graph]
     cli: [analyze graph]
     knowledge: [knowledge/graph/graphframes-api.md, knowledge/graph/availability.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze explicit Data Platform metadata graph and bounded lineage impact
+    tools: [sparkforge_analyze_platform_graph]
+    cli: [analyze platform-graph]
+    knowledge: [docs/knowledge/platform-intelligence-graph.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: inventory serving ingestion AI data and optional radar ecosystem
+    tools: [sparkforge_analyze_platform_ecosystem]
+    cli: [analyze platform-ecosystem]
+    knowledge: [docs/knowledge/data-platform-ecosystem.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: describe offline Forge Lab topology and failure scenarios
+    tools: [sparkforge_analyze_forge_lab]
+    cli: [analyze forge-lab]
+    knowledge: [docs/knowledge/forge-lab-digital-twin.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze open lakehouse catalog and multi-engine bindings
+    tools: [sparkforge_analyze_lakehouse_catalog]
+    cli: [analyze lakehouse-catalog]
+    knowledge: [docs/knowledge/open-lakehouse-catalog.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze dbt manifest catalog and run results
+    tools: [sparkforge_analyze_dbt_artifacts]
+    cli: [analyze dbt-artifacts]
+    knowledge: [docs/knowledge/analytics-engineering-microscope.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze read-only DuckDB Parquet and Iceberg microscope bundles
+    tools: [sparkforge_analyze_duckdb_microscope]
+    cli: [analyze duckdb-microscope]
+    knowledge: [docs/knowledge/analytics-engineering-microscope.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: evaluate offline data observability and SRE SLO evidence
+    tools: [sparkforge_analyze_data_observability]
+    cli: [analyze data-observability]
+    knowledge: [docs/knowledge/data-observability-sre.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: normalize orchestration control plane across Airflow Dagster Step Functions and Control-M
+    tools: [sparkforge_analyze_orchestration]
+    cli: [analyze orchestration]
+    knowledge: [docs/knowledge/orchestration-control-plane.md]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
@@ -1161,6 +1380,39 @@ capabilities:
       - analyze dq-ai
       - dq-ai assess
     knowledge: [knowledge/dq/validation-frameworks.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect read-only streaming integration snapshots
+    tools: [sparkforge_collect_streaming_integrations]
+    cli: [collect streaming-integrations]
+    knowledge: [knowledge/streaming-integrations.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect Glue Schema Registry latest versions read-only
+    tools: [sparkforge_collect_schema_registry]
+    cli: [collect schema-registry]
+    knowledge: [knowledge/schema-registry-data-contracts.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect Managed Flink configuration and bounded temporal metrics read-only
+    tools: [sparkforge_collect_managed_flink]
+    cli: [collect managed-flink]
+    knowledge: [knowledge/flink-streaming.md]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

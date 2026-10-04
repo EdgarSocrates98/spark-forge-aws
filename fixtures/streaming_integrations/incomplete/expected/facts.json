@@ -1,0 +1,356 @@
+[
+  {
+    "id": "f_142dda",
+    "schema_version": 1,
+    "kind": "kafka.connect",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-source",
+      "snippet": ""
+    },
+    "measures": {
+      "task_count": 1
+    },
+    "attrs": {
+      "name": "orders-source",
+      "mode": "distributed",
+      "connector_class": "io.debezium.connector.postgresql.PostgresConnector"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_d2e433",
+    "schema_version": 1,
+    "kind": "kafka.connect.task",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-source.task.0",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "id": 0,
+      "state": "FAILED",
+      "connector": "orders-source"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_e9f246",
+    "schema_version": 1,
+    "kind": "kafka.streams",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-enrichment",
+      "snippet": ""
+    },
+    "measures": {
+      "state_store_count": 1
+    },
+    "attrs": {
+      "application_id": "orders-enrichment",
+      "processing_guarantee": "at_least_once"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_83e524",
+    "schema_version": 1,
+    "kind": "kafka.streams.state_store",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-enrichment.store.0",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-store",
+      "type": "rocksdb",
+      "application_id": "orders-enrichment"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_45c527",
+    "schema_version": 1,
+    "kind": "lineage.openlineage",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-enrichment",
+      "snippet": ""
+    },
+    "measures": {
+      "input_count": 1,
+      "output_count": 0
+    },
+    "attrs": {
+      "job_name": "orders-enrichment",
+      "job_namespace": "",
+      "run_id": "",
+      "event_type": "START",
+      "producer": "",
+      "input_count": 1,
+      "output_count": 0,
+      "facet_names": []
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_de023a",
+    "schema_version": 1,
+    "kind": "streaming.checkpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_duration_ms_first": 12000,
+      "batch_duration_ms_last": 12000,
+      "batch_duration_ms_max": 12000,
+      "trigger_interval_ms_first": 10000,
+      "trigger_interval_ms_last": 10000,
+      "trigger_interval_ms_max": 10000,
+      "observation_count": 1,
+      "trigger_interval_ms": 10000,
+      "batch_duration_exceeds_trigger": 1
+    },
+    "attrs": {
+      "query_name": "orders",
+      "storage": "s3"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_9dae4f",
+    "schema_version": 1,
+    "kind": "streaming_integrations.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 13
+    },
+    "attrs": {
+      "sections": [
+        "checkpoint",
+        "kafka_connect",
+        "kafka_streams",
+        "openlineage"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_9156fc",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "checkpoint_context_missing:orders:path",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "checkpoint_context_missing:orders:path",
+      "domain": "checkpoint"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_1110bd",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "checkpoint_series_insufficient:orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "checkpoint_series_insufficient:orders",
+      "domain": "checkpoint"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_1409a0",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "kafka_connect_context_missing:orders-source:offsets",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "kafka_connect_context_missing:orders-source:offsets",
+      "domain": "kafka_connect"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_d2c4de",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "kafka_connect_context_missing:orders-source:status",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "kafka_connect_context_missing:orders-source:status",
+      "domain": "kafka_connect"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_89ce23",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "kafka_streams_context_missing:orders-enrichment:changelog_topics",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "kafka_streams_context_missing:orders-enrichment:changelog_topics",
+      "domain": "kafka_streams"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_3e866c",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "kafka_streams_context_missing:orders-enrichment:repartition_topics",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "kafka_streams_context_missing:orders-enrichment:repartition_topics",
+      "domain": "kafka_streams"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_60121f",
+    "schema_version": 1,
+    "kind": "streaming_integrations.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "openlineage_context_missing:orders-enrichment:run",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "openlineage_context_missing:orders-enrichment:run",
+      "domain": "openlineage"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  }
+]
