@@ -13,15 +13,180 @@ para evitar repetir erros e reusar soluções provadas. É armazenado em
 from __future__ import annotations
 
 import json
+import hashlib
+import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 from sparkforge.agentic.models import Decision
 from sparkforge.case.store import CASE_DIR
 
 MEMORY_DIR = "memory"
 DECISIONS_FILE = "decisions.jsonl"
+QUARANTINE_FILE = "quarantine.jsonl"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _tokens(value: str) -> set[str]:
+    return {token for token in re.findall(r"[a-z0-9_]{3,}", value.lower())}
+
+
+def _fingerprint(value: Any) -> str:
+    raw = json.dumps(value, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
+
+
+@dataclass(frozen=True)
+class DecisionMemoryRecord:
+    """Structured institutional memory with applicability and lifecycle."""
+
+    id: str
+    case_id: str
+    problem: str
+    problem_fingerprint: str
+    environment_fingerprint: str
+    workload_type: str = "unknown"
+    runtime: dict[str, Any] | None = None
+    spark_version: str = ""
+    glue_version: str = ""
+    emr_version: str = ""
+    iceberg_version: str = ""
+    aws_services: tuple[str, ...] = ()
+    decision: str = ""
+    decision_evidence: tuple[str, ...] = ()
+    outcome: str = ""
+    outcome_evidence: tuple[str, ...] = ()
+    confidence: str = "low"
+    trust: str = "hypothesis-like"
+    freshness: str = "unknown"
+    created_at: str = ""
+    observed_at: str = ""
+    expires_at: str | None = None
+    applicability: tuple[str, ...] = ()
+    invalidated_by: str | None = None
+    superseded_by: str | None = None
+    tags: tuple[str, ...] = ()
+    status: str = "quarantine"
+
+    def to_dict(self) -> dict[str, Any]:
+        result = {
+            "id": self.id,
+            "case_id": self.case_id,
+            "problem": self.problem,
+            "problem_fingerprint": self.problem_fingerprint,
+            "environment_fingerprint": self.environment_fingerprint,
+            "workload_type": self.workload_type,
+            "runtime": dict(self.runtime or {}),
+            "spark_version": self.spark_version,
+            "glue_version": self.glue_version,
+            "emr_version": self.emr_version,
+            "iceberg_version": self.iceberg_version,
+            "aws_services": list(self.aws_services),
+            "decision": self.decision,
+            "decision_evidence": list(self.decision_evidence),
+            "outcome": self.outcome,
+            "outcome_evidence": list(self.outcome_evidence),
+            "confidence": self.confidence,
+            "trust": self.trust,
+            "freshness": self.freshness,
+            "created_at": self.created_at,
+            "observed_at": self.observed_at,
+            "expires_at": self.expires_at,
+            "applicability": list(self.applicability),
+            "invalidated_by": self.invalidated_by,
+            "superseded_by": self.superseded_by,
+            "tags": list(self.tags),
+            "status": self.status,
+        }
+        return result
+
+    @classmethod
+    def from_decision(cls, decision: Decision, *, case_id: str = "", outcome: str = "") -> "DecisionMemoryRecord":
+        runtime = dict(decision.runtime or {})
+        environment = {"runtime": runtime, "services": runtime.get("aws_services", [])}
+        created = decision.created_at or _now()
+        return cls(
+            id=decision.id,
+            case_id=case_id,
+            problem=decision.problem,
+            problem_fingerprint=_fingerprint(_tokens(decision.problem)),
+            environment_fingerprint=_fingerprint(environment),
+            runtime=runtime,
+            spark_version=str(runtime.get("spark", runtime.get("spark_version", ""))),
+            glue_version=str(runtime.get("glue", runtime.get("glue_version", ""))),
+            emr_version=str(runtime.get("emr", runtime.get("emr_version", ""))),
+            iceberg_version=str(runtime.get("iceberg", runtime.get("iceberg_version", ""))),
+            aws_services=tuple(str(v) for v in runtime.get("aws_services", [])),
+            decision=decision.selected_option,
+            decision_evidence=tuple(decision.evidence_refs),
+            outcome=outcome,
+            confidence=decision.confidence,
+            created_at=created,
+            observed_at=created if outcome else "",
+            applicability=tuple(decision.assumptions),
+            tags=("legacy-compatible",),
+        )
+
+
+@dataclass(frozen=True)
+class MemoryCandidate:
+    record: DecisionMemoryRecord
+    evidence_valid: bool
+    outcome_valid: bool
+    trust: str
+    reason: str
+
+    @property
+    def persistable(self) -> bool:
+        return self.evidence_valid
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "record": self.record.to_dict(),
+            "evidence_valid": self.evidence_valid,
+            "outcome_valid": self.outcome_valid,
+            "trust": self.trust,
+            "reason": self.reason,
+            "persistable": self.persistable,
+        }
+
+
+def classify_memory_candidate(
+    record: DecisionMemoryRecord,
+    *,
+    valid_evidence_refs: Iterable[str] = (),
+) -> MemoryCandidate:
+    valid = set(valid_evidence_refs)
+    evidence_valid = bool(record.decision_evidence) and (
+        not valid or set(record.decision_evidence).issubset(valid)
+    )
+    outcome_valid = bool(record.outcome and record.outcome_evidence)
+    if not evidence_valid:
+        trust, reason = "hypothesis-like", "missing_or_unverified_evidence"
+    elif outcome_valid:
+        trust, reason = "verified", "evidence_and_outcome_validated"
+    else:
+        trust, reason = "provisional", "evidence_valid_outcome_missing"
+    status = "accepted" if evidence_valid else "quarantine"
+    normalized = DecisionMemoryRecord(**{**record.to_dict(), "status": status, "trust": trust})
+    return MemoryCandidate(normalized, evidence_valid, outcome_valid, trust, reason)
+
+
+def persist_memory_candidate(
+    candidate: MemoryCandidate,
+    root: Path | str,
+    *,
+    allow_quarantine: bool = True,
+) -> Path:
+    """Persist an accepted candidate or an auditable quarantine record."""
+    if not candidate.persistable and not allow_quarantine:
+        raise ValueError("memory candidate rejected: evidence validation required")
+    return _write_record(root, candidate.record, quarantine=not candidate.persistable)
 
 
 def memory_path(root: Path | str) -> Path:
@@ -41,6 +206,14 @@ def init_memory(root: Path | str) -> Path:
     return p
 
 
+def _write_record(root: Path | str, record: DecisionMemoryRecord, *, quarantine: bool = False) -> Path:
+    init_memory(root)
+    path = memory_path(root) / (QUARANTINE_FILE if quarantine else DECISIONS_FILE)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record.to_dict(), ensure_ascii=True, sort_keys=True) + "\n")
+    return path
+
+
 def record_decision(decision: Decision, root: Path | str, case_id: str = "") -> Path:
     """Registra uma decisão na memória institucional.
 
@@ -49,23 +222,17 @@ def record_decision(decision: Decision, root: Path | str, case_id: str = "") -> 
     - case_id (para rastreabilidade)
     - outcome (inicialmente empty — updated later)
     """
-    init_memory(root)
-    record = decision.to_dict()
-    record["case_id"] = case_id
-    record["outcome"] = ""  # updated by update_outcome
-    record["outcome_evidence"] = []
-
+    record = DecisionMemoryRecord.from_decision(decision, case_id=case_id)
     path = decisions_file_path(root)
     # Check for duplicate
     existing = _read_decisions(root)
     for e in existing:
         if e.get("id") == decision.id:
             raise ValueError(f"Decision {decision.id!r} já existe na memória institucional.")
-
-    line = json.dumps(record, ensure_ascii=True, sort_keys=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(line + "\n")
-    return path
+    # Backward-compatible history keeps the record visible, but it is explicitly
+    # quarantined until evidence is supplied. New consumers use retrieve_memory.
+    candidate = classify_memory_candidate(record)
+    return _write_record(root, candidate.record, quarantine=False)
 
 
 def update_outcome(
@@ -85,6 +252,10 @@ def update_outcome(
         if d.get("id") == decision_id:
             d["outcome"] = outcome
             d["outcome_evidence"] = evidence or []
+            d["observed_at"] = _now()
+            d["outcome_valid"] = bool(evidence)
+            if evidence and d.get("status") == "accepted":
+                d["trust"] = "verified"
             updated = True
             break
 
@@ -126,11 +297,11 @@ def find_similar_decisions(
     if not decisions:
         return []
 
-    problem_words = set(problem.lower().split())
+    problem_words = _tokens(problem)
     scored: list[tuple[float, dict[str, Any]]] = []
     for d in decisions:
         d_problem = d.get("problem", "").lower()
-        d_words = set(d_problem.split())
+        d_words = _tokens(d_problem)
         overlap = len(problem_words & d_words)
         if overlap > 0:
             # Boost decisions with positive outcomes
@@ -140,6 +311,86 @@ def find_similar_decisions(
 
     scored.sort(key=lambda x: x[0], reverse=True)
     return [d for _, d in scored[:limit]]
+
+
+def retrieve_memory(
+    problem: str,
+    root: Path | str,
+    *,
+    limit: int = 5,
+    runtime: Mapping[str, Any] | None = None,
+    environment_fingerprint: str = "",
+    workload_type: str = "",
+    include_quarantine: bool = False,
+) -> list[dict[str, Any]]:
+    """Hybrid local retrieval with an explicit trust gate.
+
+    Ordering is exact → lexical → environment/runtime → outcome. Graph and
+    semantic retrieval remain optional hooks: absent indexes are reported by
+    score fields instead of silently pretending similarity exists.
+    """
+    query_tokens = _tokens(problem)
+    runtime = runtime or {}
+    ranked: list[tuple[tuple[float, ...], dict[str, Any]]] = []
+    for record in _read_decisions(root):
+        if record.get("status") not in {"accepted", "verified"} and not include_quarantine:
+            continue
+        if record.get("invalidated_by") or record.get("superseded_by"):
+            continue
+        if workload_type and record.get("workload_type") not in {workload_type, "unknown"}:
+            continue
+        stored_runtime = record.get("runtime") or {}
+        compatible = sum(
+            1 for key, value in runtime.items() if value and stored_runtime.get(key) == value
+        )
+        if runtime and compatible == 0 and stored_runtime:
+            continue
+        stored_tokens = _tokens(str(record.get("problem", "")))
+        lexical = len(query_tokens & stored_tokens) / max(len(query_tokens), 1)
+        exact = 1.0 if record.get("problem_fingerprint") == _fingerprint(query_tokens) else 0.0
+        env = 1.0 if environment_fingerprint and record.get("environment_fingerprint") == environment_fingerprint else 0.0
+        outcome = 1.0 if record.get("outcome") and record.get("outcome_evidence") else 0.0
+        ranked.append(((exact, lexical, float(compatible), env, outcome), record))
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    result: list[dict[str, Any]] = []
+    for scores, record in ranked[:limit]:
+        item = dict(record)
+        item["retrieval"] = {
+            "exact": scores[0],
+            "lexical": scores[1],
+            "runtime_compatibility": scores[2],
+            "environment": scores[3],
+            "outcome": scores[4],
+            "graph": "unresolved",
+            "semantic": "disabled",
+        }
+        result.append(item)
+    return result
+
+
+def invalidate_memory(
+    root: Path | str,
+    *,
+    reason: str,
+    runtime: Mapping[str, Any] | None = None,
+    record_ids: Iterable[str] = (),
+) -> int:
+    """Invalidate records explicitly; no silent expiry or inferred drift."""
+    records = _read_decisions(root)
+    requested = set(record_ids)
+    changed = 0
+    for record in records:
+        same_runtime = bool(runtime) and record.get("runtime") != dict(runtime)
+        if record.get("id") in requested or same_runtime:
+            record["invalidated_by"] = reason
+            record["status"] = "invalidated"
+            changed += 1
+    if changed:
+        path = decisions_file_path(root)
+        with path.open("w", encoding="utf-8") as f:
+            for record in records:
+                f.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
+    return changed
 
 
 def get_decision_history(root: Path | str) -> list[dict[str, Any]]:
@@ -157,6 +408,8 @@ class MemoryStats:
     failed_outcomes: int
     reverted_outcomes: int
     unique_problems: int
+    quarantined_decisions: int = 0
+    verified_decisions: int = 0
 
 
 def memory_stats(root: Path | str) -> MemoryStats:
@@ -172,6 +425,8 @@ def memory_stats(root: Path | str) -> MemoryStats:
     failed = sum(1 for d in decisions if "fail" in d.get("outcome", "").lower())
     reverted = sum(1 for d in decisions if "revert" in d.get("outcome", "").lower())
     problems = {d.get("problem", "") for d in decisions}
+    quarantined = sum(1 for d in decisions if d.get("status") == "quarantine")
+    verified = sum(1 for d in decisions if d.get("trust") == "verified")
 
     return MemoryStats(
         total_decisions=total,
@@ -180,4 +435,25 @@ def memory_stats(root: Path | str) -> MemoryStats:
         failed_outcomes=failed,
         reverted_outcomes=reverted,
         unique_problems=len(problems),
+        quarantined_decisions=quarantined,
+        verified_decisions=verified,
     )
+
+
+__all__ = [
+    "DecisionMemoryRecord",
+    "MemoryCandidate",
+    "MemoryStats",
+    "classify_memory_candidate",
+    "decisions_file_path",
+    "find_similar_decisions",
+    "get_decision_history",
+    "init_memory",
+    "invalidate_memory",
+    "memory_path",
+    "memory_stats",
+    "persist_memory_candidate",
+    "record_decision",
+    "retrieve_memory",
+    "update_outcome",
+]

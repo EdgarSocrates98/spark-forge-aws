@@ -14,6 +14,11 @@ from sparkforge.context.progressive import (
     KnowledgeLevelC,
     ProgressiveDisclosureManager,
 )
+from sparkforge.context.quality import (
+    ContextObservation,
+    ContextQualityReport,
+    MinimumSufficientContextBenchmark,
+)
 
 __all__ = [
     "ContextChunk",
@@ -34,4 +39,7 @@ __all__ = [
     "plan_execution",
     "ContextTreeEntry",
     "build_context_tree",
+    "ContextObservation",
+    "ContextQualityReport",
+    "MinimumSufficientContextBenchmark",
 ]
