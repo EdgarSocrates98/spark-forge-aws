@@ -203,7 +203,7 @@ class AgentHandoff:
             "evidence_refs",
         ):
             result[key] = list(result[key])
-        result["authority"] = self.authority.value
+        result["authority"] = self.authority.name
         return result
 
 

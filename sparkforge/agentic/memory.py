@@ -12,13 +12,14 @@ para evitar repetir erros e reusar soluções provadas. É armazenado em
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from sparkforge.agentic.models import Decision
 from sparkforge.case.store import CASE_DIR
@@ -37,7 +38,16 @@ def _tokens(value: str) -> set[str]:
 
 
 def _fingerprint(value: Any) -> str:
-    raw = json.dumps(value, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
+    def canonical(item: Any) -> Any:
+        if isinstance(item, Mapping):
+            return {str(key): canonical(nested) for key, nested in item.items()}
+        if isinstance(item, (set, frozenset)):
+            return sorted((canonical(nested) for nested in item), key=repr)
+        if isinstance(item, (list, tuple)):
+            return [canonical(nested) for nested in item]
+        return item
+
+    raw = json.dumps(canonical(value), sort_keys=True, ensure_ascii=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
 
 
@@ -106,7 +116,9 @@ class DecisionMemoryRecord:
         return result
 
     @classmethod
-    def from_decision(cls, decision: Decision, *, case_id: str = "", outcome: str = "") -> "DecisionMemoryRecord":
+    def from_decision(
+        cls, decision: Decision, *, case_id: str = "", outcome: str = ""
+    ) -> DecisionMemoryRecord:
         runtime = dict(decision.runtime or {})
         environment = {"runtime": runtime, "services": runtime.get("aws_services", [])}
         created = decision.created_at or _now()
@@ -206,7 +218,9 @@ def init_memory(root: Path | str) -> Path:
     return p
 
 
-def _write_record(root: Path | str, record: DecisionMemoryRecord, *, quarantine: bool = False) -> Path:
+def _write_record(
+    root: Path | str, record: DecisionMemoryRecord, *, quarantine: bool = False
+) -> Path:
     init_memory(root)
     path = memory_path(root) / (QUARANTINE_FILE if quarantine else DECISIONS_FILE)
     with path.open("a", encoding="utf-8") as f:
@@ -223,7 +237,6 @@ def record_decision(decision: Decision, root: Path | str, case_id: str = "") -> 
     - outcome (inicialmente empty — updated later)
     """
     record = DecisionMemoryRecord.from_decision(decision, case_id=case_id)
-    path = decisions_file_path(root)
     # Check for duplicate
     existing = _read_decisions(root)
     for e in existing:
@@ -348,7 +361,14 @@ def retrieve_memory(
         stored_tokens = _tokens(str(record.get("problem", "")))
         lexical = len(query_tokens & stored_tokens) / max(len(query_tokens), 1)
         exact = 1.0 if record.get("problem_fingerprint") == _fingerprint(query_tokens) else 0.0
-        env = 1.0 if environment_fingerprint and record.get("environment_fingerprint") == environment_fingerprint else 0.0
+        env = (
+            1.0
+            if environment_fingerprint
+            and record.get("environment_fingerprint") == environment_fingerprint
+            else 0.0
+        )
+        if not exact and lexical == 0 and not env:
+            continue
         outcome = 1.0 if record.get("outcome") and record.get("outcome_evidence") else 0.0
         ranked.append(((exact, lexical, float(compatible), env, outcome), record))
     ranked.sort(key=lambda item: item[0], reverse=True)
