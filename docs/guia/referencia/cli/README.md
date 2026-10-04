@@ -6,6 +6,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 
 | Comando | O que faz |
 |---|---|
+| [`sparkforge agentops`](agentops.md) | Inspeciona runs locais, compara baseline e atribui desperdicio observado. |
 | [`sparkforge agents`](agents.md) | Lista e inspeciona agentes do runtime agêntico. |
 | [`sparkforge analyze`](analyze.md) | Extrai facts deterministicos de codigo-fonte. |
 | [`sparkforge arbitrate`](arbitrate.md) | Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. |

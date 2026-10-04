@@ -9,6 +9,7 @@ Descobre capabilities e empacota contexto deterministico sob limite explicito.
 | Subcomando | O que faz |
 |---|---|
 | [`sparkforge context expand`](#sparkforge-context-expand) | Expande uma referencia ctx://v1 sob budget. |
+| [`sparkforge context inspect`](#sparkforge-context-inspect) | Inspeciona qualidade de contexto sem inferir tokens por bytes. |
 | [`sparkforge context start`](#sparkforge-context-start) | Inicia descoberta, selecao, reducao e materializacao de contexto. |
 
 ## `sparkforge context expand`
@@ -30,6 +31,25 @@ sparkforge context expand --help
 ### Tool MCP equivalente
 
 [`sparkforge_context_expand`](../tools/sparkforge_context_expand.md), [`sparkforge_context_start`](../tools/sparkforge_context_start.md)
+
+## `sparkforge context inspect`
+
+Inspeciona qualidade de contexto sem inferir tokens por bytes.
+
+```bash
+sparkforge context inspect --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--input` | sim | texto |  |  | JSON com itens e refs de evidencia. |
+| `--observed-provider-tokens` | não | texto |  |  | Tokens observados no transcript do host; omitido permanece unresolved. |
+
+### Tool MCP equivalente
+
+[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
 ## `sparkforge context start`
 

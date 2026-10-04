@@ -82,3 +82,33 @@ e `docs/vnext/adrs/`; `docs/vnext/DEMOS.md` documenta 5 demonstrações interati
 
 - **Limitação**: O compilador de plataformas atualmente gera arquivos estáticos; a sincronização contínua em tempo real pode ser integrada com hooks de Git ou file watchers.
 - **Oportunidade Futura**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS (Lambda container image + EventBridge).
+
+## 8. Addendum — AGENTIC_ENGINEERING_OS_V2
+
+Esta entrega não reescreve o kernel determinístico nem promove provider. Ela fecha uma
+vertical local-first sobre contratos que faltavam:
+
+| Entrega | Resultado verificável |
+|---|---|
+| Memória e trust | `DecisionMemoryRecord` separa evidência e outcome; quarantine impede retrieval confiável sem evidência; `TrustEnvelope` mantém dados externos como `DATA_ONLY`. |
+| Contexto | `ContextQualityReport` mede precisão, recall declarado, densidade, stale, duplicação, reuse e cache hit; tokens só entram quando observados. |
+| Economia e routing | `TokenLedger` reconcilia estimated/observed; custo exige `cost_basis`; `AdaptiveModelRouter` permanece shadow por default. |
+| Continuidade e protocolo | `SemanticCheckpoint` e `sparkforge.protocols.forge` são serializáveis e content-addressed. |
+| AgentOps | inspect, compare, baseline e waste attribution leem traces SQLite locais e preservam `unresolved`. |
+| Superfícies | CLI e MCP compartilham `_core`; `doctor agentic` declara readiness sem rede. |
+
+### Limites de evidência
+
+Os testes desta onda verificam contratos e paridade local. Não medem tokens de provider,
+preço efetivo, qualidade live, ganho de performance ou economia financeira. Esses campos
+continuam unresolved até transcript, `cost_basis`, contrato de qualidade e benchmark
+same-case existirem. Active routing, escrita automática de memória e chamadas AWS ficam
+fora do escopo.
+
+### Operação e rollback
+
+Os commits da onda são independentes por área: contratos agentic, economia, observabilidade
+e adaptadores. Reverter qualquer commit remove sua superfície sem alterar facts, rules,
+findings, case, Decision Plane ou traces SQLite legados. O fluxo SDD completo e o ADR
+estão em `docs/sdd/AGENTIC_ENGINEERING_OS_V2/` e
+`docs/vnext/adrs/ADR-012-agentic-os-v2-contracts.md`.

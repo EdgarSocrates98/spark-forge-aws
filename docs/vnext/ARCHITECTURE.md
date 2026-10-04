@@ -212,3 +212,21 @@ produtor. `IAMAllowedPrincipals` não é bloqueio universal em Hybrid Access;
 registro, opt-in e versão cross-account continuam verificações independentes.
 `glue.id` é comparado a ownership e `glue.account-id` ao contexto esperado,
 sem alias entre propriedades.
+
+## 7. Agentic OS v2 — implementação local-first
+
+O desenho acima agora tem uma camada de contratos implementada sem provider SDK:
+
+| Área | Contrato/código | Limite operacional |
+|---|---|---|
+| Memória institucional | `sparkforge.agentic.memory` | decisão sem evidência entra em quarantine; retrieval não confia nela por padrão |
+| Trust e handoff | `sparkforge.agentic.trust`, `sparkforge.protocols.forge` | confiança não concede autoridade de instrução; handoff é `DATA_ONLY` |
+| Contexto | `sparkforge.context.quality` | bytes, tokens observados e custo ficam em eixos separados |
+| Economia | `sparkforge.economy.ledger`, `model_router` | `cost_basis` obrigatório; router shadow por default |
+| Checkpoint | `sparkforge.agentic.checkpoint` | estado resumível é content-addressed e serializável |
+| AgentOps | `sparkforge.observability.agentops` | SQLite local; transcript, preço e qualidade ausentes saem `unresolved` |
+
+As operações públicas são aditivas: `context inspect`, `agentops
+inspect|compare|baseline` e `doctor agentic`. CLI e MCP chamam o mesmo `_core`; salvar
+baseline é a única mutação nova e fica limitada a arquivo local. A ativação de modelos
+ou execução AWS permanece fora dessa onda.

@@ -68,3 +68,16 @@ Esta feature entrega contratos locais, enforcement, comandos de inspeção e
 documentação. Live-model evals, benchmark de custo real, integração AWS e
 promoção para active dependem de transcript/execuções externas e ficam
 explicitamente `unresolved` até haver evidência.
+
+## Cobertura do prompt_evo_new_step1.md
+
+| Faixa do prompt | Entrega correspondente | Estado verificável |
+|---|---|---|
+| 0–2: base, memória e confiança | `trust.py`, memória estruturada/quarentena, papéis e handoff | implementado; provider/AWS ausentes permanecem `unresolved` |
+| 3–4: contexto e economia | `context/quality.py`, ledger reconciliado, router shadow/assisted/active | implementado; tokens/custo sem fonte não são inferidos |
+| 5–7: execução e observabilidade | checkpoint semântico, protocolos Forge, AgentOps inspect/compare/baseline | implementado; baseline é escrita local idempotente |
+| 8–10: superfície e compatibilidade | CLI, MCP, parity, referências geradas, doctor | implementado; superfície existente preservada |
+| 11–13: documentação, governança e entrega | ADR, ledger, status, claims, SDD e rollback por onda | implementado; gates e suíte final pendentes até ship |
+
+Esta matriz fecha rastreabilidade funcional sem transformar benchmark hipotético,
+integração externa ou promoção de modelo em fato.

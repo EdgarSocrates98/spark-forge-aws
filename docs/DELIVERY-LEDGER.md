@@ -1,9 +1,9 @@
 # SparkForge AWS — ledger de entrega das evoluções
 
-**Atualizado em:** 2026-10-03
+**Atualizado em:** 2026-10-04
 **Fonte de estado:** `sparkforge sdd status --repo .`  
-**Escopo:** `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md` e
-`prompt_evo_forge_lab.md`
+**Escopo:** `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md`,
+`prompt_evo_forge_lab.md` e `prompt_evo_new_step1.md`
 
 Este ledger é a leitura curta do que foi entregue. O detalhe técnico permanece
 nos `ship.md`, no catálogo de regras, nas skills, no conhecimento e nos guias
@@ -17,12 +17,20 @@ referenciados aqui. Ele não transforma contrato offline em capacidade live.
 | Streaming / real-time / batch | Structured Streaming, Kafka/MSK/Kinesis, Flink, Glue Streaming/RTM, CDC/Debezium/DMS, Schema Registry, Iceberg, eventos, serving, SLO/FinOps/security, collectors read-only e matrizes de runtime | Entregue como contratos e diagnósticos offline |
 | Forge Lab | DSL, registry, Golden 20, geradores, faults allowlisted, Compose/Testcontainers, probes, oracle, receipts, promoção de fixtures, tier AWS explícito e contrato topológico offline | `FORGE_LAB_PRODUCT` + `FORGE_LAB_DIGITAL_TWIN` entregues offline |
 | Economia de contexto | profiles, caps, payload bytes, transcript usage, refresh incremental, grafo semântico, receipts e benchmark determinístico | Entregue; economia financeira/provider continua não inferida |
+| Agentic OS v2 | memória/trust, contexto mínimo, ledger, router shadow, checkpoint, Forge/A2A, AgentOps e superfícies CLI/MCP | Implementado; suíte final e gates de ship pendentes |
 
 O produto está pronto para auxiliar projetos streaming e batch com evidência
 reproduzível, julgamento rastreável e especialistas roteáveis. Execução Spark/Flink,
 replay, endpoints live, benchmark cloud e validação funcional continuam exigindo
 artefatos reais; quando ausentes, o SparkForge retorna `unresolved`, `N/A + motivo`
 ou recusa nomeada.
+
+## Agentic OS v2 — onda em fechamento
+
+Os contratos estão em `docs/sdd/AGENTIC_ENGINEERING_OS_V2/`, com commits separados por
+área e ADR em `docs/vnext/adrs/ADR-012-agentic-os-v2-contracts.md`. O caminho é local-first:
+nenhum módulo novo chama provider ou AWS. `tokens_unresolved`, `cost_basis` ausente,
+qualidade sem contrato e memória sem evidência continuam estados explícitos.
 
 ## Estado SDD
 

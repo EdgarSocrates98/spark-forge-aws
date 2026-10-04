@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/AGENTIC_ENGINEERING_OS_V2/explore.md
-  sha256: "a7ddfe98e8d542513f04517abe7f08471552ff99f37692c260a55a47a7b626d5"
+  sha256: "571bbf0e880d92a62f39efa9072498a73491207e800ce809aea77abb5c7c9976"
 hypothesis:
   claim: "Contratos determinísticos e opt-in para memória, trust, contexto, economia, routing, AgentOps e interoperabilidade tornam evolução agentic mais auditável e econômica sem quebrar a superfície legada."
   prediction: "Os novos contratos bloquearão memória sem evidência/outcome, preservarão dados externos como não-instrução, calcularão métricas sem converter bytes em tokens, manterão routing shadow fail-closed e permitirão comparar runs locais; CLI e MCP devolverão o mesmo envelope."
@@ -15,27 +15,35 @@ acceptance:
   - id: AC1
     statement: "DecisionMemoryRecord, MemoryCandidate e trust gate persistem somente decisões com evidência válida, isolam case e permitem quarantine, outcome, freshness, invalidation e supersession."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_memory_trust_gate_and_retrieval"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC2
     statement: "TrustEnvelope e RoleContextPlan carregam origin, trust, scope, instruction_authority, taint, provenance e freshness; conteúdo externo e handoff não ganham autoridade de instrução."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_trust_and_role_context_isolation"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC3
     statement: "ContextQualityReport calcula recall, precision, density, duplicação, stale, expansão, reuse, cache hit e evidence-per-token com bytes separados de tokens observados, e compara níveis A/B/C."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_context_quality_and_minimum_sufficient_context"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC4
     statement: "TokenLedger unifica eventos de host/tool/agent/case/provider, reconcilia estimated versus observed e recusa custo sem cost_basis ou provider transcript."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_token_ledger_reconciliation_is_explicit"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC5
     statement: "AdaptiveModelRouter registra scorecard, decide por complexidade/risco/contexto/tool support/quality/cost/latency/budget e permanece shadow por default, sem confundir case routing."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_model_router_is_shadow_by_default"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC6
     statement: "AgentOps inspeciona e compara traces locais, cria baseline/regression findings e classifica waste como observed, estimated ou hypothesis."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_agentops_inspect_compare_baseline"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC7
     statement: "SemanticCheckpoint e Forge protocol publicam estado resumível e envelopes ForgeCapability, ForgeTask, ForgeEvidenceBundle, ForgeHandoff, ForgeResult e ForgeHealth sem expor detalhes internos."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_checkpoint_and_forge_protocol_are_content_addressed"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
   - id: AC8
     statement: "CLI e MCP expõem context inspect, agentops inspect/compare/baseline e doctor agentic com schemas estruturados, mantendo ferramentas existentes e local-first."
     verified_by: {kind: test, ref: "tests/test_agentic_os_v2.py::test_cli_mcp_and_doctor_surfaces"}
+    guard: "Execução de testes foi deliberadamente adiada para a suíte final por instrução do operador."
 success:
   - id: SC1
     metric: "Suíte final e testes de contrato AC1–AC8 passam"

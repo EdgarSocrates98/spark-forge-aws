@@ -110,3 +110,34 @@ artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 - **D-3**: Preservar gates do caso (`sparkforge.case`) com trilha de override rastreável e assinatura de relatório.
 - **D-4**: Preservar contratos de CLI existentes (`sparkforge analyze ...`, `sparkforge judge ...`, `sparkforge case ...`, `sparkforge report ...`) e MCP tools.
 - **D-5**: Manter o princípio Local-First / Offline-First sem exigir infraestrutura cloud ou banco pago.
+
+## 8. Overlay atual — Agentic OS v2
+
+As seções anteriores preservam o snapshot da auditoria inicial. Para o estado do
+repositório após `AGENTIC_ENGINEERING_OS_V2`, leia este overlay:
+
+- Memória institucional agora tem `DecisionMemoryRecord`, quarantine, trust,
+  outcome, freshness, invalidação e retrieval híbrido local. Records antigos continuam
+  legíveis, mas não entram no retrieval confiável sem evidência.
+- Trust/taint e autoridade de instrução são campos distintos. `TrustEnvelope`,
+  `RoleContextPlan` e os handoffs Forge/A2A preservam origem, escopo e
+  `DATA_ONLY` para dados externos e mensagens entre agentes.
+- Contexto tem `ContextQualityReport` e benchmark de minimum sufficient context. O
+  relatório separa bytes serializados de tokens observados e deixa métricas sem
+  transcript como `tokens_unresolved`.
+- Economia tem `TokenLedger`, reconciliação estimated/observed e `cost_basis` obrigatório.
+  `AdaptiveModelRouter` é independente do roteamento de caso e permanece shadow por
+  default; active exige autoridade e evidência de promoção.
+- Checkpoints semânticos são content-addressed. `sparkforge.protocols.forge` publica
+  envelopes mínimos de task, capability, evidence, handoff, result e health.
+- AgentOps lê o SQLite de traces e oferece inspect, compare e baseline local. Waste é
+  classificado como observado ou hipótese; ausência de provider transcript, contrato de
+  qualidade ou preço efetivo permanece unresolved.
+- CLI e MCP compartilham `_core` para `context inspect`, `agentops
+  inspect|compare|baseline` e `doctor agentic`. Baseline save grava somente arquivo
+  local e é a única mutação desta superfície.
+
+Pendências deliberadas: evals live de provider, preço atual sem fonte efetiva, promoção
+active automática, vector database obrigatório e execução AWS. A suíte final e os gates
+de superfície/claims são a validação de entrega; nenhum ganho financeiro é inferido por
+bytes ou por scorecard.

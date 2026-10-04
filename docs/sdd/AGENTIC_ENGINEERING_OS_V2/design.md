@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/AGENTIC_ENGINEERING_OS_V2/define.md
-  sha256: "4e4736f8176ece72557320661119f25e38811e1eeaf26f936f07c331a36f97cc"
+  sha256: "a4311141a3b1709fd8da8eff5bebb3ad41adbeee2e90735c8c78ffc2ef6058d2"
 files:
   - {path: tests/test_agentic_os_v2.py, action: create, reason: "contratos AC1-AC8 e paridade das superfícies"}
   - {path: sparkforge/agentic/trust.py, action: create, reason: "TrustEnvelope, RoleContextPlan, sanitização e autoridade"}
@@ -42,7 +42,7 @@ decisions:
     rejected: ["converter bytes por divisor fixo, proibido pelas regras de economia", "hardcode de preço, por envelhecimento silencioso"]
     rollback: "git revert da onda de ledger; ContextLedger existente continua medindo payload_bytes."
   - id: D4
-    choice: "CLI e MCP usam as mesmas funções do _core e schemas compactos; superfícies novas são read-only."
+    choice: "CLI e MCP usam as mesmas funções do _core e schemas compactos; inspeções são read-only e baseline save é mutação local idempotente declarada."
     rejected: ["CLI-only, por quebrar parity", "expor objetos internos completos, por aumentar payload e acoplamento"]
     rollback: "git revert dos adaptadores e manter bibliotecas novas disponíveis sem surface pública."
 covers:
@@ -60,7 +60,7 @@ covers:
 
 Todas as implementações são offline-first, serializáveis e sem import de SDK de
 provider. JSONL de memória ganha campos novos preservando records antigos como
-`legacy_untrusted`; SQLite de traces não muda schema nesta onda. Claims de
+`quarantine`/`legacy-compatible`; SQLite de traces não muda schema nesta onda. Claims de
 desempenho, custo e qualidade só aparecem como métricas reproduzíveis ou
 `unresolved`.
 

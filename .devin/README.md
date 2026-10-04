@@ -28,10 +28,10 @@ Os dois arquivos ao lado já fazem o resto:
 
 | Arquivo | O que faz |
 |---|---|
-| `mcp_config.json` | expõe as **136 tools** por stdio (recontado em 2026-10-03). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
+| `mcp_config.json` | expõe as **141 tools** por stdio (recontado em 2026-10-04). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **60 skills** e os **14 coordenadores** o Devin lê sozinho de `.agents/`, que
+As **60 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
@@ -142,14 +142,14 @@ linhas lido a olho vira opinião; passado por `sparkforge analyze emr-eks` vira
 fact com namespace fechado, e `sparkforge judge` diz o que o catálogo tem a
 dizer sobre ele.
 
-As **60 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
+As skills em `.agents/skills/` são gatilhos para isso: cada uma abre
 dizendo **quando** entrar e **o que ela não julga**. Ler a fronteira antes de
 trazer o artefato economiza a investigação inteira.
 
 
 ## Economia: o que medir antes de dizer que economizou
 
-**136 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
+**141 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
 quando so precisa do veredito.
 
 **Leia o numero antes de afirmar reducao.** Medido em 2026-09-02 sobre o gold set

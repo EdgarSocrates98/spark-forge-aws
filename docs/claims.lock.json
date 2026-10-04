@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "1530e33c6d4fdc39dea321b5da2710f7446fb87d",
+  "extracted_from": "79f7cb82fefff62be3ef24b31517df2a7773254f",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -10513,6 +10513,26 @@
       "note": "Remedido em 2026-09-15 (item 3 da revisao critica): `economy/budget.py` e o `TIER_PRICING` sairam sem uso em producao; os tiers continuam em `ModelTier`, e o custo zero do tier deterministico e o do `CapabilityModelRouter`."
     },
     {
+      "context": "PESO_LINEAGE em zero, declarado e nao omitido",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-736",
+      "line": 707,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.codeintel.ranking import PESO_LINEAGE; print(PESO_LINEAGE)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 80,
       "text": "114",
@@ -10581,26 +10601,6 @@
       "id": "VNX-802",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
-    },
-    {
-      "context": "PESO_LINEAGE em zero, declarado e nao omitido",
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "id": "VNX-736",
-      "line": 707,
-      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.codeintel.ranking import PESO_LINEAGE; print(PESO_LINEAGE)'",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 0
-        },
-        "kind": "command",
-        "tier": "fast"
-      },
-      "state": "PROVADA",
-      "text": "0",
-      "type": "number"
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
