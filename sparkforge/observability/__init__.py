@@ -9,6 +9,7 @@ from sparkforge.observability.sre import (
 )
 from sparkforge.observability.store import SQLiteTraceStore
 from sparkforge.observability.tracer import AgentOpsTracker, ExecutionTrace, TraceSpan
+from sparkforge.observability.agentops import compare_baseline, compare_runs, inspect_run, save_baseline
 
 __all__ = [
     "AgentOpsTracker",
@@ -19,4 +20,8 @@ __all__ = [
     "ObservabilityReport",
     "analyze_data_observability",
     "load_data_observability",
+    "compare_baseline",
+    "compare_runs",
+    "inspect_run",
+    "save_baseline",
 ]
