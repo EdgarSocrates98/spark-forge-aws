@@ -62,6 +62,7 @@ from sparkforge.collect import schema_registry as collect_schema_registry_collec
 from sparkforge.collect import streaming as collect_streaming
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
+from sparkforge.context.quality import ContextQualityReport, context_item_from_mapping
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
     UnknownVersion as UnknownControlMVersion,
@@ -83,13 +84,6 @@ from sparkforge.dq_ai.assessment import build_assessment_facts
 from sparkforge.dqdl.validator import validate_dqdl_path
 from sparkforge.economy.provider_cost import provider_cost as build_provider_cost
 from sparkforge.economy.report import build_context_report
-from sparkforge.context.quality import ContextQualityReport, context_item_from_mapping
-from sparkforge.observability.agentops import (
-    compare_baseline as _agentops_compare_baseline,
-    compare_runs as _agentops_compare_runs,
-    inspect_run as _agentops_inspect_run,
-    save_baseline as _agentops_save_baseline,
-)
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts import lakeformation_matrix as _lf_matrix
 from sparkforge.facts.airflow_dag import (
@@ -234,6 +228,18 @@ from sparkforge.migration.release_descriptor import (
 from sparkforge.migration.release_diff import diff as diff_releases
 from sparkforge.migration.version_path import (
     DEFAULT_PLATFORM as MIGRATION_DEFAULT_PLATFORM,
+)
+from sparkforge.observability.agentops import (
+    compare_baseline as _agentops_compare_baseline,
+)
+from sparkforge.observability.agentops import (
+    compare_runs as _agentops_compare_runs,
+)
+from sparkforge.observability.agentops import (
+    inspect_run as _agentops_inspect_run,
+)
+from sparkforge.observability.agentops import (
+    save_baseline as _agentops_save_baseline,
 )
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.observability.sre import (
@@ -9577,7 +9583,9 @@ def context_gateway_expand(
         raise AdapterError(f"context expand recusado: {exc}", exit_code=2) from exc
 
 
-def context_inspect(payload: Mapping[str, Any], *, observed_provider_tokens: int | None = None) -> dict[str, Any]:
+def context_inspect(
+    payload: Mapping[str, Any], *, observed_provider_tokens: int | None = None
+) -> dict[str, Any]:
     """Inspect a local context payload without inferring tokens from bytes."""
     items = payload.get("items", []) if isinstance(payload, Mapping) else []
     if not isinstance(items, list):
@@ -9588,7 +9596,9 @@ def context_inspect(payload: Mapping[str, Any], *, observed_provider_tokens: int
         observations,
         required_evidence_refs=required if isinstance(required, list) else (),
         observed_provider_tokens=observed_provider_tokens,
-        expansion_count=int(payload.get("expansion_count", 0)) if isinstance(payload, Mapping) else 0,
+        expansion_count=(
+            int(payload.get("expansion_count", 0)) if isinstance(payload, Mapping) else 0
+        ),
     )
     return {
         "status": "ok",
@@ -9606,7 +9616,9 @@ def agentops_inspect(repo: str = ".", *, run_id: str, db_path: str | None = None
     return _agentops_inspect_run(path, run_id)
 
 
-def agentops_compare(repo: str = ".", *, run_a: str, run_b: str, db_path: str | None = None) -> dict[str, Any]:
+def agentops_compare(
+    repo: str = ".", *, run_a: str, run_b: str, db_path: str | None = None
+) -> dict[str, Any]:
     path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
     return _agentops_compare_runs(path, run_a, run_b)
 

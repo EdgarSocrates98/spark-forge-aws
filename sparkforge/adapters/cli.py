@@ -1588,7 +1588,9 @@ def build_parser() -> argparse.ArgumentParser:
     context_inspect_p = context_sub.add_parser(
         "inspect", help="Inspeciona qualidade de contexto sem inferir tokens por bytes."
     )
-    context_inspect_p.add_argument("--input", required=True, help="JSON com itens e refs de evidencia.")
+    context_inspect_p.add_argument(
+        "--input", required=True, help="JSON com itens e refs de evidencia."
+    )
     context_inspect_p.add_argument(
         "--observed-provider-tokens",
         type=int,
@@ -1610,7 +1612,9 @@ def build_parser() -> argparse.ArgumentParser:
     agentops_compare_p.add_argument("run_b")
     agentops_compare_p.add_argument("--repo", default=".")
     agentops_compare_p.add_argument("--db", dest="db_path")
-    agentops_baseline_p = agentops_sub.add_parser("baseline", help="Salva ou compara baseline local.")
+    agentops_baseline_p = agentops_sub.add_parser(
+        "baseline", help="Salva ou compara baseline local."
+    )
     agentops_baseline_p.add_argument("action", choices=["save", "compare"])
     agentops_baseline_p.add_argument("run_id")
     agentops_baseline_p.add_argument("--path", dest="baseline_path", required=True)

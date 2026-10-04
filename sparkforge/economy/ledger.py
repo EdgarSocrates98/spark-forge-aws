@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,7 +52,8 @@ class LedgerEvent:
             "provider": self.provider,
             "model": self.model,
             "cost_basis": self.cost_basis,
-            "timestamp": self.timestamp or datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            "timestamp": self.timestamp
+            or datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
             "metadata": dict(self.metadata),
         }
         return result
@@ -66,7 +68,13 @@ class Reconciliation:
     status: str
 
     def to_dict(self) -> dict[str, Any]:
-        return {"metric": self.metric, "estimated": self.estimated, "observed": self.observed, "delta": self.delta, "status": self.status}
+        return {
+            "metric": self.metric,
+            "estimated": self.estimated,
+            "observed": self.observed,
+            "delta": self.delta,
+            "status": self.status,
+        }
 
 
 class TokenLedger:
@@ -82,7 +90,7 @@ class TokenLedger:
     def events(self) -> tuple[LedgerEvent, ...]:
         return tuple(self._events)
 
-    def for_run(self, run_id: str) -> "TokenLedger":
+    def for_run(self, run_id: str) -> TokenLedger:
         return TokenLedger(event for event in self._events if event.run_id == run_id)
 
     def reconcile(self) -> dict[str, Any]:
@@ -94,8 +102,16 @@ class TokenLedger:
         )
         output: dict[str, Any] = {"events": len(self._events), "metrics": {}}
         for name, estimate_field, observed_field in fields:
-            estimated_values = [getattr(event, estimate_field) for event in self._events if getattr(event, estimate_field) is not None]
-            observed_values = [getattr(event, observed_field) for event in self._events if getattr(event, observed_field) is not None]
+            estimated_values = [
+                getattr(event, estimate_field)
+                for event in self._events
+                if getattr(event, estimate_field) is not None
+            ]
+            observed_values = [
+                getattr(event, observed_field)
+                for event in self._events
+                if getattr(event, observed_field) is not None
+            ]
             estimated = sum(estimated_values) if estimated_values else None
             observed = sum(observed_values) if observed_values else None
             if observed is None:
@@ -104,14 +120,27 @@ class TokenLedger:
             else:
                 delta = observed - (estimated or 0)
                 status = "measured"
-            if name == "cost_usd" and observed is not None and any(not event.cost_basis for event in self._events):
+            if (
+                name == "cost_usd"
+                and observed is not None
+                and any(not event.cost_basis for event in self._events)
+            ):
                 status = "cost_basis_unresolved"
-            output["metrics"][name] = Reconciliation(name, estimated, observed, delta, status).to_dict()
-        output["provider_tokens"] = output["metrics"]["tokens"]["observed"] if output["metrics"]["tokens"]["status"] == "measured" else "tokens_unresolved"
+            output["metrics"][name] = Reconciliation(
+                name, estimated, observed, delta, status
+            ).to_dict()
+        output["provider_tokens"] = (
+            output["metrics"]["tokens"]["observed"]
+            if output["metrics"]["tokens"]["status"] == "measured"
+            else "tokens_unresolved"
+        )
         return output
 
     def to_jsonl(self) -> str:
-        return "".join(json.dumps(event.to_dict(), ensure_ascii=True, sort_keys=True) + "\n" for event in self._events)
+        return "".join(
+            json.dumps(event.to_dict(), ensure_ascii=True, sort_keys=True) + "\n"
+            for event in self._events
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,7 +159,15 @@ class ProviderPriceProfile:
         if not self.source:
             raise ValueError("ProviderPriceProfile exige source")
 
-    def cost(self, *, input_tokens: int = 0, output_tokens: int = 0, cached_input_tokens: int = 0, cache_creation_tokens: int = 0, reasoning_tokens: int = 0) -> float | None:
+    def cost(
+        self,
+        *,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        cached_input_tokens: int = 0,
+        cache_creation_tokens: int = 0,
+        reasoning_tokens: int = 0,
+    ) -> float | None:
         rates = (
             (input_tokens, self.input_usd_per_million),
             (output_tokens, self.output_usd_per_million),
@@ -140,7 +177,9 @@ class ProviderPriceProfile:
         )
         if any(tokens and rate is None for tokens, rate in rates):
             return None
-        return round(sum(tokens * rate / 1_000_000 for tokens, rate in rates if rate is not None), 8)
+        return round(
+            sum(tokens * rate / 1_000_000 for tokens, rate in rates if rate is not None), 8
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {

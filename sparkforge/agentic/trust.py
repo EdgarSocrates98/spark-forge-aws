@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Any, Iterable
+from typing import Any
 
 
 class TrustLabel(str, Enum):
@@ -100,7 +101,9 @@ class TrustEnvelope:
         return result
 
     @classmethod
-    def external(cls, content: str, *, origin: str, provenance: Iterable[str] = ()) -> TrustEnvelope:
+    def external(
+        cls, content: str, *, origin: str, provenance: Iterable[str] = ()
+    ) -> TrustEnvelope:
         lowered = content.lower()
         suspicious = any(marker in lowered for marker in _INJECTION_MARKERS)
         return cls(

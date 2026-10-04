@@ -7,8 +7,9 @@ token counts. No bytes-to-token conversion is performed here.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,7 +62,7 @@ class ContextQualityReport:
         required_evidence_refs: Iterable[str] = (),
         observed_provider_tokens: int | None = None,
         expansion_count: int = 0,
-    ) -> "ContextQualityReport":
+    ) -> ContextQualityReport:
         records = list(items)
         required = set(required_evidence_refs)
         recalled = {ref for item in records if item.relevant for ref in item.evidence_refs}
@@ -141,7 +142,11 @@ class MinimumSufficientContextBenchmark:
         for index, report in enumerate(self.levels):
             recall = report.metrics.get("context_recall")
             precision = report.metrics.get("context_precision", 0)
-            if isinstance(recall, (int, float)) and recall >= self.target_recall and precision >= self.target_precision:
+            if (
+                isinstance(recall, (int, float))
+                and recall >= self.target_recall
+                and precision >= self.target_precision
+            ):
                 return index
         return None
 

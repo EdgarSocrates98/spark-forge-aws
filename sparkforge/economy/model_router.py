@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Iterable
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Iterable
+from typing import Any
 
 
 class ModelRouteMode(str, Enum):
@@ -88,7 +89,9 @@ class ModelRouteDecision:
 class AdaptiveModelRouter:
     """Ranks declared candidates; does not call providers or mutate policy."""
 
-    def __init__(self, candidates: Iterable[ModelCandidate] = (), scorecards: Iterable[ModelScorecard] = ()) -> None:
+    def __init__(
+        self, candidates: Iterable[ModelCandidate] = (), scorecards: Iterable[ModelScorecard] = ()
+    ) -> None:
         self.candidates = tuple(candidates)
         self.scorecards = tuple(scorecards)
 
@@ -102,11 +105,21 @@ class AdaptiveModelRouter:
         promotion_evidence: Iterable[str] = (),
     ) -> ModelRouteDecision:
         evidence = tuple(str(value) for value in promotion_evidence)
-        compatible = [candidate for candidate in self.candidates if self._compatible(candidate, request)]
+        compatible = [
+            candidate for candidate in self.candidates if self._compatible(candidate, request)
+        ]
         unresolved: list[str] = []
         if not compatible:
             unresolved.append("no_declared_model_candidate")
-            return ModelRouteDecision(None, mode, False, "no compatible model", len(self.candidates), evidence, tuple(unresolved))
+            return ModelRouteDecision(
+                None,
+                mode,
+                False,
+                "no compatible model",
+                len(self.candidates),
+                evidence,
+                tuple(unresolved),
+            )
         selected = max(compatible, key=lambda candidate: self._score(candidate, request))
         if request.context_tokens is not None and selected.max_context_tokens is None:
             unresolved.append("model_context_limit_unresolved")
@@ -116,28 +129,70 @@ class AdaptiveModelRouter:
         if mode == ModelRouteMode.ASSISTED and not authority:
             reason = "assisted route proposed without execution authority"
         elif mode == ModelRouteMode.ACTIVE and not applied:
-            reason = "active route refused: enabled, authority and promotion evidence are all required"
+            reason = (
+                "active route refused: enabled, authority and promotion evidence are all required"
+            )
         else:
             reason = f"{mode.value} model route selected by declared capability and scorecard"
-        return ModelRouteDecision(selected, mode, applied, reason, len(self.candidates), evidence, tuple(unresolved))
+        return ModelRouteDecision(
+            selected, mode, applied, reason, len(self.candidates), evidence, tuple(unresolved)
+        )
 
     def _compatible(self, candidate: ModelCandidate, request: ModelRoutingInput) -> bool:
-        if request.context_tokens and candidate.max_context_tokens and request.context_tokens > candidate.max_context_tokens:
+        if (
+            request.context_tokens
+            and candidate.max_context_tokens
+            and request.context_tokens > candidate.max_context_tokens
+        ):
             return False
         if any(tool not in candidate.supported_tools for tool in request.required_tools):
             return False
-        if request.latency_budget_ms is not None and candidate.latency_ms is not None and candidate.latency_ms > request.latency_budget_ms:
+        if (
+            request.latency_budget_ms is not None
+            and candidate.latency_ms is not None
+            and candidate.latency_ms > request.latency_budget_ms
+        ):
             return False
+        if request.budget_usd is not None:
+            score = self._scorecard(candidate, request)
+            if (
+                score is not None
+                and score.cost_usd is not None
+                and score.cost_usd > request.budget_usd
+            ):
+                return False
         return True
 
+    def _scorecard(
+        self, candidate: ModelCandidate, request: ModelRoutingInput
+    ) -> ModelScorecard | None:
+        relevant = [
+            item
+            for item in self.scorecards
+            if item.provider == candidate.provider
+            and item.model == candidate.model
+            and item.task_type == request.task_type
+        ]
+        return relevant[-1] if relevant else None
+
     def _score(self, candidate: ModelCandidate, request: ModelRoutingInput) -> tuple[float, ...]:
-        relevant = [item for item in self.scorecards if item.provider == candidate.provider and item.model == candidate.model and item.task_type == request.task_type]
-        score = relevant[-1] if relevant else None
+        score = self._scorecard(candidate, request)
         quality = score.quality if score and score.quality is not None else 0.0
-        evidence = score.evidence_correctness if score and score.evidence_correctness is not None else 0.0
+        evidence = (
+            score.evidence_correctness if score and score.evidence_correctness is not None else 0.0
+        )
         tool = score.tool_correctness if score and score.tool_correctness is not None else 0.0
         latency = -(candidate.latency_ms or 0.0)
-        return (quality, evidence, tool, -float(request.complexity), latency, float(candidate.cost_known))
+        cost = -(score.cost_usd or 0.0) if score else 0.0
+        return (
+            quality,
+            evidence,
+            tool,
+            cost,
+            -float(request.complexity),
+            latency,
+            float(candidate.cost_known),
+        )
 
 
 __all__ = [

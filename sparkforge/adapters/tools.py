@@ -21,8 +21,9 @@ Nenhuma ferramenta e destrutiva. Os coletores AWS (`collect_*`, exceto
 `collect_verify`) sao os unicos open-world -- leem de fora do sandbox local e
 nunca escrevem do lado AWS. Escrevem em disco: `case_open` e `case_update`
 (`.sparkforge/case.yaml`), `report_sign` (o bloco de assinatura, no lugar) e
-`funcval_plan` (o plano, que `funcval_compare` rele como artefato); todas as
-outras sao read-only. A lista literal correspondente vive em
+`funcval_plan` (o plano, que `funcval_compare` rele como artefato) e
+`agentops_baseline save` (baseline local idempotente); todas as outras sao
+read-only. A lista literal correspondente vive em
 `tests/test_adapters_tools.py::test_only_case_and_report_writers_are_not_read_only`.
 """
 
@@ -10843,7 +10844,15 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(
             {
                 "type": "object",
-                "required": ["status", "summary", "items", "quality", "refs", "unresolved", "evidence"],
+                "required": [
+                    "status",
+                    "summary",
+                    "items",
+                    "quality",
+                    "refs",
+                    "unresolved",
+                    "evidence",
+                ],
                 "properties": {
                     "status": {"type": "string"},
                     "summary": {"type": "object"},
@@ -10864,24 +10873,39 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "additionalProperties": False,
             "required": ["run_id"],
-            "properties": {"run_id": {"type": "string", "minLength": 1}, "repo": {"type": "string"}, "db_path": {"type": "string"}},
+            "properties": {
+                "run_id": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
         },
         "outputSchema": _may_fail({"type": "object"}, "Run ausente ou banco local indisponivel."),
         "annotations": _READ_ONLY,
     },
     "sparkforge_agentops_compare": {
-        "description": "Compara dois runs AgentOps locais sem atribuir causa ou converter bytes em tokens.",
+        "description": (
+            "Compara dois runs AgentOps locais sem atribuir causa ou converter "
+            "bytes em tokens."
+        ),
         "inputSchema": {
             "type": "object",
             "additionalProperties": False,
             "required": ["run_a", "run_b"],
-            "properties": {"run_a": {"type": "string", "minLength": 1}, "run_b": {"type": "string", "minLength": 1}, "repo": {"type": "string"}, "db_path": {"type": "string"}},
+            "properties": {
+                "run_a": {"type": "string", "minLength": 1},
+                "run_b": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
         },
         "outputSchema": _may_fail({"type": "object"}, "Run ausente ou banco local indisponivel."),
         "annotations": _READ_ONLY,
     },
     "sparkforge_agentops_baseline": {
-        "description": "Salva ou compara baseline AgentOps em arquivo local content-addressed por run declarado.",
+        "description": (
+            "Salva ou compara baseline AgentOps em arquivo local content-addressed "
+            "por run declarado."
+        ),
         "inputSchema": {
             "type": "object",
             "additionalProperties": False,
@@ -10907,7 +10931,14 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(
             {
                 "type": "object",
-                "required": ["status", "checks", "unresolved", "network", "provider_tokens", "cost"],
+                "required": [
+                    "status",
+                    "checks",
+                    "unresolved",
+                    "network",
+                    "provider_tokens",
+                    "cost",
+                ],
                 "properties": {
                     "status": {"type": "string"},
                     "checks": {"type": "object"},

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 
 def _canonical(value: Any) -> str:
@@ -57,7 +58,7 @@ class SemanticCheckpoint:
         return result
 
     @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> "SemanticCheckpoint":
+    def from_dict(cls, raw: Mapping[str, Any]) -> SemanticCheckpoint:
         return cls(
             objective=str(raw.get("objective", "")),
             state=str(raw.get("state", "")),
@@ -78,11 +79,14 @@ class SemanticCheckpoint:
     def save(self, path: Path | str) -> Path:
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(json.dumps(self.to_dict(), ensure_ascii=True, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        destination.write_text(
+            json.dumps(self.to_dict(), ensure_ascii=True, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
         return destination
 
     @classmethod
-    def load(cls, path: Path | str) -> "SemanticCheckpoint":
+    def load(cls, path: Path | str) -> SemanticCheckpoint:
         return cls.from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
