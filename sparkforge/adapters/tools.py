@@ -10825,6 +10825,102 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _CODE_WRITES_INDEX,
     },
+    "sparkforge_context_inspect": {
+        "description": (
+            "Inspeciona qualidade de contexto fornecido pelo chamador. Mede bytes, "
+            "relevancia, duplicacao, frescor e cobertura de evidencia; nunca converte "
+            "bytes em tokens. Tokens do provider so entram quando transcript os mediu."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["payload"],
+            "properties": {
+                "payload": {"type": "object"},
+                "observed_provider_tokens": {"type": ["integer", "null"], "minimum": 0},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status", "summary", "items", "quality", "refs", "unresolved", "evidence"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "summary": {"type": "object"},
+                    "items": {"type": "array", "items": {"type": "object"}},
+                    "quality": {"type": "object"},
+                    "refs": {"type": "array", "items": {"type": "string"}},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                    "evidence": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Payload invalido ou item de contexto sem forma declarada.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_agentops_inspect": {
+        "description": "Inspeciona um run AgentOps local, com evidencia e desperdicio observado.",
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["run_id"],
+            "properties": {"run_id": {"type": "string", "minLength": 1}, "repo": {"type": "string"}, "db_path": {"type": "string"}},
+        },
+        "outputSchema": _may_fail({"type": "object"}, "Run ausente ou banco local indisponivel."),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_agentops_compare": {
+        "description": "Compara dois runs AgentOps locais sem atribuir causa ou converter bytes em tokens.",
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["run_a", "run_b"],
+            "properties": {"run_a": {"type": "string", "minLength": 1}, "run_b": {"type": "string", "minLength": 1}, "repo": {"type": "string"}, "db_path": {"type": "string"}},
+        },
+        "outputSchema": _may_fail({"type": "object"}, "Run ausente ou banco local indisponivel."),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_agentops_baseline": {
+        "description": "Salva ou compara baseline AgentOps em arquivo local content-addressed por run declarado.",
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["action", "run_id", "baseline_path"],
+            "properties": {
+                "action": {"type": "string", "enum": ["save", "compare"]},
+                "run_id": {"type": "string", "minLength": 1},
+                "baseline_path": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail({"type": "object"}, "Baseline ou run indisponivel."),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
+    "sparkforge_doctor_agentic": {
+        "description": "Confere readiness local do plano agêntico sem rede ou provider.",
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {"repo": {"type": "string"}},
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status", "checks", "unresolved", "network", "provider_tokens", "cost"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "checks": {"type": "object"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                    "network": {"type": "string"},
+                    "provider_tokens": {"type": "string"},
+                    "cost": {"type": "string"},
+                },
+            },
+            "Readiness local indisponivel.",
+        ),
+        "annotations": _READ_ONLY,
+    },
 }
 
 
@@ -11199,6 +11295,42 @@ def _h_context_expand(args: dict[str, Any]) -> dict[str, Any]:
         repo=args.get("repo", "."),
         catalog=TOOLS,
     )
+
+
+def _h_context_inspect(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.context_inspect(
+        args.get("payload", {}),
+        observed_provider_tokens=args.get("observed_provider_tokens"),
+    )
+
+
+def _h_agentops_inspect(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_inspect(
+        args.get("repo", "."), run_id=args["run_id"], db_path=args.get("db_path")
+    )
+
+
+def _h_agentops_compare(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_compare(
+        args.get("repo", "."),
+        run_a=args["run_a"],
+        run_b=args["run_b"],
+        db_path=args.get("db_path"),
+    )
+
+
+def _h_agentops_baseline(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_baseline(
+        args.get("repo", "."),
+        action=args["action"],
+        run_id=args["run_id"],
+        baseline_path=args["baseline_path"],
+        db_path=args.get("db_path"),
+    )
+
+
+def _h_doctor_agentic(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentic_doctor(args.get("repo", "."))
 
 
 def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
@@ -12126,6 +12258,11 @@ def _h_code_sync(args: dict[str, Any]) -> dict[str, Any]:
 _HANDLERS = {
     "sparkforge_context_start": _h_context_start,
     "sparkforge_context_expand": _h_context_expand,
+    "sparkforge_context_inspect": _h_context_inspect,
+    "sparkforge_agentops_inspect": _h_agentops_inspect,
+    "sparkforge_agentops_compare": _h_agentops_compare,
+    "sparkforge_agentops_baseline": _h_agentops_baseline,
+    "sparkforge_doctor_agentic": _h_doctor_agentic,
     "sparkforge_case_open": _h_case_open,
     "sparkforge_case_get": _h_case_get,
     "sparkforge_case_update": _h_case_update,

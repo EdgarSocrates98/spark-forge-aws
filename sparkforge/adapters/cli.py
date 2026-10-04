@@ -1585,6 +1585,37 @@ def build_parser() -> argparse.ArgumentParser:
         help="Teto de bytes serializados; omitido usa default economy.",
     )
     context_expand_p.add_argument("--repo", default=".")
+    context_inspect_p = context_sub.add_parser(
+        "inspect", help="Inspeciona qualidade de contexto sem inferir tokens por bytes."
+    )
+    context_inspect_p.add_argument("--input", required=True, help="JSON com itens e refs de evidencia.")
+    context_inspect_p.add_argument(
+        "--observed-provider-tokens",
+        type=int,
+        help="Tokens observados no transcript do host; omitido permanece unresolved.",
+    )
+
+    # AgentOps --------------------------------------------------------------
+    agentops_p = sub.add_parser(
+        "agentops",
+        help="Inspeciona runs locais, compara baseline e atribui desperdicio observado.",
+    )
+    agentops_sub = agentops_p.add_subparsers(dest="agentops_action", required=True)
+    agentops_inspect_p = agentops_sub.add_parser("inspect", help="Inspeciona um run local.")
+    agentops_inspect_p.add_argument("run_id")
+    agentops_inspect_p.add_argument("--repo", default=".")
+    agentops_inspect_p.add_argument("--db", dest="db_path")
+    agentops_compare_p = agentops_sub.add_parser("compare", help="Compara dois runs locais.")
+    agentops_compare_p.add_argument("run_a")
+    agentops_compare_p.add_argument("run_b")
+    agentops_compare_p.add_argument("--repo", default=".")
+    agentops_compare_p.add_argument("--db", dest="db_path")
+    agentops_baseline_p = agentops_sub.add_parser("baseline", help="Salva ou compara baseline local.")
+    agentops_baseline_p.add_argument("action", choices=["save", "compare"])
+    agentops_baseline_p.add_argument("run_id")
+    agentops_baseline_p.add_argument("--path", dest="baseline_path", required=True)
+    agentops_baseline_p.add_argument("--repo", default=".")
+    agentops_baseline_p.add_argument("--db", dest="db_path")
 
     # agentic: agents -------------------------------------------------------
     agents_p = sub.add_parser(
@@ -2987,6 +3018,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Confirma a credencial na AWS (STS get_caller_identity). Unico modo com rede.",
     )
+    doctor_sub = doctor_p.add_subparsers(dest="doctor_action")
+    doctor_agentic_p = doctor_sub.add_parser(
+        "agentic", help="Confere readiness local do plano agêntico, sem rede."
+    )
+    doctor_agentic_p.add_argument("--repo", default=".")
 
     # integrate / detach --------------------------------------------------------
     # INTEGRACAO_USUARIO (D10): so CLI. Escrever no HOME e decisao do operador, e
@@ -4637,6 +4673,47 @@ def _cmd_context_expand(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_context_inspect(args: argparse.Namespace) -> int:
+    payload = _load_json_object(args.input)
+    _print(
+        _core.context_inspect(
+            payload,
+            observed_provider_tokens=args.observed_provider_tokens,
+        )
+    )
+    return 0
+
+
+def _cmd_agentops_inspect(args: argparse.Namespace) -> int:
+    _print(_core.agentops_inspect(args.repo, run_id=args.run_id, db_path=args.db_path))
+    return 0
+
+
+def _cmd_agentops_compare(args: argparse.Namespace) -> int:
+    _print(
+        _core.agentops_compare(
+            args.repo,
+            run_a=args.run_a,
+            run_b=args.run_b,
+            db_path=args.db_path,
+        )
+    )
+    return 0
+
+
+def _cmd_agentops_baseline(args: argparse.Namespace) -> int:
+    _print(
+        _core.agentops_baseline(
+            args.repo,
+            action=args.action,
+            run_id=args.run_id,
+            baseline_path=args.baseline_path,
+            db_path=args.db_path,
+        )
+    )
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -5217,6 +5294,12 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
     resultado = _core.doctor(args.repo, online=args.online)
     _print(resultado)
     return 0 if resultado["healthy"] else 1
+
+
+def _cmd_doctor_agentic(args: argparse.Namespace) -> int:
+    resultado = _core.agentic_doctor(args.repo)
+    _print(resultado)
+    return 0 if resultado["status"] == "ok" else 1
 
 
 def _perguntar(texto: str) -> str:
@@ -6007,6 +6090,10 @@ _DISPATCH = {
     ("decision", "receipt"): _cmd_decision_receipt,
     ("context", "start"): _cmd_context_start,
     ("context", "expand"): _cmd_context_expand,
+    ("context", "inspect"): _cmd_context_inspect,
+    ("agentops", "inspect"): _cmd_agentops_inspect,
+    ("agentops", "compare"): _cmd_agentops_compare,
+    ("agentops", "baseline"): _cmd_agentops_baseline,
     ("telemetry", "export"): _cmd_telemetry_export,
     ("receipt", "emit"): _cmd_receipt_emit,
     ("receipt", "verify"): _cmd_receipt_verify,
@@ -6015,6 +6102,7 @@ _DISPATCH = {
     ("gain", None): _cmd_gain,
     ("scan", None): _cmd_scan,
     ("doctor", None): _cmd_doctor,
+    ("doctor", "agentic"): _cmd_doctor_agentic,
     ("integrate", None): _cmd_integrate,
     ("detach", None): _cmd_detach,
     ("policy", "check"): _cmd_policy_check,
@@ -6171,6 +6259,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "journal_action", None)
         or getattr(args, "dq_ai_action", None)
         or getattr(args, "context_action", None)
+        or getattr(args, "agentops_action", None)
+        or getattr(args, "doctor_action", None)
         or getattr(args, "decision_action", None)
         or getattr(args, "architecture_action", None)
         or getattr(args, "subcommand", None)

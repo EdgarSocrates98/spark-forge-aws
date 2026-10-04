@@ -1419,3 +1419,26 @@ capabilities:
       devin_cli: [mcp, cli, files]
       codex: [cli, files]
       copilot_ci: [cli, files]
+
+  - name: inspect agentic context quality and local AgentOps economy
+    tools:
+      - sparkforge_context_inspect
+      - sparkforge_agentops_inspect
+      - sparkforge_agentops_compare
+      - sparkforge_agentops_baseline
+      - sparkforge_doctor_agentic
+    cli:
+      - context inspect
+      - agentops inspect
+      - agentops compare
+      - agentops baseline
+      - doctor agentic
+    knowledge:
+      - docs/sdd/AGENTIC_ENGINEERING_OS_V2/design.md
+      - knowledge/token-economy.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
