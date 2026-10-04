@@ -101,7 +101,7 @@
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
     "rule_count": 221,
-    "retrieved": "2026-10-03"
+    "retrieved": "2026-10-04"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
   "tools": [
@@ -156,6 +156,9 @@
     "sparkforge_analyze_terraform_diff",
     "sparkforge_analyze_workload",
     "sparkforge_arbitrate",
+    "sparkforge_agentops_baseline",
+    "sparkforge_agentops_compare",
+    "sparkforge_agentops_inspect",
     "sparkforge_benchmark",
     "sparkforge_capacity",
     "sparkforge_case_get",
@@ -192,6 +195,7 @@
     "sparkforge_collect_parquet_footer",
     "sparkforge_collect_verify",
     "sparkforge_context_expand",
+    "sparkforge_context_inspect",
     "sparkforge_context_start",
     "sparkforge_controlm_describe",
     "sparkforge_decision_evaluate",
@@ -200,6 +204,7 @@
     "sparkforge_debate_start",
     "sparkforge_debate_submit",
     "sparkforge_doctor",
+    "sparkforge_doctor_agentic",
     "sparkforge_economy_report",
     "sparkforge_finops",
     "sparkforge_dq_ai_assess",
