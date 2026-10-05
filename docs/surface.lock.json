@@ -3,8 +3,8 @@
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
     "tool_count": 141,
-    "total_bytes": 687290,
-    "by_name_sha256": "1897f215b42a984a4d5939b962e8aee346ba008bd521a04a2535f6d0900245c2"
+    "total_bytes": 688185,
+    "by_name_sha256": "7068b1f3ea2ed20a6e374057d0cc0e1f2f149ad6835fe88b7a05382a8f2cb7a6"
   },
   "compact": {
     "tool_count": 7,

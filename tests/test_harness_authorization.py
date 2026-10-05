@@ -794,10 +794,10 @@ class TestConfinamentoEhUmSoAlgoritmo:
 class TestOCatalogoContinuaCabendoNaVerificacao:
     """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
 
-    Medido: 59 das 61 tools declaram parametro de caminho, e as duas sem
-    nenhum sao `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`)
-    e `sparkforge_economy_report` (`run_id`, `host_transcript`) -- nenhum dos
-    dois nomeia arquivo, diretorio ou repo, entao nenhum casa com o predicado.
+    Medido: 131 das 141 tools declaram parametro de caminho, e as dez sem
+    nenhum sao superfícies de catálogo, conhecimento empacotado ou inspeção
+    bounded sem artefato escolhido pelo chamador -- nenhuma casa com o
+    predicado.
     Eram 43 de 44 ate a superficie de Code Intelligence entrar: as SEIS tools
     de `sparkforge_code_*` declaram `repo`, que e a raiz fora da qual nada e
     lido (INV-002), entao todas as seis caem do lado certo do predicado.
@@ -881,6 +881,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # que o chamador escolha. Aceitar um `path` aqui seria abrir uma
             # superficie que a tool nao precisa.
             "sparkforge_lakeformation_matrix",
+            # `context_inspect` (2026-10-04) inspeciona referências já
+            # selecionadas pelo Context Gateway; não recebe caminho de
+            # artefato e não deve abrir uma fronteira nova de leitura.
+            "sparkforge_context_inspect",
             # `pack_list` (2026-09-12, Forge Pack) nao recebe caminho: le
             # `SPARKFORGE_PACKS`, variavel do operador da mesma confianca de
             # `SPARKFORGE_CATALOG`. Aceitar diretorio pela tool abriria uma
@@ -991,10 +995,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # sem mover `SEM_CAMINHO`. `analyze_streaming` (2026-10-01) e
         # `analyze_transport` (2026-10-02) e `analyze_flink` (2026-10-02)
         # declaram `path`, portanto acrescentam entradas ao lado que declara
-        # caminho.
+        # caminho. `context_inspect` (2026-10-04) é bounded sobre referências
+        # já selecionadas e entra no conjunto explícito sem caminho.
         # The platform and Forge Lab analyzers add path-bearing read-only
         # capabilities; the exception set remains explicit and unchanged.
-        assert len(TOOLS) - len(sem_caminho) == 127
+        assert len(TOOLS) - len(sem_caminho) == 131
 
 
 class TestAImposicaoNoDespacho:
