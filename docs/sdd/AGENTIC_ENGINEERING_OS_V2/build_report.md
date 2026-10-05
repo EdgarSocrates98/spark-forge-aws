@@ -19,7 +19,8 @@ tasks:
 claims:
   - {text: "Contratos de memória, trust, contexto, economia, routing, AgentOps, checkpoint e Forge foram implementados em ondas independentes.", evidence_ref: "docs/sdd/AGENTIC_ENGINEERING_OS_V2/design.md"}
   - {text: "CLI e MCP novos delegam para as mesmas funções compartilhadas de _core e preservam estado unresolved.", evidence_ref: "tests/test_agentic_os_v2.py::test_cli_mcp_and_doctor_surfaces"}
-  - {text: "A execução de testes foi guardada para a suíte final conforme instrução do operador; compile sintático foi verificado fora da suíte.", evidence_ref: "docs/sdd/AGENTIC_ENGINEERING_OS_V2/define.md"}
+  - {text: "A suíte final integral passou com 14538 testes aprovados e 14 skips.", evidence_ref: "python -m pytest -q -p no:cacheprovider (exit 0, 2026-10-05)"}
+  - {text: "Referências foram regeneradas e surface.lock.json foi reconciliado antes da suíte final.", evidence_ref: "python scripts/gen_reference_docs.py; python scripts/check_surface_lock.py --update"}
 ---
 
 # AGENTIC_ENGINEERING_OS_V2 — relatório do build
@@ -36,11 +37,14 @@ claims:
 
 ## Desvio de execução
 
-O operador determinou que nenhuma suíte de testes fosse executada antes da etapa final.
-Por isso as tarefas estão `skipped` neste relatório e os acceptance criteria carregam
-guard explícito. `py_compile`, ajuda da CLI, chamada estruturada MCP e `git diff --check`
-foram verificações de sintaxe/contrato, não a suíte pytest. O status será fechado após a
-execução única da suíte final; nenhum resultado de teste é inventado neste ponto.
+O operador determinou que a suíte só fosse executada na etapa final. As tarefas permanecem
+`skipped` neste relatório para preservar honestamente a ausência de red/green por tarefa;
+os acceptance criteria carregam guard explícito. A suíte integral final foi executada após
+a regeneração das referências e do surface lock: `14538 passed, 14 skipped`, exit 0, em
+`2:20:09`. Não houve resultado de teste inventado nem execução AWS/provider.
+
+O primeiro gate final encontrou uma referência e dois valores de surface lock obsoletos;
+ambos foram regenerados/reconciliados e a segunda execução integral passou.
 
 ## Limites
 
