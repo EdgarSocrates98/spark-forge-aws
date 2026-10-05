@@ -38,6 +38,10 @@ class ModelCandidate:
     max_context_tokens: int | None = None
     cost_known: bool = False
     latency_ms: float | None = None
+    # Capacidade de risco DECLARADA do candidato. `None` nao significa "aguenta
+    # tudo": significa que ninguem declarou o limite, e quem decide isso e o
+    # scorecard/promotion evidence -- nunca uma inferencia da rota.
+    max_risk: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +77,7 @@ class ModelRouteDecision:
                     "max_context_tokens": self.selected.max_context_tokens,
                     "cost_known": self.selected.cost_known,
                     "latency_ms": self.selected.latency_ms,
+                    "max_risk": self.selected.max_risk,
                 }
                 if self.selected
                 else None
@@ -111,6 +116,17 @@ class AdaptiveModelRouter:
         unresolved: list[str] = []
         if not compatible:
             unresolved.append("no_declared_model_candidate")
+            # Diagnostico do que eliminou os candidatos: um vazio sem nome e a
+            # mesma classe de recusa silenciosa que o resto do sistema recusa.
+            if request.required_reasoning >= 2 and not any(
+                "reasoning" in candidate.capabilities for candidate in self.candidates
+            ):
+                unresolved.append("required_reasoning_unmet")
+            if request.risk > 1 and not any(
+                candidate.max_risk is not None and candidate.max_risk >= request.risk
+                for candidate in self.candidates
+            ):
+                unresolved.append("risk_capacity_unmet")
             return ModelRouteDecision(
                 None,
                 mode,
@@ -123,6 +139,10 @@ class AdaptiveModelRouter:
         selected = max(compatible, key=lambda candidate: self._score(candidate, request))
         if request.context_tokens is not None and selected.max_context_tokens is None:
             unresolved.append("model_context_limit_unresolved")
+        if request.risk > 1 and selected.max_risk is None:
+            unresolved.append("model_risk_capacity_unresolved")
+        if request.required_reasoning >= 2 and "reasoning" not in selected.capabilities:
+            unresolved.append("model_reasoning_capacity_unresolved")
         if not selected.cost_known:
             unresolved.append("model_cost_unresolved")
         applied = mode == ModelRouteMode.ACTIVE and active_enabled and authority and bool(evidence)
@@ -146,6 +166,15 @@ class AdaptiveModelRouter:
         ):
             return False
         if any(tool not in candidate.supported_tools for tool in request.required_tools):
+            return False
+        # Risco so e limite duro quando a capacidade foi DECLARADA
+        # (`max_risk`). Sem declaracao, o candidato nao e eliminado --
+        # `model_risk_capacity_unresolved` nomeia a ausencia na decisao.
+        if candidate.max_risk is not None and request.risk > candidate.max_risk:
+            return False
+        # `required_reasoning >= 2` pede capability declarada "reasoning".
+        # Requisito sem evidencia de capacidade e incompativel, nao "talvez".
+        if request.required_reasoning >= 2 and "reasoning" not in candidate.capabilities:
             return False
         if (
             request.latency_budget_ms is not None
@@ -176,20 +205,37 @@ class AdaptiveModelRouter:
         return relevant[-1] if relevant else None
 
     def _score(self, candidate: ModelCandidate, request: ModelRoutingInput) -> tuple[float, ...]:
+        """Tupla lexicografica de ranking. Convencao documentada, nao medida:
+
+        `complexity` ajusta a qualidade exigida -- `quality - (complexity - 1) *
+        (1 - quality)` -- de modo que modelos fracos pagam mais caro sob
+        complexidade alta, e o input finalmente move o ranking (antes entrava
+        como constante identica para todo candidato, ou seja: morta).
+        `structured_output_reliability` e `failure_rate`, ja declarados no
+        scorecard, entram depois de tool correctness e antes de custo.
+        """
         score = self._scorecard(candidate, request)
         quality = score.quality if score and score.quality is not None else 0.0
+        adjusted_quality = quality - (request.complexity - 1) * (1.0 - quality)
         evidence = (
             score.evidence_correctness if score and score.evidence_correctness is not None else 0.0
         )
         tool = score.tool_correctness if score and score.tool_correctness is not None else 0.0
+        structured = (
+            score.structured_output_reliability
+            if score and score.structured_output_reliability is not None
+            else 0.0
+        )
+        failure = -(score.failure_rate) if score and score.failure_rate is not None else 0.0
         latency = -(candidate.latency_ms or 0.0)
         cost = -(score.cost_usd or 0.0) if score else 0.0
         return (
-            quality,
+            adjusted_quality,
             evidence,
             tool,
+            structured,
+            failure,
             cost,
-            -float(request.complexity),
             latency,
             float(candidate.cost_known),
         )

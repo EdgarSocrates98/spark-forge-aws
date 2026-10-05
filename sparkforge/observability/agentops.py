@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from sparkforge.observability.tracer import tokens_status_of
+
+_TOKEN_FIELDS = ("input_tokens", "output_tokens", "cached_tokens")
+
 
 def _load_trace(db_path: Path | str, run_id: str) -> dict[str, Any] | None:
     path = Path(db_path)
@@ -91,6 +95,66 @@ def _waste(spans: list[dict[str, Any]]) -> list[WasteAttribution]:
     return findings
 
 
+def _span_tokens_status(span: dict[str, Any]) -> str:
+    """Status de medicao lido da linha, ou derivado quando a coluna vem NULL
+    de um banco escrito antes dela existir."""
+    declared = span.get("tokens_status") or ""
+    if declared:
+        return tokens_status_of(
+            str(span.get("component_type", "")), 0, 0, 0, declared=declared
+        )
+    return tokens_status_of(
+        str(span.get("component_type", "")),
+        int(span.get("input_tokens") or 0),
+        int(span.get("output_tokens") or 0),
+        int(span.get("cached_tokens") or 0),
+    )
+
+
+def _axis_status(measured: int, unresolved: int) -> str:
+    if measured and unresolved:
+        return "partial"
+    if measured:
+        return "measured"
+    if unresolved:
+        return "unresolved"
+    return "not_applicable"
+
+
+def _model_axes(spans: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Os dois eixos de modelo, medidos por span e nunca somados com ausencia.
+
+    `observed` so carrega numero quando ao menos um span mediu; `partial`
+    significa que a soma cobre so os spans medidos, e o buraco e nomeado pelo
+    status em vez de sumir dentro de um zero."""
+    tokens_measured = tokens_unresolved = 0
+    tokens_observed = 0
+    cost_measured = cost_unresolved = 0
+    cost_observed = 0.0
+    for span in spans:
+        status = _span_tokens_status(span)
+        if status == "measured":
+            tokens_measured += 1
+            tokens_observed += sum(int(span.get(f) or 0) for f in _TOKEN_FIELDS)
+        elif status == "unresolved":
+            tokens_unresolved += 1
+        if span.get("cost_basis"):
+            cost_measured += 1
+            cost_observed += float(span.get("estimated_cost_usd") or 0.0)
+        elif span.get("component_type") == "model":
+            cost_unresolved += 1
+    return {
+        "tokens": {
+            "observed": tokens_observed if tokens_measured else None,
+            "status": _axis_status(tokens_measured, tokens_unresolved),
+        },
+        "cost": {
+            "observed": round(cost_observed, 6) if cost_measured else None,
+            "status": _axis_status(cost_measured, cost_unresolved),
+        },
+    }
+
+
 def inspect_run(db_path: Path | str, run_id: str) -> dict[str, Any]:
     trace = _load_trace(db_path, run_id)
     if trace is None:
@@ -102,6 +166,22 @@ def inspect_run(db_path: Path | str, run_id: str) -> dict[str, Any]:
         by_component[component] = by_component.get(component, 0) + 1
     evidence = sorted({ref for span in spans for ref in _metadata_list(span, "evidence_refs")})
     unresolved = sorted({ref for span in spans for ref in _metadata_list(span, "unresolved")})
+    model_axes = _model_axes(spans)
+    unresolved = sorted(
+        {
+            *unresolved,
+            *(
+                "model_tokens_unresolved"
+                for axis in (model_axes["tokens"],)
+                if axis["status"] in {"unresolved", "partial"}
+            ),
+            *(
+                "model_cost_unresolved"
+                for axis in (model_axes["cost"],)
+                if axis["status"] in {"unresolved", "partial"}
+            ),
+        }
+    )
     return {
         "status": "ok",
         "run": {
@@ -118,8 +198,7 @@ def inspect_run(db_path: Path | str, run_id: str) -> dict[str, Any]:
         },
         "models": {
             "calls": by_component.get("model", 0),
-            "tokens": trace.get("total_tokens", 0),
-            "cost": trace.get("total_cost_usd", 0.0),
+            **model_axes,
         },
         "evidence": {"refs": evidence, "count": len(evidence), "unresolved": unresolved},
         "waste": [finding.to_dict() for finding in _waste(spans)],
@@ -156,6 +235,13 @@ def compare_runs(db_path: Path | str, run_a: str, run_b: str) -> dict[str, Any]:
 
         return read(right) - read(left)
 
+    def axis_delta(axis: str, unresolved_label: str) -> float | str:
+        left_observed = left["models"][axis]["observed"]
+        right_observed = right["models"][axis]["observed"]
+        if left_observed is None or right_observed is None:
+            return unresolved_label
+        return right_observed - left_observed
+
     return {
         "status": "ok",
         "run_a": run_a,
@@ -163,8 +249,8 @@ def compare_runs(db_path: Path | str, run_a: str, run_b: str) -> dict[str, Any]:
         "delta": {
             "context_bytes": delta(("context", "bytes")),
             "model_calls": delta(("models", "calls")),
-            "tokens": "tokens_unresolved",
-            "cost": delta(("models", "cost")),
+            "tokens": axis_delta("tokens", "tokens_unresolved"),
+            "cost": axis_delta("cost", "cost_unresolved"),
             "evidence_count": delta(("evidence", "count")),
         },
         "quality": {"evidence_recall": "unresolved_without_task_contract"},
