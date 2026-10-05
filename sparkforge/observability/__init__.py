@@ -1,6 +1,12 @@
 """SparkForge Observability and AgentOps Package."""
 from __future__ import annotations
 
+from sparkforge.observability.agentops import (
+    compare_baseline,
+    compare_runs,
+    inspect_run,
+    save_baseline,
+)
 from sparkforge.observability.sre import (
     DataObservabilityError,
     ObservabilityReport,
@@ -9,7 +15,6 @@ from sparkforge.observability.sre import (
 )
 from sparkforge.observability.store import SQLiteTraceStore
 from sparkforge.observability.tracer import AgentOpsTracker, ExecutionTrace, TraceSpan
-from sparkforge.observability.agentops import compare_baseline, compare_runs, inspect_run, save_baseline
 
 __all__ = [
     "AgentOpsTracker",
