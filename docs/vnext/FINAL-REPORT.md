@@ -1,9 +1,11 @@
-# SparkForge AWS — Final Implementation Report vNext (Phase 12)
+# SparkForge AWS — Final Implementation Report vNext (current closure)
 
 ## 1. Executive Summary
 
-O **SparkForge AWS** foi transformado com sucesso em uma **Data & AWS Agent Factory** industrial, local-first, modular, token-eficiente e multiplataforma.
-A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers (`sparkforge.economy`), funil de contexto (`sparkforge.context`), compilador para 7 plataformas de desenvolvimento (`sparkforge.adapters.platforms`), orquestrador de DAG em waves (`sparkforge.workflows`), framework de avaliação contínua (`sparkforge.evals`) e observabilidade local via SQLite (`sparkforge.observability`), preservando a base de regras e ferramentas determinísticas existentes.
+O **SparkForge AWS** é uma **Data & AWS Agent Factory** industrial, local-first,
+modular, token-eficiente e multiplataforma. O estado entregue combina Registry,
+economia, Context Gateway, exporters, DAG/waves, evals, Agentic OS v2 e observabilidade
+local, preservando a base de facts, rules e ferramentas determinísticas.
 
 ---
 
@@ -38,13 +40,15 @@ removida, não reescrita.
 ## 4. Inventário de Arquivos Criados e Estrutura
 
 ### Novos Pacotes e Módulos:
-- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`
-- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `cache.py`, `waste_detector.py`, `router.py`, `__init__.py` (o `budget.py` saiu em 2026-09-15, sem uso em produção)
-- [`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `knowledge_pack.py`, `__init__.py`
-- [`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `antigravity.py`, `cursor.py`, `claude.py`, `targets.py`, `compiler.py`, `__init__.py`
-- [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`
-- [`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.json`, `__init__.py`
-- [`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`, `__init__.py`
+- [`sparkforge/registry/`](../../sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`
+- [`sparkforge/economy/`](../../sparkforge/economy/): ledger, router, Decision Plane, reports e receipts
+- [`sparkforge/context/`](../../sparkforge/context/): Gateway, funnel, progressive disclosure, quality e knowledge packs
+- [`sparkforge/adapters/platforms/`](../../sparkforge/adapters/platforms/): exporters, compiler e targets declarados
+- [`sparkforge/workflows/`](../../sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`
+- [`sparkforge/evals/`](../../sparkforge/evals/): runner, suites, grading, replay e token benchmark
+- [`sparkforge/agentic/`](../../sparkforge/agentic/): trust, memória, checkpoints, debate, executor e recovery
+- [`sparkforge/protocols/forge.py`](../../sparkforge/protocols/forge.py): envelopes Forge serializáveis
+- [`sparkforge/observability/`](../../sparkforge/observability/): tracer, SQLite store e AgentOps local
 
 `sparkforge/providers/mock.py` e `sparkforge/cloud/worker.py` também existem no
 repositório, mas nenhum teste os importa ou chama — não estão listados acima
@@ -61,12 +65,17 @@ e `docs/vnext/adrs/`; `docs/vnext/DEMOS.md` documenta 5 demonstrações interati
 ## 5. Suporte a Plataformas
 
 1. **Antigravity**: `.agents/agents/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md`
-2. **Cursor**: `.cursor/rules/*.mdc` com globs e frontmatter estruturado.
+2. **Cursor**: exporter para `.cursor/rules/*.mdc` com globs e frontmatter estruturado.
 3. **Claude Code**: `CLAUDE.md`, `.claude/agents/`, `.claude/skills/`.
-4. **Devin**: `knowledge/devin/INSTRUCTIONS.md` e espelhos de subagentes.
-5. **Windsurf**: `.windsurfrules` com diretrizes determinísticas.
-6. **GitHub Copilot**: `.github/copilot-instructions.md`.
-7. **Generic Open Standard**: `docs/vnext/GENERIC-AGENTS-SPEC.md` e schemas JSON-RPC.
+4. **Devin**: exporter para `knowledge/devin/INSTRUCTIONS.md`.
+5. **Windsurf**: exporter para `.windsurfrules`.
+6. **GitHub Copilot**: exporter para `.github/copilot-instructions.md`.
+7. **Generic Open Standard**: exporter para `docs/vnext/GENERIC-AGENTS-SPEC.md`.
+
+Esses artefatos são targets gerados sob demanda; a ausência de um arquivo exportado
+no checkout não significa ausência do exporter. O registro vivo é
+`sparkforge.registry.PlatformTarget` e a implementação está em
+`sparkforge.adapters.platforms`.
 
 ---
 
@@ -80,8 +89,9 @@ e `docs/vnext/adrs/`; `docs/vnext/DEMOS.md` documenta 5 demonstrações interati
 
 ## 7. Limitações Conhecidas e Próximos Passos
 
-- **Limitação**: O compilador de plataformas atualmente gera arquivos estáticos; a sincronização contínua em tempo real pode ser integrada com hooks de Git ou file watchers.
-- **Oportunidade Futura**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS (Lambda container image + EventBridge).
+- **Limitação**: O compilador de plataformas gera arquivos estáticos sob demanda; sincronização contínua por hooks ou file watchers permanece futura.
+- **Limitação**: Provider tokens, preço efetivo, qualidade live e economia financeira permanecem `unresolved` sem transcript, `cost_basis` e benchmark same-case.
+- **Oportunidade Futura**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS, sob aprovação explícita.
 
 ## 8. Addendum — AGENTIC_ENGINEERING_OS_V2
 

@@ -1,6 +1,6 @@
-# SparkForge AWS — AWS Data Platform Capability Matrix (Phase 0)
+# SparkForge AWS — AWS Data Platform Capability Matrix (current boundary)
 
-A matriz publicada em `a5b9e96` cruzava serviços AWS fundamentais de dados contra
+A matriz histórica publicada em `a5b9e96` cruzava serviços AWS fundamentais de dados contra
 dimensões de engenharia, marcando um único check por célula. A auditoria
 registrada em `docs/claims.lock.json` não encontrou, para nenhum serviço
 listado, artefato que provasse a cobertura simultânea de todas as dimensões
