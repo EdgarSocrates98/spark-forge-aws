@@ -33,6 +33,7 @@ Módulos:
 
 from __future__ import annotations
 
+from sparkforge.agentic.checkpoint import SemanticCheckpoint
 from sparkforge.agentic.governor import (
     AgentGovernor,
     GovernorDecision,
@@ -64,11 +65,20 @@ from sparkforge.agentic.recovery import (
     RecoveryDecision,
     RecoveryPolicy,
 )
+from sparkforge.agentic.trust import (
+    AgentHandoff,
+    InstructionAuthority,
+    RoleContextPlan,
+    Taint,
+    TrustEnvelope,
+    TrustLabel,
+)
 
 __all__ = [
     "Claim",
     "ClaimType",
     "AgentGovernor",
+    "AgentHandoff",
     "Contradiction",
     "Decision",
     "FailureClass",
@@ -84,11 +94,17 @@ __all__ = [
     "GovernorStatus",
     "Hypothesis",
     "HypothesisStatus",
+    "InstructionAuthority",
     "Objection",
     "Rebuttal",
     "RecoveryAction",
     "RecoveryDecision",
     "RecoveryPolicy",
+    "RoleContextPlan",
+    "SemanticCheckpoint",
+    "Taint",
+    "TrustEnvelope",
+    "TrustLabel",
     "Unknown",
     "UnknownStatus",
 ]

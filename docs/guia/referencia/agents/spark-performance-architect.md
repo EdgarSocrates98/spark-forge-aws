@@ -170,6 +170,13 @@ Para selecionar contexto sem expor catálogo inteiro, use `sparkforge_context_st
 reduções e refs `ctx://v1`. Só expanda uma dessas refs com `sparkforge_context_expand`.
 O Gateway é determinístico e não substitui `analyze_*`, `judge` ou `arbitrate`.
 
+Depois de uma execução, `sparkforge_context_inspect` mede recall, densidade,
+duplicação e tokens observados sem inferi-los de bytes. Para comparar execução
+e baseline local, use `sparkforge_agentops_inspect`,
+`sparkforge_agentops_compare` e `sparkforge_agentops_baseline`; para conferir
+readiness sem rede, `sparkforge_doctor_agentic`. Esses verbos preservam
+`unresolved` quando transcript, custo ou contrato de qualidade não existem.
+
 #### Configuração derivada da medida, e não do costume
 
 `sparkforge_tune` deriva `spark.sql.shuffle.partitions` do shuffle **medido**

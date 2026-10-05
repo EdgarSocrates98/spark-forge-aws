@@ -4,6 +4,14 @@
 
 Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a tool só lê, grava em disco local ou acessa a AWS.
 
+## agentops
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_agentops_baseline`](sparkforge_agentops_baseline.md) | grava local | Salva ou compara baseline AgentOps em arquivo local content-addressed por run declarado. |
+| [`sparkforge_agentops_compare`](sparkforge_agentops_compare.md) | só leitura | Compara dois runs AgentOps locais sem atribuir causa ou converter bytes em tokens. |
+| [`sparkforge_agentops_inspect`](sparkforge_agentops_inspect.md) | só leitura | Inspeciona um run AgentOps local, com evidencia e desperdicio observado. |
+
 ## analyze
 
 | Tool | Efeito | O que faz |
@@ -135,6 +143,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_context_expand`](sparkforge_context_expand.md) | só leitura | Resolve uma ref ctx://v1 no cache local, valida integridade SHA-256 e escopo autorizado antes de devolver o payload sob max_bytes. |
+| [`sparkforge_context_inspect`](sparkforge_context_inspect.md) | só leitura | Inspeciona qualidade de contexto fornecido pelo chamador. |
 | [`sparkforge_context_start`](sparkforge_context_start.md) | só leitura | Context Gateway deterministico: descobre capabilities relevantes, seleciona contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. |
 
 ## controlm
@@ -163,6 +172,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_doctor`](sparkforge_doctor.md) | só leitura | Confere se o ambiente esta pronto, em treze checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codig... |
+| [`sparkforge_doctor_agentic`](sparkforge_doctor_agentic.md) | só leitura | Confere readiness local do plano agêntico sem rede ou provider. |
 
 ## dq
 

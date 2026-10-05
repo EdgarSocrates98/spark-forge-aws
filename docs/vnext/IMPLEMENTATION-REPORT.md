@@ -1,36 +1,59 @@
-# SparkForge AWS — vNext Implementation & Delivery Report (Phase 13)
+# SparkForge AWS — vNext Implementation & Delivery Report
 
-## 1. Executive Summary
+## 1. Estado entregue
 
-SparkForge AWS has been transformed into an industrial **AWS Data Platform Engineering Agent Factory**, adhering strictly to deterministic evidence, fail-closed gates, token economy tiers, progressive disclosure, and domain-deep specializations.
+SparkForge combina núcleo determinístico, Registry canônico, exporters de plataforma,
+Context Gateway, economia reconciliada, Decision Plane, workflows em waves, evals,
+Agentic OS v2 e observabilidade local. Este relatório descreve código existente; não
+promove provider, não estima custo por bytes e não transforma target em capacidade live.
 
----
+## 2. Componentes e fontes
 
-## 2. Architecture & Deliverables Summary
-
-| Area | Module / Path | Key Capabilities |
+| Área | Fonte | Estado atual |
 |---|---|---|
-| **Canonical Registry** | `sparkforge.registry` | SSOT schemas for Agents, Skills, Tools, Workflows, Policies, Knowledge, and Domain Manifests. |
-| **Token Economy** | `sparkforge.economy` | 7-Tier Cascade (Deterministic ➔ Cache ➔ Retrieval ➔ Cheap ➔ Specialist ➔ Premium ➔ Multi-Agent). |
-| **Context Funnel** | `sparkforge.context` | 5-stage progressive disclosure with deduplication and token budget caps. |
-| **Glue Migration Lab** | `sparkforge.migration.glue` | Glue version-migration analyzer, S3A vs EMRFS detection, Migration Readiness Score (0-100), GO/NO-GO gate. |
-| **Lake Formation** | `sparkforge.lakeformation` | Deterministic Permission Graph (Principal ➔ IAM ➔ LF ➔ RAM ➔ S3 ➔ KMS), Cross-Account Doctor, FTA vs FGAC Advisor. |
-| **Iceberg Platform** | `sparkforge.iceberg` | Table Doctor (delete file ratio, small files, snapshots), Maintenance Planner (compaction, expiration). |
-| **Spark Performance** | `sparkforge.spark` | EventLog Analyzer (skew, memory spill, task retries) & Physical Plan Profiler (Cartesian, BNLJ). |
-| **Terraform Factory** | `sparkforge.terraform` | Plan Risk Scanner (Create/Update/Delete/Replace) with stateful deletion blocking and IAM wildcard detection. |
-| **Database Specialists** | `sparkforge.databases` | DynamoDB single-table & hot partition diagnosis; Neptune property graph / openCypher full scan detector. |
-| **Streaming Specialists**| `sparkforge.streaming` | Kafka / MSK consumer lag & partition imbalance; Kinesis hot shard & Enhanced Fan-Out (EFO). |
-| **Error KB & Matcher** | `sparkforge.errors` | Local deterministic regex/fuzzy signature matcher for 0-LLM error diagnosis. |
-| **Reliability & RCA** | `sparkforge.reliability` | Timeline correlator for CloudWatch, CloudTrail, Spark event logs, and DLQ mitigations. |
-| **CLI & Tools** | `sparkforge.cli.forge` | `forge doctor`, `forge inspect`, `forge errors match`, `forge migrate glue`, `forge iceberg doctor`, etc. |
-| **Antigravity** | `.agents/rules/` & `plugins/` | Evidence-first, AWS Safety, Terraform Safety, Migration Safety. |
+| Facts, rules e findings | `sparkforge/facts`, `sparkforge/rules`, `sparkforge/findings` | Extração/julgamento determinísticos, com evidência ancorada |
+| Caso e mudança | `sparkforge/case`, `sparkforge/change`, `sparkforge/reporting` | Gates fail-closed, proposta, rollback e assinatura |
+| Registry/exporters | `sparkforge/registry`, `sparkforge/adapters/platforms` | Manifests tipados e targets gerados sob demanda |
+| Contexto | `sparkforge/context` | Gateway, funil, progressive disclosure, quality e refs |
+| Economia/decisão | `sparkforge/economy`, `sparkforge/decision` | Ledger, cost basis, receipts e rotas gated; provider não é chamado pelo core |
+| Agentic OS v2 | `sparkforge/agentic`, `sparkforge/protocols/forge.py` | Trust, taint, memória, checkpoint, handoff, debate e recovery |
+| AgentOps | `sparkforge/observability` | Traces SQLite locais, inspect, compare e baseline |
+| Domínios AWS | `sparkforge/migration`, `lakeformation`, `iceberg`, `spark`, `terraform`, `databases`, `streaming`, `errors` | Lanes determinísticas; cada conclusão depende de facts, runtime e regras |
 
----
+## 3. Contratos preservados
 
-## 3. Invariants Preserved
+1. Facts não carregam julgamento; Findings exigem evidência.
+2. Regras respeitam runtime scope e não inventam suporte fora da matriz.
+3. Ausência de evidência permanece `unresolved`.
+4. Bytes, tokens observados e custo são eixos separados.
+5. `TrustEnvelope` não concede autoridade; dados externos e handoffs são `DATA_ONLY`.
+6. `AdaptiveModelRouter` permanece `shadow` por default; `active` exige autoridade,
+   evidência de promoção e rollback.
+7. CLI e MCP usam o mesmo `_core`; baseline save é mutação local declarada.
 
-1. **Deterministic Facts**: local extractors under `sparkforge.facts`, zero LLM calls in the fact-extraction pipeline.
-2. **Deterministic Rules**: catalog files in `rules/catalog/` evaluated via strict AST.
-3. **Fail-Closed Gates**: Strict case gates unlock exclusively on anchored fact presence.
-4. **Token Economy**: Deterministic resolution rate maximized; LLM only invoked when reasoning is strictly required.
-5. **Zero Breaking Changes**: Backwards compatibility maintained with the existing CLI test suite.
+## 4. Superfícies operacionais
+
+As superfícies Agentic OS v2 são:
+
+```text
+sparkforge context inspect
+sparkforge agentops inspect|compare|baseline
+sparkforge doctor agentic
+```
+
+As funções compartilhadas estão em `sparkforge.adapters._core`; referências geradas
+por tool e CLI ficam em `docs/guia/referencia/`. O catálogo e seus hashes são travados
+por `docs/surface.lock.json`.
+
+## 5. Limites e próximos passos
+
+- Nenhuma chamada de provider ou mutação AWS é implícita.
+- Tokens de provider, preço, qualidade live e ganho financeiro exigem transcript,
+  `cost_basis`, contrato de qualidade e benchmark same-case.
+- Exporters geram artefatos sob demanda; sincronização contínua fica fora do escopo.
+- Vector database obrigatório e promoção automática não fazem parte do contrato.
+
+Detalhes de arquitetura: [ARCHITECTURE.md](ARCHITECTURE.md). Estado corrente:
+[CURRENT-STATE.md](CURRENT-STATE.md). Decisão formal:
+[ADR-012](adrs/ADR-012-agentic-os-v2-contracts.md). Entrega SDD:
+`docs/sdd/AGENTIC_ENGINEERING_OS_V2/`.

@@ -29,6 +29,10 @@ Para ver o que foi entregue nas waves de control plane, streaming, CDC, economia
 observada e Forge Lab, consulte o [mapa de evolução atual](docs/EVOLUTION-CURRENT.md)
 e o [ledger completo de entrega](docs/DELIVERY-LEDGER.md).
 
+Superfície operacional atual: **14 coordenadores**, **5 executores** e **60 skills**;
+o catálogo mantém rastreabilidade por artefato e as novas inspeções do Agentic OS v2
+continuam locais, determinísticas e sem provider no core.
+
 ## Como ele pensa: extrair, julgar, compor
 
 Três etapas, e cada uma é um verbo diferente.
@@ -322,7 +326,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **136 tools MCP**.
+(`sparkforge/adapters/_core.py`), e o servidor publica **141 tools MCP** no catálogo atual.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|
@@ -332,13 +336,13 @@ O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mes
 | Agent Skills | `skills/`, para qualquer agente compatível com o padrão | [Referência de skills](docs/guia/referencia/skills/README.md) |
 | `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
 
-**Duas camadas de agente.** O **coordenador** (**14 coordenadores** em `agents/*.md`) lê o
-case, decide qual executor roda e registra o resultado. O **executor** (**5 executores**
+**Duas camadas de agente.** O **coordenador** (perfis em `agents/*.md`) lê o
+case, decide qual executor roda e registra o resultado. O **executor** (perfis em
 em `agents/executors/`) faz uma função só — inventário, extração, julgamento, verificação,
 síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
 as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
 desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
-traz **60 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+ traz skills versionadas; as de diagnóstico e as onze de procedimento AWS estão em
 [Agents e skills](docs/guia/05-agents-e-skills.md).
 
 ## SDD próprio
@@ -395,6 +399,29 @@ denominador de cada uma, estão nos documentos auditados por
 [Economia de contexto](docs/guia/usos/economia-de-contexto.md). A compressão de output
 (caveman, ligada por padrão e vendorizada sem `npm`) está em
 [Ecossistema caveman](docs/guia/10-caveman.md).
+
+### Agentic OS v2: contratos locais e inspeção econômica
+
+O incremento `AGENTIC_ENGINEERING_OS_V2` adiciona contratos puros para memória
+institucional com quarantine e invalidação, envelopes de trust/taint, contexto mínimo,
+checkpoints semânticos e interoperabilidade Forge/A2A. Eles não elevam dados externos a
+instrução e não chamam providers.
+
+Use as superfícies novas quando houver artefato local:
+
+```bash
+sparkforge context inspect --input context.json
+sparkforge agentops inspect <run_id> --repo .
+sparkforge agentops compare <run_a> <run_b> --repo .
+sparkforge agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
+sparkforge doctor agentic --repo .
+```
+
+`context inspect` mede bytes, relevância, duplicação, frescor e evidência. Tokens só
+entram com valor observado do transcript do host (`--observed-provider-tokens`); custo
+exige `cost_basis`. `agentops baseline save` é a única mutação nova: grava arquivo local
+idempotente; as demais leituras são read-only. O router de modelo novo permanece shadow
+por padrão e não executa provider.
 
 ## Segurança e operações destrutivas
 

@@ -62,6 +62,7 @@ from sparkforge.collect import schema_registry as collect_schema_registry_collec
 from sparkforge.collect import streaming as collect_streaming
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
+from sparkforge.context.quality import ContextQualityReport, context_item_from_mapping
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
     UnknownVersion as UnknownControlMVersion,
@@ -227,6 +228,18 @@ from sparkforge.migration.release_descriptor import (
 from sparkforge.migration.release_diff import diff as diff_releases
 from sparkforge.migration.version_path import (
     DEFAULT_PLATFORM as MIGRATION_DEFAULT_PLATFORM,
+)
+from sparkforge.observability.agentops import (
+    compare_baseline as _agentops_compare_baseline,
+)
+from sparkforge.observability.agentops import (
+    compare_runs as _agentops_compare_runs,
+)
+from sparkforge.observability.agentops import (
+    inspect_run as _agentops_inspect_run,
+)
+from sparkforge.observability.agentops import (
+    save_baseline as _agentops_save_baseline,
 )
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.observability.sre import (
@@ -9568,6 +9581,77 @@ def context_gateway_expand(
         )
     except (GatewayError, TypeError, ValueError, OSError) as exc:
         raise AdapterError(f"context expand recusado: {exc}", exit_code=2) from exc
+
+
+def context_inspect(
+    payload: Mapping[str, Any], *, observed_provider_tokens: int | None = None
+) -> dict[str, Any]:
+    """Inspect a local context payload without inferring tokens from bytes."""
+    items = payload.get("items", []) if isinstance(payload, Mapping) else []
+    if not isinstance(items, list):
+        raise AdapterError("context inspect exige items como lista", exit_code=2)
+    observations = [context_item_from_mapping(item) for item in items if isinstance(item, Mapping)]
+    required = payload.get("required_evidence_refs", []) if isinstance(payload, Mapping) else []
+    report = ContextQualityReport.from_items(
+        observations,
+        required_evidence_refs=required if isinstance(required, list) else (),
+        observed_provider_tokens=observed_provider_tokens,
+        expansion_count=(
+            int(payload.get("expansion_count", 0)) if isinstance(payload, Mapping) else 0
+        ),
+    )
+    return {
+        "status": "ok",
+        "summary": {"items": len(observations), "payload_bytes": report.payload_bytes},
+        "items": [item.to_dict() if hasattr(item, "to_dict") else {} for item in observations],
+        "quality": report.to_dict(),
+        "refs": [item.item_id for item in observations],
+        "unresolved": [] if observed_provider_tokens is not None else ["provider_tokens_missing"],
+        "evidence": sorted({ref for item in observations for ref in item.evidence_refs}),
+    }
+
+
+def agentops_inspect(repo: str = ".", *, run_id: str, db_path: str | None = None) -> dict[str, Any]:
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    return _agentops_inspect_run(path, run_id)
+
+
+def agentops_compare(
+    repo: str = ".", *, run_a: str, run_b: str, db_path: str | None = None
+) -> dict[str, Any]:
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    return _agentops_compare_runs(path, run_a, run_b)
+
+
+def agentops_baseline(
+    repo: str = ".", *, action: str, run_id: str, baseline_path: str, db_path: str | None = None
+) -> dict[str, Any]:
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    if action == "save":
+        return _agentops_save_baseline(path, run_id, Path(baseline_path))
+    if action == "compare":
+        return _agentops_compare_baseline(path, run_id, Path(baseline_path))
+    raise AdapterError(f"agentops baseline action desconhecida: {action}", exit_code=2)
+
+
+def agentic_doctor(repo: str = ".") -> dict[str, Any]:
+    """Readiness checks for the local agentic plane; no network or provider call."""
+    root = Path(repo).resolve()
+    checks = {
+        "memory": (root / ".sparkforge" / "memory").is_dir(),
+        "traces": (root / ".sparkforge" / "traces.db").exists(),
+        "context_profiles": (root / "sparkforge" / "context" / "gateway_profiles.yaml").exists(),
+        "protocols": (root / "sparkforge" / "protocols" / "forge.py").exists(),
+        "offline_core": True,
+    }
+    return {
+        "status": "ok" if all(checks.values()) else "unresolved",
+        "checks": checks,
+        "unresolved": [name for name, present in checks.items() if not present],
+        "network": "not_required",
+        "provider_tokens": "transcript_required",
+        "cost": "cost_basis_required",
+    }
 
 
 # Os nomes das tools de Code Intelligence, num lugar so. `doctor` confere o

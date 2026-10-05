@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "extracted_from": "1530e33c6d4fdc39dea321b5da2710f7446fb87d",
+  "extracted_from": "d9053657edd738d5dd6251c033485110d175c529",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 33,
+      "line": 34,
       "text": "0",
       "context": "`sparkforge/registry/models.py`, que define tiers de 0 a 6 (`ModelTier`)",
       "type": "number",
@@ -24,7 +24,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 33,
+      "line": 34,
       "text": "6",
       "context": "`sparkforge/registry/models.py`, que define tiers de 0 a 6 (`ModelTier`)",
       "type": "number",
@@ -44,7 +44,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 60,
+      "line": 61,
       "text": "19",
       "context": "na feature `docs/sdd/SF_STUBS/` (a lista completa dos 19 agentes `sf-*` ocos removidos",
       "type": "number",
@@ -64,7 +64,7 @@
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
-      "line": 98,
+      "line": 114,
       "text": "7",
       "context": "- **Cascata de 7 Tiers**:",
       "type": "number",
@@ -84,7 +84,7 @@
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
-      "line": 99,
+      "line": 115,
       "text": "0",
       "context": "- `Tier 0` (Determinístico): Extração de fatos e regras (Custo 0).",
       "type": "number",
@@ -104,7 +104,7 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
-      "line": 13,
+      "line": 15,
       "text": "100%",
       "context": "| **Deterministic Facts** | Módulos em `sparkforge/facts/` | Extratores determinísticos | **Excelente**: 100% determinís",
       "type": "number",
@@ -124,7 +124,7 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
-      "line": 16,
+      "line": 18,
       "text": "4",
       "context": "| **Case Lifecycle** | 4 Gates duráveis (`sparkforge/case/`) | Fail-closed | **Excelente**: Overrides auditados e assina",
       "type": "number",
@@ -144,47 +144,17 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
-      "line": 18,
-      "text": "7",
-      "context": "| **Token Economy** | `sparkforge/economy/` | 7 Tiers + Router | **Sólido**: Perfis `ECO`, `BALANCED`, `QUALITY`, `OFFLI",
-      "type": "number",
-      "id": "VNX-029",
-      "state": "PROVADA",
-      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): `economy/budget.py` e o `TIER_PRICING` sairam sem uso em producao; os tiers continuam em `ModelTier`, e o custo zero do tier deterministico e o do `CapabilityModelRouter`.",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.registry.models import ModelTier; print(len(ModelTier), \"tiers\")'",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) tiers",
-          "value": 7
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
-    },
-    {
-      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
-      "line": 20,
+      "line": 22,
       "text": "7",
       "context": "| **Platform Compilers** | `sparkforge/adapters/platforms/` | 7 Targets | **Sólido**: Antigravity, Cursor, Claude, Devin",
       "type": "number",
-      "id": "VNX-030",
-      "state": "PROVADA",
-      "note": "",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) targets",
-          "value": 7
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
+      "id": "VNX-029",
+      "state": "REMOVIDA",
+      "note": "Removida: a ocorrência era duplicata de uma alegação de 7 targets; a evidência de targets permanece em VNX-030."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 42,
+      "line": 44,
       "text": "4",
       "context": "4. **`sparkforge.case`**: Gerenciador durável de casos de investigação com 4 gates (`baseline_captured`, `flows_mapped`,",
       "type": "number",
@@ -204,47 +174,7 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 52,
-      "text": "5",
-      "context": "| **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especia",
-      "type": "number",
-      "id": "VNX-051",
-      "state": "PROVADA",
-      "note": "",
-      "proof": {
-        "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('agents/executors').glob('*.md'))), 'executores')\"",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) executores",
-          "value": 5
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
-    },
-    {
-      "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 53,
-      "text": "60",
-      "context": "| **Skills** | 60 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
-      "type": "number",
-      "id": "VNX-053",
-      "state": "PROVADA",
-      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido ao trazer duas skills de procedimento operacional AWS (2026-09-03): \\provision-s3-tables-table\\ e \\harden-s3-bucket\\, adaptadas de aws/agent-toolkit-for-aws, levaram as skills de 46 para 48. Numero relido pela propria prova. Remedido ao trazer nove skills oficiais AWS adaptadas (2026-09-03): aws-storage, aws-database, aws-serverless, aws-iam, aws-observability, aws-billing-and-cost-management, aws-messaging-and-streaming, aws-security, aws-sdk-python-usage, adaptadas de aws/agent-toolkit-for-aws commit 10b28af8, levaram as skills de 48 para 57. Numero relido pela propria prova. Remedido na fase 3 do executor de debate (2026-09-11): a skill `run-debate`, o driver interativo do debate, levou as skills de 58 para 59. Numero relido pela propria prova. Remedido na entrega do L3 do §15 (2026-09-14): a tool `sparkforge_change_propose` (_WRITE_IDEMPOTENT, declara repo e os anexos) levou o catalogo de 102 para 103, as que declaram caminho de 94 para 95 e as de escrita idempotente de 21 para 22; a skill `propose-change-pr` levou as skills de 59 para 60. O corpus de *.py cresceu com `sparkforge/change/proposal.py` e `tests/test_change_proposal.py`; `tools.py`, `_core.py` e `cli.py` cresceram. Numero relido pela propria prova. Remedido nas skills do SDD proprio (feature SDD_SKILLS, 2026-09-16): sdd-explore, sdd-define, sdd-design, sdd-plan, sdd-build e sdd-ship levaram as skills de 60 para 66. Numero relido pela propria prova. Remedido na remocao da camada oca sf-* (feature SF_STUBS, 2026-09-19): saíram 10 skills sem tool nem artefato, e as skills foram de 66 para 56. Numero relido pela propria prova. Remedido no criterio de dominio (feature CRITERIO_DE_DOMINIO, 2026-09-19): sairam 5 skills que so os sete sf-* alcancados por nome declaravam (agentic-orchestration, analyze-analytics, analyze-graph-data, design-neptune-graph, token-efficient-agent), e as skills foram de 56 para 51. Numero relido pela propria prova.",
-      "proof": {
-        "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('skills').glob('*/SKILL.md'))), 'skills')\"",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) skills",
-          "value": 60
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
-    },
-    {
-      "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 54,
+      "line": 56,
       "text": "0",
       "context": "| **Subagents** | 0 | — (o registro e os contratos saíram em `docs/sdd/CONFIG_OCA/`) | Não há mais contrato efêmero: nen",
       "type": "number",
@@ -264,7 +194,7 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 55,
+      "line": 57,
       "text": "1",
       "context": "| **Teams** | 1 | `config/teams-expansion.yaml` | Composições de times (governance-security) |",
       "type": "number",
@@ -284,27 +214,17 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 60,
+      "line": 62,
       "text": "3",
       "context": "| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e D",
       "type": "number",
       "id": "VNX-063",
-      "state": "PROVADA",
-      "note": "",
-      "proof": {
-        "cmd": "python -c \"import pathlib;paths=['.agents','.claude','manifest.json'];print(sum(1 for p in paths if pathlib.Path(p).exists()), 'adapters')\"",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) adapters",
-          "value": 3
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
+      "state": "REMOVIDA",
+      "note": "Removida: o inventário agora descreve mirrors declarados sem congelar uma contagem; `.github/` também participa da superfície."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 69,
+      "line": 71,
       "text": "100%",
       "context": "1. **Zero LLM para Fatos e Regras**: Análise de código, plano de execução, metadados e logs 100% determinística, offline",
       "type": "number",
@@ -324,17 +244,7 @@
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 82,
-      "text": "7",
-      "context": "3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não",
-      "type": "number",
-      "id": "VNX-047",
-      "state": "REMOVIDA",
-      "note": "Fato de versao externa (Amazon EMR 7.x, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
-    },
-    {
-      "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 108,
+      "line": 111,
       "text": "0",
       "context": "- **D-1**: Manter camada determinística pura (Layer 0) com 0 chamadas de LLM para extração de fatos e avaliação de regra",
       "type": "number",
@@ -354,7 +264,7 @@
     },
     {
       "doc": "docs/vnext/DEMOS.md",
-      "line": 48,
+      "line": 49,
       "text": "100%",
       "context": "- **Rota**: `Tier 0 (Deterministic First)` — Cálculo de compatibilidade de schema 100% determinístico.",
       "type": "number",
@@ -374,7 +284,7 @@
     },
     {
       "doc": "docs/vnext/DEMOS.md",
-      "line": 49,
+      "line": 50,
       "text": "0",
       "context": "- **Tokens Consumidos**: 0 tokens LLM.",
       "type": "number",
@@ -394,47 +304,7 @@
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 6,
-      "text": "7",
-      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
-      "type": "number",
-      "id": "VNX-082",
-      "state": "PROVADA",
-      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): `economy/budget.py` e o `TIER_PRICING` sairam sem uso em producao; os tiers continuam em `ModelTier`, e o custo zero do tier deterministico e o do `CapabilityModelRouter`.",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.registry.models import ModelTier; print(len(ModelTier), \"tiers\")'",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) tiers",
-          "value": 7
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
-    },
-    {
-      "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 6,
-      "text": "7",
-      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
-      "type": "number",
-      "id": "VNX-083",
-      "state": "PROVADA",
-      "note": "",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) targets",
-          "value": 7
-        },
-        "kind": "command",
-        "tier": "fast"
-      }
-    },
-    {
-      "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 57,
+      "line": 61,
       "text": "5",
       "context": "e `docs/vnext/adrs/`; `docs/vnext/DEMOS.md` documenta 5 demonstrações interativas.",
       "type": "number",
@@ -608,9 +478,9 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 42,
+      "line": 43,
       "text": "`spark-performance-architect`",
-      "context": "| `spark-performance-architect` | **Core Coordinator** | Mantido como coordenador primário de performance PySpark. | `sp",
+      "context": "| `spark-performance-architect` | **Coordinator** | Mantido como coordenador primário de performance PySpark. | `spark-p",
       "type": "capability",
       "id": "VNX-150",
       "state": "PROVADA",
@@ -624,9 +494,9 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 43,
+      "line": 44,
       "text": "`glue-incremental-performance-architect`",
-      "context": "| `glue-incremental-performance-architect` | **Core Coordinator** | Mantido para fluxos full + incremental complexos. | ",
+      "context": "| `glue-incremental-performance-architect` | **Coordinator** | Mantido para fluxos full + incremental complexos. | `glue",
       "type": "capability",
       "id": "VNX-151",
       "state": "PROVADA",
@@ -640,7 +510,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 44,
+      "line": 45,
       "text": "`glue-infra-reviewer`",
       "context": "| `glue-infra-reviewer` | **Specialist Role** | Foco em infraestrutura Glue, worker types e auto scaling. | `glue-infra-",
       "type": "capability",
@@ -656,7 +526,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 45,
+      "line": 46,
       "text": "`emr-infra-reviewer`",
       "context": "| `emr-infra-reviewer` | **Specialist Role** | Foco em clusters EMR EC2 e Serverless. | `emr-infra-reviewer` |",
       "type": "capability",
@@ -672,7 +542,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 46,
+      "line": 47,
       "text": "`athena-query-optimizer`",
       "context": "| `athena-query-optimizer` | **Specialist Role** | Otimização de consultas, pruning e workgroups Athena. | `athena-query",
       "type": "capability",
@@ -688,7 +558,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 47,
+      "line": 48,
       "text": "`pyspark-code-reviewer`",
       "context": "| `pyspark-code-reviewer` | **Specialist Role** | Revisão de código PySpark e GraphFrames. | `pyspark-code-reviewer` |",
       "type": "capability",
@@ -704,7 +574,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 48,
+      "line": 49,
       "text": "`iceberg-performance-engineer`",
       "context": "| `iceberg-performance-engineer` | **Specialist Role** | Manutenção e performance de tabelas Iceberg. | `iceberg-perform",
       "type": "capability",
@@ -720,7 +590,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 49,
+      "line": 50,
       "text": "`data-quality-reviewer`",
       "context": "| `data-quality-reviewer` | **Specialist Role** | Auditoria do posicionamento e custo de regras de qualidade. | `data-qu",
       "type": "capability",
@@ -736,7 +606,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 50,
+      "line": 51,
       "text": "`sf-inventory`",
       "context": "| `sf-inventory` | **Executor** | Executor determinístico de inventário (Phase Loop). | `sf-inventory` |",
       "type": "capability",
@@ -751,7 +621,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 51,
+      "line": 52,
       "text": "`sf-extractor`",
       "context": "| `sf-extractor` | **Executor** | Executor determinístico de evidências (Phase Loop). | `sf-extractor` |",
       "type": "capability",
@@ -766,7 +636,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 52,
+      "line": 53,
       "text": "`sf-judge`",
       "context": "| `sf-judge` | **Executor** | Executor de regras determinísticas (Phase Loop). | `sf-judge` |",
       "type": "capability",
@@ -781,7 +651,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 53,
+      "line": 54,
       "text": "`sf-verifier`",
       "context": "| `sf-verifier` | **Executor** | Executor de validação de saídas (Phase Loop). | `sf-verifier` |",
       "type": "capability",
@@ -796,7 +666,7 @@
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
-      "line": 54,
+      "line": 55,
       "text": "`sf-synthesizer`",
       "context": "| `sf-synthesizer` | **Executor** | Executor de síntese de relatório assinado. | `sf-synthesizer` |",
       "type": "capability",
@@ -811,13 +681,13 @@
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 41,
-      "text": "[`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`",
-      "context": "- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validat",
+      "line": 43,
+      "text": "[`sparkforge/registry/`](../../sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`",
+      "context": "- [`sparkforge/registry/`](../../sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`",
       "type": "capability",
-      "id": "VNX-169",
+      "id": "VNX-829",
       "state": "PROVADA",
-      "note": "",
+      "note": "Prova de artefato e teste local.",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/registry/models.py",
@@ -827,45 +697,45 @@
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 42,
-      "text": "[`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `cache.py`, `waste_detector.py`, `router.py`, `__init__.py` (o `budget.py` saiu em 2026-09-15, sem uso em produção)",
-      "context": "- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `cache.py`, `waste_detector.py`, `ro",
-      "type": "capability",
-      "id": "VNX-170",
-      "state": "PROVADA",
-      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): economy/budget.py, agents/supervisor.py, agents/model_policy.py e tests/test_agent_autonomy.py sairam sem uso em producao; a prova passou a apontar para o que ficou.",
-      "proof": {
-        "kind": "artifact",
-        "path": "sparkforge/economy/cache.py",
-        "symbol": "ArtifactCache",
-        "test": "tests/test_economy_engine.py"
-      }
-    },
-    {
-      "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 43,
-      "text": "[`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `knowledge_pack.py`, `__init__.py`",
-      "context": "- [`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `know",
-      "type": "capability",
-      "id": "VNX-171",
-      "state": "PROVADA",
-      "note": "",
-      "proof": {
-        "kind": "artifact",
-        "path": "sparkforge/context/funnel.py",
-        "symbol": "ContextFunnel",
-        "test": "tests/test_context_funnel.py"
-      }
-    },
-    {
-      "doc": "docs/vnext/FINAL-REPORT.md",
       "line": 44,
-      "text": "[`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `antigravity.py`, `cursor.py`, `claude.py`, `targets.py`, `compiler.py`, `__init__.py`",
-      "context": "- [`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `an",
+      "text": "[`sparkforge/economy/`](../../sparkforge/economy/): ledger, router, Decision Plane, reports e receipts",
+      "context": "- [`sparkforge/economy/`](../../sparkforge/economy/): ledger, router, Decision Plane, reports e receipts",
       "type": "capability",
-      "id": "VNX-172",
+      "id": "VNX-830",
       "state": "PROVADA",
-      "note": "",
+      "note": "Prova de artefato e teste local.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/economy/model_router.py",
+        "symbol": "AdaptiveModelRouter",
+        "test": "tests/test_agentic_os_v2.py"
+      }
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 45,
+      "text": "[`sparkforge/context/`](../../sparkforge/context/): Gateway, funnel, progressive disclosure, quality e knowledge packs",
+      "context": "- [`sparkforge/context/`](../../sparkforge/context/): Gateway, funnel, progressive disclosure, quality e knowledge packs",
+      "type": "capability",
+      "id": "VNX-831",
+      "state": "PROVADA",
+      "note": "Prova de artefato e teste local.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/context/gateway.py",
+        "symbol": "ContextGateway",
+        "test": "tests/test_context_gateway.py"
+      }
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 46,
+      "text": "[`sparkforge/adapters/platforms/`](../../sparkforge/adapters/platforms/): exporters, compiler e targets declarados",
+      "context": "- [`sparkforge/adapters/platforms/`](../../sparkforge/adapters/platforms/): exporters, compiler e targets declarados",
+      "type": "capability",
+      "id": "VNX-832",
+      "state": "PROVADA",
+      "note": "Prova de artefato e teste local.",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/platforms/compiler.py",
@@ -875,29 +745,29 @@
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 45,
-      "text": "[`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`",
-      "context": "- [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py",
+      "line": 47,
+      "text": "[`sparkforge/workflows/`](../../sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`",
+      "context": "- [`sparkforge/workflows/`](../../sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`",
       "type": "capability",
-      "id": "VNX-173",
+      "id": "VNX-833",
       "state": "PROVADA",
-      "note": "",
+      "note": "Prova de artefato e teste local.",
       "proof": {
         "kind": "artifact",
-        "path": "sparkforge/workflows/spec.py",
-        "symbol": "TaskSpec",
+        "path": "sparkforge/workflows/dag.py",
+        "symbol": "ExecutionDAG",
         "test": "tests/test_workflows_dag.py"
       }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 46,
-      "text": "[`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.json`, `__init__.py`",
-      "context": "- [`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.js",
+      "line": 48,
+      "text": "[`sparkforge/evals/`](../../sparkforge/evals/): runner, suites, grading, replay e token benchmark",
+      "context": "- [`sparkforge/evals/`](../../sparkforge/evals/): runner, suites, grading, replay e token benchmark",
       "type": "capability",
-      "id": "VNX-174",
+      "id": "VNX-834",
       "state": "PROVADA",
-      "note": "",
+      "note": "Prova de artefato e teste local.",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/evals/runner.py",
@@ -907,24 +777,56 @@
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
-      "line": 47,
-      "text": "[`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`, `__init__.py`",
-      "context": "- [`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`,",
+      "line": 49,
+      "text": "[`sparkforge/agentic/`](../../sparkforge/agentic/): trust, memória, checkpoints, debate, executor e recovery",
+      "context": "- [`sparkforge/agentic/`](../../sparkforge/agentic/): trust, memória, checkpoints, debate, executor e recovery",
       "type": "capability",
-      "id": "VNX-175",
+      "id": "VNX-835",
       "state": "PROVADA",
-      "note": "",
+      "note": "Prova de artefato e teste local.",
       "proof": {
         "kind": "artifact",
-        "path": "sparkforge/observability/tracer.py",
-        "symbol": "AgentOpsTracker",
-        "test": "tests/test_observability.py"
+        "path": "sparkforge/agentic/memory.py",
+        "symbol": "from_decision",
+        "test": "tests/test_agentic_os_v2.py"
+      }
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 50,
+      "text": "[`sparkforge/protocols/forge.py`](../../sparkforge/protocols/forge.py): envelopes Forge serializáveis",
+      "context": "- [`sparkforge/protocols/forge.py`](../../sparkforge/protocols/forge.py): envelopes Forge serializáveis",
+      "type": "capability",
+      "id": "VNX-836",
+      "state": "PROVADA",
+      "note": "Prova de artefato e teste local.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/protocols/forge.py",
+        "symbol": "ForgeTask",
+        "test": "tests/test_agentic_os_v2.py"
+      }
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 51,
+      "text": "[`sparkforge/observability/`](../../sparkforge/observability/): tracer, SQLite store e AgentOps local",
+      "context": "- [`sparkforge/observability/`](../../sparkforge/observability/): tracer, SQLite store e AgentOps local",
+      "type": "capability",
+      "id": "VNX-837",
+      "state": "PROVADA",
+      "note": "Prova de artefato e teste local.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/observability/store.py",
+        "symbol": "SQLiteTraceStore",
+        "test": "tests/test_agentic_os_v2.py"
       }
     },
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 80,
-      "text": "136",
+      "text": "141",
       "context": "136 tools:",
       "type": "number",
       "id": "VNX-482",
@@ -935,7 +837,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -944,7 +846,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 84,
-      "text": "96",
+      "text": "100",
       "context": "| `READ_ONLY` | 96 |",
       "type": "number",
       "id": "VNX-484",
@@ -955,7 +857,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 96
+          "value": 100
         },
         "kind": "command",
         "tier": "fast"
@@ -964,7 +866,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 85,
-      "text": "23",
+      "text": "24",
       "context": "| `LOCAL_MUTATION` | 23 |",
       "type": "number",
       "id": "VNX-485",
@@ -975,7 +877,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 23
+          "value": 24
         },
         "kind": "command",
         "tier": "fast"
@@ -1044,7 +946,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 172,
-      "text": "87",
+      "text": "90",
       "context": "| `READ_ONLY` | 87 | 9 |",
       "type": "number",
       "id": "VNX-630",
@@ -1055,7 +957,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 87
+          "value": 90
         },
         "kind": "command",
         "tier": "fast"
@@ -1064,7 +966,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 172,
-      "text": "9",
+      "text": "10",
       "context": "| `READ_ONLY` | 87 | 9 |",
       "type": "number",
       "id": "VNX-631",
@@ -1075,7 +977,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 9
+          "value": 10
         },
         "kind": "command",
         "tier": "fast"
@@ -1084,7 +986,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 173,
-      "text": "23",
+      "text": "24",
       "context": "| `LOCAL_MUTATION` | 23 | 0 |",
       "type": "number",
       "id": "VNX-632",
@@ -1095,7 +997,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 23
+          "value": 24
         },
         "kind": "command",
         "tier": "fast"
@@ -1164,7 +1066,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 176,
-      "text": "85",
+      "text": "88",
       "context": "Medido: **85** das tools `READ_ONLY` declaram algum argumento de caminho",
       "type": "number",
       "id": "VNX-490",
@@ -1175,7 +1077,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 85
+          "value": 88
         },
         "kind": "command",
         "tier": "fast"
@@ -1184,7 +1086,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 203,
-      "text": "127",
+      "text": "131",
       "context": "**127** de 136 — as vinte e três `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram",
       "type": "number",
       "id": "VNX-636",
@@ -1195,7 +1097,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 127
+          "value": 131
         },
         "kind": "command",
         "tier": "fast"
@@ -1204,7 +1106,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 203,
-      "text": "136",
+      "text": "141",
       "context": "**127** de 136 — as vinte e três `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram",
       "type": "number",
       "id": "VNX-637",
@@ -1215,7 +1117,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -1224,7 +1126,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 285,
-      "text": "136",
+      "text": "141",
       "context": "> `CallPolicy.decide`, e o despacho é único para as 136 tools, então fechar ali",
       "type": "number",
       "id": "VNX-732",
@@ -1235,7 +1137,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -1244,7 +1146,7 @@
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 331,
-      "text": "136",
+      "text": "141",
       "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 136",
       "type": "number",
       "id": "VNX-733",
@@ -1255,7 +1157,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -3013,7 +2915,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 196,
-      "text": "1260",
+      "text": "3059",
       "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **1260** nesta árvore (remedido em 2026-10-02 ",
       "type": "number",
       "id": "VNX-822",
@@ -3024,7 +2926,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1260
+          "value": 3059
         },
         "kind": "command",
         "tier": "fast"
@@ -3273,7 +3175,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 215,
-      "text": "400224",
+      "text": "404019",
       "context": "| `project_items` | 1 | 193 | 400224 | 2204 | 52 |",
       "type": "number",
       "id": "VNX-823",
@@ -3284,7 +3186,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 400224
+          "value": 404019
         },
         "kind": "command",
         "tier": "fast"
@@ -3373,7 +3275,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 216,
-      "text": "424922",
+      "text": "428717",
       "context": "| `tool_class` | 1 | 187 | 424922 | 3529 | 73 |",
       "type": "number",
       "id": "VNX-824",
@@ -3384,7 +3286,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 424922
+          "value": 428717
         },
         "kind": "command",
         "tier": "fast"
@@ -3473,7 +3375,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 217,
-      "text": "553706",
+      "text": "561740",
       "context": "| `authorize` | 3 | 599 | 553706 | 4427 | 115 |",
       "type": "number",
       "id": "VNX-663",
@@ -3484,7 +3386,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 553706
+          "value": 561740
         },
         "kind": "command",
         "tier": "fast"
@@ -3553,7 +3455,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 219,
-      "text": "2473680",
+      "text": "2489304",
       "context": "Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2473680**;",
       "type": "number",
       "id": "VNX-825",
@@ -3564,7 +3466,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 2473680
+          "value": 2489304
         },
         "kind": "command",
         "tier": "fast"
@@ -3613,7 +3515,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 229,
-      "text": "1294.4",
+      "text": "1302.6",
       "context": "**Contra o denominador do plano, o índice economiza 1294.4 vezes.** Contra a saída de um `grep`",
       "type": "number",
       "id": "VNX-741",
@@ -3623,7 +3525,7 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(round(total / com, 1))'",
         "expect": {
           "kind": "contains",
-          "value": "1294.4"
+          "value": "1302.6"
         },
         "kind": "command",
         "tier": "fast"
@@ -3710,7 +3612,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 248,
-      "text": "378129",
+      "text": "378600",
       "context": "no mesmo corpus, tem **378129** bytes (remedido em 2026-10-02 após a evolução do Forge Lab e dos registries de plataform",
       "type": "number",
       "id": "VNX-827",
@@ -3721,7 +3623,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 378129
+          "value": 378600
         },
         "kind": "command",
         "tier": "fast"
@@ -3885,7 +3787,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 305,
-      "text": "136",
+      "text": "141",
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **136** tools do catálogo:",
       "type": "number",
       "id": "VNX-558",
@@ -3896,7 +3798,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -4177,7 +4079,7 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 42,
-      "text": "127",
+      "text": "131",
       "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "type": "number",
       "id": "VNX-638",
@@ -4188,7 +4090,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 127
+          "value": 131
         },
         "kind": "command",
         "tier": "fast"
@@ -4197,7 +4099,7 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 42,
-      "text": "136",
+      "text": "141",
       "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "type": "number",
       "id": "VNX-639",
@@ -4208,7 +4110,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -4531,7 +4433,7 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "516,6",
+      "text": "524,5",
       "context": "Confirmado por tamanho: `tools.py` (516,6 KB) e `_core.py` (390,8 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
@@ -4541,7 +4443,7 @@
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/tools.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "516,6"
+          "value": "524,5"
         },
         "kind": "command",
         "tier": "fast"
@@ -4550,7 +4452,7 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "390,8",
+      "text": "394,5",
       "context": "Confirmado por tamanho: `tools.py` (516,6 KB) e `_core.py` (390,8 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
@@ -4560,7 +4462,7 @@
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "390,8"
+          "value": "394,5"
         },
         "kind": "command",
         "tier": "fast"
@@ -4649,7 +4551,7 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 107,
-      "text": "136",
+      "text": "141",
       "context": "o que cobre as 136 tools num ponto só. O que nunca passava por `call_tool` —",
       "type": "number",
       "id": "VNX-734",
@@ -4660,7 +4562,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 136
+          "value": 141
         },
         "kind": "command",
         "tier": "fast"
@@ -10483,6 +10385,48 @@
       "type": "number"
     },
     {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 20,
+      "text": "7",
+      "context": "| **Platform Compilers** | `sparkforge/adapters/platforms/` | 7 Targets | **Sólido**: Antigravity, Cursor, Claude, Devin",
+      "type": "number",
+      "id": "VNX-030",
+      "state": "PROVADA",
+      "note": "",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) targets",
+          "value": 7
+        },
+        "kind": "command",
+        "tier": "fast"
+      }
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 52,
+      "text": "5",
+      "context": "| **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especia",
+      "type": "number",
+      "id": "VNX-051",
+      "state": "REMOVIDA",
+      "note": "Removida: o inventário atual evita congelar a contagem de executores; `agents/executors/` permanece fonte canônica."
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 53,
+      "text": "60",
+      "context": "| **Skills** | 60 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
+      "type": "number",
+      "id": "VNX-053",
+      "state": "REMOVIDA",
+      "proof": null,
+      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido ao trazer duas skills de procedimento operacional AWS (2026-09-03): \\provision-s3-tables-table\\ e \\harden-s3-bucket\\, adaptadas de aws/agent-toolkit-for-aws, levaram as skills de 46 para 48. Numero relido pela propria prova. Remedido ao trazer nove skills oficiais AWS adaptadas (2026-09-03): aws-storage, aws-database, aws-serverless, aws-iam, aws-observability, aws-billing-and-cost-management, aws-messaging-and-streaming, aws-security, aws-sdk-python-usage, adaptadas de aws/agent-toolkit-for-aws commit 10b28af8, levaram as skills de 48 para 57. Numero relido pela propria prova. Remedido na fase 3 do executor de debate (2026-09-11): a skill `run-debate`, o driver interativo do debate, levou as skills de 58 para 59. Numero relido pela propria prova. Remedido na entrega do L3 do §15 (2026-09-14): a tool `sparkforge_change_propose` (_WRITE_IDEMPOTENT, declara repo e os anexos) levou o catalogo de 102 para 103, as que declaram caminho de 94 para 95 e as de escrita idempotente de 21 para 22; a skill `propose-change-pr` levou as skills de 59 para 60. O corpus de *.py cresceu com `sparkforge/change/proposal.py` e `tests/test_change_proposal.py`; `tools.py`, `_core.py` e `cli.py` cresceram. Numero relido pela propria prova. Remedido nas skills do SDD proprio (feature SDD_SKILLS, 2026-09-16): sdd-explore, sdd-define, sdd-design, sdd-plan, sdd-build e sdd-ship levaram as skills de 60 para 66. Numero relido pela propria prova. Remedido na remocao da camada oca sf-* (feature SF_STUBS, 2026-09-19): saíram 10 skills sem tool nem artefato, e as skills foram de 66 para 56. Numero relido pela propria prova. Remedido no criterio de dominio (feature CRITERIO_DE_DOMINIO, 2026-09-19): sairam 5 skills que so os sete sf-* alcancados por nome declaravam (agentic-orchestration, analyze-analytics, analyze-graph-data, design-neptune-graph, token-efficient-agent), e as skills foram de 56 para 51. Numero relido pela propria prova.",
+      "legacy": null
+    },
+    {
       "context": "5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não imple",
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-067",
@@ -10493,24 +10437,140 @@
       "type": "number"
     },
     {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 82,
+      "text": "7",
+      "context": "3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não",
+      "type": "number",
+      "id": "VNX-047",
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Amazon EMR 7.x, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
+    },
+    {
       "context": "3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não",
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-066",
       "line": 79,
+      "proof": null,
+      "state": "REMOVIDA",
+      "text": "7",
+      "type": "number",
+      "note": "Removida: a seção de fragilidades foi substituída pelo estado corrente do ledger e do router; a ocorrência antiga não descreve o sistema atual.",
+      "legacy": null
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 6,
+      "text": "7",
+      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
+      "type": "number",
+      "id": "VNX-082",
+      "state": "REMOVIDA",
+      "proof": null,
+      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): `economy/budget.py` e o `TIER_PRICING` sairam sem uso em producao; os tiers continuam em `ModelTier`, e o custo zero do tier deterministico e o do `CapabilityModelRouter`.",
+      "legacy": null
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 6,
+      "text": "7",
+      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
+      "type": "number",
+      "id": "VNX-083",
+      "state": "REMOVIDA",
+      "note": "Removida: a frase antiga misturava a contagem de tiers com targets; o relatório atual não publica esse número nessa linha."
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 41,
+      "text": "[`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`",
+      "context": "- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validat",
+      "type": "capability",
+      "id": "VNX-169",
+      "state": "REMOVIDA",
+      "note": "Removida: caminho absoluto `file:///` substituído por link relativo no inventário atual."
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 42,
+      "text": "[`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `cache.py`, `waste_detector.py`, `router.py`, `__init__.py` (o `budget.py` saiu em 2026-09-15, sem uso em produção)",
+      "context": "- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `cache.py`, `waste_detector.py`, `ro",
+      "type": "capability",
+      "id": "VNX-170",
+      "state": "REMOVIDA",
+      "proof": null,
+      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): economy/budget.py, agents/supervisor.py, agents/model_policy.py e tests/test_agent_autonomy.py sairam sem uso em producao; a prova passou a apontar para o que ficou.",
+      "legacy": null
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 43,
+      "text": "[`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `knowledge_pack.py`, `__init__.py`",
+      "context": "- [`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `know",
+      "type": "capability",
+      "id": "VNX-171",
+      "state": "REMOVIDA",
+      "note": "Removida: caminho absoluto `file:///` substituído por link relativo e inventário atualizado."
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 44,
+      "text": "[`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `antigravity.py`, `cursor.py`, `claude.py`, `targets.py`, `compiler.py`, `__init__.py`",
+      "context": "- [`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `an",
+      "type": "capability",
+      "id": "VNX-172",
+      "state": "REMOVIDA",
+      "note": "Removida: caminho absoluto `file:///` substituído por link relativo e descrição de exporters sob demanda."
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 45,
+      "text": "[`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`",
+      "context": "- [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py",
+      "type": "capability",
+      "id": "VNX-173",
+      "state": "REMOVIDA",
+      "note": "Removida: caminho absoluto `file:///` substituído por link relativo no inventário atual."
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 46,
+      "text": "[`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.json`, `__init__.py`",
+      "context": "- [`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.js",
+      "type": "capability",
+      "id": "VNX-174",
+      "state": "REMOVIDA",
+      "note": "Removida: caminho absoluto `file:///` substituído por link relativo e descrição de suites atualizada."
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 47,
+      "text": "[`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`, `__init__.py`",
+      "context": "- [`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`,",
+      "type": "capability",
+      "id": "VNX-175",
+      "state": "REMOVIDA",
+      "note": "Removida: caminho absoluto `file:///` substituído por link relativo e AgentOps atual."
+    },
+    {
+      "context": "PESO_LINEAGE em zero, declarado e nao omitido",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-736",
+      "line": 707,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
       "proof": {
-        "cmd": "python -c 'from sparkforge.registry.models import ModelTier; print(len(ModelTier), \"tiers\")'",
+        "cmd": "python -c 'from sparkforge.codeintel.ranking import PESO_LINEAGE; print(PESO_LINEAGE)'",
         "expect": {
           "kind": "number",
-          "pattern": "(\\d+) tiers",
-          "value": 7
+          "pattern": "^(\\d+)",
+          "value": 0
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "7",
-      "type": "number",
-      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): `economy/budget.py` e o `TIER_PRICING` sairam sem uso em producao; os tiers continuam em `ModelTier`, e o custo zero do tier deterministico e o do `CapabilityModelRouter`."
+      "text": "0",
+      "type": "number"
     },
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
@@ -10581,26 +10641,6 @@
       "id": "VNX-802",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
-    },
-    {
-      "context": "PESO_LINEAGE em zero, declarado e nao omitido",
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "id": "VNX-736",
-      "line": 707,
-      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.codeintel.ranking import PESO_LINEAGE; print(PESO_LINEAGE)'",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 0
-        },
-        "kind": "command",
-        "tier": "fast"
-      },
-      "state": "PROVADA",
-      "text": "0",
-      "type": "number"
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",

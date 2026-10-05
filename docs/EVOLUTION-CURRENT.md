@@ -1,6 +1,6 @@
 # SparkForge AWS — mapa de evolução atual
 
-**Atualizado em:** 2026-10-03
+**Atualizado em:** 2026-10-05
 **Base técnica de referência:** `STREAMING_END_TO_END_PIPELINE`; fechamento
 técnico corrente: `GOLDEN_DRIFT_CLOSURE`
 **Fonte operacional:** `sparkforge sdd status --repo .`
@@ -208,14 +208,14 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Gate | Resultado registrado |
 |---|---|
 | Forge Lab | `valid: true`, 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14533** testes coletados em 2026-10-03; Iceberg: **94** goldens e **116** gates de corpus; propagação composta: **332** goldens CloudWatch/consumers; fechamento residual: **37** cenários, **3** Glue cross-artifact e **1** scan; Flink temporal: **11** unitários, **7** goldens, **69** kinds, documentação **196** e reachability **946** passed |
-| Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped; resultado histórico, não reexecutado após Flink temporal |
+| Suíte integral atual | **14538 passed, 14 skipped** em 2026-10-05; execução final registrada em `docs/sdd/AGENTIC_ENGINEERING_OS_V2/ship.md` |
+| Corpus e gates de domínio | Iceberg: **94** goldens e **116** gates de corpus; propagação composta: **332** goldens CloudWatch/consumers; fechamento residual: **37** cenários, **3** Glue cross-artifact e **1** scan; Flink temporal: **11** unitários, **7** goldens, **69** kinds, documentação **196** e reachability **946** passed |
 | Docs de streaming | cobertura documental Glue source/sink adicionada nesta wave; Flink source/sink acrescentou 83 testes no lote de facts/goldens/kinds; observação Glue runtime acrescentou 9 testes de contrato e 5 goldens/docs/corpus; inclui sink SLO, progress observability depth, p95/freshness SLO, referências geradas e mirrors |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
 | Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; p95/freshness: 74 testes focados no lote combinado e 1 golden novo; reconciliação Iceberg: 94 goldens e 116 gates de corpus; propagação composta: 332 passed; fechamento residual: 41 passed; snippet measure adicional: 4 passed |
 | Janela temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge e 793 gates de runtime-scope |
-| Claims e proveniência | 174 passed, 5 skipped; `check_vnext_claims.py` atualmente reporta 27 divergências históricas de provas command |
-| Checks globais | skills, referências, surface lock, status numbers, bundle offline, `twine check` e `verify_wheel` verdes; divergências históricas de claims permanecem nomeadas |
+| Claims e proveniência | `check_vnext_claims.py` verde; a suíte de claims/documentação permanece registrada nos ships específicos |
+| Checks globais | skills, referências, surface lock, status numbers, bundle offline, `twine check`, wheel instalado e claims verdes |
 
 Os resultados acima são evidência de contratos e regressão local. Não significam
 CI completo atual, benchmark cloud, saving financeiro ou validação de runtime
@@ -229,12 +229,10 @@ gerenciado sem o artefato correspondente.
    gate completo instalado.
 2. Streaming live, replay, benchmark e validação funcional dependem de
    workload/runtime/credencial reais e seguem `N/A + motivo` até haver receipt.
-3. `check_vnext_claims.py` ainda exige remediação das 27 provas command históricas
-   antes de voltar a ser reportado como verde.
-4. `verify_wheel` deve permanecer como gate de distribuição; a última execução
-   foi verde com builds byte-identical, bundle instalado válido e **3514 passed,
-   5 skipped**.
-5. `activation_ready` do Decision Plane permanece `false`; `shadow` e o router
+3. `verify_wheel` deve permanecer como gate de distribuição; a última execução
+   registrada foi verde com builds byte-identical, bundle instalado válido e
+   **3514 passed, 5 skipped**.
+4. `activation_ready` do Decision Plane permanece `false`; `shadow` e o router
    legado são o rollback target.
 
 ## Manutenção documental

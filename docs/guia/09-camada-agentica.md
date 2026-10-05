@@ -6,7 +6,7 @@ em [Arbitragem e debate](usos/arbitragem-e-debate.md).
 
 ## As entidades
 
-`sparkforge/agentic/` (18 módulos fora o `__init__.py`, contados em 2026-09-28) traz
+`sparkforge/agentic/` (20 módulos, mais `__init__.py`) traz
 entidades de primeira classe e engines para trabalho agêntico auditável: `Claim`,
 `Evidence` (com tiers de autoridade T1-T6), `Hypothesis`, `Experiment`, `Decision`,
 `Unknown`, `Contradiction`, `Objection`, `Rebuttal`; mais blackboard JSONL, protocolo
@@ -16,8 +16,7 @@ plane explícito para `shadow`/`active` e níveis de autonomia L0-L5.
 
 ## O executor determinístico
 
-`sparkforge/agentic/executor/` (11 módulos fora o `__init__.py`, contados em
-2026-09-18) é o **produtor** dessas entidades, e ele é determinístico.
+`sparkforge/agentic/executor/` é o **produtor** dessas entidades, e ele é determinístico.
 `sparkforge arbitrate` roda depois de `judge` e escreve no blackboard do case — num
 case rodado, `blackboard summary` deixa de devolver zero.
 
@@ -135,6 +134,38 @@ sparkforge budget show --repo .               # budget DECLARADO no case.yaml
 sparkforge budget show --template             # defaults do código, rotulados
 sparkforge autonomy show --level L3           # perfil de autonomia
 ```
+
+## Agentic OS v2: trust, memória e economia observável
+
+O contrato novo complementa blackboard e Decision Plane sem substituir os dois:
+
+- `DecisionMemoryRecord` separa problema, ambiente, runtime, evidência, outcome,
+  freshness, invalidação e supersession. Decisões sem evidência ficam em quarantine;
+  retrieval padrão só considera registros aceitos/verificados.
+- `TrustEnvelope` separa confiança de autoridade de instrução. Texto externo pode virar
+  `VERIFIED_FACT` depois de extração determinística, mas continua `DATA_ONLY`; `Taint`
+  preserva sinal de conteúdo suspeito.
+- `RoleContextPlan` limita contexto, memória, conhecimento e tools por papel. Handoff
+  entre agentes usa `AgentHandoff`/`ForgeHandoff` com autoridade `DATA_ONLY`.
+- `ContextQualityReport` mede recall, precision, density, stale, duplicação, reuse,
+  cache hit e evidência observada. Bytes e tokens não são convertidos entre si.
+- `SemanticCheckpoint` e `sparkforge.protocols.forge` permitem retomada e handoff
+  content-addressed sem expor blackboard ou SDK de provider.
+- `TokenLedger` separa estimado/observado e exige `cost_basis` para custo. O
+  `AdaptiveModelRouter` permanece shadow por default; promoção active exige evidência
+  e autoridade explícitas.
+- AgentOps lê traces locais e compara runs/baselines. Sem transcript, qualidade contratual
+  ou preço efetivo, a saída permanece `unresolved`.
+
+```bash
+sparkforge context inspect --input context.json
+sparkforge agentops inspect <run_id> --repo .
+sparkforge agentops compare <run_a> <run_b> --repo .
+sparkforge doctor agentic --repo .
+```
+
+`agentops baseline save` é mutação local idempotente; nenhum comando dessa camada chama
+AWS ou provider.
 
 `--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO dos
 facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles findings.

@@ -1,6 +1,12 @@
 """SparkForge Observability and AgentOps Package."""
 from __future__ import annotations
 
+from sparkforge.observability.agentops import (
+    compare_baseline,
+    compare_runs,
+    inspect_run,
+    save_baseline,
+)
 from sparkforge.observability.sre import (
     DataObservabilityError,
     ObservabilityReport,
@@ -19,4 +25,8 @@ __all__ = [
     "ObservabilityReport",
     "analyze_data_observability",
     "load_data_observability",
+    "compare_baseline",
+    "compare_runs",
+    "inspect_run",
+    "save_baseline",
 ]

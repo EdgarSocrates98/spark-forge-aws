@@ -1,9 +1,11 @@
-# SparkForge AWS — Current State Assessment (Phase 0)
+# SparkForge AWS — Current State Assessment (baseline + current overlay)
 
 ## 1. Arquitetura Atual
 
 O SparkForge AWS é uma plataforma de engenharia de desempenho e qualidade para cargas de dados PySpark na AWS (Glue, EMR EC2, EMR Serverless, Athena, Iceberg, S3).
-A arquitetura atual baseia-se em um pipeline puramente determinístico para extração e julgamento de regras, com uma camada de orquestração agêntica:
+Este documento preserva o snapshot inicial para contexto histórico e fecha-o com o
+overlay corrente. O núcleo continua determinístico; Agentic OS v2 adiciona contratos
+locais, inspeção econômica e observabilidade sem provider SDK ou mutação AWS implícita.
 
 ```
 [ Artifacts no Disco / S3 / Dumps ]
@@ -49,15 +51,15 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 
 | Categoria | Quantidade | Localização | Descrição |
 |---|---|---|---|
-| **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase (Phase Loop) |
-| **Skills** | 60 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
+| **Agents** | Perfis canônicos de coordenadores e executores | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase; lista viva em `agents/` |
+| **Skills** | Diretório canônico | `skills/*/SKILL.md` | Habilidades especializadas; contagem viva verificada por `scripts/sync_skills.py` |
 | **Subagents** | 0 | — (o registro e os contratos saíram em `docs/sdd/CONFIG_OCA/`) | Não há mais contrato efêmero: nenhum módulo de `sparkforge/`, `scripts/` ou `tests/` os lia |
 | **Teams** | 1 | `config/teams-expansion.yaml` | Composições de times (governance-security) |
 | **Extratores de Fatos** | — | `sparkforge/facts/*.py` | Fatos determinísticos extraídos localmente |
 | **Catálogos de Regras** | — | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |
 | **Knowledge Base** | — | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns, lockfiles |
 | **Testes Automatizados** | — | `tests/test_*.py` | Cobertura unitária, contratos, golden cases e paridade |
-| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e Devin |
+| **Adapters / Mirrors** | Mirrors declarados | `.agents/`, `.claude/`, `.github/`, `manifest.json` | Configurações canônicas e instruções geradas para plataformas suportadas |
 
 As linhas acima que perderam a contagem ("—") tinham número desatualizado ou sem
 artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
@@ -79,10 +81,10 @@ artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 
 1. **Fragmentação de Registros**: Definições de agentes e skills espalhadas por múltiplos arquivos (`config/agents.yaml`, `config/agentic-expansion.yaml`, `config/teams-expansion.yaml`, `agents/*.md`, `skills/*`).
 2. **Sincronização Manual de Plataformas**: A geração de espelhos para IDEs depende de scripts Python pontuais (`sync_skills.py`, `install_skills.py`) em vez de um compilador canônico com pipeline de exportação padronizado.
-3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não há engine unificado que aplique a cascata de 7 tiers (Tier 0 Deterministic → Tier 1 Cache → Tier 2 Retrieval → Tier 3 Cheap → Tier 4 Specialist → Tier 5 Premium → Tier 6 Multi-Agent).
-4. **Model Router Inicial**: Seleção de modelos baseada em regras simples em vez de avaliação multidimensional (complexidade × risco × capacidade × custo × privacidade).
-5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não implementa formalmente o funil de contexto e disclosure progressivo em níveis (A: Metadados, B: Instruções, C: Referências).
-6. **Observabilidade Local Não-Centralizada**: Falta de storage padronizado para rastreamento completo de execuções (`run_id`, `span_id`, traces estruturados, SQLite/JSONL unificado).
+3. **Economia de provider ainda incompleta**: `TokenLedger` reconcilia estimated/observed e `cost_basis` é obrigatório; não há conversão bytes→tokens, preço implícito ou medição live sem transcript/preço.
+4. **Model Router deliberadamente gated**: `AdaptiveModelRouter` ranqueia candidatos declarados e começa em `shadow`; `active` exige autoridade e evidência de promoção, sem chamada de provider no core.
+5. **Contexto com contrato, não promessa**: `ContextQualityReport`, Gateway e planner implementam qualidade, disclosure e minimum sufficient context; recall exige evidência declarada e tokens ausentes permanecem `tokens_unresolved`.
+6. **Observabilidade local disponível, live ainda limitada**: AgentOps oferece `inspect`, `compare` e `baseline` sobre traces locais; transcript, preço e qualidade externa continuam `unresolved`.
 
 ---
 
@@ -97,7 +99,8 @@ artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 ## 6. Baseline de Testes e Funcionalidades
 
 - **Total de Testes**: contagem removida — o número publicado em `a5b9e96` está desatualizado (ver `docs/claims.lock.json`).
-- **Tempo Médio de Execução da Suite Completa**: ~90-120 segundos
+- **Tempo da Suite Completa**: não é SLA e não fica fixado neste documento; a validação
+  reexecutável e seu resultado ficam registrados no SDD da entrega.
 - **Compatibilidade Python**: piso mínimo e versões testadas declarados em `pyproject.toml` (`requires-python`).
 - **Dependências de Produção Obrigatórias**: `PyYAML`, `jsonschema` (versões mínimas em `pyproject.toml`; zero dependência externa pesada).
 
@@ -110,3 +113,36 @@ artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 - **D-3**: Preservar gates do caso (`sparkforge.case`) com trilha de override rastreável e assinatura de relatório.
 - **D-4**: Preservar contratos de CLI existentes (`sparkforge analyze ...`, `sparkforge judge ...`, `sparkforge case ...`, `sparkforge report ...`) e MCP tools.
 - **D-5**: Manter o princípio Local-First / Offline-First sem exigir infraestrutura cloud ou banco pago.
+- **D-6**: Manter trust, taint, autoridade de instrução, `unresolved`, `cost_basis` e
+  evidência de promoção como contratos independentes; nenhum scorecard concede autoridade sozinho.
+
+## 8. Overlay atual — Agentic OS v2
+
+As seções anteriores preservam o snapshot da auditoria inicial. Para o estado do
+repositório após `AGENTIC_ENGINEERING_OS_V2`, leia este overlay:
+
+- Memória institucional agora tem `DecisionMemoryRecord`, quarantine, trust,
+  outcome, freshness, invalidação e retrieval híbrido local. Records antigos continuam
+  legíveis, mas não entram no retrieval confiável sem evidência.
+- Trust/taint e autoridade de instrução são campos distintos. `TrustEnvelope`,
+  `RoleContextPlan` e os handoffs Forge/A2A preservam origem, escopo e
+  `DATA_ONLY` para dados externos e mensagens entre agentes.
+- Contexto tem `ContextQualityReport` e benchmark de minimum sufficient context. O
+  relatório separa bytes serializados de tokens observados e deixa métricas sem
+  transcript como `tokens_unresolved`.
+- Economia tem `TokenLedger`, reconciliação estimated/observed e `cost_basis` obrigatório.
+  `AdaptiveModelRouter` é independente do roteamento de caso e permanece shadow por
+  default; active exige autoridade e evidência de promoção.
+- Checkpoints semânticos são content-addressed. `sparkforge.protocols.forge` publica
+  envelopes mínimos de task, capability, evidence, handoff, result e health.
+- AgentOps lê o SQLite de traces e oferece inspect, compare e baseline local. Waste é
+  classificado como observado ou hipótese; ausência de provider transcript, contrato de
+  qualidade ou preço efetivo permanece unresolved.
+- CLI e MCP compartilham `_core` para `context inspect`, `agentops
+  inspect|compare|baseline` e `doctor agentic`. Baseline save grava somente arquivo
+  local e é a única mutação desta superfície.
+
+Pendências deliberadas: evals live de provider, preço atual sem fonte efetiva, promoção
+active automática, vector database obrigatório e execução AWS. A suíte final e os gates
+de superfície/claims são a validação de entrega; nenhum ganho financeiro é inferido por
+bytes ou por scorecard.

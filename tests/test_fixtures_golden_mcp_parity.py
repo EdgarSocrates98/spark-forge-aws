@@ -172,6 +172,21 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_collect_managed_flink": (
         "2026-10-03: coleta read-only de DescribeApplication do Managed Flink com unresolved"
     ),
+    "sparkforge_context_inspect": (
+        "2026-10-04: inspeção bounded de qualidade e referências do Context Gateway"
+    ),
+    "sparkforge_agentops_inspect": (
+        "2026-10-04: inspeção local read-only de traces e métricas AgentOps"
+    ),
+    "sparkforge_agentops_compare": (
+        "2026-10-04: comparação determinística de janelas locais AgentOps"
+    ),
+    "sparkforge_agentops_baseline": (
+        "2026-10-04: baseline local explícito para observabilidade AgentOps"
+    ),
+    "sparkforge_doctor_agentic": (
+        "2026-10-04: diagnóstico local dos contratos do Agentic OS v2"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

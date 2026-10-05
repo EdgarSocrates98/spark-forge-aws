@@ -451,9 +451,28 @@ sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
 verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
 ao vivo que não foi observada.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 136 tools fazem (recontado em 2026-10-03)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 141 tools fazem (catálogo atual)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
+
+As superfícies Agentic OS v2 são locais e compartilham `_core` entre CLI e MCP:
+
+```bash
+sparkforge context inspect --input context.json
+sparkforge agentops inspect <run_id> --repo .
+sparkforge agentops compare <run_a> <run_b> --repo .
+sparkforge agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
+sparkforge agentops baseline compare <run_b> --path .sparkforge/baselines/base.json --repo .
+sparkforge doctor agentic --repo .
+```
+
+O payload de `context inspect` deve declarar `items`; cada item pode trazer `relevant`,
+`evidence_refs`, `stale`, `duplicate_of`, `reused` e `cache_hit`. O comando mede bytes
+serializados. `--observed-provider-tokens` é opcional e só deve receber valor vindo do
+transcript do host; bytes não viram tokens por aproximação. `agentops` lê SQLite local,
+expõe `unresolved` quando run, transcript, qualidade ou preço não existem, e classifica
+desperdício observado separadamente de hipótese. `baseline save` grava arquivo local;
+nenhum desses comandos chama AWS ou provider.
 
 ### 3.5 Verificar que o MCP funciona
 
@@ -790,6 +809,6 @@ default determinístico do perfil: 6.000, 16.000 ou 30.000 bytes. O Gateway apli
 limites por kind antes do limite global, preserva evidência crítica e recusa quando a
 materialização completa não cabe.
 
-MCP continua `full` por padrão. `--mode compact` é opt-in e publica seis operações;
+MCP continua `full` por padrão. `--mode compact` é opt-in e publica sete operações;
 `docs/surface.lock.json` trava nomes, quantidade, bytes e digest das duas superfícies.
 Use `python scripts/check_token_efficient_bench.py` para validar matriz de benchmark.

@@ -40,9 +40,11 @@ derivadas de um grafo em vez de estágios numerados à mão.
 `sparkforge/workflows/dag.py:ExecutionDAG.compute_waves()`.
 
 **Cadeia de autorização.** Toda ferramenta declara a classe de mutação que pratica, e
-mutação exige aprovação. Hoje isso é política declarada mais função pura de verificação; o
-gate que de fato barra a execução ainda não existe, e o mapa de lacuna diz isso com
-todas as letras. `sparkforge/registry/models.py`, `sparkforge/agents/autonomy.py`.
+mutação pode exigir aprovação. `CallPolicy` decide allowlist, denylist, perfil, raiz e
+aprovações; `sparkforge.adapters.tools.call_tool(..., policy=...)` aplica a decisão e
+devolve recusa estruturada. A política é opcional por compatibilidade: sem policy
+declarada não existe bloqueio universal. `sparkforge/registry/models.py`,
+`sparkforge/agents/autonomy.py`, `sparkforge/policy/`.
 
 **Arquitetura Lake Formation.** Contrato determinístico que separa engine/runtime,
 FGAC/FTA, formato, operação, ownership dos catálogos, cross-account e credential
@@ -74,6 +76,20 @@ ferramenta gravados localmente, sem depender de serviço pago. O que é medido e
 estimado ficam distinguíveis — número estimado apresentado como medido é a mesma classe de
 mentira que um finding sem evidência. `sparkforge/observability/`.
 
+**Agentic OS v2.** Contratos locais que conectam memória, trust, contexto, economia,
+checkpoint, Forge e AgentOps sem substituir o núcleo determinístico. As fontes principais
+são `sparkforge/agentic/`, `sparkforge/context/quality.py`,
+`sparkforge/economy/ledger.py`, `sparkforge/agentic/checkpoint.py`,
+`sparkforge/protocols/forge.py` e `sparkforge/observability/agentops.py`.
+
+**Trust, taint e autoridade.** Proveniência e confiança não autorizam instrução.
+Dados externos e handoffs recebem `DATA_ONLY`; uma rota `active` exige autoridade,
+evidência de promoção e rollback. `sparkforge/agentic/trust.py` e
+`sparkforge/economy/model_router.py`.
+
+**Unresolved.** Estado explícito para aquilo que o artefato, transcript, preço ou
+benchmark não permite afirmar. Não é sinônimo de falso nem de ausência comprovada.
+
 **Paridade entre plataformas.** Uma fonte canônica compilada para cada plataforma-alvo, e
 um gate que reprova quando os espelhos divergem da fonte. `sparkforge/adapters/`,
 `parity.yaml`, `scripts/sync_skills.py`.
@@ -85,9 +101,6 @@ sources. See `docs/sdd/LAKE_FORMATION_PROMPT_ACCEPTANCE_COMPLETION/`.
 The final prompt-gap audit also proves EMR Serverless/resource-link, Hybrid
 cross-account, LF-TBAC/RAM and newer-version routing cases without loading
 Glue-only knowledge into EMR decisions.
-The final prompt-gap audit also proves EMR Serverless/resource-link, Hybrid
-cross-account, LF-TBAC/RAM and version-5 routing cases without loading Glue-only
-knowledge into EMR decisions.
 
 ## Vocabulário de prova
 

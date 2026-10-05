@@ -32,6 +32,11 @@ class TestToolSurface:
         assert set(TOOLS) == {
             "sparkforge_context_start",
             "sparkforge_context_expand",
+            "sparkforge_context_inspect",
+            "sparkforge_agentops_inspect",
+            "sparkforge_agentops_compare",
+            "sparkforge_agentops_baseline",
+            "sparkforge_doctor_agentic",
             "sparkforge_case_open",
             "sparkforge_case_get",
             "sparkforge_case_update",
@@ -244,7 +249,7 @@ class TestToolSurface:
         for name in de_rede:
             assert TOOLS[name]["annotations"]["readOnlyHint"] is False, name
 
-    def test_only_case_and_report_writers_are_not_read_only(self):
+    def test_only_declared_local_writers_are_not_read_only(self):
         """A quarta lista manual desta classe, e ela mudou junto com as outras
         tres na Fase 4b: `sparkforge_report_sign` escreve o bloco de assinatura
         DENTRO do relatorio, no lugar. Um `sign` que so devolvesse o bloco para
@@ -283,7 +288,10 @@ class TestToolSurface:
         conjunto de rede e afirmar o resto preserva a garantia inteira e para
         de crescer.
 
-        Os CINCO locais continuam a mao de proposito, e ai a lista carrega
+        `sparkforge_agentops_baseline` grava baseline local quando `action=save`,
+        portanto tambem e mutacao local declarada e entra na lista.
+
+        Os locais continuam a mao de proposito, e ai a lista carrega
         garantia real: nao ha nenhuma outra propriedade declarada que separe
         `case_open` de `analyze_pyspark` -- derivar de `TOOLS` seria escrever
         `writers == writers` e o teste deixaria de cobrar decisao humana
@@ -341,6 +349,7 @@ class TestToolSurface:
             # `.sparkforge/proposal/<id>/` (tmp + troca), e o mesmo `now` grava os
             # mesmos bytes (§15 L3). Nao roda git e nao toca a arvore principal.
             "sparkforge_change_propose",
+            "sparkforge_agentops_baseline",
             # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
             #
             # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
@@ -2203,6 +2212,43 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_context_expand",
             {"ref": started["refs"][0]["uri"], "max_bytes": 5000, "repo": str(tmp_path)},
         )
+
+    if name == "sparkforge_context_inspect":
+        return call_tool(
+            name,
+            {
+                "payload": {
+                    "items": [
+                        {"item_id": "f1", "kind": "fact", "critical": True, "evidence_refs": ["f1"]}
+                    ],
+                    "required_evidence_refs": ["f1"],
+                },
+                "observed_provider_tokens": 1,
+            },
+        )
+
+    if name == "sparkforge_agentops_inspect":
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
+
+    if name == "sparkforge_agentops_compare":
+        return call_tool(
+            name,
+            {"repo": str(tmp_path), "run_a": "missing-a", "run_b": "missing-b"},
+        )
+
+    if name == "sparkforge_agentops_baseline":
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "action": "save",
+                "run_id": "missing-run",
+                "baseline_path": str(tmp_path / "baseline.json"),
+            },
+        )
+
+    if name == "sparkforge_doctor_agentic":
+        return call_tool(name, {"repo": str(tmp_path)})
 
     if name == "sparkforge_case_get":
         _open_case(tmp_path)
