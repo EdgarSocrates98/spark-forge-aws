@@ -155,7 +155,14 @@ def _model_axes(spans: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     }
 
 
-def inspect_run(db_path: Path | str, run_id: str) -> dict[str, Any]:
+def inspect_run(
+    db_path: Path | str,
+    run_id: str,
+    *,
+    ledger_events: Any = (),
+    provider_usage: Any = None,
+    provider_cost: Any = None,
+) -> dict[str, Any]:
     trace = _load_trace(db_path, run_id)
     if trace is None:
         return {"status": "unresolved", "run_id": run_id, "unresolved": ["run_not_found"]}
@@ -200,9 +207,32 @@ def inspect_run(db_path: Path | str, run_id: str) -> dict[str, Any]:
             "calls": by_component.get("model", 0),
             **model_axes,
         },
+        # A reconciliacao por eixo cruza trace + ledger + transcript; quando o
+        # chamador nao passa ledger/transcript, as fontes saem `None` -- a
+        # ausencia e declarada, nao preenchida.
+        "economy": _reconcile(trace, ledger_events, provider_usage, provider_cost),
         "evidence": {"refs": evidence, "count": len(evidence), "unresolved": unresolved},
         "waste": [finding.to_dict() for finding in _waste(spans)],
     }
+
+
+def _reconcile(
+    trace: dict[str, Any],
+    ledger_events: Any,
+    provider_usage: Any,
+    provider_cost: Any,
+) -> dict[str, Any]:
+    """Import preguicoso: `economy/__init__` arrasta decision_plane e governor,
+    e agentops fica no caminho de importacao de `_core` -- a fusao e barata,
+    o custo de import nao."""
+    from sparkforge.economy.reconcile import reconcile_run_economy
+
+    return reconcile_run_economy(
+        trace=trace,
+        ledger_events=ledger_events,
+        provider_usage=provider_usage,
+        provider_cost=provider_cost,
+    )
 
 
 def _metadata_list(span: dict[str, Any], key: str) -> list[str]:
