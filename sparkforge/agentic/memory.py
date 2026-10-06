@@ -26,7 +26,123 @@ from sparkforge.case.store import CASE_DIR
 
 MEMORY_DIR = "memory"
 DECISIONS_FILE = "decisions.jsonl"
+# §35 do prompt_evo_runtime: `decisions.jsonl` com `status` canonico e a unica
+# autoridade de quarentena. `quarantine.jsonl` continua lido (historico
+# legado), mas nenhuma escrita nova cai nela -- duas autoridades divergindo
+# era exatamente o que a secao mandava fechar.
 QUARANTINE_FILE = "quarantine.jsonl"
+
+_FRESHNESS_RANK = {"fresh": 1.0, "unknown": 0.5, "stale": 0.25, "expired": 0.0}
+_FRESHNESS_STATES = frozenset(_FRESHNESS_RANK)
+_TRUST_RANK = {"verified": 3, "provisional": 2, "stale": 1, "hypothesis-like": 1}
+
+
+def freshness_state(record: Mapping[str, Any], *, now: str | None = None) -> str:
+    """Estado efetivo de freshness: `expired` prevalece sobre o campo gravado.
+
+    `expires_at` no passado vence qualquer `freshness` declarado -- o campo e
+    uma declaracao, o prazo e um fato. Sem `expires_at`, o valor gravado vale;
+    ausente ou fora do vocabulario, `unknown` e o honesto.
+    """
+    expires = record.get("expires_at")
+    if expires:
+        try:
+            if datetime.fromisoformat(str(expires)) < datetime.fromisoformat(now or _now()):
+                return "expired"
+        except (TypeError, ValueError):
+            # Prazo gravado num formato que nao se le: nao se afirma expirado
+            # nem fresh -- `unknown` e o honesto.
+            return "unknown"
+    valor = str(record.get("freshness", "unknown"))
+    return valor if valor in _FRESHNESS_STATES - {"expired"} else "unknown"
+
+
+def _version_tuple(value: Any) -> tuple[int, ...] | None:
+    """Tupla numerica de versao -- o mesmo idiom da runtime_matrix."""
+    texto = str(value or "").strip()
+    if not texto:
+        return None
+    partes = texto.split(".")
+    try:
+        return tuple(int(p) for p in partes)
+    except ValueError:
+        return None
+
+
+def evaluate_runtime(
+    stored: Mapping[str, Any], requested: Mapping[str, Any]
+) -> dict[str, str]:
+    """Compatibilidade por componente: exact/compatible/incompatible/unresolved.
+
+    §41-42: nao e igualdade literal. "3.5" pedido cobre "3.5.2" gravado
+    (prefixo = mesma familia); divergencia de prefixo numerico e
+    incompativel; chave pedida que o registro nunca gravou e `unresolved`,
+    nao incompativel -- ausencia de evidencia nao vira evidencia de ausencia.
+    """
+    resultado: dict[str, str] = {}
+    for key, want in requested.items():
+        got = stored.get(key)
+        if got in (None, "", [], {}):
+            resultado[key] = "unresolved"
+            continue
+        if isinstance(got, (list, tuple)) or isinstance(want, (list, tuple)):
+            got_set = {str(v) for v in (got if isinstance(got, (list, tuple)) else [got])}
+            want_set = {str(v) for v in (want if isinstance(want, (list, tuple)) else [want])}
+            resultado[key] = (
+                "exact" if want_set <= got_set else "incompatible"
+            )
+            continue
+        if str(got) == str(want):
+            resultado[key] = "exact"
+            continue
+        got_t, want_t = _version_tuple(got), _version_tuple(want)
+        if got_t is None or want_t is None:
+            resultado[key] = "incompatible"
+        elif got_t[: len(want_t)] == want_t or want_t[: len(got_t)] == got_t:
+            resultado[key] = "compatible"
+        else:
+            resultado[key] = "incompatible"
+    return resultado
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeCompatibilityPolicy:
+    """Reduce o mapa por componente a um veredito de compatibilidade."""
+
+    def verdict(self, components: Mapping[str, str]) -> str:
+        if not components:
+            return "unknown"
+        estados = set(components.values())
+        if "incompatible" in estados:
+            return "incompatible"
+        if estados == {"exact"}:
+            return "exact"
+        if "unresolved" in estados:
+            return "partial"
+        return "compatible"
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryConflict:
+    """Duas memorias relevantes que divergem na decisao para o mesmo problema.
+
+    `resolution`: `prefer` quando evidencia/trust/freshness desempatam,
+    `review` quando nao ha diferenciador, `unresolved` reservado para quando
+    nem o grupo de comparacao e bem-formado.
+    """
+
+    record_ids: tuple[str, ...]
+    resolution: str
+    preferred: str | None = None
+    reason: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "record_ids": list(self.record_ids),
+            "resolution": self.resolution,
+            "preferred": self.preferred,
+            "reason": self.reason,
+        }
 
 
 def _now() -> str:
@@ -221,11 +337,33 @@ def init_memory(root: Path | str) -> Path:
 def _write_record(
     root: Path | str, record: DecisionMemoryRecord, *, quarantine: bool = False
 ) -> Path:
+    """Append-only no ledger canonico.
+
+    `quarantine` permanece no parametro para compatibilidade de assinatura,
+    mas o destino e sempre `decisions.jsonl`: o `status` dentro do registro
+    ja e a autoridade (§35), e um segundo arquivo era a segunda autoridade
+    que a secao mandava eliminar.
+    """
     init_memory(root)
-    path = memory_path(root) / (QUARANTINE_FILE if quarantine else DECISIONS_FILE)
+    path = memory_path(root) / DECISIONS_FILE
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record.to_dict(), ensure_ascii=True, sort_keys=True) + "\n")
     return path
+
+
+def _read_quarantine_legacy(root: Path | str) -> list[dict[str, Any]]:
+    """Le `quarantine.jsonl` legado -- leitura apenas, para nao perder
+    historico; escrita nova nao volta aqui."""
+    path = memory_path(root) / QUARANTINE_FILE
+    if not path.exists():
+        return []
+    records: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+    return records
 
 
 def record_decision(decision: Decision, root: Path | str, case_id: str = "") -> Path:
@@ -326,6 +464,9 @@ def find_similar_decisions(
     return [d for _, d in scored[:limit]]
 
 
+_RUNTIME_WEIGHT = {"exact": 1.0, "compatible": 0.75, "partial": 0.25, "unknown": 0.0}
+
+
 def retrieve_memory(
     problem: str,
     root: Path | str,
@@ -335,13 +476,23 @@ def retrieve_memory(
     environment_fingerprint: str = "",
     workload_type: str = "",
     include_quarantine: bool = False,
+    expired: str = "exclude",
+    runtime_policy: RuntimeCompatibilityPolicy | None = None,
 ) -> list[dict[str, Any]]:
     """Hybrid local retrieval with an explicit trust gate.
 
-    Ordering is exact → lexical → environment/runtime → outcome. Graph and
-    semantic retrieval remain optional hooks: absent indexes are reported by
-    score fields instead of silently pretending similarity exists.
+    Ordering is exact → freshness → lexical → runtime → environment →
+    outcome. `expired` governs expired records: "exclude" (default) drops
+    them, "stale" returns them demoted -- `trust` vira "stale" na copia
+    devolvida e `retrieval.freshness` diz "expired". Nunca iguais a fresh.
+    Runtime passa pela `RuntimeCompatibilityPolicy`: incompativel sai,
+    unresolved fica e e reportado. Graph and semantic retrieval remain
+    optional hooks: absent indexes are reported by score fields instead of
+    silently pretending similarity exists.
     """
+    if expired not in {"exclude", "stale"}:
+        raise ValueError("expired must be 'exclude' or 'stale'")
+    policy = runtime_policy or RuntimeCompatibilityPolicy()
     query_tokens = _tokens(problem)
     runtime = runtime or {}
     ranked: list[tuple[tuple[float, ...], dict[str, Any]]] = []
@@ -352,11 +503,14 @@ def retrieve_memory(
             continue
         if workload_type and record.get("workload_type") not in {workload_type, "unknown"}:
             continue
+        fresh = freshness_state(record)
+        if fresh == "expired" and expired == "exclude":
+            continue
         stored_runtime = record.get("runtime") or {}
-        compatible = sum(
-            1 for key, value in runtime.items() if value and stored_runtime.get(key) == value
+        compat_verdict = (
+            policy.verdict(evaluate_runtime(stored_runtime, runtime)) if runtime else "unknown"
         )
-        if runtime and compatible == 0 and stored_runtime:
+        if compat_verdict == "incompatible":
             continue
         stored_tokens = _tokens(str(record.get("problem", "")))
         lexical = len(query_tokens & stored_tokens) / max(len(query_tokens), 1)
@@ -370,22 +524,95 @@ def retrieve_memory(
         if not exact and lexical == 0 and not env:
             continue
         outcome = 1.0 if record.get("outcome") and record.get("outcome_evidence") else 0.0
-        ranked.append(((exact, lexical, float(compatible), env, outcome), record))
+        ranked.append(
+            (
+                (
+                    exact,
+                    _FRESHNESS_RANK[fresh],
+                    lexical,
+                    _RUNTIME_WEIGHT[compat_verdict],
+                    env,
+                    outcome,
+                ),
+                record,
+                fresh,
+                compat_verdict,
+            )
+        )
     ranked.sort(key=lambda item: item[0], reverse=True)
     result: list[dict[str, Any]] = []
-    for scores, record in ranked[:limit]:
+    for scores, record, fresh, compat_verdict in ranked[:limit]:
         item = dict(record)
+        if fresh == "expired":
+            # §40: expirado devolvido nunca carrega a confianca gravada -- a
+            # copia desce para "stale" e o estado expirado fica nomeado.
+            item["trust"] = "stale"
         item["retrieval"] = {
             "exact": scores[0],
-            "lexical": scores[1],
-            "runtime_compatibility": scores[2],
-            "environment": scores[3],
-            "outcome": scores[4],
+            "freshness": fresh,
+            "lexical": scores[2],
+            "runtime_compatibility": compat_verdict,
+            "environment": scores[4],
+            "outcome": scores[5],
             "graph": "unresolved",
             "semantic": "disabled",
         }
         result.append(item)
     return result
+
+
+def detect_memory_conflicts(root: Path | str) -> list[MemoryConflict]:
+    """Agrupa memorias elegiveis por problema e nomeia divergencias (§43-44).
+
+    Conflicto e mesmo `problem_fingerprint` com `decision` divergente.
+    Resolucao deterministica por evidencia: trust > outcome com evidencia >
+    freshness. Quando nada diferencia, `review` -- nunca preferencia
+    silenciosa.
+    """
+    elegiveis = [
+        record
+        for record in _read_decisions(root)
+        if record.get("status") in {"accepted", "verified"}
+        and not record.get("invalidated_by")
+        and not record.get("superseded_by")
+    ]
+    por_problema: dict[str, list[dict[str, Any]]] = {}
+    for record in elegiveis:
+        por_problema.setdefault(str(record.get("problem_fingerprint", "")), []).append(record)
+
+    def _forca(record: dict[str, Any]) -> tuple[float, ...]:
+        return (
+            float(_TRUST_RANK.get(str(record.get("trust", "")), 0)),
+            1.0 if record.get("outcome") and record.get("outcome_evidence") else 0.0,
+            _FRESHNESS_RANK[freshness_state(record)],
+        )
+
+    conflicts: list[MemoryConflict] = []
+    for grupo in por_problema.values():
+        decisoes = {str(record.get("decision", "")) for record in grupo}
+        if len(grupo) < 2 or len(decisoes) < 2:
+            continue
+        ordenado = sorted(grupo, key=_forca, reverse=True)
+        melhor, segundo = ordenado[0], ordenado[1]
+        ids = tuple(sorted(str(record.get("id", "")) for record in grupo))
+        if _forca(melhor) > _forca(segundo):
+            conflicts.append(
+                MemoryConflict(
+                    ids,
+                    "prefer",
+                    preferred=str(melhor.get("id", "")),
+                    reason="trust_outcome_freshness_differentiates",
+                )
+            )
+        else:
+            conflicts.append(
+                MemoryConflict(
+                    ids,
+                    "review",
+                    reason="no_evidence_differentiator",
+                )
+            )
+    return conflicts
 
 
 def invalidate_memory(
@@ -433,8 +660,13 @@ class MemoryStats:
 
 
 def memory_stats(root: Path | str) -> MemoryStats:
-    """Computa estatísticas da memória institucional."""
-    decisions = _read_decisions(root)
+    """Computa estatísticas da memória institucional.
+
+    O ledger canonico e `decisions.jsonl`; `quarantine.jsonl` legado entra
+    somente para leitura de historico, senao registros quarantinados antes
+    da consolidacao sumiriam das metricas.
+    """
+    decisions = _read_decisions(root) + _read_quarantine_legacy(root)
     total = len(decisions)
     with_outcome = sum(1 for d in decisions if d.get("outcome"))
     successful = sum(
@@ -463,10 +695,15 @@ def memory_stats(root: Path | str) -> MemoryStats:
 __all__ = [
     "DecisionMemoryRecord",
     "MemoryCandidate",
+    "MemoryConflict",
     "MemoryStats",
+    "RuntimeCompatibilityPolicy",
     "classify_memory_candidate",
     "decisions_file_path",
+    "detect_memory_conflicts",
+    "evaluate_runtime",
     "find_similar_decisions",
+    "freshness_state",
     "get_decision_history",
     "init_memory",
     "invalidate_memory",
