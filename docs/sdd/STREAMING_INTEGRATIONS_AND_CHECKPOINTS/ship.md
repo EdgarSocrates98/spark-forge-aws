@@ -20,8 +20,8 @@ lineage completo sem evidência correspondente.
 
 ## Gates rodados
 
-- `python -m pytest tests/test_streaming_integrations.py tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge/local/pytest-streaming-integrations-gates` — `904 passed`, exit 0.
-- `python -m pytest tests/test_capability_parity.py tests/test_host_surface_contracts.py -q --basetemp .sparkforge/local/pytest-streaming-integrations-surface` — `46 passed`, exit 0.
+- `python -m pytest tests/test_streaming_integrations.py tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge_aws/local/pytest-streaming-integrations-gates` — `904 passed`, exit 0.
+- `python -m pytest tests/test_capability_parity.py tests/test_host_surface_contracts.py -q --basetemp .sparkforge_aws/local/pytest-streaming-integrations-surface` — `46 passed`, exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.

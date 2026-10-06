@@ -13,7 +13,7 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
-from sparkforge_aws.case.store import CASE_DIR, CASE_FILE
+from sparkforge_aws.case.store import case_read_path
 from sparkforge_aws.change.proposal import PROPOSAL_DIR
 from sparkforge_aws.change.sandbox import SANDBOX_DIR
 from sparkforge_aws.facts.scan import (
@@ -414,8 +414,8 @@ def _nao_movidas(relatorio: dict[str, Any] | None, regras: list[str]) -> list[st
 
 
 _ONDE_O_RELATORIO_MORA = (
-    ".sparkforge/sandbox/<id>/report.json ou "
-    ".sparkforge/proposal/<id>/evidence/sandbox_report.json"
+    ".sparkforge_aws/sandbox/<id>/report.json ou "
+    ".sparkforge_aws/proposal/<id>/evidence/sandbox_report.json"
 )
 
 
@@ -627,7 +627,7 @@ def _texto_ou_none(valor: Any) -> str | None:
 
 
 def _case_id_atual(repo: Path) -> str | None:
-    arquivo = repo / CASE_DIR / CASE_FILE
+    arquivo = case_read_path(repo)
     if not arquivo.is_file():
         return None
     try:
@@ -665,6 +665,10 @@ def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
 _BASES_DA_MUDANCA: tuple[tuple[PurePosixPath, str], ...] = (
     (SANDBOX_DIR, "report.json"),
     (PROPOSAL_DIR, "evidence/sandbox_report.json"),
+    # Os mesmos pontos sob o diretorio de estado pre-rename: um sandbox ou
+    # proposta gravada em `.sparkforge/` continua valendo como mudanca.
+    (PurePosixPath(".sparkforge/sandbox"), "report.json"),
+    (PurePosixPath(".sparkforge/proposal"), "evidence/sandbox_report.json"),
 )
 
 
@@ -689,8 +693,8 @@ def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     if not _pastas_da_mudanca(ctx.repo, ident):
         ctx.recusa("change_missing", artefato.path, "change_id",
                    "o build do operador passa por `sparkforge-aws change sandbox`; registre o id "
-                   "em change_id (vale enquanto existir .sparkforge/sandbox/<id>/ ou "
-                   ".sparkforge/proposal/<id>/)")
+                   "em change_id (vale enquanto existir .sparkforge_aws/sandbox/<id>/ ou "
+                   ".sparkforge_aws/proposal/<id>/ -- ou os irmaos legados em `.sparkforge/`)")
 
 
 def _ids_citados(ctx: _Contexto) -> list[str]:

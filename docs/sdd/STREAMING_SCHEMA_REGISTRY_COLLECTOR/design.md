@@ -39,7 +39,7 @@ AWS Glue Schema Registry (list/get)
               v
 collect schema-registry --repo ...
               |
-              +--> .sparkforge/artifacts/schema_registry/*.json
+              +--> .sparkforge_aws/artifacts/schema_registry/*.json
               +--> manifest + sha256 + collect command
               |
               v

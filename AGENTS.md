@@ -100,9 +100,8 @@ the case, decides which executor runs next, and records which one ran
 | `cdc-contract-reviewer` | revisão de eventos CDC, Debezium/Kafka Connect, AWS DMS e contratos de mudança com posição, chave, seam, tombstone, schema history e mappings | SF-CDC, SF-DEBEZIUM, SF-DMS, SF-SCHEMA |
 
 Which coordinator to use is data, not judgment: routes in `rules/catalog/routing.yaml`
-map the case's phase and dominant finding area to a `recommended_agent`, and
-`sparkforge_next_step` / `sparkforge-aws next-step` reads them — never pick a coordinator by
-inspection.
+map the case's phase and dominant finding area to a `recommended_agent`;
+`sparkforge_next_step` / `sparkforge-aws next-step` reads them — never pick by inspection.
 
 **Three platforms dispatch**: Claude Code, the Devin CLI and the Devin Local agent. Devin
 reads `.agents/agents/` natively and imports `.claude/agents/*.md` — both are generated
@@ -118,7 +117,7 @@ prose, byte-identical in both mirrors. Sources: `knowledge/devin/agents-and-suba
 **`playbook` is the floor on all five platforms.** `sparkforge-aws playbook <coordinator>`
 (or `sparkforge_playbook`) returns the same decomposition as a sequence of steps. It is
 the **only** path on Codex and Copilot CI, and stays the path on the three that dispatch
-whenever dispatch is off (`subagents_enabled: false`, or an org admin picking *None*).
+whenever dispatch is off (`subagents_enabled: false`, or an admin choosing *None*).
 
 ### How to actually invoke it
 
@@ -145,7 +144,7 @@ glue-incremental-performance-architect skill.`
 **143 tools, 52 with `detail_level`** (recounted 2026-10-04) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
-each level requested and does not conclude for you.
+each level and does not conclude for you.
 
 Nine Code Intelligence tools exist so that nobody has to open a file: `code_search`,
 `code_symbol`, `code_path`, `code_shape`, `code_context`, `code_read`,
@@ -197,7 +196,7 @@ The declarative Decision Plane is versioned at
 `config/decisions/routing.data_domain.yaml` and observes the current route without
 replacing it. `sparkforge-aws decision validate|shadow|compare|benchmark|receipt` are
 CLI-only verbs; they add no MCP tool and do not change `CapabilityModelRouter`
-dispatch. Content-addressed receipts live under `.sparkforge/decision-receipts/`
+dispatch. Content-addressed receipts live under `.sparkforge_aws/decision-receipts/`
 and preserve status, route, comparison, budget, `unresolved`, and
 `provider_tokens` only when a host transcript supplies them.
 
@@ -321,11 +320,11 @@ Fact/Finding contract.
 ## Access governance: the four artifacts that answer "who may do what"
 
 ```bash
-sparkforge-aws analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+sparkforge-aws analyze terraform --path infra/ --out .sparkforge_aws/facts_tf.json
 sparkforge-aws collect lakeformation --repo . --database <db> --table <t>     --catalog-id <catalog-owning-account> --resource-arn <s3-location> --now <ISO8601>
-sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
+sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lakeformation/
 sparkforge-aws collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <target-arn> --action s3:PutObject --now <ISO8601>
-sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/
+sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/
 ```
 
 **Simulate, never parse.** `collect iam-access` calls `iam:SimulatePrincipalPolicy`:
@@ -375,7 +374,7 @@ Where caveman collides with this project, **this project wins**: the
 anything the operating contract calls evidence stays anchored. Commit messages, PR
 descriptions and code comments are written in normal English. Cloning is the whole
 installation — nothing here reaches the network (`tests/test_vendor_caveman.py`).
-Durable memory across sessions is `.sparkforge/case.yaml` plus the journal.
+Durable memory across sessions is `.sparkforge_aws/case.yaml` plus the journal.
 
 ## Coordinators sf-*
 sf-lake-formation-specialist
@@ -415,7 +414,7 @@ write command, unreachable inside a subagent (V-DV-10). Use them for questions a
 
 `sparkforge_aws/agentic/` holds first-class entities (`Claim`, `Evidence`, `Hypothesis`,
 `Experiment`, `Decision`, `Unknown`, `Contradiction`, `Objection`, `Rebuttal`), the case
-blackboard (`.sparkforge/blackboard/*.jsonl`, append-only, crash-safe), debate,
+blackboard (`.sparkforge_aws/blackboard/*.jsonl`, append-only, crash-safe), debate,
 arbitration, experiment, decision with ADR, memory, budget, security, L0–L5 autonomy and
 the execution graph. `sparkforge_aws/agentic/executor/` is the deterministic **producer**.
 
@@ -424,14 +423,14 @@ the execution graph. `sparkforge_aws/agentic/executor/` is the deterministic **p
   arbitration does not close it emits a `DebatePlan` with a `debate_gate` verdict
   (`debater`, `experimentar_antes`, `nao_debater`, `unresolved`).
 - `sparkforge-aws debate start|next|submit` is an L0 state machine over
-  `.sparkforge/debate/<debate_id>/`: it opens only `debater` plans, refuses by name, accepts
+  `.sparkforge_aws/debate/<debate_id>/`: it opens only `debater` plans, refuses by name, accepts
   only **re-extracted** evidence and always closes through the `referee`. The host writes
   the arguments (skill `run-debate`, `scripts/run_debate.py`); nothing here calls a
   provider.
 - Both executors are **L0**: `applied_changes` is always `false`, and the ADR is a
   proposal with a mandatory `rollback`.
 - Every state-changing verb writes a `started`/`finished` pair to
-  `.sparkforge/journal.jsonl`; `resume` reads the open ones, `sparkforge-aws journal verify`
+  `.sparkforge_aws/journal.jsonl`; `resume` reads the open ones, `sparkforge-aws journal verify`
   checks the chain.
 - **No benchmark of the agentic layer exists, so no gain is claimed** (`CLAUDE.md` rule
   30). Evidence authority tiers: T1 official docs > T2 source/changelog > T3 reproducible

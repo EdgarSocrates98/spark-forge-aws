@@ -1,7 +1,7 @@
 """Golden do journal: cenarios de queda gravados no estado exato em que a queda os deixa.
 
 Cada caso de `fixtures/journal/` traz `input/` (a raiz de um case sintetico, com
-`.sparkforge/journal.jsonl` e, quando o cenario pede, blackboard e debate) e
+`.sparkforge_aws/journal.jsonl` e, quando o cenario pede, blackboard e debate) e
 `expected/observado.json`: o que `verify`, `estado`, `resume` e os leitores do
 blackboard e do debate devolvem sobre ela. A entrada e copiada para `tmp_path`
 antes de qualquer leitura -- o journal e commitavel, e a arvore nao pode mudar.
@@ -56,9 +56,9 @@ def _observado(raiz: Path) -> dict:
         },
         "handoff_em_voo": _secao_em_voo(render_handoff(payload)),
     }
-    if (raiz / ".sparkforge" / "blackboard" / "claims.jsonl").is_file():
+    if (raiz / ".sparkforge_aws" / "blackboard" / "claims.jsonl").is_file():
         observado["claims"] = [r["id"] for r in read_claims(raiz)]
-    debates = raiz / ".sparkforge" / "debate"
+    debates = raiz / ".sparkforge_aws" / "debate"
     if debates.is_dir():
         observado["submissions"] = {
             d.name: {
@@ -103,5 +103,5 @@ def test_append_depois_da_cauda_cortada_continua_a_cadeia(tmp_path: Path) -> Non
 
 def test_fixture_sem_crlf() -> None:
     for caso in CASOS:
-        dado = (FIXTURES / caso / "input" / ".sparkforge" / "journal.jsonl").read_bytes()
+        dado = (FIXTURES / caso / "input" / ".sparkforge_aws" / "journal.jsonl").read_bytes()
         assert b"\r\n" not in dado, caso

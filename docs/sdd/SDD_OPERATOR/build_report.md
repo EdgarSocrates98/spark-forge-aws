@@ -96,7 +96,7 @@ referência gerada").
 6. **T5, acréscimo pedido no build (dentro do commit de T4).** As seções
    "Perfil operator" de `sdd-define`, `sdd-plan` e `sdd-build` deixaram de
    adiar para o "subprojeto C" e passaram a dar o caminho concreto:
-   - o `case_id` vem de `sparkforge-aws case open` e fica em `.sparkforge/case.yaml`;
+   - o `case_id` vem de `sparkforge-aws case open` e fica em `.sparkforge_aws/case.yaml`;
    - o aceite é `funcval` ou `fact`;
    - o `test` de tarefa do operador é a checagem que falha antes da mudança;
    - `red` e `green` no sandbox;

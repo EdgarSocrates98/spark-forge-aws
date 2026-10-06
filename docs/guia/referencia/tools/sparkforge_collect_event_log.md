@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` e registra no manifesto (`.sparkforge/artifacts/manifest.json`). Le, nunca grava nada do lado AWS. Offline-first: uma segunda chamada com o mesmo artefato ja presente e integro localmente (`cache_hit: true`) nao toca rede nem credenciais. boto3 ausente devolve um erro com o comando `pip install` E o caminho exato para registrar uma coleta manual -- nunca deixa a ferramenta inutilizavel. NAO interpreta o log; use `sparkforge_analyze_event_log` depois.
+Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` e registra no manifesto (`.sparkforge_aws/artifacts/manifest.json`). Le, nunca grava nada do lado AWS. Offline-first: uma segunda chamada com o mesmo artefato ja presente e integro localmente (`cache_hit: true`) nao toca rede nem credenciais. boto3 ausente devolve um erro com o comando `pip install` E o caminho exato para registrar uma coleta manual -- nunca deixa a ferramenta inutilizavel. NAO interpreta o log; use `sparkforge_analyze_event_log` depois.
 
 ## Parâmetros
 

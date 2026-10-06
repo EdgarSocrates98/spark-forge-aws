@@ -69,7 +69,7 @@
       "evidence_artifacts": [
         {
           "extractor": "terraform",
-          "path": ".sparkforge/case.yaml"
+          "path": ".sparkforge_aws/case.yaml"
         }
       ]
     }

@@ -14,7 +14,7 @@ Tudo que o indice sabe sobre UM simbolo: metadado, assinatura normalizada, quem 
 |---|---|---|---|
 | `node_id` | string | sim | Id devolvido por `sparkforge_code_search`. |
 | `repo` | string | sim | Raiz do repositorio analisado. Nada e lido fora dela. |
-| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`. |
+| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`. |
 | `depth` | integer | não | Saltos do raio de impacto. Satura no teto, nao recusa. |
 | `detail_level` | string: `summary`, `normal`, `full` | não | `summary` para no metadado; `normal` acrescenta vizinhanca direta; `full` acrescenta o raio de impacto e os testes nele. |
 

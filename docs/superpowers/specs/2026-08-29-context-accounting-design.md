@@ -40,7 +40,7 @@ esta medição existir antes.
 
 ### 1.2 O ledger já existe, e dois campos dele mentem
 
-`sparkforge_aws/observability/store.py` cria `.sparkforge/traces.db` com as tabelas
+`sparkforge_aws/observability/store.py` cria `.sparkforge_aws/traces.db` com as tabelas
 `traces` e `spans`. `TraceSpan` já declara `component_type` — com `"tool"` entre
 os valores previstos —, `input_tokens`, `output_tokens`, `cached_tokens` e
 `estimated_cost_usd`. Nenhum caminho de execução escreve nele.
@@ -192,7 +192,7 @@ somado ao byte.
 ## 6. Erros, cada um com o seu nome
 
 **A medição nunca quebra a chamada.** Ledger indisponível — disco cheio, SQLite
-travado, `.sparkforge/` sem permissão — e `call_tool` devolve o resultado do
+travado, `.sparkforge_aws/` sem permissão — e `call_tool` devolve o resultado do
 handler do mesmo jeito. Instrumentação que derruba o produto é defeito, não
 observabilidade; a falha de escrita é engolida com a razão escrita, no padrão
 que `economy/cache.py` já usa para o cache best-effort.

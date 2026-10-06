@@ -191,13 +191,13 @@ SF-PQ-008  P1  Estatística presente e inútil — row groups cobrem quase todo 
 `sparkforge-aws iceberg` tem um subcomando só, `assess-upgrade`. Ele avalia subir o `format-version`
 da tabela contra quem a consome e **não executa** nada.
 
-Ele lê o inventário de consumidores em `.sparkforge/consumers.yaml`, dentro do diretório do job.
+Ele lê o inventário de consumidores em `.sparkforge_aws/consumers.yaml`, dentro do diretório do job.
 Exemplo com o inventário de `fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml`,
 copiado para uma pasta temporária:
 
 ```bash
-mkdir -p "$SAIDA/job_pedidos/.sparkforge"
-cp fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml "$SAIDA/job_pedidos/.sparkforge/consumers.yaml"
+mkdir -p "$SAIDA/job_pedidos/.sparkforge_aws"
+cp fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml "$SAIDA/job_pedidos/.sparkforge_aws/consumers.yaml"
 sparkforge-aws iceberg assess-upgrade --from 2 --to 3 "$SAIDA/job_pedidos"
 ```
 

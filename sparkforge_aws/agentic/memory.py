@@ -7,7 +7,7 @@ Três níveis de memória:
 
 Institutional memory é um índice de decisões passadas que pode ser consultado
 para evitar repetir erros e reusar soluções provadas. É armazenado em
-`.sparkforge/memory/decisions.jsonl` no root do repositório.
+`.sparkforge_aws/memory/decisions.jsonl` no root do repositório.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge_aws.agentic.models import Decision
-from sparkforge_aws.case.store import CASE_DIR
+from sparkforge_aws.case.store import state_dir
 
 MEMORY_DIR = "memory"
 DECISIONS_FILE = "decisions.jsonl"
@@ -318,8 +318,8 @@ def persist_memory_candidate(
 
 
 def memory_path(root: Path | str) -> Path:
-    """Retorna o path do diretório de memória institucional."""
-    return Path(root) / CASE_DIR / MEMORY_DIR
+    """Retorna o path do diretório de memória, ao lado do case resolvido."""
+    return state_dir(root) / MEMORY_DIR
 
 
 def decisions_file_path(root: Path | str) -> Path:

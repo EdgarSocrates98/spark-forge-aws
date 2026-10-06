@@ -107,7 +107,7 @@ O pacote nao faz chamada de rede.
 
 ### Approach B: SARIF com tudo, ancorando runtime num arquivo
 
-**Description:** os findings de runtime ficam presos a um arquivo ancora, como `.sparkforge/case.yaml` na linha 1, ou o proprio artefato.
+**Description:** os findings de runtime ficam presos a um arquivo ancora, como `.sparkforge_aws/case.yaml` na linha 1, ou o proprio artefato.
 
 **Pros:**
 - Tudo na aba Security.
@@ -148,7 +148,7 @@ O pacote nao faz chamada de rede.
 | 1 | Verbo `sparkforge-aws report github`, na familia `report` | Compoe sobre findings e facts, sem ler artefato | `scan .`, que descobre, extrai e julga tudo de uma vez |
 | 2 | Localizacao: `subject` com arquivo e linha; senao, fact de `evidence` com arquivo e linha; e o arquivo precisa existir sob `--repo` | So entra no SARIF o que o GitHub consegue mostrar numa linha real | Ancorar em arquivo sintetico |
 | 3 | Sem localizacao: secao do resumo com motivo (`runtime`, `arquivo fora do repo`, `sem linha`) | Regra 20: recusa tem nome | Descartar calado |
-| 4 | Saidas com nome fixo (`.sparkforge/report/sparkforge-aws.sarif` e `summary.md`) dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness) | `--out <caminho>` |
+| 4 | Saidas com nome fixo (`.sparkforge_aws/report/sparkforge-aws.sarif` e `summary.md`) dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness) | `--out <caminho>` |
 | 5 | Severidade: P0/P1 viram `error`, P2 vira `warning`, P3/P4 viram `note`; sem `security-severity` | As regras sao de performance e custo; marca-las como `security` as poria na contagem de vulnerabilidades | Mapear para `security-severity` |
 | 6 | `partialFingerprints` omitido | O `upload-sarif` o calcula a partir do fonte, e o GitHub so usa o `primaryLocationLineHash` | Calcular o hash no pacote |
 | 7 | `--fail-on P0\|P1`: exit 1 quando ha finding daquela severidade ou pior; erro de uso continua 2 | O check do PR fica vermelho sem API | Sempre 0 |

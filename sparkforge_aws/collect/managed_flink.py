@@ -49,7 +49,7 @@ def managed_flink_path(
     subject = _slug(identity)
     if metrics_start or metrics_end:
         subject += f"__metrics_{_slug(metrics_start)}_{_slug(metrics_end)}_{metrics_period}"
-    return f".sparkforge/artifacts/managed_flink_application/{subject}.json"
+    return f".sparkforge_aws/artifacts/managed_flink_application/{subject}.json"
 
 
 def _scalar(value: Any) -> Any:

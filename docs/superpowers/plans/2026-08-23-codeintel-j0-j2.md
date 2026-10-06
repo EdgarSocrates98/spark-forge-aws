@@ -47,8 +47,8 @@ Um índice que persista código de cliente **multiplica** cada um desses. Por is
 J0 vem primeiro, e por isso ela não é "preparação" — é conserto.
 
 A política de git do estado local, que era a quarta pré-condição, **já foi
-fechada** em `715a657`: `.sparkforge/traces.db`, `.sparkforge/cache/` e
-`.sparkforge/local/` entraram no `.gitignore` com a razão escrita.
+fechada** em `715a657`: `.sparkforge_aws/traces.db`, `.sparkforge_aws/cache/` e
+`.sparkforge_aws/local/` entraram no `.gitignore` com a razão escrita.
 
 ## Escopo: o que NÃO está neste plano
 
@@ -520,7 +520,7 @@ DIRETORIOS_IGNORADOS: frozenset[str] = frozenset(
         "node_modules", "bower_components",
         "vendor", "build", "dist", ".eggs", ".mypy_cache", ".pytest_cache",
         ".ruff_cache", ".idea", ".vscode", ".gradle", "target",
-        ".terraform", ".sparkforge",
+        ".terraform", ".sparkforge_aws",
     }
 )
 

@@ -33,14 +33,14 @@ Seu trabalho não é calcular. É **coletar, rodar, e interpretar o que voltou**
 sparkforge-aws collect event-log --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>
 ```
 
-Sem credencial AWS, baixe o log manualmente para `.sparkforge/artifacts/eventlog/<id>.jsonl` e registre com `sparkforge_aws.collect.register_artifact` — o manifesto é o que permite retomar em outra máquina.
+Sem credencial AWS, baixe o log manualmente para `.sparkforge_aws/artifacts/eventlog/<id>.jsonl` e registre com `sparkforge_aws.collect.register_artifact` — o manifesto é o que permite retomar em outra máquina.
 
 Se o job não tem `--enable-spark-ui` e `--spark-event-logs-path`, não há log e não vai haver. Esse é o achado: `SF-GLUE-002`, observabilidade ausente. Reporte e pare — nenhuma métrica de execução existe para analisar.
 
 ### 2. Extraia os facts
 
 ```bash
-sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json
+sparkforge-aws analyze event-log --path .sparkforge_aws/artifacts/eventlog/<id>.jsonl --out .sparkforge_aws/facts.json
 ```
 
 Leia `unresolved` na saída. Linha malformada ou log truncado vira `spark.unresolved`, e isso é ponto cego, não ausência de problema. Reporte a contagem sempre.
@@ -48,7 +48,7 @@ Leia `unresolved` na saída. Linha malformada ou log truncado vira `spark.unreso
 ### 3. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --show-skipped
 ```
 
 `--show-skipped` não é opcional. Ele diz quais regras **não** foram avaliadas e por quê — sem isso você não distingue "nenhum problema" de "não coletei o dado que provaria o problema".
@@ -58,8 +58,8 @@ A flag de versão também não é: o event log declara o runtime na própria pri
 **Mas o event log preenche `spark`, não `glue`.** A derivação é de mão única — sabendo a versão do Glue sai a do Spark pela matriz de compatibilidade, e não o contrário, porque uma mesma versão de Spark aparece em mais de uma versão de Glue. Consequência prática: as seis regras `SF-GLUE-*` continuam puladas com `reason: runtime_scope` mesmo com o log inteiro em mãos. Nenhuma regra `SF-UI-*` guarda versão, então a análise desta skill não perde nada — mas se `--show-skipped` mostrar `SF-GLUE-002` (observabilidade) e você quiser cobrir esse eixo, junte os facts do Terraform na mesma chamada (`--facts` é repetível) em vez de digitar a versão:
 
 ```bash
-sparkforge-aws analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
-sparkforge-aws judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json --show-skipped
+sparkforge-aws analyze terraform --path <dir.tf> --out .sparkforge_aws/facts_tf.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --facts .sparkforge_aws/facts_tf.json --show-skipped
 ```
 
 Se o log e o `.tf` discordarem sobre a versão do Spark, `runtime.divergences` mostra os dois valores — e essa é a leitura mais valiosa desta saída, porque um job rodando em runtime diferente do declarado invalida todo limiar versionado aplicado depois.

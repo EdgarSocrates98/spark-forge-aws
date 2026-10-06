@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Le o estado atual do case (.sparkforge/case.yaml): fase, gates, runtime detectado, indices de facts e findings. Falha com um erro que nomeia `sparkforge-aws case open` quando nenhum case existe ainda no repositorio.
+Le o estado atual do case (.sparkforge_aws/case.yaml): fase, gates, runtime detectado, indices de facts e findings. Falha com um erro que nomeia `sparkforge-aws case open` quando nenhum case existe ainda no repositorio.
 
 ## Parâmetros
 

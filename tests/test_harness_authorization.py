@@ -846,7 +846,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     `findings` e `facts` -- inline, sem caminho nenhum. Nesse desenho ela cairia
     no conjunto de EXCECAO, e a excecao seria falsa: ao contrario de
     `release_describe` e `controlm_describe`, que so leem matriz do proprio
-    pacote, esta tool ESCREVE no disco do operador (`.sparkforge/blackboard/`
+    pacote, esta tool ESCREVE no disco do operador (`.sparkforge_aws/blackboard/`
     mais um ADR por decisao). Uma tool de mutacao local fora da verificacao de
     confinamento e um buraco, nao uma simplificacao.
     Ela declara os TRES: `repo` (a raiz onde grava), `findings_path` e
@@ -973,7 +973,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # 86 -> 87 com `gain` (2026-09-13, §21): `_READ_ONLY` e declara
         # `baseline_paths` e `candidate_paths`, os runs medidos de cada lado.
         # 87 -> 89 com `scan` e `doctor` (2026-09-13, §22): as duas declaram
-        # `repo`; `scan` grava em `.sparkforge/scan/`, `doctor` so le.
+        # `repo`; `scan` grava em `.sparkforge_aws/scan/`, `doctor` so le.
         # 89 -> 90 com `policy_explain` (2026-09-13, §16): `_READ_ONLY`, declara
         # `repo` e `file_path` (o caminho de escrita que ela so confere).
         # 94 -> 95 com `change_propose` (2026-09-14, §15 L3): `_WRITE_IDEMPOTENT`,

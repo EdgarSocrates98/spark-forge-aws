@@ -73,7 +73,7 @@ por excesso até esta revisão.
 | Source read-only | EXISTE PARCIAL | Nenhum extrator abre arquivo do repositório analisado para escrita, e há teste medindo que uma tool sem `out_path` não escreve nada. Mas isso prova a **tool**, não o **invariante**: não existe checagem que varra a superfície inteira e afirme que nada escreve no source | `tests/test_adapters_tools.py` |
 | Zero network egress | EXISTE PARCIAL | `ExecutionProfile.OFFLINE` é teto, não conselho: `sparkforge_aws/agents/autonomy.py:authorize()` recusa tool de rede sob esse perfil em qualquer grafia, e aprovação explícita **não** fura o teto. O que falta é enforcement de runtime — nenhum audit hook, nenhum bloqueio de socket, nenhuma sanitização de ambiente. O teto vale para quem passa por `authorize()`; um `import requests` dentro de um extrator não passa por lugar nenhum | `tests/test_harness_authorization.py` |
 | Confinamento ao root autorizado | EXISTE PARCIAL | O algoritmo deixou de ser cópia: `sparkforge_aws/paths.py:resolve_within()` é a implementação única, e `rules/loader.py`, `knowledge_ref.py` e `agents/autonomy.py` chamam ela. `authorize()` passou a receber `arguments` e `root` e recusa argumento de caminho que escape da raiz do case, inclusive `~` e lista de caminhos item a item. `facts/scan.py:iter_source_files()` confina cada arquivo visitado sob a raiz varrida. O que falta é o outro lado da mesma pergunta: nenhum dos quatro caminhos de execução chama `authorize()`, então a verificação existe e está desligada — e a **raiz** apontada de fora não é confinada por nada, porque não há raiz autorizada contra a qual compará-la | `tests/test_harness_authorization.py` |
-| Sem telemetria conversacional | EXISTE, com teste | `sparkforge_aws/observability/store.py:SQLiteTraceStore` grava trace da execução do próprio SparkForge, e nada no repositório lê histórico de agente de terceiro. A ressalva que esta linha registrava — `.sparkforge/traces.db` fora do `.gitignore` — foi fechada pela fase J0: `git check-ignore` reconhece hoje `traces.db`, `cache/` e `local/`, cada um com a razão escrita ao lado da regra | `tests/test_observability.py` |
+| Sem telemetria conversacional | EXISTE, com teste | `sparkforge_aws/observability/store.py:SQLiteTraceStore` grava trace da execução do próprio SparkForge, e nada no repositório lê histórico de agente de terceiro. A ressalva que esta linha registrava — `.sparkforge_aws/traces.db` fora do `.gitignore` — foi fechada pela fase J0: `git check-ignore` reconhece hoje `traces.db`, `cache/` e `local/`, cada um com a razão escrita ao lado da regra | `tests/test_observability.py` |
 | Sem herança de credencial em worker de parsing | NÃO EXISTE | Não há worker de parsing, então também não há sanitização de ambiente. Hoje o extrator roda no mesmo processo, com o mesmo ambiente, e nada impede um extrator futuro de ler `AWS_SECRET_ACCESS_KEY` | — |
 | Política de retenção de source (corpo de função e cache) | EXISTE PARCIAL | O banco existe desde a fase J3, e a decisão que esta linha cobrava foi tomada **no schema**: `sparkforge_aws/codeintel/db.py` não tem coluna de corpo, e `nodes.normalized_signature` chega já sanitizada. Dois testes medem que o corpo não passa — `test_corpo_da_funcao_nao_chega_ao_banco` e `test_nenhum_no_carrega_corpo`. O que falta é a política **escrita**: nada declara por quanto tempo o índice vale, quando ele é apagado, nem o que muda no dia em que a recuperação de trecho de código existir e o snippet passar a ser material a reter | `tests/test_codeintel_index.py` |
 | Threat model escrito, com ameaça numerada e proteção | NÃO EXISTE | Nenhum documento do repositório enumera ameaça contra repositório malicioso. [`AUTHORIZATION-CHAIN.md`](AUTHORIZATION-CHAIN.md) e [`UNTRUSTED-CONTENT.md`](UNTRUSTED-CONTENT.md) cobrem duas fronteiras, cada um a sua, e nenhum dos dois é um threat model | — |
@@ -99,7 +99,7 @@ por excesso até esta revisão.
 | Confinamento de caminho vindo de fora do processo | EXISTE PARCIAL | Fechado por dentro, aberto por fora. Por dentro: `iter_source_files()` resolve cada arquivo visitado e descarta o que cair fora da raiz varrida, mesmo com componente intermediário trocado durante a varredura. Por fora: `authorize()` sabe recusar argumento de caminho que escape da raiz do case, mas nenhum dos quatro caminhos de execução — `adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`, `agents/supervisor.py` — chama `authorize()`, então as tools de análise continuam recebendo o `path` que quiserem passar. A raiz apontada é confinada em relação a si mesma, e a nada mais | `tests/test_facts_scan.py` |
 | Symlink recusado por padrão | EXISTE, com teste | `sparkforge_aws/facts/scan.py:_e_atalho()` recusa symlink de arquivo, symlink de pasta e reparse point em geral — inclusive **junction do Windows**, que `os.path.islink` não vê e que `mklink /J` cria sem privilégio de administrador. Recusar é diferente de resolver e conferir contenção: symlink apontando para dentro da raiz também é pulado, e há teste para esse caso exato | `tests/test_facts_scan.py` |
 | Denylist de caminho sensível | EXISTE, com teste | Quatro listas em `sparkforge_aws/facts/scan.py`, separadas por razão: `DIRETORIOS_SENSIVEIS` (`.aws`, `.ssh`, `.gnupg`, `.kube`, `secrets`, `cdk.out`, …), `TALOS_SENSIVEIS` (`.env`, `id_rsa`, `credentials`, `kubeconfig`, `.netrc`, …), `SUFIXOS_SENSIVEIS` (`.pem`, `.key`, `.tfstate`, `.tfvars`, …) e `SUFIXOS_SENSIVEIS_COMPOSTOS`, que pega `terraform.tfstate.json`. O casamento é por componente delimitado, nunca por prefixo: `secrets.json` é recusado e `secrets_manager.tf` não, e há teste para os dois lados | `tests/test_facts_scan.py` |
-| Exclusão de árvore de dependência e de artefato | EXISTE, com teste | `DIRETORIOS_IGNORADOS` em `sparkforge_aws/facts/scan.py` poda `.venv`, `venv`, `site-packages`, `node_modules`, `vendor`, `build`, `dist`, `target`, `.git`, `.terraform`, `.sparkforge` e os caches de ferramenta. A poda é feita **no lugar**, sobre a lista de subpastas do `os.walk`, então a varredura nem desce nelas — filtrar no fim daria a mesma lista tendo pago para listar o `.venv` inteiro. Os catorze `rglob` soltos dos extratores passaram todos por aqui, e um gate estrutural recusa o décimo quinto | `tests/test_facts_scan.py` |
+| Exclusão de árvore de dependência e de artefato | EXISTE, com teste | `DIRETORIOS_IGNORADOS` em `sparkforge_aws/facts/scan.py` poda `.venv`, `venv`, `site-packages`, `node_modules`, `vendor`, `build`, `dist`, `target`, `.git`, `.terraform`, `.sparkforge_aws` e os caches de ferramenta. A poda é feita **no lugar**, sobre a lista de subpastas do `os.walk`, então a varredura nem desce nelas — filtrar no fim daria a mesma lista tendo pago para listar o `.venv` inteiro. Os catorze `rglob` soltos dos extratores passaram todos por aqui, e um gate estrutural recusa o décimo quinto | `tests/test_facts_scan.py` |
 | Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão de cada um é diferente: código-fonte tem teto de 1 MiB, pela regra de não montar AST de arquivo gerado; artefato de dados tem teto de 128 MiB, porque o operador apontou para ele de propósito. Extensão desconhecida cai no teto de dados, e esse é o único ponto fail-open do módulo, declarado onde acontece. Falta a outra metade da linha: **detecção de binário** não existe, nem piso de tamanho | `tests/test_facts_scan.py` |
 
 ## 4. Secret firewall
@@ -126,10 +126,10 @@ por excesso até esta revisão.
 
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
-| Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge/` já é isso: `case.yaml`, `facts.json`, `findings.json`, `handoff.md` e `artifacts/manifest.json`, escritos por `sparkforge_aws/case/store.py` | `tests/test_case_store.py` |
-| Banco SQLite local já em uso | EXISTE, com teste | `sparkforge_aws/observability/store.py:SQLiteTraceStore` cria e escreve `.sparkforge/traces.db`. O precedente de "SparkForge tem banco local" já existe; o que não existe é a política sobre ele | `tests/test_observability.py` |
-| Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifesto e ignora `.sparkforge/artifacts/*`, com a razão escrita ali: artefato bruto pode ter dado de negócio. A disciplina de auditar o que o repositório ignora tem teste | `tests/test_execution_surface.py` |
-| `.sparkforge/local/` fora do git | EXISTE, sem teste | As três linhas entraram no `.gitignore` no commit `715a657`, e `git check-ignore -v` confirma as três: `.sparkforge/traces.db`, `.sparkforge/cache/` e `.sparkforge/local/`. `sparkforge_aws/codeintel/db.py:BANCO_PADRAO` aponta o índice para dentro de `local/`, e `tests/test_codeintel_search.py::test_o_banco_padrao_mora_sob_o_estado_local_ignorado_pelo_git` tranca **essa** metade. A metade que ninguém tranca é a regra em si: apagar a entrada `.sparkforge/local/` do `.gitignore` não quebra teste nenhum, ao contrário de `.claude/settings.local.json`, que tem gate próprio em `tests/test_execution_surface.py` | — |
+| Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge_aws/` já é isso: `case.yaml`, `facts.json`, `findings.json`, `handoff.md` e `artifacts/manifest.json`, escritos por `sparkforge_aws/case/store.py` | `tests/test_case_store.py` |
+| Banco SQLite local já em uso | EXISTE, com teste | `sparkforge_aws/observability/store.py:SQLiteTraceStore` cria e escreve `.sparkforge_aws/traces.db`. O precedente de "SparkForge tem banco local" já existe; o que não existe é a política sobre ele | `tests/test_observability.py` |
+| Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifesto e ignora `.sparkforge_aws/artifacts/*`, com a razão escrita ali: artefato bruto pode ter dado de negócio. A disciplina de auditar o que o repositório ignora tem teste | `tests/test_execution_surface.py` |
+| `.sparkforge_aws/local/` fora do git | EXISTE, sem teste | As três linhas entraram no `.gitignore` no commit `715a657`, e `git check-ignore -v` confirma as três: `.sparkforge_aws/traces.db`, `.sparkforge_aws/cache/` e `.sparkforge_aws/local/`. `sparkforge_aws/codeintel/db.py:BANCO_PADRAO` aponta o índice para dentro de `local/`, e `tests/test_codeintel_search.py::test_o_banco_padrao_mora_sob_o_estado_local_ignorado_pelo_git` tranca **essa** metade. A metade que ninguém tranca é a regra em si: apagar a entrada `.sparkforge_aws/local/` do `.gitignore` não quebra teste nenhum, ao contrário de `.claude/settings.local.json`, que tem gate próprio em `tests/test_execution_surface.py` | — |
 | Permissão restrita de diretório e arquivo, com umask | NÃO EXISTE | Nada no repositório define permissão de arquivo criado | — |
 
 ## 7. Banco, schema e taxonomia de grafo
@@ -210,13 +210,13 @@ lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` e
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 2 | 470 | 896633 | 14540 | 106 |
+| `iter_source_files` | 2 | 470 | 897126 | 14540 | 106 |
 | `looks_like_secret` | 2 | 470 | 198815 | 2790 | 89 |
-| `project_items` | 1 | 197 | 406571 | 2248 | 56 |
-| `tool_class` | 1 | 191 | 431313 | 3609 | 77 |
-| `authorize` | 3 | 611 | 567224 | 4479 | 123 |
+| `project_items` | 1 | 197 | 407442 | 2248 | 56 |
+| `tool_class` | 1 | 191 | 432184 | 3609 | 77 |
+| `authorize` | 3 | 611 | 567359 | 4479 | 123 |
 
-Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2500556**;
+Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2502926**;
 a saída do `grep` pelo nome, **27666**; a saída do `grep` pela definição, **451**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1289.6 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1290.8 vezes.** Contra a saída de um `grep`
 pelo nome, **14.3** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.3** vezes o que aquele `grep` custaria.
 
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
 `buscar(banco, "source")` devolve **50** símbolos em **11567** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **388665** bytes (remedido em 2026-10-06 após o `_trust` entrar em
+  no mesmo corpus, tem **388789** bytes (remedido em 2026-10-06 após o `_trust` entrar em
   `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
 (**16122** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
@@ -307,7 +307,7 @@ que omite o símbolo necessário é falha, não sucesso.
 | Projeção de campo na resposta | NÃO EXISTE | Medido no catálogo carregado, e não por leitura: `fields` aparece em **zero** das tools. A fase J1 entregou `detail_level`, que é a linha **acima** desta e é outra coisa — ele escolhe entre três formas fixas de item, e projeção é pedir os campos que interessam. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
 | As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |
-| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge-aws code index`, `sparkforge-aws code search <termo>` e `sparkforge-aws code status`, em `sparkforge_aws/adapters/cli.py`. É a única entrada do CLI cujo payload não vem de `_core` — só o tipo de erro vem —, e a razão está escrita ao lado dela: o índice não devolve fato nem achado, e atravessar o núcleo obrigaria a inventar procedência para uma linha que só tem caminho e número de linha. O banco default é `.sparkforge/local/codeintel/graph.sqlite3`, já ignorado pelo git | `tests/test_codeintel_search.py` |
+| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge-aws code index`, `sparkforge-aws code search <termo>` e `sparkforge-aws code status`, em `sparkforge_aws/adapters/cli.py`. É a única entrada do CLI cujo payload não vem de `_core` — só o tipo de erro vem —, e a razão está escrita ao lado dela: o índice não devolve fato nem achado, e atravessar o núcleo obrigaria a inventar procedência para uma linha que só tem caminho e número de linha. O banco default é `.sparkforge_aws/local/codeintel/graph.sqlite3`, já ignorado pelo git | `tests/test_codeintel_search.py` |
 | Comandos `code init`, `code doctor`, `code purge` | NÃO EXISTE | Nenhum dos três que a SPEC nomeia. `init` e `purge` supõem ciclo de vida que este índice não tem — ele é descartável e se reconstrói numa passada; `doctor` supõe manifesto de tool, que é a linha abaixo | — |
 | Hash canônico do catálogo de tools | NÃO EXISTE | Nenhum `tool-manifest.sha256`, e nenhum `doctor` que compare runtime com manifesto | — |
 
@@ -468,7 +468,7 @@ não melhoria. **As três foram pagas antes de o primeiro byte de código ir par
 esta seção fica como registro da ordem, não como pendência:
 
 - **Política de git para o estado local, antes de existir estado local.** Paga na fase J0:
-  `.sparkforge/traces.db`, `.sparkforge/cache/` e `.sparkforge/local/` entraram no `.gitignore`
+  `.sparkforge_aws/traces.db`, `.sparkforge_aws/cache/` e `.sparkforge_aws/local/` entraram no `.gitignore`
   antes de existir banco de índice, e o default do banco aponta para dentro de `local/`.
   Continua sendo a linha mais barata do documento inteiro e a de maior consequência — e a
   regra em si ainda não tem gate próprio, ao contrário do que ela protege.
@@ -638,7 +638,7 @@ Parcial:
   como gatilho independente.
 - **`offline-strict` como perfil com matriz ALLOW/DENY declarada** e **`aws-readonly` como
   perfil** — existe a regra, não existe a matriz como dado.
-- **`.sparkforge/local/` fora do git** — a regra existe no `.gitignore` e nenhum teste a tranca.
+- **`.sparkforge_aws/local/` fora do git** — a regra existe no `.gitignore` e nenhum teste a tranca.
 
 Não tocado:
 

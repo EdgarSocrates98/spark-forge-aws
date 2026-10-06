@@ -77,7 +77,7 @@ componha os facts com a definição efetiva:
 
 ```text
 sparkforge-aws analyze glue-streaming --path job.json --out effective.facts.json
-sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws analyze glue-job-runs --path .sparkforge_aws/artifacts/glue_job_run --out runs.facts.json
 sparkforge-aws fuse --facts effective.facts.json --facts runs.facts.json --out fused.facts.json
 sparkforge-aws judge --facts fused.facts.json --show-skipped
 ```

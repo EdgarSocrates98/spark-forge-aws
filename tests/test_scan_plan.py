@@ -11,7 +11,7 @@ import pytest
 from sparkforge_aws.scan import KIND_PARA_ANALYZE, RECUSAS, ScanError, plan
 
 ROOT = Path(__file__).resolve().parents[1]
-ART = ".sparkforge/artifacts"
+ART = ".sparkforge_aws/artifacts"
 
 
 def _grava(raiz: Path, relativo: str, texto: str) -> Path:
@@ -123,7 +123,7 @@ def test_varredura_pula_sparkforge_e_relata(tmp_path):
     _grava(tmp_path, f"{ART}/eventlog/x.jsonl", "{}\n")
     plano = plan(tmp_path)
     assert not plano.entradas
-    assert {"path": ".sparkforge", "reason": "DIRECTORY_IGNORED"} in plano.pulos
+    assert {"path": ".sparkforge_aws", "reason": "DIRECTORY_IGNORED"} in plano.pulos
 
 
 def test_todo_kind_emitido_pelos_coletores_esta_no_mapa():

@@ -113,7 +113,7 @@ O manifesto do repositório assume o contrário — artefato imutável, verifica
 como "precisa recoletar".
 
 Adotado: **um arquivo por run**, em
-`.sparkforge/artifacts/glue_job_run/<job_name>_<job_run_id>.json`.
+`.sparkforge_aws/artifacts/glue_job_run/<job_name>_<job_run_id>.json`.
 
 Recusado: um arquivo por janela `(job, start, end)`. Duas janelas sobrepostas rebaixariam os
 mesmos runs, e uma janela que inclua um run ainda em execução congelaria um estado que vai
@@ -299,13 +299,13 @@ Cada extrator declara o seu conjunto de `kind` emitidos, no molde do `frozenset`
 sparkforge-aws collect glue-job-runs --repo . --job-name <job> --max-runs 30 --now <ISO8601>
 
 sparkforge-aws analyze cloudwatch \
-  --path .sparkforge/artifacts/cloudwatch/<job>_<run>.json \
+  --path .sparkforge_aws/artifacts/cloudwatch/<job>_<run>.json \
   --out <facts.json>
 
 sparkforge-aws analyze glue-job-runs \
-  --path .sparkforge/artifacts/glue_job_run/ \
+  --path .sparkforge_aws/artifacts/glue_job_run/ \
   --job-name <job> \
-  --cloudwatch .sparkforge/artifacts/cloudwatch/ \
+  --cloudwatch .sparkforge_aws/artifacts/cloudwatch/ \
   --out <facts.json>
 ```
 

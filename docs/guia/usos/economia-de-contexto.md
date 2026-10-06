@@ -23,7 +23,7 @@ sparkforge-aws economy report --run-id run_guia_demo
 ```
 
 1. Copia um exemplo sintético de job PySpark para uma pasta de teste.
-2. Entra na pasta. As medições são gravadas em `.sparkforge/traces.db` da pasta
+2. Entra na pasta. As medições são gravadas em `.sparkforge_aws/traces.db` da pasta
    **atual**.
 3. `SPARKFORGE_RUN_ID` dá um nome ao **run** (a sua sessão de medição), para as
    chamadas caírem juntas.
@@ -79,7 +79,7 @@ configuração do servidor.
 ### 2. Faça as chamadas
 
 Pelo assistente, via MCP, ou pelo `call_tool` em Python, como na receita. Os
-spans ficam em memória e vão para `.sparkforge/traces.db` quando o processo
+spans ficam em memória e vão para `.sparkforge_aws/traces.db` quando o processo
 termina. Dentro do mesmo processo, o relatório já enxerga o que está em memória.
 
 ### 3. Leia o relatório
@@ -148,7 +148,7 @@ qualidade, bytes e tokens:
 
 ```bash
 python scripts/check_token_efficient_bench.py
-python scripts/run_token_efficient_bench.py --out .sparkforge/token-matrix.json
+python scripts/run_token_efficient_bench.py --out .sparkforge_aws/token-matrix.json
 ```
 
 O resultado não cria score composto nem soma bytes com tokens. Uma comparação
@@ -193,7 +193,7 @@ sparkforge-aws decision validate --repo .
 sparkforge-aws decision benchmark --repo .
 sparkforge-aws decision shadow --input decision.json --repo . --out shadow.json
 sparkforge-aws decision compare --shadow shadow.json --current-route tier_3_cheap_local
-sparkforge-aws decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
+sparkforge-aws decision receipt --path .sparkforge_aws/decision-receipts/<receipt>.json --repo .
 ```
 
 `benchmark` roda 23 casos seed offline: 15 de qualidade, 6 de grafo federado e 2 de
@@ -227,12 +227,12 @@ cloud_resources:
 ```bash
 sparkforge-aws collect workspace-graph \
   --repo . \
-  --manifest .sparkforge/workspace.yaml \
+  --manifest .sparkforge_aws/workspace.yaml \
   --max-objects 100 \
   --now 2026-09-27T00:00:00Z
 ```
 
-O artefato fica em `.sparkforge/artifacts/workspace_graph/`. Listagem S3 é
+O artefato fica em `.sparkforge_aws/artifacts/workspace_graph/`. Listagem S3 é
 limitada e marca truncamento. Recurso em outra conta exige `role_arn`; falha de
 credencial, `AccessDenied` e recurso não declarado como alvo ficam em
 `unresolved`, nunca viram ausência silenciosa.
@@ -275,8 +275,8 @@ Saída real, rodada na pasta de teste:
 {
   "run_id": "run_guia_demo",
   "files": [
-    ".sparkforge/telemetry/run_guia_demo.metrics.jsonl",
-    ".sparkforge/telemetry/run_guia_demo.traces.jsonl"
+    ".sparkforge_aws/telemetry/run_guia_demo.metrics.jsonl",
+    ".sparkforge_aws/telemetry/run_guia_demo.traces.jsonl"
   ],
   "counts": {"sparkforge_spans": 6, "host_agent": 0, "host_tool_calls": 0, "exported": 6, "refused": 0},
   "refused": [],
@@ -335,7 +335,7 @@ para economizar é defeito, e não compressão. Mais detalhes em
 | `by_tool` vazio e `run_unresolved` | O `run_id` não bate, ou você está em outra pasta | Use o mesmo `SPARKFORGE_RUN_ID` e rode na pasta onde as chamadas aconteceram |
 | Chamadas pela CLI não aparecem | O registro é feito por `call_tool` (MCP ou Python) | Meça pelo servidor MCP ou por `call_tool` |
 | `tokens_unresolved` | Não há transcript do host | Passe `--host-transcript`, se tiver. Senão, a lacuna é a resposta certa |
-| Apareceu `.sparkforge/traces.db` no projeto | O processo que chamou as tools rodou na raiz do projeto | É o lugar esperado. Para testes, rode numa pasta temporária |
+| Apareceu `.sparkforge_aws/traces.db` no projeto | O processo que chamou as tools rodou na raiz do projeto | É o lugar esperado. Para testes, rode numa pasta temporária |
 | `telemetry export` sem métrica de token | Faltou `--provider` ou transcript | Declare os dois |
 
 ## Próximos passos

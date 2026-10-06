@@ -9,7 +9,7 @@ sparkforge-aws doctor --repo .
 # 2. O que o scan vai rodar em cada arquivo (não roda nada ainda)
 sparkforge-aws scan . --dry-run
 
-# 3. Rodar: extrai, junta, julga e grava em .sparkforge/scan/
+# 3. Rodar: extrai, junta, julga e grava em .sparkforge_aws/scan/
 sparkforge-aws scan .
 
 # 4. No CI: gerar SARIF e falhar se houver achado P0
@@ -103,7 +103,7 @@ As treze checagens: `pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`,
    }
    ```
 
-O que o scan grava em `.sparkforge/scan/`:
+O que o scan grava em `.sparkforge_aws/scan/`:
 
 | Arquivo | Conteúdo |
 |---|---|
@@ -112,17 +112,17 @@ O que o scan grava em `.sparkforge/scan/`:
 | `findings.json` | Os achados do `judge` |
 | `summary.json` | O mesmo resumo do terminal |
 
-Com `--format sarif`, ele grava também o SARIF e o resumo de PR em `.sparkforge/report/`, os mesmos arquivos do [`report github`](ci-e-github.md).
+Com `--format sarif`, ele grava também o SARIF e o resumo de PR em `.sparkforge_aws/report/`, os mesmos arquivos do [`report github`](ci-e-github.md).
 
 ### Como o scan decide o que rodar
 
 | O que ele acha | O que roda |
 |---|---|
-| Artefato no `.sparkforge/artifacts/manifest.json` com sha256 conferido | O analyze do `kind` que o coletor gravou |
+| Artefato no `.sparkforge_aws/artifacts/manifest.json` com sha256 conferido | O analyze do `kind` que o coletor gravou |
 | `.py` | `analyze pyspark` e `analyze sql` (literais `spark.sql`) |
 | `.sql` | `analyze sql` |
 | `.tf` | `analyze terraform` |
-| `.jsonl` fora de `.sparkforge/` | `analyze event-log` |
+| `.jsonl` fora de `.sparkforge_aws/` | `analyze event-log` |
 | `workload.yaml` na raiz do repositório (origem `nome`) | `analyze workload`; em subpasta, nada |
 | `.json` fora do manifesto | Nada: recusa `sem_manifesto` |
 

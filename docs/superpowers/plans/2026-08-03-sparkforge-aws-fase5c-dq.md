@@ -1023,7 +1023,7 @@ def _extract_data_quality_facts(path: str) -> list[Fact]:
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o diretorio do codigo PySpark ou para um arquivo .py:\n"
-            f"    sparkforge-aws analyze data-quality --path src/ --out .sparkforge/facts_dq.json",
+            f"    sparkforge-aws analyze data-quality --path src/ --out .sparkforge_aws/facts_dq.json",
             exit_code=2,
         )
     if target.is_dir():

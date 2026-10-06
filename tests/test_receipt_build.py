@@ -37,13 +37,13 @@ def montar_case(root: Path) -> Path:
     (root / "facts" / "a.json").write_text(json.dumps(FACTS), encoding="utf-8")
     (root / "findings.json").write_text("[]\n", encoding="utf-8")
     (root / "report.md").write_text("# relatorio\n", encoding="utf-8")
-    quadro = root / ".sparkforge" / "blackboard"
+    quadro = root / ".sparkforge_aws" / "blackboard"
     (quadro / "adr").mkdir(parents=True)
     (quadro / "claims.jsonl").write_text('{"id": "clm_1"}\n{"id": "clm_2"}\n', encoding="utf-8")
     decisao = {"id": "dec_1", "rollback": "reverter a configuracao"}
     (quadro / "decisions.jsonl").write_text(json.dumps(decisao) + "\n", encoding="utf-8")
     (quadro / "adr" / "ADR-dec_1.md").write_text("# ADR\n", encoding="utf-8")
-    debate = root / ".sparkforge" / "debate" / "dbt_0000abcd"
+    debate = root / ".sparkforge_aws" / "debate" / "dbt_0000abcd"
     debate.mkdir(parents=True)
     (debate / "plan.json").write_text('{"rules": []}\n', encoding="utf-8")
     return root
@@ -99,7 +99,7 @@ def test_crlf_e_lf_dao_o_mesmo_sha256(tmp_path):
 def test_caminhos_relativos_em_posix(tmp_path):
     montar_case(tmp_path)
     doc = emitir(tmp_path)
-    assert doc["case"]["path"] == ".sparkforge/case.yaml"
+    assert doc["case"]["path"] == ".sparkforge_aws/case.yaml"
     assert doc["evidence"]["facts_files"][0]["path"] == "facts/a.json"
     assert all("\\" not in item["path"] for item in doc["decision"]["blackboard"])
 
@@ -196,8 +196,8 @@ def test_decisao_com_blackboard_adr_e_debate(tmp_path):
     decisao = emitir(tmp_path)["decision"]
     arquivos = {item["path"]: item["count"] for item in decisao["blackboard"]}
     assert arquivos == {
-        ".sparkforge/blackboard/claims.jsonl": 2,
-        ".sparkforge/blackboard/decisions.jsonl": 1,
+        ".sparkforge_aws/blackboard/claims.jsonl": 2,
+        ".sparkforge_aws/blackboard/decisions.jsonl": 1,
     }
     assert decisao["decision_ids"] == ["dec_1"]
     assert decisao["adrs"][0]["rollback_present"] is True
@@ -206,7 +206,7 @@ def test_decisao_com_blackboard_adr_e_debate(tmp_path):
 
 def test_adr_ausente_vira_lacuna_e_nao_item(tmp_path):
     montar_case(tmp_path)
-    (tmp_path / ".sparkforge" / "blackboard" / "adr" / "ADR-dec_1.md").unlink()
+    (tmp_path / ".sparkforge_aws" / "blackboard" / "adr" / "ADR-dec_1.md").unlink()
     doc = emitir(tmp_path)
     assert doc["decision"]["adrs"] == []
     assert campos_unresolved(doc)["decision.adr.dec_1"] == "adr_ausente"

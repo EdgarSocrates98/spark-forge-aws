@@ -173,7 +173,7 @@ def test_verify_adulterado_sai_1_e_nomeia_a_parte(tmp_path, capsys):
 def test_recibo_ilegivel_sai_2(tmp_path, capsys):
     repo = tmp_path / "case"
     montar(repo)
-    ruim = repo / ".sparkforge" / "receipts" / "ruim.json"
+    ruim = repo / ".sparkforge_aws" / "receipts" / "ruim.json"
     ruim.parent.mkdir(parents=True)
     ruim.write_text("{nao e json", encoding="utf-8")
     codigo = main(["receipt", "verify", "--repo", str(repo), "--receipt", str(ruim)])
@@ -192,4 +192,4 @@ def test_facts_fora_do_repo_e_recusado_e_nada_e_gravado(tmp_path, capsys):
     codigo = main([*argumentos, "--now", META["now"]])
     assert codigo == 2
     assert "fora de --repo" in capsys.readouterr().err
-    assert not (repo / ".sparkforge" / "receipts").exists()
+    assert not (repo / ".sparkforge_aws" / "receipts").exists()

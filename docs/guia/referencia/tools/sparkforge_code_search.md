@@ -14,7 +14,7 @@ Busca simbolo por parte do nome no indice local e devolve `node_id`, caminho e l
 |---|---|---|---|
 | `query` | string | sim |  |
 | `repo` | string | sim | Raiz do repositorio analisado. Nada e lido fora dela. |
-| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`. |
+| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`. |
 | `kind` | string | não | Filtra por tipo de no (`function`, `class`, `method`, ...). |
 | `limit` | integer | não |  |
 | `path_prefix` | string | não | Filtra por prefixo do caminho relativo, ex.: `jobs/`. |

@@ -426,7 +426,7 @@ def _grava_execucao(destino: Path, ws: Path, resultado: dict[str, Any]) -> Path:
     (destino / RESULT_FILE).write_text(
         json.dumps({"status": "done", **resultado}), encoding="utf-8"
     )
-    estado = ws / ".sparkforge" / "debate" / resultado["debate_id"] / "facts.jsonl"
+    estado = ws / ".sparkforge_aws" / "debate" / resultado["debate_id"] / "facts.jsonl"
     if estado.is_file():
         shutil.copyfile(estado, destino / DEBATE_FACTS_FILE)
     return destino

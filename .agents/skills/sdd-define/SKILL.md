@@ -104,13 +104,13 @@ seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
 
 ## Perfil operator
 
-- **A spec mora em `.sparkforge/sdd/<F>/`** no repositório do operador, nunca
-  em `docs/sdd/`: a cópia do `change sandbox` poda `.sparkforge`, e escrever
+- **A spec mora em `.sparkforge_aws/sdd/<F>/`** no repositório do operador, nunca
+  em `docs/sdd/`: a cópia do `change sandbox` poda `.sparkforge_aws`, e escrever
   fora dele deixa o sandbox desatualizado para `change propose`. Todo verbo do
-  SDD leva a raiz: `sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>`.
-  Não ponha `.sparkforge/sdd/` no `.gitignore`.
+  SDD leva a raiz: `sparkforge-aws sdd check --repo . --root .sparkforge_aws/sdd --feature <F>`.
+  Não ponha `.sparkforge_aws/sdd/` no `.gitignore`.
 - Abra o case antes: `sparkforge-aws case open --repo . --case-id <id> --now <ISO 8601>`,
-  e copie o `case_id` para o define (ele fica em `.sparkforge/case.yaml`). Sem
+  e copie o `case_id` para o define (ele fica em `.sparkforge_aws/case.yaml`). Sem
   ele, ou com outro, sai `case_missing` — até o ship ficar `done`; dali em
   diante o case citado é histórico.
 - Preservar a semântica é critério, não detalhe: um `AC` com `kind: funcval`,
@@ -120,7 +120,7 @@ seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
   compare --out>}` para o resultado e `{kind: fact, ref: <facts.json>#kind:<kind>}`
   para o sintoma medido. **Prefira o seletor `#kind:`** agora: o id de fact é
   hash de conteúdo e só existe depois da coleta; `#<fact_id>` continua valendo.
-  Grave os dois arquivos dentro de `.sparkforge/sdd/<F>/`. O gate confere a
+  Grave os dois arquivos dentro de `.sparkforge_aws/sdd/<F>/`. O gate confere a
   forma; o veredito é do `judge`.
 - Métrica de desempenho vem de `sparkforge-aws benchmark` entre dois runs medidos;
   custo, de `dpu_seconds` medido. Economia estimada não é métrica.

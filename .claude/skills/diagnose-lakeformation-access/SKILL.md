@@ -42,8 +42,8 @@ produz achados verdadeiros sobre a pergunta errada.
 ### Passo 1 — o que o JOB declara (sem AWS, sem credencial)
 
 ```bash
-sparkforge-aws analyze terraform --path infra/ --out .sparkforge/facts_tf.json
-sparkforge-aws judge --facts .sparkforge/facts_tf.json --show-skipped
+sparkforge-aws analyze terraform --path infra/ --out .sparkforge_aws/facts_tf.json
+sparkforge-aws judge --facts .sparkforge_aws/facts_tf.json --show-skipped
 ```
 
 **`--show-skipped` não é opcional aqui.** Sem ele, "nenhum achado" e "não
@@ -57,7 +57,7 @@ chegam nos passos 2 e 3. O que a saída mostra:
   não muda isso.
 
 Para ler as duas metades juntas, `sparkforge-aws root-cause --facts
-.sparkforge/facts_tf.json` ordena os achados por consequência declarada e
+.sparkforge_aws/facts_tf.json` ordena os achados por consequência declarada e
 publica a lacuna com **o módulo que emite cada kind que falta**.
 
 Sai daqui, antes de qualquer chamada à AWS:
@@ -80,8 +80,8 @@ Glue 4.0.
 sparkforge-aws collect lakeformation --repo . --database <db> --table <t> \
     --catalog-id <conta-dona-do-catalogo> \
     --resource-arn <localizacao-s3-da-tabela> --now <ISO8601>
-sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ \
-    --out .sparkforge/facts_lf.json
+sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lakeformation/ \
+    --out .sparkforge_aws/facts_lf.json
 ```
 
 | Achado | O que ele diz |
@@ -101,8 +101,8 @@ contas diferentes, e sem ele as duas coletas se sobrescrevem no manifesto.
 sparkforge-aws collect iam-access --repo . --role-arn <runtime-role> \
     --resource-arn <arn-do-alvo> \
     --action s3:PutObject --action kms:GenerateDataKey --now <ISO8601>
-sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/ \
-    --out .sparkforge/facts_iam.json
+sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/ \
+    --out .sparkforge_aws/facts_iam.json
 ```
 
 **Simular e não parsear**, e a diferença é o passo inteiro. `SimulatePrincipalPolicy`
@@ -124,7 +124,7 @@ sobre `*` não é `allowed` naquele recurso.
 ```bash
 sparkforge-aws collect cloudwatch-logs --repo . --job-name <job> --job-run <run> \
     --log-group /aws-glue/jobs/error --start <ISO8601> --end <ISO8601> --now <ISO8601>
-sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge_aws/artifacts/cloudwatch_logs/
 ```
 
 | Assinatura | Regra |
@@ -144,11 +144,11 @@ se a escrita é sob FGAC, `sparkforge-aws collect iam-access --role-arn <runtime
 e KMS o fact não confere, e diz isso em `unchecked`). Depois:
 
 ```bash
-sparkforge-aws analyze pyspark --path jobs/ --out .sparkforge/facts_code.json
-sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_logs.json
-sparkforge-aws analyze error-signatures --facts .sparkforge/facts_logs.json     --out .sparkforge/facts_err.json
-sparkforge-aws fuse --facts .sparkforge/facts_code.json --facts .sparkforge/facts_tf.json     --facts .sparkforge/facts_lf.json --facts .sparkforge/facts_iam.json     --facts .sparkforge/facts_err.json --out .sparkforge/facts_fused.json
-sparkforge-aws judge --facts .sparkforge/facts_fused.json --show-skipped
+sparkforge-aws analyze pyspark --path jobs/ --out .sparkforge_aws/facts_code.json
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge_aws/artifacts/cloudwatch_logs/     --out .sparkforge_aws/facts_logs.json
+sparkforge-aws analyze error-signatures --facts .sparkforge_aws/facts_logs.json     --out .sparkforge_aws/facts_err.json
+sparkforge-aws fuse --facts .sparkforge_aws/facts_code.json --facts .sparkforge_aws/facts_tf.json     --facts .sparkforge_aws/facts_lf.json --facts .sparkforge_aws/facts_iam.json     --facts .sparkforge_aws/facts_err.json --out .sparkforge_aws/facts_fused.json
+sparkforge-aws judge --facts .sparkforge_aws/facts_fused.json --show-skipped
 ```
 
 `facts_code.json` sai do primeiro comando (`--path` é o arquivo ou diretório do

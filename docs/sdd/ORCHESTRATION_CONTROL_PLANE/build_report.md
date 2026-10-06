@@ -39,7 +39,7 @@ T1–T3 estão `skipped` no bloco red/green porque a implementação precede est
 relatório e o histórico não preserva comandos vermelhos reproduzíveis. Nenhum
 exit vermelho foi inventado. A validação atual executou
 `python -m pytest tests/test_orchestration.py -q --basetemp
-.sparkforge/local/pytest-orchestration`, com `4 passed`.
+.sparkforge_aws/local/pytest-orchestration`, com `4 passed`.
 
 ## Revisão
 

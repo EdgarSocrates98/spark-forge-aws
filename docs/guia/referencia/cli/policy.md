@@ -2,7 +2,7 @@
 
 # `sparkforge-aws policy`
 
-Politica de seguranca do repositorio (.sparkforge/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json.
+Politica de seguranca do repositorio (.sparkforge_aws/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json.
 
 ## Subcomandos
 

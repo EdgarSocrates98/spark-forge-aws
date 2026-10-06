@@ -6,7 +6,7 @@
   },
   "case": {
     "case_id": "uniao-debate",
-    "path": ".sparkforge/case.yaml",
+    "path": ".sparkforge_aws/case.yaml",
     "sha256": "c1d5c78453ab0726d7a6f3741f840f81dcd6de28ddbd56b6cb22b94ba22f3e90"
   },
   "decision": {
@@ -14,27 +14,27 @@
     "blackboard": [
       {
         "count": 3,
-        "path": ".sparkforge/blackboard/claims.jsonl",
+        "path": ".sparkforge_aws/blackboard/claims.jsonl",
         "sha256": "aa204dd5bcc38f0aed9ef29f942e15fa5b8d2c69829e6c623166dae9f5fe6b31"
       },
       {
         "count": 1,
-        "path": ".sparkforge/blackboard/contradictions.jsonl",
+        "path": ".sparkforge_aws/blackboard/contradictions.jsonl",
         "sha256": "565c6705eb902081c24069fb66db7ead31975735dac352dd07dc8a3fd82c9e57"
       },
       {
         "count": 11,
-        "path": ".sparkforge/blackboard/evidence.jsonl",
+        "path": ".sparkforge_aws/blackboard/evidence.jsonl",
         "sha256": "198587f3101b23828ea6c2847bb887c78f41791b14de898da9781d2d5cfdc34e"
       },
       {
         "count": 2,
-        "path": ".sparkforge/blackboard/traces.jsonl",
+        "path": ".sparkforge_aws/blackboard/traces.jsonl",
         "sha256": "e26d93f0431cb074062d0225d5dfb008245c852c3e2f82d7003b472215497690"
       },
       {
         "count": 1,
-        "path": ".sparkforge/blackboard/unknowns.jsonl",
+        "path": ".sparkforge_aws/blackboard/unknowns.jsonl",
         "sha256": "61d798844a73b6c0906870fda77adf079051fcda42177436b561db4ac74a35bf"
       }
     ],
@@ -94,7 +94,7 @@
     "tests": []
   },
   "proves": "correspondencia entre este recibo e estes artefatos -- nunca autoria",
-  "receipt_id": "rcpt_21b295e1cba7cc9deb5509e19b9295059d65ab1796ae43479df3bb50ce37ae90",
+  "receipt_id": "rcpt_a6df37f31e9625c1ffbb24fdb51c1f14eec46c0c1284d258177624fe38f14f37",
   "receipt_version": 1,
   "refused": [
     {

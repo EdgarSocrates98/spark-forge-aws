@@ -323,7 +323,7 @@ As quatro partes conferidas são `version`, `evidence`, `catalog` e `body`.
 
 O recibo amarra, por caminho e sha256 (uma impressão digital do arquivo), o case, os
 facts, os findings, o relatório, o blackboard e os debates. Ele é gravado em
-`.sparkforge/receipts/` e por isso deve rodar numa pasta de case, nunca no repositório.
+`.sparkforge_aws/receipts/` e por isso deve rodar numa pasta de case, nunca no repositório.
 
 ```bash
 sparkforge-aws case open --repo "$DEMO" --case-id demo-recibo --now 2026-09-13T14:00:00Z --glue 5.0
@@ -348,7 +348,7 @@ Trecho real (no exemplo, o `arbitrate` já tinha rodado nesta pasta):
 Caminhos relativos resolvem contra `--repo`. Cada lacuna sai com nome em `unresolved`.
 
 ```bash
-sparkforge-aws receipt verify --repo "$DEMO" --receipt .sparkforge/receipts/<receipt_id>.json
+sparkforge-aws receipt verify --repo "$DEMO" --receipt .sparkforge_aws/receipts/<receipt_id>.json
 ```
 
 Sem mudanças: `"valid": true, "status": "valid"`. Depois de alterar `facts_lf.json`,

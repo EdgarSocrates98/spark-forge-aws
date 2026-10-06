@@ -168,7 +168,7 @@ class TestCaso:
         monkeypatch.setattr(_core, "_versao_sparkforge", lambda: regen.SARIF_GOLDEN_VERSION)
         meta = _meta(caso)
         run_id = meta["run_id"]
-        db = tmp_path / ".sparkforge" / "traces.db"
+        db = tmp_path / ".sparkforge_aws" / "traces.db"
         db.parent.mkdir()
         spans = [TraceSpan(**s) for s in json.loads(_texto(caso / "input" / "spans.json"))]
         SQLiteTraceStore(db_path=db).save_trace(
@@ -194,7 +194,7 @@ class TestCaso:
         resumo = json.loads(capsys.readouterr().out)
         esperado = json.loads(_texto(caso / "expected" / "result.json"))
         assert resumo["counts"] == esperado["counts"]
-        gravado = tmp_path / ".sparkforge" / "telemetry"
+        gravado = tmp_path / ".sparkforge_aws" / "telemetry"
         for nome in ("traces.jsonl", "metrics.jsonl"):
             assert _texto(gravado / f"{run_id}.{nome}") == _texto(caso / "expected" / nome), nome
 

@@ -35,7 +35,7 @@ Analise impactos introduzidos ou alterados pelo PR. Considere contexto suficient
 Para cada arquivo `.py` alterado pelo PR:
 
 ```bash
-sparkforge-aws analyze pyspark --path <arquivo_alterado.py> --out .sparkforge/facts_head_<n>.json
+sparkforge-aws analyze pyspark --path <arquivo_alterado.py> --out .sparkforge_aws/facts_head_<n>.json
 ```
 
 `--path` recebe um arquivo ou diretório por chamada — não uma lista de caminhos. Se as mudanças estão concentradas num diretório, aponte para ele; senão, uma chamada por arquivo alterado.
@@ -43,15 +43,15 @@ sparkforge-aws analyze pyspark --path <arquivo_alterado.py> --out .sparkforge/fa
 ### 2. Extraia os facts da versão base
 
 ```bash
-git show <base-ref>:<caminho_do_arquivo> > .sparkforge/base/<arquivo>.py
-sparkforge-aws analyze pyspark --path .sparkforge/base/<arquivo>.py --out .sparkforge/facts_base_<n>.json
+git show <base-ref>:<caminho_do_arquivo> > .sparkforge_aws/base/<arquivo>.py
+sparkforge-aws analyze pyspark --path .sparkforge_aws/base/<arquivo>.py --out .sparkforge_aws/facts_base_<n>.json
 ```
 
 ### 3. Julgue as duas versões
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts_head_<n>.json --show-skipped
-sparkforge-aws judge --facts .sparkforge/facts_base_<n>.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_head_<n>.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_base_<n>.json --show-skipped
 ```
 
 As duas chamadas precisam do **mesmo** contexto de runtime, ou a comparação HEAD-contra-base compara duas coisas diferentes e você reporta como regressão do PR uma regra que só passou a ser avaliada. Omitir a flag nas duas é a forma mais segura de garantir isso: os facts vêm de `analyze pyspark`, que não observa runtime, então as duas saídas trazem o mesmo `runtime` vazio com `detected_from: []`, e nenhuma regra `SF-PY-*` guarda versão. Se você passar a versão, passe idêntica nas duas — e confira o campo `runtime` de cada saída antes de comparar, em vez de confiar que digitou igual.
@@ -71,7 +71,7 @@ Um finding por comentário, citando `rule_id` e o `fact_id` da evidência (nunca
 ### 5. Valide antes de postar
 
 ```bash
-sparkforge-aws validate --findings .sparkforge/review_findings.json
+sparkforge-aws validate --findings .sparkforge_aws/review_findings.json
 ```
 
 Isso pega exatamente o erro mais comum de review sob pressão: afirmar "isso deve reduzir o runtime em ~30%" para soar convincente, sem ter medido nada. O schema rejeita qualquer `expected_effect` com número (`%`, `x`, "vezes") que não venha acompanhado de `benchmark_ref`. Se `validate` falhar, ou você mede antes (`benchmark-pyspark-job`) ou reformula a frase como hipótese, sem número.
@@ -82,10 +82,10 @@ A red flag "aprovar mudança de write mode ou operação Iceberg sem plano de te
 
 ```bash
 sparkforge-aws funcval plan \
-  --facts .sparkforge/facts_head_1.json \
-  --facts .sparkforge/facts_catalog.json \
+  --facts .sparkforge_aws/facts_head_1.json \
+  --facts .sparkforge_aws/facts_catalog.json \
   --key pedido_id,dt \
-  --out .sparkforge/facts_funcval_plan.json
+  --out .sparkforge_aws/facts_funcval_plan.json
 ```
 
 Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório** — o plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob `--strict-gates`, e é a entrada de `sparkforge-aws funcval compare` / `sparkforge_funcval_compare`, que compara os dois resultados **depois** que alguém os mediu. O motor não executa consulta em nenhum dos dois verbos.

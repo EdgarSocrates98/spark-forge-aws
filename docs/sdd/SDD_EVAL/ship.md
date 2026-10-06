@@ -11,7 +11,7 @@ hypothesis_outcome: confirmed
 registries: [fixture_corpus_gates]
 deviations:
   - "Modulo golden tests/test_fixtures_golden_sdd.py fora do manifesto, exigido por test_fixtures_kind_coverage para o dominio novo."
-  - "Caso operador com profile operator sob docs/sdd/ (como feature_limpa em tests/test_sdd.py), nao sob .sparkforge/sdd/."
+  - "Caso operador com profile operator sob docs/sdd/ (como feature_limpa em tests/test_sdd.py), nao sob .sparkforge_aws/sdd/."
   - "Fixtures geradas por script de scratchpad com o stamp real; nao entrou em scripts/regen_fixtures.py."
   - "--runs entrou no runner como sinonimo de --repeat, para o comando de AC5 rodar como o define o escreve."
   - "T4: o teste do plano passaria de primeira; ganhou a conferencia do baseline gravado, que deu o vermelho. T4 tocou tambem tests/test_sdd_eval_suite.py e evals/agentic/sdd/README.md."
@@ -96,6 +96,6 @@ continua sem medida: as fixtures são sintéticas.
 ## O que fica para depois
 
 - `--repeat 3` na suite sdd, e um braço `--surface suite`.
-- Um caso operator real, com `.sparkforge/sdd/` e sandbox.
+- Um caso operator real, com `.sparkforge_aws/sdd/` e sandbox.
 - A comparação com outros processos, quando existir o caso bem posto do
   README da suite.

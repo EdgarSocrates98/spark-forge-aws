@@ -17,7 +17,7 @@ Para cada pergunta da suite:
   3. guarda o JSON final do stdout em `<qid>.result.json`, que o grader nao le.
 
 `run.json` e `scorecard.json` ficam em cada execucao, e o conjunto
-`~/.sparkforge/agentic-evals/<suite>-<data>/` junta os N scorecards (`r1.json`...)
+`~/.sparkforge_aws/agentic-evals/<suite>-<data>/` junta os N scorecards (`r1.json`...)
 para `python -m sparkforge_aws.evals compare`. `run.json` registra argv,
 `claude --version`, data, a suite (id e sha256), o workspace de prova e o
 status de cada pergunta. Pergunta que falhou no host (`host_failed`) segue sem
@@ -29,7 +29,7 @@ desde a feature SDD_EVAL, escolhida por comparacao em `_suite_dir` e nunca
 montada a partir do valor), o modelo e as fontes
 de configuracao sao mapeados de allowlist, o executavel e o `claude` do PATH, a
 configuracao MCP e `evals/agentic/mcp.json`, e a saida mora sempre sob
-`~/.sparkforge/agentic-evals/` -- fora de qualquer repositorio, porque
+`~/.sparkforge_aws/agentic-evals/` -- fora de qualquer repositorio, porque
 transcript de sessao real carrega caminho e contexto do operador. Uma suite nova
 entra como constante nova, e a mudanca fica no diff: escolher o diretorio pelo
 argv, mesmo contra lista fechada, e o fluxo que o scanner de seguranca recusou.
@@ -77,7 +77,7 @@ SUITE_DIR = AGENTIC / "fase0"
 SDD_SUITE_DIR = AGENTIC / "sdd"
 SUITES = ("fase0", "sdd")
 MCP_CONFIG = AGENTIC / "mcp.json"
-OUT_BASE = Path.home() / ".sparkforge" / "agentic-evals"
+OUT_BASE = Path.home() / ".sparkforge_aws" / "agentic-evals"
 TRANSCRIPTS = Path.home() / ".claude" / "projects"
 
 MODELOS = {

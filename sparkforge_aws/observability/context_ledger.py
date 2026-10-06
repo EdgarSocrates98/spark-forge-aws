@@ -356,7 +356,7 @@ def shared_ledger() -> ContextLedger:
     sparkforge_aws.observability.context_ledger` sozinho custar um
     `ContextLedger`, e todo processo que so importa o modulo (sem nunca
     chamar `call_tool` nem `economy_report`) registraria um `atexit` de
-    flush contra o `.sparkforge/traces.db` do repositorio.
+    flush contra o `.sparkforge_aws/traces.db` do repositorio.
     """
     global _SHARED_LEDGER
     if _SHARED_LEDGER is None:

@@ -8,13 +8,13 @@ Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi derivado daque
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge-aws report github`](#sparkforge-aws-report-github) | Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede. |
+| [`sparkforge-aws report github`](#sparkforge-aws-report-github) | Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge_aws/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede. |
 | [`sparkforge-aws report sign`](#sparkforge-aws-report-sign) | Escreve o bloco de assinatura no fim do relatorio. Reassinar e barato e devolve o mesmo arquivo quando nada mudou. |
 | [`sparkforge-aws report verify`](#sparkforge-aws-report-verify) | Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo ou corpo. Sai com codigo 1 quando nao corresponde. |
 
 ## `sparkforge-aws report github`
 
-Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede.
+Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge_aws/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede.
 
 ```bash
 sparkforge-aws report github --help
@@ -26,7 +26,7 @@ sparkforge-aws report github --help
 |---|---|---|---|---|---|
 | `--findings` | sim | texto |  |  | Saida de `judge --out` (findings.json). |
 | `--facts` | sim | texto | sim |  | Facts da UNIAO do case (repetivel): o fact de evidencia de codigo empresta a linha a um finding que nao tem a propria. |
-| `--repo` | não | texto |  | `.` | Raiz do repositorio git. A saida vai para <repo>/.sparkforge/report/. |
+| `--repo` | não | texto |  | `.` | Raiz do repositorio git. A saida vai para <repo>/.sparkforge_aws/report/. |
 | `--source-root` | não | texto | sim |  | Diretorio (relativo a --repo) que foi passado a um `analyze --path`, repetivel, na mesma ordem. O caminho dos findings e relativo a ele. |
 | `--fail-on` | não | `P0`, `P1` |  |  | Sai com codigo 1 quando ha finding desta severidade ou pior. |
 | `--category` | não | texto |  |  | Categoria do upload no Code Scanning (automationDetails.id). |

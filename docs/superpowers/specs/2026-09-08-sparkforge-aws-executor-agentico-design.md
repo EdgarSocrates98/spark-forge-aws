@@ -281,7 +281,7 @@ registro de coisa feita. `validate_autonomy_boundary` recebe
 `guardrails_satisfied` do chamador; o executor não passa lista nenhuma porque não
 pede ação de risco.
 
-**Gravação:** `.sparkforge/blackboard/*.jsonl` do case — `claims`, `evidence`,
+**Gravação:** `.sparkforge_aws/blackboard/*.jsonl` do case — `claims`, `evidence`,
 `contradictions`, `unknowns`, `experiments`, `decisions`, `traces` — e um ADR por
 decisão que `is_significant_decision` aprove.
 

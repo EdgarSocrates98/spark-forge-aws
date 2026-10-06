@@ -110,7 +110,7 @@ total       12833 passed, 13 skipped, 0 failed
 | 2 | O golden congelado da paridade MCP grava `sucesso_verbo_lookup`, que devolve a `SF-TIMEOUT-002` inteira | Exceção declarada por chamada, com motivo; só os três campos reescritos são neutralizados, e o teste exige que a troca exista | pequeno |
 | 3 | O `.claude/agents/README.md` (scaffolding do agentspec, fora do git) sumiu antes do `sync_skills` | Restaurado do backup da sessão (`claude_agents_README.bak.md`) | nenhum |
 | 4 | Primeira passada da suíte: 11 falhas em 5 lotes, fora do conjunto rápido. `spark.stage.slow_tasks` entrou em goldens de outros domínios que passam pelo event log (2 de CloudWatch Logs, o `scan` misto), a regra nova moveu a contagem do catálogo nos cenários e no holdout de migração (190 -> 191), e o teste de paridade `test_so_o_type_do_output_schema_difere` também compara as chamadas gravadas | Goldens regravados e conferidos no diff (só o fact novo e a contagem); `expects_kinds` dos dois de CloudWatch; `_chamada_declarada` no filtro da paridade, restrita aos campos da chamada declarada, com a contagem travada em 5 | pequeno |
-| 5 | O script de diagnóstico da paridade gravou de novo `.sparkforge/traces.db` | Inspecionado (criado pelo script às 16:34) e apagado antes de rodar os lotes | nenhum |
+| 5 | O script de diagnóstico da paridade gravou de novo `.sparkforge_aws/traces.db` | Inspecionado (criado pelo script às 16:34) e apagado antes de rodar os lotes | nenhum |
 
 ---
 

@@ -20,7 +20,7 @@
 **Context Gathered:**
 - `sparkforge_aws/cli/forge.py` ja tem um `doctor`, mas sem console script (so `sparkforge-aws` e `sparkforge-aws-tools` no pyproject). Ele confere registry, agentes, skills e assinaturas de erro; nao confere MCP, runtimes, packs nem credenciais. `code doctor` existe na CLI principal, so para o indice de codigo.
 - Nao existe `scan` nem classificador de artefato. Os analyzes aceitam arquivo ou diretorio.
-- Todo `collect_*` grava em `.sparkforge/artifacts/<tipo>/` e registra em `.sparkforge/artifacts/manifest.json` uma entrada com `kind`, `path`, `sha256`, `source` e `collect_command`; `collect verify` confere. Os `kind` casam um a um com um analyze (`event_log`, `terraform`, `glue_job_run`, `cloudwatch`, `iceberg_metadata`, `athena_workgroup`, `emr_cluster`, `emr_serverless`, `emr_eks`, `cloudwatch_logs`, `parquet_footer`, `iam_access`, `lakeformation`, `glue_resource_link`).
+- Todo `collect_*` grava em `.sparkforge_aws/artifacts/<tipo>/` e registra em `.sparkforge_aws/artifacts/manifest.json` uma entrada com `kind`, `path`, `sha256`, `source` e `collect_command`; `collect verify` confere. Os `kind` casam um a um com um analyze (`event_log`, `terraform`, `glue_job_run`, `cloudwatch`, `iceberg_metadata`, `athena_workgroup`, `emr_cluster`, `emr_serverless`, `emr_eks`, `cloudwatch_logs`, `parquet_footer`, `iam_access`, `lakeformation`, `glue_resource_link`).
 - O `source` do `glue_job_run` e `glue:get_job_runs:{job_name}/{run_id}`: o `--job-name` sai do manifesto sem adivinhar.
 - `facts/scan.py::varrer_source_files` varre e devolve os `pulos` com nome.
 - `report github` ja grava SARIF e resumo de PR; a Checks API chamada pelo pacote foi recusada naquela frente (rede e token).
@@ -43,7 +43,7 @@
 |---|----------|--------|--------|
 | 1 | Qual recorte do §22? (doctor + scan / so scan / so doctor / TUI ou bot) | **doctor + scan** | TUI, bot e Check com totais adiados |
 | 2 | Como o scan decide o analyze de cada arquivo? (manifesto + extensao / farejar conteudo / arquivo declarado) | **Manifesto + extensao** | JSON solto sem manifesto sai `sem_manifesto`; nada e farejado |
-| 3 | O que o scan executa e grava? (so disco em `.sparkforge/scan` / so stdout / tambem coleta) | **So disco, grava em `.sparkforge/scan`** | Sem rede, sem credencial, sem case |
+| 3 | O que o scan executa e grava? (so disco em `.sparkforge_aws/scan` / so stdout / tambem coleta) | **So disco, grava em `.sparkforge_aws/scan`** | Sem rede, sem credencial, sem case |
 | 4 | Como o doctor confere credencial AWS? (local com `--online` opcional / sempre STS / nao confere) | **Local, `--online` opcional** | A tool MCP nunca vai a rede |
 | 5 | Que amostra aterra o golden? (repo sintetico de fixtures / este repositorio / so unidade) | **Repo sintetico de fixtures** | `fixtures/scan/<caso>/` montado de arquivos que ja existem |
 | 6 | Qual abordagem? (A plan/run / B script / C DAG) | **A** | Pacote com `plan()` puro e `run()` |
@@ -55,7 +55,7 @@
 | Type | Location | Count | Notes |
 |------|----------|-------|-------|
 | Input files | `fixtures/pyspark/`, `fixtures/terraform/`, `fixtures/fusion/`, `fixtures/eventlog/` | varios por dominio | `job.py`, `main.tf`, `.sql`, event log `.jsonl` |
-| Artefatos coletados | `fixtures/iceberg/`, `fixtures/athena/`, `fixtures/glue_job_run/` | varios | Copiados para `.sparkforge/artifacts/<tipo>/` com manifesto e sha256 reais |
+| Artefatos coletados | `fixtures/iceberg/`, `fixtures/athena/`, `fixtures/glue_job_run/` | varios | Copiados para `.sparkforge_aws/artifacts/<tipo>/` com manifesto e sha256 reais |
 | Output examples | goldens de `analyze` e `judge` dos mesmos arquivos | varios | O scan tem que reproduzir os mesmos facts e findings |
 | Ground truth | findings esperados dos fixtures de origem | varios | Conferencia: scan de um arquivo = analyze + judge do mesmo arquivo |
 
@@ -70,7 +70,7 @@
 
 ### Approach A: Pacote plan/run ⭐ Recommended
 
-**Description:** `sparkforge_aws/scan/` com `plan(raiz)` puro (manifesto com sha256, varredura por `varrer_source_files`, recusas nomeadas) e `run(plano)` (extratores do `_core`, uniao, `judge`, `summary.json` em `.sparkforge/scan/`, SARIF pelo caminho do `report github`). `sparkforge_aws/doctor.py` com checagens nomeadas `{id, status, detail, unlock}` e exit code.
+**Description:** `sparkforge_aws/scan/` com `plan(raiz)` puro (manifesto com sha256, varredura por `varrer_source_files`, recusas nomeadas) e `run(plano)` (extratores do `_core`, uniao, `judge`, `summary.json` em `.sparkforge_aws/scan/`, SARIF pelo caminho do `report github`). `sparkforge_aws/doctor.py` com checagens nomeadas `{id, status, detail, unlock}` e exit code.
 
 **Pros:**
 - `--dry-run` mostra o plano sem executar; o plano e testavel isolado.
@@ -122,10 +122,10 @@
 | # | Decision | Rationale | Alternative Rejected |
 |---|----------|-----------|----------------------|
 | 1 | Artefato coletado pelo `kind` do manifesto, com sha256 conferido | O coletor ja declarou o tipo; sha256 divergente e artefato adulterado ou trocado | Farejar conteudo |
-| 2 | Codigo por extensao: `.py` -> `pyspark` e `sql` (literal), `.sql` -> `sql`, `.tf` -> `terraform`, `.jsonl` fora de `.sparkforge/` -> `event-log` | Extensoes inequivocas | Classificar `.json` solto |
+| 2 | Codigo por extensao: `.py` -> `pyspark` e `sql` (literal), `.sql` -> `sql`, `.tf` -> `terraform`, `.jsonl` fora de `.sparkforge_aws/` -> `event-log` | Extensoes inequivocas | Classificar `.json` solto |
 | 3 | Recusas nomeadas: `sem_manifesto`, `sha256_divergente`, `kind_sem_analyze`, `analyze_falhou` | Regra 20 | Pular em silencio |
 | 4 | `--job-name` do `glue_job_run` sai do `source` do manifesto | Deterministico | Inferir do nome do arquivo |
-| 5 | Grava em `.sparkforge/scan/` (facts por analyze, uniao, findings, summary); stdout traz o resumo | Os outros verbos reusam os facts | So stdout |
+| 5 | Grava em `.sparkforge_aws/scan/` (facts por analyze, uniao, findings, summary); stdout traz o resumo | Os outros verbos reusam os facts | So stdout |
 | 6 | `--format sarif` e `--fail-on` pelo caminho do `report github` | Um SARIF so no projeto | Serializador proprio |
 | 7 | Tool `sparkforge_scan` `LOCAL_MUTATION` com `repo`; tool `sparkforge_doctor` `READ_ONLY` com `repo`, nunca `--online` | Anotacao reflete o efeito | Doctor com rede pela tool |
 | 8 | Doctor com nove checagens por portas existentes (`pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`, `indice_de_codigo`, `artefatos`, `credencial_aws`); exit 1 em `fail` | Serve de gate de CI | Doctor que sempre sai 0 |
@@ -149,7 +149,7 @@
 
 | Section | Presented | User Feedback | Adjusted? |
 |---------|-----------|---------------|-----------|
-| Scan: plano por manifesto e extensao, recusas, gravacao em `.sparkforge/scan`, SARIF, tool | ✅ | "Sim, segue" | No |
+| Scan: plano por manifesto e extensao, recusas, gravacao em `.sparkforge_aws/scan`, SARIF, tool | ✅ | "Sim, segue" | No |
 | Doctor: nove checagens, contrato de saida, exit code, tool sem rede | ✅ | "Sim, segue" | No |
 
 ---

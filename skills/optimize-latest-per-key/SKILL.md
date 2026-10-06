@@ -30,13 +30,13 @@ O extrator **não** sabe se `partitionBy` usa a chave de negócio certa, se o de
 ### 1. Extraia os facts
 
 ```bash
-sparkforge-aws analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge_aws/facts.json
 ```
 
 ### 2. Filtre pelas duas estratégias mais comuns
 
 ```bash
-sparkforge-aws analyze pyspark --path <arquivo> --kind pyspark.window --kind pyspark.chain --out .sparkforge/facts_latest.json
+sparkforge-aws analyze pyspark --path <arquivo> --kind pyspark.window --kind pyspark.chain --out .sparkforge_aws/facts_latest.json
 ```
 
 `pyspark.window` traz `attrs.has_partition_by`, `attrs.has_order_by`, `attrs.has_frame`. Uma `Window` **sem** `has_partition_by` é o pior caso possível: ela vira uma única partição lógica, e `row_number`/`rank` ordenam o histórico inteiro numa única task — o análogo, em memória de execução, de um `coalesce(1)`.
@@ -46,7 +46,7 @@ sparkforge-aws analyze pyspark --path <arquivo> --kind pyspark.window --kind pys
 ### 3. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --show-skipped
 ```
 
 Sem flag de versão, porque não há de onde tirá-la e ela não faria diferença aqui: os facts saem de `analyze pyspark`, que lê AST e nunca observa runtime, e `SF-PY-003` é estrutural, sem `runtime_scope`. A saída de `judge` traz o campo `runtime` com o contexto efetivamente usado — vazio, `detected_from: []` — e as regras que `--show-skipped` listar com `reason: runtime_scope` são de infraestrutura Glue, que estes facts não alimentam.

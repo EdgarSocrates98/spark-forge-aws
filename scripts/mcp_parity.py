@@ -26,7 +26,7 @@ chaves sao as do protocolo (`inputSchema`, `isError`, `structuredContent`) e
 nao os nomes Python, que no 2.x viraram snake_case.
 
 As chamadas rodam com o diretorio corrente num temporario com copia das
-fixtures, para que o ledger de `call_tool` e o `.sparkforge/` nao escrevam na
+fixtures, para que o ledger de `call_tool` e o `.sparkforge_aws/` nao escrevam na
 arvore e para que os caminhos na saida sejam relativos e iguais entre maquinas.
 """
 from __future__ import annotations

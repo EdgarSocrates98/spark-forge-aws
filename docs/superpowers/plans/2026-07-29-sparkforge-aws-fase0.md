@@ -26,7 +26,7 @@
 
 **Goal:** Build the deterministic extraction and judgment layer for SparkForge — anchored Facts from PySpark source, Findings from a version-guarded YAML rule catalog, a case file with deterministic routing, and CLI + MCP adapters — so that two operators on different models in different tools produce identical evidence and identical next steps.
 
-**Architecture:** Six layers with negative boundaries. `facts/` extractors emit anchored observations with no judgment. `rules/` applies a YAML catalog (already committed: 59 entradas = 43 regras de diagnóstico + 16 rotas `ROUTE-*` em `routing.yaml`, que o `loader` exclui — por isso `load_catalog()` retorna 43) via a whitelist-only expression evaluator to produce Findings. `case/` holds investigation state in `.sparkforge/case.yaml` and routes deterministically. `adapters/` are thin CLI and MCP shells with zero domain logic. Knowledge stays outside the code in `rules/catalog/` and `knowledge/`.
+**Architecture:** Six layers with negative boundaries. `facts/` extractors emit anchored observations with no judgment. `rules/` applies a YAML catalog (already committed: 59 entradas = 43 regras de diagnóstico + 16 rotas `ROUTE-*` em `routing.yaml`, que o `loader` exclui — por isso `load_catalog()` retorna 43) via a whitelist-only expression evaluator to produce Findings. `case/` holds investigation state in `.sparkforge_aws/case.yaml` and routes deterministically. `adapters/` are thin CLI and MCP shells with zero domain logic. Knowledge stays outside the code in `rules/catalog/` and `knowledge/`.
 
 **Tech Stack:** Python (stdlib `ast`, `hashlib`, `json`), PyYAML, jsonschema, pytest. Optional extras: boto3 (`[aws]`), MCP Python SDK (`[mcp]`). No mandatory dependency beyond PyYAML + jsonschema.
 
@@ -69,7 +69,7 @@
 | `sparkforge_aws/rules/engine.py` | Facts + RuntimeContext + catalog → Findings; version-scope skipping |
 | `sparkforge_aws/rules/version_scope.py` | `runtime_scope` range matching |
 | `sparkforge_aws/facts/pyspark_ast.py` | Static AST extractor. Three passes: parent map, chain reconstruction, emission |
-| `sparkforge_aws/case/store.py` | Read/write `.sparkforge/case.yaml` |
+| `sparkforge_aws/case/store.py` | Read/write `.sparkforge_aws/case.yaml` |
 | `sparkforge_aws/case/router.py` | `next_step(case)` pure function over `routing.yaml` |
 | `sparkforge_aws/case/resume.py` | Rehydration payload and `handoff.md` rendering |
 | `sparkforge_aws/collect/base.py` | Artifact manifest and optional-collector interface. Offline-first |
@@ -3305,7 +3305,7 @@ git commit -m "feat(facts): detect runtime and record version divergence"
 
 ## Task 12: Case store
 
-`.sparkforge/case.yaml` is the handoff bus between Devin and Claude Code. Derived state is committed; raw artifacts are not. `.gitignore` already encodes that.
+`.sparkforge_aws/case.yaml` is the handoff bus between Devin and Claude Code. Derived state is committed; raw artifacts are not. `.gitignore` already encodes that.
 
 **Files:**
 - Create: `sparkforge_aws/case/store.py`
@@ -3379,7 +3379,7 @@ class TestRoundTrip:
     def test_save_then_load_is_identical(self, tmp_path):
         case = new_case("c", "2026-07-29T00:00:00Z", RUNTIME, repo=str(tmp_path))
         path = save_case(case, tmp_path)
-        assert path == tmp_path / ".sparkforge" / "case.yaml"
+        assert path == tmp_path / ".sparkforge_aws" / "case.yaml"
         assert load_case(tmp_path) == case
 
     def test_saved_yaml_is_deterministic(self, tmp_path):
@@ -3390,7 +3390,7 @@ class TestRoundTrip:
 
     def test_saved_yaml_keys_are_sorted(self, tmp_path):
         save_case(new_case("c", "2026-07-29T00:00:00Z", RUNTIME), tmp_path)
-        text = (tmp_path / ".sparkforge" / "case.yaml").read_text(encoding="utf-8")
+        text = (tmp_path / ".sparkforge_aws" / "case.yaml").read_text(encoding="utf-8")
         keys = [line.split(":")[0] for line in text.splitlines() if line and not line[0].isspace()]
         assert keys == sorted(keys)
 
@@ -3399,7 +3399,7 @@ class TestRoundTrip:
             load_case(tmp_path)
 
     def test_load_rejects_unknown_schema_version(self, tmp_path):
-        target = tmp_path / ".sparkforge"
+        target = tmp_path / ".sparkforge_aws"
         target.mkdir()
         (target / "case.yaml").write_text(
             yaml.safe_dump({"schema_version": 99, "case_id": "c"}), encoding="utf-8"
@@ -3460,7 +3460,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge_aws.case.s
 
 ```python
 # sparkforge_aws/case/store.py
-"""Estado da investigacao em .sparkforge/case.yaml.
+"""Estado da investigacao em .sparkforge_aws/case.yaml.
 
 E o barramento de handoff entre Devin e Claude Code: as duas ferramentas rodam em
 maquinas diferentes sem contexto compartilhado, e o que trafega entre elas e
@@ -3478,7 +3478,7 @@ from typing import Any, Dict, Optional
 import yaml
 
 SCHEMA_VERSION = 1
-CASE_DIR = ".sparkforge"
+CASE_DIR = ".sparkforge_aws"
 CASE_FILE = "case.yaml"
 
 PHASES = (
@@ -4065,16 +4065,16 @@ RUNTIME = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"
 def rich_case():
     case = set_phase(new_case("sf-a", "2026-07-29T14:02:11Z", RUNTIME), "diagnosis")
     case = add_hypothesis(case, "loop recomputa DAG", "N jobs identicos", "materializar antes")
-    case["facts_index"] = {"path": ".sparkforge/facts.json", "count": 412, "by_kind": {"pyspark.loop": 2}}
+    case["facts_index"] = {"path": ".sparkforge_aws/facts.json", "count": 412, "by_kind": {"pyspark.loop": 2}}
     case["findings_index"] = {
-        "path": ".sparkforge/findings.json",
+        "path": ".sparkforge_aws/findings.json",
         "count": 3,
         "by_severity": {"P0": 1, "P2": 2},
     }
     case["artifacts"] = [
         {
             "kind": "event_log",
-            "path": ".sparkforge/artifacts/eventlog/jr_abc.json",
+            "path": ".sparkforge_aws/artifacts/eventlog/jr_abc.json",
             "sha256": "a" * 64,
             "source": "s3://bucket/spark-event-logs/jr_abc",
             "collect_command": "sparkforge-aws collect eventlog --job-run jr_abc",
@@ -4485,7 +4485,7 @@ class TestCaseLifecycle:
              "--now", "2026-07-29T00:00:00Z", "--glue", "5.0"], capsys)
         code, _ = run(["handoff", "--repo", str(repo)], capsys)
         assert code == 0
-        assert (repo / ".sparkforge" / "handoff.md").is_file()
+        assert (repo / ".sparkforge_aws" / "handoff.md").is_file()
 
 
 class TestErrorsAreActionable:
@@ -4741,7 +4741,7 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
 
 
 def _findings_for_case(root: Path) -> List[Dict[str, Any]]:
-    path = root / ".sparkforge" / "findings.json"
+    path = root / ".sparkforge_aws" / "findings.json"
     if not path.is_file():
         return []
     return json.loads(path.read_text(encoding="utf-8"))
@@ -4777,7 +4777,7 @@ def _cmd_handoff(args: argparse.Namespace) -> int:
 
     payload = resume_mod.resume(case, _findings_for_case(root))
     text = resume_mod.render_handoff(payload)
-    target = root / ".sparkforge" / "handoff.md"
+    target = root / ".sparkforge_aws" / "handoff.md"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text, encoding="utf-8")
     _emit({"path": str(target), "next_step": payload["next_step"]["recommended_skill"]})
@@ -5174,7 +5174,7 @@ Descriptions and annotations per tool:
 
 | Tool | `readOnlyHint` | `idempotentHint` | Description focus |
 |---|---|---|---|
-| `sparkforge_case_open` | `false` | `false` | creates `.sparkforge/case.yaml`; `now` is a required ISO 8601 timestamp supplied by the caller |
+| `sparkforge_case_open` | `false` | `false` | creates `.sparkforge_aws/case.yaml`; `now` is a required ISO 8601 timestamp supplied by the caller |
 | `sparkforge_case_get` | `true` | `true` | reads the case; error names `sparkforge-aws case open` |
 | `sparkforge_case_update` | `false` | `false` | sets phase, gate, or records a skill use with outcome |
 | `sparkforge_next_step` | `true` | `true` | deterministic routing; `reason` always cites a `ROUTE-*` id; `blocked_by` is advisory |
@@ -5207,7 +5207,7 @@ Handlers mirror the CLI commands, returning dicts rather than printing, and retu
 Dois transportes com o mesmo nucleo: stdio para Claude Code, Devin CLI e CI;
 streamable HTTP stateless para Devin Desktop, que configura MCP por serverUrl.
 
-Sem estado de sessao no servidor: o estado vive em .sparkforge/case.yaml, no
+Sem estado de sessao no servidor: o estado vive em .sparkforge_aws/case.yaml, no
 repositorio, que e o que permite retomar em outra ferramenta.
 
 O SDK MCP e extra opcional. Importado tarde, para o nucleo rodar sem ele.
@@ -5431,7 +5431,7 @@ Expected: FAIL — `.claude-plugin/plugin.json` does not exist
 ```markdown
 ---
 name: sf-open
-description: Abre uma investigação SparkForge, criando .sparkforge/case.yaml com o runtime detectado
+description: Abre uma investigação SparkForge, criando .sparkforge_aws/case.yaml com o runtime detectado
 ---
 
 Abra uma investigação SparkForge.
@@ -5494,18 +5494,18 @@ Antes de concluir qualquer coisa:
 ```markdown
 ---
 name: sf-handoff
-description: Gera .sparkforge/handoff.md para passar a investigação para Devin ou Claude Code
+description: Gera .sparkforge_aws/handoff.md para passar a investigação para Devin ou Claude Code
 ---
 
 Gere o briefing de passagem: `sparkforge-aws handoff --repo .`
 
-Escreve `.sparkforge/handoff.md` com dez seções fixas, na mesma ordem, para ser diffável.
+Escreve `.sparkforge_aws/handoff.md` com dez seções fixas, na mesma ordem, para ser diffável.
 
 Depois:
 
-1. Commite `.sparkforge/case.yaml`, `facts.json`, `findings.json`, `handoff.md` e
+1. Commite `.sparkforge_aws/case.yaml`, `facts.json`, `findings.json`, `handoff.md` e
    `artifacts/manifest.json`. Esse commit é o barramento entre as ferramentas.
-2. **Não** commite `.sparkforge/artifacts/**` — pode conter dado de negócio e centenas de MB.
+2. **Não** commite `.sparkforge_aws/artifacts/**` — pode conter dado de negócio e centenas de MB.
    O `.gitignore` já cobre isso; o manifest registra sha256, origem e comando de recoleta.
 3. Do outro lado, comece por `/sf-resume`.
 ```
@@ -5668,7 +5668,7 @@ elas são o que faz o resultado ser igual sob qualquer modelo e qualquer ferrame
 
 ## Regras
 
-1. **Abra ou carregue o case antes de qualquer análise.** Investigação sem `.sparkforge/case.yaml` não é retomável em outra ferramenta, e retomabilidade é requisito, não conveniência.
+1. **Abra ou carregue o case antes de qualquer análise.** Investigação sem `.sparkforge_aws/case.yaml` não é retomável em outra ferramenta, e retomabilidade é requisito, não conveniência.
 2. **Chame `next_step` antes de escolher skill.** A árvore de decisão vive em `rules/catalog/routing.yaml`. Não escolha a rota por julgamento próprio — é isso que divergiria entre modelos.
 3. **Nenhum número na saída sem `fact_id` que o sustente.** Toda afirmação quantitativa cita `rule_id` e o `fact_id` da evidência. Sem Fact, é hipótese, e tem que estar rotulada como hipótese.
 4. **Use `rules_lookup` em vez de memória** para limiar, guarda de versão e fonte. Você não precisa saber o conhecimento; precisa consultá-lo.
@@ -6524,7 +6524,7 @@ jobs:
 
       - name: No raw artifact is tracked
         run: |
-          if git ls-files | grep -E '^\.sparkforge/artifacts/(?!manifest\.json)' ; then
+          if git ls-files | grep -E '^\.sparkforge_aws/artifacts/(?!manifest\.json)' ; then
             echo "artefato bruto rastreado pelo git" >&2
             exit 1
           fi
@@ -6580,7 +6580,7 @@ class TestArtifactEntry:
     def test_records_origin_and_recollect_command(self):
         entry = ArtifactEntry(
             kind="event_log",
-            path=".sparkforge/artifacts/eventlog/jr_abc.json",
+            path=".sparkforge_aws/artifacts/eventlog/jr_abc.json",
             sha256="a" * 64,
             source="s3://bucket/spark-event-logs/jr_abc",
             collect_command="sparkforge-aws collect eventlog --job-run jr_abc",
@@ -6610,7 +6610,7 @@ class TestManifest:
     def _entry(self, **over):
         base = dict(
             kind="event_log",
-            path=".sparkforge/artifacts/eventlog/jr_abc.json",
+            path=".sparkforge_aws/artifacts/eventlog/jr_abc.json",
             sha256="a" * 64,
             source="s3://bucket/x",
             collect_command="sparkforge-aws collect eventlog --job-run jr_abc",
@@ -6621,7 +6621,7 @@ class TestManifest:
 
     def test_register_then_load_round_trip(self, tmp_path):
         path = register_artifact(self._entry(), tmp_path)
-        assert path == tmp_path / ".sparkforge" / "artifacts" / "manifest.json"
+        assert path == tmp_path / ".sparkforge_aws" / "artifacts" / "manifest.json"
         assert [e["kind"] for e in load_manifest(tmp_path)] == ["event_log"]
 
     def test_registering_the_same_path_replaces_the_entry(self, tmp_path):
@@ -6634,7 +6634,7 @@ class TestManifest:
     def test_manifest_is_sorted_and_deterministic(self, tmp_path):
         register_artifact(self._entry(kind="terraform", path="a/t.tf"), tmp_path)
         register_artifact(self._entry(), tmp_path)
-        target = tmp_path / ".sparkforge" / "artifacts" / "manifest.json"
+        target = tmp_path / ".sparkforge_aws" / "artifacts" / "manifest.json"
         first = target.read_text(encoding="utf-8")
         register_artifact(self._entry(), tmp_path)
         assert target.read_text(encoding="utf-8") == first
@@ -6647,7 +6647,7 @@ class TestManifest:
 class TestVerify:
     def test_absent_file_is_reported_with_its_recollect_command(self, tmp_path):
         entry = ArtifactEntry(
-            kind="event_log", path=".sparkforge/artifacts/gone.json", sha256="a" * 64,
+            kind="event_log", path=".sparkforge_aws/artifacts/gone.json", sha256="a" * 64,
             source="s3://b/x", collect_command="sparkforge-aws collect eventlog --job-run jr",
             collected_at="2026-07-29T10:00:00Z",
         )
@@ -6658,12 +6658,12 @@ class TestVerify:
     def test_present_file_with_matching_hash_is_ok(self, tmp_path):
         import hashlib
 
-        target = tmp_path / ".sparkforge" / "artifacts" / "log.json"
+        target = tmp_path / ".sparkforge_aws" / "artifacts" / "log.json"
         target.parent.mkdir(parents=True)
         target.write_bytes(b"{}")
         digest = hashlib.sha256(b"{}").hexdigest()
         entry = {
-            "kind": "event_log", "path": ".sparkforge/artifacts/log.json", "sha256": digest,
+            "kind": "event_log", "path": ".sparkforge_aws/artifacts/log.json", "sha256": digest,
             "source": "s3://b/x", "collect_command": "c", "collected_at": "2026-07-29T10:00:00Z",
         }
         result = verify_artifact(entry, tmp_path)
@@ -6671,11 +6671,11 @@ class TestVerify:
         assert result["hash_matches"] is True
 
     def test_present_file_with_wrong_hash_is_flagged(self, tmp_path):
-        target = tmp_path / ".sparkforge" / "artifacts" / "log.json"
+        target = tmp_path / ".sparkforge_aws" / "artifacts" / "log.json"
         target.parent.mkdir(parents=True)
         target.write_bytes(b"changed")
         entry = {
-            "kind": "event_log", "path": ".sparkforge/artifacts/log.json", "sha256": "a" * 64,
+            "kind": "event_log", "path": ".sparkforge_aws/artifacts/log.json", "sha256": "a" * 64,
             "source": "s3://b/x", "collect_command": "c", "collected_at": "2026-07-29T10:00:00Z",
         }
         result = verify_artifact(entry, tmp_path)
@@ -6735,7 +6735,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-MANIFEST_RELATIVE = Path(".sparkforge") / "artifacts" / "manifest.json"
+MANIFEST_RELATIVE = Path(".sparkforge_aws") / "artifacts" / "manifest.json"
 
 ARTIFACT_KINDS = (
     "event_log",
@@ -6926,7 +6926,7 @@ class TestReadme:
     def test_documents_the_handoff_flow(self):
         text = read("README.md")
         assert "handoff" in text.lower()
-        assert ".sparkforge" in text
+        assert ".sparkforge_aws" in text
 
 
 class TestGuia:
@@ -6999,7 +6999,7 @@ Add these keys alongside the existing ones:
   "schemas": {
     "fact": "sparkforge_aws/findings/schemas/fact.schema.json",
     "finding": "sparkforge_aws/findings/schemas/finding.schema.json",
-    "case": ".sparkforge/case.yaml"
+    "case": ".sparkforge_aws/case.yaml"
   },
   "cli": "sparkforge-aws",
   "plugin": ".claude-plugin/plugin.json",
@@ -7018,8 +7018,8 @@ Extração e julgamento são determinísticos: mesma entrada, mesma saída, qual
 pip install -e .
 
 sparkforge-aws runtime detect --glue 5.0
-sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --glue 5.0 --out .sparkforge_aws/findings.json
 sparkforge-aws next-step --repo .
 ```
 
@@ -7041,8 +7041,8 @@ Ficou sem token numa ferramenta? Continue na outra. O barramento é o git.
 
 ```bash
 sparkforge-aws handoff --repo .
-git add .sparkforge/case.yaml .sparkforge/facts.json .sparkforge/findings.json \
-        .sparkforge/handoff.md .sparkforge/artifacts/manifest.json
+git add .sparkforge_aws/case.yaml .sparkforge_aws/facts.json .sparkforge_aws/findings.json \
+        .sparkforge_aws/handoff.md .sparkforge_aws/artifacts/manifest.json
 git commit -m "chore: handoff"
 ```
 
@@ -7060,10 +7060,10 @@ nunca fica cega.
 
 O que trafega entre as ferramentas é commit, não contexto de conversa.
 
-**Commitado** (pequeno e derivado): `.sparkforge/case.yaml`, `facts.json`, `findings.json`,
+**Commitado** (pequeno e derivado): `.sparkforge_aws/case.yaml`, `facts.json`, `findings.json`,
 `handoff.md`, `artifacts/manifest.json`.
 
-**Não commitado**: `.sparkforge/artifacts/**` — event log bruto, `.tf` copiado, dumps.
+**Não commitado**: `.sparkforge_aws/artifacts/**` — event log bruto, `.tf` copiado, dumps.
 
 Ao retomar:
 

@@ -91,7 +91,7 @@ gen_lock.py --check: 108 entradas | Snyk Code (reporting, adapters, scripts): 0
 | 4 | O golden de paridade do MCP (86 tools, SDK 1.29) quebra com qualquer tool nova | `NOVAS_DEPOIS_DO_GOLDEN` com data e motivo, e a comparacao cobre so as tools do golden; regrava-lo sob o 2.x apagaria a referencia |
 | 5 | `test_mcp_modern_era.py` tinha 86 fixo | Passou a usar `len(TOOLS)` |
 | 6 | Na remediacao de lastro, a VNX-726 (`contains`) recebeu o ultimo token da saida (`unknownreceiver=91,1%`) | Corrigido para `91,1` e conferido no diff |
-| 7 | Probes manuais de `call_tool` na raiz criaram `.sparkforge/traces.db` (backstop do `conftest`) | Removido depois de cada probe |
+| 7 | Probes manuais de `call_tool` na raiz criaram `.sparkforge_aws/traces.db` (backstop do `conftest`) | Removido depois de cada probe |
 | 8 | A suite em segundo plano e morta por memoria na maquina | Blocos de 30–40 arquivos em primeiro plano |
 
 ---
@@ -103,7 +103,7 @@ gen_lock.py --check: 108 entradas | Snyk Code (reporting, adapters, scripts): 0
 | 1 | Onde gravar o texto exato das saidas | Serializar no golden / uma funcao so | `report_github_textos` no `_core` | Golden e CLI nao divergem |
 | 2 | Versao no SARIF do golden | Versao real / fixa | `0.0.0+golden` no regen e no teste | Um release nao reescreve os goldens |
 | 3 | Onde o finding novo aparece no agente | Coordenador / executor | Passo novo no `sf-synthesizer` | E quem entrega o relatorio |
-| 4 | `.sparkforge/report/` no `.gitignore` deste repo | Editar / documentar | Documentar | O `.gitignore` tem alteracao local do operador nao commitada |
+| 4 | `.sparkforge_aws/report/` no `.gitignore` deste repo | Editar / documentar | Documentar | O `.gitignore` tem alteracao local do operador nao commitada |
 | 5 | Casos do job `sarif-upload` | Os 4 / os 3 com resultado | 3 com resultado localizado | `so_runtime` tem `results: []`, e o que se prova e a aceitacao de resultado |
 
 ---

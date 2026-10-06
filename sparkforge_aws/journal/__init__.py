@@ -25,7 +25,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from sparkforge_aws.case.store import CASE_DIR
+from sparkforge_aws.case.store import state_dir
 
 JOURNAL_FILE = "journal.jsonl"
 SCHEMA_VERSION = 1
@@ -47,7 +47,15 @@ LITERAL_KEYS = frozenset(
 
 
 def journal_path(raiz: Path | str) -> Path:
-    return Path(raiz) / CASE_DIR / JOURNAL_FILE
+    """O journal do case, ao lado do `case.yaml` que a leitura resolveu.
+
+    `.sparkforge_aws/` na pratica em qualquer repo recem-aberto; um repo cujo
+    case ainda mora no `.sparkforge/` legado tem o journal dele la, e a
+    cadeia `seq`/`prev` continua a mesma em vez de reiniciar noutro arquivo.
+    Quando a gravacao do case muda a ancora, `save_case` copia este arquivo —
+    e o resto do estado vizinho — para o diretorio novo, entao a cadeia
+    segue continua depois da virada tambem."""
+    return state_dir(raiz) / JOURNAL_FILE
 
 
 @lru_cache(maxsize=1)

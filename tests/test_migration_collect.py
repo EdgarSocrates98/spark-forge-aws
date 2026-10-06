@@ -70,7 +70,7 @@ class TestTerraformSoQuandoExiste:
 class TestInventarioDeConsumidoresPorConvencao:
     """O inventario e procurado onde o extrator o declara, nao adivinhado.
 
-    `sparkforge_aws/facts/consumers.py` nomeia `.sparkforge/consumers.yaml` como a
+    `sparkforge_aws/facts/consumers.py` nomeia `.sparkforge_aws/consumers.yaml` como a
     convencao. Varrer todo `*.yaml` da arvore acharia o inventario, e junto com
     ele todo workflow de CI e todo arquivo de configuracao -- cada um virando um
     `env.consumers_analyzed` que afirma "inventario lido" sobre arquivo que nao
@@ -79,16 +79,16 @@ class TestInventarioDeConsumidoresPorConvencao:
 
     def test_le_o_arquivo_da_convencao(self, tmp_path):
         raiz = _job(tmp_path)
-        (raiz / ".sparkforge").mkdir()
-        (raiz / ".sparkforge" / "consumers.yaml").write_text(INVENTARIO, encoding="utf-8")
+        (raiz / ".sparkforge_aws").mkdir()
+        (raiz / ".sparkforge_aws" / "consumers.yaml").write_text(INVENTARIO, encoding="utf-8")
         facts = collect_mod.collect(raiz)
         consumidores = [f for f in facts if f.kind == "env.consumer"]
         assert [f.attrs["service"] for f in consumidores] == ["athena"]
 
     def test_le_o_diretorio_da_convencao_dividido_por_dominio(self, tmp_path):
         raiz = _job(tmp_path)
-        (raiz / ".sparkforge" / "consumers").mkdir(parents=True)
-        (raiz / ".sparkforge" / "consumers" / "vendas.yaml").write_text(
+        (raiz / ".sparkforge_aws" / "consumers").mkdir(parents=True)
+        (raiz / ".sparkforge_aws" / "consumers" / "vendas.yaml").write_text(
             INVENTARIO, encoding="utf-8"
         )
         facts = collect_mod.collect(raiz)
@@ -107,18 +107,18 @@ class TestUniaoOrdenada:
     def test_ordem_e_deterministica(self, tmp_path):
         raiz = _job(tmp_path)
         (raiz / "infra.tf").write_text(TF_FGAC, encoding="utf-8")
-        (raiz / ".sparkforge").mkdir()
-        (raiz / ".sparkforge" / "consumers.yaml").write_text(INVENTARIO, encoding="utf-8")
+        (raiz / ".sparkforge_aws").mkdir()
+        (raiz / ".sparkforge_aws" / "consumers.yaml").write_text(INVENTARIO, encoding="utf-8")
         uma = [f.to_dict() for f in collect_mod.collect(raiz)]
         outra = [f.to_dict() for f in collect_mod.collect(raiz)]
         assert uma == outra
 
     def test_o_tf_da_convencao_de_consumidores_nao_e_varrido_duas_vezes(self, tmp_path):
-        # `.sparkforge/` fica DENTRO da raiz, e `extract_terraform_tree` varre a
+        # `.sparkforge_aws/` fica DENTRO da raiz, e `extract_terraform_tree` varre a
         # raiz inteira: um `.tf` ali dentro entraria uma vez so, nunca duas.
         raiz = _job(tmp_path)
-        (raiz / ".sparkforge").mkdir()
-        (raiz / ".sparkforge" / "extra.tf").write_text(TF_FGAC, encoding="utf-8")
+        (raiz / ".sparkforge_aws").mkdir()
+        (raiz / ".sparkforge_aws" / "extra.tf").write_text(TF_FGAC, encoding="utf-8")
         facts = collect_mod.collect(raiz)
         anchors = [f.provenance["artifact"] for f in facts if f.kind == "tf.resource"]
         assert len(anchors) == len(set(anchors))
@@ -131,12 +131,12 @@ class TestDumpDeMetadadosIceberg:
     diretorio do job: o codigo observa `format-version` numa linha de fonte,
     sem identidade de tabela. O dump de metadados tem a tabela, e a convencao
     de onde ele mora ja existe -- `sparkforge-aws collect iceberg-metadata` escreve
-    em `.sparkforge/artifacts/iceberg/<db_tabela>.json`.
+    em `.sparkforge_aws/artifacts/iceberg/<db_tabela>.json`.
     """
 
     @staticmethod
     def _dump(raiz: Path) -> Path:
-        pasta = raiz / ".sparkforge" / "artifacts" / "iceberg"
+        pasta = raiz / ".sparkforge_aws" / "artifacts" / "iceberg"
         pasta.mkdir(parents=True)
         return pasta
 

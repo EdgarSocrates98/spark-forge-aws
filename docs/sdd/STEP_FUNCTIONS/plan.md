@@ -936,7 +936,7 @@ def _extract_step_functions_facts(path: str) -> list[Fact]:
             f"  Aponte para o .asl.json da state machine, para a saida salva de\n"
             f"  `aws stepfunctions describe-state-machine`, ou para o diretorio com eles:\n"
             f"    sparkforge-aws analyze step-functions --path statemachines/ "
-            f"--out .sparkforge/facts_sfn.json",
+            f"--out .sparkforge_aws/facts_sfn.json",
             exit_code=2,
         )
     if target.is_dir():

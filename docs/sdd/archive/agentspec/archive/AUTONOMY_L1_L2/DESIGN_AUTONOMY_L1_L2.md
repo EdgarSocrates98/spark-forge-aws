@@ -49,18 +49,18 @@
  change/sandbox.py
    copiar(repo) via facts.scan.varrer_source_files(repo, "*") -> manifesto (rel, sha256), pulos
    id = sha256(diff + manifesto)[:16]
-   .sparkforge/sandbox/<id>/before/   <- copia pristina
-   .sparkforge/sandbox/<id>/after/    <- copia + aplicar_patches() (tudo ou nada, em memoria)
+   .sparkforge_aws/sandbox/<id>/before/   <- copia pristina
+   .sparkforge_aws/sandbox/<id>/after/    <- copia + aplicar_patches() (tudo ou nada, em memoria)
      |
      v
- _core.scan(before) ; _core.scan(after)      (duas raizes; cada uma grava em <raiz>/.sparkforge/scan/)
+ _core.scan(before) ; _core.scan(after)      (duas raizes; cada uma grava em <raiz>/.sparkforge_aws/scan/)
      |
      v
  simulate.diff.diff(findings_before, findings_after, [], [], proof.load_policy()["stable_keys"])
      |
      v
  {stage, sandbox, id, new[], resolved[], kept_count, proof_obligations[], next_steps[],
-  copy_skipped[], main_tree_touched: false}  -> tambem em .sparkforge/sandbox/<id>/report.json
+  copy_skipped[], main_tree_touched: false}  -> tambem em .sparkforge_aws/sandbox/<id>/report.json
 ```
 
 ---
@@ -152,9 +152,9 @@ As recusas saem **antes de tocar disco**:
 | **Status** | Accepted |
 | **Date** | 2026-09-13 |
 
-**Context:** A-005. `_core.scan(repo)` grava em `<repo>/.sparkforge/scan/` (`_scan_gravar` apaga os `.json` antigos) e devolve o resumo; os findings ficam em `findings.json`. O catalogo carregado e so leitura.
+**Context:** A-005. `_core.scan(repo)` grava em `<repo>/.sparkforge_aws/scan/` (`_scan_gravar` apaga os `.json` antigos) e devolve o resumo; os findings ficam em `findings.json`. O catalogo carregado e so leitura.
 
-**Choice:** O sandbox monta `.sparkforge/sandbox/<id>/before/` (copia pristina) e `after/` (copia com os patches). Roda `_core.scan(str(before))` e `_core.scan(str(after))` e le `findings.json` de cada raiz. Como sao duas raizes sem arquivo compartilhado, nao ha estado de um lado para vazar no outro. A comparacao reusa `sparkforge_aws.simulate.diff.diff(antes, depois, [], [], load_policy()["stable_keys"])` (A-008: a chave estavel de `proof/keys.py` ignora `line`, `col` e `snippet`, que o proprio diff desloca). Os campos do resultado sao renomeados: `appeared` vira `new`, `disappeared` vira `resolved` e `persisted_count` vira `kept_count`.
+**Choice:** O sandbox monta `.sparkforge_aws/sandbox/<id>/before/` (copia pristina) e `after/` (copia com os patches). Roda `_core.scan(str(before))` e `_core.scan(str(after))` e le `findings.json` de cada raiz. Como sao duas raizes sem arquivo compartilhado, nao ha estado de um lado para vazar no outro. A comparacao reusa `sparkforge_aws.simulate.diff.diff(antes, depois, [], [], load_policy()["stable_keys"])` (A-008: a chave estavel de `proof/keys.py` ignora `line`, `col` e `snippet`, que o proprio diff desloca). Os campos do resultado sao renomeados: `appeared` vira `new`, `disappeared` vira `resolved` e `persisted_count` vira `kept_count`.
 
 **Rationale:** o `scan` tem golden e cobre o plano por manifesto, a fusao e o julgamento. Reusa-lo sem refatorar evita tocar o §22. Duas copias tambem deixam o operador comparar `before/` e `after/` com a ferramenta que quiser.
 
@@ -177,10 +177,10 @@ As recusas saem **antes de tocar disco**:
 
 **Choice:**
 - `id = sha256(diff_bytes + b"\0" + "".join(f"{rel}\t{sha}\n" for rel, sha in sorted(manifesto)).encode())[:16]`.
-- Se `.sparkforge/sandbox/<id>/` existe, e apagado e recriado, e a apagada passa por `resolve_within(repo/.sparkforge/sandbox, alvo)`.
-- O relatorio e gravado em `.sparkforge/sandbox/<id>/report.json` (`sort_keys`, LF) e devolvido.
-- `--clean` remove `.sparkforge/sandbox/` inteiro, confinado, e devolve `{removed: [ids]}`.
-- `.gitignore` ganha `.sparkforge/sandbox/`.
+- Se `.sparkforge_aws/sandbox/<id>/` existe, e apagado e recriado, e a apagada passa por `resolve_within(repo/.sparkforge_aws/sandbox, alvo)`.
+- O relatorio e gravado em `.sparkforge_aws/sandbox/<id>/report.json` (`sort_keys`, LF) e devolvido.
+- `--clean` remove `.sparkforge_aws/sandbox/` inteiro, confinado, e devolve `{removed: [ids]}`.
+- `.gitignore` ganha `.sparkforge_aws/sandbox/`.
 
 **Rationale:** mesma entrada, mesmo diretorio e mesmo relatorio (SC8). O conteudo da copia pode ter credencial pulada? Nao, porque a varredura recusa por nome antes de ler. Mesmo assim a copia nao deve ir para o git.
 
@@ -222,7 +222,7 @@ Na CLI:
 | 6 | `sparkforge_aws/adapters/tools.py` | Modify | 2 tools, schemas, handlers | @python-developer | 4 |
 | 7 | `fixtures/change/<caso>/{input/repo/,input/facts.json,input/request.json,expected.json}` + `.gitattributes` (`fixtures/change/** -text`) | Create | Golden sinteticos | @test-generator | 1-3 |
 | 8 | `tests/test_change_plan.py`, `tests/test_change_apply.py`, `tests/test_change_sandbox.py`, `tests/test_fixtures_golden_change.py` | Create | Unidade, ida-e-volta, confinamento, golden (`FIXTURES = ROOT / "fixtures" / "change"`) | @test-generator | 1-7 |
-| 9 | `.gitignore` | Modify | `.sparkforge/sandbox/` | (general) | None |
+| 9 | `.gitignore` | Modify | `.sparkforge_aws/sandbox/` | (general) | None |
 | 10 | Registros de tool nova: `tests/test_adapters_tools.py` (lista, amostra real, FAILABLE, writers), `tests/test_harness_authorization.py` (92), `tests/test_fixtures_golden_mcp_parity.py`, `parity.yaml`, `manifest.json`, `agents/spark-performance-architect.md`, `agents/executors/sf-verifier.md` + `scripts/sync_skills.py` (com backup do README), surface lock, claims | Modify | Tool nova | (general) | 6 |
 | 11 | `docs/guia/usos/change.md`, `docs/guia/README.md`, referencia (`scripts/gen_reference_docs.py`), `CLAUDE.md` (tabela de verbos e contagem de tools), `STATUS`, `docs/agentic-evolution-report.md` (L1/L2 do §15 contra a escala do `AutonomyLevel`) | Create/Modify | Manual para leigo e documentacao | (general) | 5, 6 |
 
@@ -386,7 +386,7 @@ O caso `resolve_achado` reusa o padrao de `fixtures/pyspark/conf_set_conflict`: 
 | Config Key | Type | Default | Description |
 |------------|------|---------|-------------|
 | `_DIFF_MAX_BYTES` | int (constante) | `2 * 1024 * 1024` | Teto do diff aceito pelo L2 |
-| `_SANDBOX_DIR` | Path (constante) | `.sparkforge/sandbox` | Raiz das copias |
+| `_SANDBOX_DIR` | Path (constante) | `.sparkforge_aws/sandbox` | Raiz das copias |
 | `_ID_HEX` | int (constante) | `16` | Tamanho do `id` |
 
 ---
@@ -396,7 +396,7 @@ O caso `resolve_achado` reusa o padrao de `fixtures/pyspark/conf_set_conflict`: 
 - Diff e entrada nao confiavel: caminho confinado duas vezes, no parse (sem absoluto e sem `..`) e na gravacao (`resolve_within(after, rel)`).
 - A copia nunca le arquivo sensivel, porque a varredura recusa por nome antes do `stat`. O diff que o toca sai `arquivo_fora_da_copia`.
 - Nada executa codigo do repositorio: os extratores do `scan` leem por AST e texto. Nenhum subprocess.
-- `--clean` apaga so dentro de `.sparkforge/sandbox/`, conferido por `resolve_within`.
+- `--clean` apaga so dentro de `.sparkforge_aws/sandbox/`, conferido por `resolve_within`.
 - Leitura do repo no L1 por `resolve_within(repo, subject.file)`: fact adulterado com `../` e recusado (`caminho_fora_da_raiz`).
 
 ---

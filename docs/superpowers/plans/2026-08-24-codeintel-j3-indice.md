@@ -813,7 +813,7 @@ falharia de forma intermitente, que é pior que falhar sempre.
 Verbo `code` com três subcomandos: `index` (recebe `--root`, default `.`),
 `search` (recebe termo), `status` (mostra o que o banco tem e quando foi feito).
 
-O banco fica em `.sparkforge/local/codeintel/graph.sqlite3`, que **já está no
+O banco fica em `.sparkforge_aws/local/codeintel/graph.sqlite3`, que **já está no
 `.gitignore`** desde `715a657`. Confirme antes de escrever.
 
 - [ ] **Passo 5: a medição que justifica a fase**

@@ -19,8 +19,8 @@ DMS, com redaction, cache por hash, manifesto, CLI, MCP, testes e documentação
 
 ## Gates rodados
 
-- `python -m pytest tests/test_collect_streaming.py tests/test_collect_base.py tests/test_collect_aws.py -q --basetemp .sparkforge/local/pytest-streaming-collectors` — `84 passed`, exit 0.
-- `python -m pytest tests/test_adapters_tools.py::TestOutputSchemasAreReal tests/test_host_surface_contracts.py -q --basetemp .sparkforge/local/pytest-streaming-collectors-surface` — `5 passed`, exit 0.
+- `python -m pytest tests/test_collect_streaming.py tests/test_collect_base.py tests/test_collect_aws.py -q --basetemp .sparkforge_aws/local/pytest-streaming-collectors` — `84 passed`, exit 0.
+- `python -m pytest tests/test_adapters_tools.py::TestOutputSchemasAreReal tests/test_host_surface_contracts.py -q --basetemp .sparkforge_aws/local/pytest-streaming-collectors-surface` — `5 passed`, exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.

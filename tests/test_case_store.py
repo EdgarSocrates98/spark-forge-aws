@@ -20,6 +20,8 @@ from sparkforge_aws.case.store import (
     save_case,
     set_gate,
     set_phase,
+    state_dir,
+    state_path,
 )
 
 RUNTIME = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
@@ -86,7 +88,7 @@ class TestRoundTrip:
     def test_save_then_load_is_identical(self, tmp_path):
         case = new_case("c", "2026-07-29T00:00:00Z", RUNTIME, repo=str(tmp_path))
         path = save_case(case, tmp_path)
-        assert path == tmp_path / ".sparkforge" / "case.yaml"
+        assert path == tmp_path / ".sparkforge_aws" / "case.yaml"
         assert load_case(tmp_path) == case
 
     def test_saved_yaml_is_deterministic(self, tmp_path):
@@ -100,13 +102,145 @@ class TestRoundTrip:
             load_case(tmp_path)
 
     def test_load_rejects_unknown_schema_version(self, tmp_path):
-        target = tmp_path / ".sparkforge"
+        target = tmp_path / ".sparkforge_aws"
         target.mkdir()
         (target / "case.yaml").write_text(
             yaml.safe_dump({"schema_version": 99, "case_id": "c"}), encoding="utf-8"
         )
         with pytest.raises(CaseError, match="schema_version"):
             load_case(tmp_path)
+
+    def test_load_reads_legacy_sparkforge_dir(self, tmp_path):
+        """Um case aberto antes do rename do diretorio continua carregando."""
+        case = new_case("legado", "2026-07-29T00:00:00Z", RUNTIME)
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "case.yaml").write_text(
+            yaml.safe_dump(case, sort_keys=True), encoding="utf-8"
+        )
+        assert load_case(tmp_path)["case_id"] == "legado"
+
+    def test_new_dir_wins_over_legacy_when_both_exist(self, tmp_path):
+        """Dois case.yaml nunca sao mesclados: `.sparkforge_aws` e a verdade."""
+        for pasta, cid in ((".sparkforge", "antigo"), (".sparkforge_aws", "novo")):
+            alvo = tmp_path / pasta
+            alvo.mkdir()
+            (alvo / "case.yaml").write_text(
+                yaml.safe_dump(new_case(cid, "2026-07-29T00:00:00Z", RUNTIME),
+                               sort_keys=True),
+                encoding="utf-8",
+            )
+        assert load_case(tmp_path)["case_id"] == "novo"
+
+    def test_save_always_writes_new_dir(self, tmp_path):
+        case = new_case("c", "2026-07-29T00:00:00Z", RUNTIME)
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        path = save_case(case, tmp_path)
+        assert path == tmp_path / ".sparkforge_aws" / "case.yaml"
+
+
+class TestStatePaths:
+    def test_state_dir_defaults_to_new(self, tmp_path):
+        assert state_dir(tmp_path) == tmp_path / ".sparkforge_aws"
+
+    def test_state_dir_follows_legacy_case(self, tmp_path):
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "case.yaml").write_text(
+            yaml.safe_dump(new_case("c", "2026-07-29T00:00:00Z", RUNTIME)),
+            encoding="utf-8",
+        )
+        assert state_dir(tmp_path) == legado
+
+    def test_state_path_prefers_new_when_both_exist(self, tmp_path):
+        for pasta in (".sparkforge", ".sparkforge_aws"):
+            alvo = tmp_path / pasta
+            (alvo / "artifacts").mkdir(parents=True)
+            (alvo / "artifacts" / "manifest.json").write_text("[]", encoding="utf-8")
+        resolvido = state_path(tmp_path, "artifacts/manifest.json")
+        assert resolvido == tmp_path / ".sparkforge_aws" / "artifacts" / "manifest.json"
+
+    def test_state_path_falls_back_to_existing_legacy_file(self, tmp_path):
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "traces.db").write_bytes(b"db")
+        assert state_path(tmp_path, "traces.db") == legado / "traces.db"
+
+    def test_state_path_accepts_prefixed_rel(self, tmp_path):
+        legado = tmp_path / ".sparkforge"
+        (legado / "scan").mkdir(parents=True)
+        for rel in ("scan", Path(".sparkforge_aws") / "scan", Path(".sparkforge") / "scan"):
+            assert state_path(tmp_path, rel) == legado / "scan"
+
+    def test_state_path_defaults_to_new_dir(self, tmp_path):
+        assert state_path(tmp_path, "traces.db") == tmp_path / ".sparkforge_aws" / "traces.db"
+
+
+class TestViradaDeAncora:
+    """A primeira gravacao do mesmo case em `.sparkforge_aws/` carrega o estado
+    vizinho do `.sparkforge/` — journal encadeado, blackboard, memoria, debates
+    e o manifesto de artefatos. Case diferente nao herda estado de outro."""
+
+    def _repo_legado(self, tmp_path, case_id="legado"):
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "case.yaml").write_text(
+            yaml.safe_dump(new_case(case_id, "2026-07-29T00:00:00Z", RUNTIME),
+                           sort_keys=True),
+            encoding="utf-8",
+        )
+        return legado
+
+    def test_save_carrega_estado_vizinho_do_case(self, tmp_path):
+        legado = self._repo_legado(tmp_path)
+        (legado / "journal.jsonl").write_text('{"seq":1}\n', encoding="utf-8")
+        (legado / "blackboard").mkdir()
+        (legado / "blackboard" / "claims.jsonl").write_text("c1\n", encoding="utf-8")
+        (legado / "memory").mkdir()
+        (legado / "memory" / "m.jsonl").write_text("m1\n", encoding="utf-8")
+        (legado / "debate" / "dbt_x").mkdir(parents=True)
+        (legado / "debate" / "dbt_x" / "doc.json").write_text("{}", encoding="utf-8")
+        (legado / "artifacts").mkdir()
+        (legado / "artifacts" / "manifest.json").write_text("[]", encoding="utf-8")
+        (legado / "artifacts" / "payload.bin").write_bytes(b"grande")
+
+        case = load_case(tmp_path)
+        save_case(case, tmp_path)
+
+        novo = tmp_path / ".sparkforge_aws"
+        assert (novo / "journal.jsonl").read_text(encoding="utf-8") == '{"seq":1}\n'
+        assert (novo / "blackboard" / "claims.jsonl").read_text() == "c1\n"
+        assert (novo / "memory" / "m.jsonl").read_text() == "m1\n"
+        assert (novo / "debate" / "dbt_x" / "doc.json").is_file()
+        assert (novo / "artifacts" / "manifest.json").read_text() == "[]"
+        # payload nao copiado; o manifesto o referencia pelo caminho legado.
+        assert not (novo / "artifacts" / "payload.bin").exists()
+        # nada e apagado: o original segue intacto.
+        assert (legado / "journal.jsonl").is_file()
+
+    def test_case_diferente_nao_herda_estado_legado(self, tmp_path):
+        legado = self._repo_legado(tmp_path, case_id="antigo")
+        (legado / "journal.jsonl").write_text('{"seq":1}\n', encoding="utf-8")
+
+        save_case(new_case("novo", "2026-08-01T00:00:00Z", RUNTIME), tmp_path)
+
+        novo = tmp_path / ".sparkforge_aws"
+        assert (novo / "case.yaml").is_file()
+        assert not (novo / "journal.jsonl").exists()
+
+    def test_segunda_gravacao_nao_recarrega_nem_sobrescreve(self, tmp_path):
+        legado = self._repo_legado(tmp_path)
+        (legado / "journal.jsonl").write_text("velho\n", encoding="utf-8")
+        case = load_case(tmp_path)
+        save_case(case, tmp_path)
+        novo = tmp_path / ".sparkforge_aws"
+        (novo / "journal.jsonl").write_text("novo\n", encoding="utf-8")
+        (legado / "journal.jsonl").write_text("mudou\n", encoding="utf-8")
+
+        save_case(set_phase(case, "diagnosis"), tmp_path)
+
+        assert (novo / "journal.jsonl").read_text(encoding="utf-8") == "novo\n"
 
 
 class TestMutators:
@@ -310,8 +444,8 @@ class TestStrictGates:
         assert "flows_mapped" in message
         assert KIND_FLOWS in message
         assert (
-            "sparkforge-aws analyze call-graph --facts .sparkforge/facts.json "
-            "--out .sparkforge/facts_callgraph.json"
+            "sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json "
+            "--out .sparkforge_aws/facts_callgraph.json"
         ) in message
 
     def test_a_mensagem_declara_o_limite_da_checagem(self):

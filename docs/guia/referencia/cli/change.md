@@ -9,8 +9,8 @@ Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff
 | Subcomando | O que faz |
 |---|---|
 | [`sparkforge-aws change plan`](#sparkforge-aws-change-plan) | Diff e diff de rollback de um valor de configuracao, achado pela procedencia dos facts (Terraform --conf ou spark.conf.set). Nao aplica nada. |
-| [`sparkforge-aws change propose`](#sparkforge-aws-change-propose) | Monta o pacote de um PR em .sparkforge/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh. |
-| [`sparkforge-aws change sandbox`](#sparkforge-aws-change-sandbox) | Aplica um diff numa copia em .sparkforge/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda. |
+| [`sparkforge-aws change propose`](#sparkforge-aws-change-propose) | Monta o pacote de um PR em .sparkforge_aws/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh. |
+| [`sparkforge-aws change sandbox`](#sparkforge-aws-change-sandbox) | Aplica um diff numa copia em .sparkforge_aws/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda. |
 
 ## `sparkforge-aws change plan`
 
@@ -36,7 +36,7 @@ sparkforge-aws change plan --help
 
 ## `sparkforge-aws change propose`
 
-Monta o pacote de um PR em .sparkforge/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh.
+Monta o pacote de um PR em .sparkforge_aws/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh.
 
 ```bash
 sparkforge-aws change propose --help
@@ -58,7 +58,7 @@ sparkforge-aws change propose --help
 
 ## `sparkforge-aws change sandbox`
 
-Aplica um diff numa copia em .sparkforge/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda.
+Aplica um diff numa copia em .sparkforge_aws/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda.
 
 ```bash
 sparkforge-aws change sandbox --help
@@ -70,7 +70,7 @@ sparkforge-aws change sandbox --help
 |---|---|---|---|---|---|
 | `--repo` | não | texto |  | `.` | Raiz do repositorio (padrao: .). |
 | `--diff` | não | texto |  |  | Arquivo de diff unificado (de change plan --out ou de git diff). |
-| `--clean` | não | liga/desliga |  |  | Apaga .sparkforge/sandbox/ e sai. |
+| `--clean` | não | liga/desliga |  |  | Apaga .sparkforge_aws/sandbox/ e sai. |
 
 ### Tool MCP equivalente
 

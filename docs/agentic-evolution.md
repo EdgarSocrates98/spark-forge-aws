@@ -57,7 +57,7 @@ evidência e rollback, e segue desabilitada na política padrão.
 caso, domínio, partição e perfil. Qualidade, rota, bytes, tokens de transcript e
 custo com `cost_basis` ficam separados; ausência vira `unresolved`.
 
-Recibos content-addressed em `.sparkforge/evolution/` vinculam candidato, pai,
+Recibos content-addressed em `.sparkforge_aws/evolution/` vinculam candidato, pai,
 suíte, gates, autoridade e rollback. Núcleo não chama modelo, AWS ou provedor.
 
 O manifesto separa duas provas: `candidate_digest` identifica a especificacao

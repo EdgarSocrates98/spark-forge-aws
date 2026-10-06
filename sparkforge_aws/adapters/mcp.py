@@ -6,7 +6,7 @@ SDK e tardio, dentro de `build_server()`/`main()`, nunca no topo do modulo: o
 resto do pacote (inclusive `tools.py`) precisa funcionar sem ele.
 
 Sem estado de sessao no servidor: o estado do case vive em
-`.sparkforge/case.yaml`, no repositorio analisado. E isso que permite retomar
+`.sparkforge_aws/case.yaml`, no repositorio analisado. E isso que permite retomar
 em outra ferramenta (Devin Desktop, Claude Code, CI) sem carregar contexto de
 sessao nenhum -- so o commit.
 
@@ -168,7 +168,7 @@ def build_server(
     catalogo = tools_do_transporte(transport, mode)
     # O canal vai MEDIDO para o span: so a chamada que entrou por aqui recebe
     # `mcp.method.name` no export OTLP (`observability/otlp.py`).
-    # `policy` e montada por `main()` a partir de `.sparkforge/policy.yaml`
+    # `policy` e montada por `main()` a partir de `.sparkforge_aws/policy.yaml`
     # (§16); sem ela, `call_tool` se comporta como sempre.
     executar_full = (
         _recusa_por_policy_invalida(policy_error)
@@ -185,7 +185,7 @@ def build_server(
         router = CompactRouter(
             tools_do_transporte(transport, "full"),
             executar_full,
-            cache=ArtifactCache(authorized_root / ".sparkforge" / "cache"),
+            cache=ArtifactCache(authorized_root / ".sparkforge_aws" / "cache"),
             authorized_root=authorized_root,
         )
         executar = router.call
@@ -266,7 +266,7 @@ def build_http_app(server: Any, *, json_response: bool = False, stateless: bool 
     que morre no primeiro segundo na maquina do operador.
 
     `stateless=True` porque este servidor nao guarda estado de sessao: o
-    estado do case vive em `.sparkforge/case.yaml`, no repositorio analisado.
+    estado do case vive em `.sparkforge_aws/case.yaml`, no repositorio analisado.
     Sessao no servidor daria a impressao de continuidade que o design nao tem.
     """
     try:

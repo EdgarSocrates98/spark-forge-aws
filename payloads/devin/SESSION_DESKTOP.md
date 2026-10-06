@@ -61,9 +61,9 @@ Liste as tools MCP do sparkforge-aws que estao disponiveis e confirme que conseg
 
 1. Abra o case: `sparkforge-aws case open --repo . --case-id <id> --now <ISO-8601> --glue <versao>`
 2. Detecte runtime: `sparkforge-aws runtime detect --glue <versao>`
-3. Analise codigo: `sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json`
-4. Julgue: `sparkforge-aws judge --facts .sparkforge/facts.json --out .sparkforge/findings.json`
-5. Proximo passo: `sparkforge-aws next-step --repo . --findings .sparkforge/findings.json`
+3. Analise codigo: `sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json`
+4. Julgue: `sparkforge-aws judge --facts .sparkforge_aws/facts.json --out .sparkforge_aws/findings.json`
+5. Proximo passo: `sparkforge-aws next-step --repo . --findings .sparkforge_aws/findings.json`
 6. Siga a rota indicada, usando skills, subagentes ou `sparkforge-aws playbook <coordenador>`.
 
 ## 9. Subagentes no Desktop

@@ -12,7 +12,7 @@ Confere um recibo de execucao e diz QUAL parte divergiu -- `version`, `integrity
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `receipt_path` | string | sim | `.sparkforge/receipts/<receipt_id>.json`, dentro do repo. |
+| `receipt_path` | string | sim | `.sparkforge_aws/receipts/<receipt_id>.json`, dentro do repo. |
 | `repo` | string | sim |  |
 | `host_transcript_path` | string | não | O mesmo transcript da emissao, para reconferir `host`. |
 

@@ -100,7 +100,7 @@ Nenhuma afirmação de ganho sobre outro processo.
    caso, escrita antes de gerar.
 2. **Operador em `docs/sdd/`.** O caso `operador` usa `profile: operator` sob
    `docs/sdd/`, como `feature_limpa` em `tests/test_sdd.py`, e não
-   `.sparkforge/sdd/`: o teste de T1 pede `docs/sdd` nos cinco casos, e a
+   `.sparkforge_aws/sdd/`: o teste de T1 pede `docs/sdd` nos cinco casos, e a
    recusa `change_missing` não depende da raiz. A pergunta `sdd-06` diz "raiz
    padrão".
 3. **Gerador fora do repositório.** As fixtures saíram de um script de

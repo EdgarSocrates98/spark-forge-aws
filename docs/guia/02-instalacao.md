@@ -332,7 +332,7 @@ são informação e não mudam o código: sem nenhuma recusa, ele é 0.
 
 | Host | Agents | Skills | MCP |
 |---|---|---|---|
-| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-aws-local`, em `~/.sparkforge/claude/plugins/sparkforge-aws/agents/` | no mesmo plugin, `skills/` | `.mcp.json` do plugin |
+| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-aws-local`, em `~/.sparkforge_aws/claude/plugins/sparkforge-aws/agents/` | no mesmo plugin, `skills/` | `.mcp.json` do plugin |
 | Devin CLI | `~/.config/devin/agents/` (`%APPDATA%\devin\agents\` no Windows) | `~/.agents/skills/` | `~/.config/devin/mcp_config.json` (`%APPDATA%\devin\mcp_config.json` no Windows), chave `mcpServers.sparkforge-aws` |
 | Codex CLI | `$CODEX_HOME/agents/*.toml` (padrão `~/.codex/agents/`) | `~/.agents/skills/` | bloco marcado `[mcp_servers.sparkforge-aws]` em `$CODEX_HOME/config.toml` |
 | Copilot CLI | `~/.copilot/agents/*.agent.md` | `~/.agents/skills/` | `~/.copilot/mcp-config.json`, chave `mcpServers.sparkforge-aws` |
@@ -353,7 +353,7 @@ do arquivo.
 O Claude Code é registrado pelo próprio CLI dele:
 
 ```bash
-claude plugin marketplace add ~/.sparkforge/claude --scope user
+claude plugin marketplace add ~/.sparkforge_aws/claude --scope user
 claude plugin install sparkforge-aws@sparkforge-aws-local --scope user --json
 ```
 
@@ -369,9 +369,9 @@ chegou a registrar o plugin (saiu `claude_cli_ausente`) e você rodou os dois co
 à mão, o `detach` com o CLI presente consulta `claude plugin list --json` e desinstala
 antes de apagar quando o plugin aparece ou quando a lista não se lê.
 
-### O manifesto: `~/.sparkforge/integrations.json`
+### O manifesto: `~/.sparkforge_aws/integrations.json`
 
-Tudo o que é gravado fica em `~/.sparkforge/integrations.json`, com o sha256 de cada
+Tudo o que é gravado fica em `~/.sparkforge_aws/integrations.json`, com o sha256 de cada
 arquivo, os hosts donos dele, a versão do pacote que integrou e o registro de cada
 config de usuário tocada. Rodar o `integrate` de novo com o mesmo pacote não muda nada.
 Arquivo que já estava no HOME, idêntico ao que o pacote grava, é adotado como
@@ -440,14 +440,14 @@ HOME (um HOME versionado, por exemplo), `.agents/skills` do "repositório" é o
 `~/.agents/skills` da própria integração: a raiz que é o HOME, o `APPDATA` ou o
 `CODEX_HOME`, que contém algum deles, ou que mora dentro de um destino da integração
 (`~/.agents`, `~/.claude`, `~/.codex`, `~/.copilot`, `~/.config/devin`,
-`%APPDATA%\devin`, `$CODEX_HOME`, `~/.sparkforge`) sai `repositorio_e_o_home`, e nada é
+`%APPDATA%\devin`, `$CODEX_HOME`, `~/.sparkforge_aws`) sai `repositorio_e_o_home`, e nada é
 tocado, com qualquer `--on-conflict`. O `doctor` pula os mesmos casos.
 
 ### Recusas e o que fazer
 
 | Recusa | O que aconteceu | O que fazer |
 |---|---|---|
-| `claude_cli_ausente` | O binário `claude` não está no PATH. O plugin fica montado em `~/.sparkforge/claude/` e a recusa traz os comandos. | Instale o Claude Code e rode os dois comandos `claude plugin` acima, ou rode o `integrate claude` de novo. |
+| `claude_cli_ausente` | O binário `claude` não está no PATH. O plugin fica montado em `~/.sparkforge_aws/claude/` e a recusa traz os comandos. | Instale o Claude Code e rode os dois comandos `claude plugin` acima, ou rode o `integrate claude` de novo. |
 | `claude_cli_falhou` / `claude_cli_timeout` | Um comando `claude plugin` saiu com erro ou passou de 120 segundos. A recusa traz o comando e o fim da saída. | Rode o comando mostrado à mão e depois o `integrate` de novo. |
 | `sparkforge_ja_configurado` | A config de usuário já tem um `sparkforge-aws` que você mesmo escreveu. O arquivo não é tocado. | Tire a sua entrada, ou mantenha-a e ignore a recusa. |
 | `config_invalida` / `bloco_toml_quebrado` | A config de usuário não se lê como JSON, ou o bloco marcado do `config.toml` perdeu um dos marcadores. | Conserte o arquivo e rode de novo. |
@@ -528,16 +528,16 @@ correto, em vez de escrever num lugar que você não estava olhando.
 
 ## Onde o projeto grava dados
 
-O SparkForge grava estado na pasta `.sparkforge/`, **dentro do diretório que
+O SparkForge grava estado na pasta `.sparkforge_aws/`, **dentro do diretório que
 você está analisando** (o que você passa em `--repo`, ou o diretório atual).
 
 | Caminho | O que é | Vai para o Git? |
 |---|---|---|
-| `.sparkforge/case.yaml` | O estado da investigação (veja [case](01-conceitos.md#case)). | Sim, é pequeno e serve de passagem entre sessões e ferramentas. |
-| `.sparkforge/facts.json`, `.sparkforge/findings.json`, `.sparkforge/handoff.md` | Saídas derivadas que você grava com `--out` ou com `handoff`. | Sim. |
-| `.sparkforge/artifacts/` | Artefatos brutos coletados (event log, dumps). Só o `manifest.json` é versionado. | Não, porque pode conter dado de negócio e ser grande. |
-| `.sparkforge/traces.db`, `.sparkforge/cache/` | Registro das chamadas de tool e cache de saídas. | Não, porque acumula e pode conter trechos de artefato. |
-| `.sparkforge/local/` | Índice local de código usado pelos comandos `code ...`. | Não. |
+| `.sparkforge_aws/case.yaml` | O estado da investigação (veja [case](01-conceitos.md#case)). | Sim, é pequeno e serve de passagem entre sessões e ferramentas. |
+| `.sparkforge_aws/facts.json`, `.sparkforge_aws/findings.json`, `.sparkforge_aws/handoff.md` | Saídas derivadas que você grava com `--out` ou com `handoff`. | Sim. |
+| `.sparkforge_aws/artifacts/` | Artefatos brutos coletados (event log, dumps). Só o `manifest.json` é versionado. | Não, porque pode conter dado de negócio e ser grande. |
+| `.sparkforge_aws/traces.db`, `.sparkforge_aws/cache/` | Registro das chamadas de tool e cache de saídas. | Não, porque acumula e pode conter trechos de artefato. |
+| `.sparkforge_aws/local/` | Índice local de código usado pelos comandos `code ...`. | Não. |
 
 O `.gitignore` do próprio repositório já segue essa política. Se você usar o
 SparkForge em outro repositório, copie as mesmas linhas para o `.gitignore`
@@ -573,6 +573,18 @@ antes: `pip uninstall sparkforge`. Os nomes de distribuição são independentes
 o `pip` não sabe que um substitui o outro — sem esse passo, o comando `sparkforge`
 velho continua no PATH apontando para um pacote que não existe mais.
 
+O diretório de estado também mudou de nome: `.sparkforge/` virou
+`.sparkforge_aws/`. Estado novo sempre é escrito no nome novo, mas a leitura
+reconhece o legado onde ele carrega continuidade — `case.yaml`, `policy.yaml`
+e o manifesto `~/.sparkforge/integrations.json` migram sozinhos (a primeira
+gravação grava no nome novo e aposenta o arquivo antigo). Na primeira
+gravação de um case que existia só no nome antigo, o estado que anda com ele
+— `journal.jsonl`, `blackboard/`, `memory/`, `debate/` e o manifesto de
+artefatos — é copiado para o lado novo, então a cadeia do journal continua
+sem se partir. Nada é apagado: payloads de artefato ficam onde estão e
+seguem legíveis pelo caminho gravado no case, e você pode renomear
+`.sparkforge/` para `.sparkforge_aws/` à mão quando quiser fechar a migração.
+
 ## Desinstalar
 
 ```bash
@@ -580,7 +592,7 @@ pip uninstall sparkforge-aws
 ```
 
 A desinstalação remove os comandos e o pacote. Ela **não** apaga as pastas
-`.sparkforge/` que foram criadas nos repositórios analisados; apague-as à mão
+`.sparkforge_aws/` que foram criadas nos repositórios analisados; apague-as à mão
 se não precisar mais delas.
 
 ## Erros comuns e como resolver

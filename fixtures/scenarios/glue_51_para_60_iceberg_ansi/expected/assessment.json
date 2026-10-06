@@ -228,7 +228,7 @@
   },
   "missing_evidence": {
     "lakeformation": "nenhum `tf.attribute` nos facts -- a topologia de controle de acesso fino e declarada nos `default_arguments` do job no Terraform, entao aponte a analise para o diretorio que contem os `.tf` do job",
-    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge_aws/facts/consumers.py`)",
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge_aws/consumers.yaml` (ver `sparkforge_aws/facts/consumers.py`)",
     "iam_kms": "nenhum `tf.attribute` nos facts -- security configuration, papel de execucao e a rota ate o KMS sao declarados no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
     "rede": "nenhum `tf.attribute` nos facts -- a conexao que coloca o job dentro da VPC e declarada no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
     "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",

@@ -11,15 +11,15 @@ def rich_case():
     case = set_phase(new_case("sf-a", "2026-07-29T14:02:11Z", RUNTIME), "diagnosis")
     case = add_hypothesis(case, "loop recomputa DAG", "N jobs identicos", "materializar antes")
     case["facts_index"] = {
-        "path": ".sparkforge/facts.json", "count": 412, "by_kind": {"pyspark.loop": 2}
+        "path": ".sparkforge_aws/facts.json", "count": 412, "by_kind": {"pyspark.loop": 2}
     }
     case["findings_index"] = {
-        "path": ".sparkforge/findings.json", "count": 3, "by_severity": {"P0": 1, "P2": 2}
+        "path": ".sparkforge_aws/findings.json", "count": 3, "by_severity": {"P0": 1, "P2": 2}
     }
     case["artifacts"] = [
         {
             "kind": "event_log",
-            "path": ".sparkforge/artifacts/eventlog/jr_abc.json",
+            "path": ".sparkforge_aws/artifacts/eventlog/jr_abc.json",
             "sha256": "a" * 64,
             "source": "s3://bucket/spark-event-logs/jr_abc",
             "collect_command": "sparkforge-aws collect eventlog --job-run jr_abc",
@@ -176,7 +176,7 @@ class TestRootConsultsTheManifest:
     verdade por artefato -- ele reflete o disco agora, o case pode estar
     desatualizado."""
 
-    ARTIFACT_PATH = ".sparkforge/artifacts/eventlog/jr_abc.json"
+    ARTIFACT_PATH = ".sparkforge_aws/artifacts/eventlog/jr_abc.json"
 
     def test_without_root_the_stale_case_flag_is_authoritative(self):
         # rich_case() grava present=False; sem root, resume nao tem como

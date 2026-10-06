@@ -30,7 +30,7 @@ _ACCESS_ERRORS = {
 
 def workspace_graph_path(workspace: str) -> str:
     name = _SAFE_NAME.sub("_", workspace).strip("._") or "workspace"
-    return f".sparkforge/artifacts/workspace_graph/{name}.json"
+    return f".sparkforge_aws/artifacts/workspace_graph/{name}.json"
 
 
 def collect_workspace_graph(

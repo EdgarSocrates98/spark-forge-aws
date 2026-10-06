@@ -35,9 +35,9 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | `sparkforge-aws scan [raiz]` monta um plano puro: artefato coletado pelo `kind` do `.sparkforge/artifacts/manifest.json` (sha256 conferido), codigo por extensao (`.py`, `.sql`, `.tf`, `.jsonl`) pela varredura que ja existe |
+| **MUST** | `sparkforge-aws scan [raiz]` monta um plano puro: artefato coletado pelo `kind` do `.sparkforge_aws/artifacts/manifest.json` (sha256 conferido), codigo por extensao (`.py`, `.sql`, `.tf`, `.jsonl`) pela varredura que ja existe |
 | **MUST** | Recusas nomeadas no plano: `sem_manifesto` (JSON solto fora do manifesto), `sha256_divergente`, `kind_sem_analyze`, e `analyze_falhou` na execucao, sem derrubar os outros analyzes |
-| **MUST** | `scan` grava em `.sparkforge/scan/`: facts por analyze, a uniao, os findings do `judge` e um `summary.json`; imprime o resumo |
+| **MUST** | `scan` grava em `.sparkforge_aws/scan/`: facts por analyze, a uniao, os findings do `judge` e um `summary.json`; imprime o resumo |
 | **MUST** | `scan --dry-run` imprime o plano e nao grava nada |
 | **MUST** | `sparkforge-aws doctor` com nove checagens nomeadas (`pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`, `indice_de_codigo`, `artefatos`, `credencial_aws`), cada uma com `status` (`ok`, `warn`, `fail`, `skip`), `detail` e `unlock`; exit 1 com algum `fail` |
 | **MUST** | Sem rede no `scan` e no `doctor` por padrao; `doctor --online` (so CLI) chama STS |
@@ -53,7 +53,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 - [x] SC1: num repositorio sintetico misto (codigo + artefatos coletados com manifesto), `scan` produz facts e findings iguais, fact a fact e finding a finding, aos dos `analyze` e do `judge` rodados a mao sobre os mesmos arquivos.
 - [x] SC2: cada uma das 5 recusas (`sem_manifesto`, `sha256_divergente`, `kind_sem_analyze`, `analyze_falhou`, `exige_job_name`) tem caso em `fixtures/scan/`, e com 1 analyze falhando os outros N-1 ainda gravam facts.
-- [x] SC3: `scan --dry-run` sai 0 e deixa `.sparkforge/scan/` sem nenhum arquivo novo.
+- [x] SC3: `scan --dry-run` sai 0 e deixa `.sparkforge_aws/scan/` sem nenhum arquivo novo.
 - [x] SC4: `scan --format sarif` gera SARIF byte a byte igual ao de `report github` sobre os mesmos findings e facts.
 - [x] SC5: `doctor` sai 1 com uma checagem `fail` e 0 sem nenhuma; as 9 checagens tem teste para cada status que podem assumir.
 - [x] SC6: 2 tools novas (97 no total), registros, surface lock e claims em dia; suite nos 9 lotes com 0 falhas; referencia de `docs/guia/referencia/` regerada.
@@ -66,7 +66,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 |----|----------|-------|------|------|
 | AT-001 | Repositorio misto | `job.py`, `main.tf`, `query.sql` e dois artefatos coletados com manifesto | `sparkforge-aws scan <raiz>` | plano com 5 entradas; `facts.json` = uniao dos analyzes; `findings.json` = `judge` da uniao; exit 0 |
 | AT-002 | Plano sem execucao | o mesmo repositorio | `scan --dry-run` | JSON do plano; nada gravado |
-| AT-003 | JSON solto | `dump.json` fora de `.sparkforge/` e fora do manifesto | `scan` | `refused` com `sem_manifesto` e o caminho; nada farejado |
+| AT-003 | JSON solto | `dump.json` fora de `.sparkforge_aws/` e fora do manifesto | `scan` | `refused` com `sem_manifesto` e o caminho; nada farejado |
 | AT-004 | Artefato adulterado | entrada do manifesto com sha256 que nao bate | `scan` | `sha256_divergente`; o artefato nao e analisado |
 | AT-005 | Kind sem analyze | manifesto com `kind` que nenhum analyze le | `scan` | `kind_sem_analyze` |
 | AT-006 | Analyze que falha | `.sql` ou event log malformado ao lado de arquivos bons | `scan` | `analyze_falhou` com o erro; os outros analyzes gravam facts |
@@ -97,7 +97,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 |------|------------|--------|
 | Technical | Regra 23: nada de rede no pacote alem dos `collect_*`; `doctor --online` e so CLI | Tool do doctor `READ_ONLY` com `openWorldHint: false` |
 | Technical | Regra 20: toda recusa com nome | Cinco recusas no plano e na execucao |
-| Technical | Varredura so por `varrer_source_files` (gate de glob cru em `sparkforge_aws/`) | `.sparkforge`, `.venv`, `vendor` e credenciais ja sao pulados com razao |
+| Technical | Varredura so por `varrer_source_files` (gate de glob cru em `sparkforge_aws/`) | `.sparkforge_aws`, `.venv`, `vendor` e credenciais ja sao pulados com razao |
 | Technical | Tool nova move registros manuais (memoria `tool-nova-move-registros-manuais`, itens 1-14) | Duas tools: lista, amostra, FAILABLE, `SEM_CAMINHO`/contagem, `NOVAS_DEPOIS_DO_GOLDEN`, manifest, parity, agente dono, surface, claims, referencia |
 | Resource | Fixtures sinteticos (repositorio publico) | `fixtures/scan/` montado de arquivos que ja existem |
 
@@ -117,8 +117,8 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 | ID | Assumption | If Wrong, Impact | Validated? |
 |----|------------|------------------|------------|
-| A-001 | Um fixture pode commitar `.sparkforge/artifacts/` (o `.gitignore` so ignora esse caminho na raiz) | Golden teria de montar o manifesto em `tmp_path` | [x] padrao ancorado, medido 2026-09-13; confirmar com `git check-ignore` no build |
-| A-002 | `varrer_source_files` ja pula `.sparkforge`, entao codigo e artefato nunca se contam em dobro | Scan analisaria o event log coletado duas vezes | [x] `DIRETORIOS_IGNORADOS` inclui `.sparkforge` |
+| A-001 | Um fixture pode commitar `.sparkforge_aws/artifacts/` (o `.gitignore` so ignora esse caminho na raiz) | Golden teria de montar o manifesto em `tmp_path` | [x] padrao ancorado, medido 2026-09-13; confirmar com `git check-ignore` no build |
+| A-002 | `varrer_source_files` ja pula `.sparkforge_aws`, entao codigo e artefato nunca se contam em dobro | Scan analisaria o event log coletado duas vezes | [x] `DIRETORIOS_IGNORADOS` inclui `.sparkforge_aws` |
 | A-003 | Todo `kind` do manifesto casa com um analyze existente (14 kinds dos `collect_*`) | Mapa incompleto; `kind_sem_analyze` mais frequente que o esperado | [ ] conferir no design, um a um |
 | A-004 | Os extratores do `_core` aceitam um arquivo so, alem de diretorio | Scan teria de agrupar por diretorio | [ ] conferir por analyze no design |
 | A-005 | `report_github` pode ser chamado com arquivos gravados pelo scan sem mudar sua saida | SC4 exige refatorar o caminho do SARIF | [ ] |

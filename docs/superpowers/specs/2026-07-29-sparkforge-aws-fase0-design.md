@@ -73,7 +73,7 @@ artefatos locais  →  Facts  →  Findings  →  case.yaml  →  next_step  →
 
 A fronteira negativa — o que a camada **não** pode fazer — é o mecanismo que garante o determinismo. Sem ela, juízo vaza para dentro do extrator e o resultado volta a depender do modelo.
 
-**`collect/` — coletores (opcional).** Materializa artefatos em `.sparkforge/artifacts/` e grava `manifest.json` com kind, sha256, origem e comando de recoleta. Offline-first: se o arquivo já existe e o hash confere, no-op. `collect/aws.py` (extra `[aws]`, boto3) baixa event log do S3, `get_job` do Glue, `GetMetricData` do CloudWatch, query Athena em metadata tables.
+**`collect/` — coletores (opcional).** Materializa artefatos em `.sparkforge_aws/artifacts/` e grava `manifest.json` com kind, sha256, origem e comando de recoleta. Offline-first: se o arquivo já existe e o hash confere, no-op. `collect/aws.py` (extra `[aws]`, boto3) baixa event log do S3, `get_job` do Glue, `GetMetricData` do CloudWatch, query Athena em metadata tables.
 *Não faz:* análise. Só materializa bytes e registra procedência.
 
 **`facts/` — extratores.** Entrada: um artefato local. Saída: `Fact[]`. Puro, determinístico, sem rede, sem limiar, sem severidade, sem ordenação por importância.
@@ -85,7 +85,7 @@ A fronteira negativa — o que a camada **não** pode fazer — é o mecanismo q
 **`findings/` — contratos.** Dataclasses + JSON Schema publicado para `Fact`, `Finding`, `Recommendation`, `RuntimeContext`. Serialização estável, ordenação determinística.
 *Não faz:* lógica de domínio.
 
-**`case/` — estado e roteamento.** `.sparkforge/case.yaml` e as funções puras `next_step(case)` e `resume(case)`.
+**`case/` — estado e roteamento.** `.sparkforge_aws/case.yaml` e as funções puras `next_step(case)` e `resume(case)`.
 *Não faz:* chamar LLM. O roteamento é decidido por regra.
 
 **`adapters/` — CLI e MCP.** Cascas finas sobre o core.
@@ -203,7 +203,7 @@ O segundo exemplo abaixo (`SF-UI-002`) usa facts de Spark UI, cuja extração é
 
 **Avaliador de `expr`:** mini-avaliador com whitelist de nós AST — `Compare`, `BinOp` (aritmética), `BoolOp`, `UnaryOp`, `Constant`, e acesso a atributo restrito a `measures.*`, `attrs.*`, `threshold.*`. Proibido: `Call`, `Import`, `Subscript` arbitrário, qualquer dunder, qualquer nome fora da whitelist. **Não usar `eval`.** Motivo: o catálogo é dado editável e um dia alguém cola YAML de terceiro nele — o avaliador é superfície de execução e é tratado como tal.
 
-### 5.4 `.sparkforge/case.yaml`
+### 5.4 `.sparkforge_aws/case.yaml`
 
 ```yaml
 schema_version: 1
@@ -219,8 +219,8 @@ runtime:
 scope: {repo: ..., entrypoints: [], job_names: []}
 phase: diagnosis        # intake|inventory|facts|diagnosis|hypothesis|experiment|validation|report
 artifacts: [{kind, path, sha256, collected_at, source}]
-facts_index:    {path: .sparkforge/facts.json,    count: 412, by_kind: {...}}
-findings_index: {path: .sparkforge/findings.json, count: 19,  by_severity: {P0: 1, P1: 4}}
+facts_index:    {path: .sparkforge_aws/facts.json,    count: 412, by_kind: {...}}
+findings_index: {path: .sparkforge_aws/findings.json, count: 19,  by_severity: {P0: 1, P1: 4}}
 baseline: null          # {runtime_s, dpu_hours, input_rows, captured_at} quando existir
 hypotheses:
   - id: h1
@@ -339,7 +339,7 @@ Prefixo consistente `sparkforge_`. Toda tool declara `outputSchema` — são os 
 
 | tool | annotations | papel |
 |---|---|---|
-| `sparkforge_case_open` | readOnly:false, destructive:false, idempotent:false | cria `.sparkforge/case.yaml` |
+| `sparkforge_case_open` | readOnly:false, destructive:false, idempotent:false | cria `.sparkforge_aws/case.yaml` |
 | `sparkforge_case_get` | readOnly:true, idempotent:true | lê o case |
 | `sparkforge_case_update` | readOnly:false, destructive:false, idempotent:false | grava fase, hipótese, gate, skill usada |
 | `sparkforge_next_step` | readOnly:true, idempotent:true | roteamento determinístico |
@@ -373,7 +373,7 @@ Nenhum erro genérico. Cada erro traz causa, o que falta e o comando que resolve
 
 ```
 ERRO artifact_missing: event log ausente para job_run jr_abc123.
-  Esperado: .sparkforge/artifacts/eventlog/jr_abc123.json
+  Esperado: .sparkforge_aws/artifacts/eventlog/jr_abc123.json
   Recoleta:  sparkforge-aws collect eventlog --job-run jr_abc123
   Sem credencial AWS? Baixe manualmente de s3://.../spark-event-logs/ e coloque no path acima.
 ```
@@ -397,7 +397,7 @@ Requisito declarado: ficar sem token em uma ferramenta e continuar na outra, com
 Sessão Devin e sessão Claude Code são máquinas diferentes sem contexto conversacional compartilhado. O que trafega entre elas é commit.
 
 ```
-.sparkforge/
+.sparkforge_aws/
   case.yaml                 ← commitado   (estado, fases, hipóteses, gates, decisões)
   facts.json                ← commitado   (evidência, com sha256 de origem)
   findings.json             ← commitado   (juízo + rule_id + fonte)
@@ -408,7 +408,7 @@ Sessão Devin e sessão Claude Code são máquinas diferentes sem contexto conve
 
 Facts e findings são pequenos e derivados: commitados, então o outro lado não reprocessa nada. Artefatos brutos ficam fora do git (dado de negócio, centenas de MB), mas o manifest commitado diz o que falta e qual comando recoleta. Retomada nunca fica cega, e nunca vaza dado bruto para o histórico.
 
-`.gitignore` recebe `.sparkforge/artifacts/*` com `!.sparkforge/artifacts/manifest.json`.
+`.gitignore` recebe `.sparkforge_aws/artifacts/*` com `!.sparkforge_aws/artifacts/manifest.json`.
 
 ### 8.2 Escada de degradação
 
@@ -593,7 +593,7 @@ Job separado e manual para `refresh_knowledge` (Fase 2), que **nunca commita soz
 | Catálogo YAML como vetor de execução | Avaliador `expr` com whitelist de nós AST. Sem `eval`. Sem `Call`. Teste de segurança dedicado |
 | Vazamento de dado de negócio no git | `artifacts/**` gitignored; só manifest commitado; teste que falha se artefato bruto for staged |
 | Segredo em default arguments do Glue | Extratores redigem valores de chaves com padrão de segredo antes de gravar Fact; `SF-TF-*` (Fase 1) alerta sobre segredo em IaC |
-| Manutenção destrutiva acidental | Nenhuma tool da Fase 0 escreve fora de `.sparkforge/`. `destructiveHint: false` em todas. Regra 9 do `AGENT_PROTOCOL` exige confirmação explícita de escopo e retenção |
+| Manutenção destrutiva acidental | Nenhuma tool da Fase 0 escreve fora de `.sparkforge_aws/`. `destructiveHint: false` em todas. Regra 9 do `AGENT_PROTOCOL` exige confirmação explícita de escopo e retenção |
 | Credencial AWS em ambiente compartilhado | Coletores AWS são extra opcional; núcleo nunca requer credencial; nenhuma credencial é gravada em case ou manifest |
 
 ## 14. Estrutura de diretórios resultante

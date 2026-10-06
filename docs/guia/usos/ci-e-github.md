@@ -18,7 +18,7 @@ cp examples/github/sparkforge-aws.yml .github/workflows/sparkforge-aws.yml
 # 2. Edite o arquivo: troque `jobs` e `infra` pelos seus diretórios e `--glue 5.0` pela sua versão
 
 # 3. Não versione o que é gerado a cada execução
-echo ".sparkforge/report/" >> .gitignore
+echo ".sparkforge_aws/report/" >> .gitignore
 
 # 4. Teste o passo principal na sua máquina, sobre uma fixture, numa pasta temporária
 cp -r fixtures/sarif/misto/input/repo /tmp/sf_repo
@@ -80,7 +80,7 @@ repositório.
 ### 1. O que o `report github` faz
 
 Ele pega os findings do `judge` e grava dois arquivos, com nomes fixos, em
-`<repo>/.sparkforge/report/`:
+`<repo>/.sparkforge_aws/report/`:
 
 - `sparkforge-aws.sarif`: para o Code Scanning;
 - `summary.md`: o resumo com **todos** os findings.
@@ -90,7 +90,7 @@ E imprime uma anotação por finding que tem linha no repositório.
 Rodando o passo 4 da receita, a saída real é:
 
 ```text
-sparkforge-aws report github: 1 no SARIF, 5 sem localizacao, gate P0: disparou (.sparkforge/report/sparkforge-aws.sarif, .sparkforge/report/summary.md)
+sparkforge-aws report github: 1 no SARIF, 5 sem localizacao, gate P0: disparou (.sparkforge_aws/report/sparkforge-aws.sarif, .sparkforge_aws/report/summary.md)
 ::error file=a/main.tf,line=24,title=SF-ERR-006 P0::Permissão do Lake Formation negada em runtime, num job que lê o Data Catalog de outra conta
 ```
 
@@ -144,7 +144,7 @@ A lista completa está em [github-code-scanning.md](../../github-code-scanning.m
 |---|---|
 | `--findings` | A saída de `judge --out` |
 | `--facts` | Os facts da união do case. Repetível: passe os mesmos que foram ao `judge` |
-| `--repo` | A raiz do repositório. A saída vai para `<repo>/.sparkforge/report/` |
+| `--repo` | A raiz do repositório. A saída vai para `<repo>/.sparkforge_aws/report/` |
 | `--source-root` | Cada diretório que foi passado a um `analyze --path`, na mesma ordem. Repetível |
 | `--fail-on P0` ou `P1` | Sai com código 1 quando há finding dessa severidade ou pior |
 | `--category` | O nome da análise no Code Scanning |
@@ -207,32 +207,32 @@ jobs:
         run: pip install sparkforge-aws
       - name: Extrair facts
         run: |
-          mkdir -p .sparkforge
-          sparkforge-aws analyze pyspark --path jobs --out .sparkforge/facts-pyspark.json
-          sparkforge-aws analyze terraform --path infra --out .sparkforge/facts-terraform.json
+          mkdir -p .sparkforge_aws
+          sparkforge-aws analyze pyspark --path jobs --out .sparkforge_aws/facts-pyspark.json
+          sparkforge-aws analyze terraform --path infra --out .sparkforge_aws/facts-terraform.json
       - name: Julgar
         run: |
           sparkforge-aws judge \
-            --facts .sparkforge/facts-pyspark.json \
-            --facts .sparkforge/facts-terraform.json \
+            --facts .sparkforge_aws/facts-pyspark.json \
+            --facts .sparkforge_aws/facts-terraform.json \
             --glue 5.0 \
-            --out .sparkforge/findings.json
+            --out .sparkforge_aws/findings.json
       - name: Projetar para o GitHub
         run: |
           sparkforge-aws report github \
-            --findings .sparkforge/findings.json \
-            --facts .sparkforge/facts-pyspark.json \
-            --facts .sparkforge/facts-terraform.json \
+            --findings .sparkforge_aws/findings.json \
+            --facts .sparkforge_aws/facts-pyspark.json \
+            --facts .sparkforge_aws/facts-terraform.json \
             --repo . --source-root jobs --source-root infra \
             --category sparkforge-aws --fail-on P0 --source-freshness
       - name: Resumo do PR
-        if: always() && hashFiles('.sparkforge/report/summary.md') != ''
-        run: cat .sparkforge/report/summary.md >> "$GITHUB_STEP_SUMMARY"
+        if: always() && hashFiles('.sparkforge_aws/report/summary.md') != ''
+        run: cat .sparkforge_aws/report/summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Enviar ao Code Scanning
-        if: always() && hashFiles('.sparkforge/report/sparkforge-aws.sarif') != ''
+        if: always() && hashFiles('.sparkforge_aws/report/sparkforge-aws.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: .sparkforge/report/sparkforge-aws.sarif
+          sarif_file: .sparkforge_aws/report/sparkforge-aws.sarif
           category: sparkforge-aws
 ```
 
@@ -248,7 +248,7 @@ número de resultados que o SARIF tem.
 ### 6. Telemetria: `telemetry export`
 
 Cada chamada de tool do SparkForge vira um span (um registro com início, fim e
-atributos) em `.sparkforge/traces.db`. O `telemetry export` converte esses
+atributos) em `.sparkforge_aws/traces.db`. O `telemetry export` converte esses
 spans para OTLP/JSON, que um Collector do OpenTelemetry lê.
 
 ```bash
@@ -260,14 +260,14 @@ export SPARKFORGE_RUN_ID=run_sessao_42
 sparkforge-aws telemetry export --run-id run_sessao_42 --repo .
 ```
 
-A saída tem nome fixo: `.sparkforge/telemetry/<run_id>.traces.jsonl` e
-`.sparkforge/telemetry/<run_id>.metrics.jsonl`.
+A saída tem nome fixo: `.sparkforge_aws/telemetry/<run_id>.traces.jsonl` e
+`.sparkforge_aws/telemetry/<run_id>.metrics.jsonl`.
 
 Se o run não tem spans, o verbo avisa e sai com código 2. Saída real num
 diretório vazio:
 
 ```text
-run 'run_exemplo' sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo que chamou as tools e rode, no diretorio onde ele gravou .sparkforge/traces.db: sparkforge-aws telemetry export --run-id <run_id>
+run 'run_exemplo' sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo que chamou as tools e rode, no diretorio onde ele gravou .sparkforge_aws/traces.db: sparkforge-aws telemetry export --run-id <run_id>
 ```
 
 Duas opções mudam o que sai:
@@ -284,10 +284,10 @@ Configuração mínima do Collector (de [opentelemetry.md](../../opentelemetry.m
 ```yaml
 receivers:
   otlp_json_file/traces:
-    include: [/caminho/do/repo/.sparkforge/telemetry/*.traces.jsonl]
+    include: [/caminho/do/repo/.sparkforge_aws/telemetry/*.traces.jsonl]
     start_at: beginning
   otlp_json_file/metrics:
-    include: [/caminho/do/repo/.sparkforge/telemetry/*.metrics.jsonl]
+    include: [/caminho/do/repo/.sparkforge_aws/telemetry/*.metrics.jsonl]
     start_at: beginning
 exporters:
   otlphttp:
@@ -384,10 +384,10 @@ confere as fontes, atualiza o lock e abre um PR para uma pessoa revisar.
 - **Passar ao `report github` só parte dos facts.** Findings viram
   `evidencia_ausente`. Passe todos os que foram ao `judge`.
 - **Faltar `security-events: write`.** O upload do SARIF falha.
-- **Versionar `.sparkforge/report/`.** São arquivos gerados; ponha no
+- **Versionar `.sparkforge_aws/report/`.** São arquivos gerados; ponha no
   `.gitignore`.
 - **Rodar `telemetry export` em outro diretório.** Rode onde o processo gravou
-  `.sparkforge/traces.db`, com o mesmo `SPARKFORGE_RUN_ID`.
+  `.sparkforge_aws/traces.db`, com o mesmo `SPARKFORGE_RUN_ID`.
 
 ## Para ir além
 

@@ -185,7 +185,7 @@ _PHOTON_FLAG_HELP = (
 )
 
 _CODE_DB_HELP = (
-    "Arquivo do indice. Default: `.sparkforge/local/codeintel/graph.sqlite3` "
+    "Arquivo do indice. Default: `.sparkforge_aws/local/codeintel/graph.sqlite3` "
     "sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora "
     "dali e escolha de quem chama, e o arquivo passa a ser candidato a commit."
 )
@@ -1076,7 +1076,7 @@ def build_parser() -> argparse.ArgumentParser:
         "path",
         help=(
             "Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando "
-            "existem e o inventario de consumidores em .sparkforge/consumers.yaml "
+            "existem e o inventario de consumidores em .sparkforge_aws/consumers.yaml "
             "--, ou um .py sozinho."
         ),
     )
@@ -1114,7 +1114,7 @@ def build_parser() -> argparse.ArgumentParser:
         "path",
         help=(
             "Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando "
-            "existem e o inventario de consumidores em .sparkforge/consumers.yaml "
+            "existem e o inventario de consumidores em .sparkforge_aws/consumers.yaml "
             "--, ou um .py sozinho."
         ),
     )
@@ -1208,7 +1208,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Avalia subir o format version da tabela contra quem a consome. NAO executa.",
     )
     upgrade_p.add_argument(
-        "path", help="Diretorio do job, com o inventario em .sparkforge/consumers.yaml."
+        "path", help="Diretorio do job, com o inventario em .sparkforge_aws/consumers.yaml."
     )
     upgrade_p.add_argument(
         "--from", dest="from_spec", type=int, required=True, help="Format version de origem."
@@ -1663,7 +1663,7 @@ def build_parser() -> argparse.ArgumentParser:
     # agentic: blackboard ---------------------------------------------------
     bb_p = sub.add_parser(
         "blackboard",
-        help="Lê o shared blackboard (.sparkforge/blackboard/).",
+        help="Lê o shared blackboard (.sparkforge_aws/blackboard/).",
     )
     bb_sub = bb_p.add_subparsers(dest="blackboard_action", required=True)
     bb_summary_p = bb_sub.add_parser("summary", help="Resumo contável do blackboard.")
@@ -1912,7 +1912,7 @@ def build_parser() -> argparse.ArgumentParser:
     # (roda sobre findings que `judge` ja produziu) e nao e inspecao de estado
     # como `blackboard` e `decisions`. A forma dos argumentos segue os verbos
     # agenticos -- `--repo`, nunca `--case <id>` --, porque o blackboard mora
-    # em `<repo>/.sparkforge/blackboard/` e nao ha id de case em CLI nenhuma
+    # em `<repo>/.sparkforge_aws/blackboard/` e nao ha id de case em CLI nenhuma
     # deste pacote.
     arbitrate_p = sub.add_parser(
         "arbitrate",
@@ -1946,7 +1946,7 @@ def build_parser() -> argparse.ArgumentParser:
     arbitrate_p.add_argument(
         "--repo",
         default=".",
-        help="Raiz do case. O blackboard fica em <repo>/.sparkforge/blackboard/.",
+        help="Raiz do case. O blackboard fica em <repo>/.sparkforge_aws/blackboard/.",
     )
     arbitrate_p.add_argument("--glue")
     arbitrate_p.add_argument("--emr", help=_EMR_FLAG_HELP)
@@ -1958,7 +1958,7 @@ def build_parser() -> argparse.ArgumentParser:
     arbitrate_p.add_argument("--athena")
 
     # case ------------------------------------------------------------
-    case_p = sub.add_parser("case", help="Gerencia o estado do case em .sparkforge/case.yaml.")
+    case_p = sub.add_parser("case", help="Gerencia o estado do case em .sparkforge_aws/case.yaml.")
     case_sub = case_p.add_subparsers(dest="case_action", required=True)
 
     open_p = case_sub.add_parser("open", help="Cria um case novo, em fase intake.")
@@ -2088,7 +2088,7 @@ def build_parser() -> argparse.ArgumentParser:
     resume_p.add_argument("--in-flight", default="")
 
     handoff_p = sub.add_parser(
-        "handoff", help="Escreve .sparkforge/handoff.md e imprime o payload."
+        "handoff", help="Escreve .sparkforge_aws/handoff.md e imprime o payload."
     )
     handoff_p.add_argument("--repo", required=True)
     handoff_p.add_argument("--findings")
@@ -2098,7 +2098,7 @@ def build_parser() -> argparse.ArgumentParser:
     journal_p = sub.add_parser(
         "journal",
         help=(
-            "Journal de eventos do case (.sparkforge/journal.jsonl): um started e um "
+            "Journal de eventos do case (.sparkforge_aws/journal.jsonl): um started e um "
             "finished por verbo que muda estado, encadeados por hash."
         ),
     )
@@ -2364,7 +2364,8 @@ def build_parser() -> argparse.ArgumentParser:
         code_sub.add_parser(
             "purge",
             help=(
-                "Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro diretorio e recusado."
+                "Apaga SOMENTE .sparkforge_aws/local/codeintel/. "
+                "Qualquer outro diretorio e recusado."
             ),
         )
     )
@@ -2459,7 +2460,7 @@ def build_parser() -> argparse.ArgumentParser:
         "start",
         help=(
             "Congela o plano de debate do par --rules A,B em "
-            "<repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos "
+            "<repo>/.sparkforge_aws/debate/<debate_id>/, a partir dos MESMOS insumos "
             "do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml."
         ),
     )
@@ -2749,7 +2750,7 @@ def build_parser() -> argparse.ArgumentParser:
         "github",
         help=(
             "Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e "
-            "resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma "
+            "resumo Markdown para o PR, em .sparkforge_aws/report/ (nomes fixos), e uma "
             "anotacao ::error/::warning/::notice por finding com linha no stdout. "
             "Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede."
         ),
@@ -2769,7 +2770,7 @@ def build_parser() -> argparse.ArgumentParser:
     report_github_p.add_argument(
         "--repo",
         default=".",
-        help="Raiz do repositorio git. A saida vai para <repo>/.sparkforge/report/.",
+        help="Raiz do repositorio git. A saida vai para <repo>/.sparkforge_aws/report/.",
     )
     report_github_p.add_argument(
         "--source-root",
@@ -2814,7 +2815,7 @@ def build_parser() -> argparse.ArgumentParser:
     telemetry_export_p = telemetry_sub.add_parser(
         "export",
         help=(
-            "Grava .sparkforge/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes "
+            "Grava .sparkforge_aws/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes "
             "fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le "
             "com o receiver otlp_json_file. Nao chama rede; token so com transcript do host."
         ),
@@ -2836,7 +2837,7 @@ def build_parser() -> argparse.ArgumentParser:
     telemetry_export_p.add_argument(
         "--repo",
         default=".",
-        help="Raiz do repositorio. A saida vai para <repo>/.sparkforge/telemetry/.",
+        help="Raiz do repositorio. A saida vai para <repo>/.sparkforge_aws/telemetry/.",
     )
 
     # receipt -------------------------------------------------------------------
@@ -2853,7 +2854,7 @@ def build_parser() -> argparse.ArgumentParser:
     receipt_emit_p = receipt_sub.add_parser(
         "emit",
         help=(
-            "Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, "
+            "Grava .sparkforge_aws/receipts/<receipt_id>.json com caminho e sha256 do case, "
             "dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os "
             "spans do run declarado e o host declarado. Sem conteudo de caso."
         ),
@@ -3003,7 +3004,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo "
             "manifesto, codigo pela extensao; depois fuse, judge e um resumo em "
-            ".sparkforge/scan/. Sem rede."
+            ".sparkforge_aws/scan/. Sem rede."
         ),
     )
     scan_p.add_argument("raiz", nargs="?", default=".", help="Pasta a varrer (padrao: .).")
@@ -3096,7 +3097,7 @@ def build_parser() -> argparse.ArgumentParser:
         "detach",
         help=(
             "Remove a integracao de usuario do host: so o que o manifesto "
-            "~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado."
+            "~/.sparkforge_aws/integrations.json registrou e ainda tem o sha256 gravado."
         ),
     )
     detach_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
@@ -3111,12 +3112,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # policy ------------------------------------------------------------------
-    # §16: `.sparkforge/policy.yaml`, imposta pelo servidor MCP, pelo hook
+    # §16: `.sparkforge_aws/policy.yaml`, imposta pelo servidor MCP, pelo hook
     # PreToolUse (deny) e por `permissions.ask` gerado (ask).
     policy_p = sub.add_parser(
         "policy",
         help=(
-            "Politica de seguranca do repositorio (.sparkforge/policy.yaml): validar, "
+            "Politica de seguranca do repositorio (.sparkforge_aws/policy.yaml): validar, "
             "explicar uma decisao e gerar as regras ask do .claude/settings.json."
         ),
     )
@@ -3189,7 +3190,7 @@ def build_parser() -> argparse.ArgumentParser:
     change_sandbox_p = change_sub.add_parser(
         "sandbox",
         help=(
-            "Aplica um diff numa copia em .sparkforge/sandbox/<id>/, roda o scan antes e "
+            "Aplica um diff numa copia em .sparkforge_aws/sandbox/<id>/, roda o scan antes e "
             "depois e compara os achados. A arvore principal nao muda."
         ),
     )
@@ -3200,12 +3201,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Arquivo de diff unificado (de change plan --out ou de git diff).",
     )
     change_sandbox_p.add_argument(
-        "--clean", action="store_true", help="Apaga .sparkforge/sandbox/ e sai."
+        "--clean", action="store_true", help="Apaga .sparkforge_aws/sandbox/ e sai."
     )
     change_propose_p = change_sub.add_parser(
         "propose",
         help=(
-            "Monta o pacote de um PR em .sparkforge/proposal/<id>/ a partir do sandbox ja "
+            "Monta o pacote de um PR em .sparkforge_aws/proposal/<id>/ a partir do sandbox ja "
             "rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST "
             "roda. Nao executa git nem gh."
         ),

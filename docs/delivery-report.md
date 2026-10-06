@@ -93,7 +93,7 @@ O `sf-orchestrator` recebe o objetivo, identifica domínios, cria tarefas de esc
 | Revisão | Finding e evidências | Aprovação, rejeição ou lacuna | Sem divergência crítica |
 | Validação | Plano antes/depois ou benchmark | Resultado comparável | Gate funcional satisfeito |
 | Entrega | Relatório, findings e manifest | Assinatura/verificação | Relatório completo |
-| Handoff | Lacunas ou trabalho em andamento | `.sparkforge/handoff.md` e `next_step` | Próximo responsável claro |
+| Handoff | Lacunas ou trabalho em andamento | `.sparkforge_aws/handoff.md` e `next_step` | Próximo responsável claro |
 
 Os arquivos `commands/sf-open.md`, `sf-next.md`, `sf-resume.md` e `sf-handoff.md` são comandos de host. Para terminal, as equivalências são `sparkforge-aws case open`, `sparkforge-aws next-step`, `sparkforge-aws resume` e `sparkforge-aws handoff`.
 

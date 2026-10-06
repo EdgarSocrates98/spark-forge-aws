@@ -37,7 +37,7 @@
       "runs_analyzed": 1
     },
     "attrs": {
-      "path": ".sparkforge/artifacts/glue_job_run"
+      "path": ".sparkforge_aws/artifacts/glue_job_run"
     },
     "provenance": {
       "artifact": "analyzed.json",

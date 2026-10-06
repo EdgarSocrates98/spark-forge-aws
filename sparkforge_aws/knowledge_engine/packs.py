@@ -28,7 +28,7 @@ class PackRegistry:
         self.cache_dir = (
             Path(cache_dir).expanduser().resolve()
             if cache_dir is not None
-            else self.root.parent / ".sparkforge-knowledge-cache"
+            else self.root.parent / ".sparkforge_aws-knowledge-cache"
         )
         self._indexes: dict[tuple[str, str], KnowledgeIndex] = {}
         self._descriptor_signature_cache: tuple[tuple[str, str, int, int], ...] | None = None

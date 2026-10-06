@@ -2,7 +2,7 @@
 
 # `sparkforge-aws handoff`
 
-Escreve .sparkforge/handoff.md e imprime o payload.
+Escreve .sparkforge_aws/handoff.md e imprime o payload.
 
 ```bash
 sparkforge-aws handoff --help

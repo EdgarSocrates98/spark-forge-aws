@@ -262,9 +262,9 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "change_kinds": ["tool_or_verb"],
     }
     if profile == "operator":
-        (repo / ".sparkforge").mkdir(exist_ok=True)
-        (repo / ".sparkforge" / "case.yaml").write_bytes(b"case_id: C1\n")
-        (repo / ".sparkforge" / "sandbox" / "S1").mkdir(parents=True)
+        (repo / ".sparkforge_aws").mkdir(exist_ok=True)
+        (repo / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: C1\n")
+        (repo / ".sparkforge_aws" / "sandbox" / "S1").mkdir(parents=True)
         define["case_id"] = "C1"
     caminhos["define"] = _grava(repo, feature, "define", define)
     caminhos["design"] = _grava(repo, feature, "design", {
@@ -1082,14 +1082,14 @@ def test_case_missing_case_diferente(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     for fase in ("design", "plan", "build_report", "ship"):
         caminhos[fase].unlink()
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
     assert _codigos(check(tmp_path)) == (["case_missing"], [])
 
 
 def test_change_missing(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     caminhos["ship"].unlink()
-    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "S1").rmdir()
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
 
@@ -1104,7 +1104,7 @@ def test_change_id_nao_escapa_do_sandbox(tmp_path, ident):
 def test_change_id_que_e_arquivo_nao_serve(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     caminhos["ship"].unlink()
-    (tmp_path / ".sparkforge" / "sandbox" / "ARQ").write_bytes(b"x")
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "ARQ").write_bytes(b"x")
     _reescreve(caminhos["build_report"], change_id="ARQ")
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
@@ -1112,22 +1112,22 @@ def test_change_id_que_e_arquivo_nao_serve(tmp_path):
 def test_change_id_aceita_proposal(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     caminhos["ship"].unlink()
-    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "S1").rmdir()
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
     # o sandbox foi limpo, mas o pacote de `change propose` guarda o mesmo id
-    (tmp_path / ".sparkforge" / "proposal" / "S1").mkdir(parents=True)
+    (tmp_path / ".sparkforge_aws" / "proposal" / "S1").mkdir(parents=True)
     assert _codigos(check(tmp_path)) == ([], [])
     # a proposal passa pelo mesmo confinamento: arquivo com o nome do id nao serve
-    (tmp_path / ".sparkforge" / "proposal" / "S1").rmdir()
-    (tmp_path / ".sparkforge" / "proposal" / "S1").write_bytes(b"x")
+    (tmp_path / ".sparkforge_aws" / "proposal" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "proposal" / "S1").write_bytes(b"x")
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
 
 def test_case_e_change_historicos_depois_do_ship(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     # depois da entrega: outro case aberto e o sandbox limpo
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
-    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "S1").rmdir()
     assert _codigos(check(tmp_path)) == ([], [])
     # com o ship ainda aberto, as duas referencias voltam a valer
     _reescreve(caminhos["ship"], status="ready")
@@ -1141,7 +1141,7 @@ def test_case_id_compara_como_texto(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     for fase in ("design", "plan", "build_report", "ship"):
         caminhos[fase].unlink()
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: 123\n")
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: 123\n")
     _reescreve(caminhos["define"], case_id="123")
     assert _codigos(check(tmp_path)) == ([], [])
 
@@ -1151,21 +1151,21 @@ def test_case_vazio_nao_casa_com_nada(tmp_path, conteudo):
     caminhos = feature_limpa(tmp_path, "operator")
     for fase in ("design", "plan", "build_report", "ship"):
         caminhos[fase].unlink()
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(conteudo)
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(conteudo)
     _reescreve(caminhos["define"], case_id="")
     assert _codigos(check(tmp_path)) == (["case_missing"], [])
 
 
 def test_perfil_dev_nao_pede_case_nem_change(tmp_path):
     feature_limpa(tmp_path, "dev")
-    assert not (tmp_path / ".sparkforge").exists()
+    assert not (tmp_path / ".sparkforge_aws").exists()
     assert _codigos(check(tmp_path)) == ([], [])
 
 
 def _relatorio_de_mudanca(repo: Path, base: str, ident: str, novos=(), resolvidos=()) -> None:
     """Grava o relatorio que `change sandbox` (ou `change propose`) deixaria."""
     nome = "report.json" if base == "sandbox" else "evidence/sandbox_report.json"
-    arquivo = repo / ".sparkforge" / base / ident / nome
+    arquivo = repo / ".sparkforge_aws" / base / ident / nome
     arquivo.parent.mkdir(parents=True, exist_ok=True)
     dado = {
         "id": ident,
@@ -1242,7 +1242,7 @@ def test_moved_confere_o_relatorio(tmp_path):
     )
     assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
     # o sandbox limpo nao apaga a prova que o pacote de proposal guarda
-    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox" / "S1")
+    shutil.rmtree(tmp_path / ".sparkforge_aws" / "sandbox" / "S1")
     _relatorio_de_mudanca(tmp_path, "proposal", "S1", resolvidos=["SF-PY-012"])
     assert _codigos(check(tmp_path)) == ([], [])
     # o plano que prova por #<rule_id> le o change_id do build; com o build pronto,
@@ -1290,7 +1290,7 @@ def test_relatorio_por_symlink_nao_escapa(tmp_path):
     fora.write_bytes(json.dumps({"new": [], "resolved": [{"rule_id": "SF-PY-012"}]})
                      .encode("utf-8"))
     try:
-        (tmp_path / ".sparkforge" / "sandbox" / "S1" / "report.json").symlink_to(fora)
+        (tmp_path / ".sparkforge_aws" / "sandbox" / "S1" / "report.json").symlink_to(fora)
     except OSError as erro:
         pytest.skip(f"symlink indisponivel: {erro}")
     assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
@@ -1307,13 +1307,13 @@ def _operator_com_moved(repo: Path, ident: str = "S1") -> dict[str, Path]:
 
 
 def _relatorio_sha(repo: Path, ident: str = "S1") -> str:
-    return text_sha256(repo / ".sparkforge" / "sandbox" / ident / "report.json")
+    return text_sha256(repo / ".sparkforge_aws" / "sandbox" / ident / "report.json")
 
 
 def test_ship_done_sem_evidencia_recusa(tmp_path):
     """SDD_ENDURECIMENTO AC1: change_id fabricado, ship done, nada gravado: recusa."""
     caminhos = _operator_com_moved(tmp_path, "FALSO")
-    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox")
+    shutil.rmtree(tmp_path / ".sparkforge_aws" / "sandbox")
     _reescreve(caminhos["ship"], evidence=None)
     recusa = check(tmp_path)["refused"]
     assert [(r["code"], r["field"]) for r in recusa] == [("ship_evidence_missing", "evidence")]
@@ -1331,7 +1331,7 @@ def test_ship_done_sem_evidencia_recusa(tmp_path):
 def test_ship_done_com_evidencia_e_sem_relatorio_e_historia(tmp_path):
     """SDD_ENDURECIMENTO AC2: o hash gravado e o que resta quando o relatorio some."""
     caminhos = _operator_com_moved(tmp_path, "FALSO")
-    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox")
+    shutil.rmtree(tmp_path / ".sparkforge_aws" / "sandbox")
     _reescreve(caminhos["ship"], evidence=[{"change_id": "FALSO", "report_sha256": "a" * 64}])
     assert _codigos(check(tmp_path)) == ([], [])
     # a entrada precisa nomear o id citado
@@ -1708,7 +1708,7 @@ def _eventos(repo: Path) -> list[dict]:
 
 
 def test_stamp_pelo_mcp_grava_no_journal(tmp_path):
-    # a raiz do journal e o `repo`; nao precisa de .sparkforge/case.yaml
+    # a raiz do journal e o `repo`; nao precisa de .sparkforge_aws/case.yaml
     caminhos = feature_limpa(tmp_path)
     _reescreve(caminhos["build_report"], claims=[{"text": "t", "evidence_ref": "x"}])
     resposta = _valida(

@@ -74,7 +74,7 @@ collect workspace-graph ──► boto3 STS/Glue/Lake Formation/S3
         │                     ├── nodes/edges declarados
         │                     └── unresolved por chamada/conta/paginacao
         ▼
-.sparkforge/artifacts/workspace_graph/<workspace>.json
+.sparkforge_aws/artifacts/workspace_graph/<workspace>.json
 ```
 
 ## Partes

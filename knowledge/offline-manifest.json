@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "639e8bb950d41eee6c8b1cddffc8dcab87d79176f7031379b0d3ad27c66243ba"
+      "sha256": "2756fd96eee77cc9c8a86b6de8f08ac60e6dca2604af796d8467eb79bda08989"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -136,12 +136,12 @@
     {
       "path": "knowledge/flink-streaming.md",
       "title": "flink-streaming",
-      "sha256": "3dbaae2feb120c29a56dda94eda80faed1f1ccaf769536e9d47dea52ff44ab45"
+      "sha256": "66d684630ad4c04b911ee5bed04cd6ac9874b96e82e8221fe081350b00b12964"
     },
     {
       "path": "knowledge/glue-streaming-rtm.md",
       "title": "glue-streaming-rtm",
-      "sha256": "30098859104e790d30910b79209d9cead4e37f48a64a6f3f29803f09e3311b87"
+      "sha256": "5eb043c269dbfbada123a5cedb4ff9e9575a6429dffa66997fb90d95019edc88"
     },
     {
       "path": "knowledge/glue/dq-advanced-matrix.md",
@@ -301,7 +301,7 @@
     {
       "path": "knowledge/streaming-integrations.md",
       "title": "streaming-integrations",
-      "sha256": "2adc122e3520eee2dc58da2e9e5d3281a2bae6dfae419a68891aa90047cda2e9"
+      "sha256": "7a1781e66316dbad6dd51a8f17e17be0c9952ae29e47ace7c0054e9647e53ac4"
     },
     {
       "path": "knowledge/streaming-lakehouse-observability.md",

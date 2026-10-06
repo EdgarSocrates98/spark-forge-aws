@@ -21,6 +21,7 @@ from typing import Any, overload
 
 import yaml
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.decision.authority import AuthorityPolicy, PromotionEvidence
 from sparkforge_aws.decision.fingerprint import digest
 from sparkforge_aws.evals.decision_replay import (
@@ -688,7 +689,7 @@ class EvolutionService:
     def __init__(self, repo: Path | str = ".") -> None:
         self.repo = Path(repo).expanduser().resolve()
         self.registry = CandidateRegistry(self.repo)
-        self.root = self.repo / ".sparkforge" / "evolution"
+        self.root = state_path(self.repo, "evolution")
         self.evidence_resolver = EvidenceResolver(self.repo)
         self._last_receipt_lock_state = "uninitialized"
         self.lifecycle = LifecycleProjector(

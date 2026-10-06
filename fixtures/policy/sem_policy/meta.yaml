@@ -1,2 +1,2 @@
 description: >-
-  Repositorio sem .sparkforge/policy.yaml: o hook nao faz nada.
+  Repositorio sem .sparkforge_aws/policy.yaml: o hook nao faz nada.

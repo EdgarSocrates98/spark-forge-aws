@@ -386,7 +386,7 @@ class TestPayloadNaoSerializavelNaoDerrubaAChamada:
 
 class TestImportarToolsNaoTocaDisco:
     """Achado do revisor: `_LEDGER = ContextLedger()` no corpo do modulo fazia
-    `import sparkforge_aws.adapters.tools` sozinho criar `.sparkforge/traces.db`
+    `import sparkforge_aws.adapters.tools` sozinho criar `.sparkforge_aws/traces.db`
     onde quer que o processo estivesse rodando."""
 
     def test_importar_tools_nao_cria_arquivo_nenhum(self, tmp_path):
@@ -401,7 +401,7 @@ class TestImportarToolsNaoTocaDisco:
         )
 
         assert resultado.returncode == 0, resultado.stderr
-        assert not (tmp_path / ".sparkforge").exists()
+        assert not (tmp_path / ".sparkforge_aws").exists()
 
 
 class TestBufferEFlush:
@@ -597,7 +597,7 @@ class TestSuiteNaoEscreveNoRepositorioReal:
     (`context_ledger._SHARED_LEDGER`) para um caminho temporario durante toda
     a sessao de teste -- entao mesmo uma chamada de `call_tool` que NAO
     monkeypatcha o ledger (a maioria dos testes de `test_adapters_tools.py`)
-    nao pode tocar o `.sparkforge/traces.db` real do repositorio."""
+    nao pode tocar o `.sparkforge_aws/traces.db` real do repositorio."""
 
     def test_chamar_call_tool_sem_monkeypatch_nao_toca_o_traces_db_do_repo(
         self, tmp_path
@@ -608,7 +608,7 @@ class TestSuiteNaoEscreveNoRepositorioReal:
         from sparkforge_aws.observability import context_ledger
 
         raiz_do_repo = Path(__file__).resolve().parents[1]
-        traces_do_repo = raiz_do_repo / ".sparkforge" / "traces.db"
+        traces_do_repo = raiz_do_repo / ".sparkforge_aws" / "traces.db"
         existia_antes = traces_do_repo.exists()
         tamanho_antes = traces_do_repo.stat().st_size if existia_antes else None
 

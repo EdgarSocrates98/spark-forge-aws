@@ -30,7 +30,7 @@ Seu trabalho é **coletar as quatro fontes, rodar, e ler `--show-skipped` para s
 ### 1. Escrita: extraia o padrão de particionamento do código
 
 ```bash
-sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json --kind pyspark.write --kind pyspark.partitioning
+sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json --kind pyspark.write --kind pyspark.partitioning
 ```
 
 `pyspark.write` traz modo e destino de cada escrita; `pyspark.partitioning` traz `coalesce`/`repartition`, se o argumento é literal, e o valor alvo. É aqui que aparece o writer por chave de alta cardinalidade e o `coalesce(1)` disfarçado de "arquivo único".
@@ -41,7 +41,7 @@ Não existe `sparkforge-aws collect s3-listing`, e isso é decisão de desenho, 
 
 ```bash
 aws s3api list-objects-v2 --bucket <bucket> --prefix <prefixo> > listing.json
-sparkforge-aws analyze s3-listing --path listing.json --out .sparkforge/facts_s3.json
+sparkforge-aws analyze s3-listing --path listing.json --out .sparkforge_aws/facts_s3.json
 ```
 
 Sai um `s3.prefix_summary` **por grupo (formato, compressão)**, não um por prefixo: um prefixo real mistura Parquet com `_SUCCESS` de 0 byte e log em `.gz`, e um sumário único faria a média de bytes ser puxada pelo arquivo de controle — e `SF-PQ-003` (`format: text` + `compression: gzip`) nunca casaria num prefixo majoritariamente Parquet, mesmo com um `.gz` de 4 GB ali.
@@ -51,7 +51,7 @@ Sai um `s3.prefix_summary` **por grupo (formato, compressão)**, não um por pre
 ### 3. Leitura: extraia o plano físico
 
 ```bash
-sparkforge-aws analyze plan --path <explain>.txt --out .sparkforge/facts_plan.json
+sparkforge-aws analyze plan --path <explain>.txt --out .sparkforge_aws/facts_plan.json
 ```
 
 `plan.file_scan` é o que responde as duas perguntas do lado da leitura: `SF-PQ-002` (tabela particionada com `PartitionFilters` vazio — está lendo tudo) e `SF-PQ-004` (razão entre colunas de `ReadSchema` e colunas referenciadas). Gere o `explain` com `df.explain("formatted")`; o procedimento completo, e o que fazer quando o Spark trunca a lista de campos, está em `analyze-spark-plan`.
@@ -59,7 +59,7 @@ sparkforge-aws analyze plan --path <explain>.txt --out .sparkforge/facts_plan.js
 ### 4. Catálogo: confirme a cardinalidade real da partição
 
 ```bash
-sparkforge-aws analyze catalog-schema --path <dump-glue-catalog.json> --out .sparkforge/facts_catalog.json
+sparkforge-aws analyze catalog-schema --path <dump-glue-catalog.json> --out .sparkforge_aws/facts_catalog.json
 ```
 
 Produz `catalog.table_partitions` (valores distintos, bytes médios por partição) — é o que `SF-PQ-005` consome para decidir se a cardinalidade é baixa demais (não filtra nada) ou alta demais (small files por desenho).
@@ -67,7 +67,7 @@ Produz `catalog.table_partitions` (valores distintos, bytes médios por partiç�
 ### 5. Execução: sintoma indireto no event log
 
 ```bash
-sparkforge-aws analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog.json
+sparkforge-aws analyze event-log --path <log>.jsonl --out .sparkforge_aws/facts_eventlog.json
 ```
 
 `spark.stage.task_count` comparado a `spark.cluster.cores` (`SF-UI-006`) é o sinal indireto de small files do lado da leitura: contagem de tasks muito acima dos cores disponíveis, cada uma processando pouco dado, é a assinatura de ler muitos arquivos pequenos. É corroboração, não substituto: quem responde sobre o armazenamento é a listagem do passo 2.
@@ -76,11 +76,11 @@ sparkforge-aws analyze event-log --path <log>.jsonl --out .sparkforge/facts_even
 
 ```bash
 sparkforge-aws judge \
-  --facts .sparkforge/facts.json \
-  --facts .sparkforge/facts_s3.json \
-  --facts .sparkforge/facts_plan.json \
-  --facts .sparkforge/facts_catalog.json \
-  --facts .sparkforge/facts_eventlog.json \
+  --facts .sparkforge_aws/facts.json \
+  --facts .sparkforge_aws/facts_s3.json \
+  --facts .sparkforge_aws/facts_plan.json \
+  --facts .sparkforge_aws/facts_catalog.json \
+  --facts .sparkforge_aws/facts_eventlog.json \
   --show-skipped
 ```
 

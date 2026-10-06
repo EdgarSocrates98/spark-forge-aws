@@ -164,7 +164,7 @@ def _lacuna_nomeada(engine: str) -> str:
             f"e o EKS traz 1.6.1-amzn-2), entao uma resposta unica estaria errada "
             f"para pelo menos uma delas. Declare "
             f"{', '.join(f'`{a}`' for a in alternativas)} em "
-            f"`.sparkforge/consumers.yaml`, com `release:` quando souber"
+            f"`.sparkforge_aws/consumers.yaml`, com `release:` quando souber"
         )
     return (
         f"{engine}: consumidor declarado e AUSENTE da matriz -- nenhuma celula "
@@ -274,7 +274,7 @@ def assess_upgrade(
             unresolved=[
                 "nenhum consumidor declarado -- sem inventario nao ha quem "
                 "consultar, e ausencia de declaracao nao e declaracao de "
-                "ausencia; declare em `.sparkforge/consumers.yaml`"
+                "ausencia; declare em `.sparkforge_aws/consumers.yaml`"
             ],
         )
 

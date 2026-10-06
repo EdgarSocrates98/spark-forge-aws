@@ -41,7 +41,7 @@ identidade declarada. O suporte é opcional: ausência de OpenLineage permanece
 ## Coleta read-only e fronteira de segurança
 
 `sparkforge-aws collect streaming-integrations` grava um artefato composto em
-`.sparkforge/artifacts/streaming_integrations/` e registra SHA-256 no manifesto.
+`.sparkforge_aws/artifacts/streaming_integrations/` e registra SHA-256 no manifesto.
 As fontes suportadas são:
 
 - `--checkpoint-s3-uri`: lista limitada de objetos do diretório de checkpoint;

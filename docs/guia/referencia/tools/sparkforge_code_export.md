@@ -14,7 +14,7 @@ Exporta o grafo de codigo no formato de EXTRACAO que a fonte do Graphify publica
 |---|---|---|---|
 | `repo` | string | sim | Raiz do repositorio analisado. Nada e lido fora dela. |
 | `communities` | boolean | não | Inclui a comunidade de cada no. `false` deixa `communities.algorithm` como `null`, que diz 'nao calculei' -- diferente de chave ausente. |
-| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`. |
+| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`. |
 | `detail_level` | string: `summary`, `normal`, `full` | não | `summary` para as contagens e a declaracao de compatibilidade; `normal` e `full` trazem nos e arestas. |
 
 ## Na CLI

@@ -1,9 +1,9 @@
 """Shared Blackboard — estado estruturado do case em árvore de arquivos.
 
-Evolui de `case.yaml` único para uma árvore estruturada sob `.sparkforge/`:
+Evolui de `case.yaml` único para uma árvore estruturada sob `.sparkforge_aws/`:
 
 ```
-.sparkforge/
+.sparkforge_aws/
   case.yaml           # metadata + phase + gates (existente, preservado)
   blackboard/
     claims.jsonl      # claims feitas por agentes
@@ -40,7 +40,7 @@ from sparkforge_aws.agentic.models import (
     Rebuttal,
     Unknown,
 )
-from sparkforge_aws.case.store import CASE_DIR
+from sparkforge_aws.case.store import state_dir
 from sparkforge_aws.durable import append_text_line, read_records
 
 BLACKBOARD_DIR = "blackboard"
@@ -61,8 +61,8 @@ _ENTITY_FILES: dict[str, str] = {
 
 
 def blackboard_path(root: Path | str) -> Path:
-    """Retorna o path do diretório blackboard."""
-    return Path(root) / CASE_DIR / BLACKBOARD_DIR
+    """Retorna o path do diretório blackboard, ao lado do case resolvido."""
+    return state_dir(root) / BLACKBOARD_DIR
 
 
 def init_blackboard(root: Path | str) -> Path:

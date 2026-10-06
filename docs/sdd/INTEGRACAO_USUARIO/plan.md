@@ -1319,7 +1319,7 @@ def test_manifesto_dry_run_e_idempotencia(tmp_path):
 
     primeira = integrate("devin", home=home, windows=False)
     assert primeira["refused"] == []
-    manifesto = json.loads((home / ".sparkforge" / "integrations.json").read_text("utf-8"))
+    manifesto = json.loads((home / ".sparkforge_aws" / "integrations.json").read_text("utf-8"))
     arquivos = manifesto["hosts"]["devin"]["files"]
     assert manifesto["hosts"]["devin"]["package_version"] == __version__
     assert set(arquivos) == set(primeira["hosts"][0]["written"])
@@ -1403,7 +1403,7 @@ class Host:
 
 
 def claude_marketplace_dir(home: Path) -> Path:
-    return Path(home) / ".sparkforge" / "claude"
+    return Path(home) / ".sparkforge_aws" / "claude"
 
 
 def claude_plugin_dir(home: Path) -> Path:
@@ -1526,7 +1526,7 @@ __all__ = [
 """Plano de escrita no HOME, manifesto, dry-run e idempotencia (D5).
 
 Toda escrita fora do repositorio passa por aqui e fica registrada em
-`~/.sparkforge/integrations.json`: por host, cada arquivo gravado (caminho
+`~/.sparkforge_aws/integrations.json`: por host, cada arquivo gravado (caminho
 relativo ao HOME, em POSIX, e sha256), a versao do pacote que o gravou e as
 entradas de config inseridas. O manifesto e o que torna `detach` seguro -- sem
 ele, apagar pelo nome levaria junto arquivo do usuario com o mesmo nome.
@@ -1553,7 +1553,7 @@ from typing import Any
 from sparkforge_aws.integrate import render, sources
 from sparkforge_aws.integrate.hosts import Host
 
-MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
+MANIFEST_RELATIVE = Path(".sparkforge_aws") / "integrations.json"
 SCHEMA = 1
 
 
@@ -2481,7 +2481,7 @@ def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     # O mcp-config.json do Copilot foi criado pelo integrate e ficou vazio: sai.
     assert not (home / ".copilot" / "mcp-config.json").exists()
     assert meu.read_text(encoding="utf-8") == "do usuario\n"
-    assert not (home / ".sparkforge" / "integrations.json").exists()
+    assert not (home / ".sparkforge_aws" / "integrations.json").exists()
     assert detach("devin", home=home)["hosts"][0]["status"] == "not_integrated"
 ```
 
@@ -2757,7 +2757,7 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     from scripts import sync_skills
 
     home = tmp_path / "home"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     plugin = marketplace / "plugins" / "sparkforge-aws"
 
     # Sem `claude` no PATH: o plugin fica montado e a recusa traz os dois comandos.
@@ -2831,7 +2831,7 @@ Falha esperada: `TypeError: integrate() got an unexpected keyword argument 'whic
 ```python
 """Claude Code: o plugin por marketplace local (D8).
 
-Monta em `~/.sparkforge/claude/` o marketplace `sparkforge-aws-local`, com o plugin
+Monta em `~/.sparkforge_aws/claude/` o marketplace `sparkforge-aws-local`, com o plugin
 `sparkforge-aws` em `plugins/sparkforge-aws/` (skills, agents, `.mcp.json` e
 `.claude-plugin/plugin.json`), e o registra pelo proprio CLI do Claude:
 
@@ -4202,7 +4202,7 @@ por
         "detach",
         help=(
             "Remove a integracao de usuario do host: so o que o manifesto "
-            "~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado."
+            "~/.sparkforge_aws/integrations.json registrou e ainda tem o sha256 gravado."
         ),
     )
     detach_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
@@ -4418,7 +4418,7 @@ sparkforge-aws detach all                              # remove só o que o Spar
 
 | Host | Agents | Skills | MCP |
 |---|---|---|---|
-| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-aws-local`, em `~/.sparkforge/claude/` | no plugin | `.mcp.json` do plugin |
+| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-aws-local`, em `~/.sparkforge_aws/claude/` | no plugin | `.mcp.json` do plugin |
 | Devin CLI | `~/.config/devin/agents/` (`%APPDATA%\devin\agents\` no Windows) | `~/.agents/skills/` | `~/.config/devin/mcp_config.json`, chave `mcpServers.sparkforge-aws` |
 | Codex CLI | `~/.codex/agents/*.toml` | `~/.agents/skills/` | bloco marcado `[mcp_servers.sparkforge-aws]` em `~/.codex/config.toml` |
 | Copilot CLI | `~/.copilot/agents/*.agent.md` | `~/.agents/skills/` | `~/.copilot/mcp-config.json`, chave `mcpServers.sparkforge-aws` |
@@ -4432,7 +4432,7 @@ O servidor MCP é chamado pelo Python que tem o `sparkforge-aws` instalado, sem
 sobrescrita: só a entrada `sparkforge-aws` entra, e um `sparkforge-aws` que você mesmo escreveu
 sai como recusa `sparkforge_ja_configurado`, sem tocar no arquivo.
 
-Tudo o que é gravado fica em `~/.sparkforge/integrations.json`, com o sha256 de cada
+Tudo o que é gravado fica em `~/.sparkforge_aws/integrations.json`, com o sha256 de cada
 arquivo. Rodar de novo não muda nada. `detach` remove só o que o manifesto registrou e
 ainda tem o sha256 gravado: arquivo que você editou depois fica, e sai como recusa
 `editado_pelo_usuario`.
@@ -4473,7 +4473,7 @@ por
 | Comando | O que faz | Referência |
 |---|---|---|
 | `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user`, `--dry-run`, `--on-conflict`. | [integrate](referencia/cli/integrate.md) |
-| `detach` | Remove a integração de usuário: só o que `~/.sparkforge/integrations.json` registrou e ainda tem o sha256 gravado. | [detach](referencia/cli/detach.md) |
+| `detach` | Remove a integração de usuário: só o que `~/.sparkforge_aws/integrations.json` registrou e ainda tem o sha256 gravado. | [detach](referencia/cli/detach.md) |
 
 Sem tool MCP de propósito: escrever no HOME é decisão do operador. O detalhe está em [Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 
@@ -4517,10 +4517,10 @@ agents e o MCP nos diretórios de usuário de cada host, a partir do wheel, e
 `sparkforge_aws/integrate/bundle/`. O renderizador por plataforma saiu de
 `scripts/sync_skills.py` para `sparkforge_aws/integrate/render.py`, com a plataforma
 `codex`, e é um só para os espelhos do repositório e para a integração. Claude Code
-entra por marketplace local em `~/.sparkforge/claude/`, registrado pelo `claude
+entra por marketplace local em `~/.sparkforge_aws/claude/`, registrado pelo `claude
 plugin`. Devin, Codex e Copilot CLI recebem os agents nos diretórios globais, as skills
 em `~/.agents/skills` e o MCP mesclado na config de usuário. Tudo o que é escrito fica
-em `~/.sparkforge/integrations.json`, com sha256. A cópia vendorizada em dobro no
+em `~/.sparkforge_aws/integrations.json`, com sha256. A cópia vendorizada em dobro no
 repositório é detectada e resolvida por escolha do operador. O `doctor` ganhou uma
 checagem por host.
 

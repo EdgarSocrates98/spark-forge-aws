@@ -12,7 +12,7 @@ Arbitra o PROTOCOLO de debate do case e diz se o fechamento declarado pode ser p
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `repo` | string | sim | Raiz do repositorio com `.sparkforge/blackboard/`. |
+| `repo` | string | sim | Raiz do repositorio com `.sparkforge_aws/blackboard/`. |
 
 ## Na CLI
 

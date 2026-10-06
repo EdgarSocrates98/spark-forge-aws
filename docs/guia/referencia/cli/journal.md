@@ -2,7 +2,7 @@
 
 # `sparkforge-aws journal`
 
-Journal de eventos do case (.sparkforge/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash.
+Journal de eventos do case (.sparkforge_aws/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash.
 
 ## Subcomandos
 

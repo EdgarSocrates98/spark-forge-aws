@@ -48,7 +48,7 @@ O artefato aqui é o `.py` do repositório — o checkout é a coleta.
 
 ```bash
 sparkforge-aws analyze data-quality --path <arquivo .py ou diretório> \
-  --out .sparkforge/facts_dq.json
+  --out .sparkforge_aws/facts_dq.json
 ```
 
 Quatro kinds saem daqui:
@@ -97,8 +97,8 @@ uma cadeia cuja raiz é a sessão —, e ele é ponto cego do extrator, não def
 persistência ou agregação única, junte a leitura estrutural do mesmo arquivo:
 
 ```bash
-sparkforge-aws analyze pyspark --path <mesmo caminho> --out .sparkforge/facts_py.json
-sparkforge-aws analyze call-graph --path <mesmo caminho> --out .sparkforge/facts_cg.json
+sparkforge-aws analyze pyspark --path <mesmo caminho> --out .sparkforge_aws/facts_py.json
+sparkforge-aws analyze call-graph --path <mesmo caminho> --out .sparkforge_aws/facts_cg.json
 ```
 
 `--facts` é repetível: passe os arquivos na mesma chamada de `judge`, que une e deduplica as
@@ -109,12 +109,12 @@ dobrada, não repetida.
 ### 5. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts_dq.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_dq.json --show-skipped
 
 # com a leitura de código junto, para sustentar custo:
 sparkforge-aws judge \
-  --facts .sparkforge/facts_dq.json \
-  --facts .sparkforge/facts_py.json \
+  --facts .sparkforge_aws/facts_dq.json \
+  --facts .sparkforge_aws/facts_py.json \
   --show-skipped
 ```
 

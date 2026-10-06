@@ -1,7 +1,7 @@
 """Plano de escrita no HOME, manifesto, dry-run e idempotencia (D5).
 
 Toda escrita fora do repositorio passa por aqui e fica registrada em
-`~/.sparkforge/integrations.json` (formato 2): em `files`, cada arquivo gravado
+`~/.sparkforge_aws/integrations.json` (formato 2): em `files`, cada arquivo gravado
 (caminho relativo a uma raiz declarada, HOME ou APPDATA, em POSIX) com UM sha256
 e o conjunto de hosts donos; em `hosts`, por host, a versao do pacote que o
 gravou e as entradas de config inseridas. O manifesto e o que torna `detach`
@@ -43,7 +43,12 @@ from typing import Any
 from sparkforge_aws.integrate import render, sources
 from sparkforge_aws.integrate.hosts import Host, default_appdata, default_codex_home
 
-MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
+MANIFEST_RELATIVE = Path(".sparkforge_aws") / "integrations.json"
+# Diretorio de estado legado: instalacoes pre-rename gravaram o manifesto em
+# `~/.sparkforge/`. O manifesto e o que torna `detach` seguro, entao a leitura
+# cai para o nome antigo quando o novo ainda nao existe; a escrita sempre usa o
+# nome novo, e o arquivo legado e removido na primeira gravacao.
+LEGACY_MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
 SCHEMA = 2
 
 
@@ -52,7 +57,17 @@ def sha256_bytes(data: bytes) -> str:
 
 
 def manifest_path(home: Path) -> Path:
+    """Onde o manifesto e ESCRITO: sempre `~/.sparkforge_aws/`."""
     return Path(home) / MANIFEST_RELATIVE
+
+
+def _manifest_read_path(home: Path) -> Path:
+    """Onde o manifesto e LIDO: o nome novo, ou o legado quando so ele existe."""
+    novo = manifest_path(home)
+    if novo.is_file():
+        return novo
+    legado = Path(home) / LEGACY_MANIFEST_RELATIVE
+    return legado if legado.is_file() else novo
 
 
 class ManifestoRecusado(Exception):
@@ -296,7 +311,7 @@ def _chaves(dados: dict[str, Any]) -> list[str]:
 def load_manifest(home: Path) -> dict[str, Any]:
     """O manifesto do HOME. Ilegivel, ou com caminho que sai da raiz declarada,
     levanta `ManifestoRecusado` antes de qualquer escrita ou remocao."""
-    caminho = manifest_path(home)
+    caminho = _manifest_read_path(home)
     if not caminho.is_file():
         return _manifesto_vazio()
     try:
@@ -378,6 +393,9 @@ def save_manifest(home: Path, manifesto: dict[str, Any]) -> bool:
     if caminho.is_file() and caminho.read_text(encoding="utf-8") == texto:
         return False
     gravar_atomico(caminho, texto.encode("utf-8"))
+    legado = Path(home) / LEGACY_MANIFEST_RELATIVE
+    if legado.is_file():
+        legado.unlink()
     return True
 
 
@@ -993,7 +1011,10 @@ def drop_manifest_if_empty(disco: Disco, manifesto: dict[str, Any]) -> None:
     if manifesto.get("hosts") or manifesto.get("files"):
         save_manifest(disco.home, manifesto)
         return
-    caminho = manifest_path(disco.home)
-    if caminho.is_file():
-        caminho.unlink()
-        disco.podar(caminho)
+    for caminho in (
+        manifest_path(disco.home),
+        disco.home / LEGACY_MANIFEST_RELATIVE,
+    ):
+        if caminho.is_file():
+            caminho.unlink()
+            disco.podar(caminho)

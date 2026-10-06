@@ -3,10 +3,10 @@
 Duas portas decidem, e so elas:
 
 - **artefato coletado** entra pelo `kind` que o proprio coletor gravou em
-  `.sparkforge/artifacts/manifest.json`, e so depois de o sha256 conferir;
+  `.sparkforge_aws/artifacts/manifest.json`, e so depois de o sha256 conferir;
 - **codigo do repositorio** entra pela extensao (`.py`, `.sql`, `.tf`,
   `.jsonl`), pela mesma varredura que os extratores usam
-  (`varrer_source_files`), que ja pula `.sparkforge`, dependencias e cofres de
+  (`varrer_source_files`), que ja pula `.sparkforge_aws`, dependencias e cofres de
   credencial com a razao escrita.
 
 JSON solto fora do manifesto NAO e classificado pelo conteudo: dez extratores
@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from sparkforge_aws.collect.base import MANIFEST_RELATIVE, verify_artifact
+from sparkforge_aws.collect.base import MANIFEST_RELATIVE, manifest_path, verify_artifact
 from sparkforge_aws.facts.scan import varrer_source_files
 
 # `kind` gravado pelos `collect_*` -> analyze que o le. `None` e kind conhecido
@@ -124,7 +124,7 @@ class Plano:
 
 
 def _manifesto(raiz: Path) -> list[dict[str, Any]]:
-    caminho = raiz / MANIFEST_RELATIVE
+    caminho = manifest_path(raiz)
     if not caminho.is_file():
         return []
     try:

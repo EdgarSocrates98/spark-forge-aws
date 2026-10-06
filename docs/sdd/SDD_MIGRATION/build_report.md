@@ -41,7 +41,7 @@ claims:
     evidence_ref: "tests/test_sdd_migration.py::test_documentos_de_entrada_apontam_o_sdd"
   - text: "CLAUDE.md foi de 22868 para 23533 bytes e AGENTS.md de 21582 para 22145, abaixo do teto de 26000."
     evidence_ref: "tests/test_bootstrap_budget.py::test_arquivos_de_instrucao_cabem_no_teto"
-  - text: "README.md apresenta as seis skills, os tres verbos e os dois perfis; .sparkforge/journal.jsonl esta ignorado."
+  - text: "README.md apresenta as seis skills, os tres verbos e os dois perfis; .sparkforge_aws/journal.jsonl esta ignorado."
     evidence_ref: "tests/test_sdd_migration.py::test_readme_e_journal"
   - text: "O corpus de *.py foi de 738 para 739, relido pela propria prova de VNX-640."
     evidence_ref: "docs/claims.lock.json"

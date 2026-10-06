@@ -27,7 +27,7 @@
 - `agentic/runtime.py::RuntimeCapabilities.checkpointing` é propriedade declarada do HOST (Devin `True`, Claude Code `False`), não do pacote.
 - 103 tools, 36 com `readOnlyHint: false`; 9 delas são `code_*` (índice de code intelligence, cache reconstruível). Sobram 27 verbos que mudam estado do case ou do repositório. 24 dos 27 recebem `repo`; `funcval_plan`, `funcval_compare` e `report_sign` não.
 - A CLI não passa por `tools.call_tool` (0 ocorrência em `cli.py`); tem despacho central em `cli.py::_dispatch`.
-- `.gitignore`: política de `.sparkforge/` é "derivado pequeno pode ser commitado"; `case.yaml`, `handoff.md` e blackboard viajam no commit; `traces.db`, `cache/`, `local/`, `sandbox/`, `proposal/` são ignorados.
+- `.gitignore`: política de `.sparkforge_aws/` é "derivado pequeno pode ser commitado"; `case.yaml`, `handoff.md` e blackboard viajam no commit; `traces.db`, `cache/`, `local/`, `sandbox/`, `proposal/` são ignorados.
 - `facts/secrets.py::redact` existe e é heurístico (nome de chave, entropia).
 - `policy/load.py::raiz_do_projeto()` resolve a raiz por `CLAUDE_PROJECT_DIR` ou cwd.
 
@@ -59,7 +59,7 @@
 |------|----------|-------|-------|
 | Input files | `fixtures/journal/` (novo) | ~6 | `sem_queda`, `started_sem_finished`, `cauda_cortada` (journal, blackboard, `submissions.jsonl`), `linha_removida`, `linha_alterada`, `case_yaml_intacto_apos_falha` |
 | Output examples | `fixtures/debate/retomada/expected/brief.json` | 1 | Deve continuar igual byte a byte: escrita atômica não muda conteúdo |
-| Ground truth | `fixtures/receipt/uniao_debate/expected/receipt.json` | 1 | Conferir se o recibo enumera arquivos de `.sparkforge/`; se sim, o journal o move |
+| Ground truth | `fixtures/receipt/uniao_debate/expected/receipt.json` | 1 | Conferir se o recibo enumera arquivos de `.sparkforge_aws/`; se sim, o journal o move |
 | Related code | `tests/test_case_resume.py`, `tests/test_case_store.py`, `receipt/`, `debate_run.py`, `policy/load.py` | 5 | Moldes de payload de resume, cadeia content-addressed, estado em arquivo, raiz do projeto |
 
 **How samples will be used:**
@@ -74,7 +74,7 @@
 
 ### Approach A: gancho nas duas portas, conjunto derivado das anotações ⭐ Recommended
 
-**Description:** `sparkforge_aws/durable.py` concentra `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`), `append_line` (sob trava, com quarentena da cauda cortada) e `read_jsonl` (tolera só a cauda). `sparkforge_aws/journal/` guarda `.sparkforge/journal.jsonl` e um context manager `recording(verbo, porta, args, raiz)` chamado em `tools.call_tool` (MCP) e em `cli._dispatch` (CLI). O conjunto de verbos sai das anotações (`readOnlyHint: false`, menos `code_*`), travado por teste. `resume` lê o journal; verbo `journal verify` confere a cadeia.
+**Description:** `sparkforge_aws/durable.py` concentra `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`), `append_line` (sob trava, com quarentena da cauda cortada) e `read_jsonl` (tolera só a cauda). `sparkforge_aws/journal/` guarda `.sparkforge_aws/journal.jsonl` e um context manager `recording(verbo, porta, args, raiz)` chamado em `tools.call_tool` (MCP) e em `cli._dispatch` (CLI). O conjunto de verbos sai das anotações (`readOnlyHint: false`, menos `code_*`), travado por teste. `resume` lê o journal; verbo `journal verify` confere a cadeia.
 
 **Pros:**
 - Dois pontos de gancho em vez de 27.
@@ -130,9 +130,9 @@
 | 2 | Journal cobre os 27 verbos que mudam estado, conjunto derivado de `readOnlyHint: false` menos `code_*`, travado por teste | Registro de mudança de estado; leitura já tem ledger | Todo verbo (segundo ledger); só o barramento do case (perde `scan`, `change`, `collect`) |
 | 3 | Evento = par `started`/`finished` com `seq`, `prev` (sha256 da linha anterior), `call` (sha256 de verbo+args canônicos), `verb`, `port`, `args`, `at`; `finished` com `outcome` e `outputs` | `started` sem `finished` é o dado de "em voo"; a cadeia prova ordem e ausência de remoção | Evento só no fim; par sem cadeia |
 | 4 | Sem relógio: `at` é o `now` que o verbo recebeu, senão `null` | Timestamp nunca é gerado no pacote (`case/store.py`); id content-addressed não leva hora | Ler o relógio no gancho |
-| 5 | Journal commitável em `<raiz>/.sparkforge/journal.jsonl`; raiz = `args["repo"]` (24 de 27), senão `raiz_do_projeto()` (3 de 27) | O case atravessa sessão pelo commit | Journal local ignorado pelo git |
+| 5 | Journal commitável em `<raiz>/.sparkforge_aws/journal.jsonl`; raiz = `args["repo"]` (24 de 27), senão `raiz_do_projeto()` (3 de 27) | O case atravessa sessão pelo commit | Journal local ignorado pelo git |
 | 6 | Argumento vira sha256 do valor canônico; literal só para lista fechada (`rules`, `debate_id`, `sandbox`, `fail_on`, `format`) e valor não absoluto | Repo público; "caso real nunca entra em arquivo"; `redact` é heurístico | Literal com `redact()` |
-| 7 | `outputs` = sha256 dos arquivos que o verbo declara ter gravado; sem declaração sai `outputs_unresolved` | Recusa tem nome (regra 20); não inventar lista | Varrer `.sparkforge/` por mtime |
+| 7 | `outputs` = sha256 dos arquivos que o verbo declara ter gravado; sem declaração sai `outputs_unresolved` | Recusa tem nome (regra 20); não inventar lista | Varrer `.sparkforge_aws/` por mtime |
 | 8 | Gravação sob trava de arquivo (`msvcrt.locking` no Windows, `fcntl.flock` no POSIX) | CLI e servidor MCP podem gravar ao mesmo tempo e disputariam o `prev`; append no Windows não é atômico por linha | Confiar em `O_APPEND` |
 | 9 | Regra 27: falha do journal não derruba o verbo; resultado ganha `journal: "unrecorded"` com motivo | Medição/registro nunca quebra o produto | Falhar o verbo |
 | 10 | `append_line` com cauda cortada move os bytes para `<arquivo>.torn` e volta o arquivo ao último `\n` antes de anexar | Sem isso, o append seguinte transforma a cauda em linha corrompida no meio; a quarentena preserva a evidência | Apagar a cauda; anexar por cima |
@@ -196,7 +196,7 @@ O estado do case (`case.yaml`, blackboard, debate) é gravado sem proteção con
 - Repositório público: journal commitável só com hash e lista fechada de literais.
 - Windows e POSIX: trava de arquivo nos dois.
 - `sparkforge_resume` está no golden de paridade MCP 1.29: campo novo vai para a exceção declarada.
-- `receipt emit` também grava no journal: conferir se o recibo enumera arquivos de `.sparkforge/` (golden `uniao_debate`).
+- `receipt emit` também grava no journal: conferir se o recibo enumera arquivos de `.sparkforge_aws/` (golden `uniao_debate`).
 - Python 3.10 no CI (`datetime.UTC` proibido).
 
 ### Out of Scope (Confirmed)

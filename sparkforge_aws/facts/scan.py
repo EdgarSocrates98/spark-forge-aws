@@ -182,6 +182,7 @@ DIRETORIOS_IGNORADOS: frozenset[str] = frozenset(
         "target",
         ".terraform",
         ".sparkforge",
+        ".sparkforge_aws",
     }
 )
 

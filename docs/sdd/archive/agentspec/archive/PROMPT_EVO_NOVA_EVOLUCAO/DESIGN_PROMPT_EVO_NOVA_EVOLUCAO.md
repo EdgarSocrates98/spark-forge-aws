@@ -55,7 +55,7 @@ KB grounding used in this design:
 │             ┌────────────┴────────────┐                                      │
 │             ▼                         ▼                                      │
 │   evaluation receipt                  PromotionGate                          │
-│   .sparkforge/evolution/*.json        CI + benchmark + review + rollback     │
+│   .sparkforge_aws/evolution/*.json        CI + benchmark + review + rollback     │
 │             │                         │                                      │
 │             └──────────────► accepted candidate or named refusal             │
 │                                                                            │
@@ -486,7 +486,7 @@ Both paths end at the same `EvaluationEvidenceBundle` and `CandidateEvaluation` 
 | Authorized host command | Local subprocess with JSON stdout | Explicit registry allowlist and executable digest; no provider credentials inherited |
 | Host transcript | Hash/reference in bundle; optional existing `HostEnvelope` validation | No network access; source hash required for usage |
 | CI/benchmark/review artifacts | Evidence references with kind, URI/ref and SHA-256 | Caller supplies references; Forge verifies shape/digest and does not fetch network data |
-| `.sparkforge/evolution/` | Content-addressed filesystem receipts | Local exclusive sequence lock |
+| `.sparkforge_aws/evolution/` | Content-addressed filesystem receipts | Local exclusive sequence lock |
 
 No AWS, provider SDK, MCP SDK, HTTP client or new service is added. If a future integration needs network retrieval, it is outside this feature and requires a new explicit contract.
 

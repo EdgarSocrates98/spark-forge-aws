@@ -20,9 +20,9 @@
 **Context Gathered:**
 - **O que ja existe:**
   - `report sign`/`report verify` (`adapters/_core.py:4748` e `:4838`, `findings/signature.py`). A assinatura e o sha256 do corpo normalizado mais `fact_ids`, `rule_ids`, `catalog_version` e `schema_version`, sem chave. O proprio verbo declara que prova "correspondencia entre este corpo, esta evidencia e este catalogo -- nunca autoria". O verify diz qual parte divergiu (`version`, `evidence`, `catalog`, `body`), em ordem fixa, e sai com codigo 1.
-  - Spans de tool em `.sparkforge/traces.db` (`observability/store.py:61-96`), com chave `run_id`. Colunas: `name`, `status`, `outcome`, `payload_bytes`, `payload_basis`, `detail_level`, `item_count`, horarios, `metadata_json`. O `telemetry export` (#52) ja le essa tabela.
+  - Spans de tool em `.sparkforge_aws/traces.db` (`observability/store.py:61-96`), com chave `run_id`. Colunas: `name`, `status`, `outcome`, `payload_bytes`, `payload_basis`, `detail_level`, `item_count`, horarios, `metadata_json`. O `telemetry export` (#52) ja le essa tabela.
   - O `telemetry export` le o transcript do host (`observability/otlp.py::_host`) e declara provider sem deduzir. Sem provider sai `gen_ai.provider.name` com `provider_nao_declarado`, e sem modelo sai `modelo_ausente` ou `modelos_multiplos`.
-  - Artefatos agenticos do case: blackboard em `.sparkforge/blackboard/*.jsonl` (`claims`, `evidence`, `contradictions`, `decisions`, `unknowns`...), ADR em `.sparkforge/adr/ADR-<id>.md` com `rollback` obrigatorio, e debate em `.sparkforge/debate/<debate_id>/`.
+  - Artefatos agenticos do case: blackboard em `.sparkforge_aws/blackboard/*.jsonl` (`claims`, `evidence`, `contradictions`, `decisions`, `unknowns`...), ADR em `.sparkforge_aws/adr/ADR-<id>.md` com `rollback` obrigatorio, e debate em `.sparkforge_aws/debate/<debate_id>/`.
   - `funcval compare` e `benchmark` ja emitem facts (`funcval.*` e os de benchmark). "Tests" e "before/after" do §14 existem como fact quando fazem parte da uniao.
   - `sf-synthesizer.md` ja fecha a sessao com `report_sign` (passo 4) e `telemetry_export`. A capacidade vizinha em `parity.yaml:679` e "prove a report corresponds to its evidence and catalog".
 - **O que nao existe:**
@@ -31,7 +31,7 @@
   - O span **nao guarda hash** de entrada nem de saida da tool (zero `sha256`/`hashlib` em `context_ledger.py`).
 - **Medido em 2026-09-12:**
   - Seis helpers de JSON canonico e digest ja duplicados: `_canonical` em `findings/models.py:21` e `agentic/models.py:77`, `_canonico` em `adapters/_core.py:235` e `agentic/executor/debate_run.py:1073`, `_digest` em `agentic/models.py:82` e `adapters/_core.py:7036`.
-  - `.gitignore:31-45`: a politica default de `.sparkforge/` e "derivado pequeno pode ser commitado". Ficam fora so `artifacts/*`, `traces.db`, `cache/` e `local/`. Um recibo em `.sparkforge/receipts/` e commitavel, e por isso nao pode carregar conteudo de caso.
+  - `.gitignore:31-45`: a politica default de `.sparkforge_aws/` e "derivado pequeno pode ser commitado". Ficam fora so `artifacts/*`, `traces.db`, `cache/` e `local/`. Um recibo em `.sparkforge_aws/receipts/` e commitavel, e por isso nao pode carregar conteudo de caso.
 
 **Technical Context Observed (for Define):**
 
@@ -150,7 +150,7 @@
 | 13 | `receipt verify` na ordem fixa `version, integrity, case, evidence, judgment, decision, proof, tools, host`; item `match`, `diverged` ou `missing`; `valid` = integrity ok e nenhuma parte `diverged` ou `missing`; codigo 1 quando invalido e 2 em erro de uso | Mesmo contrato do `report verify`; arquivo apagado e `missing`, nunca `diverged` | Veredito unico sem diagnostico |
 | 14 | Spans com run podado ou `traces.db` ausente saem `not_rechecked` com a razao, listados, sem derrubar `valid` | O `traces.db` fica fora do git e nao existe em outra maquina nem no CI (nenhum codigo o poda: corrigido no DEFINE, A-004); o modo estrito quebraria a verificacao nesses lugares | `not_rechecked` derruba `valid` |
 | 15 | `receipt_version` diferente da build: partes que dependem de normalizacao saem `not_evaluable`, fora de `diverged` | Licao do `report verify`: a versao no hash garante que as assinaturas diferem, e a versao declarada permite dizer por que | Tratar como corpo adulterado |
-| 16 | CLI `receipt emit`/`receipt verify` e tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge/receipts/`, caminhos confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) | Quem executa e o agente, e ele fecha a sessao emitindo o recibo | So CLI; so verify no MCP |
+| 16 | CLI `receipt emit`/`receipt verify` e tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge_aws/receipts/`, caminhos confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) | Quem executa e o agente, e ele fecha a sessao emitindo o recibo | So CLI; so verify no MCP |
 | 17 | `sf-synthesizer` ganha um passo depois do sign e do telemetry; `parity.yaml` ganha a capacidade "prove what an execution used and decided" | O executor que ja fecha a sessao | Coordenador novo |
 
 ---
@@ -193,7 +193,7 @@
   "receipt_version": 1,
   "receipt_id": "rcpt_<sha256 do JSON canonico sem este campo>",
   "emitted_at": "<--now>",
-  "case":      {"path": ".sparkforge/case.yaml", "sha256": "...", "case_id": "..."},
+  "case":      {"path": ".sparkforge_aws/case.yaml", "sha256": "...", "case_id": "..."},
   "evidence":  {"facts_files": [{"path": "...", "sha256": "...", "fact_count": 0}], "fact_ids_sha256": "..."},
   "judgment":  {"findings_path": "...", "sha256": "...", "rule_ids": [], "fact_ids": [],
                 "catalog_version": 0, "schema_version": 0, "report": {"path": "...", "signature": "sig_..."}},

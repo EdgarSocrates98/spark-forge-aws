@@ -165,7 +165,7 @@ repositório **já aceita** entrada declarada como fact de primeira classe. O qu
 ele nunca aceitou é entrada declarada **sem rótulo de procedência** — e é isso
 que o campo `origin` paga.
 
-**Variante considerada e rejeitada:** `.sparkforge/keys.yaml`, no molde de
+**Variante considerada e rejeitada:** `.sparkforge_aws/keys.yaml`, no molde de
 `consumers.yaml`, que daria ao declarado um artefato com `artifact_sha256`.
 Rejeitada por custo (formato, extrator, fixtures — numa fase de sete tasks) e
 por volatilidade: inventário de consumidor é estável e versionável; chave de
@@ -678,7 +678,7 @@ escreve.** Nos verbos de `analyze` o `--out` é opcional e a escrita mora na CLI
 porque lá o arquivo é conveniência. Aqui ele é a **entrada do verbo seguinte**
 (`funcval compare --plan`) e a evidência que o gate `functional_validation_defined`
 vai cobrar na Task 6 — e foi ele que permitiu à Task 1 rejeitar
-`.sparkforge/keys.yaml` dizendo que "o registro existe mesmo assim". Plano que só
+`.sparkforge_aws/keys.yaml` dizendo que "o registro existe mesmo assim". Plano que só
 passa pelo stdout não é artefato. Consequências: a escrita desce para
 `_core.funcval_plan` (senão CLI e MCP manteriam a mesma escrita em duas cópias),
 `sparkforge_funcval_plan` recebe `out_path` obrigatório e sai de `_READ_ONLY`

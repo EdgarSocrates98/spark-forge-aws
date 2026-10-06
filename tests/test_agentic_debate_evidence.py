@@ -79,10 +79,10 @@ class TestConfinamento:
 
     def test_diretorio_de_estado_do_case_e_recusado(self, tmp_path):
         raiz = _case(tmp_path)
-        estado = raiz / ".sparkforge" / "debate"
+        estado = raiz / ".sparkforge_aws" / "debate"
         estado.mkdir(parents=True)
         (estado / "forjado.tf").write_text(TF, encoding="utf-8")
-        pedido = [{"extractor": "terraform", "path": ".sparkforge/debate/forjado.tf"}]
+        pedido = [{"extractor": "terraform", "path": ".sparkforge_aws/debate/forjado.tf"}]
         assert _recusa(raiz, pedido) == de.ARTIFACT_OUTSIDE_CASE
 
     def test_a_propria_raiz_nao_e_artefato(self, tmp_path):

@@ -31,7 +31,7 @@ Seu trabalho é **coletar, rodar, e interpretar por recurso** — nunca por arqu
 ### 1. Extraia os facts
 
 ```bash
-sparkforge-aws analyze terraform --path <diretório ou arquivo.tf> --out .sparkforge/facts.json
+sparkforge-aws analyze terraform --path <diretório ou arquivo.tf> --out .sparkforge_aws/facts.json
 ```
 
 Leia `unresolved`: interpolação `${...}`, heredoc, `dynamic`, `for_each` e qualquer expressão HCL fora do que este parser de linha entende viram `tf.unresolved` com um motivo — nunca um valor adivinhado. Um `for_each` no corpo de um `resource` faz o recurso inteiro virar um único `tf.unresolved`: o parser nunca finge ler atributo "literal" de um recurso que na prática o Terraform gera N vezes, um por item, com valores que só existem em runtime.
@@ -39,7 +39,7 @@ Leia `unresolved`: interpolação `${...}`, heredoc, `dynamic`, `for_each` e qua
 ### 2. Se for avaliar SF-GLUE-004, extraia também o código
 
 ```bash
-sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
+sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts_pyspark.json
 ```
 
 `SF-GLUE-004` (retry maior que zero com escrita não idempotente) precisa de `tf.attribute` (`max_retries`) e `pyspark.write` (`mode: append`) **na mesma chamada de `judge`**. `--facts` é repetível: passe os dois arquivos na mesma chamada e `judge` une e deduplica as listas antes de julgar — não mescle JSON na mão. Julgar os dois arquivos separados nunca faz `SF-GLUE-004` disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência.
@@ -49,7 +49,7 @@ Quando a revisão é de um **PR** — e não de um estado parado —, o que mudo
 ```bash
 sparkforge-aws analyze terraform-diff \
   --before <dir-do-estado-anterior> --after <dir-do-estado-proposto> \
-  --out .sparkforge/tf_diff.json
+  --out .sparkforge_aws/tf_diff.json
 ```
 
 É o que `SF-GLUE-005` consome para acusar `worker_type` aumentado no PR. Ela precisa também de `spark.job.spill_summary` e `spark.executor.memory_usage` de um event log real do run que motivou a mudança (`sparkforge-aws analyze event-log`): sem essas duas, "sem evidência de limitação de memória" seria indistinguível de "ninguém mediu", e a regra se recusa a fazer essa confusão — sai em `skipped` com `reason: requires_facts`.
@@ -57,18 +57,18 @@ sparkforge-aws analyze terraform-diff \
 ### 3. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --show-skipped
 
 # com o código junto, para SF-GLUE-004:
 sparkforge-aws judge \
-  --facts .sparkforge/facts.json \
-  --facts .sparkforge/facts_pyspark.json \
+  --facts .sparkforge_aws/facts.json \
+  --facts .sparkforge_aws/facts_pyspark.json \
   --show-skipped
 
 # revisão de PR, para SF-GLUE-005:
 sparkforge-aws judge \
-  --facts .sparkforge/tf_diff.json \
-  --facts .sparkforge/facts_eventlog.json \
+  --facts .sparkforge_aws/tf_diff.json \
+  --facts .sparkforge_aws/facts_eventlog.json \
   --show-skipped
 ```
 

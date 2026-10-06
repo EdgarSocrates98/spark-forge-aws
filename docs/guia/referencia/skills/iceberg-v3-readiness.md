@@ -25,7 +25,7 @@ Subir o format version é **decisão de ida**. O modo de falha é perverso: o jo
 
 ### Procedimento
 
-1. Declare quem consome, em `.sparkforge/consumers.yaml`:
+1. Declare quem consome, em `.sparkforge_aws/consumers.yaml`:
 
    ```yaml
    consumers:

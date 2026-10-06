@@ -9,7 +9,7 @@ The repository gate is intentionally offline:
 ```bash
 python scripts/audit_skills.py --strict
 python scripts/check_skill_evals.py --strict
-python scripts/run_skill_evals.py --offline --out .sparkforge/skill-evals.json
+python scripts/run_skill_evals.py --offline --out .sparkforge_aws/skill-evals.json
 ```
 
 The runner checks catalog completeness and contract assertions. It does not

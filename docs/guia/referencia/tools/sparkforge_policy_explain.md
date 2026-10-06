@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Diz o que a policy de seguranca do repositorio (`.sparkforge/policy.yaml`) decide para UM comando de shell (`bash_text`, so comparado como texto, nunca executado), UM caminho de escrita (`file_path`) ou UMA tool MCP (`tool`): allow, ask ou deny, a regra que casou e a porta que impoe (hook PreToolUse para deny de shell e escrita, permissions.ask do `.claude/settings.json` para ask, servidor MCP para deny de tool). So le. Regra de shell casa o texto do comando, nao o programa: nao e fronteira de seguranca. Sem arquivo de policy, `active: false` e allow.
+Diz o que a policy de seguranca do repositorio (`.sparkforge_aws/policy.yaml`) decide para UM comando de shell (`bash_text`, so comparado como texto, nunca executado), UM caminho de escrita (`file_path`) ou UMA tool MCP (`tool`): allow, ask ou deny, a regra que casou e a porta que impoe (hook PreToolUse para deny de shell e escrita, permissions.ask do `.claude/settings.json` para ask, servidor MCP para deny de tool). So le. Regra de shell casa o texto do comando, nao o programa: nao e fronteira de seguranca. Sem arquivo de policy, `active: false` e allow.
 
 ## Parâmetros
 

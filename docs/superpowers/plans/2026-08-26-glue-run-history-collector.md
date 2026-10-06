@@ -4,7 +4,7 @@
 
 **Goal:** Dar ao SparkForge o baseline histórico que hoje não existe — um artefato por run Glue terminal, facts de distribuição por capacidade e estado, e o extrator que finalmente transforma o artefato CloudWatch já coletado em facts.
 
-**Architecture:** Três peças independentes, cada uma no molde do vizinho que já existe. O coletor `collect_glue_job_runs` grava um JSON por run terminal em `.sparkforge/artifacts/glue_job_run/` (artefato imutável, hash estável, coleta incremental via `_offline_hit`). O extrator `facts/cloudwatch.py` lê o artefato de métricas e emite `glue.metric`. O extrator `facts/glue_job_run.py` lê o diretório de runs, emite fact por run, agrega distribuições por `(glue_version, worker_type, number_of_workers, autoscaling)` × estado terminal, e correlaciona por `job_run_id` com os facts de CloudWatch presentes. Nenhuma regra nova, nenhum custo em dinheiro.
+**Architecture:** Três peças independentes, cada uma no molde do vizinho que já existe. O coletor `collect_glue_job_runs` grava um JSON por run terminal em `.sparkforge_aws/artifacts/glue_job_run/` (artefato imutável, hash estável, coleta incremental via `_offline_hit`). O extrator `facts/cloudwatch.py` lê o artefato de métricas e emite `glue.metric`. O extrator `facts/glue_job_run.py` lê o diretório de runs, emite fact por run, agrega distribuições por `(glue_version, worker_type, number_of_workers, autoscaling)` × estado terminal, e correlaciona por `job_run_id` com os facts de CloudWatch presentes. Nenhuma regra nova, nenhum custo em dinheiro.
 
 **Tech Stack:** Python 3, `pytest`, `boto3` (opcional, importado sob demanda via `require_boto3`), `PyYAML`. Spec: [`../specs/2026-08-26-glue-run-history-collector-design.md`](../specs/2026-08-26-glue-run-history-collector-design.md).
 
@@ -348,7 +348,7 @@ class TestGlueJobRunKind:
 
         entry = ArtifactEntry(
             kind="glue_job_run",
-            path=".sparkforge/artifacts/glue_job_run/job_jr_1.json",
+            path=".sparkforge_aws/artifacts/glue_job_run/job_jr_1.json",
             sha256="a" * 64,
             source="glue:get_job_runs:job",
             collect_command="sparkforge-aws collect glue-job-runs --job-name job",
@@ -361,7 +361,7 @@ class TestGlueJobRunKind:
 
         assert (
             aws.glue_job_run_path("my-job", "jr_abc")
-            == ".sparkforge/artifacts/glue_job_run/my-job_jr_abc.json"
+            == ".sparkforge_aws/artifacts/glue_job_run/my-job_jr_abc.json"
         )
 ```
 
@@ -396,7 +396,7 @@ Em `sparkforge_aws/collect/aws.py`, logo após `glue_job_path`:
 
 ```python
 def glue_job_run_path(job_name: str, job_run_id: str) -> str:
-    return f".sparkforge/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
+    return f".sparkforge_aws/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
 ```
 
 - [ ] **Step 4: Rodar e ver passar**
@@ -2223,7 +2223,7 @@ def _extract_cloudwatch_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um artefato gravado por `sparkforge-aws collect cloudwatch`:\n"
             f"    sparkforge-aws analyze cloudwatch "
-            f"--path .sparkforge/artifacts/cloudwatch/<job>_<run>.json",
+            f"--path .sparkforge_aws/artifacts/cloudwatch/<job>_<run>.json",
             exit_code=2,
         )
     return extract_cloudwatch_path(target)
@@ -2255,7 +2255,7 @@ def analyze_glue_job_runs(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o DIRETORIO de artefatos de run, nao para um arquivo:\n"
             f"    sparkforge-aws analyze glue-job-runs "
-            f"--path .sparkforge/artifacts/glue_job_run/ --job-name <job>",
+            f"--path .sparkforge_aws/artifacts/glue_job_run/ --job-name <job>",
             exit_code=2,
         )
     cw_dir = Path(cloudwatch) if cloudwatch else None

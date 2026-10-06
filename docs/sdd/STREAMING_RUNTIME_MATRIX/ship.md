@@ -20,8 +20,8 @@ permanece explícita.
 
 ## Gates rodados
 
-- `python -m pytest tests/test_streaming_runtime_matrix.py -q --basetemp .sparkforge/local/pytest-streaming-runtime-matrix` — `3 passed`, exit 0.
-- `python -m pytest tests/test_offline_expansion.py tests/test_refresh_knowledge.py -q --basetemp .sparkforge/local/pytest-streaming-runtime-knowledge` — `43 passed`, exit 0.
+- `python -m pytest tests/test_streaming_runtime_matrix.py -q --basetemp .sparkforge_aws/local/pytest-streaming-runtime-matrix` — `3 passed`, exit 0.
+- `python -m pytest tests/test_offline_expansion.py tests/test_refresh_knowledge.py -q --basetemp .sparkforge_aws/local/pytest-streaming-runtime-knowledge` — `43 passed`, exit 0.
 - `python scripts/refresh_knowledge.py --check --offline` — exit 0.
 - `python scripts/verify_offline_bundle.py --check` — `69 checked`, `failed: []`, exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.

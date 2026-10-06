@@ -35,7 +35,7 @@ conflito nao e avaliado. Com o cwd no HOME, `repo/.agents/skills` E o
 `~/.agents/skills` da propria integracao: a raiz que e o HOME, o APPDATA ou o
 CODEX_HOME, que contem algum deles, ou que mora dentro de um destino da integracao
 (`~/.agents`, `~/.claude`, `~/.codex`, `~/.copilot`, `~/.config/devin`,
-`%APPDATA%/devin`, `$CODEX_HOME`, `~/.sparkforge`) sai `repositorio_e_o_home`, e
+`%APPDATA%/devin`, `$CODEX_HOME`, `~/.sparkforge_aws`) sai `repositorio_e_o_home`, e
 `detect` e `resolve` nao tocam em nada.
 """
 from __future__ import annotations
@@ -107,7 +107,8 @@ def home_guard(
     alvo = _real(repo)
     raizes = [casa, dados, codex]
     destinos = [casa / ".agents", casa / ".claude", casa / ".codex", casa / ".copilot",
-                casa / ".config" / "devin", dados / "devin", codex, casa / ".sparkforge"]
+                casa / ".config" / "devin", dados / "devin", codex, casa / ".sparkforge_aws",
+                casa / ".sparkforge"]
     if any(_contem(alvo, _real(r)) for r in raizes) or any(
         _contem(_real(d), alvo) for d in destinos
     ):

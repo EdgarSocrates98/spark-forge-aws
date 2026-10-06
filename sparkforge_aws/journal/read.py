@@ -20,7 +20,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sparkforge_aws.case.store import CASE_DIR
 from sparkforge_aws.journal import JOURNAL_FILE, journal_path
 from sparkforge_aws.journal.record import sha256_texto
 
@@ -68,7 +67,7 @@ def verify(raiz: Path | str) -> dict[str, Any]:
     """`intact`, `broken` (com `broken_at`), `torn_tail` ou `absent`."""
     caminho = journal_path(raiz)
     base: dict[str, Any] = {
-        "path": f"{CASE_DIR}/{JOURNAL_FILE}",
+        "path": f"{caminho.parent.name}/{JOURNAL_FILE}",
         "events": 0,
         "last_seq": 0,
         "broken_at": None,

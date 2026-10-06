@@ -34,7 +34,7 @@ permanecem unresolved sem transcript do host.
 ## Gates rodados
 
 - `python scripts/check_platform_eval_contract.py --path evals/platform_intelligence/suite.yaml` — exit 0, 8/8 casos válidos.
-- `python -m pytest tests/test_platform_evals.py -q --basetemp .sparkforge/local/pytest-platform-evals` — `2 passed`, exit 0.
+- `python -m pytest tests/test_platform_evals.py -q --basetemp .sparkforge_aws/local/pytest-platform-evals` — `2 passed`, exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `sparkforge-aws sdd check --repo . --feature PLATFORM_INTELLIGENCE_EVALS` — `ok: true`.

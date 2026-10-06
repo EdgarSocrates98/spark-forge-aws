@@ -38,7 +38,7 @@ def create_run(
     environment: dict[str, Any] | None = None,
     versions: dict[str, Any] | None = None,
 ) -> Path:
-    base = Path(root).expanduser().resolve() / ".sparkforge" / "lab" / "runs"
+    base = Path(root).expanduser().resolve() / ".sparkforge_aws" / "lab" / "runs"
     run_id = f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:12]}"
     run = base / run_id
     run.mkdir(parents=True, exist_ok=False)

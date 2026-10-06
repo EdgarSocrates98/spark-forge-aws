@@ -73,8 +73,8 @@ duas vezes a resposta honesta foi **nenhum**.
 
 | Gate | Comando que produz o kind |
 |---|---|
-| `baseline_captured` | `sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json` (flags `--before/--after/--out` verificadas em `benchmark --help`) |
-| `flows_mapped` | `sparkforge-aws analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json` (flag `--facts` verificada em `analyze call-graph --help`; a entrada é o `--out` de `analyze pyspark`) |
+| `baseline_captured` | `sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge_aws/facts_bench.json` (flags `--before/--after/--out` verificadas em `benchmark --help`) |
+| `flows_mapped` | `sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json --out .sparkforge_aws/facts_callgraph.json` (flag `--facts` verificada em `analyze call-graph --help`; a entrada é o `--out` de `analyze pyspark`) |
 
 **Dois kinds foram medidos e REJEITADOS como produtor.** Registrados porque cada
 um passaria numa leitura rápida, e o gate que eles satisfariam seria um gate que
@@ -145,8 +145,8 @@ Resposta ao "se depender do gate": **depende**, e por isso o mapeamento é
 
 | Gate | Fact produtor | Comando que destrava | Fases que guarda | Regime |
 |---|---|---|---|---|
-| `baseline_captured` | `bench.run_delta` | `sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json` | `validation`, `report` | **fail-closed** |
-| `flows_mapped` | `callgraph.reachable_spark_work` | `sparkforge-aws analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json` | `hypothesis`, `experiment`, `validation`, `report` | **fail-closed** |
+| `baseline_captured` | `bench.run_delta` | `sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge_aws/facts_bench.json` | `validation`, `report` | **fail-closed** |
+| `flows_mapped` | `callgraph.reachable_spark_work` | `sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json --out .sparkforge_aws/facts_callgraph.json` | `hypothesis`, `experiment`, `validation`, `report` | **fail-closed** |
 | `dominant_bottleneck_identified` | — | — | nenhuma | **advisory**: dominância é ordenação entre candidatos, e nenhum dos 102 kinds a afirma; o que se aproxima é Finding, que não é Fact |
 | `functional_validation_defined` | — | — | nenhuma | **advisory**: sem produtor até a Fase 4c. `dq.check` foi medido e rejeitado — prova validação **no job**, não validação **da mudança** |
 
@@ -157,11 +157,11 @@ ausente do bloco é ambíguo entre "esqueceram" e "advisory de propósito".
 gates:
   baseline_captured:
     satisfied_by: bench.run_delta
-    produced_by: "sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json"
+    produced_by: "sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge_aws/facts_bench.json"
     guards_phases: [validation, report]
   flows_mapped:
     satisfied_by: callgraph.reachable_spark_work
-    produced_by: "sparkforge-aws analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json"
+    produced_by: "sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json --out .sparkforge_aws/facts_callgraph.json"
     guards_phases: [hypothesis, experiment, validation, report]
   dominant_bottleneck_identified:
     # SEM satisfied_by: dominancia e ordenacao entre candidatos, e nenhum dos
@@ -210,7 +210,7 @@ Bloco novo, no topo, ao lado das rotas — a decisão vira dado, como o roteamen
 gates:
   baseline_captured:
     satisfied_by: bench.run_delta
-    produced_by: "sparkforge-aws benchmark --before <facts_antes> --after <facts_depois> --out .sparkforge/facts_bench.json"
+    produced_by: "sparkforge-aws benchmark --before <facts_antes> --after <facts_depois> --out .sparkforge_aws/facts_bench.json"
     guards_phase: <o que a Task 1 mediu>
   functional_validation_defined:
     # SEM satisfied_by: nenhum extrator emite fact que prove isto ate a Fase 4c.
@@ -885,7 +885,7 @@ fecha; nada aqui amplia o escopo da fase.
 - [x] **Step 7: o exemplo principal do README dava rc=2**
 
 > **Desvio D-4b-27 — o D-4b-3 reencenado na documentação.** `case update --repo .
-> --phase report --facts .sparkforge/bench.json`, exatamente como o README o
+> --phase report --facts .sparkforge_aws/bench.json`, exatamente como o README o
 > escrevia, sai com **rc=2**: `report` é guardada pelos **dois** gates com
 > produtor, e o benchmark só destrava `baseline_captured`. O Step 4 da Task 6
 > executou o exemplo e leu a mensagem de bloqueio como demonstração do gate — ela

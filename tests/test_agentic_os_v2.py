@@ -82,7 +82,7 @@ def test_memory_trust_gate_and_retrieval(tmp_path: Path) -> None:
     record_decision(legacy, tmp_path, case_id="case-b")
     assert retrieve_memory("unanchored choice", tmp_path) == []
     last_record = json.loads(
-        (tmp_path / ".sparkforge" / "memory" / "decisions.jsonl").read_text().splitlines()[-1]
+        (tmp_path / ".sparkforge_aws" / "memory" / "decisions.jsonl").read_text().splitlines()[-1]
     )
     assert last_record["status"] == "quarantine"
 

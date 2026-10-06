@@ -1,6 +1,6 @@
 """Claude Code: o plugin por marketplace local (D8).
 
-Monta em `~/.sparkforge/claude/` o marketplace `sparkforge-aws-local`, com o plugin
+Monta em `~/.sparkforge_aws/claude/` o marketplace `sparkforge-aws-local`, com o plugin
 `sparkforge-aws` em `plugins/sparkforge-aws/` (skills, agents, `.mcp.json` e
 `.claude-plugin/plugin.json`), e o registra pelo proprio CLI do Claude:
 

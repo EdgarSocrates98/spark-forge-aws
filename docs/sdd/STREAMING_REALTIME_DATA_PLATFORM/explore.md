@@ -42,7 +42,7 @@ Perfil: `dev`; a mudança é no próprio SparkForge.
 
 - Branch `main`, commit inicial `a540c7805da0c79bbd71b6ed741f0ec3875e9b2f`.
 - `sparkforge-aws doctor --repo .`: pacote ok (`sparkforge-aws 0.5.0`, Python `3.14.6`), MCP montável com `115 tools`, catálogo com `177 regras`; boto3 ausente, fontes de knowledge com drift e integrações de usuário não configuradas.
-- Índice de código sincronizado em `.sparkforge/local/codeintel/graph.sqlite3`: `1.391` arquivos, `14.851` nós, `23.645` edges, `33.137` unresolved; busca por `streaming` retornou somente testes de Lake Formation e busca por `kafka` somente `tests/test_database_specialists.py`.
+- Índice de código sincronizado em `.sparkforge_aws/local/codeintel/graph.sqlite3`: `1.391` arquivos, `14.851` nós, `23.645` edges, `33.137` unresolved; busca por `streaming` retornou somente testes de Lake Formation e busca por `kafka` somente `tests/test_database_specialists.py`.
 - Fact modules: `52`; skills canônicas com `SKILL.md`: `52`; agents coordenadores: `12`; executors: `5`; knowledge packs: `18` diretórios.
 - O primeiro `python -m pytest -q` foi bloqueado antes dos testes pela permissão de `C:\Users\edgar\AppData\Local\Temp\pytest-of-edgar`. Uma segunda execução com `--basetemp=.pytest-baseline` foi iniciada para separar limitação ambiental de regressões; o diretório de baseline não pertence à feature.
 

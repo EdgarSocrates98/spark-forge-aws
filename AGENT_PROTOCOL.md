@@ -10,7 +10,7 @@ ferramenta.
 
 ## Regras
 
-1. **Abra ou carregue o case antes de qualquer análise.** Investigação sem `.sparkforge/case.yaml` não é retomável em outra ferramenta, e retomabilidade é requisito, não conveniência.
+1. **Abra ou carregue o case antes de qualquer análise.** Investigação sem `.sparkforge_aws/case.yaml` não é retomável em outra ferramenta, e retomabilidade é requisito, não conveniência.
 2. **Chame `next_step` antes de escolher skill.** A árvore de decisão vive em `rules/catalog/routing.yaml`. Não escolha a rota por julgamento próprio — é isso que divergiria entre modelos.
 3. **Nenhum número na saída sem `fact_id` que o sustente.** Toda afirmação quantitativa cita `rule_id` e o `fact_id` da evidência. Sem Fact, é hipótese, e tem que estar rotulada como hipótese.
 4. **Use `rules_lookup` em vez de memória** para limiar, guarda de versão e fonte. Você não precisa saber o conhecimento; precisa consultá-lo. A resposta traz `knowledge_refs` com o **caminho resolvido** de cada arquivo de `knowledge/` que a regra cita — abra por ali, nunca pelo caminho relativo do texto: num pacote instalado por pip o arquivo está dentro do `site-packages`. Para achar knowledge fora de uma regra, use `sparkforge_knowledge_path` (ou `sparkforge-aws knowledge path --file <rel>` na CLI). **E não abra `rules/catalog/*.yaml` com `Read`, nem varra a árvore com `find`.** Medido em 2026-09-15 sobre 78 sessões de eval: 74% dos bytes que o agente consumiu vieram de `Read` de arquivo e menos de 3% das tools do SparkForge — o arquivo mais lido foi `rules/catalog/pyspark.yaml`, 33 888 bytes, onze vezes. Procurar regra por atributo tem verbo: `rules_lookup --index` devolve id, categoria, título, severidade e escopo — a página default de 50 regras custa 9 125 bytes, e as 191 inteiras (`--limit 1000`) 33 557, contra 607 301 do catálogo completo por páginas. Com `--runtime glue` o índice cai para 4 478 bytes, e a regra inteira por `--id` custa 2 602. Ler o YAML é a mesma resposta pelo caminho caro, e ele não carrega `knowledge_refs` resolvido.
@@ -67,7 +67,7 @@ abriu. Sob ele, quatro coisas mudam para você:
    total, e declarar esse recorte no relatório é a mesma obrigação da regra 7 — é o que
    este projeto faz com `dq.unresolved`.
 5. **Abrir um case por cima de outro é recusado.** `sparkforge-aws case open` sobre um
-   `.sparkforge/case.yaml` que já existe sai com código 2 e nomeia o que apagaria: fase,
+   `.sparkforge_aws/case.yaml` que já existe sai com código 2 e nomeia o que apagaria: fase,
    rigor e overrides. Recomeçar do zero continua possível, com nome — `--reopen` na CLI,
    `reopen: true` na tool —, e ele **herda** o `strict_gates` do case atual: o rigor sobe
    com `--strict-gates` e nunca desce por omissão de flag. Se você queria continuar a

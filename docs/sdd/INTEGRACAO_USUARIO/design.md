@@ -58,9 +58,9 @@ decisions:
     rejected: ["ler variaveis de ambiente espalhadas pelo codigo, que nao se testa sem tocar o HOME real"]
     rollback: "sparkforge-aws detach all remove o que foi gravado; git revert do codigo."
   - id: D5
-    choice: "Manifesto em ~/.sparkforge/integrations.json com, por host, cada arquivo gravado (caminho, sha256), a versao do pacote e as entradas de config inseridas; dry-run calcula o plano e so imprime; a segunda execucao compara pelo sha256 e nao regrava. Arquivo de ~/.agents/skills, compartilhado por Devin, Codex e Copilot, registra quais hosts o usam."
+    choice: "Manifesto em ~/.sparkforge_aws/integrations.json com, por host, cada arquivo gravado (caminho, sha256), a versao do pacote e as entradas de config inseridas; dry-run calcula o plano e so imprime; a segunda execucao compara pelo sha256 e nao regrava. Arquivo de ~/.agents/skills, compartilhado por Devin, Codex e Copilot, registra quais hosts o usam."
     rejected: ["sem manifesto, adivinhar o que apagar pelo nome, que apagaria arquivo do usuario com o mesmo nome"]
-    rollback: "sparkforge-aws detach all, que le o proprio manifesto; apagar ~/.sparkforge/integrations.json depois."
+    rollback: "sparkforge-aws detach all, que le o proprio manifesto; apagar ~/.sparkforge_aws/integrations.json depois."
   - id: D6
     choice: "Config de usuario e mesclada, nunca sobrescrita: no JSON (Devin, Copilot) so a chave mcpServers.sparkforge-aws; no TOML do Codex um bloco entre `# >>> sparkforge (gerenciado)` e `# <<< sparkforge`, porque o Python 3.10 que o projeto suporta nao tem leitor de TOML e o projeto nao tem essa dependencia. Um `sparkforge-aws` ja presente que o SparkForge nao escreveu, ou arquivo que nao e JSON/TOML valido, sai recusa nomeada sem tocar o arquivo."
     rejected: ["acrescentar a dependencia tomli-w so para gravar um bloco", "sobrescrever o arquivo de config inteiro"]
@@ -70,7 +70,7 @@ decisions:
     rejected: ["apagar os diretorios inteiros do host, que levaria arquivo do usuario junto"]
     rollback: "sparkforge-aws integrate <host> grava de novo o mesmo conteudo."
   - id: D8
-    choice: "Claude: marketplace local sparkforge-aws-local em ~/.sparkforge/claude/ com o plugin sparkforge-aws (skills, agents, plugin.json e .mcp.json chamando o Python do pacote com -m sparkforge_aws.adapters.mcp); registro por `claude plugin marketplace add <dir> --scope user` e `claude plugin install sparkforge-aws@sparkforge-aws-local --json` (sem prompt para marketplace local, medido no Claude Code 2.1.283 pelo --help); sem `claude` no PATH o diretorio fica montado e sai recusa claude_cli_ausente com os dois comandos."
+    choice: "Claude: marketplace local sparkforge-aws-local em ~/.sparkforge_aws/claude/ com o plugin sparkforge-aws (skills, agents, plugin.json e .mcp.json chamando o Python do pacote com -m sparkforge_aws.adapters.mcp); registro por `claude plugin marketplace add <dir> --scope user` e `claude plugin install sparkforge-aws@sparkforge-aws-local --json` (sem prompt para marketplace local, medido no Claude Code 2.1.283 pelo --help); sem `claude` no PATH o diretorio fica montado e sai recusa claude_cli_ausente com os dois comandos."
     rejected: ["editar ~/.claude/settings.json a mao, formato interno do Claude que muda sem aviso", "usar o proprio repositorio como plugin, que exige o clone"]
     rollback: "claude plugin uninstall sparkforge-aws, ou sparkforge-aws detach claude."
   - id: D9

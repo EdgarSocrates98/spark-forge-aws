@@ -88,7 +88,7 @@ todo o lado EKS.
 
 ```bash
 sparkforge-aws analyze emr-eks --path <arquivo ou diretório com os dumps> \
-  --out .sparkforge/facts_emr_eks.json
+  --out .sparkforge_aws/facts_emr_eks.json
 ```
 
 Tool MCP equivalente: `sparkforge_analyze_emr_eks`. Ela **não** chama a API do `emr-containers` — só lê o JSON já salvo em disco.
@@ -115,7 +115,7 @@ afirma sobre uma linha que ninguém leu inteira.
 #### 3. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts_emr_eks.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_emr_eks.json --show-skipped
 ```
 
 **Sem flag de versão, e aqui isso é uma decisão medida, não conveniência.** As quatro regras

@@ -88,14 +88,44 @@ def test_policy_do_repositorio_e_valida_e_pede_ask_nos_destrutivos():
 
 
 def test_policy_invalida_levanta(tmp_path):
-    (tmp_path / ".sparkforge").mkdir()
-    (tmp_path / ".sparkforge" / "policy.yaml").write_text("version: 1\nbash: 3\n", encoding="utf-8")
+    (tmp_path / ".sparkforge_aws").mkdir()
+    (tmp_path / ".sparkforge_aws" / "policy.yaml").write_text(
+        "version: 1\nbash: 3\n", encoding="utf-8"
+    )
     with pytest.raises(PolicyError, match="bash"):
         carregar(tmp_path)
 
 
 def test_sem_arquivo_e_none(tmp_path):
     assert carregar(tmp_path) is None
+
+
+def test_policy_legada_em_sparkforge_sem_aws_continua_valendo(tmp_path):
+    """Um repo com `.sparkforge/policy.yaml` pre-rename nao fica sem a policy
+    que escolheu so porque o diretorio mudou de nome."""
+    (tmp_path / ".sparkforge").mkdir()
+    (tmp_path / ".sparkforge" / "policy.yaml").write_text(
+        "version: 1\nbash:\n  - {rule: 'aws s3 rm *', decision: deny, reason: x}\n",
+        encoding="utf-8",
+    )
+    politica = carregar(tmp_path)
+    assert politica is not None
+    assert decidir_bash("aws s3 rm s3://b/k", politica.bash).decision == DENY
+
+
+def test_policy_nova_ganha_da_legada_quando_ambas_existem(tmp_path):
+    """Dois policy.yaml nunca sao mesclados: `.sparkforge_aws` e a verdade."""
+    for pasta, motivo in ((".sparkforge", "legada"), (".sparkforge_aws", "nova")):
+        alvo = tmp_path / pasta
+        alvo.mkdir()
+        (alvo / "policy.yaml").write_text(
+            "version: 1\nbash:\n"
+            f"  - {{rule: 'aws s3 rm *', decision: deny, reason: {motivo}}}\n",
+            encoding="utf-8",
+        )
+    politica = carregar(tmp_path)
+    decisao = decidir_bash("aws s3 rm s3://b/k", politica.bash)
+    assert (decisao.decision, decisao.reason) == (DENY, "nova")
 
 
 def test_raiz_que_nao_e_diretorio_e_recusada(tmp_path):

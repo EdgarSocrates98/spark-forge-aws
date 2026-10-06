@@ -4,7 +4,7 @@
 
 Este guia descreve como instalar, configurar, executar, validar e manter a plataforma agêntica do SparkForge AWS em Linux, macOS e Windows PowerShell. O projeto combina análise determinística de workloads AWS Glue, EMR, PySpark, Parquet, Iceberg e Athena com um runtime cooperativo de agents especializados. A metáfora de sala de conversa representa um protocolo: mensagens tipadas, contexto selecionado, handoffs verificáveis, revisão cruzada e critérios de parada. Não é uma interface de chat e não autoriza retransmitir o histórico inteiro.
 
-A fonte declarativa de agents é `config/agents.yaml`; o runtime fica em `sparkforge_aws/agents/`; a fonte de skills e agents está em `skills/` e `agents/`; os espelhos `.claude/`, `.agents/` e `.github/` são gerados por `scripts/sync_skills.py`. O protocolo compartilhado está em `AGENT_PROTOCOL.md`. O estado durável de um caso vive em `.sparkforge/case.yaml`, com findings, handoff e manifestos derivados em `.sparkforge/`.
+A fonte declarativa de agents é `config/agents.yaml`; o runtime fica em `sparkforge_aws/agents/`; a fonte de skills e agents está em `skills/` e `agents/`; os espelhos `.claude/`, `.agents/` e `.github/` são gerados por `scripts/sync_skills.py`. O protocolo compartilhado está em `AGENT_PROTOCOL.md`. O estado durável de um caso vive em `.sparkforge_aws/case.yaml`, com findings, handoff e manifestos derivados em `.sparkforge_aws/`.
 
 > **Regra operacional:** fatos, evidências, hipóteses, decisões e recomendações permanecem separados. Um finding só é conclusivo quando tem evidência suficiente, escopo de runtime e validação proporcional ao risco.
 
@@ -124,16 +124,16 @@ Windows — PowerShell:
 
 ### Handoff e retomada
 
-Use `.sparkforge/handoff.md`, `.sparkforge/findings.json` e `.sparkforge/artifacts/manifest.json` como barramento pequeno e verificável entre sessões. Não apague findings anteriores para esconder falhas.
+Use `.sparkforge_aws/handoff.md`, `.sparkforge_aws/findings.json` e `.sparkforge_aws/artifacts/manifest.json` como barramento pequeno e verificável entre sessões. Não apague findings anteriores para esconder falhas.
 
 Linux — Bash:
-```bashpython -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
+```bashpython -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge_aws/findings.jsonpython -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge_aws/findings.jsonpython -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge_aws/findings.json --in-flight "validar benchmark" --unresolved 0```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython3 -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython3 -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
+```bashpython3 -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge_aws/findings.jsonpython3 -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge_aws/findings.jsonpython3 -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge_aws/findings.json --in-flight "validar benchmark" --unresolved 0```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
+```powershellpython -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge_aws/findings.jsonpython -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge_aws/findings.jsonpython -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge_aws/findings.json --in-flight "validar benchmark" --unresolved 0```
 
 ### Validação e relatório
 

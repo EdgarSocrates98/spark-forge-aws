@@ -1,6 +1,6 @@
 # Base de conhecimento — SparkForge AWS
 
-Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam**. Ela não contém procedimento de investigação — isso vive em `skills/`. Não contém estado de investigação — isso vive em `.sparkforge/case.yaml`.
+Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam**. Ela não contém procedimento de investigação — isso vive em `skills/`. Não contém estado de investigação — isso vive em `.sparkforge_aws/case.yaml`.
 
 O estado das waves que consomem esta base está em
 [`docs/EVOLUTION-CURRENT.md`](../docs/EVOLUTION-CURRENT.md). A matriz de

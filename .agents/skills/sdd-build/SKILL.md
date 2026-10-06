@@ -178,12 +178,12 @@ O resto: `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 ## Perfil operator
 
 A sessão **nunca** escreve na árvore do operador. Spec e evidências moram em
-`.sparkforge/sdd/<F>/` (a cópia do sandbox poda `.sparkforge`). Siga
+`.sparkforge_aws/sdd/<F>/` (a cópia do sandbox poda `.sparkforge_aws`). Siga
 `docs/sdd/README.md#caminho-da-mudança-do-operador`; os três passos que mais
 erram:
 
 - `sparkforge-aws change sandbox --repo . --diff d.patch`: o `id` vai para
-  `change_id`. Id fora de `.sparkforge/sandbox/` e de `.sparkforge/proposal/`
+  `change_id`. Id fora de `.sparkforge_aws/sandbox/` e de `.sparkforge_aws/proposal/`
   sai `change_missing`. Achado novo P0 ou P1: pare e volte ao design.
 - `funcval compare ... --out <ref do AC>` e `benchmark ... --out bench.json`:
   sem o `--out`, a evidência não existe para o gate.
@@ -197,13 +197,13 @@ Registro por tarefa:
 - Tarefa com `proof`, sem pytest: `moved: {change_id: <id>, resolved: [<rule_id>...]}`
   no lugar de `red` e `green`, com o **mesmo** `change_id` do relatório
   (outro sai `moved_change_mismatch`). O gate lê
-  `.sparkforge/sandbox/<id>/report.json` (ou
-  `.sparkforge/proposal/<id>/evidence/sandbox_report.json`) e exige cada
+  `.sparkforge_aws/sandbox/<id>/report.json` (ou
+  `.sparkforge_aws/proposal/<id>/evidence/sandbox_report.json`) e exige cada
   regra em `resolved` e fora de `new`; senão, `moved_not_observed`. No dev,
   `moved` é `schema_invalid`.
 
-Feche com `sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>`.
-O `case_id` é o de `sparkforge-aws case open` (`.sparkforge/case.yaml`).
+Feche com `sparkforge-aws sdd check --repo . --root .sparkforge_aws/sdd --feature <F>`.
+O `case_id` é o de `sparkforge-aws case open` (`.sparkforge_aws/case.yaml`).
 
 ## Verificação antes de fechar
 

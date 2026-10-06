@@ -1,8 +1,8 @@
 """Golden do `sparkforge-aws scan` (§22), de ponta a ponta pela CLI.
 
 Cada caso de `fixtures/scan/` tem um `repo/` sintetico (codigo e, quando cabe,
-`.sparkforge/artifacts/` com manifesto e sha256 reais). O scan roda sobre uma
-COPIA em `tmp_path`, porque ele grava em `<repo>/.sparkforge/scan/`.
+`.sparkforge_aws/artifacts/` com manifesto e sha256 reais). O scan roda sobre uma
+COPIA em `tmp_path`, porque ele grava em `<repo>/.sparkforge_aws/scan/`.
 
 Regenerar depois de mudanca DELIBERADA:
 `SPARKFORGE_REGEN_SCAN=1 pytest tests/test_fixtures_golden_scan.py`.
@@ -61,7 +61,7 @@ def test_scan_igual_ao_fluxo_a_mao(tmp_path, capsys):
     """SC1: analyze por arquivo -> fuse -> judge, feito a mao, da o mesmo."""
     repo = _copia("misto", tmp_path)
     _rodar(repo, capsys)
-    saida = repo / ".sparkforge" / "scan"
+    saida = repo / ".sparkforge_aws" / "scan"
     plano = _core.scan(str(repo), dry_run=True)["plan"]
     uniao = []
     for entrada in sorted(plano["entries"], key=lambda e: (e["analyze"], e["path"])):
@@ -89,7 +89,7 @@ def test_dry_run_nao_grava(tmp_path, capsys):
     repo = _copia("misto", tmp_path)
     saida = _rodar(repo, capsys, "--dry-run")
     assert saida["dry_run"] is True and saida["plan"]["entries"]
-    assert not (repo / ".sparkforge" / "scan").exists()
+    assert not (repo / ".sparkforge_aws" / "scan").exists()
 
 
 def test_sarif_igual_ao_report_github(tmp_path, capsys):
@@ -97,7 +97,7 @@ def test_sarif_igual_ao_report_github(tmp_path, capsys):
     repo = _copia("misto", tmp_path)
     resumo = _rodar(repo, capsys, "--format", "sarif", "--fail-on", "P0", esperado=1)
     assert resumo["gate"]["tripped"] is True
-    scan_dir = repo / ".sparkforge" / "scan"
+    scan_dir = repo / ".sparkforge_aws" / "scan"
     payload = _core.report_github(
         str(scan_dir / "findings.json"), str(scan_dir / "facts.json"), repo=str(repo),
         fail_on="P0",

@@ -354,7 +354,7 @@ handler **não rodou**. Recusa que devolve erro depois de executar não é recus
 
 O hook `PreToolUse` do §41 **passou a existir em 2026-09-13** (§16), com uma
 fonte declarada em vez de uma lista de comandos no script:
-`.sparkforge/policy.yaml`. Três portas leem a mesma decisão
+`.sparkforge_aws/policy.yaml`. Três portas leem a mesma decisão
 (`sparkforge_aws/policy/decide.py`): o hook (`python -m sparkforge_aws.policy.hook`,
 matcher `Bash|Edit|Write|MultiEdit|NotebookEdit`) bloqueia as regras `deny` pelo
 código de saída que o Claude Code trata como bloqueio; as regras `ask` viram `permissions.ask` do `.claude/settings.json`,

@@ -30,7 +30,7 @@
                                   judge ──> SF-WASTE-001 / SF-WASTE-002
 
  collect parquet-footer (CLI + tool open-world) ──> collect/parquet_footer.collect_parquet_footer
-      └─> .sparkforge/artifacts/<footer>.json + manifesto (kind parquet_footer, sha256)
+      └─> .sparkforge_aws/artifacts/<footer>.json + manifesto (kind parquet_footer, sha256)
             └─> scan: KIND_PARA_ANALYZE["parquet_footer"] ──> analyze parquet-footer
 ```
 

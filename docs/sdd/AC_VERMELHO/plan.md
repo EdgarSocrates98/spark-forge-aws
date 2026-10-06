@@ -50,7 +50,7 @@ plano não prevê quais ids caem; se cair, ele entra no commit e no *Desvios* do
 ## Antes de começar
 
 1. Branch `sdd/ac-vermelho`. `git status --short` limpo, fora `docs/sdd/AC_VERMELHO/`.
-2. `ls .sparkforge/traces.db` — o operador o apagou em 2026-09-21. Se reaparecer, algo
+2. `ls .sparkforge_aws/traces.db` — o operador o apagou em 2026-09-21. Se reaparecer, algo
    construiu `ContextLedger()` fora do lugar e o `tests/conftest.py:85` acusa; pare e
    relate, não apague.
 3. `ls .claude/agents/README.md` — hoje **ausente**. Se aparecer, copie-o para o

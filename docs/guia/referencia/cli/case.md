@@ -2,7 +2,7 @@
 
 # `sparkforge-aws case`
 
-Gerencia o estado do case em .sparkforge/case.yaml.
+Gerencia o estado do case em .sparkforge_aws/case.yaml.
 
 ## Subcomandos
 

@@ -176,7 +176,7 @@ _EVIDENCIA_DOS_EIXOS: dict[str, str] = {
     "consumidor": (
         "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no "
         "codigo do job, no plano fisico nem no metadata Iceberg; declare o "
-        "inventario em `.sparkforge/consumers.yaml` (ver "
+        "inventario em `.sparkforge_aws/consumers.yaml` (ver "
         "`sparkforge_aws/facts/consumers.py`)"
     ),
     "iam_kms": (

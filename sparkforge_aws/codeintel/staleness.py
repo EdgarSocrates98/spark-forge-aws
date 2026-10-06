@@ -156,6 +156,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.codeintel.db import BANCO_PADRAO, abrir, criar_schema, impressao_da_raiz
 from sparkforge_aws.codeintel.extract import extrair_nos_ou_none
 from sparkforge_aws.codeintel.index import (
@@ -547,7 +548,7 @@ def banco_da_arvore(raiz: str | os.PathLike[str]) -> Path:
     material = f"{estado.identidade}\n{estado.impressao}"
     sufixo = hashlib.blake2b(material.encode("utf-8"), digest_size=_TAMANHO_DIGEST)
     nome = f"{_slug_do_ref(estado.ref)}-{sufixo.hexdigest()[:_SUFIXO_DE_WORKTREE]}"
-    return base / DIRETORIO_DE_WORKTREES / f"{nome}.sqlite3"
+    return state_path(base, DIRETORIO_DE_WORKTREES / f"{nome}.sqlite3")
 
 
 def _slug_do_ref(ref: str) -> str:

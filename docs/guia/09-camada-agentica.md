@@ -45,7 +45,7 @@ sparkforge-aws decision validate --repo .
 sparkforge-aws decision benchmark --repo .
 sparkforge-aws decision shadow --input decision.json --repo . --out shadow.json
 sparkforge-aws decision compare --shadow shadow.json --current-route tier_3_cheap_local
-sparkforge-aws decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
+sparkforge-aws decision receipt --path .sparkforge_aws/decision-receipts/<receipt>.json --repo .
 ```
 
 A seed offline tem 23 casos e passou 23/23 na validação atual. Isso prova o contrato

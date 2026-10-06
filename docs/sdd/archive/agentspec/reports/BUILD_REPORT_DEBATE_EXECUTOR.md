@@ -55,7 +55,7 @@ Branch `feat/debate-executor`, empilhado sobre `feat/eval-harness-agentico` (`37
 | File | Verified | Notes |
 | ---- | -------- | ----- |
 | `sparkforge_aws/agentic/executor/debate_run.py` | ✅ | `start`/`next_step`/`submit`; fechamento pelo `referee_over_blackboard` numa cópia temporária, gravando só a decisão final (blackboard append-only) |
-| `sparkforge_aws/agentic/executor/debate_evidence.py` | ✅ | Allowlist de 22 extratores, caminho confinado ao case, `.sparkforge/` fora do alcance, sha1 do artefato gravado |
+| `sparkforge_aws/agentic/executor/debate_evidence.py` | ✅ | Allowlist de 22 extratores, caminho confinado ao case, `.sparkforge_aws/` fora do alcance, sha1 do artefato gravado |
 | `sparkforge_aws/evals/debate_grade.py` + subcomando `debate` | ✅ | `correct_winner`, `wrong_winner`, `correct_unresolved`, `false_resolution`, `missed_resolution` + `decisive_fact` |
 | `scripts/run_debate.py` | ✅ | Workspace de prova, nomes neutros de caso, `stdin=DEVNULL`, `no_json_block` |
 | `skills/run-debate/SKILL.md` | ✅ | Não despachável; espelhos via `sync_skills.py` |

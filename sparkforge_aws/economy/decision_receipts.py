@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.economy.decision_models import (
     DecisionComparison,
     DecisionInput,
@@ -37,7 +38,7 @@ class DecisionReceiptStore:
 
     def __init__(self, repo: Path | str = ".") -> None:
         self.repo = Path(repo).expanduser().resolve()
-        self.root = self.repo / ".sparkforge" / "decision-receipts"
+        self.root = state_path(self.repo, "decision-receipts")
 
     def emit(
         self,

@@ -19,13 +19,13 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
 
 ### Procedimento
 
-1. **Antes da mudança:** `sparkforge-aws collect event-log --repo . --job-run <id_antes> --bucket <bucket> --prefix <prefix> --now <ISO8601>`, depois `sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id_antes>.jsonl --out .sparkforge/baseline_facts.json`.
+1. **Antes da mudança:** `sparkforge-aws collect event-log --repo . --job-run <id_antes> --bucket <bucket> --prefix <prefix> --now <ISO8601>`, depois `sparkforge-aws analyze event-log --path .sparkforge_aws/artifacts/eventlog/<id_antes>.jsonl --out .sparkforge_aws/baseline_facts.json`.
 2. Aplique a mudança — uma variável principal por comparação. Duas mudanças juntas tornam a causa indistinguível.
-3. **Depois da mudança:** repita coleta e extração para o novo run, gerando `.sparkforge/after_facts.json`.
+3. **Depois da mudança:** repita coleta e extração para o novo run, gerando `.sparkforge_aws/after_facts.json`.
 4. **Confirme runtime idêntico entre os dois runs** antes de comparar — Glue/Spark/Python/Iceberg diferentes invalidam a comparação. Isto deixou de ser conferência no olho: `runtime detect` aceita `--facts` (repetível) e cada event log declara a própria versão do Spark na primeira linha, extraída como `spark.runtime_version`.
 
    ```bash
-   sparkforge-aws runtime detect --facts .sparkforge/baseline_facts.json --facts .sparkforge/after_facts.json
+   sparkforge-aws runtime detect --facts .sparkforge_aws/baseline_facts.json --facts .sparkforge_aws/after_facts.json
    ```
 
    Leia `divergences`: **vazio é a condição de aceite** desta etapa. Se os dois runs rodaram em versões diferentes, aparece uma linha nomeando o componente e o valor de cada artefato (`spark: valores divergentes entre fontes (event_log:<a>=..., event_log:<b>=...)`), e a comparação está invalidada na origem — nenhum percentual medido depois disso vale como `benchmark_ref`. `detected_from` diz de quais fontes a detecção saiu; passe `--glue 5.1` apenas se souber a versão de fonte confiável e quiser preencher o eixo que o event log não preenche — o log declara `spark`, não `glue`, porque a matriz de compatibilidade deriva do Glue para o Spark e não o inverso.
@@ -33,9 +33,9 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
 
    ```bash
    sparkforge-aws benchmark \
-     --before .sparkforge/baseline_facts.json \
-     --after .sparkforge/after_facts.json \
-     --out .sparkforge/bench_facts.json
+     --before .sparkforge_aws/baseline_facts.json \
+     --after .sparkforge_aws/after_facts.json \
+     --out .sparkforge_aws/bench_facts.json
    ```
 
    Ele **não executa nada** — não roda Spark, não chama AWS, não mede. Compara dois conjuntos que alguém já coletou. O que sai:
@@ -54,9 +54,9 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
 
    ```bash
    sparkforge-aws judge \
-     --facts .sparkforge/bench_facts.json \
-     --facts .sparkforge/baseline_facts.json \
-     --facts .sparkforge/after_facts.json \
+     --facts .sparkforge_aws/bench_facts.json \
+     --facts .sparkforge_aws/baseline_facts.json \
+     --facts .sparkforge_aws/after_facts.json \
      --show-skipped
    ```
 
@@ -64,7 +64,7 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
 
 7. Se houver variabilidade relevante entre execuções, repita a coleta (n ≥ 3) e reporte mediana e dispersão — uma única execução vira "ganho" por ruído.
 8. Registre o achado com `expected_effect` (ex.: "38% menos tempo de task somado") e `benchmark_ref` **citando o `fact_id` do `bench.run_delta`** — a forma é `f_` seguido de 6 dígitos hexadecimais, o `id` do fato que saiu do passo 5.
-9. `sparkforge-aws validate --findings .sparkforge/findings.json --facts .sparkforge/bench_facts.json` — sem `--facts`, o `benchmark_ref` é cobrado só na **forma**; com ele, o `fact_id` citado precisa **existir** naquele conjunto, e achado que cita medição ausente da evidência é rejeitado. Não contorne; é o gate do item 5 do `AGENT_PROTOCOL.md`.
+9. `sparkforge-aws validate --findings .sparkforge_aws/findings.json --facts .sparkforge_aws/bench_facts.json` — sem `--facts`, o `benchmark_ref` é cobrado só na **forma**; com ele, o `fact_id` citado precisa **existir** naquele conjunto, e achado que cita medição ausente da evidência é rejeitado. Não contorne; é o gate do item 5 do `AGENT_PROTOCOL.md`.
 
 ### Referência rápida
 
@@ -101,10 +101,10 @@ O par antes/depois é o **mesmo** dos passos 1 a 3: uma execução de cada lado 
 
 ```bash
 sparkforge-aws funcval plan \
-  --facts .sparkforge/facts.json \
-  --facts .sparkforge/facts_catalog.json \
+  --facts .sparkforge_aws/facts.json \
+  --facts .sparkforge_aws/facts_catalog.json \
   --key pedido_id,dt \
-  --out .sparkforge/facts_funcval_plan.json
+  --out .sparkforge_aws/facts_funcval_plan.json
 ```
 
 Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` (`analyze pyspark`) e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório**, ao contrário do `--out` dos verbos de `analyze`: o plano é a entrada do `compare` e a evidência do gate, não uma conveniência. Sai um `funcval.plan` por alvo distinto, mais `funcval.unresolved` para o que ele não conseguiu resolver — nunca alvo adivinhado por sufixo.
@@ -137,10 +137,10 @@ O lado `before` só existe se você o mediu **antes** de a mudança tocar o alvo
 
 ```bash
 sparkforge-aws funcval compare \
-  --plan .sparkforge/facts_funcval_plan.json \
-  --before .sparkforge/funcval_before.json \
-  --after .sparkforge/funcval_after.json \
-  --out .sparkforge/facts_funcval.json
+  --plan .sparkforge_aws/facts_funcval_plan.json \
+  --before .sparkforge_aws/funcval_before.json \
+  --after .sparkforge_aws/funcval_after.json \
+  --out .sparkforge_aws/facts_funcval.json
 ```
 
 Tool MCP: `sparkforge_funcval_compare`, com `out_path`. Antes contra depois, **nunca** observado contra catálogo.
@@ -154,7 +154,7 @@ Emite `funcval.check_delta` (um por check, com `attrs.axis` em `count`/`schema`/
 #### 4. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts_funcval.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_funcval.json --show-skipped
 ```
 
 | Regra | Severidade | O que acusa |
@@ -177,9 +177,9 @@ Fora do alcance dos quatro proxies, e portanto seu: hashes lógicos por partiç�
 
 ```bash
 sparkforge-aws case update --repo . --phase report \
-  --facts .sparkforge/bench_facts.json \
-  --facts .sparkforge/facts_callgraph.json \
-  --facts .sparkforge/facts_funcval_plan.json
+  --facts .sparkforge_aws/bench_facts.json \
+  --facts .sparkforge_aws/facts_callgraph.json \
+  --facts .sparkforge_aws/facts_funcval_plan.json
 ```
 
 ### Quando NÃO usar

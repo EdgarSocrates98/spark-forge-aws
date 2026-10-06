@@ -1,7 +1,7 @@
 """Golden do §15: `change plan` e `change sandbox` sobre repos sinteticos.
 
 Cada caso de `fixtures/change/` traz `input/repo/` (copiado para `tmp_path`
-antes de rodar: o sandbox grava `.sparkforge/sandbox/` na raiz), `input/request.json`
+antes de rodar: o sandbox grava `.sparkforge_aws/sandbox/` na raiz), `input/request.json`
 (o que pedir), `input/facts.json` (para o plano, extraido do repo pelo extrator
 real) e, para o sandbox, o `host.patch` escrito como um host o escreveria.
 
@@ -36,7 +36,7 @@ def _pedido(caso: str) -> dict[str, Any]:
     return json.loads((FIXTURES / caso / "input" / "request.json").read_text(encoding="utf-8"))
 
 
-_ESTADO_DO_CHANGE = (".sparkforge/sandbox/", ".sparkforge/proposal/")
+_ESTADO_DO_CHANGE = (".sparkforge_aws/sandbox/", ".sparkforge_aws/proposal/")
 # O que o pacote do L3 grava e o golden compara pelo conteudo.
 ARQUIVOS_DA_PROPOSTA = (
     "pr_body.md", "commands.md", "change.patch", "rollback.patch", "commit_message.txt",
@@ -118,7 +118,7 @@ def test_golden(caso, tmp_path):
         pytest.skip("expected.json regravado")
     esperado = json.loads(esperado_path.read_text(encoding="utf-8"))
     assert saida == esperado
-    assert _hashes(repo) == antes, "a arvore principal mudou fora de .sparkforge/sandbox/"
+    assert _hashes(repo) == antes, "a arvore principal mudou fora de .sparkforge_aws/sandbox/"
 
 
 @pytest.mark.parametrize("caso", [c for c in CASOS if _pedido(c)["kind"] == "plan"])

@@ -3,10 +3,10 @@
 O fluxo ponta a ponta usa as tools reais: `sparkforge_case_open` grava o case,
 `sparkforge_change_sandbox` cria o sandbox cujo id vira `change_id`,
 `sparkforge_change_propose` monta o pacote e `sparkforge_analyze_pyspark` da os
-facts. Nada de `.sparkforge/` fabricado a mao -- isso o teste do nucleo ja faz.
+facts. Nada de `.sparkforge_aws/` fabricado a mao -- isso o teste do nucleo ja faz.
 
-A spec do operador mora em `.sparkforge/sdd` (`--root`), porque a varredura do
-sandbox poda `.sparkforge` e a copia validada continua valendo.
+A spec do operador mora em `.sparkforge_aws/sdd` (`--root`), porque a varredura do
+sandbox poda `.sparkforge_aws` e a copia validada continua valendo.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from sparkforge_aws.sdd.stamp import stamp
 
 ROOT = Path(__file__).resolve().parents[1]
 FEATURE = "JOB_SHUFFLE"
-RAIZ = ".sparkforge/sdd"
+RAIZ = ".sparkforge_aws/sdd"
 REGRA = "SF-PY-012"
 _NOW = "2026-09-16T00:00:00Z"
 
@@ -90,7 +90,7 @@ def _evidencias(repo: Path, raiz: str) -> Path:
 
 def _sha_do_relatorio(repo: Path, change_id: str) -> str:
     """O que o ship grava em evidence: o text_sha256 do relatorio que ele leu."""
-    return text_sha256(repo / ".sparkforge" / "sandbox" / change_id / "report.json")
+    return text_sha256(repo / ".sparkforge_aws" / "sandbox" / change_id / "report.json")
 
 
 def _feature_operator(repo: Path, case_id: str, change_id: str, raiz: str = RAIZ) -> None:
@@ -213,7 +213,7 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert caso.get("case_id") == "C-42", caso
     sandbox = call_tool("sparkforge_change_sandbox", {"repo": str(repo), "diff_path": str(diff)})
     change_id = sandbox.get("id")
-    assert change_id and (repo / ".sparkforge" / "sandbox" / change_id).is_dir(), sandbox
+    assert change_id and (repo / ".sparkforge_aws" / "sandbox" / change_id).is_dir(), sandbox
     assert REGRA in {r["rule_id"] for r in sandbox["resolved"]}, sandbox
     # o sandbox nunca escreve na arvore do operador
     assert (repo / "lib" / "job.py").read_bytes() == _JOB
@@ -224,11 +224,11 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert _codigos(relatorio) == ([], []), relatorio
     assert relatorio["ok"] is True
 
-    # a spec em .sparkforge/sdd nao desatualiza a copia validada
+    # a spec em .sparkforge_aws/sdd nao desatualiza a copia validada
     proposta = call_tool("sparkforge_change_propose",
                          {"repo": str(repo), "sandbox_id": change_id, "now": _NOW})
     assert proposta["refused"] == [], proposta
-    assert (repo / ".sparkforge" / "proposal" / change_id).is_dir()
+    assert (repo / ".sparkforge_aws" / "proposal" / change_id).is_dir()
     # com o ship done e os dois relatorios presentes, os dois casam com o hash
     # gravado: a proposal guarda a mesma serializacao do sandbox
     assert _check(repo) == ([], [])
@@ -241,12 +241,12 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
 
     # sandbox limpo: o pacote de proposal guarda o id e o relatorio
     call_tool("sparkforge_change_sandbox", {"repo": str(repo), "clean": True})
-    assert not (repo / ".sparkforge" / "sandbox" / change_id).exists()
+    assert not (repo / ".sparkforge_aws" / "sandbox" / change_id).exists()
     assert _check(repo) == ([], [])
 
     # sem nenhum dos dois e com outro case: o ship done deixa as referencias
     # historicas, sustentadas pelo hash que ele gravou
-    shutil.rmtree(repo / ".sparkforge" / "proposal" / change_id)
+    shutil.rmtree(repo / ".sparkforge_aws" / "proposal" / change_id)
     outro = call_tool("sparkforge_case_open",
                       {"repo": str(repo), "case_id": "C-43", "now": _NOW, "reopen": True})
     assert outro.get("case_id") == "C-43", outro
@@ -295,10 +295,10 @@ def test_coordenadores_apontam_o_sdd():
 
 
 _OPERADOR_DURAVEL = {
-    "sdd-define": ("--root .sparkforge/sdd", "#kind:"),
-    "sdd-plan": ("--root .sparkforge/sdd", "proof", "finding"),
-    "sdd-build": ("--root .sparkforge/sdd", "moved", "--out", "--funcval", "--benchmark"),
-    "sdd-ship": ("--root .sparkforge/sdd", "--funcval", "--benchmark", "done"),
+    "sdd-define": ("--root .sparkforge_aws/sdd", "#kind:"),
+    "sdd-plan": ("--root .sparkforge_aws/sdd", "proof", "finding"),
+    "sdd-build": ("--root .sparkforge_aws/sdd", "moved", "--out", "--funcval", "--benchmark"),
+    "sdd-ship": ("--root .sparkforge_aws/sdd", "--funcval", "--benchmark", "done"),
 }
 
 
@@ -309,7 +309,7 @@ def test_skills_ensinam_o_operador_duravel():
         for trecho in trechos:
             assert trecho in operador, (nome, trecho)
     readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
-    for trecho in ("--root .sparkforge/sdd", "sparkforge-aws change sandbox",
+    for trecho in ("--root .sparkforge_aws/sdd", "sparkforge-aws change sandbox",
                    "sparkforge-aws change propose", "#kind:"):
         assert trecho in readme, trecho
 

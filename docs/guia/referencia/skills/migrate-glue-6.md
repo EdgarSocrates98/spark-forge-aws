@@ -19,7 +19,7 @@ Migração de runtime não é uma pergunta sobre a versão de destino — é uma
 
 1. `sparkforge-aws migrate glue <dir-do-job> --from 5.1 --to 6.0`
 
-   **Diretório, não arquivo.** Um pin de `requirements.txt` e um `.jar` de Scala 2.12 sobrevivem à troca de runtime e não têm linha de fonte Python. O comando compõe código, `.jar`, `requirements*.txt`, os `.tf` quando existem e o inventário de consumidores em `.sparkforge/consumers.yaml`.
+   **Diretório, não arquivo.** Um pin de `requirements.txt` e um `.jar` de Scala 2.12 sobrevivem à troca de runtime e não têm linha de fonte Python. O comando compõe código, `.jar`, `requirements*.txt`, os `.tf` quando existem e o inventário de consumidores em `.sparkforge_aws/consumers.yaml`.
 
    `--from` e `--to` não têm default. Um par embutido responderia sobre um alvo que ninguém declarou.
 

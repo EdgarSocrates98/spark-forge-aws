@@ -20,7 +20,7 @@ sparkforge-aws policy sync-settings --check
 
 ## Para que serve
 
-O arquivo `.sparkforge/policy.yaml` diz o que um agente pode fazer sozinho, o que precisa da sua confirmação e o que é proibido. Uma política só vale em três lugares:
+O arquivo `.sparkforge_aws/policy.yaml` diz o que um agente pode fazer sozinho, o que precisa da sua confirmação e o que é proibido. Uma política só vale em três lugares:
 
 | Onde | O que cobre | O que faz |
 |---|---|---|

@@ -66,13 +66,13 @@ permitidas; `ok` do `check` só com zero recusa e zero lacuna.
    carimbada de novo: carimbar sem revisar é o erro que a cascata existe para
    pegar.
 
-No perfil operator, todo verbo do SDD leva `--root .sparkforge/sdd` (seção
+No perfil operator, todo verbo do SDD leva `--root .sparkforge_aws/sdd` (seção
 abaixo).
 
 ## Caminho da mudança do operador
 
 A sessão nunca escreve na árvore do operador. Spec e evidências ficam em
-`.sparkforge/sdd/<F>/`; o job muda só por este caminho:
+`.sparkforge_aws/sdd/<F>/`; o job muda só por este caminho:
 
 1. `sparkforge-aws funcval plan --facts <f> --key <k> --out <p>`, com a chave de
    negócio **declarada**, antes da mudança.
@@ -129,19 +129,19 @@ Uma por fase, canônicas em `skills/` e espelhadas por `scripts/sync_skills.py`:
 ## Perfil operator: onde mora a spec
 
 No repositório do operador, os artefatos e as evidências ficam em
-`.sparkforge/sdd/<FEATURE>/`, e todo verbo do SDD leva a raiz:
+`.sparkforge_aws/sdd/<FEATURE>/`, e todo verbo do SDD leva a raiz:
 
 ```
-sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>
-sparkforge-aws sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/<fase>.md
+sparkforge-aws sdd check --repo . --root .sparkforge_aws/sdd --feature <F>
+sparkforge-aws sdd stamp --repo . --root .sparkforge_aws/sdd .sparkforge_aws/sdd/<F>/<fase>.md
 ```
 
-Por quê: a cópia que `sparkforge-aws change sandbox` valida poda `.sparkforge`.
+Por quê: a cópia que `sparkforge-aws change sandbox` valida poda `.sparkforge_aws`.
 Uma spec em `docs/sdd/` muda a árvore copiada, e `sparkforge-aws change propose`
 recusa o pacote com `sandbox_desatualizado`. A árvore do job continua mudando
 só pelo diff de `sparkforge-aws change sandbox` e pelo pacote de
-`sparkforge-aws change propose`. Não ponha `.sparkforge/sdd/` no `.gitignore`: é a
-spec do operador. `.sparkforge/sandbox/` e `.sparkforge/proposal/` são
+`sparkforge-aws change propose`. Não ponha `.sparkforge_aws/sdd/` no `.gitignore`: é a
+spec do operador. `.sparkforge_aws/sandbox/` e `.sparkforge_aws/proposal/` são
 recriados a cada execução.
 
 O que o gate aceita só no operator:
@@ -153,8 +153,8 @@ O que o gate aceita só no operator:
 | build_report | `moved: {change_id, resolved: [<rule_id>...]}` no lugar de `red`/`green` | `change_id` igual ao do build (senão `moved_change_mismatch`) e cada regra em `resolved` e fora de `new` no `report.json` do sandbox ou no `evidence/sandbox_report.json` da proposal; senão `moved_not_observed` |
 | ship | `evidence: [{change_id, report_sha256}]`, obrigatório | uma entrada por `change_id` citado, com o `text_sha256` do relatório lido (senão `ship_evidence_missing`); relatório presente com outro hash, `ship_evidence_mismatch` |
 
-`change_id` vale enquanto existir `.sparkforge/sandbox/<id>/` ou
-`.sparkforge/proposal/<id>/`. Com o ship em `status: done`, `case_missing` e
+`change_id` vale enquanto existir `.sparkforge_aws/sandbox/<id>/` ou
+`.sparkforge_aws/proposal/<id>/`. Com o ship em `status: done`, `case_missing` e
 `change_missing` param: o case e a pasta citados viraram histórico. A
 conferência de `moved`/`finding` só para quando **nenhum** relatório da
 mudança existe — aí o que sustenta a mudança é o `report_sha256` gravado em

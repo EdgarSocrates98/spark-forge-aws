@@ -36,7 +36,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 |----------|------|
 | **MUST** | `sparkforge_aws/durable.py`: `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`; falha deixa o original intacto), `append_line` (sob trava de arquivo; cauda sem `\n` vai para `<arquivo>.torn` e o arquivo volta ao último `\n` antes do append) e `read_jsonl` (tolera só a cauda cortada e a devolve como `torn_tail`; linha inválida no meio é erro com o número da linha) |
 | **MUST** | Escrita e leitura durável em `case.yaml` (`save_case`), `plan.json` e `decision.json` do debate, os 10 JSONL do blackboard e `submissions.jsonl` |
-| **MUST** | Journal commitável em `<raiz>/.sparkforge/journal.jsonl`: evento `started` (`seq`, `prev`, `call`, `verb`, `port`, `args`, `at`) e `finished` (`seq`, `prev`, `started_seq`, `outcome`, `outputs` ou `outputs_unresolved`) |
+| **MUST** | Journal commitável em `<raiz>/.sparkforge_aws/journal.jsonl`: evento `started` (`seq`, `prev`, `call`, `verb`, `port`, `args`, `at`) e `finished` (`seq`, `prev`, `started_seq`, `outcome`, `outputs` ou `outputs_unresolved`) |
 | **MUST** | Gancho nas duas portas: `tools.call_tool` (MCP) e `cli._dispatch` (CLI); o conjunto de verbos é `readOnlyHint: false` menos `code_*` (27), e um teste trava a igualdade; na CLI, verbo → tool pelo `parity.yaml` |
 | **MUST** | Raiz do journal = `args["repo"]` quando existe (24 de 27), senão `raiz_do_projeto()` (3 de 27) |
 | **MUST** | `args` só como sha256 do valor canônico; literal apenas para a lista fechada (`rules`, `debate_id`, `sandbox`, `fail_on`, `format`) e só com valor que não seja caminho absoluto |
@@ -80,7 +80,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 | AT-010 | Cauda cortada | `cauda_cortada` (journal, `claims.jsonl`, `submissions.jsonl`) | Ler, depois anexar | Leitura sem erro com `torn_tail`; append grava linha válida; os bytes cortados ficam em `<arquivo>.torn`; `debate next` devolve o brief |
 | AT-011 | Linha ruim no meio | JSONL com linha inválida no meio | `read_jsonl` | Erro com o número da linha (não tolera) |
 | AT-012 | Escrita atômica | `case.yaml` e `plan.json` existentes | `os.replace` sabotado para levantar | Os dois arquivos iguais byte a byte ao anterior; nenhum temporário sobrando |
-| AT-013 | Journal indisponível | `.sparkforge/journal.jsonl` como diretório | Verbo de escrita | Verbo conclui; resultado com `journal: "unrecorded"` e motivo |
+| AT-013 | Journal indisponível | `.sparkforge_aws/journal.jsonl` como diretório | Verbo de escrita | Verbo conclui; resultado com `journal: "unrecorded"` e motivo |
 | AT-014 | Sem valor literal | Eventos dos 27 verbos com argumentos sintéticos de caminho absoluto, ARN e nome de job | Varredura | Nenhum desses valores aparece no journal |
 | AT-015 | Recusa da policy | Policy que recusa a tool | `call_tool` | Nenhum evento gravado |
 | AT-016 | Goldens intactos | `fixtures/debate/*`, `fixtures/receipt/uniao_debate` | Suíte | Passam sem regravação |
@@ -110,7 +110,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 | Technical | CI em Windows e Linux | Trava com `msvcrt.locking` e `fcntl.flock`; Python 3.10 (`datetime.UTC` proibido) |
 | Technical | `sparkforge_resume` está no golden de paridade MCP 1.29 (`fixtures/mcp_parity/tools_list_*.json`) | Campo novo no `outputSchema` vai para a exceção declarada |
 | Technical | A CLI não passa por `call_tool` | Dois ganchos; mapa verbo → tool pelo `parity.yaml` |
-| Technical | 24 arquivos rastreados em `fixtures/**/.sparkforge/` | Nenhum teste pode rodar verbo de escrita sobre a pasta da fixture sem copiar |
+| Technical | 24 arquivos rastreados em `fixtures/**/.sparkforge_aws/` | Nenhum teste pode rodar verbo de escrita sobre a pasta da fixture sem copiar |
 | Resource | A suíte inteira não cabe num processo | 9 lotes, um por vez |
 
 ---

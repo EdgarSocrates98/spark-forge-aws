@@ -1,7 +1,7 @@
 """Montagem do recibo a partir do que o adapter ja leu.
 
 Cada parte do recibo guarda caminho relativo (POSIX), sha256, ids e contagens,
-e nunca o conteudo: `.sparkforge/` pode ser commitado, e caso real nao entra em
+e nunca o conteudo: `.sparkforge_aws/` pode ser commitado, e caso real nao entra em
 arquivo. Toda lacuna sai nomeada em `unresolved`, e as duas recusas fixas
 (`authorship` e `tool_io`) saem sempre em `refused`.
 
@@ -28,7 +28,7 @@ from sparkforge_aws.agentic.executor.debate_run import (
     SUBMISSIONS_FILE,
 )
 from sparkforge_aws.agentic.executor.run import DIR_DE_ADR
-from sparkforge_aws.case.store import CASE_DIR, case_path
+from sparkforge_aws.case.store import case_path, state_dir
 from sparkforge_aws.receipt._hash import RECEIPT_VERSION, digest_of, receipt_id_of, text_sha256
 
 PROVES = "correspondencia entre este recibo e estes artefatos -- nunca autoria"
@@ -173,7 +173,7 @@ def _adr_items(
 
 
 def _debate_items(root: Path) -> list[dict[str, Any]]:
-    base = Path(root) / CASE_DIR / DEBATE_DIR
+    base = state_dir(root) / DEBATE_DIR
     if not base.is_dir():
         return []
     with os.scandir(base) as entradas:

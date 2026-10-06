@@ -58,7 +58,8 @@ def test_decision_validate_and_shadow_and_receipt_cli(tmp_path: Path, capsys) ->
     shadow = json.loads(capsys.readouterr().out)
     assert shadow["result"]["status"] == "accepted"
     receipt_path = (
-        shadow_repo / ".sparkforge" / "decision-receipts" / f"{shadow['result']['receipt_id']}.json"
+        shadow_repo / ".sparkforge_aws" / "decision-receipts"
+        / f"{shadow['result']['receipt_id']}.json"
     )
     assert (
         main(

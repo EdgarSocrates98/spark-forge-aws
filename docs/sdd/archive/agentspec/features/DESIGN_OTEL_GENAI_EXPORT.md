@@ -17,7 +17,7 @@
 ## Architecture Overview
 
 ```text
- call_tool (tools.py) ──record(channel)──> ContextLedger ──flush──> .sparkforge/traces.db
+ call_tool (tools.py) ──record(channel)──> ContextLedger ──flush──> .sparkforge_aws/traces.db
         ^                                       │
         │ partial(call_tool, channel="mcp",     │ spans_of(run_id)  (buffer + disco)
         │         transport=...)                v
@@ -33,8 +33,8 @@
                   ┌──────────────────────────────────┼─────────────────────┐
                   v                                  v                     v
    CLI `telemetry export` grava            tool MCP READ_ONLY      golden fixtures/otel
-   .sparkforge/telemetry/<run>.traces.jsonl  (devolve, nao grava)   + Collector no CI
-   .sparkforge/telemetry/<run>.metrics.jsonl                        (otlpjsonfile -> file)
+   .sparkforge_aws/telemetry/<run>.traces.jsonl  (devolve, nao grava)   + Collector no CI
+   .sparkforge_aws/telemetry/<run>.metrics.jsonl                        (otlpjsonfile -> file)
 ```
 
 ---
@@ -69,7 +69,7 @@
 
 **Context:** A-002. O `file.go` do `otlpjsonfilereceiver` le cada linha com o unmarshaler do pipeline dele (`ptrace.JSONUnmarshaler` no de traces, `pmetric` no de metrics). Uma linha `MetricsData` no pipeline de traces vira erro contado como recusa (`EndTracesOp(..., err)`), ou traces vazio descartado.
 
-**Choice:** `.sparkforge/telemetry/<run_id>.traces.jsonl` e `.sparkforge/telemetry/<run_id>.metrics.jsonl`. Cada pipeline do Collector aponta o `include` para o seu arquivo.
+**Choice:** `.sparkforge_aws/telemetry/<run_id>.traces.jsonl` e `.sparkforge_aws/telemetry/<run_id>.metrics.jsonl`. Cada pipeline do Collector aponta o `include` para o seu arquivo.
 
 **Rationale:** nenhuma recusa espuria na observabilidade do proprio Collector, e o operador pode ligar so traces.
 
@@ -243,7 +243,7 @@ Mais duas regras:
 
 **Choice:**
 - `run_id` precisa casar `^[A-Za-z0-9_.-]{1,64}$` e nao comecar com `.`; senao, exit 2.
-- O destino e `Path(repo) / ".sparkforge" / "telemetry" / f"{run_id}.traces.jsonl"`, e o teste confere que ele resolve dentro de `--repo`.
+- O destino e `Path(repo) / ".sparkforge_aws" / "telemetry" / f"{run_id}.traces.jsonl"`, e o teste confere que ele resolve dentro de `--repo`.
 - Um run sem span nenhum (buffer e disco vazios) sai com exit 2: "run sem spans".
 
 **Rationale:** nenhum caminho de escrita vem livre do argv (licao do Snyk).

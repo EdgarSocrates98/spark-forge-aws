@@ -24,8 +24,8 @@ O que a comparação de facts **não** prova é se, em execução, a entrada peq
 #### 1. Extraia os facts dos dois caminhos
 
 ```bash
-sparkforge-aws analyze pyspark --path <arquivo-ou-módulo-full> --out .sparkforge/facts_full.json
-sparkforge-aws analyze pyspark --path <arquivo-ou-módulo-incremental> --out .sparkforge/facts_incremental.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-módulo-full> --out .sparkforge_aws/facts_full.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-módulo-incremental> --out .sparkforge_aws/facts_incremental.json
 ```
 
 Se full e incremental são branches do mesmo módulo (um `if is_full: ... else: ...`), um único `analyze pyspark` já captura os dois; separe por linha/função na leitura, não rode duas vezes o mesmo arquivo esperando facts diferentes.
@@ -41,8 +41,8 @@ No caminho incremental, o filtro pela chave/janela de controle deveria aparecer 
 #### 4. Julgue cada caminho separadamente
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts_incremental.json --show-skipped
-sparkforge-aws judge --facts .sparkforge/facts_full.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_incremental.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_full.json --show-skipped
 ```
 
 Sem flag de versão: estes facts vêm de `analyze pyspark`, que lê AST e não observa runtime, e as regras `SF-PY-*` que julgam forma de código são estruturais, sem `runtime_scope`. O campo `runtime` da saída volta vazio com `detected_from: []` — leia-o mesmo assim, porque é ele que diz se o julgamento teve ou não contexto de versão. O que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, fora do escopo desta comparação.

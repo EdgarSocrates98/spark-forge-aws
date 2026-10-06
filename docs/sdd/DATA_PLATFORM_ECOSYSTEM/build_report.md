@@ -40,7 +40,7 @@ relatório e o histórico não preserva comandos vermelhos reproduzíveis. Nenhu
 exit vermelho foi inventado. A validação atual executou os testes focados com
 `python -m pytest tests/test_platform_ecosystem.py
 tests/test_fixtures_golden_platform.py -q --basetemp
-.sparkforge/local/pytest-platform-ecosystem`, com `7 passed`.
+.sparkforge_aws/local/pytest-platform-ecosystem`, com `7 passed`.
 
 ## Revisão
 

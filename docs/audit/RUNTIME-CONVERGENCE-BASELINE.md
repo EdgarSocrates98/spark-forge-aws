@@ -175,7 +175,7 @@ complexidade), tudo com `unresolved` quando a evidência não existe.
 
 Nota de ambiente registrada na fase 3: a suíte com `--basetemp` dentro do
 repositório faz `_ancestral_com_case` (`journal/record.py`) escalar até a raiz
-do projeto e gravar em `.sparkforge/journal.jsonl` — o backstop do
+do projeto e gravar em `.sparkforge_aws/journal.jsonl` — o backstop do
 `conftest.py` reprova por desenho. A suíte roda com `--basetemp` fora da árvore
 (`E:\projetos\.tmp_pytest_sf`) até que o tempdir do Windows volte a aceitar
 escrita.

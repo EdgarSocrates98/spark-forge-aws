@@ -35,23 +35,23 @@ Debezium com evento CDC ou tarefa DMS.
 2. Extraia o domínio:
 
    ```bash
-   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact cdc --out .sparkforge/facts_cdc.json
-   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact debezium --out .sparkforge/facts_debezium.json
-   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact dms --out .sparkforge/facts_dms.json
+   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact cdc --out .sparkforge_aws/facts_cdc.json
+   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact debezium --out .sparkforge_aws/facts_debezium.json
+   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact dms --out .sparkforge_aws/facts_dms.json
    ```
 
 3. Julgue fatos observados:
 
    ```bash
-   sparkforge-aws judge --facts .sparkforge/facts_cdc.json --show-skipped
+   sparkforge-aws judge --facts .sparkforge_aws/facts_cdc.json --show-skipped
    ```
 
    Em MCP, a extração é `sparkforge_analyze_cdc`.
    Para contrato/evolução de schema:
 
    ```bash
-   sparkforge-aws analyze schema-registry --path <contract.json> --out .sparkforge/facts_schema.json
-   sparkforge-aws judge --facts .sparkforge/facts_schema.json --show-skipped
+   sparkforge-aws analyze schema-registry --path <contract.json> --out .sparkforge_aws/facts_schema.json
+   sparkforge-aws judge --facts .sparkforge_aws/facts_schema.json --show-skipped
    ```
 
    Em MCP, a extração é `sparkforge_analyze_schema_registry`.

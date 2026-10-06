@@ -1,6 +1,6 @@
 # DEFINE: OpenTelemetry GenAI export
 
-> Um verbo `sparkforge-aws telemetry export` que projeta os spans de tool ja gravados em `.sparkforge/traces.db` e, quando houver, o transcript do host em OTLP/JSON Lines com as convencoes `gen_ai.*` e `mcp.*`. A saida e deterministica, sem rede, sem dependencia nova e sem nenhum numero que a fonte nao mediu. A prova e um Collector real que le o arquivo.
+> Um verbo `sparkforge-aws telemetry export` que projeta os spans de tool ja gravados em `.sparkforge_aws/traces.db` e, quando houver, o transcript do host em OTLP/JSON Lines com as convencoes `gen_ai.*` e `mcp.*`. A saida e deterministica, sem rede, sem dependencia nova e sem nenhum numero que a fonte nao mediu. A prova e um Collector real que le o arquivo.
 
 ## Metadata
 
@@ -38,7 +38,7 @@ O SparkForge mede cada chamada de tool (duracao, bytes e desfecho), e o extrator
 | **MUST** | G2: cada span de tool do run vira um span OTLP `execute_tool {tool}` (ou `tools/call {tool}`, kind SERVER, quando o canal medido for MCP: DESIGN Decision 3) com `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function`, inicio e fim medidos, e status ERROR quando `outcome` for `error` ou `unauthorized`. O desfecho sai em `sparkforge_aws.outcome` |
 | **MUST** | G3: os bytes saem em `sparkforge_aws.payload_bytes`, com `sparkforge_aws.payload_basis` e `sparkforge_aws.detail_level` quando houver. **Nunca** saem em `gen_ai.usage.*` (regra 22) |
 | **MUST** | G4: ids deterministicos: `traceId` = primeiros 32 hex de `sha256(run_id)` e `spanId` = primeiros 16 hex de `sha256(span_id)`. Exportar o mesmo run duas vezes da o mesmo arquivo, byte a byte |
-| **MUST** | G5: a saida segue o encoding JSON do OTLP 1.11.0 (ids em hex, `*UnixNano` como string decimal, enum inteiro, chaves lowerCamelCase), em JSON Lines, gravada sob `.sparkforge/telemetry/` em dois arquivos com nome fixo derivado do `run_id` validado: `<run_id>.traces.jsonl` e `<run_id>.metrics.jsonl` |
+| **MUST** | G5: a saida segue o encoding JSON do OTLP 1.11.0 (ids em hex, `*UnixNano` como string decimal, enum inteiro, chaves lowerCamelCase), em JSON Lines, gravada sob `.sparkforge_aws/telemetry/` em dois arquivos com nome fixo derivado do `run_id` validado: `<run_id>.traces.jsonl` e `<run_id>.metrics.jsonl` |
 | **MUST** | G6: nenhum span some. Span sem horario medido nao e exportado: vira recusa nomeada, e `exportados + recusados = total` sai no resultado |
 | **MUST** | G7: token so com fonte. Sem `--host-transcript`, o arquivo tem **0** atributos `gen_ai.usage.*` e nenhuma metrica de token (regra 24). Custo nunca sai (regra 25) |
 | **MUST** | G8: o extrator `host_transcript` passa a guardar horario: `host.transcript` ganha `first_timestamp` e `last_timestamp`, e `host.tool_call` ganha `started_at` (linha do `tool_use`) e `ended_at` (linha do `tool_result`). Quando a linha nao traz `timestamp`, o campo fica ausente, nunca zero |

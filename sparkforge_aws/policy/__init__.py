@@ -1,4 +1,4 @@
-"""Politica de seguranca declarada (§16): `.sparkforge/policy.yaml`.
+"""Politica de seguranca declarada (§16): `.sparkforge_aws/policy.yaml`.
 
 Uma fonte, tres portas: o servidor MCP (via `CallPolicy`), o hook `PreToolUse`
 do Claude Code (`python -m sparkforge_aws.policy.hook`, so `deny`) e as regras

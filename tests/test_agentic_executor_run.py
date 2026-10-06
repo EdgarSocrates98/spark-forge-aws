@@ -470,7 +470,7 @@ def test_o_adr_e_gravado_dentro_do_case(tmp_path: Path) -> None:
     for caminho in adrs:
         arquivo = Path(caminho)
         assert arquivo.is_relative_to(tmp_path)
-        assert arquivo.parent == tmp_path / ".sparkforge" / "blackboard" / "adr"
+        assert arquivo.parent == tmp_path / ".sparkforge_aws" / "blackboard" / "adr"
         texto = arquivo.read_text(encoding="utf-8")
         assert "## Rollback" in texto
 

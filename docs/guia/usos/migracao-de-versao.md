@@ -74,7 +74,7 @@ ganho de uma versão nova só se prova com benchmark
 - SparkForge instalado ([Instalação](../02-instalacao.md)).
 - O diretório do job, com código, `requirements*.txt` e `.jar`.
 - Opcional, mas decisivo: os `.tf` do job e o inventário de consumidores em
-  `.sparkforge/consumers.yaml`. Sem eles, alguns gates saem `BLOCKED`.
+  `.sparkforge_aws/consumers.yaml`. Sem eles, alguns gates saem `BLOCKED`.
 
 ## Passo a passo
 
@@ -189,7 +189,7 @@ Como ler:
 - **`gates`**: `PASS` e `FAIL` foram avaliados; **`BLOCKED`** quer dizer "faltou
   evidência para avaliar". Não é aprovação.
 - **`missing_evidence`**: para cada gate bloqueado, o que falta. Exemplo real:
-  `"consumidor": "nenhum \`env.consumer\` nos facts -- ... declare o inventario em \`.sparkforge/consumers.yaml\`"`.
+  `"consumidor": "nenhum \`env.consumer\` nos facts -- ... declare o inventario em \`.sparkforge_aws/consumers.yaml\`"`.
 - **`recommendation`**: nos exemplos aparecem `NO_GO` e `CONDITIONAL_GO`.
 - **`coverage`**: quantas regras do catálogo o caminho alcançou, dito por escrito.
 - **`component_diff`**: o `release diff` de cada degrau, já embutido.
@@ -240,13 +240,13 @@ fixture `fixtures/migration/python_dep/input`, `pandas==2.0.3` e
 ### 4. Tabelas Iceberg: `iceberg assess-upgrade`
 
 O verbo avalia subir o format version da tabela contra **quem a consome**. Ele
-lê o inventário em `<diretório>/.sparkforge/consumers.yaml`. Não executa nada.
+lê o inventário em `<diretório>/.sparkforge_aws/consumers.yaml`. Não executa nada.
 
 Para testar, copie o inventário de uma fixture para uma pasta temporária:
 
 ```bash
-mkdir -p /tmp/sf/job_iceberg/.sparkforge
-cp fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml /tmp/sf/job_iceberg/.sparkforge/
+mkdir -p /tmp/sf/job_iceberg/.sparkforge_aws
+cp fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml /tmp/sf/job_iceberg/.sparkforge_aws/
 sparkforge-aws iceberg assess-upgrade /tmp/sf/job_iceberg --from 2 --to 3
 ```
 

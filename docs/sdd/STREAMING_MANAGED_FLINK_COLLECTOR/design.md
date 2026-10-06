@@ -54,7 +54,7 @@ Managed Flink DescribeApplication (read-only)
                  v
 collect managed-flink --repo ... --application-name ...
                  |
-                 +--> .sparkforge/artifacts/managed_flink_application/*.json
+                 +--> .sparkforge_aws/artifacts/managed_flink_application/*.json
                  +--> manifest + sha256 + collect command
                  |
                  v

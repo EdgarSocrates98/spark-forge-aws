@@ -25,7 +25,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_analyze_cdc`](sparkforge_analyze_cdc.md) | só leitura | Extrai facts determinísticos de dumps JSON/JSONL já salvos de eventos CDC, Debezium ou AWS DMS. |
 | [`sparkforge_analyze_cloudwatch`](sparkforge_analyze_cloudwatch.md) | só leitura | Extrai facts `glue.metric` de um artefato de metricas do CloudWatch ja coletado. |
 | [`sparkforge_analyze_cloudwatch_logs`](sparkforge_analyze_cloudwatch_logs.md) | só leitura | Extrai facts do LOG do run ja coletado por `collect cloudwatch-logs`. |
-| [`sparkforge_analyze_consumers`](sparkforge_analyze_consumers.md) | só leitura | Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge/consumers.yaml`, versionado com o repositorio). |
+| [`sparkforge_analyze_consumers`](sparkforge_analyze_consumers.md) | só leitura | Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge_aws/consumers.yaml`, versionado com o repositorio). |
 | [`sparkforge_analyze_controlm_jobs`](sparkforge_analyze_controlm_jobs.md) | só leitura | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC) -- o JSON de definicao de job versionado no repositorio, o mesmo que `ctm build` valida e `ctm deploy` publica. |
 | [`sparkforge_analyze_data_observability`](sparkforge_analyze_data_observability.md) | só leitura | Avalia SLI/SLO, freshness, completeness, latency, lag, throughput e availability a partir de medições exportadas. |
 | [`sparkforge_analyze_data_quality`](sparkforge_analyze_data_quality.md) | só leitura | Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do repositorio, nunca API da AWS): onde cada check roda, o que ele custa e se ele tem consequencia. |
@@ -91,8 +91,8 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 
 | Tool | Efeito | O que faz |
 |---|---|---|
-| [`sparkforge_case_get`](sparkforge_case_get.md) | só leitura | Le o estado atual do case (.sparkforge/case.yaml): fase, gates, runtime detectado, indices de facts e findings. |
-| [`sparkforge_case_open`](sparkforge_case_open.md) | grava local | Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. |
+| [`sparkforge_case_get`](sparkforge_case_get.md) | só leitura | Le o estado atual do case (.sparkforge_aws/case.yaml): fase, gates, runtime detectado, indices de facts e findings. |
+| [`sparkforge_case_open`](sparkforge_case_open.md) | grava local | Cria um case novo em .sparkforge_aws/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. |
 | [`sparkforge_case_update`](sparkforge_case_update.md) | muda estado local | Atualiza a fase, um gate booleano, ou registra o uso de uma skill no case atual. |
 
 ## change
@@ -100,8 +100,8 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_change_plan`](sparkforge_change_plan.md) | só leitura | Autonomia L1 (§15, produce change): o diff unificado e o diff de rollback de um VALOR de configuracao Spark, achado pela procedencia dos facts -- `tf.spark_conf` (so o par `chav... |
-| [`sparkforge_change_propose`](sparkforge_change_propose.md) | grava local | Autonomia L3 (§15, propose change): monta o pacote de um PR em `.sparkforge/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id que `sparkforge_change_sandbox`... |
-| [`sparkforge_change_sandbox`](sparkforge_change_sandbox.md) | grava local | Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do `sparkforge-aws change plan --out` ou de `git diff`) numa COPIA do repositorio em `.sparkforge/san... |
+| [`sparkforge_change_propose`](sparkforge_change_propose.md) | grava local | Autonomia L3 (§15, propose change): monta o pacote de um PR em `.sparkforge_aws/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id que `sparkforge_change_sandb... |
+| [`sparkforge_change_sandbox`](sparkforge_change_sandbox.md) | grava local | Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do `sparkforge-aws change plan --out` ou de `git diff`) numa COPIA do repositorio em `.sparkforge_aws... |
 
 ## code
 
@@ -127,7 +127,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_collect_emr_cluster`](sparkforge_collect_emr_cluster.md) | acessa a AWS | Baixa os seis dumps de um cluster EMR on EC2 (`describe_cluster`, grupos OU fleets, bootstrap actions, managed scaling e auto termination) e registra a uniao deles no manifesto,... |
 | [`sparkforge_collect_emr_eks`](sparkforge_collect_emr_eks.md) | acessa a AWS | Baixa `describe-virtual-cluster` e `describe-job-run` de uma execucao Amazon EMR on EKS e grava as DUAS respostas num unico arquivo autocontido, sob as chaves de topo `virtualCl... |
 | [`sparkforge_collect_emr_serverless`](sparkforge_collect_emr_serverless.md) | acessa a AWS | Baixa `get-application` de uma application Amazon EMR Serverless e registra a resposta no manifesto, no mesmo shape camelCase que `aws emr-serverless get-application` devolve --... |
-| [`sparkforge_collect_event_log`](sparkforge_collect_event_log.md) | acessa a AWS | Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` e registra no manifesto (`.sparkforge/artifacts/manifest.json`). |
+| [`sparkforge_collect_event_log`](sparkforge_collect_event_log.md) | acessa a AWS | Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` e registra no manifesto (`.sparkforge_aws/artifacts/manifest.json`). |
 | [`sparkforge_collect_glue_job`](sparkforge_collect_glue_job.md) | acessa a AWS | Baixa a definicao de um job via `glue.get_job` e registra no manifesto. |
 | [`sparkforge_collect_glue_job_runs`](sparkforge_collect_glue_job_runs.md) | acessa a AWS | Baixa o historico de execucoes de um job via `glue.get_job_runs` e grava UM artefato por run em estado terminal. |
 | [`sparkforge_collect_glue_resource_link`](sparkforge_collect_glue_resource_link.md) | acessa a AWS | Le o objeto que o job consulta na conta CONSUMIDORA via `glue:GetTable` (ou `glue:GetDatabase` sem `table`) e, por default, o recurso de ORIGEM que o link declara. |
@@ -274,7 +274,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 
 | Tool | Efeito | O que faz |
 |---|---|---|
-| [`sparkforge_policy_explain`](sparkforge_policy_explain.md) | só leitura | Diz o que a policy de seguranca do repositorio (`.sparkforge/policy.yaml`) decide para UM comando de shell (`bash_text`, so comparado como texto, nunca executado), UM caminho de... |
+| [`sparkforge_policy_explain`](sparkforge_policy_explain.md) | só leitura | Diz o que a policy de seguranca do repositorio (`.sparkforge_aws/policy.yaml`) decide para UM comando de shell (`bash_text`, so comparado como texto, nunca executado), UM caminh... |
 
 ## proof
 
@@ -286,7 +286,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 
 | Tool | Efeito | O que faz |
 |---|---|---|
-| [`sparkforge_receipt_emit`](sparkforge_receipt_emit.md) | grava local | Grava o RECIBO de uma execucao do case em `<repo>/.sparkforge/receipts/<receipt_id>.json`: caminho relativo e sha256 do `case.yaml`, de cada arquivo de facts (a UNIAO do case, o... |
+| [`sparkforge_receipt_emit`](sparkforge_receipt_emit.md) | grava local | Grava o RECIBO de uma execucao do case em `<repo>/.sparkforge_aws/receipts/<receipt_id>.json`: caminho relativo e sha256 do `case.yaml`, de cada arquivo de facts (a UNIAO do cas... |
 | [`sparkforge_receipt_verify`](sparkforge_receipt_verify.md) | só leitura | Confere um recibo de execucao e diz QUAL parte divergiu -- `version`, `integrity`, `case`, `evidence`, `judgment`, `decision`, `proof`, `tools`, `host` --, em vez de devolver so... |
 
 ## release

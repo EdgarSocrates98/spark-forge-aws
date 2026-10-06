@@ -40,7 +40,7 @@ sparkforge-aws case open --repo <repo> --case-id <id> --now <ISO8601>
 O case guarda o runtime da investigação inteira, e toda skill que ler o case depois herda o que estiver aqui — por isso vale abri-lo com a melhor detecção disponível, não com o que você digitou. Se já houver facts extraídos, `case open` também aceita `--facts` (repetível):
 
 ```bash
-sparkforge-aws case open --repo <repo> --case-id <id> --now <ISO8601> --facts .sparkforge/facts_tf.json
+sparkforge-aws case open --repo <repo> --case-id <id> --now <ISO8601> --facts .sparkforge_aws/facts_tf.json
 ```
 
 Se ainda não houver, abra o case mesmo assim — o loop não pode esperar pelo runtime, e `judge` refaz a detecção por conta própria a cada chamada.
@@ -58,11 +58,11 @@ Nem tudo vai existir na primeira passada — o job pode não ter Spark UI habili
 #### 4. Extraia facts do que foi coletado
 
 ```bash
-sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json
-sparkforge-aws analyze data-quality --path <lib> --out .sparkforge/facts_dq.json
-sparkforge-aws analyze graph --path <lib> --out .sparkforge/facts_graph.json
-sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts_eventlog.json
-sparkforge-aws analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
+sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json
+sparkforge-aws analyze data-quality --path <lib> --out .sparkforge_aws/facts_dq.json
+sparkforge-aws analyze graph --path <lib> --out .sparkforge_aws/facts_graph.json
+sparkforge-aws analyze event-log --path .sparkforge_aws/artifacts/eventlog/<id>.jsonl --out .sparkforge_aws/facts_eventlog.json
+sparkforge-aws analyze terraform --path <dir.tf> --out .sparkforge_aws/facts_tf.json
 ```
 
 **`analyze data-quality` roda sobre o mesmo `<lib>` do `analyze pyspark`, e as duas leituras não se repetem.** `pyspark` vê "há uma action aqui"; `data-quality` vê "esta action é uma validação, e ela está depois do write, ou não tem consequência, ou recomputa o lineage". Nenhuma regra `SF-PY` lê fact `dq.*` e nenhuma `SF-DQ` lê fact `pyspark.*` — a fronteira é por construção, não por supressão, e há invariante que a trava. Pular esta linha não deixa a investigação mais enxuta: apaga a área `SF-DQ` inteira do relatório, em silêncio.
@@ -78,9 +78,9 @@ Se o job roda em **EMR on EC2** em vez de Glue, o eixo de infraestrutura muda de
 #### 5. Julgue com --show-skipped
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts.json --facts .sparkforge/facts_dq.json \
-                 --facts .sparkforge/facts_graph.json --facts .sparkforge/facts_tf.json \
-                 --facts .sparkforge/facts_eventlog.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --facts .sparkforge_aws/facts_dq.json \
+                 --facts .sparkforge_aws/facts_graph.json --facts .sparkforge_aws/facts_tf.json \
+                 --facts .sparkforge_aws/facts_eventlog.json --show-skipped
 ```
 
 `--facts` é repetível, e passar tudo que o passo 4 extraiu numa chamada só é o que fecha o eixo de versão sem digitar nada: `judge` refaz a detecção a partir desses mesmos facts antes de filtrar as regras. Leia o campo `runtime` da saída — ele traz o contexto **efetivamente usado**, `detected_from` diz de onde veio, e `divergences` lista as fontes que discordam. Divergência não é detalhe: é `SF-ENV-001` em P0, e trava qualquer conclusão dependente de versão até ser resolvida.
@@ -92,7 +92,7 @@ Se `runtime.glue` voltar vazio e não houver `.tf` no repositório, aí sim decl
 #### 6. Deixe next-step decidir a rota
 
 ```bash
-sparkforge-aws next-step --repo <repo> --findings .sparkforge/findings.json
+sparkforge-aws next-step --repo <repo> --findings .sparkforge_aws/findings.json
 ```
 
 Rode de novo depois de **cada** rodada de achados novos, não uma vez só. `next-step` lê `rules/catalog/routing.yaml` e devolve a skill recomendada, alternativas com rank, e o que ainda falta coletar (`missing_artifacts`, `collect_commands`). Não escolha a skill seguinte pelo que parece o problema — é isso que faria o resultado divergir entre modelos e entre sessões.
@@ -108,7 +108,7 @@ Regra 6 do protocolo: cada skill usada, o resultado, e por que as descartadas n�
 #### 8. Valide antes de apresentar
 
 ```bash
-sparkforge-aws validate --findings .sparkforge/findings.json
+sparkforge-aws validate --findings .sparkforge_aws/findings.json
 ```
 
 Ganho quantificado sem `benchmark_ref` é rejeitado pelo schema.
@@ -116,8 +116,8 @@ Ganho quantificado sem `benchmark_ref` é rejeitado pelo schema.
 #### 9. Assine o relatório que você entregar
 
 ```bash
-sparkforge-aws report sign --report <relatorio.md> --findings .sparkforge/findings.json
-sparkforge-aws report verify --report <relatorio.md> --findings .sparkforge/findings.json
+sparkforge-aws report sign --report <relatorio.md> --findings .sparkforge_aws/findings.json
+sparkforge-aws report verify --report <relatorio.md> --findings .sparkforge_aws/findings.json
 ```
 
 Escreve um bloco no fim do relatório e prova **correspondência** entre aquele texto, aquela evidência e aquele catálogo. **Nunca autoria**: não há chave nem segredo, qualquer pessoa com os mesmos findings produz a mesma assinatura — não escreva, e não deixe o leitor supor, que o bloco autentica quem redigiu.
@@ -134,10 +134,10 @@ Duas coisas que a assinatura **não** faz, e que são suas:
 #### 10. Pare em qualquer ponto, retome em qualquer ferramenta
 
 ```bash
-sparkforge-aws handoff --repo <repo> --findings .sparkforge/findings.json --unresolved <n> --in-flight "<o que estava em andamento>"
+sparkforge-aws handoff --repo <repo> --findings .sparkforge_aws/findings.json --unresolved <n> --in-flight "<o que estava em andamento>"
 ```
 
-Escreve `.sparkforge/handoff.md` e devolve o mesmo payload em JSON. É o que permite a investigação parar aqui e continuar no Devin — ou o inverso — com o mesmo próximo passo, em vez de reconstruir contexto do zero. Ao retomar, `sparkforge-aws resume --repo <repo> --findings <> --unresolved <n> --in-flight <>` rehidrata o case com o mesmo formato de payload.
+Escreve `.sparkforge_aws/handoff.md` e devolve o mesmo payload em JSON. É o que permite a investigação parar aqui e continuar no Devin — ou o inverso — com o mesmo próximo passo, em vez de reconstruir contexto do zero. Ao retomar, `sparkforge-aws resume --repo <repo> --findings <> --unresolved <n> --in-flight <>` rehidrata o case com o mesmo formato de payload.
 
 ### Vocabulário de gargalo, não checklist
 
@@ -169,7 +169,7 @@ Como `next-step` decide, sem repetir a árvore inteira de `routing.yaml` — con
 
 ### Red flags
 
-- Pular a abertura do case porque "é só uma pergunta rápida" — sem `.sparkforge/case.yaml` não há retomada, nem para você na próxima mensagem.
+- Pular a abertura do case porque "é só uma pergunta rápida" — sem `.sparkforge_aws/case.yaml` não há retomada, nem para você na próxima mensagem.
 - Escolher a skill seguinte pelo que parece óbvio em vez de rodar `next-step`.
 - Julgar sem `--show-skipped` e reportar "nenhum problema encontrado" quando na prática nada foi coletado para aquela área.
 - Recomendar mais workers ou mudar `spark.sql.shuffle.partitions` antes de ter baseline.

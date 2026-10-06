@@ -9,12 +9,12 @@ A CLI aceita NOMES, nunca caminhos. Cada nome passa por `os.path.basename` e e
 recusado se trouxer separador, e o diretorio sai de uma base fixa:
 
   * suite    -> `<cwd>/evals/agentic/<suite>`
-  * execucao -> `~/.sparkforge/agentic-evals/<run_id>` (onde o runner grava)
+  * execucao -> `~/.sparkforge_aws/agentic-evals/<run_id>` (onde o runner grava)
   * conjunto -> `<cwd>/evals/agentic/<suite>/baselines/<nome>` (commitado) ou
-    `~/.sparkforge/agentic-evals/<nome>` (recem-rodado); precisa existir em
+    `~/.sparkforge_aws/agentic-evals/<nome>` (recem-rodado); precisa existir em
     exatamente um dos dois.
   * debate   -> a suite e CONSTANTE (`<cwd>/evals/agentic/debate`), e a execucao
-    e `~/.sparkforge/debate-evals/<run>` (onde `scripts/run_debate.py` grava).
+    e `~/.sparkforge_aws/debate-evals/<run>` (onde `scripts/run_debate.py` grava).
     O placar vai para `grade.json` dentro da propria execucao.
 
 O scorecard de `grade` vai para `scorecard.json` dentro da propria execucao, e
@@ -35,6 +35,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.evals.compare import compare
 from sparkforge_aws.evals.debate_grade import GRADE_FILE, DebateGradeError, grade_debate_run
 from sparkforge_aws.evals.evidence_adapters import (
@@ -47,8 +48,10 @@ from sparkforge_aws.evals.grade import grade
 from sparkforge_aws.evals.suite import SuiteError, load_suite
 from sparkforge_aws.facts.host_transcript import extract_host_transcript_path
 
-RUNS_ROOT = Path.home() / ".sparkforge" / "agentic-evals"
-DEBATE_RUNS_ROOT = Path.home() / ".sparkforge" / "debate-evals"
+# `state_path` mantem o historico de quem avaliava antes do rename: execucoes
+# gravadas em `~/.sparkforge/agentic-evals/` seguem sendo O conjunto de runs.
+RUNS_ROOT = state_path(Path.home(), "agentic-evals")
+DEBATE_RUNS_ROOT = state_path(Path.home(), "debate-evals")
 DEBATE_SUITE = ("evals", "agentic", "debate")
 SCORECARD = "scorecard.json"
 

@@ -39,7 +39,7 @@ T1–T3 estão `skipped` no bloco red/green porque a implementação já existia
 antes da criação deste relatório e o histórico não preserva comandos vermelhos
 reproduzíveis. Não há vermelho honesto a declarar retroativamente. A validação
 atual foi executada depois da auditoria: `python -m pytest
-tests/test_platform_graph.py -q --basetemp .sparkforge/local/pytest-platform-graph`
+tests/test_platform_graph.py -q --basetemp .sparkforge_aws/local/pytest-platform-graph`
 terminou com `4 passed`, e o comando de aceite do define também terminou com
 exit 0.
 

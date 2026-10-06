@@ -20,7 +20,7 @@
 **Context Gathered:**
 - Nenhum arquivo em `sparkforge_aws/` cita `opentelemetry`, `otel` ou `gen_ai`.
 - O que ja e medido:
-  - `adapters/tools.py:call_tool` e o despacho unico, e cada chamada vira um `TraceSpan` gravado por `observability/context_ledger.py` em `.sparkforge/traces.db`: nome da tool, inicio e fim, `payload_bytes` com `payload_basis`, `detail_level`, `item_count` e `outcome` (`ok`, `error`, `unauthorized`).
+  - `adapters/tools.py:call_tool` e o despacho unico, e cada chamada vira um `TraceSpan` gravado por `observability/context_ledger.py` em `.sparkforge_aws/traces.db`: nome da tool, inicio e fim, `payload_bytes` com `payload_basis`, `detail_level`, `item_count` e `outcome` (`ok`, `error`, `unauthorized`).
   - Token e custo ficam vazios de proposito (regras 22, 24 e 25).
   - Os ids sao `run_<12 hex>` e `span_<8 hex>`, fora do formato OTel (trace de 16 bytes, span de 8).
   - O span tem `metadata` (coluna `metadata_json`), que hoje fica vazio.
@@ -148,7 +148,7 @@
 | # | Decision | Rationale | Alternative Rejected |
 |---|----------|-----------|----------------------|
 | 1 | Verbo `sparkforge-aws telemetry export --run-id <id> [--facts <host.json> ...]`, que compoe sobre `traces.db` e facts | Nao le artefato; o `traces.db` ja e o que `economy report` le | Instrumentar com o SDK OTel |
-| 2 | Saida em JSON Lines com `TracesData` e `MetricsData`, com nome fixo sob `.sparkforge/telemetry/`, dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness). Se a mesma linha pode misturar `TracesData` e `MetricsData` para o `otlpjsonfile`, ou se sao dois arquivos, o Design decide com o Collector | `--out <caminho>` |
+| 2 | Saida em JSON Lines com `TracesData` e `MetricsData`, com nome fixo sob `.sparkforge_aws/telemetry/`, dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness). Se a mesma linha pode misturar `TracesData` e `MetricsData` para o `otlpjsonfile`, ou se sao dois arquivos, o Design decide com o Collector | `--out <caminho>` |
 | 3 | Ids por `sha256` do id local, truncado a 16 e 8 bytes | Deterministico; o export repetido nao duplica trace no backend | Ids aleatorios |
 | 4 | Span SparkForge: `execute_tool {tool}`, `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function` | Semconv GenAI | Nome proprio de span |
 | 5 | `mcp.method.name=tools/call` so quando o span registrou o canal MCP. `adapters/mcp.py` passa o canal ao `call_tool`, e o `record()` o grava em `metadata`, sem migrar schema | Afirmar canal sem medida seria inventar | Assumir MCP para todo span |

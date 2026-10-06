@@ -28,11 +28,11 @@
     "tripped": false
   },
   "outputs": [
-    ".sparkforge/scan/facts_pyspark.json",
-    ".sparkforge/scan/facts_sql.json",
-    ".sparkforge/scan/facts.json",
-    ".sparkforge/scan/findings.json",
-    ".sparkforge/scan/summary.json"
+    ".sparkforge_aws/scan/facts_pyspark.json",
+    ".sparkforge_aws/scan/facts_sql.json",
+    ".sparkforge_aws/scan/facts.json",
+    ".sparkforge_aws/scan/findings.json",
+    ".sparkforge_aws/scan/summary.json"
   ],
   "plan": {
     "entries": [
@@ -50,13 +50,13 @@
     "refused": [
       {
         "detail": "sha256 nao bate com o manifesto",
-        "path": ".sparkforge/artifacts/iceberg/t.json",
+        "path": ".sparkforge_aws/artifacts/iceberg/t.json",
         "reason": "sha256_divergente"
       }
     ],
     "skipped": [
       {
-        "path": ".sparkforge",
+        "path": ".sparkforge_aws",
         "reason": "DIRECTORY_IGNORED"
       }
     ]
@@ -64,7 +64,7 @@
   "refused": [
     {
       "detail": "sha256 nao bate com o manifesto",
-      "path": ".sparkforge/artifacts/iceberg/t.json",
+      "path": ".sparkforge_aws/artifacts/iceberg/t.json",
       "reason": "sha256_divergente"
     }
   ],

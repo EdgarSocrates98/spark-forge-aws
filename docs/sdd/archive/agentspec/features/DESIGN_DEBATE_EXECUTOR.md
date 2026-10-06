@@ -32,7 +32,7 @@
                                              │
  sparkforge-aws debate start --rules A,B ────────┤  recalcula os planos (executor, sem gravar)
                                              ▼  e congela o do par escolhido
- .sparkforge/debate/<debate_id>/  plan.json · submissions.jsonl · facts.jsonl
+ .sparkforge_aws/debate/<debate_id>/  plan.json · submissions.jsonl · facts.jsonl
                                              │
  sparkforge-aws debate next  --debate <id> ──────┤  brief do lado da vez │ done │ budget_exhausted
  sparkforge-aws debate submit --debate <id> ─────┤  valida → reextrai evidência → grava Claim/
@@ -80,7 +80,7 @@ As dependências respeitam as duas fronteiras: `agentic/executor` (runtime) não
 
 **Context:** `arbitrate` devolve `debate_plans` no payload e não os grava; `digest` recalcula sem gravar. O debate precisa de um plano estável entre chamadas, e o DEFINE exige retomada (SC2).
 
-**Choice:** `debate start` recebe os mesmos insumos do `arbitrate` (findings, facts repetível, runtime) mais `--rules A,B`. Ele recalcula os planos pelo mesmo caminho do executor e grava o do par em `.sparkforge/debate/<debate_id>/plan.json`, com a lista de `fact_id` da união. `debate_id = "dbt_" + sha1[:8]` do plano canônico. `next`/`submit` leem **só** esse diretório e o blackboard, sem caminho novo do argv.
+**Choice:** `debate start` recebe os mesmos insumos do `arbitrate` (findings, facts repetível, runtime) mais `--rules A,B`. Ele recalcula os planos pelo mesmo caminho do executor e grava o do par em `.sparkforge_aws/debate/<debate_id>/plan.json`, com a lista de `fact_id` da união. `debate_id = "dbt_" + sha1[:8]` do plano canônico. `next`/`submit` leem **só** esse diretório e o blackboard, sem caminho novo do argv.
 
 **Rationale:** Retomada vira recálculo sobre arquivos. O mesmo `start` é idempotente: plano igual dá o mesmo id, e um segundo `start` com plano diferente para o mesmo par é recusado com `debate_exists_with_other_plan`.
 
@@ -179,7 +179,7 @@ As dependências respeitam as duas fronteiras: `agentic/executor` (runtime) não
 3. repete: `next` → `claude -p` com o brief, e o protocolo pede um único bloco ` ```json ` no fim → extrai o último bloco → `submit`;
 4. submissão recusada volta ao lado com o motivo e consome o budget.
 
-Os transcripts ficam em `~/.sparkforge/debate-evals/<run>/<caso>/<n>-<lado>.jsonl`.
+Os transcripts ficam em `~/.sparkforge_aws/debate-evals/<run>/<caso>/<n>-<lado>.jsonl`.
 
 **Rationale:** O mesmo molde já medido no eval harness, com as mesmas defesas: allowlist, nada do argv em caminho, `encoding="utf-8"`.
 

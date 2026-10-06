@@ -42,7 +42,7 @@ HOOKS_DO_PROJETO = frozenset(
         "(fallback sem Node)'; cat \"$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/"
         'caveman-activate.md"; }',
         # §16 (2026-09-13): o PreToolUse da policy. Le o stdin do Claude Code e
-        # `.sparkforge/policy.yaml`; so BLOQUEIA (exit 2) regra `deny` de Bash e
+        # `.sparkforge_aws/policy.yaml`; so BLOQUEIA (exit 2) regra `deny` de Bash e
         # escrita. Sem rede, sem escrita, sem shell: um modulo Python do pacote.
         "python -m sparkforge_aws.policy.hook",
     }

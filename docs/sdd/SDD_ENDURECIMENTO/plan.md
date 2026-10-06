@@ -120,7 +120,7 @@ def test_relatorio_por_symlink_nao_escapa(tmp_path):
     fora.write_bytes(json.dumps({"new": [], "resolved": [{"rule_id": "SF-PY-012"}]})
                      .encode("utf-8"))
     try:
-        (tmp_path / ".sparkforge" / "sandbox" / "S1" / "report.json").symlink_to(fora)
+        (tmp_path / ".sparkforge_aws" / "sandbox" / "S1" / "report.json").symlink_to(fora)
     except OSError as erro:
         pytest.skip(f"symlink indisponivel: {erro}")
     assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
@@ -171,12 +171,12 @@ def _operator_com_moved(repo: Path, ident: str = "S1") -> dict[str, Path]:
 
 
 def _relatorio_sha(repo: Path, ident: str = "S1") -> str:
-    return text_sha256(repo / ".sparkforge" / "sandbox" / ident / "report.json")
+    return text_sha256(repo / ".sparkforge_aws" / "sandbox" / ident / "report.json")
 
 
 def test_ship_done_sem_evidencia_recusa(tmp_path):
     caminhos = _operator_com_moved(tmp_path, "FALSO")
-    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox")
+    shutil.rmtree(tmp_path / ".sparkforge_aws" / "sandbox")
     _reescreve(caminhos["ship"], evidence=None)
     recusa = check(tmp_path)["refused"]
     assert [(r["code"], r["field"]) for r in recusa] == [("ship_evidence_missing", "evidence")]
@@ -192,7 +192,7 @@ def test_ship_done_sem_evidencia_recusa(tmp_path):
 
 def test_ship_done_com_evidencia_e_sem_relatorio_e_historia(tmp_path):
     caminhos = _operator_com_moved(tmp_path, "FALSO")
-    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox")
+    shutil.rmtree(tmp_path / ".sparkforge_aws" / "sandbox")
     _reescreve(caminhos["ship"], evidence=[{"change_id": "FALSO", "report_sha256": "a" * 64}])
     assert _codigos(check(tmp_path)) == ([], [])
     # a entrada precisa nomear o id citado

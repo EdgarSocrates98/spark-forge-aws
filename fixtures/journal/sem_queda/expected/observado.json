@@ -24,7 +24,7 @@
     "broken_at": null,
     "events": 4,
     "last_seq": 4,
-    "path": ".sparkforge/journal.jsonl",
+    "path": ".sparkforge_aws/journal.jsonl",
     "status": "intact",
     "torn_tail": false
   }

@@ -77,7 +77,7 @@ def test_collect_parquet_footer_registra_e_o_scan_pega(tmp_path):
     repo.mkdir()
     dados = _parquet(tmp_path / "dados")
     entrada = _core.collect_parquet_footer(str(repo), prefix=str(dados), now=AGORA)
-    manifesto_path = repo / ".sparkforge" / "artifacts" / "manifest.json"
+    manifesto_path = repo / ".sparkforge_aws" / "artifacts" / "manifest.json"
     manifesto = json.loads(manifesto_path.read_text(encoding="utf-8"))
     (registro,) = [e for e in manifesto if e["kind"] == "parquet_footer"]
     assert registro["path"] == entrada["path"]

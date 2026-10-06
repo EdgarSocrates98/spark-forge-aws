@@ -57,16 +57,16 @@ sparkforge-aws lab verify --repo .
 sparkforge-aws lab scenarios --json --repo .
 sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42
 sparkforge-aws lab run iceberg-small-files --backend compose --seed 42
-sparkforge-aws lab inspect .sparkforge/lab/runs/<run-id>
-sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id>
+sparkforge-aws lab inspect .sparkforge_aws/lab/runs/<run-id>
+sparkforge-aws lab analyze .sparkforge_aws/lab/runs/<run-id>
 sparkforge-aws lab compare <run-a> <run-b>
-sparkforge-aws lab reproduce .sparkforge/lab/runs/<run-id>/receipt.json
+sparkforge-aws lab reproduce .sparkforge_aws/lab/runs/<run-id>/receipt.json
 ```
 
 Doctor, verify, profiles, scenarios, describe, plan, inspect, analyze, compare
 and reproduce are read-only or planning operations. `run`, `up`, `down`,
 `shell` and `gc` require both `--execute` and `--confirm` to mutate a local
-environment. Runs belong in `.sparkforge/lab/runs/`, never in Git; promotion
+environment. Runs belong in `.sparkforge_aws/lab/runs/`, never in Git; promotion
 requires a reviewed, hash-valid receipt.
 
 The final offline registry verification reported 11 components, 20 Golden

@@ -95,7 +95,7 @@ def iam_access_path(role_arn: str) -> str:
     if len(partes) > 4:
         conta = partes[4]
     prefixo = f"{conta}_" if conta else ""
-    return f".sparkforge/artifacts/iam_access/{prefixo}{nome}.json"
+    return f".sparkforge_aws/artifacts/iam_access/{prefixo}{nome}.json"
 
 
 def _codigo_de_erro(exc: BaseException) -> str:

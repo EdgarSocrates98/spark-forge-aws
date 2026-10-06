@@ -31,7 +31,7 @@ Seu trabalho não é vasculhar o arquivo à procura do padrão. É **extrair, ju
 ### 1. Extraia os facts
 
 ```bash
-sparkforge-aws analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge_aws/facts.json
 ```
 
 Leia `by_kind` na saída: se o arquivo tem joins e a contagem de `pyspark.join` é zero, ou o módulo é grande e `by_kind` está vazio, o parser não reconheceu a forma do código antes de concluir "está limpo". Leia `unresolved` sempre — linha que o AST não conseguiu resolver (import dinâmico, `conf.set` com valor não literal) é ponto cego, não ausência de problema.
@@ -39,7 +39,7 @@ Leia `by_kind` na saída: se o arquivo tem joins e a contagem de `pyspark.join` 
 ### 2. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --show-skipped
 ```
 
 `--show-skipped` mostra as regras que não avaliaram por falta do fact esperado ou por incompatibilidade de `runtime_scope` — sem isso, "zero findings" e "não consegui avaliar" ficam indistinguíveis.
@@ -68,7 +68,7 @@ Se o módulo importa `graphframes` ou `io.graphframes`, o mesmo `.py` tem uma qu
 e ela não é opcional — pular apaga a área `SF-GRAPH` do relatório em silêncio:
 
 ```bash
-sparkforge-aws analyze graph --path <arquivo-ou-diretório> --out .sparkforge/facts_graph.json
+sparkforge-aws analyze graph --path <arquivo-ou-diretório> --out .sparkforge_aws/facts_graph.json
 ```
 
 Quatro regras: `SF-GRAPH-001` (`connectedComponents` sem diretório de checkpoint — **P0**,

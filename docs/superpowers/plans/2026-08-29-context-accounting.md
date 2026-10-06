@@ -36,7 +36,7 @@ sparkforge_aws.observability.tracer:
                  .finish_trace(trace, status="completed") -> None
 
 sparkforge_aws.observability.store:
-  SQLiteTraceStore(db_path=None)      # default: Path.cwd()/".sparkforge"/"traces.db"
+  SQLiteTraceStore(db_path=None)      # default: Path.cwd()/".sparkforge_aws"/"traces.db"
     .save_trace(trace) -> None        # INSERT OR REPLACE em `traces` e `spans`
     .get_trace(run_id) -> dict | None
 

@@ -1,6 +1,6 @@
 # Investigação com case
 
-O **case** é a memória da investigação. É um arquivo, `.sparkforge/case.yaml`, que
+O **case** é a memória da investigação. É um arquivo, `.sparkforge_aws/case.yaml`, que
 guarda a fase, a versão do runtime, as skills usadas e as hipóteses. Com ele, você
 para hoje no Claude Code e continua amanhã no Devin sem perder nada. Veja também
 [Case](../01-conceitos.md#case) no glossário.
@@ -88,7 +88,7 @@ versões do Glue. `divergences` vazio quer dizer que as fontes concordam.
 Abrir de novo por cima é recusado, com código de saída 2:
 
 ```text
-ja existe um case em .../.sparkforge/case.yaml, e abrir por cima dele apagaria: fase `intake`.
+ja existe um case em .../.sparkforge_aws/case.yaml, e abrir por cima dele apagaria: fase `intake`.
   Para continuar a investigacao: `sparkforge-aws case get --repo <raiz>` e `sparkforge-aws case update ...`.
   Para recomecar do zero mesmo assim: acrescente `--reopen` ...
 ```
@@ -112,7 +112,7 @@ sparkforge-aws next-step --repo "$DEMO"
   "phase": "intake",
   "recommended_skill": "analyze-library-call-graph",
   "reason": "ROUTE-002: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.",
-  "collect_commands": ["sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json"],
+  "collect_commands": ["sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json"],
   "recommended_agent": null
 }
 ```
@@ -121,13 +121,13 @@ sparkforge-aws next-step --repo "$DEMO"
 job de exemplo (fixture sintética):
 
 ```bash
-sparkforge-aws analyze pyspark --path fixtures/pyspark/action_in_loop/input/lib --out "$DEMO/.sparkforge/facts.json"
-sparkforge-aws judge --facts "$DEMO/.sparkforge/facts.json" --glue 5.0 --out "$DEMO/.sparkforge/findings.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/action_in_loop/input/lib --out "$DEMO/.sparkforge_aws/facts.json"
+sparkforge-aws judge --facts "$DEMO/.sparkforge_aws/facts.json" --glue 5.0 --out "$DEMO/.sparkforge_aws/findings.json"
 ```
 
 O `judge` achou 1 finding: `SF-PY-004`, "Action ou write dentro de loop", P0.
 Depois de ter findings, passe o arquivo ao `next-step` para ele casar as rotas:
-`sparkforge-aws next-step --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"`.
+`sparkforge-aws next-step --repo "$DEMO" --findings "$DEMO/.sparkforge_aws/findings.json"`.
 
 ### 4. Mudar de fase e registrar o que foi feito
 
@@ -199,12 +199,12 @@ ela combinar com o resultado. O `f_64c631` do exemplo veio de um `benchmark` rea
 
 ### 7. Handoff e resume: parar e continuar
 
-- `handoff` grava `.sparkforge/handoff.md` e imprime o resumo.
+- `handoff` grava `.sparkforge_aws/handoff.md` e imprime o resumo.
 - `resume` devolve o resumo para quem vai continuar.
 
 ```bash
-sparkforge-aws handoff --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"
-sparkforge-aws resume --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"
+sparkforge-aws handoff --repo "$DEMO" --findings "$DEMO/.sparkforge_aws/findings.json"
+sparkforge-aws resume --repo "$DEMO" --findings "$DEMO/.sparkforge_aws/findings.json"
 ```
 
 Início real do `handoff.md`:
@@ -231,7 +231,7 @@ O `resume` traz, entre outras, as chaves `top_findings`, `open_hypotheses`,
 
 Todo verbo que muda estado (27 hoje: `case open`, `case update`, `scan`, `arbitrate`,
 `debate start|next|submit`, `change sandbox|propose`, os `collect *`, `receipt emit`,
-`report sign`, `funcval plan|compare`) grava em `.sparkforge/journal.jsonl` um
+`report sign`, `funcval plan|compare`) grava em `.sparkforge_aws/journal.jsonl` um
 `started` antes de rodar e um `finished` depois. Isso vale pela CLI e pelo MCP. Os
 argumentos entram como hash, e só uma lista fechada de chaves, como `rules`,
 `fail_on` e `debate_id`, entra literal.
@@ -273,7 +273,7 @@ Ao retomar, siga esta ordem:
 5. Deixe o `next-step` decidir a rota.
 
 **O que vai para o git:** `case.yaml`, `facts.json`, `findings.json`, `handoff.md`,
-`journal.jsonl` e `artifacts/manifest.json`, dentro de `.sparkforge/`. Os artefatos
+`journal.jsonl` e `artifacts/manifest.json`, dentro de `.sparkforge_aws/`. Os artefatos
 brutos (event logs, planos) **não** vão, porque podem ter dado de negócio. Os `*.torn`
 também não vão: são evidência local de uma queda, não estado do case.
 

@@ -28,7 +28,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge_aws/policy/` (novo: schema, carga, `decide`, hook), `adapters/{_core,cli,tools}.py`, `.sparkforge/policy.yaml`, `.claude/settings.json`, `fixtures/policy/` | Ao lado de `agents/autonomy.py`, que continua a cadeia |
+| Likely Location | `sparkforge_aws/policy/` (novo: schema, carga, `decide`, hook), `adapters/{_core,cli,tools}.py`, `.sparkforge_aws/policy.yaml`, `.claude/settings.json`, `fixtures/policy/` | Ao lado de `agents/autonomy.py`, que continua a cadeia |
 | Relevant KB Domains | Nenhum dominio do KB do agentspec cobre hooks do Claude Code; fontes: documentacao oficial de hooks e de permissoes, `AUTHORIZATION-CHAIN.md`, `THREAT-MODEL.md` | Consultar no design |
 | IaC Patterns | Regras sobre `terraform`, `aws s3 rm`, `lakeformation revoke-permissions` | Nada de infraestrutura nova |
 
@@ -66,7 +66,7 @@
 
 ### Approach A: Modulo unico no pacote ⭐ Recommended
 
-**Description:** `sparkforge_aws/policy/` com schema, carga e `decide()` puro; `call_tool` a usa quando ha `.sparkforge/policy.yaml`; o hook e `python -m sparkforge_aws.policy.hook`; o gerador escreve `permissions.ask`.
+**Description:** `sparkforge_aws/policy/` com schema, carga e `decide()` puro; `call_tool` a usa quando ha `.sparkforge_aws/policy.yaml`; o hook e `python -m sparkforge_aws.policy.hook`; o gerador escreve `permissions.ask`.
 
 **Pros:**
 - Uma fonte, uma decisao, testavel sem Claude Code.
@@ -111,7 +111,7 @@
 
 | # | Decision | Rationale | Alternative Rejected |
 |---|----------|-----------|----------------------|
-| 1 | `.sparkforge/policy.yaml` com schema e a fonte unica | Politica declarativa e inspecionavel (OWASP ACS) | Politica montada so em codigo |
+| 1 | `.sparkforge_aws/policy.yaml` com schema e a fonte unica | Politica declarativa e inspecionavel (OWASP ACS) | Politica montada so em codigo |
 | 2 | Tres portas: `call_tool` (MCP: allow/deny/ask por aprovacao), hook `PreToolUse` matcher `Bash\|Edit\|Write` (so deny, exit 2), `permissions.ask` gerado (ask) | O hook nao faz `ask` (documentacao oficial) | `ask` virar deny |
 | 3 | Policy padrao commitada: destrutivos em `ask`, nada em `deny` | Fecha T-024 neste repo com o menor atrito | Deny por padrao |
 | 4 | Sintaxe de regra = a do Claude Code (`terraform destroy *`, `rules/catalog/**`) | Geracao 1:1 para `Bash(...)`/`Edit(...)` | Sintaxe propria |

@@ -65,7 +65,7 @@ Duas armadilhas de coleta:
 
 ```bash
 sparkforge-aws analyze emr-cluster --path <arquivo ou diretório com os dumps> \
-  --out .sparkforge/facts_emr.json
+  --out .sparkforge_aws/facts_emr.json
 ```
 
 Leia `emr.unresolved` antes de qualquer conclusão. Ele distingue os dois motivos que
@@ -80,7 +80,7 @@ Nenhuma decisão de executor se sustenta em `describe-cluster` sozinho. Quando o
 `SF-EMR-001` (ou qualquer conversa sobre memória e cores por executor), traga o run:
 
 ```bash
-sparkforge-aws analyze event-log --path <event log> --out .sparkforge/facts_eventlog.json
+sparkforge-aws analyze event-log --path <event log> --out .sparkforge_aws/facts_eventlog.json
 ```
 
 `--facts` é repetível: passe os dois arquivos na mesma chamada de `judge`, que une e
@@ -89,12 +89,12 @@ deduplica as listas antes de julgar.
 ### 4. Julgue
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts_emr.json --show-skipped
+sparkforge-aws judge --facts .sparkforge_aws/facts_emr.json --show-skipped
 
 # com o run junto, para sustentar dimensionamento:
 sparkforge-aws judge \
-  --facts .sparkforge/facts_emr.json \
-  --facts .sparkforge/facts_eventlog.json \
+  --facts .sparkforge_aws/facts_emr.json \
+  --facts .sparkforge_aws/facts_eventlog.json \
   --show-skipped
 ```
 
@@ -171,8 +171,8 @@ São **uma** chamada e um artefato, contra os seis do EC2:
 ```bash
 sparkforge-aws collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
 sparkforge-aws analyze emr-serverless --path <arquivo ou diretório> \
-  --out .sparkforge/facts_emr_serverless.json
-sparkforge-aws judge --facts .sparkforge/facts_emr_serverless.json --show-skipped
+  --out .sparkforge_aws/facts_emr_serverless.json
+sparkforge-aws judge --facts .sparkforge_aws/facts_emr_serverless.json --show-skipped
 ```
 
 Cinco coisas que decidem a leitura, e nenhuma delas existe no EC2:

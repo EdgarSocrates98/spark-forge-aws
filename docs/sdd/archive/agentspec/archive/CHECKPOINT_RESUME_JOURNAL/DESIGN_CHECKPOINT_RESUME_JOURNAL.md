@@ -78,7 +78,7 @@ leitura
 - `append_line(path, line)`: abre em `"a+b"`, trava o próprio arquivo (`fcntl.flock(LOCK_EX)`; no Windows `msvcrt.locking(LK_LOCK, 1)` no byte 0), confere o último byte; se não é `\n`, copia os bytes depois do último `\n` para `<arquivo>.torn` (acrescentando), trunca até o último `\n`, e só então anexa `line + "\n"`, `flush`, `fsync`, destrava. Devolve o texto das linhas anteriores quando o chamador precisa (journal) para calcular `seq`/`prev` DENTRO da trava.
 - `read_jsonl(path) -> (list[dict], str | None)`: linha final sem `\n` e sem JSON válido vira `torn_tail`; qualquer outra linha inválida levanta `DurableError` com o número da linha.
 - Entram: `save_case`, `_escreve_json`, `_append_jsonl`/`_read_jsonl`, `_anexa_jsonl`/`_le_jsonl`, `append_evidence_facts` e o leitor de `facts.jsonl` do debate. Ficam fora `agentic/memory.py` e `agents/room.py` (não são estado do case que `resume`/debate leiam).
-- `.gitignore` ganha `.sparkforge/**/*.torn`: a quarentena é evidência local de queda, não estado.
+- `.gitignore` ganha `.sparkforge_aws/**/*.torn`: a quarentena é evidência local de queda, não estado.
 
 **Rationale:** Uma implementação só da mesma garantia; a trava no próprio arquivo dispensa arquivo de lock ao lado (que seria mais um arquivo em pasta commitável).
 
@@ -156,16 +156,16 @@ leitura
 **Context:** 24 dos 27 recebem `repo` (na CLI do `scan`, o destino é `raiz`); `report_sign`, `funcval_plan` e `funcval_compare` não. Medido: `test_adapters_report_signature.py:430` roda `report sign` com o cwd na raiz do projeto — com `raiz_do_projeto()` o journal sujaria o repositório (A-004 caiu para esses 3). 18 dos 27 recebem `now`. `outputSchema` declara caminho em 20 dos 27.
 
 **Choice:**
-- Raiz: `args["repo"]` (MCP) ou `args.repo`/`args.raiz` (CLI). Para os 3 sem `repo`: o primeiro ancestral do arquivo de saída (`report`/`report_path`; `out`/`out_path`) que contém `.sparkforge/case.yaml`. Sem ancestral: não grava, e o resultado ganha `journal: "unrecorded"`, `journal_reason: "sem_raiz_de_case"`.
+- Raiz: `args["repo"]` (MCP) ou `args.repo`/`args.raiz` (CLI). Para os 3 sem `repo`: o primeiro ancestral do arquivo de saída (`report`/`report_path`; `out`/`out_path`) que contém `.sparkforge_aws/case.yaml`. Sem ancestral: não grava, e o resultado ganha `journal: "unrecorded"`, `journal_reason: "sem_raiz_de_case"`.
 - Argumentos: cada valor vira `sha256:` + sha256 do JSON canônico; literal só para `LITERAL_KEYS = {"rules", "debate_id", "debate", "sandbox", "sandbox_id", "fail_on", "format", "output_format", "phase", "gate"}` e só se o valor não for caminho absoluto nem conter separador de drive.
 - `at`: `args["now"]` quando é texto não vazio, senão `null`.
 - `outputs` por tabela `OUTPUTS` em `record.py` (caminho relativo à raiz → sha256 do arquivo depois do verbo):
 
 | Tool | Fonte dos caminhos |
 |------|--------------------|
-| `case_open`, `case_update` | fixo `.sparkforge/case.yaml` |
-| `collect_*` (13 com `path`) | `resultado["path"]` e `.sparkforge/artifacts/manifest.json` |
-| `collect_glue_job_runs` | `.sparkforge/artifacts/manifest.json` |
+| `case_open`, `case_update` | fixo `.sparkforge_aws/case.yaml` |
+| `collect_*` (13 com `path`) | `resultado["path"]` e `.sparkforge_aws/artifacts/manifest.json` |
+| `collect_glue_job_runs` | `.sparkforge_aws/artifacts/manifest.json` |
 | `scan` | `resultado["outputs"]` |
 | `receipt_emit` | `resultado["receipt_path"]` |
 | `debate_start` | `resultado["state_dir"]` + `plan.json` |
@@ -178,7 +178,7 @@ Caminho fora da raiz ou arquivo ausente entra como `null` com o caminho, não co
 
 **Alternatives Rejected:**
 1. `raiz_do_projeto()` para os 3 — suja a raiz do repositório na suíte (medido).
-2. Varrer `.sparkforge/` por mtime para achar saídas — inventa lista.
+2. Varrer `.sparkforge_aws/` por mtime para achar saídas — inventa lista.
 
 **Consequences:**
 - `outputs` é parcial por desenho; o número de verbos com `outputs` resolvido sai medido no BUILD_REPORT.
@@ -219,9 +219,9 @@ Caminho fora da raiz ou arquivo ausente entra como `null` com o caminho, não co
 | **Status** | Accepted |
 | **Date** | 2026-09-15 |
 
-**Context:** `tests/conftest.py` já tem a fixture de sessão que isola o ledger e afirma, no fim, que `.sparkforge/traces.db` da raiz não foi criado. 24 arquivos rastreados moram em `fixtures/**/.sparkforge/`.
+**Context:** `tests/conftest.py` já tem a fixture de sessão que isola o ledger e afirma, no fim, que `.sparkforge_aws/traces.db` da raiz não foi criado. 24 arquivos rastreados moram em `fixtures/**/.sparkforge_aws/`.
 
-**Choice:** A mesma fixture de sessão fotografa, no início, o sha256 (ou a ausência) de `_ROOT/.sparkforge/journal.jsonl` e de todo `fixtures/**/.sparkforge/journal.jsonl`, e afirma no fim que nada mudou. Um teste de unidade roda `report sign` com o cwd na raiz do projeto e confere `journal: "unrecorded"` com `sem_raiz_de_case`.
+**Choice:** A mesma fixture de sessão fotografa, no início, o sha256 (ou a ausência) de `_ROOT/.sparkforge_aws/journal.jsonl` e de todo `fixtures/**/.sparkforge_aws/journal.jsonl`, e afirma no fim que nada mudou. Um teste de unidade roda `report sign` com o cwd na raiz do projeto e confere `journal: "unrecorded"` com `sem_raiz_de_case`.
 
 **Rationale:** Verifica o EFEITO, como o backstop do `traces.db`: pega qualquer teste presente ou futuro.
 
@@ -244,7 +244,7 @@ Caminho fora da raiz ou arquivo ausente entra como `null` com o caminho, não co
 | 5 | `sparkforge_aws/adapters/tools.py` | Modify | Gancho em `call_tool`; `_RESUME_SCHEMA` com `journal`/`in_flight_source` | @python-developer | 2 |
 | 6 | `sparkforge_aws/adapters/cli.py` | Modify | Gancho em `_dispatch`; subcomando `journal verify` | @python-developer | 2 |
 | 7 | `sparkforge_aws/adapters/_core.py`, `sparkforge_aws/case/resume.py` | Modify | `resume_case` com `estado`; `journal_verify`; bloco no payload e no `handoff.md` | @python-developer | 2 |
-| 8 | `.gitignore` | Modify | `.sparkforge/**/*.torn` | (general) | None |
+| 8 | `.gitignore` | Modify | `.sparkforge_aws/**/*.torn` | (general) | None |
 | 9 | `tests/test_durable.py`, `tests/test_journal.py` | Create | Unidade: atomicidade com `os.replace` sabotado, cauda, linha ruim no meio, trava, conjunto = anotações, duas portas, sem literal, regra 27, recusa da policy, `sem_raiz_de_case` | @test-generator | 1-7 |
 | 10 | `fixtures/journal/<6 casos>/` + `tests/test_fixtures_golden_journal.py` | Create | Goldens de queda com `FIXTURES = ROOT / "fixtures" / "journal"` literal; `.gitattributes` `fixtures/journal/** -text` | @test-generator | 2, 7 |
 | 11 | `tests/conftest.py`, `tests/test_case_resume.py`, `tests/test_fixtures_golden_mcp_parity.py`, `tests/test_capability_parity.py` | Modify | Backstop do journal, payload novo, `ALTERADAS_DEPOIS_DO_GOLDEN["sparkforge_resume"]`, `ALLOWED_CLI_ONLY["journal verify"]` | (general) | 5-7 |

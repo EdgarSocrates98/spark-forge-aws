@@ -164,7 +164,7 @@ class ArtifactCache(_NamespacedCache[Any]):
         self.cache_dir = (
             Path(cache_dir).expanduser()
             if cache_dir is not None
-            else Path.cwd() / ".sparkforge" / "cache"
+            else Path.cwd() / ".sparkforge_aws" / "cache"
         )
         self.default_ttl_seconds = default_ttl_seconds
 

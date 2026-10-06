@@ -32,7 +32,7 @@
 +------------------------------ _core.scan (orquestra) ------------------------------+
 |  para cada Entrada: _core.analyze_<x>(path, limit=None)  -- erro -> analyze_falhou  |
 |  uniao -> fuse_facts -> judge_findings(runtime das flags)                           |
-|  grava .sparkforge/scan/{facts_<analyze>.json, facts.json, findings.json,           |
+|  grava .sparkforge_aws/scan/{facts_<analyze>.json, facts.json, findings.json,           |
 |                          summary.json}                                               |
 |  --format sarif -> report_github(findings, facts, repo) + report_github_write        |
 +----------------------------------------------+-------------------------------------+
@@ -63,7 +63,7 @@
 | `_core.scan`, `_core.doctor` | Orquestram as portas que ja existem; unica camada que importa `_core` | `sparkforge_aws/adapters/_core.py` |
 | CLI `scan`, `doctor` | Verbos de topo | `argparse` em `adapters/cli.py` |
 | Tools `sparkforge_scan`, `sparkforge_doctor` | Mesma funcao pelo MCP | `adapters/tools.py` |
-| `fixtures/scan/` | Repositorios sinteticos com `.sparkforge/artifacts/` commitado | JSON, `.py`, `.tf`, `.sql`, `.jsonl` copiados de fixtures existentes |
+| `fixtures/scan/` | Repositorios sinteticos com `.sparkforge_aws/artifacts/` commitado | JSON, `.py`, `.tf`, `.sql`, `.jsonl` copiados de fixtures existentes |
 
 ---
 
@@ -101,7 +101,7 @@
 
 **Context:** JSON de dump tem a mesma extensao para 10 extratores diferentes.
 
-**Choice:** `plan(raiz)` le `.sparkforge/artifacts/manifest.json` (entrada = `kind` + `path`, sha256 conferido por `verify_artifact`) e varre o codigo por `varrer_source_files` (que ja pula `.sparkforge`, `.venv`, `vendor` e credenciais, com razao). Mapa fechado `KIND_PARA_ANALYZE`:
+**Choice:** `plan(raiz)` le `.sparkforge_aws/artifacts/manifest.json` (entrada = `kind` + `path`, sha256 conferido por `verify_artifact`) e varre o codigo por `varrer_source_files` (que ja pula `.sparkforge_aws`, `.venv`, `vendor` e credenciais, com razao). Mapa fechado `KIND_PARA_ANALYZE`:
 
 | `kind` do manifesto | analyze |
 |---|---|
@@ -118,7 +118,7 @@
 | `glue_resource_link` | `glue-resource-link` |
 | `terraform` (JSON de `collect glue-job`) | recusa `kind_sem_analyze`: o `analyze terraform` le HCL, e a definicao implantada nao tem extrator (medido pela doc de 2026-09-13) |
 
-Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql`, via `from_pyspark`); `.sql` -> `sql`; `.tf` -> `terraform`; `.jsonl` -> `event-log`; `.json` -> recusa `sem_manifesto`.
+Extensao, fora de `.sparkforge_aws/`: `.py` -> `pyspark` e `sql` (literal `spark.sql`, via `from_pyspark`); `.sql` -> `sql`; `.tf` -> `terraform`; `.jsonl` -> `event-log`; `.json` -> recusa `sem_manifesto`.
 
 **Rationale:** O coletor ja declarou o tipo; farejar conteudo mandaria dump ambiguo ao extrator errado (decisao do brainstorm). Plano puro e testavel sem executar e e o que `--dry-run` imprime.
 
@@ -161,7 +161,7 @@ Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql
 | **Status** | Accepted |
 | **Date** | 2026-09-13 |
 
-**Choice:** `sparkforge_scan` `_WRITE_IDEMPOTENT` (grava em `.sparkforge/scan/`, repetir sobrescreve igual), declara `repo`; `sparkforge_doctor` `_READ_ONLY`, declara `repo`. Tools 95 -> 97; com caminho 87 -> 89; `READ_ONLY` 63 -> 64. Dono: executor `sf-inventory` (inventario do repositorio e do ambiente), checagem nova no corpo dele.
+**Choice:** `sparkforge_scan` `_WRITE_IDEMPOTENT` (grava em `.sparkforge_aws/scan/`, repetir sobrescreve igual), declara `repo`; `sparkforge_doctor` `_READ_ONLY`, declara `repo`. Tools 95 -> 97; com caminho 87 -> 89; `READ_ONLY` 63 -> 64. Dono: executor `sf-inventory` (inventario do repositorio e do ambiente), checagem nova no corpo dele.
 
 **Rationale:** A anotacao reflete o efeito; ambas confinam leitura a `repo`.
 
@@ -177,7 +177,7 @@ Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql
 | 2 | `sparkforge_aws/scan/plan.py` | Create | Plano puro, `KIND_PARA_ANALYZE`, recusas | @python-developer | None |
 | 3 | `sparkforge_aws/scan/summary.py` | Create | Resumo puro | @python-developer | 2 |
 | 4 | `sparkforge_aws/doctor.py` | Create | `Checagem`, `avaliar_*`, `resumo` | @python-developer | None |
-| 5 | `sparkforge_aws/adapters/_core.py` | Modify | `scan()`, `doctor()`, escrita em `.sparkforge/scan/` | @python-developer | 2, 3, 4 |
+| 5 | `sparkforge_aws/adapters/_core.py` | Modify | `scan()`, `doctor()`, escrita em `.sparkforge_aws/scan/` | @python-developer | 2, 3, 4 |
 | 6 | `sparkforge_aws/adapters/cli.py` | Modify | Verbos `scan` e `doctor`, dispatch | @python-developer | 5 |
 | 7 | `sparkforge_aws/adapters/tools.py` | Modify | Schemas, entradas, handlers, mapa | @python-developer | 5 |
 | 8 | `tests/test_scan_plan.py` | Create | Unidade do plano e do mapa contra os `kind=` dos coletores | @test-generator | 2 |
@@ -289,10 +289,10 @@ def avaliar_artefatos(verify: dict) -> Checagem:
 ### Pattern 3: Saida gravada (nomes fixos, nada do argv vira caminho)
 
 ```text
-<repo>/.sparkforge/scan/facts_<analyze>.json   o que cada extrator emitiu (lista de facts)
-<repo>/.sparkforge/scan/facts.json             uniao apos fuse (o que o judge viu)
-<repo>/.sparkforge/scan/findings.json          itens do judge
-<repo>/.sparkforge/scan/summary.json           plano, contagens, recusas, pulos, runtime
+<repo>/.sparkforge_aws/scan/facts_<analyze>.json   o que cada extrator emitiu (lista de facts)
+<repo>/.sparkforge_aws/scan/facts.json             uniao apos fuse (o que o judge viu)
+<repo>/.sparkforge_aws/scan/findings.json          itens do judge
+<repo>/.sparkforge_aws/scan/summary.json           plano, contagens, recusas, pulos, runtime
 ```
 
 ---
@@ -309,7 +309,7 @@ def avaliar_artefatos(verify: dict) -> Checagem:
 3. uniao -> fuse_facts -> judge_findings(runtime das flags, limit=None)
    |
    v
-4. grava .sparkforge/scan/*; --format sarif: report_github + report_github_write
+4. grava .sparkforge_aws/scan/*; --format sarif: report_github + report_github_write
    |
    v
 5. summary no stdout/tool; exit 1 se --fail-on encontrar a severidade (P1 inclui P0)
@@ -336,7 +336,7 @@ def avaliar_artefatos(verify: dict) -> Checagem:
 | Igualdade | scan == analyze -> fuse -> judge a mao; SARIF == `report github` | idem | pytest | SC1, SC4 |
 | Registros | Tools novas nos registros manuais | suites existentes | pytest | SC6 |
 
-`fixtures/scan/*/repo/.sparkforge/artifacts/manifest.json` com sha256 real; A-001 conferido por `git check-ignore` no build. O golden roda sobre copia em `tmp_path` para o scan nunca gravar dentro de `fixtures/`, e fixa a raiz do repositorio (gate de wheel, memoria item 13).
+`fixtures/scan/*/repo/.sparkforge_aws/artifacts/manifest.json` com sha256 real; A-001 conferido por `git check-ignore` no build. O golden roda sobre copia em `tmp_path` para o scan nunca gravar dentro de `fixtures/`, e fixa a raiz do repositorio (gate de wheel, memoria item 13).
 
 ---
 
@@ -370,7 +370,7 @@ def avaliar_artefatos(verify: dict) -> Checagem:
 
 - Sem rede no scan e na tool do doctor; STS so por `--online` na CLI.
 - Varredura herda a poda de credenciais (`DIRETORIOS_SENSIVEIS`, `.pem`, `.env`, `.tfstate`), relatada como pulo.
-- Caminhos de escrita fixos em `<repo>/.sparkforge/scan/`. Entrada do manifesto com caminho absoluto ou que resolve fora da raiz sai com a recusa `fora_da_raiz` (sexta recusa, acrescentada no design ao conjunto do DEFINE) e nunca e lida.
+- Caminhos de escrita fixos em `<repo>/.sparkforge_aws/scan/`. Entrada do manifesto com caminho absoluto ou que resolve fora da raiz sai com a recusa `fora_da_raiz` (sexta recusa, acrescentada no design ao conjunto do DEFINE) e nunca e lida.
 - Artefato so e analisado com sha256 conferido.
 
 ---

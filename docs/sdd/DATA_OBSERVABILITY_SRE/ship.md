@@ -35,9 +35,9 @@ Dependências e blast radius são preservados sem inferir root cause.
 
 ## Gates rodados
 
-- `python -m pytest tests/test_data_observability.py tests/test_fixtures_golden_observability.py -q --basetemp .sparkforge/local/pytest-observability` — exit 0.
+- `python -m pytest tests/test_data_observability.py tests/test_fixtures_golden_observability.py -q --basetemp .sparkforge_aws/local/pytest-observability` — exit 0.
 - `python -m sparkforge_aws.adapters.cli analyze data-observability --path fixtures/observability/sre.yaml` — exit 0.
-- `python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge/local/pytest-observability-gates` — exit 0.
+- `python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge_aws/local/pytest-observability-gates` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.

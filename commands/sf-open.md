@@ -34,5 +34,5 @@ sparkforge-aws case open --repo <raiz-do-repo> --case-id <id> --now <timestamp-I
 `--now` é obrigatório e precisa ser um timestamp real (a CLI nunca lê o relógio
 sozinha) — use a hora atual no formato ISO 8601, ex.: `2026-07-30T14:00:00Z`.
 
-O case fica em `.sparkforge/case.yaml`, em fase `intake`. Depois de abrir, use
+O case fica em `.sparkforge_aws/case.yaml`, em fase `intake`. Depois de abrir, use
 `/sf-next` para saber o próximo passo.

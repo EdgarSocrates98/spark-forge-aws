@@ -54,33 +54,33 @@
     "tripped": false
   },
   "outputs": [
-    ".sparkforge/scan/facts_event-log.json",
-    ".sparkforge/scan/facts_glue-job-runs.json",
-    ".sparkforge/scan/facts_iceberg.json",
-    ".sparkforge/scan/facts_pyspark.json",
-    ".sparkforge/scan/facts_sql.json",
-    ".sparkforge/scan/facts_terraform.json",
-    ".sparkforge/scan/facts.json",
-    ".sparkforge/scan/findings.json",
-    ".sparkforge/scan/summary.json"
+    ".sparkforge_aws/scan/facts_event-log.json",
+    ".sparkforge_aws/scan/facts_glue-job-runs.json",
+    ".sparkforge_aws/scan/facts_iceberg.json",
+    ".sparkforge_aws/scan/facts_pyspark.json",
+    ".sparkforge_aws/scan/facts_sql.json",
+    ".sparkforge_aws/scan/facts_terraform.json",
+    ".sparkforge_aws/scan/facts.json",
+    ".sparkforge_aws/scan/findings.json",
+    ".sparkforge_aws/scan/summary.json"
   ],
   "plan": {
     "entries": [
       {
         "analyze": "event-log",
         "origin": "manifesto",
-        "path": ".sparkforge/artifacts/eventlog/jr_0001.jsonl"
+        "path": ".sparkforge_aws/artifacts/eventlog/jr_0001.jsonl"
       },
       {
         "analyze": "glue-job-runs",
         "job_name": "synthetic-job",
         "origin": "manifesto",
-        "path": ".sparkforge/artifacts/glue_job_run"
+        "path": ".sparkforge_aws/artifacts/glue_job_run"
       },
       {
         "analyze": "iceberg",
         "origin": "manifesto",
-        "path": ".sparkforge/artifacts/iceberg/small_files.json"
+        "path": ".sparkforge_aws/artifacts/iceberg/small_files.json"
       },
       {
         "analyze": "pyspark",
@@ -106,7 +106,7 @@
     "refused": [],
     "skipped": [
       {
-        "path": ".sparkforge",
+        "path": ".sparkforge_aws",
         "reason": "DIRECTORY_IGNORED"
       }
     ]

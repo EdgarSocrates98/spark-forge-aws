@@ -34,7 +34,7 @@ def schema_registry_path(
 ) -> str:
     """Return deterministic artifact path from declared identity only."""
     identity = schema_arn or ":".join(item for item in (registry_name, schema_name) if item)
-    return f".sparkforge/artifacts/schema_registry/{_slug(identity)}.json"
+    return f".sparkforge_aws/artifacts/schema_registry/{_slug(identity)}.json"
 
 
 def _safe_value(value: Any) -> Any:

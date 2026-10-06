@@ -20,7 +20,7 @@ aberta para cross-artifact, observabilidade e validação funcional.
 
 ## Gates rodados
 
-- `python -m pytest tests/test_facts_schema_registry.py tests/test_schema_registry_rules.py tests/test_fixtures_golden_schema_registry.py tests/test_analyze_schema_registry.py -q --basetemp .sparkforge/local/pytest-schema-registry` — `11 passed`, exit 0.
+- `python -m pytest tests/test_facts_schema_registry.py tests/test_schema_registry_rules.py tests/test_fixtures_golden_schema_registry.py tests/test_analyze_schema_registry.py -q --basetemp .sparkforge_aws/local/pytest-schema-registry` — `11 passed`, exit 0.
 - `python -m sparkforge_aws.adapters.cli analyze schema-registry --path fixtures/schema_registry/schema_compatible/input/contract.json --limit 4` — exit 0.
 - `python scripts/sync_skills.py --check` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.

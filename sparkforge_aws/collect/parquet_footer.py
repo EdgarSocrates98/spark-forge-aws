@@ -118,7 +118,7 @@ def parquet_footer_path(prefix: str) -> str:
         prefix.replace("s3://", "").replace("s3a://", "").strip("/").replace("/", "_")
     )
     seguro = "".join(c if (c.isalnum() or c in "._-") else "_" for c in limpo)
-    return f".sparkforge/artifacts/parquet_footer/{seguro or 'prefixo'}.json"
+    return f".sparkforge_aws/artifacts/parquet_footer/{seguro or 'prefixo'}.json"
 
 
 def _codigo_de_erro(exc: BaseException) -> str:
