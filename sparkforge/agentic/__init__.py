@@ -29,6 +29,7 @@ Módulos:
 - security: Threat model + guardrails
 - autonomy: L0-L5 autonomy levels
 - graph: Agent Execution Graph (typed nodes/edges)
+- handoff: AgentHandoff admission gate (RoleContextPlan governs what crosses)
 """
 
 from __future__ import annotations
@@ -42,6 +43,11 @@ from sparkforge.agentic.governor import (
     GovernorProfile,
     GovernorRisk,
     GovernorStatus,
+)
+from sparkforge.agentic.handoff import (
+    HandoffAdmission,
+    HandoffDecision,
+    admit_handoff,
 )
 from sparkforge.agentic.models import (
     Claim,
@@ -99,6 +105,8 @@ __all__ = [
     "GovernorProfile",
     "GovernorRisk",
     "GovernorStatus",
+    "HandoffAdmission",
+    "HandoffDecision",
     "Hypothesis",
     "HypothesisStatus",
     "InstructionAuthority",
@@ -117,4 +125,5 @@ __all__ = [
     "TrustLabel",
     "Unknown",
     "UnknownStatus",
+    "admit_handoff",
 ]

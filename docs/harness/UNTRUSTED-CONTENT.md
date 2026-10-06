@@ -119,6 +119,61 @@ escrita sem os marcadores passa sem `taint`, e a suíte red-team nomeia esse
 caso (`test_injeccao_disfarcada_sem_marcador_passa_e_fica_nomeada`) em vez de
 fingir cobertura.
 
+## O handoff entre agentes: `admit_handoff`
+
+O outro sentido da fronteira é mensagem entre agentes. `AgentHandoff`
+(`sparkforge/agentic/trust.py`) é o envelope data-only que um agente escreve
+para outro; `admit_handoff` (`sparkforge/agentic/handoff.py`) é o portão que
+aplica o `RoleContextPlan` do **receptor** antes de o conteúdo entrar no
+contexto dele:
+
+```text
+AgentHandoff → plano do receptor → ALLOW / DENY / REVIEW
+```
+
+- **`authority` nunca sobe.** O construtor só aceita `DATA_ONLY`; um dict
+  serializado que declare outra autoridade nem vira objeto — a admissão
+  devolve `handoff_authority_not_data_only` como DENY.
+- **`trust` declarado tem teto `MODEL_OUTPUT`.** Auto-declaração não
+  verifica (o mesmo molde de `classify_memory_candidate`, que não acredita
+  no `trust` do próprio registro). Um handoff que diga `VERIFIED_FACT` é
+  admitido como `MODEL_OUTPUT` — o trust do `Fact` mora no registro do case,
+  não no rótulo do envelope.
+- **`taint` é piso, não teto.** `POISONED` nega; marcador lexical de
+  instrução em qualquer seção (o mesmo `detect_prompt_injection` da `_trust`
+  das tools) sobe o taint efetivo para `SUSPICIOUS` e a decisão vira REVIEW
+  — o conteúdo segue como dado marcado, não é apagado.
+- **Filtragem por kind, item a item.** Cada seção entra como o kind que ela
+  é (`facts`→`fact`, `evidence_refs`→`evidence`, …) e cada `context_items`
+  pelo `kind` declarado — `plan.allows(kind, trust)` decide, e a negação
+  vira `unresolved` nomeado (`handoff_section_denied`, `handoff_item_denied`).
+  Um `tool_output` cru dentro de `context_items` não entra no contexto do
+  `sf-judge`, porque `tool_output` não está no plano dele.
+- **Confused deputy é checagem, não convenção.** `requested_action` que
+  nomeia uma tool da superficie declarada (`tool_names`) é confrontado com o
+  `tool_access` do remetente: pedir o que o próprio remetente não pode
+  invocar é DENY (`handoff_confused_deputy`); sem plano do remetente a
+  autoridade do pedido fica `unverified` e a decisão é REVIEW. O pedido
+  contra o `tool_access` restrito do receptor vira `handoff_tool_denied_for_receiver`.
+- **Fechado por desenho.** Role sem plano (`handoff_receiver_plan_unknown`),
+  plano malformado (`handoff_receiver_plan_invalid`), `origin` de agente
+  divergente do `sender_role` (`handoff_sender_origin_mismatch`) e handoff
+  sem nada admissível (`handoff_nothing_admissible`) são DENY — "pedi um
+  plano e ele não resolveu" nunca se lê como "sem plano".
+
+`required_context` **não** é avaliado na admissão: o requisito do papel se
+cumpre no contexto total (rules vêm do catálogo, nunca via handoff), e a
+seleção final no `ContextGateway` continua emitindo `required_context_missing`.
+O que a admissão devolve em `admitted` atravessa o gateway pelo mesmo plano
+via `HandoffAdmission.context_items()` — defesa em profundidade que nunca
+contradiz, porque as duas camadas consultam o mesmo `allows()`.
+
+Onde a fronteira mordia: nada consumia `AgentHandoff` — era contrato sem
+portão, e a lacuna estava nomeada no relatório de convergência. O teste
+`tests/test_agentic_handoff.py` cobre cada caminho do vocabulário acima,
+inclusive o round-trip `to_dict`/`from_dict` que a fronteira serializada
+exige.
+
 ## O que este documento NÃO cobre
 
 - **Conteúdo que chega ao modelo por fora do `Finding`** — um agente que lê um

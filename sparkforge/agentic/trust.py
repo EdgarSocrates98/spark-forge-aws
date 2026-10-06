@@ -211,7 +211,15 @@ class RoleContextPlan:
 
 @dataclass(frozen=True, slots=True)
 class AgentHandoff:
-    """Data-only cross-agent handoff with an explicit requested action."""
+    """Data-only cross-agent handoff with an explicit requested action.
+
+    `trust` e `taint` sao declaracoes do remetente, nao medidas: quem admite
+    (`admit_handoff`) aplica teto e varredura antes de acreditar nelas.
+    `context_items` carrega itens de contexto arbitrarios com `kind` proprio
+    (o ponto por onde `tool_output` cru poderia tentar entrar). `origin` no
+    formato `agent:<role>` permite conferir remetente declarado contra
+    origem declarada — divergencia e impersonacao, nao rotulo livre.
+    """
 
     sender_role: str
     recipient_role: str
@@ -223,6 +231,11 @@ class AgentHandoff:
     evidence_refs: tuple[str, ...] = ()
     requested_action: str = ""
     authority: InstructionAuthority = InstructionAuthority.DATA_ONLY
+    origin: str = ""
+    scope: str = ""
+    trust: TrustLabel = TrustLabel.UNKNOWN
+    taint: Taint = Taint.EXTERNAL
+    context_items: tuple[Mapping[str, Any], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.sender_role.strip() or not self.recipient_role.strip():
@@ -239,10 +252,44 @@ class AgentHandoff:
             "recommendations",
             "unresolved",
             "evidence_refs",
+            "context_items",
         ):
             result[key] = list(result[key])
         result["authority"] = self.authority.name
+        result["trust"] = self.trust.value
+        result["taint"] = self.taint.value
         return result
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> AgentHandoff:
+        """Reconstroi o handoff serializado na fronteira entre agentes.
+
+        Invalido levanta -- quem admite (`admit_handoff`) converte em DENY
+        nomeado, porque um handoff malformado NAO pode ser lido como benigno.
+        """
+        if not isinstance(raw, Mapping):
+            raise ValueError("AgentHandoff: entrada deve ser um mapping")
+        return cls(
+            sender_role=str(raw.get("sender_role", "")),
+            recipient_role=str(raw.get("recipient_role", "")),
+            facts=tuple(str(x) for x in raw.get("facts", ())),
+            assumptions=tuple(str(x) for x in raw.get("assumptions", ())),
+            hypotheses=tuple(str(x) for x in raw.get("hypotheses", ())),
+            recommendations=tuple(str(x) for x in raw.get("recommendations", ())),
+            unresolved=tuple(str(x) for x in raw.get("unresolved", ())),
+            evidence_refs=tuple(str(x) for x in raw.get("evidence_refs", ())),
+            requested_action=str(raw.get("requested_action", "")),
+            authority=InstructionAuthority(str(raw.get("authority", "data_only")).lower()),
+            origin=str(raw.get("origin", "")),
+            scope=str(raw.get("scope", "")),
+            trust=TrustLabel(str(raw.get("trust", "UNKNOWN"))),
+            taint=Taint(str(raw.get("taint", "external"))),
+            context_items=tuple(
+                dict(item)
+                for item in raw.get("context_items", ())
+                if isinstance(item, Mapping)
+            ),
+        )
 
 
 def sanitize_tool_output(content: str, *, origin: str) -> TrustEnvelope:
