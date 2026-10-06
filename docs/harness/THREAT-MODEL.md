@@ -100,6 +100,26 @@ frágil no dia seguinte — porque o defeito entra por acréscimo, e acréscimo 
 como mudança de segurança. Cada uma dessas linhas está marcada como parcial por esse motivo, e não
 por dúvida sobre o fato.
 
+## Superfície agentica — Trust Lab e envenenamento de memória (§125, §45)
+
+A tabela acima é a lista da SPEC do SFCI. A onda de convergência do runtime
+trouxe uma segunda superfície — o runtime agentico — com a enumeração própria
+daquele documento. Mesma disciplina: proteção apontada em arquivo, exercitada
+por teste, lacuna escrita na linha. A bateria é
+`tests/test_redteam_security.py`, determinística e sem rede.
+
+| ID | Ameaça | Estado | Proteção que existe hoje | Teste que a exercita | O que falta |
+|---|---|---|---|---|---|
+| T-A01 | Prompt injection em conteúdo externo | **Parcial** | `agentic/security.py:detect_prompt_injection` bloqueia marcadores lexicos de sobrescrita; `TrustEnvelope.external` marca `taint=SUSPICIOUS` quando o marcador aparece em payload | `test_redteam_security.py::TestPromptInjection` | instrução sem os marcadores passa — a própria função declara que intenção fora da lista exige modelo, e esta linha não finge o contrário |
+| T-A02 | Tool output malicioso vira instrução | **Fechada** | `tool_result_envelope` mantém proveniência `TOOL_OUTPUT`, `instruction_authority=DATA_ONLY` e `taint=SUSPICIOUS`; o envelope `_trust` aterrissa no `metadata` do span em `adapters/tools.py:call_tool` | `test_redteam_security.py::TestMaliciousToolOutput` | — |
+| T-A03 | Injeção cross-agente | **Fechada** | `TrustEnvelope.__post_init__` levanta quando `trust` externo carrega `instruction_authority` SYSTEM/POLICY — autoridade de sistema não pode entrar por envelope; `validate_agent_identity` recusa personificação | `test_redteam_security.py::TestCrossAgentInjection` | — |
+| T-A04 | Instruction laundering | **Fechada** | `as_verified_fact` promove só o trust factual — `instruction_authority` segue `DATA_ONLY` e o `taint` sobrevive à promoção | `test_redteam_security.py::TestInstructionLaundering` | — |
+| T-A05 | Confused deputy | **Fechada** | `validate_tool_authorization` aplica allow list E deny list no executor; `validate_output` casa segredo por forma (AKIA/ASIA, PEM, `chave=valor`), nunca por menção — placeholder não é segredo | `test_redteam_security.py::TestConfusedDeputy` | — |
+| T-A06 | Envenenamento de memória (§45) | **Fechada** | `classify_memory_candidate` confere `decision_evidence` contra o registry do chamador e quarentena o que foge; outcome sem `outcome_evidence` nunca promove a `verified`; expirado sai do retrieval ou volta `trust:"stale"`; `invalidated_by`/`superseded_by` não retornam; runtime incompatível é excluído; memória é ledger por raiz — outra raiz não lê | `test_redteam_security.py::TestMaliciousMemoryProposal` … `::TestWrongRuntime` | com `valid_evidence_refs` vazio a evidência auto-atesta como `provisional` — opt-out do chamador, declarado no teste; a defesa máxima continua sendo `verified` só por outcome |
+
+Somando a coluna de estado da superfície agentica: **5** fechadas com teste e
+**1** parcial declarada.
+
 ## O que este documento deliberadamente não faz
 
 Ele não classifica risco, não atribui probabilidade e não prioriza. Priorização depende do
@@ -108,7 +128,9 @@ workstation com um repositório de cliente ou num CI com um repositório públic
 faz é remover a ambiguidade sobre **o que existe** — para que a priorização, quando alguém a
 fizer, seja feita sobre fato e não sobre memória.
 
-Ele também não cobre as ameaças que a SPEC não enumera. A lista é a da SPEC, ameaça a ameaça, e
-uma ameaça que não esteja nela não está aqui — inclusive as que este repositório talvez devesse
-tratar. Ampliar a lista é decisão de outra fase, e inventá-la aqui misturaria "o que a SPEC pede"
-com "o que achamos", que são as duas colunas que este documento existe para manter separadas.
+A tabela principal é a lista da SPEC, ameaça a ameaça, e uma ameaça que não
+esteja nela não está lá — inclusive as que este repositório talvez devesse
+tratar. A superfície agentica (T-A01..T-A06) é a exceção registrada: a onda de
+convergência do runtime ampliou a lista com a enumeração do próprio documento
+do runtime, mantendo as duas colunas separadas — o que a SPEC pede na primeira
+tabela, o que o runtime pede na segunda.

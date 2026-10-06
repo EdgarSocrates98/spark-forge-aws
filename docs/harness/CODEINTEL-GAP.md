@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1287** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-09 após os módulos e testes das fases 11-15 da onda de convergência entrarem no corpus).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1289** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-09 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
