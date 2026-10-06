@@ -10984,6 +10984,69 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_IDEMPOTENT,
     },
+    "sparkforge_agentops_timeline": {
+        "description": (
+            "Linha do tempo de um run local: eventos por lane "
+            "(task/context/routing/agent/model/tool/review/debate/checkpoint)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["run_id"],
+            "properties": {
+                "run_id": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "events": {"type": "array"},
+                    "count": {"type": "integer"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Timeline do run indisponivel.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_agentops_critical_path": {
+        "description": (
+            "Caminho critico medido do run: maiores duracoes, retries e "
+            "waiting entre spans consecutivos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["run_id"],
+            "properties": {
+                "run_id": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "top": {"type": "array"},
+                    "retries": {"type": "object"},
+                    "waiting_seconds": {"type": "number"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Caminho critico do run indisponivel.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_doctor_agentic": {
         "description": "Confere readiness local do plano agêntico sem rede ou provider.",
         "inputSchema": {
@@ -11421,6 +11484,22 @@ def _h_agentops_baseline(args: dict[str, Any]) -> dict[str, Any]:
         action=args["action"],
         run_id=args["run_id"],
         baseline_path=args["baseline_path"],
+        db_path=args.get("db_path"),
+    )
+
+
+def _h_agentops_timeline(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_timeline(
+        args.get("repo", "."),
+        run_id=args["run_id"],
+        db_path=args.get("db_path"),
+    )
+
+
+def _h_agentops_critical_path(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_critical_path(
+        args.get("repo", "."),
+        run_id=args["run_id"],
         db_path=args.get("db_path"),
     )
 
@@ -12358,6 +12437,8 @@ _HANDLERS = {
     "sparkforge_agentops_inspect": _h_agentops_inspect,
     "sparkforge_agentops_compare": _h_agentops_compare,
     "sparkforge_agentops_baseline": _h_agentops_baseline,
+    "sparkforge_agentops_timeline": _h_agentops_timeline,
+    "sparkforge_agentops_critical_path": _h_agentops_critical_path,
     "sparkforge_doctor_agentic": _h_doctor_agentic,
     "sparkforge_case_open": _h_case_open,
     "sparkforge_case_get": _h_case_get,

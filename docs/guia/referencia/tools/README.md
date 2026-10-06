@@ -10,7 +10,9 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 |---|---|---|
 | [`sparkforge_agentops_baseline`](sparkforge_agentops_baseline.md) | grava local | Salva ou compara baseline AgentOps em arquivo local content-addressed por run declarado. |
 | [`sparkforge_agentops_compare`](sparkforge_agentops_compare.md) | só leitura | Compara dois runs AgentOps locais sem atribuir causa ou converter bytes em tokens. |
+| [`sparkforge_agentops_critical_path`](sparkforge_agentops_critical_path.md) | só leitura | Caminho critico medido do run: maiores duracoes, retries e waiting entre spans consecutivos. |
 | [`sparkforge_agentops_inspect`](sparkforge_agentops_inspect.md) | só leitura | Inspeciona um run AgentOps local, com evidencia e desperdicio observado. |
+| [`sparkforge_agentops_timeline`](sparkforge_agentops_timeline.md) | só leitura | Linha do tempo de um run local: eventos por lane (task/context/routing/agent/model/tool/review/debate/checkpoint). |
 
 ## analyze
 

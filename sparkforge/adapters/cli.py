@@ -1629,6 +1629,19 @@ def build_parser() -> argparse.ArgumentParser:
     agentops_baseline_p.add_argument("--path", dest="baseline_path", required=True)
     agentops_baseline_p.add_argument("--repo", default=".")
     agentops_baseline_p.add_argument("--db", dest="db_path")
+    agentops_timeline_p = agentops_sub.add_parser(
+        "timeline", help="Linha do tempo do run, por lane de componente."
+    )
+    agentops_timeline_p.add_argument("run_id")
+    agentops_timeline_p.add_argument("--repo", default=".")
+    agentops_timeline_p.add_argument("--db", dest="db_path")
+    agentops_cp_p = agentops_sub.add_parser(
+        "critical-path",
+        help="Maiores duracoes, retries e waiting medidos do run.",
+    )
+    agentops_cp_p.add_argument("run_id")
+    agentops_cp_p.add_argument("--repo", default=".")
+    agentops_cp_p.add_argument("--db", dest="db_path")
 
     # agentic: agents -------------------------------------------------------
     agents_p = sub.add_parser(
@@ -4717,6 +4730,20 @@ def _cmd_agentops_compare(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_agentops_timeline(args: argparse.Namespace) -> int:
+    _print(_core.agentops_timeline(args.repo, run_id=args.run_id, db_path=args.db_path))
+    return 0
+
+
+def _cmd_agentops_critical_path(args: argparse.Namespace) -> int:
+    _print(
+        _core.agentops_critical_path(
+            args.repo, run_id=args.run_id, db_path=args.db_path
+        )
+    )
+    return 0
+
+
 def _cmd_agentops_baseline(args: argparse.Namespace) -> int:
     _print(
         _core.agentops_baseline(
@@ -6110,6 +6137,8 @@ _DISPATCH = {
     ("agentops", "inspect"): _cmd_agentops_inspect,
     ("agentops", "compare"): _cmd_agentops_compare,
     ("agentops", "baseline"): _cmd_agentops_baseline,
+    ("agentops", "timeline"): _cmd_agentops_timeline,
+    ("agentops", "critical-path"): _cmd_agentops_critical_path,
     ("telemetry", "export"): _cmd_telemetry_export,
     ("receipt", "emit"): _cmd_receipt_emit,
     ("receipt", "verify"): _cmd_receipt_verify,

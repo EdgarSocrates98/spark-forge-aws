@@ -9627,6 +9627,24 @@ def agentops_compare(
     return _agentops_compare_runs(path, run_a, run_b)
 
 
+def agentops_timeline(
+    repo: str = ".", *, run_id: str, db_path: str | None = None
+) -> dict[str, Any]:
+    from sparkforge.observability.agentops import run_timeline
+
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    return run_timeline(path, run_id)
+
+
+def agentops_critical_path(
+    repo: str = ".", *, run_id: str, db_path: str | None = None
+) -> dict[str, Any]:
+    from sparkforge.observability.agentops import critical_path
+
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    return critical_path(path, run_id)
+
+
 def agentops_baseline(
     repo: str = ".", *, action: str, run_id: str, baseline_path: str, db_path: str | None = None
 ) -> dict[str, Any]:

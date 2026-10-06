@@ -78,6 +78,12 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_dq_ai_assess": (
         "2026-09-20: composicao de assessment AI/DQ sobre fatos extraidos"
     ),
+    "sparkforge_agentops_timeline": (
+        "2026-10-05: linha do tempo do run por lane de componente (FASE 10)"
+    ),
+    "sparkforge_agentops_critical_path": (
+        "2026-10-05: maiores duracoes, retries e waiting medidos do run (FASE 10)"
+    ),
     "sparkforge_context_start": (
         "2026-09-26: descoberta seletiva de contexto sob limite deterministico"
     ),

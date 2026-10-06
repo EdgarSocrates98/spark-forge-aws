@@ -1426,12 +1426,16 @@ capabilities:
       - sparkforge_agentops_inspect
       - sparkforge_agentops_compare
       - sparkforge_agentops_baseline
+      - sparkforge_agentops_timeline
+      - sparkforge_agentops_critical_path
       - sparkforge_doctor_agentic
     cli:
       - context inspect
       - agentops inspect
       - agentops compare
       - agentops baseline
+      - agentops timeline
+      - agentops critical-path
       - doctor agentic
     knowledge:
       - docs/sdd/AGENTIC_ENGINEERING_OS_V2/design.md

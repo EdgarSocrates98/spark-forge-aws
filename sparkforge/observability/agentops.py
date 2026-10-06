@@ -121,6 +121,21 @@ def _axis_status(measured: int, unresolved: int) -> str:
     return "not_applicable"
 
 
+def _provider_usage_coverage(spans: list[dict[str, Any]]) -> dict[str, Any]:
+    """§12: measured/total de spans de modelo -- cobertura de observacao de
+    provider, nao consumo. Sem span de modelo, `coverage` e `unresolved`
+    (0/0 nao e 100% nem 0%)."""
+    modelos = [s for s in spans if s.get("component_type") == "model"]
+    if not modelos:
+        return {"measured": 0, "total": 0, "coverage": "unresolved"}
+    measured = sum(1 for s in modelos if _span_tokens_status(s) == "measured")
+    return {
+        "measured": measured,
+        "total": len(modelos),
+        "coverage": round(measured / len(modelos), 6),
+    }
+
+
 def _model_axes(spans: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Os dois eixos de modelo, medidos por span e nunca somados com ausencia.
 
@@ -206,6 +221,7 @@ def inspect_run(
         "models": {
             "calls": by_component.get("model", 0),
             **model_axes,
+            "provider_usage_coverage": _provider_usage_coverage(spans),
         },
         # A reconciliacao por eixo cruza trace + ledger + transcript; quando o
         # chamador nao passa ledger/transcript, as fontes saem `None` -- a
@@ -243,6 +259,109 @@ def _metadata_list(span: dict[str, Any], key: str) -> list[str]:
         return []
     values = data.get(key, []) if isinstance(data, dict) else []
     return [str(value) for value in values] if isinstance(values, list) else []
+
+
+_TIMELINE_LANES = frozenset(
+    {
+        "task",
+        "context",
+        "routing",
+        "agent",
+        "model",
+        "tool",
+        "review",
+        "debate",
+        "checkpoint",
+        "eval",
+        "gate",
+    }
+)
+
+
+def run_timeline(db_path: Path | str, run_id: str) -> dict[str, Any]:
+    """Linha do tempo do run: eventos ordenados por `start_time` com lane.
+
+    `lane` e o component_type quando ele esta no vocabulario §68; qualquer
+    componente fora dele vira "other" nomeado -- nunca descartado.
+    """
+    trace = _load_trace(db_path, run_id)
+    if trace is None:
+        return {
+            "status": "unresolved",
+            "run_id": run_id,
+            "unresolved": ["run_not_found"],
+        }
+    eventos = []
+    for span in trace.get("spans", []):
+        componente = str(span.get("component_type", "unknown"))
+        eventos.append(
+            {
+                "span_id": span.get("span_id"),
+                "name": span.get("name"),
+                "lane": componente if componente in _TIMELINE_LANES else "other",
+                "component_type": componente,
+                "start_time": span.get("start_time"),
+                "end_time": span.get("end_time"),
+                "duration_seconds": span.get("duration_seconds"),
+                "tokens_status": _span_tokens_status(span),
+                "outcome": span.get("outcome"),
+            }
+        )
+    return {
+        "status": "ok",
+        "run_id": run_id,
+        "events": eventos,
+        "count": len(eventos),
+    }
+
+
+def critical_path(db_path: Path | str, run_id: str) -> dict[str, Any]:
+    """Caminho critico medido: maiores duracoes, retries por nome repetido e
+    waiting (gaps entre `end_time` consecutivos). Tudo observado de
+    `duration_seconds`/timestamps -- sem latencia inventada.
+    """
+    trace = _load_trace(db_path, run_id)
+    if trace is None:
+        return {
+            "status": "unresolved",
+            "run_id": run_id,
+            "unresolved": ["run_not_found"],
+        }
+    spans = sorted(
+        trace.get("spans", []),
+        key=lambda s: (s.get("start_time") or 0.0),
+    )
+    top = sorted(
+        spans,
+        key=lambda s: float(s.get("duration_seconds") or 0.0),
+        reverse=True,
+    )[:5]
+    retries: dict[str, int] = {}
+    for span in spans:
+        nome = str(span.get("name"))
+        retries[nome] = retries.get(nome, 0) + 1
+    retries = {nome: n for nome, n in retries.items() if n > 1}
+    waiting = 0.0
+    for anterior, seguinte in zip(spans, spans[1:]):
+        fim = anterior.get("end_time")
+        inicio = seguinte.get("start_time")
+        if fim is not None and inicio is not None and inicio > fim:
+            waiting += inicio - fim
+    return {
+        "status": "ok",
+        "run_id": run_id,
+        "top": [
+            {
+                "span_id": span.get("span_id"),
+                "name": span.get("name"),
+                "component_type": span.get("component_type"),
+                "duration_seconds": span.get("duration_seconds"),
+            }
+            for span in top
+        ],
+        "retries": retries,
+        "waiting_seconds": round(waiting, 6),
+    }
 
 
 def compare_runs(db_path: Path | str, run_a: str, run_b: str) -> dict[str, Any]:
@@ -307,4 +426,12 @@ def compare_baseline(db_path: Path | str, run_id: str, baseline_path: Path | str
     return compare_runs(db_path, str(baseline["run_id"]), run_id)
 
 
-__all__ = ["WasteAttribution", "compare_baseline", "compare_runs", "inspect_run", "save_baseline"]
+__all__ = [
+    "WasteAttribution",
+    "compare_baseline",
+    "compare_runs",
+    "critical_path",
+    "inspect_run",
+    "run_timeline",
+    "save_baseline",
+]

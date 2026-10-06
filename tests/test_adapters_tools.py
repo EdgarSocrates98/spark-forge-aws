@@ -36,6 +36,8 @@ class TestToolSurface:
             "sparkforge_agentops_inspect",
             "sparkforge_agentops_compare",
             "sparkforge_agentops_baseline",
+            "sparkforge_agentops_timeline",
+            "sparkforge_agentops_critical_path",
             "sparkforge_doctor_agentic",
             "sparkforge_case_open",
             "sparkforge_case_get",
@@ -2246,6 +2248,9 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "baseline_path": str(tmp_path / "baseline.json"),
             },
         )
+
+    if name in {"sparkforge_agentops_timeline", "sparkforge_agentops_critical_path"}:
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
 
     if name == "sparkforge_doctor_agentic":
         return call_tool(name, {"repo": str(tmp_path)})
