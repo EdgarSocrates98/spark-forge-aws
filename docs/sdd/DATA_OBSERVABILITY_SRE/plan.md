@@ -9,11 +9,11 @@ upstream:
   sha256: "e219d4abeb9619373915a4a0498b740d81998c79c1ca78add37e06b7d231403b"
 tasks:
   - id: T1
-    files: [sparkforge/observability/sre.py, sparkforge/observability/__init__.py, fixtures/observability/sre.yaml, tests/test_data_observability.py]
+    files: [sparkforge_aws/observability/sre.py, sparkforge_aws/observability/__init__.py, fixtures/observability/sre.yaml, tests/test_data_observability.py]
     covers: [AC1, AC2]
     test: {path: tests/test_data_observability.py, name: test_observability_evaluates_slos_and_error_budget}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml]
     covers: [AC3]
     test: {path: tests/test_data_observability.py, name: test_observability_surfaces_share_contract}
   - id: T3

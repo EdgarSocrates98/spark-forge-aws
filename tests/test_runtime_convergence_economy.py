@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.economy.ledger import LedgerEvent
-from sparkforge.economy.reconcile import reconcile_run_economy
-from sparkforge.economy.waste_detector import TokenWasteDetector
-from sparkforge.observability.store import SQLiteTraceStore
-from sparkforge.observability.tracer import ExecutionTrace, TraceSpan
+from sparkforge_aws.economy.ledger import LedgerEvent
+from sparkforge_aws.economy.reconcile import reconcile_run_economy
+from sparkforge_aws.economy.waste_detector import TokenWasteDetector
+from sparkforge_aws.observability.store import SQLiteTraceStore
+from sparkforge_aws.observability.tracer import ExecutionTrace, TraceSpan
 
 
 class TestWasteSemEstimativaInventada:

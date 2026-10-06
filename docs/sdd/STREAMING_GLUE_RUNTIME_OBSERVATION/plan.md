@@ -9,11 +9,11 @@ upstream:
   sha256: "4d760ab0486c0e65a11ae3bb9e753354abdbf5bb3be811321ef17ee384648c12"
 tasks:
   - id: T1
-    files: [sparkforge/facts/glue_streaming.py, sparkforge/facts/streaming_glue_runtime.py, tests/test_streaming_glue_runtime_observation.py]
+    files: [sparkforge_aws/facts/glue_streaming.py, sparkforge_aws/facts/streaming_glue_runtime.py, tests/test_streaming_glue_runtime_observation.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_streaming_glue_runtime_observation.py, name: test_runtime_link_matches_literal_job_and_preserves_sources}
   - id: T2
-    files: [sparkforge/facts/fusion.py, tests/test_streaming_glue_runtime_observation.py]
+    files: [sparkforge_aws/facts/fusion.py, tests/test_streaming_glue_runtime_observation.py]
     covers: [AC4]
     test: {path: tests/test_streaming_glue_runtime_observation.py, name: test_fuse_runtime_observation_is_guarded_and_idempotent}
   - id: T3

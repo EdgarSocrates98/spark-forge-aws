@@ -5,8 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_streaming_composition
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters._core import analyze_streaming_composition
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures/streaming_composition/observability_lag/input"
@@ -55,7 +55,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",
@@ -153,7 +153,7 @@ def test_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",
@@ -261,7 +261,7 @@ def test_iceberg_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",
@@ -363,7 +363,7 @@ def test_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",
@@ -456,7 +456,7 @@ def test_transport_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",
@@ -576,7 +576,7 @@ def test_sink_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",

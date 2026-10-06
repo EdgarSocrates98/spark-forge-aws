@@ -3,15 +3,15 @@
 # ESTA AREA ESTA INTEIRAMENTE DESBLOQUEADA. As cinco regras disparam, e
 # nenhuma carrega `blocked_on`.
 #
-# Dependem de `plan.file_scan`, emitido por `sparkforge/facts/spark_plan.py`
-# (`sparkforge analyze plan --path <arquivo>` sobre a saida de
+# Dependem de `plan.file_scan`, emitido por `sparkforge_aws/facts/spark_plan.py`
+# (`sparkforge-aws analyze plan --path <arquivo>` sobre a saida de
 # `df.explain("formatted")`):
 #
 #   SF-PQ-002  pruning de particao ausente
 #   SF-PQ-004  pruning de coluna ausente
 #
 # Dependem de `s3.prefix_summary`, emitido por
-# `sparkforge/facts/s3_listing.py` (`sparkforge analyze s3-listing --path
+# `sparkforge_aws/facts/s3_listing.py` (`sparkforge-aws analyze s3-listing --path
 # <arquivo>` sobre a saida de `aws s3api list-objects-v2`):
 #
 #   SF-PQ-001  small files na entrada
@@ -42,7 +42,7 @@
 # simplesmente omite a chave nos dois casos). O extrator so marca
 # `attrs.table_partitioned: true` com evidencia positiva; sem evidencia o valor
 # e `"unknown"` e a regra nao dispara, de proposito. Ver a docstring de
-# `sparkforge/facts/spark_plan.py`.
+# `sparkforge_aws/facts/spark_plan.py`.
 #
 # ESCOPO (Fase 5a, Task 3c): as cinco declaravam `runtime_scope:
 # {spark: ">=3.0"}`, herdado da Task 2 desta fase, que as moveu de `{glue: "*"}`
@@ -59,9 +59,9 @@
 # O EFEITO MEDIDO do guarda: `RuntimeContext.spark` so e preenchido por event
 # log, por `GLUE_MATRIX` (via `glue_version`) ou pela flag `--spark`. Uma
 # listagem S3 ou um `explain()` em arquivo nao trazem nenhum dos tres. Com
-# `build_runtime_context()` sem flags -- o padrao de `sparkforge judge` -- o
+# `build_runtime_context()` sem flags -- o padrao de `sparkforge-aws judge` -- o
 # contexto sai com `spark: ""`, `in_scope` falha fechada
-# (`sparkforge/rules/version_scope.py`), e a AREA SF-PQ INTEIRA sumia: 5
+# (`sparkforge_aws/rules/version_scope.py`), e a AREA SF-PQ INTEIRA sumia: 5
 # puladas, 0 avaliadas.
 #
 # RECOMENDACAO VERSIONADA (Fase 5a.2, Task 3): SF-PQ-001 sugere o hint
@@ -134,7 +134,7 @@ rules:
     sources:
       - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
 
-  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge/facts/spark_plan.py`.
+  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge_aws/facts/spark_plan.py`.
   # `attrs.table_partitioned` so e `true` com evidencia positiva de
   # particionamento; sem evidencia fica `"unknown"` e esta regra nao dispara,
   # porque `PartitionFilters` vazio numa tabela nao particionada e
@@ -233,7 +233,7 @@ rules:
     sources:
       - {origin: field-heuristic, note: "Não splitabilidade de gzip em arquivo de texto é propriedade do codec, não configurável."}
 
-  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge/facts/spark_plan.py`.
+  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge_aws/facts/spark_plan.py`.
   # As duas measures so sao emitidas quando as listas de campo do plano vieram
   # COMPLETAS: o Spark trunca listas longas (`... N more fields`, default 25
   # campos), e como esta regra e uma RAZAO, contar uma lista parcial infla o
@@ -335,7 +335,7 @@ rules:
   #
   # As cinco acima julgam por LISTAGEM S3 (tamanho de objeto) e por PLANO
   # FISICO (filtros declarados). Nenhuma abre um arquivo. Estas quatro leem o
-  # RODAPE -- `sparkforge/facts/parquet_footer.py` --, e e ele que carrega o que
+  # RODAPE -- `sparkforge_aws/facts/parquet_footer.py` --, e e ele que carrega o que
   # `knowledge/storage/parquet-layout.md` §2 declara como a alavanca: row group,
   # estatistica por coluna, dicionario, page index, bloom e codec.
   #
@@ -406,7 +406,7 @@ rules:
         arquivo único gigante; nesse caso o conserto é o número de arquivos, não
         o row group.
       - >-
-        Medir de novo depois da reescrita — `sparkforge collect parquet-footer`
+        Medir de novo depois da reescrita — `sparkforge-aws collect parquet-footer`
         sobre o prefixo, e comparar a distribuição.
     action:
       kind: storage.set_write_layout_property

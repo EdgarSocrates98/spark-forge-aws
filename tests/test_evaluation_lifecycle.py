@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.decision.fingerprint import digest
-from sparkforge.evals.evolution import (
+from sparkforge_aws.decision.fingerprint import digest
+from sparkforge_aws.evals.evolution import (
     CandidateEvaluation,
     CandidateStatus,
     EvolutionError,

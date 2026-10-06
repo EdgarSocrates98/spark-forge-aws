@@ -15,7 +15,7 @@
   "evidence_required": ["iceberg.table_property", "env.consumer"],
   "diagnostic_steps": [
     "Read the table's format-version property from the Iceberg metadata",
-    "Check the declared consumer inventory for the table: sparkforge iceberg assess-upgrade <dir> --from 2 --to 3",
+    "Check the declared consumer inventory for the table: sparkforge-aws iceberg assess-upgrade <dir> --from 2 --to 3",
     "Identify which job wrote the table and on which Glue version it ran"
   ],
   "fixes": [

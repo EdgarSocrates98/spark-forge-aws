@@ -10,7 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from sparkforge.observability.surface import measure_surface
+from sparkforge_aws.observability.surface import measure_surface
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / "docs" / "surface.lock.json"

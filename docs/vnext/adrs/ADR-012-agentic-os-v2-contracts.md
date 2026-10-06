@@ -17,19 +17,19 @@ ausência de benchmark em ganho.
 
 Adicionar contratos Python puros e superfícies finas:
 
-- `sparkforge.agentic.memory` persiste records estruturados; evidência inválida vai
+- `sparkforge_aws.agentic.memory` persiste records estruturados; evidência inválida vai
   para quarantine e retrieval padrão aceita apenas records aceitos/verificados.
-- `sparkforge.agentic.trust` separa trust, taint e `instruction_authority`; dados
+- `sparkforge_aws.agentic.trust` separa trust, taint e `instruction_authority`; dados
   externos e handoffs entre agentes são `DATA_ONLY`.
-- `sparkforge.context.quality` calcula qualidade sobre itens declarados; bytes,
+- `sparkforge_aws.context.quality` calcula qualidade sobre itens declarados; bytes,
   tokens observados e custo são medidas independentes.
-- `sparkforge.economy.ledger` exige `cost_basis`; `model_router` começa em shadow e
+- `sparkforge_aws.economy.ledger` exige `cost_basis`; `model_router` começa em shadow e
   não chama provider.
-- `SemanticCheckpoint` e `sparkforge.protocols.forge` expõem envelopes serializáveis,
+- `SemanticCheckpoint` e `sparkforge_aws.protocols.forge` expõem envelopes serializáveis,
   content-addressed e sem blackboard interno.
-- `sparkforge.observability.agentops` lê traces locais e retorna `unresolved` para
+- `sparkforge_aws.observability.agentops` lê traces locais e retorna `unresolved` para
   qualquer eixo sem evidência.
-- CLI e MCP chamam as mesmas funções de `sparkforge.adapters._core`; baseline save é
+- CLI e MCP chamam as mesmas funções de `sparkforge_aws.adapters._core`; baseline save é
   mutação local idempotente e declarada no catálogo.
 
 ## Alternativas rejeitadas
@@ -55,7 +55,7 @@ transcript/preço; baseline save adiciona uma mutação local que precisa de ano
 ## Validação e rollback
 
 Validação: `tests/test_agentic_os_v2.py`, paridade declarada em `parity.yaml`,
-`sparkforge sdd check`, gates de referências/superfície/claims e suíte final.
+`sparkforge-aws sdd check`, gates de referências/superfície/claims e suíte final.
 
 Rollback: reverter commits das ondas agentic/economy/observability/adapters. Facts,
 rules, findings, case, Decision Plane e traces legados permanecem no commit anterior.

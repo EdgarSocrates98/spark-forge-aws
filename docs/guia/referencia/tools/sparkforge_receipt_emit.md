@@ -13,7 +13,7 @@ Grava o RECIBO de uma execucao do case em `<repo>/.sparkforge/receipts/<receipt_
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `facts_path` | string ou array de string | sim | A UNIAO dos arquivos de facts do case, dentro do repo. |
-| `findings_path` | string | sim | Findings (JSON) gerados por `sparkforge judge --out`. |
+| `findings_path` | string | sim | Findings (JSON) gerados por `sparkforge-aws judge --out`. |
 | `now` | string | sim | Instante ISO 8601 da emissao. Entra no hash. |
 | `repo` | string | sim | Raiz do case. Caminhos relativos resolvem contra ela. |
 | `host_transcript_path` | string | não | Transcript JSONL do host. So o sha256 entra no recibo. |
@@ -23,7 +23,7 @@ Grava o RECIBO de uma execucao do case em `<repo>/.sparkforge/receipts/<receipt_
 
 ## Na CLI
 
-[`sparkforge receipt emit`](../cli/receipt.md), [`sparkforge receipt verify`](../cli/receipt.md)
+[`sparkforge-aws receipt emit`](../cli/receipt.md), [`sparkforge-aws receipt verify`](../cli/receipt.md)
 
 ## Capacidade
 

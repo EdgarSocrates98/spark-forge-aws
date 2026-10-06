@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** entregar `sparkforge sdd check|status|stamp` (CLI + MCP), que confere o frontmatter dos artefatos de spec em `docs/sdd/<FEATURE>/<phase>.md` e recusa por nome o que não fecha.
+**Goal:** entregar `sparkforge-aws sdd check|status|stamp` (CLI + MCP), que confere o frontmatter dos artefatos de spec em `docs/sdd/<FEATURE>/<phase>.md` e recusa por nome o que não fecha.
 
-**Architecture:** módulo puro `sparkforge/sdd/` (`load.py` lê, `checks.py` julga com JSON Schema + gates por fase, `status.py` resume, `stamp.py` grava o sha256 do upstream). `_core` embrulha, a CLI e o registro `TOOLS` expõem. Nada chama modelo (regra 23).
+**Architecture:** módulo puro `sparkforge_aws/sdd/` (`load.py` lê, `checks.py` julga com JSON Schema + gates por fase, `status.py` resume, `stamp.py` grava o sha256 do upstream). `_core` embrulha, a CLI e o registro `TOOLS` expõem. Nada chama modelo (regra 23).
 
 **Tech Stack:** Python ≥3.10, PyYAML, jsonschema (Draft 2020-12), pytest.
 
@@ -36,18 +36,18 @@
 
 | arquivo | ação | responsabilidade |
 |---|---|---|
-| `sparkforge/durable.py` | modificar | `write_atomic_bytes`, quarta primitiva |
-| `sparkforge/sdd/__init__.py` | criar | `PHASES`, `DEFAULT_ROOT` |
-| `sparkforge/sdd/load.py` | criar | frontmatter → `Artifact`; `discover` |
-| `sparkforge/sdd/schema/*.json` | criar | um schema por fase + `common.json` |
-| `sparkforge/sdd/change_kinds.yaml` | criar | tipo de mudança → seção → registros |
-| `sparkforge/sdd/checks.py` | criar | `check()` e os gates |
-| `sparkforge/sdd/status.py` | criar | `status()` |
-| `sparkforge/sdd/stamp.py` | criar | `stamp()` e `StampError` |
-| `sparkforge/adapters/_core.py` | modificar | `sdd_check`, `sdd_status`, `sdd_stamp` |
-| `sparkforge/adapters/cli.py` | modificar | verbo `sdd` e despacho |
-| `sparkforge/adapters/tools.py` | modificar | 3 entradas em `TOOLS`, handlers, schemas de saída |
-| `sparkforge/journal/record.py` | modificar | `sparkforge_sdd_stamp` declara `path` |
+| `sparkforge_aws/durable.py` | modificar | `write_atomic_bytes`, quarta primitiva |
+| `sparkforge_aws/sdd/__init__.py` | criar | `PHASES`, `DEFAULT_ROOT` |
+| `sparkforge_aws/sdd/load.py` | criar | frontmatter → `Artifact`; `discover` |
+| `sparkforge_aws/sdd/schema/*.json` | criar | um schema por fase + `common.json` |
+| `sparkforge_aws/sdd/change_kinds.yaml` | criar | tipo de mudança → seção → registros |
+| `sparkforge_aws/sdd/checks.py` | criar | `check()` e os gates |
+| `sparkforge_aws/sdd/status.py` | criar | `status()` |
+| `sparkforge_aws/sdd/stamp.py` | criar | `stamp()` e `StampError` |
+| `sparkforge_aws/adapters/_core.py` | modificar | `sdd_check`, `sdd_status`, `sdd_stamp` |
+| `sparkforge_aws/adapters/cli.py` | modificar | verbo `sdd` e despacho |
+| `sparkforge_aws/adapters/tools.py` | modificar | 3 entradas em `TOOLS`, handlers, schemas de saída |
+| `sparkforge_aws/journal/record.py` | modificar | `sparkforge_sdd_stamp` declara `path` |
 | `tests/test_sdd.py` | criar | tudo do núcleo |
 | `tests/test_durable.py` | modificar | teste da primitiva nova |
 | registros (Task 13) | modificar | listas literais, `parity.yaml`, `manifest.json`, coordenador |
@@ -58,14 +58,14 @@
 ### Task 1: `write_atomic_bytes`
 
 **Files:**
-- Modify: `sparkforge/durable.py` (docstring do módulo e depois de `write_atomic`, linha ~65)
+- Modify: `sparkforge_aws/durable.py` (docstring do módulo e depois de `write_atomic`, linha ~65)
 - Test: `tests/test_durable.py`
 
 - [ ] **Step 1: teste que falha** — acrescentar ao fim de `tests/test_durable.py`:
 
 ```python
 def test_write_atomic_bytes_preserva_quebra_de_linha(tmp_path):
-    from sparkforge.durable import write_atomic_bytes
+    from sparkforge_aws.durable import write_atomic_bytes
 
     alvo = tmp_path / "sub" / "a.md"
     write_atomic_bytes(alvo, b"um\ndois\r\ntres\n")
@@ -80,7 +80,7 @@ def test_write_atomic_bytes_preserva_quebra_de_linha(tmp_path):
 Run: `python -m pytest tests/test_durable.py -k write_atomic_bytes -q`
 Expected: FAIL com `ImportError: cannot import name 'write_atomic_bytes'`
 
-- [ ] **Step 3: implementar** — em `sparkforge/durable.py`, logo depois de `write_atomic`:
+- [ ] **Step 3: implementar** — em `sparkforge_aws/durable.py`, logo depois de `write_atomic`:
 
 ```python
 def write_atomic_bytes(path: Path | str, data: bytes) -> None:
@@ -122,7 +122,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/durable.py tests/test_durable.py
+git add sparkforge_aws/durable.py tests/test_durable.py
 git commit -F <msg>   # "feat(durable): write_atomic_bytes keeps line endings as given"
 ```
 
@@ -131,7 +131,7 @@ git commit -F <msg>   # "feat(durable): write_atomic_bytes keeps line endings as
 ### Task 2: pacote `sdd` e leitura de artefato
 
 **Files:**
-- Create: `sparkforge/sdd/__init__.py`, `sparkforge/sdd/load.py`
+- Create: `sparkforge_aws/sdd/__init__.py`, `sparkforge_aws/sdd/load.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham** — criar `tests/test_sdd.py`:
@@ -151,8 +151,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.load import discover, load_artifact, split_frontmatter
+from sparkforge_aws.sdd import DEFAULT_ROOT, PHASES
+from sparkforge_aws.sdd.load import discover, load_artifact, split_frontmatter
 
 
 def test_fases_e_raiz_padrao():
@@ -200,11 +200,11 @@ def test_discover_so_pega_fase_na_profundidade_certa(tmp_path):
 - [ ] **Step 2: rodar e ver falhar**
 
 Run: `python -m pytest tests/test_sdd.py -q`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.sdd'`
 
 - [ ] **Step 3: implementar**
 
-`sparkforge/sdd/__init__.py`:
+`sparkforge_aws/sdd/__init__.py`:
 
 ```python
 """SDD proprio do SparkForge: contrato conferivel dos artefatos de spec.
@@ -220,7 +220,7 @@ PHASES: tuple[str, ...] = ("explore", "define", "design", "plan", "build_report"
 DEFAULT_ROOT = "docs/sdd"
 ```
 
-`sparkforge/sdd/load.py`:
+`sparkforge_aws/sdd/load.py`:
 
 ```python
 """Le um artefato SDD: frontmatter YAML conferivel, corpo livre."""
@@ -233,8 +233,8 @@ from typing import Any
 
 import yaml
 
-from sparkforge.facts.scan import iter_source_files
-from sparkforge.sdd import PHASES
+from sparkforge_aws.facts.scan import iter_source_files
+from sparkforge_aws.sdd import PHASES
 
 CERCA = "---"
 
@@ -303,7 +303,7 @@ Expected: PASS (6 testes). Se `test_discover_so_pega_fase_na_profundidade_certa`
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/__init__.py sparkforge/sdd/load.py tests/test_sdd.py
+git add sparkforge_aws/sdd/__init__.py sparkforge_aws/sdd/load.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): read SDD artifacts into checkable frontmatter"
 ```
 
@@ -312,8 +312,8 @@ git commit -F <msg>   # "feat(sdd): read SDD artifacts into checkable frontmatte
 ### Task 3: schemas por fase e `change_kinds.yaml`
 
 **Files:**
-- Create: `sparkforge/sdd/schema/common.json`, `explore.json`, `define.json`, `design.json`, `plan.json`, `build_report.json`, `ship.json`
-- Create: `sparkforge/sdd/change_kinds.yaml`
+- Create: `sparkforge_aws/sdd/schema/common.json`, `explore.json`, `define.json`, `design.json`, `plan.json`, `build_report.json`, `ship.json`
+- Create: `sparkforge_aws/sdd/change_kinds.yaml`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham** — acrescentar a `tests/test_sdd.py`:
@@ -321,7 +321,7 @@ git commit -F <msg>   # "feat(sdd): read SDD artifacts into checkable frontmatte
 ```python
 import re
 
-from sparkforge.sdd.checks import change_kinds, schema_for
+from sparkforge_aws.sdd.checks import change_kinds, schema_for
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -359,11 +359,11 @@ def test_change_kinds_casa_com_os_titulos_do_documento():
 - [ ] **Step 2: rodar e ver falhar**
 
 Run: `python -m pytest tests/test_sdd.py -q`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.sdd.checks'`
 
 - [ ] **Step 3: implementar os dados**
 
-`sparkforge/sdd/schema/common.json`:
+`sparkforge_aws/sdd/schema/common.json`:
 
 ```json
 {
@@ -387,7 +387,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/schema/explore.json`:
+`sparkforge_aws/sdd/schema/explore.json`:
 
 ```json
 {
@@ -412,7 +412,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/schema/define.json` (`source` fora de `required` de propósito: a falta dele é `success_without_source`, não `schema_invalid`):
+`sparkforge_aws/sdd/schema/define.json` (`source` fora de `required` de propósito: a falta dele é `success_without_source`, não `schema_invalid`):
 
 ```json
 {
@@ -483,7 +483,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/schema/design.json` (`rollback` fora de `required`: a falta é `rollback_missing`):
+`sparkforge_aws/sdd/schema/design.json` (`rollback` fora de `required`: a falta é `rollback_missing`):
 
 ```json
 {
@@ -532,7 +532,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/schema/plan.json` (`test` fora de `required`: a falta é `task_without_test`):
+`sparkforge_aws/sdd/schema/plan.json` (`test` fora de `required`: a falta é `task_without_test`):
 
 ```json
 {
@@ -565,7 +565,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/schema/build_report.json` (`red` e `evidence_ref` fora de `required`):
+`sparkforge_aws/sdd/schema/build_report.json` (`red` e `evidence_ref` fora de `required`):
 
 ```json
 {
@@ -613,7 +613,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/schema/ship.json`:
+`sparkforge_aws/sdd/schema/ship.json`:
 
 ```json
 {
@@ -626,7 +626,7 @@ Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.checks'
 }
 ```
 
-`sparkforge/sdd/change_kinds.yaml` — uma chave por seção `## ` de `docs/gates-por-mudanca.md` (exceto "Quando nada acima serve"). Antes de escrever, liste os títulos:
+`sparkforge_aws/sdd/change_kinds.yaml` — uma chave por seção `## ` de `docs/gates-por-mudanca.md` (exceto "Quando nada acima serve"). Antes de escrever, liste os títulos:
 
 Run: `python -c "import re,pathlib;[print(l) for l in pathlib.Path('docs/gates-por-mudanca.md').read_text(encoding='utf-8').splitlines() if l.startswith('## ')]"`
 
@@ -650,7 +650,7 @@ extractor:
   section: "Acrescentar ou alterar um EXTRATOR de facts"
   registries: [reachability_lists, fixture_kind_coverage, snippet_measure]
 context_funnel:
-  section: "Mexer no funil de contexto (`sparkforge/codeintel/context.py`, `ranking.py`, `budget.py`)"
+  section: "Mexer no funil de contexto (`sparkforge_aws/codeintel/context.py`, `ranking.py`, `budget.py`)"
   registries: [recall_economy_gate]
 fixture_corpus:
   section: "Acrescentar um CORPUS de fixture novo (`fixtures/<dominio>/`)"
@@ -668,7 +668,7 @@ terraform_blind_spots:
   section: "Pontos cegos medidos do extrator de Terraform"
   registries: [terraform_extractor_gates]
 disk_read:
-  section: "Ler dado do disco em código de `sparkforge/`"
+  section: "Ler dado do disco em código de `sparkforge_aws/`"
   registries: [verify_wheel]
 dependency:
   section: "Alterar dependência: `pyproject.toml`, `requirements.txt`, `locks/` ou os workflows"
@@ -692,7 +692,7 @@ claims:
 
 Se algum título medido diferir do acima (o documento pode ter mudado), use o título medido; o teste do Step 1 é quem decide.
 
-- [ ] **Step 4: implementar o carregamento** — criar `sparkforge/sdd/checks.py` só com isto por enquanto:
+- [ ] **Step 4: implementar o carregamento** — criar `sparkforge_aws/sdd/checks.py` só com isto por enquanto:
 
 ```python
 """Os gates do SDD: cada falha e uma recusa com nome e o que a destrava."""
@@ -738,7 +738,7 @@ Expected: PASS
 - [ ] **Step 6: commit**
 
 ```bash
-git add sparkforge/sdd/schema sparkforge/sdd/change_kinds.yaml sparkforge/sdd/checks.py tests/test_sdd.py
+git add sparkforge_aws/sdd/schema sparkforge_aws/sdd/change_kinds.yaml sparkforge_aws/sdd/checks.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): per-phase schemas and the change-kind map"
 ```
 
@@ -747,14 +747,14 @@ git commit -F <msg>   # "feat(sdd): per-phase schemas and the change-kind map"
 ### Task 4: construtor de feature, `check()` e as recusas de estrutura
 
 **Files:**
-- Modify: `sparkforge/sdd/checks.py`
+- Modify: `sparkforge_aws/sdd/checks.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: construtor e testes que falham** — acrescentar a `tests/test_sdd.py`:
 
 ```python
-from sparkforge.receipt._hash import text_sha256
-from sparkforge.sdd.checks import check
+from sparkforge_aws.receipt._hash import text_sha256
+from sparkforge_aws.sdd.checks import check
 
 
 _LINHA_SHA = re.compile(r"^(?P<recuo>[ \t]+)sha256: ['\"]?(?P<hex>[0-9a-f]*)['\"]?$", re.M)
@@ -788,8 +788,8 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
     """Uma feature que passa em tudo. Cada teste de recusa estraga UMA coisa."""
     (repo / "tests").mkdir(parents=True, exist_ok=True)
     (repo / "tests" / "test_alvo.py").write_bytes(b"def test_alvo():\n    assert True\n")
-    (repo / "sparkforge").mkdir(exist_ok=True)
-    (repo / "sparkforge" / "existente.py").write_bytes(b"x = 1\n")
+    (repo / "sparkforge_aws").mkdir(exist_ok=True)
+    (repo / "sparkforge_aws" / "existente.py").write_bytes(b"x = 1\n")
     comum = {"sdd": 1, "feature": feature, "profile": profile, "status": "done"}
     caminhos: dict[str, Path] = {}
     define = {
@@ -818,8 +818,8 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "phase": "design",
         "upstream": _upstream(repo, caminhos["define"]),
         "files": [
-            {"path": "sparkforge/novo.py", "action": "create", "reason": "r"},
-            {"path": "sparkforge/existente.py", "action": "modify", "reason": "r"},
+            {"path": "sparkforge_aws/novo.py", "action": "create", "reason": "r"},
+            {"path": "sparkforge_aws/existente.py", "action": "modify", "reason": "r"},
         ],
         "decisions": [{"id": "D1", "choice": "c", "rejected": [], "rollback": "git revert"}],
         "covers": [{"part": "p", "acceptance": ["AC1"]}],
@@ -830,7 +830,7 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "upstream": _upstream(repo, caminhos["design"]),
         "tasks": [{
             "id": "T1",
-            "files": ["sparkforge/novo.py"],
+            "files": ["sparkforge_aws/novo.py"],
             "covers": ["AC1"],
             "test": {"path": "tests/test_alvo.py", "name": "test_alvo"},
         }],
@@ -951,7 +951,7 @@ def test_feature_filtra(tmp_path):
 Run: `python -m pytest tests/test_sdd.py -q`
 Expected: FAIL com `ImportError: cannot import name 'check'`
 
-- [ ] **Step 3: implementar** — acrescentar a `sparkforge/sdd/checks.py` (imports no topo, resto no fim):
+- [ ] **Step 3: implementar** — acrescentar a `sparkforge_aws/sdd/checks.py` (imports no topo, resto no fim):
 
 ```python
 from collections.abc import Callable
@@ -959,10 +959,10 @@ from dataclasses import dataclass, field
 
 from jsonschema import Draft202012Validator
 
-from sparkforge.paths import resolve_within
-from sparkforge.receipt._hash import text_sha256
-from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.load import Artifact, discover, load_artifact
+from sparkforge_aws.paths import resolve_within
+from sparkforge_aws.receipt._hash import text_sha256
+from sparkforge_aws.sdd import DEFAULT_ROOT, PHASES
+from sparkforge_aws.sdd.load import Artifact, discover, load_artifact
 
 PREDECESSOR: dict[str, str] = {
     "design": "define",
@@ -1061,7 +1061,7 @@ def _gate_upstream(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     )
     if declarado is None:
         ctx.recusa("upstream_missing", artefato.path, "upstream",
-                   f"declare upstream.path: {esperado_rel} e rode `sparkforge sdd stamp`")
+                   f"declare upstream.path: {esperado_rel} e rode `sparkforge-aws sdd stamp`")
         return
     alvo = resolve_within(ctx.repo, declarado["path"])
     if alvo is None or not alvo.is_file():
@@ -1075,7 +1075,7 @@ def _gate_upstream(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     if declarado["sha256"] != text_sha256(alvo):
         ctx.recusa("upstream_stale", artefato.path, "upstream/sha256",
                    f"{declarado['path']} mudou; revise {fase} e rode "
-                   f"`sparkforge sdd stamp --repo . {ctx.rel(artefato.path)}`")
+                   f"`sparkforge-aws sdd stamp --repo . {ctx.rel(artefato.path)}`")
 
 
 _GATES: dict[str, tuple[Gate, ...]] = {
@@ -1132,7 +1132,7 @@ def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None
     }
 ```
 
-Remover a variável não usada no `_gate_upstream` se o ruff reclamar (`esperado_rel` é usada; confira com `python -m ruff check sparkforge/sdd`).
+Remover a variável não usada no `_gate_upstream` se o ruff reclamar (`esperado_rel` é usada; confira com `python -m ruff check sparkforge_aws/sdd`).
 
 - [ ] **Step 4: rodar e ver passar**
 
@@ -1142,7 +1142,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/checks.py tests/test_sdd.py
+git add sparkforge_aws/sdd/checks.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): check() with schema, order and upstream gates"
 ```
 
@@ -1151,13 +1151,13 @@ git commit -F <msg>   # "feat(sdd): check() with schema, order and upstream gate
 ### Task 5: `stamp` e a cascata
 
 **Files:**
-- Create: `sparkforge/sdd/stamp.py`
+- Create: `sparkforge_aws/sdd/stamp.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
 
 ```python
-from sparkforge.sdd.stamp import StampError, stamp
+from sparkforge_aws.sdd.stamp import StampError, stamp
 
 
 def test_upstream_stale_e_stamp_resolve(tmp_path):
@@ -1212,9 +1212,9 @@ Nota do `test_stamp_preserva_crlf_e_o_corpo`: com o arquivo inteiro em CRLF, o `
 - [ ] **Step 2: rodar e ver falhar**
 
 Run: `python -m pytest tests/test_sdd.py -k stamp -q`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.stamp'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.sdd.stamp'`
 
-- [ ] **Step 3: implementar** `sparkforge/sdd/stamp.py`:
+- [ ] **Step 3: implementar** `sparkforge_aws/sdd/stamp.py`:
 
 ```python
 """Grava `upstream.sha256` no frontmatter, sem tocar no resto do arquivo.
@@ -1229,10 +1229,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge.durable import write_atomic_bytes
-from sparkforge.paths import resolve_within
-from sparkforge.receipt._hash import text_sha256
-from sparkforge.sdd.load import CERCA, load_artifact
+from sparkforge_aws.durable import write_atomic_bytes
+from sparkforge_aws.paths import resolve_within
+from sparkforge_aws.receipt._hash import text_sha256
+from sparkforge_aws.sdd.load import CERCA, load_artifact
 
 
 class StampError(ValueError):
@@ -1310,7 +1310,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/stamp.py tests/test_sdd.py
+git add sparkforge_aws/sdd/stamp.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): stamp writes the upstream hash and nothing else"
 ```
 
@@ -1319,7 +1319,7 @@ git commit -F <msg>   # "feat(sdd): stamp writes the upstream hash and nothing e
 ### Task 6: gates do define
 
 **Files:**
-- Modify: `sparkforge/sdd/checks.py`
+- Modify: `sparkforge_aws/sdd/checks.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
@@ -1413,7 +1413,7 @@ def test_command_e_declarado_e_nao_conferido(tmp_path):
 Run: `python -m pytest tests/test_sdd.py -q`
 Expected: FAIL nos oito testes novos (o gate não existe; `test_verified_by_dangling_depois_do_build` falha com lista vazia)
 
-- [ ] **Step 3: implementar** — acrescentar a `sparkforge/sdd/checks.py` (import `ast` no topo), antes de `_GATES`:
+- [ ] **Step 3: implementar** — acrescentar a `sparkforge_aws/sdd/checks.py` (import `ast` no topo), antes de `_GATES`:
 
 ```python
 def _nomes_de_teste(arvore: ast.Module) -> set[str]:
@@ -1478,7 +1478,7 @@ def _gate_change_kinds(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     for indice, chave in enumerate(artefato.meta["change_kinds"]):
         if chave not in conhecidos:
             ctx.recusa("schema_invalid", artefato.path, f"change_kinds/{indice}",
-                       f"'{chave}' nao existe em sparkforge/sdd/change_kinds.yaml; use uma de: "
+                       f"'{chave}' nao existe em sparkforge_aws/sdd/change_kinds.yaml; use uma de: "
                        + ", ".join(sorted(conhecidos)))
 
 
@@ -1495,12 +1495,12 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
             if alvo is None or not alvo.is_file() or fact_id not in _ids_de_fact(alvo):
                 ctx.lacuna("fact_not_collected", artefato.path,
                            f"{fact_id or referencia} nao esta em {caminho}; colete o artefato e "
-                           "rode o `sparkforge analyze` que o extrai")
+                           "rode o `sparkforge-aws analyze` que o extrai")
         elif prova["kind"] == "funcval":
             alvo = resolve_within(ctx.repo, referencia)
             if alvo is None or not alvo.is_file():
                 ctx.lacuna("funcval_not_run", artefato.path,
-                           f"rode `sparkforge funcval compare --out {referencia}` para "
+                           f"rode `sparkforge-aws funcval compare --out {referencia}` para "
                            f"{item['id']}")
 ```
 
@@ -1518,7 +1518,7 @@ Expected: PASS nos testes de define. `test_verified_by_dangling_depois_do_build`
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/checks.py tests/test_sdd.py
+git add sparkforge_aws/sdd/checks.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): define gates - success source, change kinds, verified_by"
 ```
 
@@ -1527,7 +1527,7 @@ git commit -F <msg>   # "feat(sdd): define gates - success source, change kinds,
 ### Task 7: gates do design e do plan
 
 **Files:**
-- Modify: `sparkforge/sdd/checks.py`
+- Modify: `sparkforge_aws/sdd/checks.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
@@ -1553,7 +1553,7 @@ def _ate(tmp_path, fase):
 def test_manifest_path_unknown(tmp_path):
     caminhos = _ate(tmp_path, "design")
     meta = _meta(caminhos["design"])
-    meta["files"].append({"path": "sparkforge/sumiu.py", "action": "delete", "reason": "r"})
+    meta["files"].append({"path": "sparkforge_aws/sumiu.py", "action": "delete", "reason": "r"})
     _reescreve(caminhos["design"], files=meta["files"])
     assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
 
@@ -1668,7 +1668,7 @@ Expected: PASS, inclusive `test_verified_by_dangling_depois_do_build`
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/checks.py tests/test_sdd.py
+git add sparkforge_aws/sdd/checks.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): design and plan gates - manifest, rollback, coverage, TDD"
 ```
 
@@ -1677,7 +1677,7 @@ git commit -F <msg>   # "feat(sdd): design and plan gates - manifest, rollback, 
 ### Task 8: gates do build_report e do ship
 
 **Files:**
-- Modify: `sparkforge/sdd/checks.py`
+- Modify: `sparkforge_aws/sdd/checks.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
@@ -1793,7 +1793,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/checks.py tests/test_sdd.py
+git add sparkforge_aws/sdd/checks.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): build and ship gates - declared red, evidence, closure, registries"
 ```
 
@@ -1802,7 +1802,7 @@ git commit -F <msg>   # "feat(sdd): build and ship gates - declared red, evidenc
 ### Task 9: gates do perfil operador
 
 **Files:**
-- Modify: `sparkforge/sdd/checks.py`
+- Modify: `sparkforge_aws/sdd/checks.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
@@ -1845,11 +1845,11 @@ Expected: FAIL nos três
 - [ ] **Step 3: implementar** — imports no topo:
 
 ```python
-from sparkforge.case.store import CASE_DIR, CASE_FILE
-from sparkforge.change.sandbox import SANDBOX_DIR
+from sparkforge_aws.case.store import CASE_DIR, CASE_FILE
+from sparkforge_aws.change.sandbox import SANDBOX_DIR
 ```
 
-Confira antes que `import sparkforge.change.sandbox` não arrasta nada pesado: `python -X importtime -c "import sparkforge.change.sandbox" 2>&1 | tail -3`. Se passar de ~0,3 s, troque o import por `SANDBOX_DIR = ".sparkforge/sandbox"` local com comentário apontando para `sparkforge/change/sandbox.py:40`.
+Confira antes que `import sparkforge_aws.change.sandbox` não arrasta nada pesado: `python -X importtime -c "import sparkforge_aws.change.sandbox" 2>&1 | tail -3`. Se passar de ~0,3 s, troque o import por `SANDBOX_DIR = ".sparkforge/sandbox"` local com comentário apontando para `sparkforge_aws/change/sandbox.py:40`.
 
 Antes de `_GATES`:
 
@@ -1871,7 +1871,7 @@ def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     declarado = artefato.meta.get("case_id")
     if not declarado or declarado != _case_id_atual(ctx.repo):
         ctx.recusa("case_missing", artefato.path, "case_id",
-                   "abra o case com `sparkforge case open` e copie o case_id dele para o define")
+                   "abra o case com `sparkforge-aws case open` e copie o case_id dele para o define")
 
 
 def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -1881,7 +1881,7 @@ def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     alvo = resolve_within(ctx.repo, f"{SANDBOX_DIR}/{ident}") if ident else None
     if alvo is None or not alvo.is_dir():
         ctx.recusa("change_missing", artefato.path, "change_id",
-                   "o build do operador passa por `sparkforge change sandbox`; registre o id "
+                   "o build do operador passa por `sparkforge-aws change sandbox`; registre o id "
                    "do sandbox em change_id")
 ```
 
@@ -1895,7 +1895,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/checks.py tests/test_sdd.py
+git add sparkforge_aws/sdd/checks.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): operator gates - case and sandbox must exist"
 ```
 
@@ -1904,13 +1904,13 @@ git commit -F <msg>   # "feat(sdd): operator gates - case and sandbox must exist
 ### Task 10: `status`
 
 **Files:**
-- Create: `sparkforge/sdd/status.py`
+- Create: `sparkforge_aws/sdd/status.py`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
 
 ```python
-from sparkforge.sdd.status import status
+from sparkforge_aws.sdd.status import status
 
 
 def test_status_mostra_fase_e_bloqueio(tmp_path):
@@ -1945,9 +1945,9 @@ def test_status_sem_raiz(tmp_path):
 - [ ] **Step 2: rodar e ver falhar**
 
 Run: `python -m pytest tests/test_sdd.py -k status -q`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.sdd.status'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.sdd.status'`
 
-- [ ] **Step 3: implementar** `sparkforge/sdd/status.py`:
+- [ ] **Step 3: implementar** `sparkforge_aws/sdd/status.py`:
 
 ```python
 """Em que fase cada feature esta, e o que a impede de avancar."""
@@ -1957,10 +1957,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge.paths import resolve_within
-from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.checks import check
-from sparkforge.sdd.load import discover, load_artifact
+from sparkforge_aws.paths import resolve_within
+from sparkforge_aws.sdd import DEFAULT_ROOT, PHASES
+from sparkforge_aws.sdd.checks import check
+from sparkforge_aws.sdd.load import discover, load_artifact
 
 
 def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
@@ -1995,7 +1995,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/sdd/status.py tests/test_sdd.py
+git add sparkforge_aws/sdd/status.py tests/test_sdd.py
 git commit -F <msg>   # "feat(sdd): status - current phase and what blocks it"
 ```
 
@@ -2004,15 +2004,15 @@ git commit -F <msg>   # "feat(sdd): status - current phase and what blocks it"
 ### Task 11: `_core` e a CLI
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py` (depois de `debate_referee`, linha ~3345)
-- Modify: `sparkforge/adapters/cli.py` (parser depois do bloco `funcval`, linha ~1183; handlers depois de `_cmd_funcval_compare`, linha ~3425; `_DISPATCH` linha ~4545; `_dispatch` linha ~4654)
+- Modify: `sparkforge_aws/adapters/_core.py` (depois de `debate_referee`, linha ~3345)
+- Modify: `sparkforge_aws/adapters/cli.py` (parser depois do bloco `funcval`, linha ~1183; handlers depois de `_cmd_funcval_compare`, linha ~3425; `_DISPATCH` linha ~4545; `_dispatch` linha ~4654)
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
 
 ```python
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
 
 
 def test_cli_check_ok_e_recusa(tmp_path, capsys):
@@ -2042,14 +2042,14 @@ def test_cli_status_e_stamp(tmp_path, capsys):
 def test_core_erros_acionaveis(tmp_path):
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_check(str(tmp_path / "nao-existe"))
-    assert "sparkforge" in erro.value.message
+    assert "sparkforge-aws" in erro.value.message
     feature_limpa(tmp_path)
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_check(str(tmp_path), feature="NAO_HA")
-    assert "sparkforge sdd status" in erro.value.message
+    assert "sparkforge-aws sdd status" in erro.value.message
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_stamp(str(tmp_path), "docs/sdd/F1/define.md")
-    assert "sparkforge sdd stamp" in erro.value.message
+    assert "sparkforge-aws sdd stamp" in erro.value.message
     assert erro.value.exit_code == 2
 ```
 
@@ -2065,7 +2065,7 @@ def _raiz_do_repo(repo: str, verbo: str) -> Path:
     raiz = Path(repo)
     if not raiz.is_dir():
         raise AdapterError(
-            f"repositorio nao encontrado: {repo}. Rode `sparkforge sdd {verbo} --repo <raiz>` "
+            f"repositorio nao encontrado: {repo}. Rode `sparkforge-aws sdd {verbo} --repo <raiz>` "
             "apontando para a raiz que contem docs/sdd/.",
             exit_code=2,
         )
@@ -2076,13 +2076,13 @@ def sdd_check(
     repo: str, root_path: str = "docs/sdd", feature: str | None = None
 ) -> dict[str, Any]:
     """Os gates do SDD sobre `repo/root_path`. So le."""
-    from sparkforge.sdd.checks import check
+    from sparkforge_aws.sdd.checks import check
 
     raiz = _raiz_do_repo(repo, "check")
     relatorio = check(raiz, root_path, feature)
     if feature is not None and not relatorio["features"] and not relatorio["unresolved"]:
         raise AdapterError(
-            f"feature {feature} nao existe em {root_path}. Rode `sparkforge sdd status --repo "
+            f"feature {feature} nao existe em {root_path}. Rode `sparkforge-aws sdd status --repo "
             f"{repo}` para listar as que existem.",
             exit_code=2,
         )
@@ -2090,14 +2090,14 @@ def sdd_check(
 
 
 def sdd_status(repo: str, root_path: str = "docs/sdd") -> dict[str, Any]:
-    from sparkforge.sdd.status import status
+    from sparkforge_aws.sdd.status import status
 
     return status(_raiz_do_repo(repo, "status"), root_path)
 
 
 def sdd_stamp(repo: str, path: str) -> dict[str, Any]:
     """Grava `upstream.sha256` em `path`. Unica escrita do SDD."""
-    from sparkforge.sdd.stamp import StampError, stamp
+    from sparkforge_aws.sdd.stamp import StampError, stamp
 
     raiz = _raiz_do_repo(repo, "stamp")
     try:
@@ -2105,7 +2105,7 @@ def sdd_stamp(repo: str, path: str) -> dict[str, Any]:
     except StampError as exc:
         raise AdapterError(
             f"{exc.code}: {exc.message}. Corrija o frontmatter e rode "
-            f"`sparkforge sdd stamp --repo {repo} {path}` de novo.",
+            f"`sparkforge-aws sdd stamp --repo {repo} {path}` de novo.",
             exit_code=2,
         ) from exc
 ```
@@ -2183,8 +2183,8 @@ Expected: PASS. Se `test_cli_status_e_stamp` falhar dentro do journal (a Task 12
 - [ ] **Step 6: commit**
 
 ```bash
-git add sparkforge/adapters/_core.py sparkforge/adapters/cli.py tests/test_sdd.py
-git commit -F <msg>   # "feat(cli): sparkforge sdd check|status|stamp"
+git add sparkforge_aws/adapters/_core.py sparkforge_aws/adapters/cli.py tests/test_sdd.py
+git commit -F <msg>   # "feat(cli): sparkforge-aws sdd check|status|stamp"
 ```
 
 ---
@@ -2192,15 +2192,15 @@ git commit -F <msg>   # "feat(cli): sparkforge sdd check|status|stamp"
 ### Task 12: tools MCP e o journal
 
 **Files:**
-- Modify: `sparkforge/adapters/tools.py` (schemas de saída perto de `_DEBATE_REFEREE_SCHEMA`; entradas em `TOOLS` depois de `sparkforge_funcval_compare`; handlers depois de `_h_funcval_compare`; registro depois de `"sparkforge_funcval_compare": _h_funcval_compare,`)
-- Modify: `sparkforge/journal/record.py:44-47`
+- Modify: `sparkforge_aws/adapters/tools.py` (schemas de saída perto de `_DEBATE_REFEREE_SCHEMA`; entradas em `TOOLS` depois de `sparkforge_funcval_compare`; handlers depois de `_h_funcval_compare`; registro depois de `"sparkforge_funcval_compare": _h_funcval_compare,`)
+- Modify: `sparkforge_aws/journal/record.py:44-47`
 - Test: `tests/test_sdd.py`
 
 - [ ] **Step 1: testes que falham**
 
 ```python
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.journal import journaled
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.journal import journaled
 
 
 def _estruturado(resposta):
@@ -2247,7 +2247,7 @@ def test_stamp_pelo_mcp_grava_no_journal(tmp_path):
     assert "docs/sdd/F1/ship.md" in json.dumps(eventos[-1]["outputs"])
 ```
 
-Antes de escrever o último teste, confira os nomes de campo do evento: `python -c "import sparkforge.journal.record as r, inspect; print(inspect.getsource(r.Registro))" | head -60`. Se o campo não se chamar `event`, ajuste o teste ao nome real — não o código.
+Antes de escrever o último teste, confira os nomes de campo do evento: `python -c "import sparkforge_aws.journal.record as r, inspect; print(inspect.getsource(r.Registro))" | head -60`. Se o campo não se chamar `event`, ajuste o teste ao nome real — não o código.
 
 - [ ] **Step 2: rodar e ver falhar**
 
@@ -2320,7 +2320,7 @@ _SDD_STAMP_SCHEMA = {
 }
 ```
 
-Confira se as outras tools declaram `outputSchema` com `oneOf` para o ramo de erro (`rtk proxy grep -n "_DEBATE_REFEREE_SCHEMA =" -A12 sparkforge/adapters/tools.py`); se sim, use o mesmo embrulho que elas usam em vez do objeto nu.
+Confira se as outras tools declaram `outputSchema` com `oneOf` para o ramo de erro (`rtk proxy grep -n "_DEBATE_REFEREE_SCHEMA =" -A12 sparkforge_aws/adapters/tools.py`); se sim, use o mesmo embrulho que elas usam em vez do objeto nu.
 
 Entradas em `TOOLS`, depois de `sparkforge_funcval_compare`:
 
@@ -2416,7 +2416,7 @@ Registro de handlers, depois de `"sparkforge_funcval_compare": _h_funcval_compar
     "sparkforge_sdd_stamp": _h_sdd_stamp,
 ```
 
-Em `sparkforge/journal/record.py`, `_SAIDAS_POR_CHAVE`:
+Em `sparkforge_aws/journal/record.py`, `_SAIDAS_POR_CHAVE`:
 
 ```python
 _SAIDAS_POR_CHAVE: dict[str, tuple[str, ...]] = {
@@ -2434,7 +2434,7 @@ Expected: PASS
 - [ ] **Step 5: commit**
 
 ```bash
-git add sparkforge/adapters/tools.py sparkforge/journal/record.py tests/test_sdd.py
+git add sparkforge_aws/adapters/tools.py sparkforge_aws/journal/record.py tests/test_sdd.py
 git commit -F <msg>   # "feat(mcp): sdd check, status and stamp tools; stamp is journaled"
 ```
 
@@ -2611,7 +2611,7 @@ Anote o crescimento em bytes que o script imprime; ele vai na mensagem de commit
 Run: `python scripts/check_vnext_claims.py`
 Expected: lista de ids de alegação que mudaram (arquivo `.py` novo e tool nova movem `len(TOOLS)`). Remedie **pela lista de ids**, nunca por varredura. Se precisar de `--seed`, guarde só as entradas novas e restaure o resto (memória item 18).
 
-- [ ] **Step 5: `STATUS.md` e spec** — em `STATUS.md`, registrar o subprojeto A do SDD próprio como entregue na seção de frentes (siga o formato das linhas vizinhas), com o número de tools **medido** (`python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))"`). No spec, trocar `**Estado:** desenho aprovado, implementação não iniciada` por `**Estado:** implementado (subprojeto A)` e acrescentar ao fim uma seção `## 13. Desvios na implementação` listando qualquer diferença do que foi escrito (no mínimo: `explore` é opcional e só vira upstream do define quando existe; `feature` inexistente é erro de uso e não código do §5).
+- [ ] **Step 5: `STATUS.md` e spec** — em `STATUS.md`, registrar o subprojeto A do SDD próprio como entregue na seção de frentes (siga o formato das linhas vizinhas), com o número de tools **medido** (`python -c "from sparkforge_aws.adapters.tools import TOOLS; print(len(TOOLS))"`). No spec, trocar `**Estado:** desenho aprovado, implementação não iniciada` por `**Estado:** implementado (subprojeto A)` e acrescentar ao fim uma seção `## 13. Desvios na implementação` listando qualquer diferença do que foi escrito (no mínimo: `explore` é opcional e só vira upstream do define quando existe; `feature` inexistente é erro de uso e não código do §5).
 
 Run: `python -m pytest tests/test_docs_coverage.py -q` e, se a tabela de números do `STATUS.md` mudou, os gates da seção "Alterar a tabela *Números correntes*" de `docs/gates-por-mudanca.md`.
 
@@ -2632,16 +2632,16 @@ git commit -F <msg>
 - [ ] **Step 1: gates rápidos**
 
 ```bash
-git add -A sparkforge/sdd tests/test_sdd.py
-python -m ruff check sparkforge/sdd sparkforge/adapters sparkforge/durable.py tests/test_sdd.py
+git add -A sparkforge_aws/sdd tests/test_sdd.py
+python -m ruff check sparkforge_aws/sdd sparkforge_aws/adapters sparkforge_aws/durable.py tests/test_sdd.py
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py tests/test_facts_scan.py tests/test_sdd.py tests/test_durable.py -q
 ```
 
-Expected: PASS. `test_facts_scan.py` reprova `glob`/`rglob` cru em `sparkforge/`; `sdd` usa `iter_source_files`, então deve passar. `test_arvore_versionada.py` exige `git add` nos arquivos novos (feito acima).
+Expected: PASS. `test_facts_scan.py` reprova `glob`/`rglob` cru em `sparkforge_aws/`; `sdd` usa `iter_source_files`, então deve passar. `test_arvore_versionada.py` exige `git add` nos arquivos novos (feito acima).
 
 - [ ] **Step 2: regra 23**
 
-Run: `python -c "import pathlib,re;t=''.join(p.read_text(encoding='utf-8') for p in pathlib.Path('sparkforge/sdd').rglob('*.py'));print(bool(re.search(r'\b(anthropic|openai|bedrock|litellm)\b',t)))"`
+Run: `python -c "import pathlib,re;t=''.join(p.read_text(encoding='utf-8') for p in pathlib.Path('sparkforge_aws/sdd').rglob('*.py'));print(bool(re.search(r'\b(anthropic|openai|bedrock|litellm)\b',t)))"`
 Expected: `False`
 
 - [ ] **Step 3: wheel** (o `sdd` lê `schema/*.json` e `change_kinds.yaml` do disco)

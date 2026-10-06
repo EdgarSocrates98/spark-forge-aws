@@ -62,8 +62,8 @@ Um comando por vez, em primeiro plano, depois da correção de ruff e da ediçã
 
 | registro | comando | resultado |
 |---|---|---|
-| pré-requisito | `sparkforge sdd check --repo . --feature DATABRICKS_PHOTON_PLAN` | `ok: true`, 0 recusas, 0 lacunas |
-| pré-requisito (CI) | `python -m ruff check sparkforge scripts tests` | 1 E501 em `tests/test_databricks_photon_plan.py:157`, corrigido; depois, `All checks passed!` |
+| pré-requisito | `sparkforge-aws sdd check --repo . --feature DATABRICKS_PHOTON_PLAN` | `ok: true`, 0 recusas, 0 lacunas |
+| pré-requisito (CI) | `python -m ruff check sparkforge_aws scripts tests` | 1 E501 em `tests/test_databricks_photon_plan.py:157`, corrigido; depois, `All checks passed!` |
 | `rules_catalog_gates`, `manifest_rule_count`, `fixture_kind_coverage`, `reachability_lists` | `python -m pytest tests/test_rules_loader.py tests/test_rules_catalog_reachability.py tests/test_rules_result_axis.py tests/test_rules_engine.py tests/test_agent_coverage.py tests/test_router_agents.py tests/test_docs_coverage.py tests/test_fixtures_kind_coverage.py tests/test_refresh_knowledge.py tests/test_rules_threshold_mutation.py -q` | 1144 passed |
 | `runtime_scope_gates` | `python -m pytest tests/test_rule_scope_by_nature.py tests/test_runtime_inferred_from_facts.py tests/test_runtime_glue_versions.py -q` | 715 passed |
 | `snippet_measure` | `python -m pytest tests/test_harness_untrusted.py -q` | 4 passed |
@@ -110,7 +110,7 @@ apagam o `.claude/agents/README.md`, que não é rastreado. Esta entrega não te
 - O gate que o CI roda primeiro, o ruff, não estava na receita de verificação do
   build. Uma linha de 102 colunas no teste da própria feature passou pelas revisões
   por tarefa e pela revisão final. O build deve rodar
-  `python -m ruff check sparkforge scripts tests` antes do relatório `done`.
+  `python -m ruff check sparkforge_aws scripts tests` antes do relatório `done`.
 - O teste de AC3 compara com o golden que a própria feature regenera, e por isso não
   segura o "antes". Quem mediu o "antes" foi a comparação contra a merge-base, feita
   no ship. Critério "nada mudou" deve nascer com o comando de comparação contra a base

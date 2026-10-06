@@ -26,11 +26,11 @@ depois de definir o artefato e a hipótese. O Lab não substitui a cadeia
 captura evidências e devolve um receipt para análise e comparação.
 
 ```bash
-sparkforge lab verify --repo .
-sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
-sparkforge lab run iceberg-small-files --backend compose --seed 42 \
+sparkforge-aws lab verify --repo .
+sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42 --repo .
+sparkforge-aws lab run iceberg-small-files --backend compose --seed 42 \
   --execute --confirm --repo .
-sparkforge lab analyze .sparkforge/lab/runs/<run-id> --repo .
+sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id> --repo .
 ```
 
 O Golden 20 é compilado de `lab/scenarios/golden.yaml`; o oracle esperado é
@@ -45,17 +45,17 @@ Quando o caso já possui facts de progress, contrato SLO e transporte, use a
 composição offline. A identidade e os timestamps precisam vir dos artefatos:
 
 ```bash
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name output-rows --query-name orders-query \
   --sink-name orders-sink --out sink-slo.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out transport-slo.facts.json
@@ -79,10 +79,10 @@ Para detectar drift de configuração, extraia os dois lados e reutilize a
 composição geral de facts:
 
 ```bash
-sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
-sparkforge analyze terraform --path infra/ --out terraform.facts.json
-sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
-sparkforge judge --facts fused.facts.json --show-skipped
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge-aws analyze terraform --path infra/ --out terraform.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge-aws judge --facts fused.facts.json --show-skipped
 ```
 
 O vínculo exige correspondência literal e única entre o nome efetivo e
@@ -98,9 +98,9 @@ Com histórico sanitizado de execução, componha a definição efetiva com o
 analyzer existente de runs:
 
 ```bash
-sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
-sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
-sparkforge judge --facts runtime.facts.json --show-skipped
+sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
 
 O vínculo literal `glue.streaming.runtime_link` compara `glue_version`,
@@ -129,8 +129,8 @@ throughput sem timestamp e janela; `pending_commits`, backlog e lag continuam
 observações locais.
 
 ```bash
-sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
-sparkforge judge --facts flink.facts.json --show-skipped
+sparkforge-aws analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge-aws judge --facts flink.facts.json --show-skipped
 ```
 
 Quando source ou sink não aparece, o extrator publica
@@ -147,10 +147,10 @@ os facts upstream.
 
 ```bash
 pip install -e .
-sparkforge runtime detect --glue 5.0
-sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
-sparkforge next-step --repo . --findings .sparkforge/findings.json
+sparkforge-aws runtime detect --glue 5.0
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
+sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge/findings.json
 ```
 
 ## EMR on EC2
@@ -162,9 +162,9 @@ infraestrutura juntos, que é o que faz um achado de código ser julgado contra
 o Spark que aquele cluster realmente roda.
 
 ```bash
-sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
-sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
+sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
+sparkforge-aws judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
   --out .sparkforge/findings.json
 ```
 
@@ -224,7 +224,7 @@ dos facts que os outros já resolveram. O par mais próximo disso é
 enquanto o outro lê artefato. Eles existem porque o
 motor de regras avalia **um fact por condição** e nunca combina `attrs` de dois
 — quando a pergunta precisa cruzar duas fontes, ou quando o predicado não cabe
-nos seis comparadores de `sparkforge/rules/expr.py`, quem cruza é uma etapa
+nos seis comparadores de `sparkforge_aws/rules/expr.py`, quem cruza é uma etapa
 anterior. `lakeformation_missing_grant.py` é o exemplo mais recente dos dois
 casos ao mesmo tempo: ele cruza a falha do log (`ERR-LF-001`), a operação do
 código, o modelo de acesso e o grant ou a decisão de IAM, e "a permissão exigida
@@ -266,7 +266,7 @@ passo está em [Lake Formation e acesso](usos/lake-formation-e-acesso.md#insuffi
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
 | **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
-| **O agente acertou, com as tools certas, e recusou onde devia?** | `python -m sparkforge.evals grade` / `compare` — fora da CLI `sparkforge`, porque o runtime não importa a avaliação (`tests/test_harness_boundary.py`) | transcripts do Claude Code gerados por `scripts/run_agentic_eval.py` (fora do CI) e o gabarito `evals/agentic/<suite>/suite.yaml`; o compare lê N scorecards por lado e não conclui — ver `evals/README.md` |
+| **O agente acertou, com as tools certas, e recusou onde devia?** | `python -m sparkforge_aws.evals grade` / `compare` — fora da CLI `sparkforge-aws`, porque o runtime não importa a avaliação (`tests/test_harness_boundary.py`) | transcripts do Claude Code gerados por `scripts/run_agentic_eval.py` (fora do CI) e o gabarito `evals/agentic/<suite>/suite.yaml`; o compare lê N scorecards por lado e não conclui — ver `evals/README.md` |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
 | Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
@@ -275,7 +275,7 @@ passo está em [Lake Formation e acesso](usos/lake-formation-e-acesso.md#insuffi
 | Contexto que a execução consumiu | `economy report` | os spans do ledger que `call_tool` alimenta, mais a superfície em repouso e o transcript do host quando houver |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
-Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
+Coletar o artefato bruto (`sparkforge-aws collect *`) é a única parte que toca a
 AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `collect emr-eks` é o único que faz **duas** chamadas de API
 (`describe-virtual-cluster` e `describe-job-run`) e grava **um** arquivo: os dois
@@ -350,7 +350,7 @@ artefato de GraphFrames publicado para Spark 3.3 em linhagem nenhuma — nove da
 não executa nada — compara **dois conjuntos de facts** que `analyze event-log`
 já produziu, um por execução, e emite `bench.run_delta`, `bench.stage_delta`,
 `bench.unmatched`, `bench.analyzed` e `bench.unresolved`. É o produtor que o
-gate de `benchmark_ref` nunca teve: `sparkforge validate --findings` rejeita
+gate de `benchmark_ref` nunca teve: `sparkforge-aws validate --findings` rejeita
 `expected_effect` que quantifique ganho sem citar o `fact_id` de um
 `bench.run_delta`, e a área `SF-BENCH` julga a **validade da comparação** antes
 de qualquer conclusão sobre o job. `total_task_ms` é tempo de task somado —
@@ -380,21 +380,21 @@ e o próprio comparador carrega esse limite em
 ```bash
 # o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
 aws emr describe-cluster --cluster-id j-XXXX > cluster.json
-sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
+sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
 
 # onde o job valida dado, e o que acontece quando o check falha
-sparkforge analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
+sparkforge-aws analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
 
 # o mesmo lib/, pela ótica do GraphFrames — sem import da biblioteca, só sentinela
-sparkforge analyze graph --path lib/ --out .sparkforge/facts-graph.json
+sparkforge-aws analyze graph --path lib/ --out .sparkforge/facts-graph.json
 
 # o antes e o depois, comparados — e o fact_id que o benchmark_ref cita
-sparkforge analyze event-log --path before.jsonl --out .sparkforge/before.json
-sparkforge analyze event-log --path after.jsonl  --out .sparkforge/after.json
-sparkforge benchmark --before .sparkforge/before.json \
+sparkforge-aws analyze event-log --path before.jsonl --out .sparkforge/before.json
+sparkforge-aws analyze event-log --path after.jsonl  --out .sparkforge/after.json
+sparkforge-aws benchmark --before .sparkforge/before.json \
                      --after .sparkforge/after.json \
                      --out .sparkforge/bench.json
-sparkforge validate --findings .sparkforge/findings.json \
+sparkforge-aws validate --findings .sparkforge/findings.json \
                     --facts .sparkforge/bench.json
 ```
 

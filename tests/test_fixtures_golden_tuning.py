@@ -1,6 +1,6 @@
 """Golden test do corpus tuning: sete cenarios da configuracao derivada.
 
-`sparkforge tune` NAO extrai de artefato -- deriva de facts JA extraidos
+`sparkforge-aws tune` NAO extrai de artefato -- deriva de facts JA extraidos
 (`spark.stage.shuffle`, `spark.conf_effective`, `pyspark.conf_set`,
 `tf.spark_conf`, `spark.runtime_version`) -- mesmo molde de `fixtures/finops/` e
 `fixtures/capacity/`.
@@ -27,8 +27,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.findings.models import Fact
-from sparkforge.tuning import build_conf_advice
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.tuning import build_conf_advice
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "tuning"

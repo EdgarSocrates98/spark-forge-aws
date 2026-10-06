@@ -4,7 +4,7 @@
 
 **Goal:** Transformar as mudanças de Spark 3.5→4.0→4.1 confirmadas em fonte oficial no primeiro conjunto de regras `SF-SPARK4`, alimentadas pelo extrator de migração que já existe.
 
-**Architecture:** O conhecimento entra como documento em `knowledge/spark/`, com fonte e `retrieved`, vigiado pelo lock. Três kinds novos entram em `sparkforge/facts/migration.py` (observação pura, nenhum julgamento). Uma área nova `SF-SPARK4` em `rules/catalog/spark4.yaml` julga esses kinds com `runtime_scope` guardado por versão de **Spark**, não de Glue — a fronteira é do Apache, não da AWS, e vale igual em EMR. Nenhuma bifurcação do motor: `judge` e `assess` já fazem o resto.
+**Architecture:** O conhecimento entra como documento em `knowledge/spark/`, com fonte e `retrieved`, vigiado pelo lock. Três kinds novos entram em `sparkforge_aws/facts/migration.py` (observação pura, nenhum julgamento). Uma área nova `SF-SPARK4` em `rules/catalog/spark4.yaml` julga esses kinds com `runtime_scope` guardado por versão de **Spark**, não de Glue — a fronteira é do Apache, não da AWS, e vale igual em EMR. Nenhuma bifurcação do motor: `judge` e `assess` já fazem o resto.
 
 **Tech Stack:** Python 3.10/3.11 (stdlib + PyYAML), pytest, o catálogo de regras e o modelo `Fact`/`Finding` existentes.
 
@@ -48,12 +48,12 @@ e cobrir de novo criaria dois achados para o mesmo problema.
 ## Convenções deste repositório que valem para todas as tasks
 
 - Comentários e docstrings em português, explicando *por quê*, nunca *o quê*.
-- `python -m ruff check sparkforge scripts tests` não pode acusar nada novo nos arquivos
+- `python -m ruff check sparkforge_aws scripts tests` não pode acusar nada novo nos arquivos
   tocados. Limite de linha 100.
 - Nenhum teste afirma contagem copiada (`len(rules) == 3`). Conte derivando, ou asserte
   estrutura.
 - `Fact` é observação ancorada e **nunca** contém juízo nem limiar
-  (`sparkforge/findings/models.py`). Limiar mora na regra.
+  (`sparkforge_aws/findings/models.py`). Limiar mora na regra.
 - Todo extrator declara `EMITTED_KINDS` fechado. `migration` **já está** registrado em
   `tests/test_rules_catalog_reachability.py` e `tests/test_fixtures_kind_coverage.py`, então
   **kind novo sem golden derruba a suíte no mesmo commit**. Kind, regra e fixture entram
@@ -71,7 +71,7 @@ e cobrir de novo criaria dois achados para o mesmo problema.
 | `knowledge/spark/spark4-migration.md` | criar — as mudanças 3.5→4.0→4.1 confirmadas, com fonte e `retrieved`. Prosa para humano e para o terceiro degrau de portabilidade |
 | `knowledge/sources.lock.json` | modificar — as duas URLs de migração do Spark 4.1 passam a ser vigiadas |
 | `knowledge/offline-manifest.json` | modificar — `sha256` do documento novo |
-| `sparkforge/facts/migration.py` | modificar — três kinds novos em `EMITTED_KINDS` e os detectores deles |
+| `sparkforge_aws/facts/migration.py` | modificar — três kinds novos em `EMITTED_KINDS` e os detectores deles |
 | `rules/catalog/spark4.yaml` | criar — área `SF-SPARK4`, três regras |
 | `rules/catalog/routing.yaml` | modificar — rota para a área nova |
 | `agents/sf-runtime-specialist.md` | modificar — `SF-SPARK4` em `rule_areas` |
@@ -193,7 +193,7 @@ Run:
 ```bash
 python - <<'PY'
 import json, pathlib
-from sparkforge.tools.offline import _content_sha256
+from sparkforge_aws.tools.offline import _content_sha256
 p = pathlib.Path("knowledge/offline-manifest.json")
 d = json.loads(p.read_text(encoding="utf-8"))
 alvo = "knowledge/spark/spark4-migration.md"
@@ -224,7 +224,7 @@ git commit -m "docs(knowledge): mudancas de Spark 3.5 a 4.1 confirmadas em fonte
 ### Task 2: Kind `mig.renamed_conf` — config que perdeu o prefixo `legacy`
 
 **Files:**
-- Modify: `sparkforge/facts/migration.py`
+- Modify: `sparkforge_aws/facts/migration.py`
 - Test: `tests/test_facts_migration.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -270,7 +270,7 @@ Expected: FAIL — nenhum fact com kind `mig.renamed_conf` é emitido.
 
 - [ ] **Step 3: Implementar**
 
-Em `sparkforge/facts/migration.py`, acrescentar `"mig.renamed_conf"` a `EMITTED_KINDS` e,
+Em `sparkforge_aws/facts/migration.py`, acrescentar `"mig.renamed_conf"` a `EMITTED_KINDS` e,
 junto das outras constantes de regex:
 
 ```python
@@ -371,7 +371,7 @@ expects_rules:
 ```
 
 > Confirme o nome exato do kind sentinela lendo `EMITTED_KINDS` em
-> `sparkforge/facts/migration.py` antes de escrever `expects_kinds`; a lista precisa
+> `sparkforge_aws/facts/migration.py` antes de escrever `expects_kinds`; a lista precisa
 > bater com o que o extrator emite para aquele arquivo, e `test_declared_kinds_all_present`
 > compara conjunto com conjunto.
 
@@ -391,7 +391,7 @@ Step 5 não está sendo encontrado — confira o nome do diretório.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add sparkforge/facts/migration.py tests/test_facts_migration.py fixtures/migration/spark4_renamed_conf
+git add sparkforge_aws/facts/migration.py tests/test_facts_migration.py fixtures/migration/spark4_renamed_conf
 git commit -m "feat(facts): observa config de Spark que mudou de nome na versao 4.0"
 ```
 
@@ -400,7 +400,7 @@ git commit -m "feat(facts): observa config de Spark que mudou de nome na versao 
 ### Task 3: Kind `mig.removed_api` — API de pandas-on-Spark removida em 4.0
 
 **Files:**
-- Modify: `sparkforge/facts/migration.py`
+- Modify: `sparkforge_aws/facts/migration.py`
 - Test: `tests/test_facts_migration.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -535,7 +535,7 @@ Expected: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add sparkforge/facts/migration.py tests/test_facts_migration.py fixtures/migration/spark4_removed_api
+git add sparkforge_aws/facts/migration.py tests/test_facts_migration.py fixtures/migration/spark4_removed_api
 git commit -m "feat(facts): observa API de pandas-on-Spark removida no Spark 4.0"
 ```
 
@@ -552,9 +552,9 @@ git commit -m "feat(facts): observa API de pandas-on-Spark removida no Spark 4.0
 Criar `tests/test_spark4_rules.py`:
 
 ```python
-from sparkforge.facts import migration
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts import migration
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 SPARK_4 = {"glue": "6.0", "spark": "4.1.1", "python": "3.13"}
 SPARK_35 = {"glue": "5.1", "spark": "3.5.6", "python": "3.11"}
@@ -654,7 +654,7 @@ Condições:
 > `attrs.major` **não existe hoje** em `mig.python_dep` — o kind guarda `version` como
 > string. O avaliador de expressões compara números, não versões. Antes de escrever
 > `SF-SPARK4-003`, acrescente `major` (inteiro) aos `attrs` do kind em
-> `sparkforge/facts/migration.py`, com teste próprio em `tests/test_facts_migration.py`:
+> `sparkforge_aws/facts/migration.py`, com teste próprio em `tests/test_facts_migration.py`:
 > `pyarrow==11.0.0` produz `attrs["major"] == 11`. Extrair o major é observação, não
 > juízo — o limiar `15` continua na regra, que é onde ele pertence.
 > Versão que não começa por dígito (`pyarrow==@git+...`) **não** recebe `major`, e a
@@ -670,7 +670,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add rules/catalog/spark4.yaml tests/test_spark4_rules.py sparkforge/facts/migration.py tests/test_facts_migration.py
+git add rules/catalog/spark4.yaml tests/test_spark4_rules.py sparkforge_aws/facts/migration.py tests/test_facts_migration.py
 git commit -m "feat(rules): area SF-SPARK4 com as tres primeiras regras"
 ```
 
@@ -718,7 +718,7 @@ Run:
 ```bash
 python - <<'PY'
 import json, pathlib
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 p = pathlib.Path("manifest.json")
 d = json.loads(p.read_text(encoding="utf-8"))
 d["knowledge_base"]["rule_count"] = len(load_catalog())

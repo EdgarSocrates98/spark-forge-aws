@@ -4,7 +4,7 @@ import json
 import shutil
 from pathlib import Path
 
-from sparkforge.adapters.cli import build_parser, main
+from sparkforge_aws.adapters.cli import build_parser, main
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,7 +107,7 @@ def test_decision_benchmark_cli_passes_seed() -> None:
 
 
 def test_candidate_validate_cli_uses_explicit_repository(capsys) -> None:
-    from sparkforge.evals.cli import main as eval_main
+    from sparkforge_aws.evals.cli import main as eval_main
 
     assert eval_main(["candidate", "validate", "--repo", str(ROOT)]) == 0
     payload = json.loads(capsys.readouterr().out)

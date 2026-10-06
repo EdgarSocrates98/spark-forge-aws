@@ -9,16 +9,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.agentic.checkpoint import SemanticCheckpoint
-from sparkforge.agentic.memory import (
+from sparkforge_aws.agentic.checkpoint import SemanticCheckpoint
+from sparkforge_aws.agentic.memory import (
     DecisionMemoryRecord,
     classify_memory_candidate,
     persist_memory_candidate,
     record_decision,
     retrieve_memory,
 )
-from sparkforge.agentic.models import Decision
-from sparkforge.agentic.trust import (
+from sparkforge_aws.agentic.models import Decision
+from sparkforge_aws.agentic.trust import (
     AgentHandoff,
     InstructionAuthority,
     RoleContextPlan,
@@ -26,28 +26,28 @@ from sparkforge.agentic.trust import (
     TrustEnvelope,
     TrustLabel,
 )
-from sparkforge.context.quality import (
+from sparkforge_aws.context.quality import (
     ContextObservation,
     ContextQualityReport,
     MinimumSufficientContextBenchmark,
 )
-from sparkforge.economy.ledger import LedgerEvent, ProviderPriceProfile, TokenLedger
-from sparkforge.economy.model_router import (
+from sparkforge_aws.economy.ledger import LedgerEvent, ProviderPriceProfile, TokenLedger
+from sparkforge_aws.economy.model_router import (
     AdaptiveModelRouter,
     ModelCandidate,
     ModelRouteMode,
     ModelRoutingInput,
     ModelScorecard,
 )
-from sparkforge.observability.agentops import (
+from sparkforge_aws.observability.agentops import (
     compare_baseline,
     compare_runs,
     inspect_run,
     save_baseline,
 )
-from sparkforge.observability.store import SQLiteTraceStore
-from sparkforge.observability.tracer import ExecutionTrace, TraceSpan
-from sparkforge.protocols.forge import (
+from sparkforge_aws.observability.store import SQLiteTraceStore
+from sparkforge_aws.observability.tracer import ExecutionTrace, TraceSpan
+from sparkforge_aws.protocols.forge import (
     ForgeCapability,
     ForgeEvidenceBundle,
     ForgeHealth,
@@ -251,13 +251,13 @@ def test_checkpoint_and_forge_protocol_are_content_addressed(tmp_path: Path) -> 
     result = ForgeResult(
         task.id, ForgeTaskStatus.SUCCEEDED, "done", ForgeEvidenceBundle(facts=("f1",))
     )
-    health = ForgeHealth("ok", "1", (ForgeCapability("sparkforge.data"),), {"offline": "ok"})
+    health = ForgeHealth("ok", "1", (ForgeCapability("sparkforge_aws.data"),), {"offline": "ok"})
     assert result.to_dict()["evidence"]["facts"] == ["f1"]
-    assert health.to_dict()["capabilities"][0]["name"] == "sparkforge.data"
+    assert health.to_dict()["capabilities"][0]["name"] == "sparkforge_aws.data"
 
 
 def test_cli_mcp_and_doctor_surfaces() -> None:
-    from sparkforge.adapters import _core
+    from sparkforge_aws.adapters import _core
 
     context = _core.context_inspect(
         {

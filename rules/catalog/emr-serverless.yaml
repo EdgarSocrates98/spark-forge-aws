@@ -1,6 +1,6 @@
 # Catálogo de regras — definição de application Amazon EMR Serverless
 #
-# Depende do extrator `sparkforge/facts/emr_serverless.py` (Fase 5d, Task 2),
+# Depende do extrator `sparkforge_aws/facts/emr_serverless.py` (Fase 5d, Task 2),
 # que lê o dump já coletado de UMA chamada — `aws emr-serverless
 # get-application`. Diferente do EMR on EC2, que exige seis subcomandos, aqui a
 # resposta única traz capacidade inicial, capacidade máxima, auto-start/stop,
@@ -47,7 +47,7 @@
 # Serverless uma a uma: elas publicam Spark, Hive e Tez, e **não** publicam
 # Hadoop, Iceberg nem Python; o Spark vem sem o sufixo `-amzn-N`. Três das
 # quatro colunas de `EMR_MATRIX` não têm fonte deste lado, então o `releaseLabel`
-# NÃO alimenta `RuntimeContext.emr` (D-5d-5). Num `sparkforge judge` sobre um
+# NÃO alimenta `RuntimeContext.emr` (D-5d-5). Num `sparkforge-aws judge` sobre um
 # artefato de Serverless, `RuntimeContext.emr` é vazio por construção — e
 # `in_scope` falha FECHADA. Uma regra desta área com escopo de versão seria
 # pulada em toda execução real e em todo golden, e o corpus ficaria verde por

@@ -27,8 +27,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.controlm import descriptor as cd
-from sparkforge.controlm import matrix as cm
+from sparkforge_aws.controlm import descriptor as cd
+from sparkforge_aws.controlm import matrix as cm
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML_PATH = ROOT / "knowledge" / "controlm" / "automation-api-matrix.yaml"

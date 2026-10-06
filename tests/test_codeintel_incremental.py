@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.codeintel.incremental import refresh
+from sparkforge_aws.codeintel.incremental import refresh
 
 
 def test_refresh_reports_complete_then_changed_and_reused_files(tmp_path: Path) -> None:

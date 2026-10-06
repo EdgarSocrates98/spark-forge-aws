@@ -5,7 +5,7 @@ Ela não substitui collector, métrica temporal ou validação do runtime.
 
 ## Kafka
 
-`sparkforge analyze transport --artifact kafka --path <dump.json>` aceita
+`sparkforge-aws analyze transport --artifact kafka --path <dump.json>` aceita
 descrição de topics/partitions, configs, consumer groups e offsets. Os facts
 separam `kafka.topic`, `kafka.partition`, `kafka.consumer_group` e `kafka.lag`.
 `replication_factor`, `isr_count`, offsets e lag são observações do dump; não são
@@ -104,7 +104,7 @@ separada.
 
 ## SLO observado de transporte
 
-`sparkforge analyze streaming-composition --mode slo` pode avaliar um SLO
+`sparkforge-aws analyze streaming-composition --mode slo` pode avaliar um SLO
 declarado sobre `kafka.lag` ou `kinesis.shard` quando o chamador fornece
 `--transport-key`. O valor é a identidade de um grupo/topic Kafka ou de um
 stream Kinesis; a chave não é inferida pelo nome de arquivo, e grupos, topics,

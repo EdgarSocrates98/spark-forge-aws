@@ -23,7 +23,7 @@ Compara os DOIS resultados que VOCE mediu contra o plano de `sparkforge_funcval_
 
 ## Na CLI
 
-[`sparkforge funcval compare`](../cli/funcval.md)
+[`sparkforge-aws funcval compare`](../cli/funcval.md)
 
 ## Capacidade
 

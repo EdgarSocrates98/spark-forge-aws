@@ -22,7 +22,7 @@
   - `knowledge/sources.lock.json` guarda, por URL, `pinned` (versao no path, conteudo imutavel), `rules` e `docs` que dependem dela, a lista de `retrieved` e, quando a fonte foi conferida com rede, `sha256` e `checked_at`.
   - Esse lock e escrito por `scripts/refresh_knowledge.py` (workflow semanal que abre PR e nunca commita sozinho).
   - Cada fonte de regra no catalogo tem `url` e `retrieved` (a data em que o autor leu), e o motor copia `sources` da regra para o finding.
-  - `sparkforge/agentic/evidence.py` separa autoridade (tier) de vigencia (versao alvo), mas nao olha data nem mudanca de fonte.
+  - `sparkforge_aws/agentic/evidence.py` separa autoridade (tier) de vigencia (versao alvo), mas nao olha data nem mudanca de fonte.
 - **O que nao existe:**
   - Nenhum estado de freshness e calculado; nenhum verbo diz que uma fonte envelheceu ou mudou.
   - O lock nao guarda **quando** o hash mudou: o `--update` sobrescreve `sha256` e `checked_at`, e a mudanca se perde.
@@ -34,13 +34,13 @@
   - **60** fontes de regra caem em URL cujo `retrieved` diverge entre regra e documento de knowledge (ex.: a regra leu em 07-31 e o documento em 08-03).
   - As 132 URLs so de knowledge: 124 nunca conferidas, 2 conferidas e 6 imutaveis.
   - **166** goldens de `fixtures/**/expected/findings.json` carregam **368** `sources`.
-- O diretorio `knowledge/` inteiro vai para o wheel como `sparkforge/knowledge` (force-include no `pyproject.toml`): o lock viaja com o pacote, e um pacote Python com esse nome colidiria com ele.
+- O diretorio `knowledge/` inteiro vai para o wheel como `sparkforge_aws/knowledge` (force-include no `pyproject.toml`): o lock viaja com o pacote, e um pacote Python com esse nome colidiria com ele.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/knowledge_freshness.py` (modulo puro); `adapters/_core.py` e `adapters/tools.py` (`judge`, `rules_lookup`, `knowledge_path`, `report github`); `sparkforge/reporting/github.py`; `scripts/refresh_knowledge.py`; `agents/executors/sf-verifier.md`; `docs/knowledge-freshness.md` | Compoe sobre o lock e o catalogo, sem rede |
+| Likely Location | `sparkforge_aws/knowledge_freshness.py` (modulo puro); `adapters/_core.py` e `adapters/tools.py` (`judge`, `rules_lookup`, `knowledge_path`, `report github`); `sparkforge_aws/reporting/github.py`; `scripts/refresh_knowledge.py`; `agents/executors/sf-verifier.md`; `docs/knowledge-freshness.md` | Compoe sobre o lock e o catalogo, sem rede |
 | Relevant KB Domains | Knowledge management (proveniencia de fonte), testing (pares positivo/negativo, relogio injetado), CI/CD (workflow `refresh-knowledge`) | Estado calculado na leitura, nunca gravado no finding |
 | IaC Patterns | Nenhum recurso novo; o workflow `refresh-knowledge.yml` ja existe | So o script muda |
 
@@ -67,7 +67,7 @@
 | Input files | `knowledge/**.md`, secao `Fontes` | 132 URLs so de knowledge | Estado por documento no `knowledge_path` |
 | Output examples | Testes com lock sintetico, e um caso novo em `fixtures/sarif/` com `--source-freshness` | 1 caso de golden + pares de unidade | O `as_of` e o lock sinteticos fixam a saida |
 | Ground truth | `scripts/refresh_knowledge.py` (o que ele grava e quando) | — | O `changed_at` nasce dele |
-| Related code | `sparkforge/agentic/evidence.py`, `sparkforge/rules/engine.py`, `sparkforge/reporting/github.py` | — | Vigencia por versao, copia de `sources`, resumo do PR |
+| Related code | `sparkforge_aws/agentic/evidence.py`, `sparkforge_aws/rules/engine.py`, `sparkforge_aws/reporting/github.py` | — | Vigencia por versao, copia de `sources`, resumo do PR |
 
 **How samples will be used:**
 
@@ -148,7 +148,7 @@
 | 8 | `knowledge_path`: com `file`, estado de cada URL da secao `Fontes` do documento; sem `file`, contagem por estado por documento | As 132 URLs so de knowledge tambem envelhecem | So regras |
 | 9 | `report github --source-freshness` (opt-in): secao "Fontes que pedem releitura" com os findings de fonte `stale` ou `aging`, e uma linha com a contagem de findings que citam fonte `unverified` | Com 157 de 218 `unverified`, listar um por um afogaria o resumo; opt-in para o golden de `fixtures/sarif` nao depender do lock e do dia | Ligado por padrao |
 | 10 | `sf-verifier`, checagem 6: fonte `stale` deixa o achado `open`, com o statement "fonte mudou em X, depois da validacao de Y", e nunca confirmado sem releitura; nao refuta | A regra pode continuar certa; o que falta e reler | Refutar o achado |
-| 11 | Modulo em `sparkforge/knowledge_freshness.py` | `sparkforge/knowledge` e o destino do force-include do `knowledge/` no wheel | Pacote `sparkforge/knowledge/` |
+| 11 | Modulo em `sparkforge_aws/knowledge_freshness.py` | `sparkforge_aws/knowledge` e o destino do force-include do `knowledge/` no wheel | Pacote `sparkforge_aws/knowledge/` |
 | 12 | Nenhuma tool nova; os schemas de `judge`, `rules_lookup` e `knowledge_path` crescem, e o crescimento e declarado (regra 26) | O estado mora onde a fonte ja aparece | Tool `knowledge_freshness` |
 
 ---

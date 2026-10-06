@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Exporta o grafo de codigo no formato de EXTRACAO que a fonte do Graphify publica -- `id`/`label`/`source_file`/`source_location` nos nos, `source`/`target`/`relation`/`confidence` nas arestas. MEDIDO em 2026-09-02: o formato do `graph.json` FINAL do Graphify NAO e publicado (o README nao o especifica e o ARCHITECTURE.md diz que o schema que mostra e o da extracao, anterior a `build()`), entao esta tool exporta o que a fonte de fato publica e declara no proprio artefato o que nao faz. NAO ha importacao e NAO ha dependencia de `graphifyy`: a compatibilidade e de FORMATO, nunca de codigo. Tudo o que este motor sabe e a fonte nao nomeia vive no bloco `sparkforge`, separado, para que ninguem assuma que veio de la.
+Exporta o grafo de codigo no formato de EXTRACAO que a fonte do Graphify publica -- `id`/`label`/`source_file`/`source_location` nos nos, `source`/`target`/`relation`/`confidence` nas arestas. MEDIDO em 2026-09-02: o formato do `graph.json` FINAL do Graphify NAO e publicado (o README nao o especifica e o ARCHITECTURE.md diz que o schema que mostra e o da extracao, anterior a `build()`), entao esta tool exporta o que a fonte de fato publica e declara no proprio artefato o que nao faz. NAO ha importacao e NAO ha dependencia de `graphifyy`: a compatibilidade e de FORMATO, nunca de codigo. Tudo o que este motor sabe e a fonte nao nomeia vive no bloco `sparkforge-aws`, separado, para que ninguem assuma que veio de la.
 
 ## Parâmetros
 
@@ -19,7 +19,7 @@ Exporta o grafo de codigo no formato de EXTRACAO que a fonte do Graphify publica
 
 ## Na CLI
 
-[`sparkforge code export`](../cli/code.md)
+[`sparkforge-aws code export`](../cli/code.md)
 
 ## Capacidade
 

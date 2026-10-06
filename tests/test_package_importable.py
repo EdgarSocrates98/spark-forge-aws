@@ -17,9 +17,9 @@ def _pyproject_version() -> str:
 
 
 def test_package_version_exposed():
-    import sparkforge
+    import sparkforge_aws
 
-    assert sparkforge.__version__ == _pyproject_version()
+    assert sparkforge_aws.__version__ == _pyproject_version()
 
 
 def test_every_manifest_declares_the_same_version():
@@ -31,11 +31,11 @@ def test_every_manifest_declares_the_same_version():
     concordancia, nao o numero.
     """
     expected = _pyproject_version()
-    import sparkforge
+    import sparkforge_aws
 
     declared = {
         "pyproject.toml": expected,
-        "sparkforge/__init__.py": sparkforge.__version__,
+        "sparkforge_aws/__init__.py": sparkforge_aws.__version__,
         "manifest.json": json.loads(
             (ROOT / "manifest.json").read_text(encoding="utf-8")
         )["version"],
@@ -53,9 +53,9 @@ def test_core_imports_without_optional_extras():
         "import sys;"
         "sys.modules['boto3'] = None;"
         "sys.modules['mcp'] = None;"
-        "import sparkforge, sparkforge.findings, sparkforge.rules,"
-        "sparkforge.findings.models, sparkforge.rules.expr,"
-        "sparkforge.facts, sparkforge.case, sparkforge.adapters;"
+        "import sparkforge_aws, sparkforge_aws.findings, sparkforge_aws.rules,"
+        "sparkforge_aws.findings.models, sparkforge_aws.rules.expr,"
+        "sparkforge_aws.facts, sparkforge_aws.case, sparkforge_aws.adapters;"
         "print('ok')"
     )
     result = subprocess.run(

@@ -1,6 +1,6 @@
 ---
 name: review-data-validation
-description: "Use quando o job PySpark valida dado e a pergunta for onde a validação está, se ela tem consequência e quanto ela custa — check artesanal (`df.filter(...).count()`), `VerificationSuite` do PyDeequ ou Great Expectations por `batch_parameters`. Use também quando a pergunta for \\\"esse job valida alguma coisa?\\\", \\\"por que o job termina verde com dado ruim?\\\", \\\"essa suíte protege alguém?\\\" ou \\\"por que validar dobrou o tempo do job?\\\", mesmo que ninguém fale em regra. Se você está prestes a ler o `.py` no olho procurando `count()`, rode `sparkforge analyze data-quality` e `sparkforge judge` em vez disso — o extrator decide a posição relativa ao write, a persistência do alvo e quantos checks pesam sobre o mesmo DataFrame, e o catálogo aplica as regras SF-DQ sobre o que ele achou."
+description: "Use quando o job PySpark valida dado e a pergunta for onde a validação está, se ela tem consequência e quanto ela custa — check artesanal (`df.filter(...).count()`), `VerificationSuite` do PyDeequ ou Great Expectations por `batch_parameters`. Use também quando a pergunta for \\\"esse job valida alguma coisa?\\\", \\\"por que o job termina verde com dado ruim?\\\", \\\"essa suíte protege alguém?\\\" ou \\\"por que validar dobrou o tempo do job?\\\", mesmo que ninguém fale em regra. Se você está prestes a ler o `.py` no olho procurando `count()`, rode `sparkforge-aws analyze data-quality` e `sparkforge-aws judge` em vez disso — o extrator decide a posição relativa ao write, a persistência do alvo e quantos checks pesam sobre o mesmo DataFrame, e o catálogo aplica as regras SF-DQ sobre o que ele achou."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze data-quality
-  - sparkforge judge
-  - sparkforge analyze pyspark
+  - sparkforge-aws analyze data-quality
+  - sparkforge-aws judge
+  - sparkforge-aws analyze pyspark
 ---
 
 # Review Data Validation
@@ -45,7 +45,7 @@ O artefato aqui é o `.py` do repositório — o checkout é a coleta.
 ### 2. Extraia os facts
 
 ```bash
-sparkforge analyze data-quality --path <arquivo .py ou diretório> \
+sparkforge-aws analyze data-quality --path <arquivo .py ou diretório> \
   --out .sparkforge/facts_dq.json
 ```
 
@@ -95,8 +95,8 @@ uma cadeia cuja raiz é a sessão —, e ele é ponto cego do extrator, não def
 persistência ou agregação única, junte a leitura estrutural do mesmo arquivo:
 
 ```bash
-sparkforge analyze pyspark --path <mesmo caminho> --out .sparkforge/facts_py.json
-sparkforge analyze call-graph --path <mesmo caminho> --out .sparkforge/facts_cg.json
+sparkforge-aws analyze pyspark --path <mesmo caminho> --out .sparkforge/facts_py.json
+sparkforge-aws analyze call-graph --path <mesmo caminho> --out .sparkforge/facts_cg.json
 ```
 
 `--facts` é repetível: passe os arquivos na mesma chamada de `judge`, que une e deduplica as
@@ -107,10 +107,10 @@ dobrada, não repetida.
 ### 5. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_dq.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_dq.json --show-skipped
 
 # com a leitura de código junto, para sustentar custo:
-sparkforge judge \
+sparkforge-aws judge \
   --facts .sparkforge/facts_dq.json \
   --facts .sparkforge/facts_py.json \
   --show-skipped
@@ -134,8 +134,8 @@ O que isso muda, e o que não muda:
 Quando você precisa do runtime — e nesta área você precisa dele para **recomendar
 biblioteca**, nunca para disparar regra —, há duas saídas reais:
 
-1. **Dê a fonte ao motor.** `sparkforge analyze terraform` sobre o `.tf` que define o job, ou
-   `sparkforge analyze event-log` sobre o event log do run, e passe o resultado em mais um
+1. **Dê a fonte ao motor.** `sparkforge-aws analyze terraform` sobre o `.tf` que define o job, ou
+   `sparkforge-aws analyze event-log` sobre o event log do run, e passe o resultado em mais um
    `--facts`. Confirme em `runtime.detected_from`, que dirá `terraform` ou `event_log`.
 2. **Declare a versão que você conhece de fonte confiável**, como `--glue 5.1` ou
    `--emr 7.5.0`. Declaração perde para observação: quando a versão declarada discorda da
@@ -175,7 +175,7 @@ nenhuma — uma agregação única, com uma expressão por regra. Ela vale em qu
 ## Referência rápida
 
 Regras desta área e o fact que cada uma consome. Limiares e severidades **não** estão aqui de
-propósito, e a lista autoritativa é `sparkforge rules lookup --category data-quality` — o
+propósito, e a lista autoritativa é `sparkforge-aws rules lookup --category data-quality` — o
 catálogo cresce, esta tabela é uma foto.
 
 | Regra | O que consome | O que acusa |
@@ -191,7 +191,7 @@ catálogo cresce, esta tabela é uma foto.
   está errado, qual coluna deveria ter `not null`. Isso é a ferramenta de DQ rodando sobre o
   dado; esta análise lê apenas o `.py`.
 - O gargalo é o código ou o plano físico, e a validação é irrelevante para a pergunta:
-  comece por `sparkforge-diagnose`, e siga com `optimize-pyspark-code` ou
+  comece por `sparkforge-aws-diagnose`, e siga com `optimize-pyspark-code` ou
   `analyze-spark-plan`.
 - O risco está na definição do job ou do cluster: `review-glue-terraform` para Glue,
   `review-emr-cluster` para EMR on EC2.
@@ -239,9 +239,9 @@ de reprovar linha; um que muda de lugar passa a reprovar outra. Reduzir passadas
 o ganho legítimo desta skill — reduzir o que é reprovado é mudança de regra de negócio no mesmo
 diff, e as duas se parecem.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -279,7 +279,7 @@ Esta skill trata **validação de dados, consequência e custo da checagem**. Co
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze data-quality`, `sparkforge judge`, `sparkforge analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze data-quality`, `sparkforge-aws judge`, `sparkforge-aws analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

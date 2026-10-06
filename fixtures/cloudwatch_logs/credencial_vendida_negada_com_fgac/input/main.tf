@@ -12,13 +12,13 @@ resource "aws_glue_job" "curated_fato" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/fato.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/fato.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-lakeformation-fine-grained-access" = "true"
     "--enable-spark-ui"                          = "true"
-    "--spark-event-logs-path"                    = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"                    = "s3://sparkforge-aws-demo/spark-logs/"
   }
 }

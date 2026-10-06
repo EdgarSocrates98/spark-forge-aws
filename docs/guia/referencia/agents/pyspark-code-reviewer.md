@@ -96,7 +96,7 @@ voltava de `next_step` com `recommended_agent: None` — a área tinha dono no f
 e nenhuma rota em dado. Como o destino é o mesmo agente, a pergunta de precedência que a
 `AGENT-008` teve de responder não existe aqui.
 
-**O que isso te obriga a fazer:** `sparkforge analyze graph --path <lib>` é uma leitura
+**O que isso te obriga a fazer:** `sparkforge-aws analyze graph --path <lib>` é uma leitura
 a mais sobre os arquivos que você já leu, e pular a linha apaga a área inteira do
 relatório em silêncio — igual a pular `analyze data-quality`. `SF-GRAPH-002` é a única
 regra sua com guarda de versão, e ela é guardada por **faixa de Spark**
@@ -151,7 +151,7 @@ e com ela o que `dropDuplicates`, `first`, `collect_list` e `monotonically_incre
 devolvem — **sem mudar contagem nenhuma**. Reescrita que preserva a contagem e troca a linha
 passa nos quatro eixos, e é por isso que o limite deles entra no seu texto.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
 lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
@@ -170,9 +170,9 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 #### Mudança no job pede spec
 
 Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
-`sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
-`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
-nunca pela árvore do operador. `sparkforge sdd check` confere cada fase. As duas
+`sparkforge-aws case open` dá o `case_id`, a skill `sdd-define` escreve o define com
+`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge-aws change sandbox`,
+nunca pela árvore do operador. `sparkforge-aws sdd check` confere cada fase. As duas
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
 despacham subagentes, e subagente não faz nenhum dos dois.
 
@@ -189,7 +189,7 @@ inteiro — que é o que torna a revisão estrutural barata.
 - `sparkforge_code_symbol` — quem chama, o que chama, e o impacto de mudar.
 - `sparkforge_code_export` — o grafo no formato de **extração** que a fonte do Graphify
   publica. O formato do `graph.json` **final** dele não é publicado, então não há
-  importação — e o artefato diz isso em `sparkforge.not_implemented`. Nada aqui
+  importação — e o artefato diz isso em `sparkforge_aws.not_implemented`. Nada aqui
   depende de `graphifyy`: a compatibilidade é de formato, nunca de código.
 - `sparkforge_code_shape` — a **forma** do grafo: comunidades e nós de maior grau.
   Não é julgamento. Comunidade não é módulo nem sugestão de refatoração, e grau alto
@@ -228,5 +228,5 @@ Uma revisão é reversível exatamente porque ninguém a aplicou ainda.
 
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook pyspark-code-reviewer` (CLI) ou
+Em plataforma sem despacho de subagente: `sparkforge-aws playbook pyspark-code-reviewer` (CLI) ou
 a tool MCP `sparkforge_playbook`.

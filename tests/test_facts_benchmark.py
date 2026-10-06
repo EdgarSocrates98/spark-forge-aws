@@ -1,8 +1,8 @@
-from sparkforge.facts.benchmark import EMITTED_KINDS, EXTRACTOR_ID, build_benchmark
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.findings.validate import validate_fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.benchmark import EMITTED_KINDS, EXTRACTOR_ID, build_benchmark
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.validate import validate_fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 
 def _prov(artifact: str) -> dict:

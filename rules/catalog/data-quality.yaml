@@ -1,6 +1,6 @@
 # Catálogo de regras — validação de dados dentro do job PySpark
 #
-# Consome os facts de `sparkforge/facts/data_quality.py` (Fase 5c), que lê o
+# Consome os facts de `sparkforge_aws/facts/data_quality.py` (Fase 5c), que lê o
 # `.py` e reconhece TRÊS formas de validação pela FORMA, nunca por lista de
 # nomes: o check artesanal (`df.filter(...).count()`), a `VerificationSuite` do
 # PyDeequ (cadeia que contém `onData` e termina em `run`) e a validação do Great
@@ -28,8 +28,8 @@
 # `.py` não traz versão nenhuma. `RuntimeContext.spark` vem de event log, de
 # `GLUE_MATRIX` (via `glue_version` no Terraform) ou de flag da CLI; nenhum dos
 # três está num arquivo Python. Com `build_runtime_context()` sem flags -- o
-# padrão de `sparkforge judge` -- o contexto sai vazio, `in_scope` falha FECHADA
-# (`sparkforge/rules/version_scope.py`), e um `runtime_scope` não-vazio apagaria
+# padrão de `sparkforge-aws judge` -- o contexto sai vazio, `in_scope` falha FECHADA
+# (`sparkforge_aws/rules/version_scope.py`), e um `runtime_scope` não-vazio apagaria
 # a ÁREA SF-DQ INTEIRA em silêncio. Foi assim que 20 regras de análise estática
 # ficaram indisponíveis até a Fase 5a.
 #
@@ -42,7 +42,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # POR QUE A CORRELAÇÃO NÃO ESTÁ NO `when`, e sim no extrator.
 #
-# Medido em `sparkforge/rules/engine.py` antes de escrever estas regras:
+# Medido em `sparkforge_aws/rules/engine.py` antes de escrever estas regras:
 # `_condition_candidates` avalia UM FACT POR VEZ -- `where` e `expr` leem o
 # contexto de um único fact (`_fact_context`) -- e `_absent_satisfied` compara
 # só `kind`. O motor não correlaciona dois facts dentro de uma condição, e não é

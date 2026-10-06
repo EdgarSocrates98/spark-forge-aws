@@ -15,7 +15,7 @@ Change Proof: para cada recomendacao APLICADA (`applied`: RULE_ID ou RULE_ID:sim
 | `after_facts_path` | string ou array de string | sim | Facts extraidos dos artefatos do depois. |
 | `applied` | array de string | sim | RULE_ID ou RULE_ID:simbolo de cada recomendacao aplicada. |
 | `facts_path` | string ou array de string | sim | A UNIAO de facts do case, com os de funcval e benchmark. |
-| `findings_path` | string | sim | Findings do antes, gerados por `sparkforge judge --out`. |
+| `findings_path` | string | sim | Findings do antes, gerados por `sparkforge-aws judge --out`. |
 | `athena` | string | não |  |
 | `databricks` | string | não |  |
 | `emr` | string | não |  |
@@ -27,7 +27,7 @@ Change Proof: para cada recomendacao APLICADA (`applied`: RULE_ID ou RULE_ID:sim
 
 ## Na CLI
 
-[`sparkforge proof`](../cli/proof.md)
+[`sparkforge-aws proof`](../cli/proof.md)
 
 ## Capacidade
 

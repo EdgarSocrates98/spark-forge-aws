@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 import yaml
 
-from sparkforge.workspace import (
+from sparkforge_aws.workspace import (
     GraphFragment,
     assess_freshness,
     compose_federated_graph,

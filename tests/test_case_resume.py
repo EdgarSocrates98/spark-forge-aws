@@ -1,8 +1,8 @@
 import hashlib
 
-from sparkforge.case.resume import HANDOFF_SECTIONS, render_handoff, resume
-from sparkforge.case.store import add_hypothesis, new_case, set_phase
-from sparkforge.collect.base import ArtifactEntry, register_artifact
+from sparkforge_aws.case.resume import HANDOFF_SECTIONS, render_handoff, resume
+from sparkforge_aws.case.store import add_hypothesis, new_case, set_phase
+from sparkforge_aws.collect.base import ArtifactEntry, register_artifact
 
 RUNTIME = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
 
@@ -22,7 +22,7 @@ def rich_case():
             "path": ".sparkforge/artifacts/eventlog/jr_abc.json",
             "sha256": "a" * 64,
             "source": "s3://bucket/spark-event-logs/jr_abc",
-            "collect_command": "sparkforge collect eventlog --job-run jr_abc",
+            "collect_command": "sparkforge-aws collect eventlog --job-run jr_abc",
             "present": False,
         }
     ]
@@ -58,7 +58,7 @@ class TestResumePayload:
     def test_missing_artifacts_carry_the_collect_command(self):
         payload = resume(rich_case(), FINDINGS)
         assert payload["missing_artifacts"][0]["collect_command"] == (
-            "sparkforge collect eventlog --job-run jr_abc"
+            "sparkforge-aws collect eventlog --job-run jr_abc"
         )
 
     def test_next_step_is_included(self):
@@ -158,7 +158,7 @@ class TestHandoffMarkdown:
         assert "SF-PY-004" in text
 
     def test_renders_collect_command_for_missing_artifact(self):
-        assert "sparkforge collect eventlog --job-run jr_abc" in render_handoff(
+        assert "sparkforge-aws collect eventlog --job-run jr_abc" in render_handoff(
             resume(rich_case(), FINDINGS)
         )
 
@@ -172,7 +172,7 @@ class TestHandoffMarkdown:
 
 class TestRootConsultsTheManifest:
     """Sem `root`, resume() confia so na flag `present` do case (comportamento
-    original). Com `root`, o manifesto de sparkforge.collect e a fonte de
+    original). Com `root`, o manifesto de sparkforge_aws.collect e a fonte de
     verdade por artefato -- ele reflete o disco agora, o case pode estar
     desatualizado."""
 
@@ -196,7 +196,7 @@ class TestRootConsultsTheManifest:
                 path=self.ARTIFACT_PATH,
                 sha256=digest,
                 source="s3://bucket/spark-event-logs/jr_abc",
-                collect_command="sparkforge collect eventlog --job-run jr_abc",
+                collect_command="sparkforge-aws collect eventlog --job-run jr_abc",
                 collected_at="2026-07-30T00:00:00Z",
             ),
             tmp_path,

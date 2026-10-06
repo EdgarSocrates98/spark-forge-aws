@@ -13,9 +13,9 @@ files:
   - {path: skills/agentic-orchestration/SKILL.md, action: delete, reason: "as cinco skills que so os sete declaram saem (D4); esta e a representante"}
   - {path: agents/spark-performance-architect.md, action: modify, reason: "a secao Mudanca no job pede spec passa a citar sparkforge_sdd_check, sparkforge_sdd_status e sparkforge_sdd_stamp (D3)"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "saem as sete rotas __agentic_*__ dos sete: AGENT-011, 012, 014, 015, 016, 027 e 028"}
-  - {path: config/agents.yaml, action: modify, reason: "lido por sparkforge/registry/loader.py; saem sf-orchestrator, sf-pyspark-specialist, sf-storage-specialist e sf-token-verifier (D5)"}
+  - {path: config/agents.yaml, action: modify, reason: "lido por sparkforge_aws/registry/loader.py; saem sf-orchestrator, sf-pyspark-specialist, sf-storage-specialist e sf-token-verifier (D5)"}
   - {path: tests/test_canonical_registry.py, action: modify, reason: "test_registry_loading pede sf-pyspark-specialist; passa a pedir sf-runtime-specialist (D5)"}
-  - {path: knowledge/tool-specialization-matrix.md, action: modify, reason: "lido por sparkforge/knowledge_drift.py; as linhas PySpark e Iceberg e Parquet passam aos donos classicos (D6)"}
+  - {path: knowledge/tool-specialization-matrix.md, action: modify, reason: "lido por sparkforge_aws/knowledge_drift.py; as linhas PySpark e Iceberg e Parquet passam aos donos classicos (D6)"}
   - {path: knowledge/offline-manifest.json, action: modify, reason: "sha256 dos documentos de knowledge tocados"}
   - {path: fixtures/knowledge_drift/filtro_por_url/expected/result.json, action: modify, reason: "golden lista agents/*.md que citam a URL; regenerado, so saem os caminhos dos agentes removidos (D6)"}
   - {path: scripts/sync_skills.py, action: modify, reason: "tabelas de despacho citam as cinco skills"}

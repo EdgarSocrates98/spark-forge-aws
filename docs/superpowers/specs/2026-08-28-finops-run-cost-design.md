@@ -45,7 +45,7 @@ respondem, e é isso que E põe na mesa.
 
 ### 1.1 A restrição que a fonte impõe
 
-`sparkforge/facts/pricing.py` abre com *"POR QUE ESTE MÓDULO NÃO CALCULA NADA"*, e a entrada
+`sparkforge_aws/facts/pricing.py` abre com *"POR QUE ESTE MÓDULO NÃO CALCULA NADA"*, e a entrada
 de preço, medida em 2026-08-28, é:
 
 ```
@@ -67,8 +67,8 @@ qualificou", que é diferente de "ninguém leu".
 
 **Entra:**
 
-- `sparkforge/facts/run_cost.py`: o fact `glue.run_cost`, e o `glue.run_cost.unresolved`.
-- Verbo de topo `sparkforge finops` e a tool MCP, reunindo **tudo o que é financeiro**: o custo
+- `sparkforge_aws/facts/run_cost.py`: o fact `glue.run_cost`, e o `glue.run_cost.unresolved`.
+- Verbo de topo `sparkforge-aws finops` e a tool MCP, reunindo **tudo o que é financeiro**: o custo
   por run (§3.1), a fronteira custo-versus-tempo entre as capacidades observadas (§3.5), o
   custo por desfecho de SLA (§3.6), os sintomas ao lado (§3.3), e **onde a alavanca está** —
   capacidade ou código (§3.7).
@@ -88,9 +88,9 @@ qualificou", que é diferente de "ninguém leu".
   sobrevive à revisão melhor que ausência declarada.
 - **Custo de EMR, Athena ou S3.** O `dpu_seconds` que existe é de Glue. Os outros exigem outra
   fonte de preço e outro coletor.
-- **`sparkforge/finops/` com os sete módulos do §22.** Metade já existe em outro lugar:
-  `optimizer.py` é o subprojeto D em `sparkforge/capacity/`, `pricing.py` é
-  `sparkforge/facts/pricing.py`, e `dpu.py` é o `dpu_seconds` que B já emite. Reproduzir a
+- **`sparkforge_aws/finops/` com os sete módulos do §22.** Metade já existe em outro lugar:
+  `optimizer.py` é o subprojeto D em `sparkforge_aws/capacity/`, `pricing.py` é
+  `sparkforge_aws/facts/pricing.py`, e `dpu.py` é o `dpu_seconds` que B já emite. Reproduzir a
   árvore inteira criaria módulos vazios com nome de promessa.
 
 ---
@@ -108,9 +108,9 @@ sobre um número medido e uma constante com fonte. **Não há limiar, e não há
 limiar que obriga um mecanismo próprio, como em C2 e D.
 
 Sendo fact, ele entra no motor de regras, e uma regra futura pode consumi-lo — coisa que a
-saída de `sparkforge/capacity/` não permite.
+saída de `sparkforge_aws/capacity/` não permite.
 
-**Alternativa recusada:** `sparkforge/finops/` como mecanismo, seguindo o §22 à letra. Manteria
+**Alternativa recusada:** `sparkforge_aws/finops/` como mecanismo, seguindo o §22 à letra. Manteria
 `facts/pricing.py` fiel ao próprio docstring, e deixaria o número de custo fora do motor de
 regras para sempre.
 
@@ -231,7 +231,7 @@ recusa. Ele diz **qual alavanca se aplica**, nomeando a evidência:
 etl-pedidos, run jr_0042   custo 2,32 USD (region UNQUALIFIED)
 
   ALAVANCA DE CAPACIDADE
-    ver `sparkforge capacity` -- ele responde com a distribuicao medida.
+    ver `sparkforge-aws capacity` -- ele responde com a distribuicao medida.
 
   ALAVANCA DE CODIGO -- 4 achados, e nenhum deles muda trocando worker:
     SF-PQ-002  scan sem filtro de particao        plan.file_scan
@@ -303,14 +303,14 @@ calculado sobre DPU derivado é uma derivação sobre outra, e o leitor precisa 
 
 ### 4.3 O relatório
 
-Não é fact. `sparkforge finops` compõe, por run: o custo, os sintomas, e a leitura de §3.4.
+Não é fact. `sparkforge-aws finops` compõe, por run: o custo, os sintomas, e a leitura de §3.4.
 
 ---
 
 ## 5. Superfície
 
 ```
-sparkforge finops --facts <facts.json> [--job-name <job>] [--out F]
+sparkforge-aws finops --facts <facts.json> [--job-name <job>] [--out F]
 ```
 
 **Verbo de topo**, pela mesma regra de `benchmark`, `fuse`, `workload` e `capacity`: consome
@@ -332,7 +332,7 @@ fact não exija verbo próprio só para existir.
 | Run sem `dpu_seconds` | `glue.run_cost.unresolved`, razão `dpu_seconds_unavailable`, nomeando a recusa de B |
 | Tabela de preço ausente ou ilegível | `price_unavailable`. O carregador é fail-closed e levanta; o extrator converte em lacuna, nunca deixa passar zero |
 | Mais de um preço por DPU-hora sem eixo | `price_ambiguous`, listando os candidatos |
-| Sem `glue.metric` para o run | o relatório declara a leitura indisponível, com `sparkforge collect cloudwatch …`; o custo continua saindo |
+| Sem `glue.metric` para o run | o relatório declara a leitura indisponível, com `sparkforge-aws collect cloudwatch …`; o custo continua saindo |
 | Sem nenhum `glue.job_run` | relatório vazio com a razão, não um relatório de zero runs que parece "nada a pagar" |
 
 ---

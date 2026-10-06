@@ -1,7 +1,7 @@
 """Tests for forge CLI doctor and inspection commands."""
 import pytest
 
-from sparkforge.cli.forge import main
+from sparkforge_aws.cli.forge import main
 
 
 @pytest.fixture(autouse=True)

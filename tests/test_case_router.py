@@ -1,5 +1,5 @@
-from sparkforge.case.router import ROUTING_OPERATORS, next_step
-from sparkforge.case.store import new_case, set_gate, set_phase
+from sparkforge_aws.case.router import ROUTING_OPERATORS, next_step
+from sparkforge_aws.case.store import new_case, set_gate, set_phase
 
 RUNTIME = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
 
@@ -21,7 +21,7 @@ class TestOperators:
 class TestIntake:
     def test_missing_runtime_routes_to_diagnose(self):
         step = next_step(case(phase="intake", runtime={}), [])
-        assert step["recommended_skill"] == "sparkforge-diagnose"
+        assert step["recommended_skill"] == "sparkforge-aws-diagnose"
         assert step["reason"].startswith("ROUTE-001")
 
     def test_divergent_runtime_routes_to_diagnose(self):
@@ -74,7 +74,7 @@ class TestFallback:
         odd = case(phase="report")
         odd["gates"] = dict.fromkeys(odd["gates"], True)
         step = next_step(odd, [])
-        assert step["recommended_skill"] == "sparkforge-diagnose"
+        assert step["recommended_skill"] == "sparkforge-aws-diagnose"
         assert "Nenhuma regra" in step["reason"]
 
 

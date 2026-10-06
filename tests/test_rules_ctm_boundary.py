@@ -58,9 +58,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters._core import _facts_from_dicts
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters._core import _facts_from_dicts
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
@@ -190,7 +190,7 @@ class TestARedeLarga:
     """
 
     def test_nenhum_golden_de_fora_carrega_kind_ctm(self):
-        from sparkforge.facts.controlm_jobs import EMITTED_KINDS
+        from sparkforge_aws.facts.controlm_jobs import EMITTED_KINDS
 
         intrusos: dict[str, list[str]] = {}
         for directory in _fixtures_com_golden():
@@ -207,7 +207,7 @@ class TestARedeLarga:
     def test_o_corpus_ctm_so_carrega_kind_ctm(self):
         """O espelho, e ele fecha a porta oposta: golden de Control-M com kind de
         outro extrator faria regra de fora disparar ali."""
-        from sparkforge.facts.controlm_jobs import EMITTED_KINDS
+        from sparkforge_aws.facts.controlm_jobs import EMITTED_KINDS
 
         for directory in sorted(p for p in CORPUS_CTM.iterdir() if p.is_dir()):
             dicts = json.loads(

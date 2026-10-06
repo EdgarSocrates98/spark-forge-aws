@@ -65,7 +65,7 @@ key policy do KMS e Glue resource policy são avaliação separada.
 Apos iniciar uma sessao Devin neste repositorio, pergunte:
 
 ```text
-Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
 ```
 
 Ou, no Devin CLI:
@@ -74,7 +74,7 @@ Ou, no Devin CLI:
 devin mcp list
 ```
 
-A saida deve conter `sparkforge`. Se nao aparecer, veja `GUIA_DE_USO.md` secao 3.6
+A saida deve conter `sparkforge-aws`. Se nao aparecer, veja `GUIA_DE_USO.md` secao 3.6
 (Troubleshooting).
 
 ## Transporte HTTP para o Devin Desktop
@@ -83,7 +83,7 @@ O `.devin/mcp_config.json` e stdio. No Desktop, o MCP e configurado por `serverU
 Suba o servidor antes de abrir a sessao:
 
 ```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 ```
 
 E aponte o Desktop para `http://127.0.0.1:8765/mcp`. O arquivo de referencia para
@@ -138,8 +138,8 @@ seguem são o contrato do motor, não orientação.
 ## Antes de ler artefato no olho, rode o verbo
 
 Este é o hábito que faz o SparkForge valer a pena. Um `describe-job-run` de 400
-linhas lido a olho vira opinião; passado por `sparkforge analyze emr-eks` vira
-fact com namespace fechado, e `sparkforge judge` diz o que o catálogo tem a
+linhas lido a olho vira opinião; passado por `sparkforge-aws analyze emr-eks` vira
+fact com namespace fechado, e `sparkforge-aws judge` diz o que o catálogo tem a
 dizer sobre ele.
 
 As skills em `.agents/skills/` são gatilhos para isso: cada uma abre

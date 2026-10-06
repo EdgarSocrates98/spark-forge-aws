@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from sparkforge.decision import BoundedDecisionKernel, ContractLoader, DecisionCache, DecisionStatus
+from sparkforge_aws.decision import (
+    BoundedDecisionKernel,
+    ContractLoader,
+    DecisionCache,
+    DecisionStatus,
+)
 
 
 def test_kernel_cache_and_activation_refusal():
@@ -18,7 +23,7 @@ def test_kernel_cache_and_activation_refusal():
 def test_kernel_package_has_no_provider_or_mcp_sdk_imports():
     source = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in Path("sparkforge/decision").glob("*.py")
+        for path in Path("sparkforge_aws/decision").glob("*.py")
     )
     for forbidden in ("anthropic", "openai", "bedrock", "litellm", "mcp"):
         assert forbidden not in source.lower()

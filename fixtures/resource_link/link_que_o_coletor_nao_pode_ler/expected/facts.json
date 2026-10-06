@@ -35,7 +35,7 @@
     "attrs": {
       "reason": "sem_permissao",
       "block": "link",
-      "unblocked_by": "conceder `glue:GetTable` (ou `glue:GetDatabase`) ao principal que coleta, no catalogo CONSUMIDOR, e reexecutar `sparkforge collect glue-resource-link`",
+      "unblocked_by": "conceder `glue:GetTable` (ou `glue:GetDatabase`) ao principal que coleta, no catalogo CONSUMIDOR, e reexecutar `sparkforge-aws collect glue-resource-link`",
       "extractor": "glue_resource_link@0.1.0"
     },
     "provenance": {

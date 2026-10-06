@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.decision import ClaudeHostAdapter, CodexHostAdapter, DevinHostAdapter
+from sparkforge_aws.decision import ClaudeHostAdapter, CodexHostAdapter, DevinHostAdapter
 
 ROOT = Path(__file__).resolve().parents[1]
 

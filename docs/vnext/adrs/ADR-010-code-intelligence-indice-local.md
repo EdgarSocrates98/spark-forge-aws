@@ -41,7 +41,7 @@ vale mais que duas que se conferem à mão.
 
 ### SQLite com FTS5 da biblioteca padrão, e nenhuma dependência nova
 O índice inteiro — `metadata`, `files`, `nodes`, `edges`, `unresolved_refs` e a tabela virtual
-`symbols_fts` — é criado por `sparkforge/codeintel/db.py` sobre o módulo `sqlite3` que já vem com
+`symbols_fts` — é criado por `sparkforge_aws/codeintel/db.py` sobre o módulo `sqlite3` que já vem com
 o interpretador. Nenhum pacote foi acrescentado ao `pyproject.toml` por causa desta fase.
 
 Dependência é superfície de ataque antes de ser conveniência, e o mapa classifica dependência
@@ -61,7 +61,7 @@ Não existe coluna de corpo, e não existe cache de trecho. Um índice que guard
 segunda cópia do código do cliente, com o mesmo valor para quem vazasse e nenhuma das proteções do
 diretório original — e ainda envelheceria em silêncio contra o arquivo real.
 
-A assinatura passa por `sparkforge/codeintel/ids.py:normalizar_assinatura()` antes de existir nó:
+A assinatura passa por `sparkforge_aws/codeintel/ids.py:normalizar_assinatura()` antes de existir nó:
 valor literal de default vira o marcador `<literal>`, e nome, ordem de parâmetro e anotação de
 retorno sobrevivem. Isso não é limpeza estética. `def cliente(token="AKIA...")` colocaria a
 credencial dentro de uma coluna do índice pela única razão de ela ser o default de um parâmetro, e
@@ -75,7 +75,7 @@ teste é garantia até a primeira coluna nova.
 ### `unresolved` é dado de primeira classe, e não uma aresta inventada
 O AST vê `foo(x)` e não sabe qual `foo`. Escolher um candidato quando há vários é inventar: quem
 seguisse a aresta investigaria o arquivo errado e nada acusaria. A regra executada em
-`sparkforge/codeintel/resolve.py` é resolver só o inequívoco e mandar todo o resto para
+`sparkforge_aws/codeintel/resolve.py` é resolver só o inequívoco e mandar todo o resto para
 `unresolved_refs` **com motivo** — `UNKNOWN_RECEIVER`, `NO_CANDIDATE`, `AMBIGUOUS`,
 `NO_SOURCE_NODE` —, porque ponto cego contado é diferente de ponto cego silencioso. É a mesma lei
 que os extratores de grafo e de SQL deste repositório já aplicavam.
@@ -83,7 +83,7 @@ que os extratores de grafo e de SQL deste repositório já aplicavam.
 A taxa foi medida sobre a própria árvore e publicada como saiu, e o que ela diz é desconfortável:
 **menos referências viram aresta do que viram ponto cego declarado.** Cerca de um terço resolve,
 cerca de dois quintos entram em `unresolved_refs` com motivo, e o restante é builtin, descartado de
-propósito. Os valores absolutos moram em `sparkforge/codeintel/resolve.py`, datados na docstring do
+propósito. Os valores absolutos moram em `sparkforge_aws/codeintel/resolve.py`, datados na docstring do
 módulo, e **não** são copiados para cá: eles se movem a cada arquivo novo da árvore, e número
 copiado envelhece no documento sem que nada acuse.
 

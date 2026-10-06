@@ -51,10 +51,10 @@ Quando o operador possui os dois artefatos, extraia-os separadamente e passe os
 facts pelo compositor já existente:
 
 ```text
-sparkforge analyze glue-streaming --path job.json --out glue.facts.json
-sparkforge analyze terraform --path infra/ --out tf.facts.json
-sparkforge fuse --facts glue.facts.json --facts tf.facts.json --out fused.json
-sparkforge judge --facts fused.json --show-skipped
+sparkforge-aws analyze glue-streaming --path job.json --out glue.facts.json
+sparkforge-aws analyze terraform --path infra/ --out tf.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts tf.facts.json --out fused.json
+sparkforge-aws judge --facts fused.json --show-skipped
 ```
 
 O `fuse` casa somente `glue.streaming.job.attrs.name` com um
@@ -76,10 +76,10 @@ Quando também existir histórico de execução sanitizado, extraia os runs e
 componha os facts com a definição efetiva:
 
 ```text
-sparkforge analyze glue-streaming --path job.json --out effective.facts.json
-sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
-sparkforge fuse --facts effective.facts.json --facts runs.facts.json --out fused.facts.json
-sparkforge judge --facts fused.facts.json --show-skipped
+sparkforge-aws analyze glue-streaming --path job.json --out effective.facts.json
+sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws fuse --facts effective.facts.json --facts runs.facts.json --out fused.facts.json
+sparkforge-aws judge --facts fused.facts.json --show-skipped
 ```
 
 `fuse` casa somente o nome literal de `glue.streaming.job` com o

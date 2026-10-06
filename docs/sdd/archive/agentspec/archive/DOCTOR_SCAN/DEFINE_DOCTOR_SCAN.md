@@ -1,6 +1,6 @@
 # DEFINE: Doctor e Scan
 
-> `sparkforge doctor` diz se o ambiente esta pronto; `sparkforge scan` roda sozinho os analyzes que cabem num repositorio, julga e resume, sem rede.
+> `sparkforge-aws doctor` diz se o ambiente esta pronto; `sparkforge-aws scan` roda sozinho os analyzes que cabem num repositorio, julga e resume, sem rede.
 
 ## Metadata
 
@@ -35,11 +35,11 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | `sparkforge scan [raiz]` monta um plano puro: artefato coletado pelo `kind` do `.sparkforge/artifacts/manifest.json` (sha256 conferido), codigo por extensao (`.py`, `.sql`, `.tf`, `.jsonl`) pela varredura que ja existe |
+| **MUST** | `sparkforge-aws scan [raiz]` monta um plano puro: artefato coletado pelo `kind` do `.sparkforge/artifacts/manifest.json` (sha256 conferido), codigo por extensao (`.py`, `.sql`, `.tf`, `.jsonl`) pela varredura que ja existe |
 | **MUST** | Recusas nomeadas no plano: `sem_manifesto` (JSON solto fora do manifesto), `sha256_divergente`, `kind_sem_analyze`, e `analyze_falhou` na execucao, sem derrubar os outros analyzes |
 | **MUST** | `scan` grava em `.sparkforge/scan/`: facts por analyze, a uniao, os findings do `judge` e um `summary.json`; imprime o resumo |
 | **MUST** | `scan --dry-run` imprime o plano e nao grava nada |
-| **MUST** | `sparkforge doctor` com nove checagens nomeadas (`pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`, `indice_de_codigo`, `artefatos`, `credencial_aws`), cada uma com `status` (`ok`, `warn`, `fail`, `skip`), `detail` e `unlock`; exit 1 com algum `fail` |
+| **MUST** | `sparkforge-aws doctor` com nove checagens nomeadas (`pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`, `indice_de_codigo`, `artefatos`, `credencial_aws`), cada uma com `status` (`ok`, `warn`, `fail`, `skip`), `detail` e `unlock`; exit 1 com algum `fail` |
 | **MUST** | Sem rede no `scan` e no `doctor` por padrao; `doctor --online` (so CLI) chama STS |
 | **MUST** | Tools `sparkforge_scan` (`LOCAL_MUTATION`, declara `repo`) e `sparkforge_doctor` (`READ_ONLY`, declara `repo`, nunca vai a rede), com os registros de tool nova |
 | **SHOULD** | `scan --format sarif` e `--fail-on P0\|P1` pelo mesmo caminho do `report github` |
@@ -64,7 +64,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 | ID | Scenario | Given | When | Then |
 |----|----------|-------|------|------|
-| AT-001 | Repositorio misto | `job.py`, `main.tf`, `query.sql` e dois artefatos coletados com manifesto | `sparkforge scan <raiz>` | plano com 5 entradas; `facts.json` = uniao dos analyzes; `findings.json` = `judge` da uniao; exit 0 |
+| AT-001 | Repositorio misto | `job.py`, `main.tf`, `query.sql` e dois artefatos coletados com manifesto | `sparkforge-aws scan <raiz>` | plano com 5 entradas; `facts.json` = uniao dos analyzes; `findings.json` = `judge` da uniao; exit 0 |
 | AT-002 | Plano sem execucao | o mesmo repositorio | `scan --dry-run` | JSON do plano; nada gravado |
 | AT-003 | JSON solto | `dump.json` fora de `.sparkforge/` e fora do manifesto | `scan` | `refused` com `sem_manifesto` e o caminho; nada farejado |
 | AT-004 | Artefato adulterado | entrada do manifesto com sha256 que nao bate | `scan` | `sha256_divergente`; o artefato nao e analisado |
@@ -72,7 +72,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 | AT-006 | Analyze que falha | `.sql` ou event log malformado ao lado de arquivos bons | `scan` | `analyze_falhou` com o erro; os outros analyzes gravam facts |
 | AT-007 | Runs do Glue | entrada `glue_job_run` com `source` `glue:get_job_runs:job_x/jr_1` | `scan` | `analyze glue-job-runs --job-name job_x` no plano |
 | AT-008 | SARIF | repositorio com findings | `scan --format sarif --fail-on P0` | SARIF igual ao do `report github`; exit 1 se houver P0 |
-| AT-009 | Doctor saudavel | instalacao com catalogo valido | `sparkforge doctor` | nove checagens; nenhuma `fail`; exit 0 |
+| AT-009 | Doctor saudavel | instalacao com catalogo valido | `sparkforge-aws doctor` | nove checagens; nenhuma `fail`; exit 0 |
 | AT-010 | Doctor com falha | catalogo invalido (diretorio apontado por variavel) | `doctor` | `catalogo` = `fail` com `unlock`; exit 1 |
 | AT-011 | Extra ausente | `mcp` ou `boto3` nao importavel | `doctor` | `extras` = `warn`; `mcp`/`credencial_aws` = `skip` com a razao |
 | AT-012 | Credencial offline | `boto3` presente, sem credencial resolvivel | `doctor` | `credencial_aws` = `warn`; nenhuma chamada de rede |
@@ -85,7 +85,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 - TUI, bot de review de PR e GitHub Check com totais (custo e regressao exigem `gain` e `funcval`).
 - Coleta dentro do `scan` (rede e credencial; seria `CLOUD_MUTATION`).
 - Classificar JSON solto pelo conteudo.
-- Aposentar ou mudar `forge doctor` (`sparkforge/cli/forge.py`).
+- Aposentar ou mudar `forge doctor` (`sparkforge_aws/cli/forge.py`).
 - Portas de CLI que faltam para `workload.yaml` e utilizacao (lacunas medidas em 2026-09-13, frente propria).
 - Abrir ou atualizar case a partir do `scan`.
 
@@ -97,7 +97,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 |------|------------|--------|
 | Technical | Regra 23: nada de rede no pacote alem dos `collect_*`; `doctor --online` e so CLI | Tool do doctor `READ_ONLY` com `openWorldHint: false` |
 | Technical | Regra 20: toda recusa com nome | Cinco recusas no plano e na execucao |
-| Technical | Varredura so por `varrer_source_files` (gate de glob cru em `sparkforge/`) | `.sparkforge`, `.venv`, `vendor` e credenciais ja sao pulados com razao |
+| Technical | Varredura so por `varrer_source_files` (gate de glob cru em `sparkforge_aws/`) | `.sparkforge`, `.venv`, `vendor` e credenciais ja sao pulados com razao |
 | Technical | Tool nova move registros manuais (memoria `tool-nova-move-registros-manuais`, itens 1-14) | Duas tools: lista, amostra, FAILABLE, `SEM_CAMINHO`/contagem, `NOVAS_DEPOIS_DO_GOLDEN`, manifest, parity, agente dono, surface, claims, referencia |
 | Resource | Fixtures sinteticos (repositorio publico) | `fixtures/scan/` montado de arquivos que ja existem |
 
@@ -107,7 +107,7 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/scan/` (novo), `sparkforge/doctor.py` (novo), `sparkforge/adapters/{_core,cli,tools}.py`, `fixtures/scan/`, `tests/` | Ao lado das portas que o scan e o doctor compoem |
+| **Deployment Location** | `sparkforge_aws/scan/` (novo), `sparkforge_aws/doctor.py` (novo), `sparkforge_aws/adapters/{_core,cli,tools}.py`, `fixtures/scan/`, `tests/` | Ao lado das portas que o scan e o doctor compoem |
 | **KB Domains** | Nenhum dominio do KB do agentspec cobre isto; padroes do repositorio: `collect/base.py` (manifesto), `facts/scan.py` (varredura), `_core.report_github` (SARIF), `packs/manifest.py::installed_version`, `rules/loader.py::load_catalog` | Consultar esses modulos no design |
 | **IaC Impact** | None | Nada de infraestrutura |
 

@@ -3,21 +3,21 @@
 O Forge Protocol permanece o contrato; o adapter so traduz formas
 (AgentCard, task submit/status, artifacts) para `protocols/forge.py`.
 Nenhum SDK A2A entra no core (§112): o adapter e stdlib-puro e o pacote
-`a2a` nao pode ser importado por `sparkforge/`.
+`a2a` nao pode ser importado por `sparkforge_aws/`.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from sparkforge.protocols.a2a_adapter import (
+from sparkforge_aws.protocols.a2a_adapter import (
     A2A_EXPERIMENTAL,
     agent_card,
     forge_to_a2a_state,
     result_to_a2a_task,
     submit_task,
 )
-from sparkforge.protocols.forge import (
+from sparkforge_aws.protocols.forge import (
     ForgeCapability,
     ForgeEvidenceBundle,
     ForgeResult,

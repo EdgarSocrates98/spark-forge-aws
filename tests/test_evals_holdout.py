@@ -34,9 +34,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.migration import extract_migration_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.migration.assessment import assess
+from sparkforge_aws.facts.migration import extract_migration_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.migration.assessment import assess
 
 ROOT = Path(__file__).resolve().parents[1]
 HOLDOUT = ROOT / "evals" / "holdout"
@@ -221,7 +221,7 @@ class TestOHoldoutNaoRepeteOsVisiveis:
         return [rodar(d) for d in fixture_dirs()]
 
     def test_algum_holdout_termina_fora_de_no_go(self):
-        """DECISAO 2 de `sparkforge/migration/assessment.py`: o gate de
+        """DECISAO 2 de `sparkforge_aws/migration/assessment.py`: o gate de
         compatibilidade separa por SEVERIDADE, nao por presenca. Os tres
         cenarios de `fixtures/scenarios/` disparam P0/P1 e todos fecham em
         NO_GO -- nenhum deles pode medir o outro ramo. O holdout de
@@ -258,7 +258,7 @@ class TestOHoldoutNaoRepeteOsVisiveis:
 
     def test_o_holdout_nao_inventa_regra_fora_do_catalogo(self):
         """Um holdout que exigisse regra nova mediria a regra, nao o sistema."""
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         do_catalogo = {r["id"] for r in load_catalog()}
         for directory in holdout_dirs():

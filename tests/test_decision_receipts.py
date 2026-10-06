@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_models import DecisionInput, ProviderUsage
-from sparkforge.economy.decision_plane import DecisionPlaneService
-from sparkforge.economy.decision_receipts import DecisionReceiptError, DecisionReceiptStore
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_models import DecisionInput, ProviderUsage
+from sparkforge_aws.economy.decision_plane import DecisionPlaneService
+from sparkforge_aws.economy.decision_receipts import DecisionReceiptError, DecisionReceiptStore
 
 ROOT = Path(__file__).resolve().parents[1]
 

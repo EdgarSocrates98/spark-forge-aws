@@ -23,7 +23,7 @@ Se isso estiver errado, o custo da entrega triplica e o desenho volta à mesa.
 ```bash
 TOKENSAVE_DISABLE_GREP_HOOK=1 grep -rn "judge_findings" tests/test_fixtures_golden*.py | head
 python -c "
-import inspect, sparkforge.rules.engine as e
+import inspect, sparkforge_aws.rules.engine as e
 print('run_judge devolve Finding, nao dict:', inspect.signature(e.judge))
 "
 ```
@@ -39,7 +39,7 @@ Se algum `test_fixtures_golden*` chamar `judge_findings` (o adapter) em vez de
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/agentic/executor/digest.py` | monta o bloco `plan` e o mapa de lastro, sem gravar |
+| `sparkforge_aws/agentic/executor/digest.py` | monta o bloco `plan` e o mapa de lastro, sem gravar |
 | `tests/test_agentic_executor_digest.py` | testes do digest |
 | `tests/test_adapters_judge_plan.py` | testes do bloco na resposta do adapter |
 
@@ -47,10 +47,10 @@ Se algum `test_fixtures_golden*` chamar `judge_findings` (o adapter) em vez de
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/agentic/executor/claims.py` | expõe `standing_for_finding`; `claims_from_findings` passa a usá-la |
-| `sparkforge/agentic/executor/run.py` | passa a usar `plan_digest` |
-| `sparkforge/adapters/_core.py` | `judge_findings` anexa `plan` e `evidence_standing` |
-| `sparkforge/adapters/tools.py` | `outputSchema` de `sparkforge_judge` |
+| `sparkforge_aws/agentic/executor/claims.py` | expõe `standing_for_finding`; `claims_from_findings` passa a usá-la |
+| `sparkforge_aws/agentic/executor/run.py` | passa a usar `plan_digest` |
+| `sparkforge_aws/adapters/_core.py` | `judge_findings` anexa `plan` e `evidence_standing` |
+| `sparkforge_aws/adapters/tools.py` | `outputSchema` de `sparkforge_judge` |
 | `docs/surface.lock.json` | crescimento do schema |
 
 ---
@@ -58,7 +58,7 @@ Se algum `test_fixtures_golden*` chamar `judge_findings` (o adapter) em vez de
 ## Task 1: `standing_for_finding` — os três insumos, num lugar só
 
 **Files:**
-- Modify: `sparkforge/agentic/executor/claims.py`
+- Modify: `sparkforge_aws/agentic/executor/claims.py`
 - Test: `tests/test_agentic_executor_claims.py`
 
 Hoje `claims_from_findings` computa `tier`, `dentro` e `medidas_presentes`
@@ -71,8 +71,8 @@ cópias divergiriam — que é o defeito que este spec evita entre `digest` e `r
 Acrescentar a `tests/test_agentic_executor_claims.py`:
 
 ```python
-from sparkforge.agentic.executor.authority import load_authority_map
-from sparkforge.agentic.executor.claims import standing_for_finding
+from sparkforge_aws.agentic.executor.authority import load_authority_map
+from sparkforge_aws.agentic.executor.claims import standing_for_finding
 
 _MAPA = load_authority_map()
 
@@ -119,7 +119,7 @@ class TestStandingForFinding:
     def test_o_valor_bate_com_o_confidence_da_claim(self):
         """A funcao nova e a que `claims_from_findings` usa -- se as duas
         divergirem, o `judge` diz uma coisa e o `arbitrate` outra."""
-        from sparkforge.agentic.executor.claims import claims_from_findings
+        from sparkforge_aws.agentic.executor.claims import claims_from_findings
 
         finding = {
             "rule_id": "SF-WASTE-001",
@@ -141,7 +141,7 @@ Expected: FAIL com `ImportError: cannot import name 'standing_for_finding'`
 
 - [ ] **Step 3: Extrair a função**
 
-Em `sparkforge/agentic/executor/claims.py`, acrescentar (e **fazer
+Em `sparkforge_aws/agentic/executor/claims.py`, acrescentar (e **fazer
 `claims_from_findings` usá-la**, substituindo o cálculo inline das três
 variáveis):
 
@@ -187,7 +187,7 @@ mudar o `confidence` de claim nenhuma.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/agentic/executor/claims.py tests/test_agentic_executor_claims.py
+git add sparkforge_aws/agentic/executor/claims.py tests/test_agentic_executor_claims.py
 git commit -m "refactor(executor): os tres insumos do lastro viram funcao propria, para nao serem recomputados"
 ```
 
@@ -196,7 +196,7 @@ git commit -m "refactor(executor): os tres insumos do lastro viram funcao propri
 ## Task 2: `digest.py` — o bloco, sem gravar
 
 **Files:**
-- Create: `sparkforge/agentic/executor/digest.py`
+- Create: `sparkforge_aws/agentic/executor/digest.py`
 - Test: `tests/test_agentic_executor_digest.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -205,7 +205,7 @@ git commit -m "refactor(executor): os tres insumos do lastro viram funcao propri
 """O bloco de plano que o `judge` publica.
 
 Ele e CALCULADO e nao gravado: nenhuma entidade e criada, nenhum arquivo e
-escrito. O registro auditavel continua sendo `sparkforge arbitrate`.
+escrito. O registro auditavel continua sendo `sparkforge-aws arbitrate`.
 """
 
 from __future__ import annotations
@@ -213,8 +213,8 @@ from __future__ import annotations
 import json
 import pathlib
 
-from sparkforge.agentic.executor.digest import plan_digest
-from sparkforge.findings.models import Fact
+from sparkforge_aws.agentic.executor.digest import plan_digest
+from sparkforge_aws.findings.models import Fact
 
 _RUNTIME = {"glue": "5.0", "spark": "3.5.4"}
 
@@ -322,7 +322,7 @@ class TestNaoPublicaScore:
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_agentic_executor_digest.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.agentic.executor.digest'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.agentic.executor.digest'`
 
 - [ ] **Step 3: Escrever o módulo**
 
@@ -336,7 +336,7 @@ Ele NAO cria entidade e NAO toca o disco. `sparkforge_judge` e `READ_ONLY` e
 continua sendo -- faze-lo gravar mudaria a cadeia de autorizacao de uma tool que
 muitas skills chamam, e faria um verbo de leitura escrever no repositorio do
 operador. O registro auditavel (blackboard, ADR, decisoes, `DebatePlan`
-completo) continua sendo `sparkforge arbitrate`.
+completo) continua sendo `sparkforge-aws arbitrate`.
 
 `run.py` usa este modulo em vez de repetir a sequencia: se os dois montassem o
 plano por conta propria, divergiriam, e o operador veria o `judge` afirmar uma
@@ -347,14 +347,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from sparkforge.agentic.executor.authority import load_authority_map
-from sparkforge.agentic.executor.claims import standing_for_finding
-from sparkforge.agentic.executor.conflict import conditional_conflicts, direct_conflicts
-from sparkforge.agentic.executor.ordering import order_actions
-from sparkforge.agentic.executor.unknowns import unknowns_from
+from sparkforge_aws.agentic.executor.authority import load_authority_map
+from sparkforge_aws.agentic.executor.claims import standing_for_finding
+from sparkforge_aws.agentic.executor.conflict import conditional_conflicts, direct_conflicts
+from sparkforge_aws.agentic.executor.ordering import order_actions
+from sparkforge_aws.agentic.executor.unknowns import unknowns_from
 
 _NOTA = (
-    "calculado, nao gravado. O registro auditavel e `sparkforge arbitrate`."
+    "calculado, nao gravado. O registro auditavel e `sparkforge-aws arbitrate`."
 )
 
 
@@ -442,7 +442,7 @@ Expected: PASS nos oito.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/agentic/executor/digest.py tests/test_agentic_executor_digest.py
+git add sparkforge_aws/agentic/executor/digest.py tests/test_agentic_executor_digest.py
 git commit -m "feat(executor): o plano de aplicacao calculado, sem entidade e sem disco"
 ```
 
@@ -451,7 +451,7 @@ git commit -m "feat(executor): o plano de aplicacao calculado, sem entidade e se
 ## Task 3: `run.py` passa a usar `digest.py`
 
 **Files:**
-- Modify: `sparkforge/agentic/executor/run.py`
+- Modify: `sparkforge_aws/agentic/executor/run.py`
 - Test: `tests/test_agentic_executor_run.py`
 
 **Este é o passo que impede as duas leituras de divergirem.** Hoje `run.py`
@@ -471,8 +471,8 @@ class TestJudgeEArbitrateNaoDivergem:
         partir do MESMO calculo. Se estes dois numeros divergirem, o operador
         ve o `judge` afirmar uma ordem e o `arbitrate` outra sobre o mesmo case.
         """
-        from sparkforge.agentic.executor.digest import plan_digest
-        from sparkforge.agentic.executor import run_executor
+        from sparkforge_aws.agentic.executor.digest import plan_digest
+        from sparkforge_aws.agentic.executor import run_executor
 
         findings, facts = _fixture_uniao("timeout/timeout_com_spill_e_skew")
         runtime = {"glue": "5.0", "spark": "3.5.4"}
@@ -500,7 +500,7 @@ para pegar a divergência que uma mudança futura introduziria.
 Em `run_executor`, substituir as chamadas diretas por:
 
 ```python
-    from sparkforge.agentic.executor.digest import plan_digest
+    from sparkforge_aws.agentic.executor.digest import plan_digest
 
     bloco, _lastro = plan_digest(findings, facts, runtime, authority_map=mapa)
     ordem = bloco["order"]
@@ -522,7 +522,7 @@ Expected: PASS, sem regressão nos 163 mais os novos.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/agentic/executor/run.py tests/test_agentic_executor_run.py
+git add sparkforge_aws/agentic/executor/run.py tests/test_agentic_executor_run.py
 git commit -m "refactor(executor): run.py consome o digest, e um teste trava a igualdade das duas leituras"
 ```
 
@@ -531,7 +531,7 @@ git commit -m "refactor(executor): run.py consome o digest, e um teste trava a i
 ## Task 4: `judge_findings` anexa o bloco e o lastro
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py` (a montagem do `result`, por volta da linha 2889)
+- Modify: `sparkforge_aws/adapters/_core.py` (a montagem do `result`, por volta da linha 2889)
 - Test: `tests/test_adapters_judge_plan.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -546,7 +546,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.adapters._core import judge_findings
+from sparkforge_aws.adapters._core import judge_findings
 
 _FACTS = "fixtures/waste/folga_medida_sem_skew/input/facts.json"
 
@@ -609,7 +609,7 @@ Expected: FAIL com `KeyError: 'plan'`
 
 - [ ] **Step 3: Anexar em `judge_findings`**
 
-Em `sparkforge/adapters/_core.py`, **depois** do filtro de severidade e
+Em `sparkforge_aws/adapters/_core.py`, **depois** do filtro de severidade e
 **antes** de `paginate_items`, e depois anexar ao `result`:
 
 ```python
@@ -617,7 +617,7 @@ Em `sparkforge/adapters/_core.py`, **depois** do filtro de severidade e
     # paginacao: ele e do conjunto que o operador pediu, nao da pagina que
     # coube. Ordem parcial apresentada como ordem e a familia de afirmacao que
     # este projeto recusa -- por isso `scope` carrega a contagem.
-    from sparkforge.agentic.executor.digest import plan_digest
+    from sparkforge_aws.agentic.executor.digest import plan_digest
 
     plano, lastro = plan_digest(finding_dicts, [f.to_dict() for f in fact_list], runtime)
     for item in finding_dicts:
@@ -662,7 +662,7 @@ premissa da §7 do spec estava errada — **pare e reporte**.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add sparkforge/adapters/_core.py tests/test_adapters_judge_plan.py
+git add sparkforge_aws/adapters/_core.py tests/test_adapters_judge_plan.py
 git commit -m "feat(judge): a resposta traz o plano de aplicacao e o lastro por achado"
 ```
 
@@ -671,7 +671,7 @@ git commit -m "feat(judge): a resposta traz o plano de aplicacao e o lastro por 
 ## Task 5: `outputSchema` da tool e o lock de superfície
 
 **Files:**
-- Modify: `sparkforge/adapters/tools.py`
+- Modify: `sparkforge_aws/adapters/tools.py`
 - Modify: `docs/surface.lock.json`
 - Test: `tests/test_adapters_tools.py`
 
@@ -687,22 +687,22 @@ Acrescentar a `tests/test_adapters_tools.py`:
 ```python
 class TestJudgeDeclaraOPlano:
     def test_outputschema_declara_plan_e_evidence_standing(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         schema = json.dumps(TOOLS["sparkforge_judge"])
         assert "plan" in schema
         assert "evidence_standing" in schema
 
     def test_a_descricao_diz_que_nao_grava(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         desc = TOOLS["sparkforge_judge"]["description"].lower()
         assert "nao grava" in desc or "não grava" in desc
         assert "arbitrate" in desc
 
     def test_judge_continua_read_only(self):
-        from sparkforge.adapters.tools import TOOLS
-        from sparkforge.harness.authorization import ToolClass, classify
+        from sparkforge_aws.adapters.tools import TOOLS
+        from sparkforge_aws.harness.authorization import ToolClass, classify
 
         assert classify("sparkforge_judge", TOOLS["sparkforge_judge"]) is ToolClass.READ_ONLY
 ```
@@ -714,7 +714,7 @@ API for outra, use a que estiver lá. O que o teste precisa garantir é que
 
 - [ ] **Step 3: Declarar no schema**
 
-Em `sparkforge/adapters/tools.py`, acrescentar ao `outputSchema` de
+Em `sparkforge_aws/adapters/tools.py`, acrescentar ao `outputSchema` de
 `sparkforge_judge` a chave `plan` (com as nove subchaves) e `evidence_standing`
 dentro do item, e acrescentar à `description`:
 
@@ -737,7 +737,7 @@ Anote o crescimento em bytes.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/adapters/tools.py docs/surface.lock.json tests/test_adapters_tools.py
+git add sparkforge_aws/adapters/tools.py docs/surface.lock.json tests/test_adapters_tools.py
 git commit -m "feat(mcp): sparkforge_judge declara o plano no schema, e segue READ_ONLY"
 ```
 
@@ -758,7 +758,7 @@ observação.**
 ```bash
 python - <<'EOF'
 import json, subprocess
-from sparkforge.adapters._core import judge_findings
+from sparkforge_aws.adapters._core import judge_findings
 alvo = "fixtures/waste/folga_medida_sem_skew/input/facts.json"
 r = judge_findings(facts_path=alvo, glue="5.0", spark="3.5.4")
 depois = len(json.dumps(r, ensure_ascii=False))
@@ -821,7 +821,7 @@ na workstation (o CI a roda inteira e passa — ver `.github/workflows/ci.yml`).
 
 - [ ] **Step 3: Lint**
 
-Run: `python -m ruff check sparkforge scripts tests`
+Run: `python -m ruff check sparkforge_aws scripts tests`
 Expected: limpo. **Não** rode `ruff format --check` — reprova 396 arquivos
 intocados por drift de versão.
 

@@ -6,7 +6,7 @@
 não versionado neste repositório** — a nota entra aqui porque um leitor de clone limpo
 procuraria o arquivo e não o acharia. O que importa dele está reproduzido abaixo.
 **Base:** o motor existente — artefato → facts → regras → findings — com o manifesto de
-artefatos verificado por sha256 (`sparkforge/collect/base.py`).
+artefatos verificado por sha256 (`sparkforge_aws/collect/base.py`).
 **Estado corrente:** [`../STATUS.md`](../STATUS.md)
 
 ---
@@ -22,7 +22,7 @@ escopo de uma spec. A decomposição adotada, com a ordem de dependência:
 | B | **Coletor de histórico de runs** (este documento) | `collect glue-job-runs`, `analyze cloudwatch`, `analyze glue-job-runs` | — |
 | C | Effective Workload e Fingerprint | facts de scan por fonte, join graph, classificador multidimensional | B |
 | D | Capacity e SLA optimizer | candidatos de capacidade, simulação de SLA, escolha do menor custo que cabe | B, C |
-| E | FinOps | `sparkforge/finops/`, custo por run, desperdício, custo por sucesso de SLA | B, D |
+| E | FinOps | `sparkforge_aws/finops/`, custo por run, desperdício, custo por sucesso de SLA | B, D |
 
 Cada um recebe spec própria. Este documento cobre **apenas B**.
 
@@ -32,25 +32,25 @@ O princípio central do documento de origem é que o volume da entrada principal
 o trabalho físico do DAG. Um job pode ter batch pequeno e varredura extrema. C existe para
 medir isso; D existe para escolher capacidade a partir disso.
 
-Mas C e D precisam de um baseline que hoje não existe. `sparkforge collect glue-job` traz a
-*definição* do job via `glue.get_job` (`sparkforge/collect/aws.py:298`), não o histórico de
+Mas C e D precisam de um baseline que hoje não existe. `sparkforge-aws collect glue-job` traz a
+*definição* do job via `glue.get_job` (`sparkforge_aws/collect/aws.py:298`), não o histórico de
 execuções. Sem p50/p95/p99 de runtime observado, "probabilidade de cumprir o SLA" não tem de
 onde sair. B é a fundação, e entrega valor sozinha.
 
 ### 1.2 Dois achados do repositório que este documento consome
 
 **O artefato CloudWatch é coletado e ninguém o consome.** `collect_cloudwatch`
-(`sparkforge/collect/aws.py:340`) baixa 17 métricas de observabilidade Glue, grava o JSON e o
+(`sparkforge_aws/collect/aws.py:340`) baixa 17 métricas de observabilidade Glue, grava o JSON e o
 registra no manifesto. Existe a tool MCP `sparkforge_collect_cloudwatch`
-(`sparkforge/adapters/tools.py:3405`) e o subcomando `collect cloudwatch`
-(`sparkforge/adapters/cli.py:1023`). Não existe extrator em `sparkforge/facts/` que leia esse
+(`sparkforge_aws/adapters/tools.py:3405`) e o subcomando `collect cloudwatch`
+(`sparkforge_aws/adapters/cli.py:1023`). Não existe extrator em `sparkforge_aws/facts/` que leia esse
 artefato, e nenhuma regra do catálogo o consome — `glue.driver.*` aparece no catálogo apenas
 em texto de `validation:` (`rules/catalog/glue-infra.yaml:36`, `parquet.yaml:204`,
 `spark-ui.yaml:271`, `env.yaml:158`), nunca como `kind` de fact casado por um `when:`.
 Correlacionar métrica com run, que é escopo desta entrega, não tem hoje com o que se juntar.
 B fecha esse buraco.
 
-**O período da query CloudWatch é fixo em 30 segundos.** `sparkforge/collect/aws.py:372`
+**O período da query CloudWatch é fixo em 30 segundos.** `sparkforge_aws/collect/aws.py:372`
 codifica `"Period": 30`. A retenção do CloudWatch varia por período: pontos de granularidade
 sub-minuto são descartados em poucas horas, enquanto períodos maiores sobrevivem por dias ou
 meses. A consequência para um coletor de histórico é direta: a query com período 30 sobre um
@@ -59,7 +59,7 @@ habilitada no job", que é uma causa completamente diferente.
 
 **Este documento não fixa os valores de retenção.** Eles entram em
 `knowledge/glue/observability.yaml`, legível por máquina, com carregador fail-closed no molde
-de `knowledge/glue/pricing.yaml` mais `sparkforge/facts/pricing.py` — a mesma dupla que o
+de `knowledge/glue/pricing.yaml` mais `sparkforge_aws/facts/pricing.py` — a mesma dupla que o
 projeto já usa para conhecimento que vira número. A seção correspondente em
 `knowledge/glue/observability.md` aponta para o YAML em vez de repetir a tabela, e a fonte é
 registrada em `knowledge/sources.lock.json` com URL, data de consulta e sha256, como as outras
@@ -96,7 +96,7 @@ até ser corrigido, o motor emite uma recomendação errada com severidade P1.
 **Fora:**
 
 - Nenhuma regra nova no catálogo. B produz facts; julgar histórico é D.
-- Nenhum fact de custo em dinheiro. `sparkforge/facts/pricing.py` recusa deliberadamente
+- Nenhum fact de custo em dinheiro. `sparkforge_aws/facts/pricing.py` recusa deliberadamente
   combinar preço com região `UNQUALIFIED`, e esta entrega não fura essa recusa. Custo é E.
 - Nenhuma mudança em `SF-GLUE-001` — é A.
 - Nenhum footprint por fonte, join graph ou fingerprint — é C.
@@ -109,7 +109,7 @@ até ser corrigido, o motor emite uma recomendação errada com severidade P1.
 
 `GetJobRuns` devolve uma janela móvel: os N runs mais recentes, e o conjunto muda a cada dia.
 O manifesto do repositório assume o contrário — artefato imutável, verificado por sha256
-(`sparkforge/collect/base.py:142`), e `_offline_hit` (`aws.py:150`) trata divergência de hash
+(`sparkforge_aws/collect/base.py:142`), e `_offline_hit` (`aws.py:150`) trata divergência de hash
 como "precisa recoletar".
 
 Adotado: **um arquivo por run**, em
@@ -146,7 +146,7 @@ A correlação acontece em `analyze glue-job-runs`, que junta por `job_run_id` o
 CloudWatch já presentes. Run sem métrica coletada não é erro: sai em
 `glue.job_run.unresolved` com a razão e o `collect_command` exato que a resolve — a mesma
 convenção que o manifesto usa para não deixar `resume()` cego
-(`sparkforge/collect/base.py:50`).
+(`sparkforge_aws/collect/base.py:50`).
 
 Recusado: `--with-metrics` fazendo fan-out. Uma chamada do operador viraria N chamadas
 CloudWatch, com custo e permissão maiores, e um coletor passaria a chamar outro.
@@ -190,7 +190,7 @@ em todo run com Auto Scaling.
 
 ## 4. Modelo de facts
 
-Todos seguem o contrato de `Fact` (`sparkforge/findings/models.py:31`): `subject` identifica,
+Todos seguem o contrato de `Fact` (`sparkforge_aws/findings/models.py:31`): `subject` identifica,
 `measures` são números, `attrs` são categóricos que uma regra casa com `where`, `provenance`
 diz de onde o valor veio.
 
@@ -208,7 +208,7 @@ Um `kind` só, discriminado por `attrs.name`, no molde de `tf.attribute` — e n
 kinds, um por métrica. Como nenhuma regra consome CloudWatch hoje (§1.2), a forma está livre;
 a escolhida é a que o motor de regras já sabe casar.
 
-Os nomes de métrica são os de `CLOUDWATCH_METRICS` (`sparkforge/collect/aws.py:57`),
+Os nomes de métrica são os de `CLOUDWATCH_METRICS` (`sparkforge_aws/collect/aws.py:57`),
 reproduzidos sem correção — inclusive `glue.driver.bytesWrittten`, com três "t", que é como a
 AWS escreve. `attrs.stat` preserva a estatística que a métrica exige: pedir `Average` de
 `glue.error.ALL`, documentado como `Sum`, devolveria um número errado com aparência de certo.
@@ -230,7 +230,7 @@ attrs:    {state, worker_type, glue_version, execution_class, autoscaling,
 fica ausente quando ela não trouxer. Nunca é inferido do texto de `ErrorMessage` — classificar
 mensagem de erro por heurística é julgamento, e fact não julga. A mensagem em si também não
 entra no fact: ela pode carregar nome de tabela, caminho de S3 ou trecho de dado, e este
-projeto redige segredo em vez de propagá-lo (`sparkforge/facts/secrets.py`).
+projeto redige segredo em vez de propagá-lo (`sparkforge_aws/facts/secrets.py`).
 
 ### 4.3 `glue.job_run.distribution`
 
@@ -244,10 +244,10 @@ attrs:    {window_first, window_last, dpu_source}
 ```
 
 Percentis por nearest-rank sem interpolação, a mesma fórmula que
-`sparkforge/facts/event_log.py:120` usa para `spark.stage.task_duration`.
+`sparkforge_aws/facts/event_log.py:120` usa para `spark.stage.task_duration`.
 
 A fórmula é **reescrita neste extrator, não importada** — o que parece duplicação e é
-convenção declarada: `sparkforge/facts/iceberg_metadata.py:128` já tomou essa decisão por
+convenção declarada: `sparkforge_aws/facts/iceberg_metadata.py:128` já tomou essa decisão por
 escrito, porque os extratores são módulos independentes por desenho e a fórmula é pequena
 demais para acoplá-los. Consolidar as três seria refatoração de dois módulos que esta entrega
 não toca. O que garante que continuam iguais é teste, não import: um caso que roda as
@@ -275,7 +275,7 @@ denominador.
 ### 4.5 `glue.job_run.unresolved` e `glue.metric.unresolved`
 
 O que não deu para saber, com a razão e, quando existe, o comando que a resolve. Convenção já
-usada por `spark.unresolved` e `plan.unresolved` (`sparkforge/facts/event_log.py:50`).
+usada por `spark.unresolved` e `plan.unresolved` (`sparkforge_aws/facts/event_log.py:50`).
 
 Razões previstas: run sem artefato CloudWatch correspondente; métrica fora da janela de
 retenção do período consultado; `DPUSeconds` ausente em run com Auto Scaling; run em estado
@@ -287,7 +287,7 @@ Fechamento no molde de `spark.log_analyzed`, com as contagens do que entrou na a
 análise sobre três runs e uma sobre trinta não podem parecer a mesma coisa na saída.
 
 Cada extrator declara o seu conjunto de `kind` emitidos, no molde do `frozenset` de
-`sparkforge/facts/event_log.py:38`.
+`sparkforge_aws/facts/event_log.py:38`.
 
 ---
 
@@ -296,13 +296,13 @@ Cada extrator declara o seu conjunto de `kind` emitidos, no molde do `frozenset`
 ### 5.1 CLI
 
 ```
-sparkforge collect glue-job-runs --repo . --job-name <job> --max-runs 30 --now <ISO8601>
+sparkforge-aws collect glue-job-runs --repo . --job-name <job> --max-runs 30 --now <ISO8601>
 
-sparkforge analyze cloudwatch \
+sparkforge-aws analyze cloudwatch \
   --path .sparkforge/artifacts/cloudwatch/<job>_<run>.json \
   --out <facts.json>
 
-sparkforge analyze glue-job-runs \
+sparkforge-aws analyze glue-job-runs \
   --path .sparkforge/artifacts/glue_job_run/ \
   --job-name <job> \
   --cloudwatch .sparkforge/artifacts/cloudwatch/ \
@@ -310,7 +310,7 @@ sparkforge analyze glue-job-runs \
 ```
 
 `--now` é parâmetro, nunca lido do relógio — a convenção de todo o projeto
-(`sparkforge/collect/aws.py:16`), e o que torna `collected_at == now` a forma barata de a CLI
+(`sparkforge_aws/collect/aws.py:16`), e o que torna `collected_at == now` a forma barata de a CLI
 saber se a chamada foi um no-op.
 
 `--max-runs` é teto de paginação, não filtro de data. `GetJobRuns` devolve do mais recente
@@ -323,7 +323,7 @@ inteira vai para `unresolved` com o comando de coleta que falta.
 ### 5.2 MCP
 
 `sparkforge_collect_glue_job_runs`, `sparkforge_analyze_cloudwatch` e
-`sparkforge_analyze_glue_job_runs` em `sparkforge/adapters/tools.py`, cada uma com handler e
+`sparkforge_analyze_glue_job_runs` em `sparkforge_aws/adapters/tools.py`, cada uma com handler e
 entrada fechada no despacho.
 
 Três lugares com gate próprio recebem as novas entradas:
@@ -337,7 +337,7 @@ Três lugares com gate próprio recebem as novas entradas:
 
 ### 5.3 Novo `kind` de artefato
 
-`ARTIFACT_KINDS` (`sparkforge/collect/base.py:29`) é tupla fechada, validada em
+`ARTIFACT_KINDS` (`sparkforge_aws/collect/base.py:29`) é tupla fechada, validada em
 `ArtifactEntry.__post_init__`. Entra `"glue_job_run"`. Sem isso, a construção da entrada
 levanta `ValueError`.
 

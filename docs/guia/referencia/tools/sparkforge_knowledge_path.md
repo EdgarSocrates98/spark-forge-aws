@@ -18,7 +18,7 @@ Resolve a raiz dos arquivos de conhecimento versionado e, opcionalmente, um arqu
 
 ## Na CLI
 
-[`sparkforge knowledge path`](../cli/knowledge.md)
+[`sparkforge-aws knowledge path`](../cli/knowledge.md)
 
 ## Capacidade
 

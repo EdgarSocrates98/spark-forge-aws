@@ -3,7 +3,7 @@
 **Quem quebrava sem isto:** `scripts/verify_wheel.py`, o gate de paridade do
 artefato. Ele roda a suíte de golden a partir de um `cwd` fora do repositório,
 com `PYTHONSAFEPATH=1` e `-o pythonpath=`, exatamente para que
-`import sparkforge` venha do wheel instalado e não do diretório-fonte — sem
+`import sparkforge_aws` venha do wheel instalado e não do diretório-fonte — sem
 isso o gate compararia o repositório consigo mesmo. O efeito colateral é que
 `scripts/` sai do `sys.path` junto, e `scripts/` **não vai no wheel**: ele é
 andaime de teste, não parte do pacote. `tests/test_fixtures_golden_funcval.py`
@@ -12,11 +12,11 @@ importa `with_plan_ref` de lá, então a coleta parava com
 rodar — nos dois sistemas operacionais da matriz.
 
 **Por que `append` e nunca `insert(0, ...)`:** a raiz entra no FIM do
-`sys.path`, então `site-packages` continua vencendo para `sparkforge`. Este
+`sys.path`, então `site-packages` continua vencendo para `sparkforge-aws`. Este
 caminho só resolve o que não existe no artefato. E o que impede isso de virar
 teatro não é a ordem em si — configuração se perde em refactor — e sim
 `tests/test_installed_provenance.py`, que roda no mesmo processo sob
-`SPARKFORGE_VERIFY_INSTALLED=1` e falha se `sparkforge` tiver vindo do
+`SPARKFORGE_VERIFY_INSTALLED=1` e falha se `sparkforge-aws` tiver vindo do
 diretório-fonte.
 
 **Por que não copiar `with_plan_ref` para dentro do teste:** o docstring dele
@@ -40,7 +40,7 @@ def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
     `.sparkforge/traces.db` real do repositorio durante toda a sessao de
     teste.
 
-    POR QUE AQUI, E NAO NO PRODUTO. `sparkforge.observability.context_ledger.
+    POR QUE AQUI, E NAO NO PRODUTO. `sparkforge_aws.observability.context_ledger.
     shared_ledger()` materializa o ledger do processo na primeira chamada que
     nao monkeypatcha o proprio ledger -- e o default e `.sparkforge/
     traces.db` relativo ao `cwd`, que ao rodar a suite E o repositorio.
@@ -63,7 +63,7 @@ def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
     `None` original, porque a substituicao aconteceu depois desta fixture
     rodar.
     """
-    from sparkforge.observability import context_ledger
+    from sparkforge_aws.observability import context_ledger
 
     db_path = tmp_path_factory.mktemp("observability") / "traces.db"
     context_ledger._SHARED_LEDGER = context_ledger.ContextLedger(
@@ -104,7 +104,7 @@ def _journals_do_repositorio() -> dict[str, str | None]:
 
 @pytest.fixture(autouse=True, scope="session")
 def _journal_do_repositorio_intocado_pela_suite():
-    """O journal (`sparkforge.journal`) grava na raiz do case que o verbo toca.
+    """O journal (`sparkforge_aws.journal`) grava na raiz do case que o verbo toca.
 
     Teste que rode verbo de escrita com `repo` na raiz do projeto, ou direto sobre
     a pasta de uma fixture, sujaria a arvore versionada -- o journal e
@@ -129,7 +129,7 @@ def _journal_do_repositorio_intocado_pela_suite():
 def _nenhum_teste_aperta_o_rlimit_do_pytest(request):
     """Nenhum teste pode deixar um `setrlimit` aplicado no processo do pytest.
 
-    O DEFEITO QUE ISTO IMPEDE, MEDIDO. `sparkforge.codeintel.security.
+    O DEFEITO QUE ISTO IMPEDE, MEDIDO. `sparkforge_aws.codeintel.security.
     apply_resource_limits()` aperta `RLIMIT_AS` e `RLIMIT_CPU` do processo
     CORRENTE, e `TETO_CPU_SEGUNDOS` e 300. Um teste que a chamasse em processo
     dava 300 s de CPU para a suite INTEIRA terminar: o `pytest` morria com

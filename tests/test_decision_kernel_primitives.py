@@ -1,8 +1,8 @@
 import pytest
 
-from sparkforge.decision.contracts import ContractLoader
-from sparkforge.decision.models import DecisionStatus, PrimitiveKind
-from sparkforge.decision.primitives import evaluator_for
+from sparkforge_aws.decision.contracts import ContractLoader
+from sparkforge_aws.decision.models import DecisionStatus, PrimitiveKind
+from sparkforge_aws.decision.primitives import evaluator_for
 
 
 def _parse(primitive, spec, field, value):

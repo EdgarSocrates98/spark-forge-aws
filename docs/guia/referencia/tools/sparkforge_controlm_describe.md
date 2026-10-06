@@ -17,7 +17,7 @@ O que vale numa versao do Control-M AUTOMATION API: quais capacidades existem, q
 
 ## Na CLI
 
-[`sparkforge controlm describe`](../cli/controlm.md)
+[`sparkforge-aws controlm describe`](../cli/controlm.md)
 
 ## Capacidade
 

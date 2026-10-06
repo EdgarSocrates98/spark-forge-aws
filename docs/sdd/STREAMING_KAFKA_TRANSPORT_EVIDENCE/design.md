@@ -9,7 +9,7 @@ upstream:
   sha256: "b9a42178563bce4fbe372641da60a7a7d8f5b36a787393226e752b68a6d4a837"
 files:
   - {path: tests/test_facts_transport.py, action: modify, reason: "provar série explícita, timestamps fail-closed e guarda do snapshot legado"}
-  - {path: sparkforge/facts/transport.py, action: modify, reason: "extrair lag_observations e compor kafka.lag.series sem nova superfície"}
+  - {path: sparkforge_aws/facts/transport.py, action: modify, reason: "extrair lag_observations e compor kafka.lag.series sem nova superfície"}
   - {path: tests/test_streaming_rules.py, action: modify, reason: "provar condições observadas das duas regras novas"}
   - {path: rules/catalog/streaming_observability.yaml, action: modify, reason: "adicionar SF-STREAMOBS-003 e SF-STREAMOBS-004 com actions e fontes"}
   - {path: tests/test_fixtures_golden_transport.py, action: modify, reason: "incluir corpus Kafka novo no golden determinístico"}
@@ -73,9 +73,9 @@ mas não dispara `SF-STREAMOBS-004`.
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category streaming_observability`: `SF-STREAMOBS`
+- `sparkforge-aws rules lookup --category streaming_observability`: `SF-STREAMOBS`
   já roteia para `streaming-realtime-architect` e usa actions de baseline.
-- `sparkforge/facts/transport.py`: facts Kafka existentes e envelope comum.
+- `sparkforge_aws/facts/transport.py`: facts Kafka existentes e envelope comum.
 - Apache Kafka Basic Operations 4.0:
   `https://kafka.apache.org/40/operations/basic-kafka-operations/` — offsets,
   log end offset e lag no describe de consumer group.

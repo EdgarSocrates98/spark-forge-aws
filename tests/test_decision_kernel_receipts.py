@@ -2,8 +2,8 @@ from copy import deepcopy
 
 import pytest
 
-from sparkforge.decision import BoundedDecisionKernel, ContractLoader
-from sparkforge.decision.receipts import ReceiptValidationError, verify_receipt
+from sparkforge_aws.decision import BoundedDecisionKernel, ContractLoader
+from sparkforge_aws.decision.receipts import ReceiptValidationError, verify_receipt
 
 
 def test_receipt_round_trip_and_tamper_detection():

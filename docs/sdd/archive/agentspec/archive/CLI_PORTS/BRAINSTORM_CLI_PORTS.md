@@ -18,18 +18,18 @@
 **Raw Input:** Primeira das três candidatas pedidas depois do §15: as portas de CLI que a escrita dos manuais `docs/guia/` (2026-09-13) mediu como faltando. Nenhum verbo lê `workload.yaml`; SF-WASTE não dispara pela CLI; `collect parquet-footer` é citado e não existe.
 
 **Context Gathered:**
-- `extract_workload_path(path, repo_root)` (`sparkforge/facts/workload.py:194`) só é chamado por teste e pelos planos em `docs/superpowers/plans/`. `capacity`, `finops` e `workload` só veem o SLA se `workload.declared` já estiver no arquivo de facts. Nenhum parser da CLI tem argumento para o YAML.
-- `extract_utilization(facts, path)` (`sparkforge/facts/utilization.py:71`) só é chamado por `tests/test_facts_utilization.py`. Ele emite `glue.utilization.summary` (utilização p50, memória e disco p95, razão de skew do pior stage) ou `glue.utilization.unresolved` (`utilization_not_observed`). Os `input/facts.json` de `fixtures/waste/` já trazem `glue.metric` e `spark.stage.task_duration`.
-- O `fuse` (`sparkforge/facts/fusion.py:537`) já deriva o diagnóstico de timeout só quando o pool tem kind de origem (`timeout_diagnosis.SOURCE_KINDS`). A utilização cabe no mesmo molde.
-- `collect_parquet_footer(prefix, root, *, now, ...)` existe em `sparkforge/collect/parquet_footer.py`, com pyarrow opcional (`require_pyarrow`) e teste próprio (`tests/test_collect_parquet_footer.py`). Faltam a porta de CLI e a tool. `cli.py:312` e a descrição da tool em `tools.py:5398`/`5420` citam `collect parquet-footer`.
-- O `scan` já mapeia o kind `parquet_footer` do manifesto para `analyze parquet-footer` (`sparkforge/scan/plan.py:40`).
+- `extract_workload_path(path, repo_root)` (`sparkforge_aws/facts/workload.py:194`) só é chamado por teste e pelos planos em `docs/superpowers/plans/`. `capacity`, `finops` e `workload` só veem o SLA se `workload.declared` já estiver no arquivo de facts. Nenhum parser da CLI tem argumento para o YAML.
+- `extract_utilization(facts, path)` (`sparkforge_aws/facts/utilization.py:71`) só é chamado por `tests/test_facts_utilization.py`. Ele emite `glue.utilization.summary` (utilização p50, memória e disco p95, razão de skew do pior stage) ou `glue.utilization.unresolved` (`utilization_not_observed`). Os `input/facts.json` de `fixtures/waste/` já trazem `glue.metric` e `spark.stage.task_duration`.
+- O `fuse` (`sparkforge_aws/facts/fusion.py:537`) já deriva o diagnóstico de timeout só quando o pool tem kind de origem (`timeout_diagnosis.SOURCE_KINDS`). A utilização cabe no mesmo molde.
+- `collect_parquet_footer(prefix, root, *, now, ...)` existe em `sparkforge_aws/collect/parquet_footer.py`, com pyarrow opcional (`require_pyarrow`) e teste próprio (`tests/test_collect_parquet_footer.py`). Faltam a porta de CLI e a tool. `cli.py:312` e a descrição da tool em `tools.py:5398`/`5420` citam `collect parquet-footer`.
+- O `scan` já mapeia o kind `parquet_footer` do manifesto para `analyze parquet-footer` (`sparkforge_aws/scan/plan.py:40`).
 - pyarrow 25.0.1 está instalado no ambiente de desenvolvimento.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/adapters/{_core,cli,tools}.py`, `sparkforge/facts/fusion.py`, `sparkforge/scan/plan.py` | Três portas sobre código que já existe; nenhum extrator novo |
+| Likely Location | `sparkforge_aws/adapters/{_core,cli,tools}.py`, `sparkforge_aws/facts/fusion.py`, `sparkforge_aws/scan/plan.py` | Três portas sobre código que já existe; nenhum extrator novo |
 | Relevant KB Domains | CLAUDE.md regras 13, 14 e 17 (utilização baixa não é capacidade sobrando) | O resumo não quantifica economia |
 | IaC Patterns | N/A | Nada provisionado |
 

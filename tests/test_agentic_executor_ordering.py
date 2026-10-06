@@ -32,8 +32,8 @@ from typing import Any
 
 import pytest
 
-from sparkforge.agentic.executor.ordering import load_measure_axes, order_actions
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.agentic.executor.ordering import load_measure_axes, order_actions
+from sparkforge_aws.rules.loader import load_catalog
 
 RAIZ = Path(__file__).resolve().parents[1]
 

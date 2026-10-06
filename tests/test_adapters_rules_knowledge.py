@@ -7,7 +7,7 @@ Devolver o caminho resolvido fecha isso sem passo novo.
 """
 from pathlib import Path
 
-from sparkforge.adapters import _core
+from sparkforge_aws.adapters import _core
 
 
 def _rule(payload: dict, rule_id: str) -> dict:

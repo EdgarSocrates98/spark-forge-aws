@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"

@@ -17,7 +17,7 @@ A UNICA tool de mutacao do Code Intelligence: poe o indice local em dia com a ar
 
 ## Na CLI
 
-[`sparkforge code status`](../cli/code.md), [`sparkforge code sync`](../cli/code.md)
+[`sparkforge-aws code status`](../cli/code.md), [`sparkforge-aws code sync`](../cli/code.md)
 
 ## Capacidade
 

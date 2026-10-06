@@ -4,11 +4,11 @@ import json
 import shutil
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_models import DecisionInput
-from sparkforge.economy.decision_plane import DecisionPlaneService
-from sparkforge.economy.decision_receipts import DecisionReceiptStore
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_models import DecisionInput
+from sparkforge_aws.economy.decision_plane import DecisionPlaneService
+from sparkforge_aws.economy.decision_receipts import DecisionReceiptStore
 
 ROOT = Path(__file__).resolve().parents[1]
 

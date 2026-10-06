@@ -10,19 +10,19 @@ upstream:
 tasks:
   - id: T1
     status: done
-    red: {command: "python -m pytest tests/test_facts_streaming_slo.py::test_evaluates_sink_output_slo tests/test_facts_streaming_slo.py::test_sink_slo_uses_batch_timestamp_and_provenance tests/test_facts_streaming_slo.py::test_sink_slo_unresolved_reasons -q --basetemp=E:\\temp\\sparkforge-sink-sdd-t1", exit: 1}
-    green: {command: "python -m pytest tests/test_facts_streaming_slo.py -q --basetemp=E:\\temp\\sparkforge-sink-slo-green2", exit: 0}
+    red: {command: "python -m pytest tests/test_facts_streaming_slo.py::test_evaluates_sink_output_slo tests/test_facts_streaming_slo.py::test_sink_slo_uses_batch_timestamp_and_provenance tests/test_facts_streaming_slo.py::test_sink_slo_unresolved_reasons -q --basetemp=E:\\temp\\sparkforge_aws-sink-sdd-t1", exit: 1}
+    green: {command: "python -m pytest tests/test_facts_streaming_slo.py -q --basetemp=E:\\temp\\sparkforge_aws-sink-slo-green2", exit: 0}
   - id: T2
     status: done
-    red: {command: "python -m pytest tests/test_analyze_streaming_composition.py::test_sink_slo_cli_and_mcp_envelopes_match -q --basetemp=E:\\temp\\sparkforge-sink-sdd-t2", exit: 1}
+    red: {command: "python -m pytest tests/test_analyze_streaming_composition.py::test_sink_slo_cli_and_mcp_envelopes_match -q --basetemp=E:\\temp\\sparkforge_aws-sink-sdd-t2", exit: 1}
     green: {command: "python -m pytest tests/test_analyze_streaming_composition.py::test_sink_slo_cli_and_mcp_envelopes_match -q", exit: 0}
   - id: T3
     status: done
-    red: {command: "python -m pytest tests/test_fixtures_golden_streaming_composition.py::test_fixture_goldens -q --basetemp=E:\\temp\\sparkforge-sink-golden-red", exit: 1}
-    green: {command: "python -m pytest tests/test_fixtures_golden_streaming_composition.py -q --basetemp=E:\\temp\\sparkforge-sink-golden4", exit: 0}
+    red: {command: "python -m pytest tests/test_fixtures_golden_streaming_composition.py::test_fixture_goldens -q --basetemp=E:\\temp\\sparkforge_aws-sink-golden-red", exit: 1}
+    green: {command: "python -m pytest tests/test_fixtures_golden_streaming_composition.py -q --basetemp=E:\\temp\\sparkforge_aws-sink-golden4", exit: 0}
   - id: T4
     status: done
-    red: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_sink_slo_coverage_mentions_batch_link -q --basetemp=E:\\temp\\sparkforge-sink-sdd-t4", exit: 1}
+    red: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_sink_slo_coverage_mentions_batch_link -q --basetemp=E:\\temp\\sparkforge_aws-sink-sdd-t4", exit: 1}
     green: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_sink_slo_coverage_mentions_batch_link -q", exit: 0}
   - id: T5
     status: done
@@ -30,7 +30,7 @@ tasks:
     green: {command: "python scripts/sync_skills.py --check; python scripts/gen_reference_docs.py --check; python scripts/check_surface_lock.py; python scripts/check_status_numbers.py --strict; python scripts/verify_offline_bundle.py --check", exit: 0}
 claims:
   - text: "mode=slo avalia num_output_rows diretamente observado em streaming.progress.sink e liga cada medida ao batch temporal correspondente."
-    evidence_ref: "sparkforge/facts/streaming_slo.py; tests/test_facts_streaming_slo.py::test_sink_slo_uses_batch_timestamp_and_provenance"
+    evidence_ref: "sparkforge_aws/facts/streaming_slo.py; tests/test_facts_streaming_slo.py::test_sink_slo_uses_batch_timestamp_and_provenance"
   - text: "Sink sem batch, unidade incompatível, descrição ambígua ou identidade não encontrada permanece streaming.slo.unresolved."
     evidence_ref: "tests/test_facts_streaming_slo.py::test_sink_slo_unresolved_reasons"
   - text: "CLI, MCP e core preservam o mesmo envelope para SLO de sink sem tool nova."
@@ -77,7 +77,7 @@ o `batch_id` e o timestamp do batch correspondente para fechar a janela.
 ## Evidência de gates
 
 - 55 testes focados verdes no lote facts/composição/goldens/docs.
-- `sparkforge sdd check --repo . --feature STREAMING_SINK_SLO_EVALUATION` verde
+- `sparkforge-aws sdd check --repo . --feature STREAMING_SINK_SLO_EVALUATION` verde
   para as fases anteriores.
 
 Não há medição de performance, custo, throughput, latência ou capacidade cloud.

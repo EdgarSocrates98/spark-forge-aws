@@ -17,8 +17,8 @@
 # O EFEITO MEDIDO, e o mais absurdo do catálogo: o event log é justamente a
 # fonte MAIS confiável de `spark.version` -- mas `judge` recebe o runtime que a
 # CLI montou, não o que o extrator viu. Com `build_runtime_context()` sem flags,
-# que é o padrão de `sparkforge judge`, o contexto sai com `spark: ""`,
-# `in_scope` falha fechada (`sparkforge/rules/version_scope.py`), e a ÁREA SF-UI
+# que é o padrão de `sparkforge-aws judge`, o contexto sai com `spark: ""`,
+# `in_scope` falha fechada (`sparkforge_aws/rules/version_scope.py`), e a ÁREA SF-UI
 # INTEIRA sumia: 6 puladas, 0 avaliadas -- inclusive sobre um event log que
 # carrega a versão. Se um dia o runtime for propagado do extrator para o
 # `judge`, o lugar de usá-lo continua sendo uma regra cujo GATILHO dependa da
@@ -351,7 +351,7 @@ rules:
       a task lenta porque leu mais.
     proposed_change:
       - Investigar o worker do executor nomeado (disco, rede e CPU do nó no mesmo intervalo) antes de mexer em configuração.
-      - Se o nó não puder ser trocado, ligar spark.speculation como mitigação — `sparkforge tune` propõe o valor com os stages medidos.
+      - Se o nó não puder ser trocado, ligar spark.speculation como mitigação — `sparkforge-aws tune` propõe o valor com os stages medidos.
     action:
       kind: capacity.investigate_slow_executor
       target: spark.speculation

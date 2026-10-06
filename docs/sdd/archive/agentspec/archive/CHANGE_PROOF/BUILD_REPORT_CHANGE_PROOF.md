@@ -31,8 +31,8 @@
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
 | 1 | `rules/catalog/proof_axes.yaml` | (direct) | ✅ Complete | 23 eixos, chave estavel por tipo, convencao do sinal com a razao |
-| 2 | `sparkforge/proof/{__init__,axes,keys}.py` | (direct) | ✅ Complete | Carga por `safe_catalog_file`, validacao com o campo nomeado |
-| 3 | `sparkforge/proof/{resolution,axis,prove}.py` | (direct) | ✅ Complete | Desfechos na ordem do DESIGN |
+| 2 | `sparkforge_aws/proof/{__init__,axes,keys}.py` | (direct) | ✅ Complete | Carga por `safe_catalog_file`, validacao com o campo nomeado |
+| 3 | `sparkforge_aws/proof/{resolution,axis,prove}.py` | (direct) | ✅ Complete | Desfechos na ordem do DESIGN |
 | 4 | `tests/test_proof_policy.py` | (direct) | ✅ Complete | A politica contra o catalogo real |
 | 5 | `tests/test_proof_outcomes.py` | (direct) | ✅ Complete | Cada ramo |
 | 6 | `adapters/_core.py` | (direct) | ✅ Complete | `proof_change`: dois `judge` |

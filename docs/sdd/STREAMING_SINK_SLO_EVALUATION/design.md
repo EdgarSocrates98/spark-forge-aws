@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_SINK_SLO_EVALUATION/define.md
   sha256: "58c2caa0837a354ddc34f82d7e77dfbb1b8f937545e3a9377721efc252632a3a"
 files:
-  - {path: sparkforge/facts/streaming_slo.py, action: modify, reason: "aceitar num_output_rows e ligar sink ao batch temporal"}
-  - {path: sparkforge/facts/streaming_ops.py, action: modify, reason: "preservar sink_name declarado no contrato SLO"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "documentar source streaming_sink e sink_name na superfície MCP existente"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "explicar source streaming_sink no modo SLO existente"}
+  - {path: sparkforge_aws/facts/streaming_slo.py, action: modify, reason: "aceitar num_output_rows e ligar sink ao batch temporal"}
+  - {path: sparkforge_aws/facts/streaming_ops.py, action: modify, reason: "preservar sink_name declarado no contrato SLO"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "documentar source streaming_sink e sink_name na superfície MCP existente"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "explicar source streaming_sink no modo SLO existente"}
   - {path: tests/test_facts_streaming_slo.py, action: modify, reason: "cobrir sink observado, vínculo temporal e recusas"}
   - {path: tests/test_analyze_streaming_composition.py, action: modify, reason: "paridade CLI/MCP do SLO de sink"}
   - {path: tests/test_fixtures_golden_streaming_composition.py, action: modify, reason: "registrar goldens de sink"}

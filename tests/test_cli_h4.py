@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from sparkforge.adapters.cli import main
+from sparkforge_aws.adapters.cli import main
 
 JOB = "import com.amazonaws.services.s3.AmazonS3\n"
 REQS = "pyarrow==8.0.0\npandas==1.5.3\n"

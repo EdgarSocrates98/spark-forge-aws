@@ -6,7 +6,7 @@ e conta byte.
 
 from __future__ import annotations
 
-from sparkforge.observability.surface import measure_surface
+from sparkforge_aws.observability.surface import measure_surface
 
 
 class TestAMedidaEstatica:
@@ -40,7 +40,7 @@ class TestAMedidaEstatica:
     def test_nothing_is_executed(self):
         """A medida le disco. Se ela chamasse uma tool, um `path` inexistente
         derrubaria a medicao -- e o teste abaixo prova que ela nao chama."""
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         chamadas = []
         original = tools.call_tool
@@ -55,7 +55,7 @@ class TestAMedidaEstatica:
 
 class TestRecusa:
     def test_an_unreadable_document_is_named_not_skipped(self, tmp_path):
-        from sparkforge.observability.surface import measure_directory
+        from sparkforge_aws.observability.surface import measure_directory
 
         (tmp_path / "bom.md").write_text("conteudo", encoding="utf-8")
         (tmp_path / "ruim.md").write_bytes(b"\xff\xfe invalido \x00")
@@ -69,7 +69,7 @@ class TestRecusa:
         """`runtime-matrix.md` existe em emr/, emr-serverless/ e glue/ dentro de
         `knowledge/` -- indexar por nome de arquivo faria um pisar no outro e a
         medida ficar menor do que a superficie real."""
-        from sparkforge.observability.surface import measure_directory
+        from sparkforge_aws.observability.surface import measure_directory
 
         (tmp_path / "a").mkdir()
         (tmp_path / "b").mkdir()

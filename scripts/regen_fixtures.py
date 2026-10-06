@@ -20,69 +20,69 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from sparkforge.errors.matcher import build_signature_matches  # noqa: E402
-from sparkforge.facts.airflow_dag import (  # noqa: E402
+from sparkforge_aws.errors.matcher import build_signature_matches  # noqa: E402
+from sparkforge_aws.facts.airflow_dag import (  # noqa: E402
     build_af_glue_link,
     extract_airflow_dag_tree,
 )
-from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
-from sparkforge.facts.benchmark import build_benchmark  # noqa: E402
-from sparkforge.facts.call_graph import build_call_graph  # noqa: E402
-from sparkforge.facts.catalog_schema import (  # noqa: E402
+from sparkforge_aws.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
+from sparkforge_aws.facts.benchmark import build_benchmark  # noqa: E402
+from sparkforge_aws.facts.call_graph import build_call_graph  # noqa: E402
+from sparkforge_aws.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
-from sparkforge.facts.cloudwatch_logs import (  # noqa: E402
+from sparkforge_aws.facts.cloudwatch_logs import (  # noqa: E402
     extract_cloudwatch_logs_tree,
 )
-from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
-from sparkforge.facts.controlm_jobs import extract_controlm_jobs_tree  # noqa: E402
-from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
-from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
-from sparkforge.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
-from sparkforge.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
-from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
-from sparkforge.facts.exception import build_exceptions  # noqa: E402
-from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
-from sparkforge.facts.fusion import fuse  # noqa: E402
-from sparkforge.facts.glue_resource_link import (  # noqa: E402
+from sparkforge_aws.facts.consumers import extract_consumers_path  # noqa: E402
+from sparkforge_aws.facts.controlm_jobs import extract_controlm_jobs_tree  # noqa: E402
+from sparkforge_aws.facts.data_quality import extract_data_quality_tree  # noqa: E402
+from sparkforge_aws.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
+from sparkforge_aws.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
+from sparkforge_aws.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
+from sparkforge_aws.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge_aws.facts.exception import build_exceptions  # noqa: E402
+from sparkforge_aws.facts.funcval import build_comparison, build_plan  # noqa: E402
+from sparkforge_aws.facts.fusion import fuse  # noqa: E402
+from sparkforge_aws.facts.glue_resource_link import (  # noqa: E402
     extract_glue_resource_link_tree,
 )
-from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
-from sparkforge.facts.iam_access import extract_iam_access_tree  # noqa: E402
-from sparkforge.facts.iceberg_metadata import (  # noqa: E402
+from sparkforge_aws.facts.graph import extract_graph_tree  # noqa: E402
+from sparkforge_aws.facts.iam_access import extract_iam_access_tree  # noqa: E402
+from sparkforge_aws.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
-from sparkforge.facts.lakeformation import build_lakeformation  # noqa: E402
-from sparkforge.facts.lakeformation_grants import (  # noqa: E402
+from sparkforge_aws.facts.lakeformation import build_lakeformation  # noqa: E402
+from sparkforge_aws.facts.lakeformation_grants import (  # noqa: E402
     extract_lakeformation_tree,
 )
-from sparkforge.facts.lakeformation_missing_grant import build_missing_grant  # noqa: E402
-from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
-from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
-from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
-from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
-from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
-from sparkforge.facts.sfn_history import (  # noqa: E402
+from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant  # noqa: E402
+from sparkforge_aws.facts.migration import extract_migration_tree  # noqa: E402
+from sparkforge_aws.facts.parquet_footer import extract_parquet_footer  # noqa: E402
+from sparkforge_aws.facts.pyspark_ast import extract_tree  # noqa: E402
+from sparkforge_aws.facts.runtime_detect import detect_runtime  # noqa: E402
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path  # noqa: E402
+from sparkforge_aws.facts.sfn_history import (  # noqa: E402
     build_sfn_retry_observado,
     extract_sfn_history_tree,
 )
-from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
-from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
-from sparkforge.facts.stepfunctions import (  # noqa: E402
+from sparkforge_aws.facts.spark_plan import extract_plan_path  # noqa: E402
+from sparkforge_aws.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge_aws.facts.stepfunctions import (  # noqa: E402
     build_sfn_glue_link,
     extract_stepfunctions_tree,
 )
-from sparkforge.facts.terraform import (  # noqa: E402
+from sparkforge_aws.facts.terraform import (  # noqa: E402
     extract_terraform_diff,
     extract_terraform_tree,
 )
-from sparkforge.findings.models import sort_facts  # noqa: E402
-from sparkforge.migration.assessment import assess  # noqa: E402
-from sparkforge.migration.collect import collect as collect_migration  # noqa: E402
-from sparkforge.rules.engine import judge  # noqa: E402
-from sparkforge.rules.loader import load_catalog  # noqa: E402
+from sparkforge_aws.findings.models import sort_facts  # noqa: E402
+from sparkforge_aws.migration.assessment import assess  # noqa: E402
+from sparkforge_aws.migration.collect import collect as collect_migration  # noqa: E402
+from sparkforge_aws.rules.engine import judge  # noqa: E402
+from sparkforge_aws.rules.loader import load_catalog  # noqa: E402
 
 FIXTURES = ROOT / "fixtures" / "pyspark"
 FIXTURES_EVENTLOG = ROOT / "fixtures" / "eventlog"
@@ -741,7 +741,7 @@ def regen_scenario(directory: Path) -> None:
     `meta.yaml`; `assess()` o deriva da matriz para o ALVO de cada degrau, entao
     um cenario nao pode mentir sobre o runtime que julgou.
 
-    A extracao e `sparkforge.migration.collect.collect()`, a MESMA funcao que a
+    A extracao e `sparkforge_aws.migration.collect.collect()`, a MESMA funcao que a
     CLI e a tool MCP chamam -- codigo, `.tf` quando existe e o inventario de
     consumidores na convencao. Reimplementar a composicao aqui faria o golden
     descrever uma uniao que nenhuma superficie do produto emite, que e o defeito
@@ -941,17 +941,17 @@ def regen_host_transcript(directory: Path) -> None:
       * `transcript` -- UM `input/<qid>.jsonl`. Golden: `facts.json` do extrator
         e `grade.json`, o veredito daquela pergunta contra `_suite/suite.yaml`.
       * `run` -- varios `input/*.jsonl`, uma execucao inteira. Golden:
-        `scorecard.json`, pelo mesmo caminho da CLI (`sparkforge.evals.cli.eval_grade`).
+        `scorecard.json`, pelo mesmo caminho da CLI (`sparkforge_aws.evals.cli.eval_grade`).
       * `compare` -- `input/baseline/*.json` e `input/candidate/*.json`, que sao
         scorecards. Golden: `compare.json`.
 
     O `run.id` do scorecard e o nome do diretorio de transcripts, e aqui ele e
     sempre `input` -- nunca o caminho da maquina.
     """
-    from sparkforge.evals.cli import eval_compare, eval_grade
-    from sparkforge.evals.grade import grade_question
-    from sparkforge.evals.suite import load_suite
-    from sparkforge.facts.host_transcript import extract_host_transcript_path
+    from sparkforge_aws.evals.cli import eval_compare, eval_grade
+    from sparkforge_aws.evals.grade import grade_question
+    from sparkforge_aws.evals.suite import load_suite
+    from sparkforge_aws.facts.host_transcript import extract_host_transcript_path
 
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     out = directory / "expected"
@@ -985,7 +985,7 @@ def saidas_sarif(directory: Path) -> dict[str, str]:
     Passa pelo mesmo `_core.report_github` e pelo mesmo `report_github_textos`
     que a CLI usa, com a versao do pacote fixada em `SARIF_GOLDEN_VERSION`.
     """
-    from sparkforge.adapters import _core
+    from sparkforge_aws.adapters import _core
 
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     real = _core._versao_sparkforge
@@ -1020,7 +1020,7 @@ def saidas_sarif(directory: Path) -> dict[str, str]:
         "exit_code": 1 if payload["gate"]["tripped"] else 0,
     }
     return {
-        "sparkforge.sarif": textos["sparkforge.sarif"],
+        "sparkforge-aws.sarif": textos["sparkforge-aws.sarif"],
         "summary.md": textos["summary.md"],
         "annotations.txt": "".join(linha + "\n" for linha in payload["annotations"]),
         "result.json": json.dumps(resultado, indent=2, ensure_ascii=False) + "\n",
@@ -1043,7 +1043,7 @@ def saidas_otel(directory: Path) -> dict[str, str]:
     `telemetry_export_textos` da CLI, com a versao fixada em
     `SARIF_GOLDEN_VERSION` para um release nao reescrever os goldens.
     """
-    from sparkforge.adapters import _core
+    from sparkforge_aws.adapters import _core
 
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     spans = json.loads((directory / "input" / "spans.json").read_text(encoding="utf-8"))

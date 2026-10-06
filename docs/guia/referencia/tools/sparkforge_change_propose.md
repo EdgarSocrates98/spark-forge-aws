@@ -20,7 +20,7 @@ Autonomia L3 (§15, propose change): monta o pacote de um PR em `.sparkforge/pro
 
 ## Na CLI
 
-[`sparkforge change plan`](../cli/change.md), [`sparkforge change propose`](../cli/change.md), [`sparkforge change sandbox`](../cli/change.md)
+[`sparkforge-aws change plan`](../cli/change.md), [`sparkforge-aws change propose`](../cli/change.md), [`sparkforge-aws change sandbox`](../cli/change.md)
 
 ## Capacidade
 

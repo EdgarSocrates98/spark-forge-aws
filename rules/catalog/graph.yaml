@@ -1,6 +1,6 @@
 # Catálogo de regras — processamento de grafo com GraphFrames
 #
-# Consome os facts de `sparkforge/facts/graph.py` (Fase 6a, Task 2), que lê o
+# Consome os facts de `sparkforge_aws/facts/graph.py` (Fase 6a, Task 2), que lê o
 # `.py` pela terceira vez — depois de `pyspark_ast.py` e `data_quality.py` — e
 # emite seis kinds: `graph.import`, `graph.construction`, `graph.algorithm`,
 # `graph.checkpoint_dir`, `graph.unresolved` e a sentinela
@@ -29,7 +29,7 @@
 # SF-GRAPH-001, -003, -004 e -006 têm gatilho de ESTRUTURA de código — um
 # argumento de chamada, uma persistência ausente, um laço Python. Nenhum deles
 # muda com a versão do Spark, e um `runtime_scope` não-vazio ali apagaria a
-# regra inteira num `sparkforge judge` sobre um `.py` solto, porque
+# regra inteira num `sparkforge-aws judge` sobre um `.py` solto, porque
 # `RuntimeContext.spark` não vem de arquivo Python nenhum e `in_scope` falha
 # FECHADA. SF-GRAPH-005 chega ao mesmo escopo por outro caminho: o gatilho dela
 # é a ausência de entrega no IaC, e a ausência da biblioteca na PLATAFORMA foi
@@ -52,13 +52,13 @@
 # acusação a 3.4 e 3.5, onde ela é falsa. Uma lista de release envelheceria a
 # cada release nova da nuvem, que é o que `runtime_scope` por VERSÃO existe para
 # evitar. A capacidade de listar specs numa chave nasceu aqui, em
-# `sparkforge/rules/version_scope.py::_specs`, e a lista conjuga como as chaves
+# `sparkforge_aws/rules/version_scope.py::_specs`, e a lista conjuga como as chaves
 # entre si.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # POR QUE A DECISÃO DE CHECKPOINT VEM PRONTA DO EXTRATOR.
 #
-# Medido em `sparkforge/rules/engine.py` antes de escrever estas regras:
+# Medido em `sparkforge_aws/rules/engine.py` antes de escrever estas regras:
 # `_where_matches` (linhas 31-37) compara por IGUALDADE e reprova caminho
 # AUSENTE, e `_expr_matches` (40-45) engole o `ExprError` devolvendo `False`.
 # Logo `attrs.algorithm_arg != "graphx"` é FALSO quando a chave não existe — que
@@ -70,7 +70,7 @@
 # no MESMO fact. Não é juízo: é transcrição do modo de falha documentado
 # (`throw new IOException` na primeira iteração). Severidade, limiar e
 # recomendação continuam aqui. É o padrão que `SF-EMR-008` fixou e que
-# `sparkforge/facts/data_quality.py:6-12` declara.
+# `sparkforge_aws/facts/data_quality.py:6-12` declara.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # VETOS APURADOS NA PESQUISA DE FONTES (2026-08-05). Não reintroduzir.
@@ -709,7 +709,7 @@ rules:
     # Escopo vazio, e pela razao da secao ESCOPO do cabecalho: o gatilho e um
     # ARGUMENTO da chamada, lido do AST, e o limiar vem da biblioteca e nao do
     # Spark. Nenhuma versao de Spark move o `2`. Um escopo nao-vazio aqui
-    # apagaria a regra inteira num `sparkforge judge` sobre um `.py` solto,
+    # apagaria a regra inteira num `sparkforge-aws judge` sobre um `.py` solto,
     # porque `in_scope` falha FECHADA.
     runtime_scope: {}
     explanation: >

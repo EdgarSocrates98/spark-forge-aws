@@ -22,15 +22,15 @@ pip install -e ".[aws]"            # a partir do código-fonte
 export AWS_PROFILE=leitura
 
 # 3. Colete (exemplo: permissões do Lake Formation de uma tabela)
-sparkforge collect lakeformation --repo . --database curated --table fato_venda \
+sparkforge-aws collect lakeformation --repo . --database curated --table fato_venda \
   --catalog-id 222222222222 --resource-arn arn:aws:s3:::meu-bucket/curated/fato_venda \
   --now 2026-09-13T12:00:00Z
 
 # 4. Confira que o que está no disco bate com o manifesto
-sparkforge collect verify --repo .
+sparkforge-aws collect verify --repo .
 
 # 5. Extraia os facts do artefato coletado
-sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ \
+sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ \
   --out .sparkforge/facts_lf.json
 ```
 
@@ -81,7 +81,7 @@ Não use:
 
 ## Os coletores
 
-Lista conferida em `sparkforge collect --help`. Todos exigem `--repo` e `--now`.
+Lista conferida em `sparkforge-aws collect --help`. Todos exigem `--repo` e `--now`.
 
 | Verbo | O que lê na AWS (chamadas da API) | Onde grava | Próximo passo |
 |---|---|---|---|
@@ -104,7 +104,7 @@ Nos caminhos de `lakeformation` e `glue-resource-link`, `<conta>` é o
 `--catalog-id`; sem ele, o nome usa `local`.
 
 Os nomes da coluna do meio são as operações do boto3 que o código chama
-(`sparkforge/collect/`). A permissão IAM da credencial precisa cobrir cada uma.
+(`sparkforge_aws/collect/`). A permissão IAM da credencial precisa cobrir cada uma.
 O repositório **não publica uma policy pronta**; para montar a sua, use a skill
 [`aws-iam`](../referencia/skills/aws-iam.md). Três avisos que vêm do próprio
 código:
@@ -131,8 +131,8 @@ Sem o boto3, qualquer `collect` falha com código 2 e diz onde pôr o arquivo se
 você baixá-lo à mão. A mensagem começa assim:
 
 ```text
-boto3 nao disponivel. Instale com `pip install 'sparkforge-aws[aws]'` para usar coletores AWS, ou colete o artefato manualmente (AWS CLI ou console) e registre-o com `sparkforge.collect.register_artifact`.
-  Alternativa manual: baixe o artefato (AWS CLI ou console), salve em <repo>/.sparkforge/artifacts/..., e registre com `sparkforge.collect.register_artifact` (kind, sha256, source e o collect_command acima).
+boto3 nao disponivel. Instale com `pip install 'sparkforge-aws[aws]'` para usar coletores AWS, ou colete o artefato manualmente (AWS CLI ou console) e registre-o com `sparkforge_aws.collect.register_artifact`.
+  Alternativa manual: baixe o artefato (AWS CLI ou console), salve em <repo>/.sparkforge/artifacts/..., e registre com `sparkforge_aws.collect.register_artifact` (kind, sha256, source e o collect_command acima).
 ```
 
 ### 2. Coletar
@@ -142,25 +142,25 @@ flags reais:
 
 ```bash
 # Event log de um run (o coletor LISTA o prefixo e pega o que existe)
-sparkforge collect event-log --repo . --job-run jr_EXEMPLO \
+sparkforge-aws collect event-log --repo . --job-run jr_EXEMPLO \
   --bucket meu-bucket-de-logs --prefix sparkui/ --now 2026-09-13T12:00:00Z
 
 # Histórico de runs de um job
-sparkforge collect glue-job-runs --repo . --job-name meu-job --max-runs 20 \
+sparkforge-aws collect glue-job-runs --repo . --job-name meu-job --max-runs 20 \
   --now 2026-09-13T12:00:00Z
 
 # Log de erro de um run (o log group é obrigatório: cada um tem conteúdo diferente)
-sparkforge collect cloudwatch-logs --repo . --job-name meu-job --job-run jr_EXEMPLO \
+sparkforge-aws collect cloudwatch-logs --repo . --job-name meu-job --job-run jr_EXEMPLO \
   --log-group /aws-glue/jobs/error --start 2026-09-13T10:00:00Z --end 2026-09-13T11:00:00Z \
   --now 2026-09-13T12:00:00Z
 
 # Decisão do IAM para a escrita que falhou, contra o recurso real
-sparkforge collect iam-access --repo . --role-arn arn:aws:iam::111111111111:role/meu-runtime-role \
+sparkforge-aws collect iam-access --repo . --role-arn arn:aws:iam::111111111111:role/meu-runtime-role \
   --resource-arn arn:aws:s3:::meu-bucket/curated/* \
   --action s3:PutObject --action kms:GenerateDataKey --now 2026-09-13T12:00:00Z
 
 # Cluster EMR on EC2 (pelo id, nunca pelo nome)
-sparkforge collect emr-cluster --repo . --cluster-id j-XXXXXXXXXXXXX --now 2026-09-13T12:00:00Z
+sparkforge-aws collect emr-cluster --repo . --cluster-id j-XXXXXXXXXXXXX --now 2026-09-13T12:00:00Z
 ```
 
 `--now` é o horário da coleta, em ISO 8601. O SparkForge nunca lê o relógio
@@ -190,7 +190,7 @@ Duas exceções que o código documenta:
 `collect verify` só lê o disco. Numa pasta sem manifesto, a saída real é:
 
 ```bash
-sparkforge collect verify --repo /tmp/pasta_vazia
+sparkforge-aws collect verify --repo /tmp/pasta_vazia
 ```
 
 ```json
@@ -218,7 +218,7 @@ montado numa pasta temporária a partir de uma fixture:
       "path": ".sparkforge/artifacts/lakeformation/222222222222_curated_fato_venda.json",
       "present": true,
       "hash_matches": true,
-      "collect_command": "sparkforge collect lakeformation --repo . --database curated --table fato_venda --catalog-id 222222222222 --now 2026-09-13T12:00:00Z",
+      "collect_command": "sparkforge-aws collect lakeformation --repo . --database curated --table fato_venda --catalog-id 222222222222 --now 2026-09-13T12:00:00Z",
       "source": "lakeformation:ListPermissions"
     },
     {
@@ -226,7 +226,7 @@ montado numa pasta temporária a partir de uma fixture:
       "path": ".sparkforge/artifacts/iam_access/111111111111_glue-curated.json",
       "present": false,
       "hash_matches": false,
-      "collect_command": "sparkforge collect iam-access --repo . --role-arn arn:aws:iam::111111111111:role/glue-curated --now 2026-09-13T12:00:00Z",
+      "collect_command": "sparkforge-aws collect iam-access --repo . --role-arn arn:aws:iam::111111111111:role/glue-curated --now 2026-09-13T12:00:00Z",
       "source": "iam:SimulatePrincipalPolicy"
     }
   ]

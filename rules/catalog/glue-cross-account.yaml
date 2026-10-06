@@ -5,7 +5,7 @@
 # OUTRA conta declara isso numa propriedade Spark:
 # `spark.hadoop.hive.metastore.glue.catalogid`. O extrator já desmonta cada
 # `--conf` do `default_arguments` em `tf.spark_conf`, um fact por propriedade
-# (ver `sparkforge/facts/terraform.py`), então a observação não custa extrator
+# (ver `sparkforge_aws/facts/terraform.py`), então a observação não custa extrator
 # novo. O resto da cadeia -- concessão do Lake Formation, aceitação do convite
 # do AWS RAM, resource link na conta consumidora -- vive em recursos e em
 # estado de outra conta, e nada disso é alcançável a partir do `.tf` do job.

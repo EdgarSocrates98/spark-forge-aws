@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from sparkforge.evals.token_benchmark import load_benchmark_suite, run_benchmark_matrix
+from sparkforge_aws.evals.token_benchmark import load_benchmark_suite, run_benchmark_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE = ROOT / "evals" / "token_efficient"

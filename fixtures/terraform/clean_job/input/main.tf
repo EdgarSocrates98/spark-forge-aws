@@ -9,16 +9,16 @@ resource "aws_glue_job" "etl_clean" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl_clean.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl_clean.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"                  = "true"
-    "--spark-event-logs-path"            = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"            = "s3://sparkforge-aws-demo/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
     "--job-bookmark-option"              = "job-bookmark-disable"
-    "--TempDir"                          = "s3://sparkforge-demo/temp/"
+    "--TempDir"                          = "s3://sparkforge-aws-demo/temp/"
   }
 
   execution_property {

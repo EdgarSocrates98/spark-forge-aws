@@ -15,23 +15,23 @@
 
 ## Initial Idea
 
-**Raw Input:** §22 de `prompt_new_evo.md`, "UX: existe um produto escondido dentro da CLI". O que resta dele depois do `report github` (PR #50): `sparkforge doctor` ("valida instalacao, MCP, runtimes, packs, credenciais, ferramentas e capacidades"), `sparkforge scan .` ("o Forge decide automaticamente quais coletores executar"), `--format sarif`, GitHub Check com totais, bot de review de PR e TUI.
+**Raw Input:** §22 de `prompt_new_evo.md`, "UX: existe um produto escondido dentro da CLI". O que resta dele depois do `report github` (PR #50): `sparkforge-aws doctor` ("valida instalacao, MCP, runtimes, packs, credenciais, ferramentas e capacidades"), `sparkforge-aws scan .` ("o Forge decide automaticamente quais coletores executar"), `--format sarif`, GitHub Check com totais, bot de review de PR e TUI.
 
 **Context Gathered:**
-- `sparkforge/cli/forge.py` ja tem um `doctor`, mas sem console script (so `sparkforge` e `sparkforge-tools` no pyproject). Ele confere registry, agentes, skills e assinaturas de erro; nao confere MCP, runtimes, packs nem credenciais. `code doctor` existe na CLI principal, so para o indice de codigo.
+- `sparkforge_aws/cli/forge.py` ja tem um `doctor`, mas sem console script (so `sparkforge-aws` e `sparkforge-aws-tools` no pyproject). Ele confere registry, agentes, skills e assinaturas de erro; nao confere MCP, runtimes, packs nem credenciais. `code doctor` existe na CLI principal, so para o indice de codigo.
 - Nao existe `scan` nem classificador de artefato. Os analyzes aceitam arquivo ou diretorio.
 - Todo `collect_*` grava em `.sparkforge/artifacts/<tipo>/` e registra em `.sparkforge/artifacts/manifest.json` uma entrada com `kind`, `path`, `sha256`, `source` e `collect_command`; `collect verify` confere. Os `kind` casam um a um com um analyze (`event_log`, `terraform`, `glue_job_run`, `cloudwatch`, `iceberg_metadata`, `athena_workgroup`, `emr_cluster`, `emr_serverless`, `emr_eks`, `cloudwatch_logs`, `parquet_footer`, `iam_access`, `lakeformation`, `glue_resource_link`).
 - O `source` do `glue_job_run` e `glue:get_job_runs:{job_name}/{run_id}`: o `--job-name` sai do manifesto sem adivinhar.
 - `facts/scan.py::varrer_source_files` varre e devolve os `pulos` com nome.
 - `report github` ja grava SARIF e resumo de PR; a Checks API chamada pelo pacote foi recusada naquela frente (rede e token).
-- `sparkforge/workflows/dag.py` so e usado pelo proprio teste.
+- `sparkforge_aws/workflows/dag.py` so e usado pelo proprio teste.
 - `tests/test_capability_parity.py` cobra tool MCP para todo verbo de CLI, ou razao em `ALLOWED_CLI_ONLY`.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/scan/` (novo), `sparkforge/doctor.py` (novo), `adapters/{_core,cli,tools}.py`, `fixtures/scan/` | Ao lado das portas que ja existem |
+| Likely Location | `sparkforge_aws/scan/` (novo), `sparkforge_aws/doctor.py` (novo), `adapters/{_core,cli,tools}.py`, `fixtures/scan/` | Ao lado das portas que ja existem |
 | Relevant KB Domains | Nenhum dominio do KB do agentspec cobre descoberta de artefato de Glue; a fonte e o repositorio | Padroes: `collect/base.py` (manifesto), `facts/scan.py` (varredura), `report_github` (SARIF) |
 | IaC Patterns | `.tf` do repositorio vai para `analyze terraform` | Nada de infraestrutura nova |
 
@@ -70,7 +70,7 @@
 
 ### Approach A: Pacote plan/run ⭐ Recommended
 
-**Description:** `sparkforge/scan/` com `plan(raiz)` puro (manifesto com sha256, varredura por `varrer_source_files`, recusas nomeadas) e `run(plano)` (extratores do `_core`, uniao, `judge`, `summary.json` em `.sparkforge/scan/`, SARIF pelo caminho do `report github`). `sparkforge/doctor.py` com checagens nomeadas `{id, status, detail, unlock}` e exit code.
+**Description:** `sparkforge_aws/scan/` com `plan(raiz)` puro (manifesto com sha256, varredura por `varrer_source_files`, recusas nomeadas) e `run(plano)` (extratores do `_core`, uniao, `judge`, `summary.json` em `.sparkforge/scan/`, SARIF pelo caminho do `report github`). `sparkforge_aws/doctor.py` com checagens nomeadas `{id, status, detail, unlock}` e exit code.
 
 **Pros:**
 - `--dry-run` mostra o plano sem executar; o plano e testavel isolado.

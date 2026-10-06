@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sparkforge.decision import (  # noqa: E402
+from sparkforge_aws.decision import (  # noqa: E402
     BoundedDecisionKernel,
     ContractLoader,
     DecisionCache,

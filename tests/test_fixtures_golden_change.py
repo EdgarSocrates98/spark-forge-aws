@@ -18,8 +18,8 @@ from typing import Any
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.change import apply_patches, parse_unified_diff
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.change import apply_patches, parse_unified_diff
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "change"
@@ -134,7 +134,7 @@ def test_ida_e_volta_devolve_os_bytes(caso, tmp_path):
 
 
 def test_toda_recusa_do_plano_tem_golden():
-    from sparkforge.change.refusals import (
+    from sparkforge_aws.change.refusals import (
         LINHA_NAO_CONFERE,
         PROCEDENCIA_AMBIGUA,
         SEM_PROCEDENCIA,

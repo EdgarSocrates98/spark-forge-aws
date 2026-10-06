@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge tune`
+# `sparkforge-aws tune`
 
 Configuracao Spark derivada da medida, com a procedencia de cada propriedade. Nunca aplica a mudanca.
 
 ```bash
-sparkforge tune --help
+sparkforge-aws tune --help
 ```
 
 ## Opções

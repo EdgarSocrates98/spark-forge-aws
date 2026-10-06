@@ -6,7 +6,7 @@ O assistente é o **cliente**. O SparkForge é o **servidor**: ele publica uma
 lista de **tools** (funções com nome, entrada e saída descritas) e responde
 quando o assistente chama uma delas.
 
-Cada tool do servidor faz o mesmo que um comando da CLI `sparkforge`. O MCP só
+Cada tool do servidor faz o mesmo que um comando da CLI `sparkforge-aws`. O MCP só
 muda **quem** chama: em vez de você digitar o comando, o assistente chama a tool.
 
 Termos novos estão no [glossário](01-conceitos.md).
@@ -22,15 +22,15 @@ Rode na raiz do repositório clonado:
 
 ```bash
 pip install -e ".[mcp]"
-python -m sparkforge.adapters.mcp --help
-claude mcp add -s local sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+python -m sparkforge_aws.adapters.mcp --help
+claude mcp add -s local sparkforge-aws -- python -m sparkforge_aws.adapters.mcp --transport stdio
 claude mcp list
 ```
 
 Depois, dentro de uma sessão do Claude Code, peça:
 
 ```text
-Liste as tools MCP do sparkforge e chame sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e chame sparkforge_runtime_detect.
 ```
 
 O que cada passo faz:
@@ -38,7 +38,7 @@ O que cada passo faz:
 1. `pip install -e ".[mcp]"` instala o pacote com o extra `mcp`. O extra traz o
    SDK do MCP (`mcp>=2,<3`), que não vem na instalação básica.
 2. `--help` confirma que o módulo do servidor carrega. A saída real começa com
-   `usage: sparkforge-mcp [-h] [--transport {stdio,http}] [--host HOST] [--port PORT]`.
+   `usage: sparkforge-aws-mcp [-h] [--transport {stdio,http}] [--host HOST] [--port PORT]`.
 3. `claude mcp add` cadastra o servidor. `-s local` grava a configuração só na
    sua máquina, fora do git.
 4. `claude mcp list` mostra os servidores cadastrados e confere se cada um
@@ -66,7 +66,7 @@ Não precisa de MCP quando:
 ## Os dois transportes
 
 **Transporte** é o canal por onde cliente e servidor conversam. O servidor tem
-dois (`sparkforge/adapters/mcp.py`):
+dois (`sparkforge_aws/adapters/mcp.py`):
 
 | Transporte | Como funciona | Quem usa |
 |---|---|---|
@@ -92,9 +92,9 @@ Há dois caminhos.
   ```json
   {
     "mcpServers": {
-      "sparkforge": {
+      "sparkforge-aws": {
         "command": "python",
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
         "env": {
           "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}",
           "SPARKFORGE_CATALOG": "${CLAUDE_PLUGIN_ROOT}/rules/catalog"
@@ -116,9 +116,9 @@ O repositório já traz `.devin/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "sparkforge": {
+    "sparkforge-aws": {
       "command": "python",
-      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+      "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"]
     }
   }
 }
@@ -127,7 +127,7 @@ O repositório já traz `.devin/mcp_config.json`:
 Ou cadastre pela própria CLI do Devin:
 
 ```bash
-devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+devin mcp add -s project sparkforge-aws -- python -m sparkforge_aws.adapters.mcp --transport stdio
 devin mcp list
 ```
 
@@ -140,7 +140,7 @@ devin mcp list
 Suba o servidor e deixe o terminal aberto enquanto usar:
 
 ```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 ```
 
 No Desktop, em **Devin Settings > MCP**, cadastre a URL
@@ -159,7 +159,7 @@ cliente, então confira na documentação dele.
 Qualquer cliente que aceite servidor `stdio` precisa de duas informações:
 
 - comando: `python`
-- argumentos: `-m sparkforge.adapters.mcp --transport stdio`
+- argumentos: `-m sparkforge_aws.adapters.mcp --transport stdio`
 
 Variáveis de ambiente opcionais:
 
@@ -265,7 +265,7 @@ Flink/AWS e não prova exactly-once, throughput ou saúde. Use
 **Sem cliente nenhum.** Monte o servidor em Python:
 
 ```bash
-python -c "from sparkforge.adapters.mcp import build_server; print(type(build_server()).__name__)"
+python -c "from sparkforge_aws.adapters.mcp import build_server; print(type(build_server()).__name__)"
 ```
 
 Saída real: `Server`. Se o SDK faltar, a saída é a mensagem
@@ -283,20 +283,20 @@ obtido com o servidor rodando em 127.0.0.1:
 Qualquer código HTTP prova que o servidor está no ar. `connection refused` quer
 dizer que ele não subiu ou que a porta está errada.
 
-**Dentro do assistente.** Peça para listar as tools do `sparkforge` e chamar
+**Dentro do assistente.** Peça para listar as tools do `sparkforge-aws` e chamar
 `sparkforge_runtime_detect`.
 
 ## Tool e comando da CLI são o mesmo código
 
-As regras de negócio moram em `sparkforge/adapters/_core.py`. A CLI
+As regras de negócio moram em `sparkforge_aws/adapters/_core.py`. A CLI
 (`cli.py`) e as tools (`tools.py`) são cascas finas em volta dele.
 
-O nome segue um padrão: `sparkforge code search` vira `sparkforge_code_search`.
+O nome segue um padrão: `sparkforge-aws code search` vira `sparkforge_code_search`.
 Os **nomes dos argumentos** podem mudar. Exemplo real:
 
 | CLI | Tool |
 |---|---|
-| `sparkforge code search capacity --root capacity` | `{"repo": "capacity", "query": "capacity"}` |
+| `sparkforge-aws code search capacity --root capacity` | `{"repo": "capacity", "query": "capacity"}` |
 
 Na dúvida, veja a página da tool em
 [`referencia/tools/`](referencia/tools/README.md), por exemplo
@@ -332,7 +332,7 @@ capability com `readOnlyHint: true`; `execute_mutation` só aceita capability co
 A validação de schema, policy e dispatcher full continua sendo a fonte única de execução.
 
 Integrações podem selecionar Compact por profile:
-`sparkforge integrate claude --scope user --profile economy` ou `--profile balanced`.
+`sparkforge-aws integrate claude --scope user --profile economy` ou `--profile balanced`.
 `deep` mantém full; sem profile, integração mantém compatibilidade full.
 
 Refs `ctx://v1` são content-addressed. `get` e `context_expand` recusam ref inválida,
@@ -395,9 +395,9 @@ Erro de uso nunca vira exceção crua. Ele volta como um objeto com `error`
 
 ```json
 {
-  "error": "indice inexistente: .../vazio/.sparkforge/local/codeintel/graph.sqlite3; construa com `sparkforge code sync`.",
+  "error": "indice inexistente: .../vazio/.sparkforge/local/codeintel/graph.sqlite3; construa com `sparkforge-aws code sync`.",
   "exit_code": 2,
-  "action": "sparkforge code sync",
+  "action": "sparkforge-aws code sync",
   "db": ".../vazio/.sparkforge/local/codeintel/graph.sqlite3",
   "error_code": "INDEX_MISSING"
 }
@@ -414,17 +414,17 @@ pode ver:
 
 ## Exemplo: chamar uma tool em Python, sem cliente MCP
 
-`call_tool` em `sparkforge/adapters/tools.py` é a mesma porta que o servidor usa.
+`call_tool` em `sparkforge_aws/adapters/tools.py` é a mesma porta que o servidor usa.
 Serve para testar sem assistente nenhum. Rode numa pasta de teste, porque cada
 chamada registra uma medição em `.sparkforge/traces.db` na pasta atual:
 
 ```bash
-mkdir -p /tmp/sf-guia && cp -r sparkforge/capacity /tmp/sf-guia/capacity
+mkdir -p /tmp/sf-guia && cp -r sparkforge_aws/capacity /tmp/sf-guia/capacity
 cd /tmp/sf-guia
-sparkforge code init --root capacity
+sparkforge-aws code init --root capacity
 python -c "
 import json
-from sparkforge.adapters.tools import call_tool
+from sparkforge_aws.adapters.tools import call_tool
 r = call_tool('sparkforge_code_search', {'repo': 'capacity', 'query': 'capacity'})
 print(json.dumps(r, indent=1))
 "
@@ -522,7 +522,7 @@ ou SLO automático.
 | O cliente não mostra as tools | Servidor não cadastrado no escopo certo, ou não aprovado | `claude mcp list` ou `devin mcp list`, e aprove o servidor se ele aparecer como pendente |
 | `sparkforge_code_read` não aparece | Você está no transporte `http` | Use `stdio` |
 | Devin Desktop não conecta | Servidor HTTP parado ou porta errada | Suba de novo com `--transport http` e confira a URL `/mcp` |
-| `devin mcp list` vazio ou sem `sparkforge` | O escopo do `mcp_config.json` pode ser global em vez de projeto | Confira `.devin/mcp_config.json` |
+| `devin mcp list` vazio ou sem `sparkforge-aws` | O escopo do `mcp_config.json` pode ser global em vez de projeto | Confira `.devin/mcp_config.json` |
 
 ## O SDK é o 2.x, e o que o adapter passou a garantir
 
@@ -530,7 +530,7 @@ O extra `mcp` fixa `mcp>=2,<3` desde 2026-09-11. A migração do 1.x trocou
 mais do que a API: o SDK 1.x validava os argumentos e o resultado de cada
 tool contra os schemas e montava o `structuredContent`, sem que o adapter
 escrevesse uma linha, e o 2.x não faz nada disso. As três garantias moram
-agora em `sparkforge/adapters/mcp_envelope.py`, testável sem o SDK.
+agora em `sparkforge_aws/adapters/mcp_envelope.py`, testável sem o SDK.
 `tests/test_fixtures_golden_mcp_parity.py` compara o que o cliente recebe contra o golden que
 o 1.29 gravou em `fixtures/mcp_parity/`: no handshake legado, a única
 diferença é `outputSchema.type = "object"`, que o spec `2025-06-18` exige e o

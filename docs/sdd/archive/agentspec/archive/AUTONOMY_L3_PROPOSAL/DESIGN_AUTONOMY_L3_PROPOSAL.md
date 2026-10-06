@@ -23,7 +23,7 @@
    └─ report.json
             │
             ▼
-sparkforge change propose --sandbox <id> [--benchmark f]... [--funcval f] [--now iso]
+sparkforge-aws change propose --sandbox <id> [--benchmark f]... [--funcval f] [--now iso]
             │
    change/proposal.py (puro, sem git, sem subprocess)
    ├─ 1. ler report.json ............ sandbox_inexistente / sandbox_nao_aplicado
@@ -46,10 +46,10 @@ host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/change/proposal.py` | Montagem pura do pacote a partir do sandbox | stdlib (`difflib`, `hashlib`, `json`) |
-| `sparkforge/change/refusals.py` | Quatro recusas novas com `unlock` | constantes existentes |
-| `sparkforge/adapters/_core.py::change_propose` | Resolve o repo, carrega anexos, chama receipt e report sign, grava | padrão dos verbos de topo |
-| `sparkforge change propose` / `sparkforge_change_propose` | CLI e tool (`_WRITE_IDEMPOTENT`) | argparse, `TOOLS` |
+| `sparkforge_aws/change/proposal.py` | Montagem pura do pacote a partir do sandbox | stdlib (`difflib`, `hashlib`, `json`) |
+| `sparkforge_aws/change/refusals.py` | Quatro recusas novas com `unlock` | constantes existentes |
+| `sparkforge_aws/adapters/_core.py::change_propose` | Resolve o repo, carrega anexos, chama receipt e report sign, grava | padrão dos verbos de topo |
+| `sparkforge-aws change propose` / `sparkforge_change_propose` | CLI e tool (`_WRITE_IDEMPOTENT`) | argparse, `TOOLS` |
 | `skills/propose-change-pr/SKILL.md` | Roteiro do host, com as paradas de confirmação | skill não despachável |
 | `.sparkforge/policy.yaml` + `.claude/settings.json` | `git push *` e `gh pr create *` em `ask` | `policy sync-settings` |
 
@@ -130,7 +130,7 @@ host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
 
 **Context:** Mesma classe e mesmo `now` do recibo; saída no molde do sandbox.
 
-**Choice:** `sparkforge_change_propose` (`_WRITE_IDEMPOTENT`, `required: [repo, sandbox_id, now]`, `benchmark_paths`, `funcval_path`), dono `sf-verifier` (checagem 11). Saída: `stage: propose_change`, `applied: false`, `git_run: false`, `main_tree_touched: false`, `refused`, `proposal` (caminho relativo), `id`, `files` (lista do pacote), `branch`, `blocking_findings`, `attention_findings`, `pending_measures`. CLI `sparkforge change propose --sandbox <id> [--repo .] [--benchmark f]... [--funcval f] [--now iso]`, com `now` default UTC. Recusa sai no payload e a CLI sai com código 1; erro de entrada é `AdapterError` exit 2 com o comando que resolve.
+**Choice:** `sparkforge_change_propose` (`_WRITE_IDEMPOTENT`, `required: [repo, sandbox_id, now]`, `benchmark_paths`, `funcval_path`), dono `sf-verifier` (checagem 11). Saída: `stage: propose_change`, `applied: false`, `git_run: false`, `main_tree_touched: false`, `refused`, `proposal` (caminho relativo), `id`, `files` (lista do pacote), `branch`, `blocking_findings`, `attention_findings`, `pending_measures`. CLI `sparkforge-aws change propose --sandbox <id> [--repo .] [--benchmark f]... [--funcval f] [--now iso]`, com `now` default UTC. Recusa sai no payload e a CLI sai com código 1; erro de entrada é `AdapterError` exit 2 com o comando que resolve.
 
 **Rationale:** Idempotência vem de `now` fixo; recusa não é erro.
 
@@ -167,10 +167,10 @@ host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/change/refusals.py` | Modify | 4 recusas | @python-developer | None |
-| 2 | `sparkforge/change/proposal.py` | Create | Montagem pura | @python-developer | 1 |
-| 3 | `sparkforge/change/__init__.py` | Modify | Exporta `montar` | @python-developer | 2 |
-| 4 | `sparkforge/adapters/{_core,cli,tools}.py` | Modify | Verbo, tool, schema | @python-developer | 2 |
+| 1 | `sparkforge_aws/change/refusals.py` | Modify | 4 recusas | @python-developer | None |
+| 2 | `sparkforge_aws/change/proposal.py` | Create | Montagem pura | @python-developer | 1 |
+| 3 | `sparkforge_aws/change/__init__.py` | Modify | Exporta `montar` | @python-developer | 2 |
+| 4 | `sparkforge_aws/adapters/{_core,cli,tools}.py` | Modify | Verbo, tool, schema | @python-developer | 2 |
 | 5 | `skills/propose-change-pr/SKILL.md` | Create | Roteiro do host | (general) | 4 |
 | 6 | `.sparkforge/policy.yaml`, `.claude/settings.json`, `.gitignore` | Modify | `ask` e pasta ignorada | (general) | None |
 | 7 | `fixtures/change/{proposta_completa,proposta_com_medida,proposta_desatualizada,proposta_bloqueada}/` | Create | Goldens | @test-generator | 4 |

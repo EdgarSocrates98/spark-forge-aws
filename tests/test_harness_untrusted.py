@@ -27,10 +27,10 @@ import json
 import pkgutil
 from pathlib import Path
 
-import sparkforge.facts as facts_pkg
-from sparkforge.facts.pyspark_ast import extract_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+import sparkforge_aws.facts as facts_pkg
+from sparkforge_aws.facts.pyspark_ast import extract_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 # A marca curta e o que as assercoes procuram, e nao a frase inteira: um
 # extrator pode truncar o snippet (`facts/spark_plan.py` corta em 200 chars), e
@@ -84,8 +84,8 @@ def _derivados_de_facts(pool):
     medida pulava 5 dos 20 modulos em silencio -- `alvos` ficava vazio, `any([])`
     dava False, e o modulo entrava como "sem snippet" por nao ter rodado nada.
     """
-    from sparkforge.errors import matcher
-    from sparkforge.facts import (
+    from sparkforge_aws.errors import matcher
+    from sparkforge_aws.facts import (
         benchmark,
         bridge,
         call_graph,
@@ -159,7 +159,7 @@ def _derivados_de_facts(pool):
     # chamada que faz a medida perceber.
     #
     # ELE FALTAVA AQUI, e a guarda fail-closed derrubava o teste dizendo o nome
-    # do modulo: a entrega que criou `sparkforge/facts/lakeformation.py`
+    # do modulo: a entrega que criou `sparkforge_aws/facts/lakeformation.py`
     # registrou-o nas duas listas de cobertura de kind e nao nesta.
     yield "lakeformation", lakeformation.build_lakeformation(pool)
     # `lakeformation_missing_grant` deriva de `error.signature_match` mais grant,
@@ -173,7 +173,7 @@ def _derivados_de_facts(pool):
     # acima para com o nome do modulo, que foi o que aconteceu ao acrescenta-lo.
     yield "exception", exception.build_exceptions(pool)
     # `matcher` deriva de `spark.exception`, e nao de caminho -- e ele mora em
-    # `sparkforge/errors/`, fora do `iter_modules(facts_pkg)` que monta `todos`
+    # `sparkforge_aws/errors/`, fora do `iter_modules(facts_pkg)` que monta `todos`
     # acima. A guarda fail-closed portanto NAO o cobraria: ele esta aqui porque
     # a medida de snippet precisa ve-lo, nao porque algo o obrigaria. A entrada
     # e encadeada de proposito: se um dia `spark.exception` propagar snippet, e
@@ -229,7 +229,7 @@ def extratores_com_snippet() -> set[str]:
     pool: list = []
 
     for info in sorted(pkgutil.iter_modules(facts_pkg.__path__), key=lambda m: m.name):
-        modulo = importlib.import_module("sparkforge.facts." + info.name)
+        modulo = importlib.import_module("sparkforge_aws.facts." + info.name)
         # `EMITTED_KINDS` e o que distingue extrator de modulo auxiliar --
         # mesmo criterio de VNX-207/208 em `docs/harness/BASELINE.md`.
         if not hasattr(modulo, "EMITTED_KINDS"):

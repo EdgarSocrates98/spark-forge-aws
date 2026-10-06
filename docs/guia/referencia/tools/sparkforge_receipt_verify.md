@@ -18,7 +18,7 @@ Confere um recibo de execucao e diz QUAL parte divergiu -- `version`, `integrity
 
 ## Na CLI
 
-[`sparkforge receipt emit`](../cli/receipt.md), [`sparkforge receipt verify`](../cli/receipt.md)
+[`sparkforge-aws receipt emit`](../cli/receipt.md), [`sparkforge-aws receipt verify`](../cli/receipt.md)
 
 ## Capacidade
 

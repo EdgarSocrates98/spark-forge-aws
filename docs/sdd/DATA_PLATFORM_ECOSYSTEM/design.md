@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/DATA_PLATFORM_ECOSYSTEM/define.md
   sha256: "331bed683bccce99cbb80f4db3af45f0c9a55421e78a2a5215d02ff7ba29479f"
 files:
-  - {path: sparkforge/platform/ecosystem.py, action: create, reason: "Contrato de serving/ingestion/AI/radar e reliability."}
-  - {path: sparkforge/platform/__init__.py, action: modify, reason: "Exporta o inventário transversal."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Analisador comum."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze platform-ecosystem."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
+  - {path: sparkforge_aws/platform/ecosystem.py, action: create, reason: "Contrato de serving/ingestion/AI/radar e reliability."}
+  - {path: sparkforge_aws/platform/__init__.py, action: modify, reason: "Exporta o inventário transversal."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Analisador comum."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo analyze platform-ecosystem."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
   - {path: parity.yaml, action: modify, reason: "Paridade do inventário."}
   - {path: docs/surface.lock.json, action: modify, reason: "Registro exigido por nova tool MCP."}
   - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice gerado da referência."}

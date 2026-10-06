@@ -7,7 +7,7 @@ do repositorio, com o custo de disco e o risco de vazamento que vem junto.
 
 import textwrap
 
-from sparkforge.codeintel.extract import extrair_nos, extrair_nos_ou_none
+from sparkforge_aws.codeintel.extract import extrair_nos, extrair_nos_ou_none
 
 
 def _nos(fonte: str, caminho: str = "jobs/etl.py"):

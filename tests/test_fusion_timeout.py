@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts import timeout_diagnosis
-from sparkforge.facts.fusion import fuse
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts import timeout_diagnosis
+from sparkforge_aws.facts.fusion import fuse
+from sparkforge_aws.findings.models import Fact
 
 ROOT = Path(__file__).resolve().parents[1]
 BROADCAST = ROOT / "fixtures" / "eventlog" / "broadcast_timeout_stage_failure" / "expected"

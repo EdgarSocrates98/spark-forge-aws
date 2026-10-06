@@ -55,7 +55,7 @@ python -m pytest tests/test_evals.py -q
 ```
 
 Um agente (humano ou modelo) roda as dez perguntas via as tools MCP ou a CLI
-`sparkforge` e compara a resposta literal com `evals/fase0.xml`.
+`sparkforge-aws` e compara a resposta literal com `evals/fase0.xml`.
 
 Até 2026-09-10 este parágrafo terminava em "não há harness automatizado de
 execução de agente neste repositório". Continua verdade que o **pacote** não
@@ -86,10 +86,10 @@ invalidaria os transcripts já gravados.
 #    scorecard.json) e o conjunto fase0-<data>/ com os N scorecards.
 python scripts/run_agentic_eval.py --repeat 3 --model haiku
 # 2. repontua uma execucao, se o gabarito mudou
-python -m sparkforge.evals grade --suite fase0 --run <run_id>
+python -m sparkforge_aws.evals grade --suite fase0 --run <run_id>
 # 3. compara dois conjuntos: cada nome e procurado em
 #    evals/agentic/fase0/baselines/ (commitado) e em ~/.sparkforge/agentic-evals/
-python -m sparkforge.evals compare --suite fase0 --baseline <nome> --candidate <nome>
+python -m sparkforge_aws.evals compare --suite fase0 --baseline <nome> --candidate <nome>
 ```
 
 **O que o scorecard mede, por pergunta e em colunas separadas:**
@@ -138,8 +138,8 @@ mudança fica no diff.
 fixas; `grade` grava o scorecard dentro da própria execução e `compare` só
 imprime. A versão que aceitava diretório arbitrário, mesmo confinado por
 `realpath`, foi recusada pelo scanner de segurança, e o operador escolheu os
-nomes sob bases fixas (2026-09-10). A CLI mora em `sparkforge/evals/`, fora da
-CLI `sparkforge`, porque o runtime não importa a avaliação
+nomes sob bases fixas (2026-09-10). A CLI mora em `sparkforge_aws/evals/`, fora da
+CLI `sparkforge-aws`, porque o runtime não importa a avaliação
 (`tests/test_harness_boundary.py`).
 
 **O agente responde numa cópia de prova, sem gabarito.** No primeiro baseline
@@ -158,7 +158,7 @@ pergunta 1 foi respondida `SF-PY-005, 2` contra `SF-PY-005:2`, e o protocolo da
 suíte passou a dizer o separador. A correção foi no protocolo, como manda a
 regra desta página, e não no grader.
 
-**Formato de transcript: só Claude Code.** O extrator (`sparkforge/facts/
+**Formato de transcript: só Claude Code.** O extrator (`sparkforge_aws/facts/
 host_transcript.py`) lê o JSONL de sessão do Claude Code e recusa por nome o
 resto. Transcript do Devin não é lido. Por isso a matriz de execução acima
 continua com "Devin não foi executado" até alguém escrever esse leitor.
@@ -363,7 +363,7 @@ agente.
 python scripts/run_debate.py --model haiku --max-budget-usd 0.3
 python scripts/run_debate.py --dry-run          # monta e mostra; nao gasta
 # repontua uma execucao em ~/.sparkforge/debate-evals/<run>/
-python -m sparkforge.evals debate --run <run>
+python -m sparkforge_aws.evals debate --run <run>
 ```
 
 Por caso, o placar sai em cinco desfechos: `correct_winner`, `wrong_winner`,

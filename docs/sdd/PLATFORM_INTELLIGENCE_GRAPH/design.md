@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/PLATFORM_INTELLIGENCE_GRAPH/define.md
   sha256: "e6511c626dcfe203680354e7c8ebf72f15fd2d3cf959f5b0a1ee6e07becabfe6"
 files:
-  - {path: sparkforge/platform/__init__.py, action: create, reason: "API pública do núcleo de inteligência da plataforma."}
-  - {path: sparkforge/platform/graph.py, action: create, reason: "Loader, validador, compositor, fingerprint e impacto determinísticos."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Ponto comum para CLI e MCP analisar o grafo de plataforma."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze platform-graph e paginação/saída estruturada."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Contrato MCP e handler parity com CLI."}
+  - {path: sparkforge_aws/platform/__init__.py, action: create, reason: "API pública do núcleo de inteligência da plataforma."}
+  - {path: sparkforge_aws/platform/graph.py, action: create, reason: "Loader, validador, compositor, fingerprint e impacto determinísticos."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Ponto comum para CLI e MCP analisar o grafo de plataforma."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo analyze platform-graph e paginação/saída estruturada."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Contrato MCP e handler parity com CLI."}
   - {path: parity.yaml, action: modify, reason: "Declara paridade CLI/MCP e integração nas plataformas suportadas."}
   - {path: contracts/platform-graph-v1.schema.json, action: create, reason: "Contrato publicável para manifests de Metadata Graph."}
   - {path: fixtures/platform/graph.yaml, action: create, reason: "Fixture sintético para smoke command e documentação."}
@@ -68,6 +68,6 @@ como estado declarado do produtor, mas nunca criado pelo analisador.
 ## Conhecimento consultado
 
 O contrato SDD e a implementação existente foram consultados por
-`sparkforge sdd check`, `sparkforge code search graph` e
-`sparkforge code symbol sparkforge/workspace/federated.py::compose_federated_graph`.
+`sparkforge-aws sdd check`, `sparkforge-aws code search graph` e
+`sparkforge-aws code symbol sparkforge_aws/workspace/federated.py::compose_federated_graph`.
 Não há afirmação de comportamento externo de Spark/Glue nesta fase.

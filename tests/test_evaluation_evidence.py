@@ -7,10 +7,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from sparkforge.evals.evidence import EvaluationEvidenceBundle, EvidenceBundleError
-from sparkforge.evals.evidence_adapters import BundleFileAdapter
-from sparkforge.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
-from sparkforge.evals.policy import EvaluationPolicyError, PolicyResolver
+from sparkforge_aws.evals.evidence import EvaluationEvidenceBundle, EvidenceBundleError
+from sparkforge_aws.evals.evidence_adapters import BundleFileAdapter
+from sparkforge_aws.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
+from sparkforge_aws.evals.policy import EvaluationPolicyError, PolicyResolver
 
 HASH = "0" * 64
 

@@ -11,7 +11,7 @@ proves: >
   A regra le UMA condicao so, e isso nao e simplificacao: o DSL nao tem grupo
   aninhado, entao "FGAC E (resolver OU chave de catalogo)" nao e escrevivel em
   `when`. Derivar o predicado foi o que tornou a regra de uma linha -- e o mesmo
-  motivo pelo qual `sparkforge/facts/lakeformation.py` existe.
+  motivo pelo qual `sparkforge_aws/facts/lakeformation.py` existe.
 
   O EMRFS esta restaurado na mesma linha de `--conf`, de proposito: sem ele
   `SF-LF-004` disparia junto, e a fixture provaria duas coisas ao mesmo tempo.

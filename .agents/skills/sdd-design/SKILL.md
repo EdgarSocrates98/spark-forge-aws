@@ -14,22 +14,22 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge sdd check
-  - sparkforge code search
-  - sparkforge code symbol
+  - sparkforge-aws sdd check
+  - sparkforge-aws code search
+  - sparkforge-aws code symbol
 ---
 
 # SDD Design
 
 Fase 2 do SDD próprio. Diz **quais arquivos** mudam, **por quê**, e **como
-desfazer**. O `sparkforge sdd check` confere que todo caminho alterado existe,
+desfazer**. O `sparkforge-aws sdd check` confere que todo caminho alterado existe,
 que toda decisão tem rollback e que todo critério do define tem uma parte que o
 cobre. Se o desenho é sensato continua sendo julgamento — do operador e da
 revisão.
 
 ## Antes de começar
 
-1. `sparkforge sdd check --repo . --feature <F>` com o define em `ready`. Design
+1. `sparkforge-aws sdd check --repo . --feature <F>` com o define em `ready`. Design
    sobre define em `draft` sai `phase_out_of_order`.
 2. Leia o define inteiro: hipótese, critérios, `out_of_scope`, `unknowns` e
    `change_kinds`. Lacuna com `blocks` sobre um critério é resolvida aqui ou vira
@@ -43,9 +43,9 @@ Cada item tem `path`, `action` (`create`, `modify`, `delete`) e `reason`.
 
 - **`create`** é caminho novo. O check não o procura.
 - **`modify` e `delete`** exigem o caminho existente hoje. Confira antes de
-  escrever: `sparkforge code search <nome>` para achar,
-  `sparkforge code symbol <node_id>` para ver quem chama e o que quebra,
-  `sparkforge code path <origem> <destino>` para saber como um chega no outro.
+  escrever: `sparkforge-aws code search <nome>` para achar,
+  `sparkforge-aws code symbol <node_id>` para ver quem chama e o que quebra,
+  `sparkforge-aws code path <origem> <destino>` para saber como um chega no outro.
   Caminho inventado sai `manifest_path_unknown`. Depois do build pronto, o
   `delete` de um arquivo que sumiu é o desenho cumprido e deixa de ser recusado.
 - **Os registros entram no manifesto agora.** Para cada chave de `change_kinds`,
@@ -68,7 +68,7 @@ Cada decisão tem `id` `D<n>`, `choice`, `rejected` e `rollback`.
   `rollback_missing`.
 - **Conhecimento citado, nunca lembrado**, com a versão alvo:
   `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
-- **Valor de configuração não é decisão de design.** Ele sai de `sparkforge tune`
+- **Valor de configuração não é decisão de design.** Ele sai de `sparkforge-aws tune`
   sobre a medida; o design decide *onde* o valor mora e *quem* o pede.
 
 ## A cobertura (`covers`)
@@ -82,8 +82,8 @@ entrega. Todo `AC` aparece em pelo menos um `covers`; o que faltar sai
 O de `docs/sdd/README.md#o-laço-de-cada-fase`, com a cascata. Aqui o desenho
 vai ao operador **por partes**, do tamanho da complexidade de cada uma, com a
 pergunta "está certo?" antes de seguir. Depois
-`sparkforge sdd stamp --repo . docs/sdd/<F>/design.md` e
-`sparkforge sdd check --repo . --feature <F>`. Próximo passo: `sdd-plan`.
+`sparkforge-aws sdd stamp --repo . docs/sdd/<F>/design.md` e
+`sparkforge-aws sdd check --repo . --feature <F>`. Próximo passo: `sdd-plan`.
 
 ## Perfil operator
 
@@ -99,20 +99,20 @@ pergunta "está certo?" antes de seguir. Depois
 - Define ainda em `draft`, ou critério sem `verified_by`: volte a `sdd-define`.
 - Para quebrar o trabalho em tarefas com teste e código: `sdd-plan`.
 - Para aplicar a mudança: `sdd-build`.
-- Para escolher o valor de configuração: `sparkforge tune`.
+- Para escolher o valor de configuração: `sparkforge-aws tune`.
 
 ## Referência rápida
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| achar o arquivo | `sparkforge code search <nome>` | `sparkforge_code_search` |
-| quem chama, o que quebra | `sparkforge code symbol <node_id>` | `sparkforge_code_symbol` |
-| como X chega em Y | `sparkforge code path <origem> <destino>` | `sparkforge_code_path` |
-| regra citada | `sparkforge rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
-| documento citado | `sparkforge knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| carimbar | `sparkforge sdd stamp --repo . docs/sdd/<F>/design.md` | `sparkforge_sdd_stamp` |
-| conferir | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| diff do job (operator) | `sparkforge change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
+| achar o arquivo | `sparkforge-aws code search <nome>` | `sparkforge_code_search` |
+| quem chama, o que quebra | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
+| como X chega em Y | `sparkforge-aws code path <origem> <destino>` | `sparkforge_code_path` |
+| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
+| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/design.md` | `sparkforge_sdd_stamp` |
+| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| diff do job (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
 
 Recusas desta fase: `phase_out_of_order`, `manifest_path_unknown`,
 `rollback_missing`, `acceptance_uncovered`, `upstream_stale`.
@@ -137,7 +137,7 @@ Esta skill trata **manifesto, decisões e rollback do design SDD**. Contrato com
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge sdd check`, `sparkforge code search`, `sparkforge code symbol`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws code search`, `sparkforge-aws code symbol`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

@@ -6,9 +6,9 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "Uma funcao so, a de sparkforge/agents/budget.py (teto de len/4, minimo 1, JSON ordenado para nao-string), e sparkforge/tools/cost.py, sparkforge/context/funnel.py e sparkforge/providers/mock.py passam a chama-la. O funnel e o mock mudam de comportamento (piso vira teto; o mock deixa de devolver 0), e o define mede e declara esse custo antes do build."
+    summary: "Uma funcao so, a de sparkforge_aws/agents/budget.py (teto de len/4, minimo 1, JSON ordenado para nao-string), e sparkforge_aws/tools/cost.py, sparkforge_aws/context/funnel.py e sparkforge_aws/providers/mock.py passam a chama-la. O funnel e o mock mudam de comportamento (piso vira teto; o mock deixa de devolver 0), e o define mede e declara esse custo antes do build."
     tradeoffs:
-      - "e a consolidacao que a propria base declara devida, na docstring de sparkforge/codeintel/budget.py"
+      - "e a consolidacao que a propria base declara devida, na docstring de sparkforge_aws/codeintel/budget.py"
       - "teto e o lado conservador: o funnel passa a encaixar no maximo os mesmos chunks, nunca mais"
       - "muda resultado: registros diferentes podem ser escolhidos com o mesmo orcamento; exige medida e aprovacao"
   - id: B
@@ -29,7 +29,7 @@ chosen: A
 
 A feature TOOLS_ORFAS foi abandonada antes do explore: medida de novo, a premissa ("cost
 sem leitor") era falsa — o `__init__.py` do pacote reexporta e o `pyproject.toml` publica o
-console script `sparkforge-tools`. A medida achou, no lugar, este defeito, já registrado em
+console script `sparkforge-aws-tools`. A medida achou, no lugar, este defeito, já registrado em
 `docs/claims.lock.json`: a mesma pergunta com quatro respostas. Pedido do operador em
 2026-09-21.
 
@@ -41,12 +41,12 @@ console script `sparkforge-tools`. A medida achou, no lugar, este defeito, já r
 
 | onde | fórmula | mínimo |
 |---|---|---|
-| `sparkforge/agents/budget.py::estimate_tokens` | teto de `len/4`; não-string vira JSON ordenado | 1 |
-| `sparkforge/tools/cost.py::estimate_tokens` | teto de `len(str(x))/4` | 1 |
-| `sparkforge/context/funnel.py` (em linha) | **piso** de `len/4` | 1 |
-| `sparkforge/providers/mock.py` (em linha) | **piso** de `len/4` | **0** |
+| `sparkforge_aws/agents/budget.py::estimate_tokens` | teto de `len/4`; não-string vira JSON ordenado | 1 |
+| `sparkforge_aws/tools/cost.py::estimate_tokens` | teto de `len(str(x))/4` | 1 |
+| `sparkforge_aws/context/funnel.py` (em linha) | **piso** de `len/4` | 1 |
+| `sparkforge_aws/providers/mock.py` (em linha) | **piso** de `len/4` | **0** |
 
-**Uma quinta fica fora, de propósito.** `sparkforge/codeintel/budget.py` mede
+**Uma quinta fica fora, de propósito.** `sparkforge_aws/codeintel/budget.py` mede
 `utf8_bytes / 3`, e a docstring dele explica: *"a unidade é outra e o papel é outro: lá a
 estimativa DECIDE o corte, aqui o byte decide e a estimativa acompanha"*. A mesma docstring
 declara a consolidação dos quatro **devida**, *"com esse custo medido e declarado"*.

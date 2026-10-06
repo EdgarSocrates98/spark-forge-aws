@@ -8,7 +8,7 @@ proves: >
   está. Com as labels ligadas e sem expressão de AM, o AM cai na partição
   DEFAULT — e o EMR não rotula nós de task, então a partição DEFAULT é
   exatamente onde o Spot deste cluster está.
-  Por isso `sparkforge/facts/emr_cluster.py::_am_node_label_facts` NÃO emite
+  Por isso `sparkforge_aws/facts/emr_cluster.py::_am_node_label_facts` NÃO emite
   `emr.yarn.am_node_label` aqui, e SF-EMR-008 dispara. Uma versão do extrator
   que emitisse o fact ao ver qualquer propriedade de node label transformaria
   esta fixture em silêncio, e o silêncio leria como "revisei e está protegido".

@@ -25,14 +25,14 @@ here, so **use the CLI** — every MCP tool has a CLI verb with the same contrac
 
 | Question | Command |
 |---|---|
-| where is X defined | `sparkforge code search <term>` |
-| who calls X, what breaks if I change it | `sparkforge code symbol <node_id>` |
-| **how** does X reach Y | `sparkforge code path <origin> <target>` |
-| how is this code organized | `sparkforge code shape` |
-| the context pack within a byte budget | `sparkforge code context "<task>"` |
-| source, labelled as untrusted content | `sparkforge code read <node_id>` |
-| is the index fresh | `sparkforge code status` / `code sync` |
-| judge artifacts against the rule catalog | `sparkforge analyze ...` then `sparkforge judge` |
+| where is X defined | `sparkforge-aws code search <term>` |
+| who calls X, what breaks if I change it | `sparkforge-aws code symbol <node_id>` |
+| **how** does X reach Y | `sparkforge-aws code path <origin> <target>` |
+| how is this code organized | `sparkforge-aws code shape` |
+| the context pack within a byte budget | `sparkforge-aws code context "<task>"` |
+| source, labelled as untrusted content | `sparkforge-aws code read <node_id>` |
+| is the index fresh | `sparkforge-aws code status` / `code sync` |
+| judge artifacts against the rule catalog | `sparkforge-aws analyze ...` then `sparkforge-aws judge` |
 
 ## Economy: measure before claiming a saving
 

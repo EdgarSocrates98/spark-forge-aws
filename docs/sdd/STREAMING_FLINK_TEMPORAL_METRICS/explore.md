@@ -33,9 +33,9 @@ saúde ou economia.
 
 ## Evidência consultada
 
-- `sparkforge sdd status --repo .`: Wave D tem Flink offline e Managed Flink
+- `sparkforge-aws sdd status --repo .`: Wave D tem Flink offline e Managed Flink
   temporal bounded entregue; upstream temporal genérico continua gap.
-- `sparkforge code search`/leitura de `sparkforge/facts/flink.py`: o extrator
+- `sparkforge-aws code search`/leitura de `sparkforge_aws/facts/flink.py`: o extrator
   upstream não emite `flink.metric`; Managed Flink já emite
   `managed_flink.metric` em namespace separado.
 - `docs/streaming/prompt-coverage.md` e `knowledge/flink-streaming.md`:

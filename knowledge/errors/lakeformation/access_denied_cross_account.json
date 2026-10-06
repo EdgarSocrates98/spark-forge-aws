@@ -18,7 +18,7 @@
     "Grant SELECT on target table in producer LF to consumer account ID"
   ],
   "unsafe_fixes": ["Granting Super on Catalog to IAMAllowedPrincipals"],
-  "verification": "Run `sparkforge lakeformation diagnose-cross-account`",
+  "verification": "Run `sparkforge-aws lakeformation diagnose-cross-account`",
   "rollback": "Revoke granted LF permissions",
   "sources": ["https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html"],
   "last_verified": "2026-08-15"

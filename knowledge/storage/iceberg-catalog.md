@@ -131,7 +131,7 @@ e nenhuma diz qual metade vence quando as duas estão declaradas. Ver a §7 de
 
 **Nenhuma regra desta área julga a combinação, e a razão foi medida.** Uma regra
 para ela foi escrita, ganhou fixture, e saiu: a chave é um dos dois marcadores de
-Full Table Access que `sparkforge/facts/lakeformation.py` procura, então com FGAC
+Full Table Access que `sparkforge_aws/facts/lakeformation.py` procura, então com FGAC
 ligado o `access_model` sai sempre como `model: "both"` e `SF-LF-005` acusa a mesma
 entrada — a regra específica nunca disparava sozinha, e a localização que ela
 acrescentava já está no achado da outra. O registro está em `V-ICE-3`, no cabeçalho
@@ -151,7 +151,7 @@ tabela **é**. A pergunta que fecharia a família ICE-VERSION do prompt de orige
 suporta?" — **não tem produtor neste repositório**, e por duas razões independentes:
 
 1. **`RuntimeContext.iceberg` não é observado por extrator nenhum.**
-   `sparkforge/facts/runtime_detect.py` só o preenche derivando de `GLUE_MATRIX`
+   `sparkforge_aws/facts/runtime_detect.py` só o preenche derivando de `GLUE_MATRIX`
    quando alguma fonte trouxe `glue_version`, ou lendo a flag `--iceberg` da CLI.
    Fora do Glue, e sem alguém digitar a versão à mão, o campo é `""` — e é
    exatamente por isso que as cinco primeiras regras de `SF-ICE` abandonaram

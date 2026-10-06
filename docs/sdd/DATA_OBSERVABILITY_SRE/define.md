@@ -20,7 +20,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_data_observability.py::test_observability_preserves_incidents_dependencies_and_blast_radius"}
   - id: AC3
     statement: "CLI e MCP expõem o mesmo envelope de observabilidade."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze data-observability --path fixtures/observability/sre.yaml"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze data-observability --path fixtures/observability/sre.yaml"}
 success:
   - id: SC1
     metric: "Métricas sem observação retornam unresolved e não status met"

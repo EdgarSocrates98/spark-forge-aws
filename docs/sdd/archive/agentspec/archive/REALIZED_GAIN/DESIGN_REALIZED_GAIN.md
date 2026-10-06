@@ -32,7 +32,7 @@
 │        │                                                               │
 │   ┌────┴──────────────┐                                                │
 │   ▼                   ▼                                                │
-│ CLI sparkforge gain   tool sparkforge_gain (READ_ONLY, declara caminho)│
+│ CLI sparkforge-aws gain   tool sparkforge_gain (READ_ONLY, declara caminho)│
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,8 +42,8 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/finops/realized.py` | `realized_gain`, `GainError`, estatistica por lado, marcas, recusas | Python puro, `statistics.median` |
-| `sparkforge/capacity/plan.py::_volume_de` | Volume de um run (reusado, nao copiado) | existente |
+| `sparkforge_aws/finops/realized.py` | `realized_gain`, `GainError`, estatistica por lado, marcas, recusas | Python puro, `statistics.median` |
+| `sparkforge_aws/capacity/plan.py::_volume_de` | Volume de um run (reusado, nao copiado) | existente |
 | `_core.gain` | Carrega um conjunto de facts por arquivo e chama `realized_gain` | adapters existentes |
 | CLI `gain` e tool `sparkforge_gain` | Superficie | adapters existentes |
 
@@ -108,7 +108,7 @@ A tolerancia e `volume_tolerance` do `workload.declared` do mesmo `job_name` em 
 | **Status** | Accepted |
 | **Date** | 2026-09-13 |
 
-**Choice:** CLI `sparkforge gain --baseline <facts> [...] --candidate <facts> [...]` (append, obrigatorios). Tool `sparkforge_gain`, `_READ_ONLY`, `baseline_paths` e `candidate_paths` (arrays de caminho): declara caminho, entao tools 94 -> 95, READ_ONLY 62 -> 63, as que declaram caminho 86 -> 87. `GainError` vira `AdapterError` codigo 2. Dono: `agents/executors/sf-verifier.md`, checagem 9 -- depois do Change Proof (checagem 7), o ganho observado.
+**Choice:** CLI `sparkforge-aws gain --baseline <facts> [...] --candidate <facts> [...]` (append, obrigatorios). Tool `sparkforge_gain`, `_READ_ONLY`, `baseline_paths` e `candidate_paths` (arrays de caminho): declara caminho, entao tools 94 -> 95, READ_ONLY 62 -> 63, as que declaram caminho 86 -> 87. `GainError` vira `AdapterError` codigo 2. Dono: `agents/executors/sf-verifier.md`, checagem 9 -- depois do Change Proof (checagem 7), o ganho observado.
 
 **Alternatives Rejected:** `sf-extractor` (unico que cita `finops` hoje) -- rejeitado: ele extrai; comparar o antes e o depois de uma mudanca e verificacao.
 
@@ -118,10 +118,10 @@ A tolerancia e `volume_tolerance` do `workload.declared` do mesmo `job_name` em 
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/finops/realized.py` | Create | `realized_gain`, `GainError` | (general) | None |
+| 1 | `sparkforge_aws/finops/realized.py` | Create | `realized_gain`, `GainError` | (general) | None |
 | 2 | `tests/test_finops_realized.py` | Create | Estatistica, marcas, descarte, recusas, erros | (general) | 1 |
-| 3 | `sparkforge/adapters/_core.py` | Modify | `gain(baseline_paths, candidate_paths)` | (general) | 1 |
-| 4 | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py` | Modify | Verbo e tool | (general) | 3 |
+| 3 | `sparkforge_aws/adapters/_core.py` | Modify | `gain(baseline_paths, candidate_paths)` | (general) | 1 |
+| 4 | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py` | Modify | Verbo e tool | (general) | 3 |
 | 5 | `fixtures/gain/` + `tests/test_fixtures_golden_gain.py` | Create | Casos pela CLI | (general) | 4 |
 | 6 | Registros (lista, amostra, formas de erro, contagem de caminho 86 -> 87, `NOVAS_DEPOIS_DO_GOLDEN`, manifest, parity, `sf-verifier` + sync) | Modify | Tool nova | (general) | 4 |
 | 7 | `docs/realized-gain.md`, STATUS, contagens, surface, claims | Create/Modify | Doc e numeros | (general) | 6 |

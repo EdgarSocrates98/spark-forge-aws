@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge decisions`
+# `sparkforge-aws decisions`
 
 Lista e explica decisões registradas.
 
@@ -8,15 +8,15 @@ Lista e explica decisões registradas.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge decisions explain`](#sparkforge-decisions-explain) | Explica uma decisão. |
-| [`sparkforge decisions list`](#sparkforge-decisions-list) | Lista decisões. |
+| [`sparkforge-aws decisions explain`](#sparkforge-aws-decisions-explain) | Explica uma decisão. |
+| [`sparkforge-aws decisions list`](#sparkforge-aws-decisions-list) | Lista decisões. |
 
-## `sparkforge decisions explain`
+## `sparkforge-aws decisions explain`
 
 Explica uma decisão.
 
 ```bash
-sparkforge decisions explain --help
+sparkforge-aws decisions explain --help
 ```
 
 ### Opções
@@ -30,12 +30,12 @@ sparkforge decisions explain --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge decisions list`
+## `sparkforge-aws decisions list`
 
 Lista decisões.
 
 ```bash
-sparkforge decisions list --help
+sparkforge-aws decisions list --help
 ```
 
 ### Opções

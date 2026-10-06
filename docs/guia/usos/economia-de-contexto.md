@@ -15,11 +15,11 @@ mkdir -p /tmp/sf-guia && cp -r fixtures/pyspark/coalesce_one /tmp/sf-guia/job_ex
 cd /tmp/sf-guia
 export SPARKFORGE_RUN_ID=run_guia_demo
 python -c "
-from sparkforge.adapters.tools import call_tool
+from sparkforge_aws.adapters.tools import call_tool
 for nivel in ('full', 'normal', 'summary'):
     call_tool('sparkforge_analyze_pyspark', {'path': 'job_exemplo', 'detail_level': nivel, 'limit': 2})
 "
-sparkforge economy report --run-id run_guia_demo
+sparkforge-aws economy report --run-id run_guia_demo
 ```
 
 1. Copia um exemplo sintético de job PySpark para uma pasta de teste.
@@ -85,8 +85,8 @@ termina. Dentro do mesmo processo, o relatório já enxerga o que está em memó
 ### 3. Leia o relatório
 
 ```bash
-sparkforge economy report --run-id run_guia_demo
-sparkforge economy report --run-id run_guia_demo --out relatorio.json
+sparkforge-aws economy report --run-id run_guia_demo
+sparkforge-aws economy report --run-id run_guia_demo --out relatorio.json
 ```
 
 A tool equivalente é `sparkforge_economy_report`, com `run_id` e, opcionalmente,
@@ -99,7 +99,7 @@ quantos tokens o modelo gastou. Esse dado está no **transcript**, o arquivo JSO
 da sessão. Com um transcript sintético do repositório:
 
 ```bash
-sparkforge economy report --run-id run_guia_demo --host-transcript <repo>/fixtures/otel/com_host/input/transcript.jsonl
+sparkforge-aws economy report --run-id run_guia_demo --host-transcript <repo>/fixtures/otel/com_host/input/transcript.jsonl
 ```
 
 Trecho real:
@@ -173,7 +173,7 @@ converter tokens observados em custo, forneça uma base de preço explícita:
 ```
 
 ```bash
-sparkforge economy provider-cost \
+sparkforge-aws economy provider-cost \
   --host-transcript transcript.jsonl \
   --pricing pricing.json
 ```
@@ -189,11 +189,11 @@ validado, executado sobre entradas normalizadas, comparado com a rota atual e
 auditado por receipt:
 
 ```bash
-sparkforge decision validate --repo .
-sparkforge decision benchmark --repo .
-sparkforge decision shadow --input decision.json --repo . --out shadow.json
-sparkforge decision compare --shadow shadow.json --current-route tier_3_cheap_local
-sparkforge decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
+sparkforge-aws decision validate --repo .
+sparkforge-aws decision benchmark --repo .
+sparkforge-aws decision shadow --input decision.json --repo . --out shadow.json
+sparkforge-aws decision compare --shadow shadow.json --current-route tier_3_cheap_local
+sparkforge-aws decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
 ```
 
 `benchmark` roda 23 casos seed offline: 15 de qualidade, 6 de grafo federado e 2 de
@@ -225,7 +225,7 @@ cloud_resources:
 ```
 
 ```bash
-sparkforge collect workspace-graph \
+sparkforge-aws collect workspace-graph \
   --repo . \
   --manifest .sparkforge/workspace.yaml \
   --max-objects 100 \
@@ -266,7 +266,7 @@ que um **OTLP Collector** lê. É só uma ponte: o SparkForge grava arquivo e n�
 envia nada pela rede.
 
 ```bash
-sparkforge telemetry export --run-id run_guia_demo --repo .
+sparkforge-aws telemetry export --run-id run_guia_demo --repo .
 ```
 
 Saída real, rodada na pasta de teste:

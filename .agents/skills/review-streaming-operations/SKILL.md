@@ -14,8 +14,8 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze streaming-ops
-  - sparkforge judge
+  - sparkforge-aws analyze streaming-ops
+  - sparkforge-aws judge
 subagent: true
 agent: streaming-realtime-architect
 ---
@@ -26,10 +26,10 @@ Use um contrato JSON salvo localmente. A análise mede declarações e preserva
 lacunas; não consulta AWS e não calcula preço.
 
 ```bash
-sparkforge analyze streaming-ops \
+sparkforge-aws analyze streaming-ops \
   --path streaming-operations.json \
   --out streaming-operations-facts.json
-sparkforge judge --facts streaming-operations-facts.json
+sparkforge-aws judge --facts streaming-operations-facts.json
 ```
 
 ## Procedimento
@@ -52,9 +52,9 @@ Para dump sanitizado de Kafka ou MSK, rode o analyzer de transporte antes da
 composição:
 
 ```bash
-sparkforge analyze transport --artifact kafka --path kafka-dump.json \
+sparkforge-aws analyze transport --artifact kafka --path kafka-dump.json \
   --out kafka-facts.json
-sparkforge judge --facts kafka-facts.json --show-skipped
+sparkforge-aws judge --facts kafka-facts.json --show-skipped
 ```
 
 Leia `kafka.partition` para ISR observado e `kafka.lag.series` para uma série
@@ -71,7 +71,7 @@ Quando o caso precisa correlacionar CDC, transporte, processador e sink, use
 um contrato JSON versionado e selectors exatos:
 
 ```bash
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
   --facts iceberg-facts.json --mode pipeline \
   --pipeline-path pipeline.json --out pipeline-facts.json
@@ -117,7 +117,7 @@ mutação live ao operador.
 
 ## Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

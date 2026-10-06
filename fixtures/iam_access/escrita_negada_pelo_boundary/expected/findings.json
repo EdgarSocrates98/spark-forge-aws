@@ -10,10 +10,10 @@
     "subject": {
       "type": "job_run",
       "file": "111111111111_glue-curated.json",
-      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:PutObject@arn:aws:s3:::sparkforge-demo/curated/*"
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:PutObject@arn:aws:s3:::sparkforge-aws-demo/curated/*"
     },
     "evidence": [
-      "f_b148aa"
+      "f_35c3cd"
     ],
     "measured": {
       "matched_statements": 0
@@ -143,10 +143,10 @@
     "subject": {
       "type": "job_run",
       "file": "111111111111_glue-curated.json",
-      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:DeleteObject@arn:aws:s3:::sparkforge-demo/curated/*"
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:DeleteObject@arn:aws:s3:::sparkforge-aws-demo/curated/*"
     },
     "evidence": [
-      "f_207888"
+      "f_9b6643"
     ],
     "measured": {
       "matched_statements": 1

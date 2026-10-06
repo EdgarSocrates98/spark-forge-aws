@@ -19,7 +19,7 @@
 Três extratores têm golden e ficam de fora do caminho do operador:
 - `extract_workload_path` só é chamado por teste, e nenhum verbo lê `workload.yaml`;
 - `extract_utilization` só é chamado por teste, e por isso SF-WASTE-001/002 não disparam pelo `judge`, pelo `fuse`, pelo `scan` nem pelo MCP;
-- `collect_parquet_footer` existe sem porta, e mesmo assim o `--help` de `analyze parquet-footer` e a descrição da tool mandam rodar `sparkforge collect parquet-footer`.
+- `collect_parquet_footer` existe sem porta, e mesmo assim o `--help` de `analyze parquet-footer` e a descrição da tool mandam rodar `sparkforge-aws collect parquet-footer`.
 
 ---
 
@@ -37,10 +37,10 @@ Três extratores têm golden e ficam de fora do caminho do operador:
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | `sparkforge analyze workload --path <workload.yaml> [--out]` emite `workload.declared`, `workload.declared_analyzed` e `workload.unresolved` pelo `extract_workload_path`, no molde de `analyze consumers` (paginação, `by_kind`, `unresolved`). Tool `sparkforge_analyze_workload` READ_ONLY |
+| **MUST** | `sparkforge-aws analyze workload --path <workload.yaml> [--out]` emite `workload.declared`, `workload.declared_analyzed` e `workload.unresolved` pelo `extract_workload_path`, no molde de `analyze consumers` (paginação, `by_kind`, `unresolved`). Tool `sparkforge_analyze_workload` READ_ONLY |
 | **MUST** | O `fuse` deriva `glue.utilization.summary` (ou `glue.utilization.unresolved`) quando o pool tem `glue.metric`, guardado como o diagnóstico de timeout. Pool sem `glue.metric` fica byte a byte igual |
-| **MUST** | `sparkforge collect parquet-footer --repo R --prefix <dir local ou s3://> [--max-files N] --now T` chama `collect_parquet_footer`, registra o artefato no manifesto com o kind `parquet_footer` e sha256, e sai no mesmo formato dos outros `collect`. Tool `sparkforge_collect_parquet_footer`, na mesma classe e com as mesmas anotações dos outros coletores |
-| **MUST** | Sem pyarrow, `collect parquet-footer` sai com erro de fronteira que contém `sparkforge` e o `pip install` que resolve |
+| **MUST** | `sparkforge-aws collect parquet-footer --repo R --prefix <dir local ou s3://> [--max-files N] --now T` chama `collect_parquet_footer`, registra o artefato no manifesto com o kind `parquet_footer` e sha256, e sai no mesmo formato dos outros `collect`. Tool `sparkforge_collect_parquet_footer`, na mesma classe e com as mesmas anotações dos outros coletores |
+| **MUST** | Sem pyarrow, `collect parquet-footer` sai com erro de fronteira que contém `sparkforge-aws` e o `pip install` que resolve |
 | **MUST** | O `scan` roda `analyze workload` quando existe `workload.yaml` na raiz, com a origem `nome` no plano |
 | **MUST** | Registros de tool nova, surface lock, claims e referência gerada em dia |
 | **SHOULD** | Manuais: `custo-e-capacidade.md` (o SLA pela porta pública e SF-WASTE pelo `fuse`), `iceberg-e-parquet.md` (o `collect`) e `scan-e-doctor.md` (a linha do `workload.yaml`) |
@@ -106,7 +106,7 @@ Três extratores têm golden e ficam de fora do caminho do operador:
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/adapters/{_core,cli,tools}.py`, `sparkforge/facts/fusion.py`, `sparkforge/scan/plan.py`, `fixtures/scan/`, testes | Nenhum módulo novo |
+| **Deployment Location** | `sparkforge_aws/adapters/{_core,cli,tools}.py`, `sparkforge_aws/facts/fusion.py`, `sparkforge_aws/scan/plan.py`, `fixtures/scan/`, testes | Nenhum módulo novo |
 | **KB Domains** | Nenhum domínio do KB do agentspec. Fontes internas: `facts/workload.py`, `facts/utilization.py`, `collect/parquet_footer.py`, `rules/catalog/waste.yaml` | |
 | **IaC Impact** | None | |
 

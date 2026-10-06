@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.codeintel.index import indexar
-from sparkforge.workspace import (
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.workspace import (
     FreshnessAssessment,
     build_graph,
     build_semantic_graph,
     load_manifest,
 )
-from sparkforge.workspace.manifest import WorkspaceManifestError
+from sparkforge_aws.workspace.manifest import WorkspaceManifestError
 
 
 def test_workspace_manifest_and_graph_keep_declared_relationships(tmp_path: Path) -> None:

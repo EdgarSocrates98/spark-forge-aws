@@ -30,7 +30,7 @@ tasks:
     green: {command: "python scripts/check_surface_lock.py", exit: 0}
 claims:
   - text: "Kafka, MSK e Kinesis agora têm facts offline específicos, com unresolved nomeado para JSON inválido, shape ausente e campos não observados."
-    evidence_ref: "sparkforge/facts/transport.py; tests/test_facts_transport.py"
+    evidence_ref: "sparkforge_aws/facts/transport.py; tests/test_facts_transport.py"
   - text: "CLI e MCP usam o mesmo analyzer e retornam o envelope de transporte sem collector implícito."
     evidence_ref: "tests/test_analyze_transport.py::test_cli_and_mcp_transport_envelopes_match"
   - text: "O corpus golden, knowledge offline, manifest, parity e referências públicas foram sincronizados."

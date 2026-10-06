@@ -20,7 +20,7 @@ Extrai facts determinísticos de dumps JSON/JSONL já salvos de AWS Glue Streami
 
 ## Na CLI
 
-[`sparkforge analyze glue-streaming`](../cli/analyze.md)
+[`sparkforge-aws analyze glue-streaming`](../cli/analyze.md)
 
 ## Capacidade
 

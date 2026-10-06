@@ -21,9 +21,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.agentic.control import RecoveryGovernor
-from sparkforge.agentic.recovery import FailureClass, RecoveryPolicy
-from sparkforge.agentic.stop import ExpectedGainState, StopPolicy
+from sparkforge_aws.agentic.control import RecoveryGovernor
+from sparkforge_aws.agentic.recovery import FailureClass, RecoveryPolicy
+from sparkforge_aws.agentic.stop import ExpectedGainState, StopPolicy
 
 SUITE = Path(__file__).resolve().parents[1] / "evals" / "agentic" / "recovery"
 

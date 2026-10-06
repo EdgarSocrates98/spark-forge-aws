@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.facts.flink import extract_flink_text
+from sparkforge_aws.facts.flink import extract_flink_text
 
 
 def _kinds(facts):

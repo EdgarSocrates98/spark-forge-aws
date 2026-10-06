@@ -1,6 +1,6 @@
 """O gold set deriva das regras, e a derivacao nao inventa nada.
 
-Ver `sparkforge/economy/goldset.py` para por que ele e derivado e nunca
+Ver `sparkforge_aws/economy/goldset.py` para por que ele e derivado e nunca
 versionado como arquivo.
 """
 
@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from sparkforge.economy.goldset import (
+from sparkforge_aws.economy.goldset import (
     _RAIZ,
     EXTENSOES_INDEXADAS,
     ForaDoAlcance,
@@ -116,7 +116,7 @@ def test_o_simbolo_exigido_esta_de_fato_no_arquivo(goldset):
 
 def test_a_pergunta_vem_do_titulo_da_regra(goldset):
     """Pergunta escrita a mao aqui mediria a minha suposicao, nao a do repo."""
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     titulos = {r["id"]: r.get("title", r["id"]) for r in load_catalog()}
     divergentes = [
@@ -166,7 +166,7 @@ def test_a_derivacao_e_estavel_entre_chamadas(goldset):
 
 def test_json_malformado_nao_derruba_a_derivacao(tmp_path, monkeypatch):
     """Medicao nunca derruba a chamada (regra 27) -- vale para a derivacao tambem."""
-    from sparkforge.economy import goldset as modulo
+    from sparkforge_aws.economy import goldset as modulo
 
     raiz = tmp_path
     base = raiz / "fixtures" / "x" / "quebrada"

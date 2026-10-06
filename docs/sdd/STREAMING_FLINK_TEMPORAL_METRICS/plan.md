@@ -9,15 +9,15 @@ upstream:
   sha256: "63f8635a42d4235c6fc81f725a327b5e8523557a8cf347286c25d251e63df61f"
 tasks:
   - id: T1
-    files: [tests/test_facts_flink.py, sparkforge/facts/flink.py]
+    files: [tests/test_facts_flink.py, sparkforge_aws/facts/flink.py]
     covers: [AC1, AC6]
     test: {path: tests/test_facts_flink.py, name: test_flink_temporal_metrics_preserve_observed_value_and_metadata}
   - id: T2
-    files: [tests/test_facts_flink.py, sparkforge/facts/flink.py]
+    files: [tests/test_facts_flink.py, sparkforge_aws/facts/flink.py]
     covers: [AC2]
     test: {path: tests/test_facts_flink.py, name: test_flink_temporal_metric_missing_timestamp_is_unresolved}
   - id: T3
-    files: [tests/test_facts_flink.py, sparkforge/facts/flink.py]
+    files: [tests/test_facts_flink.py, sparkforge_aws/facts/flink.py]
     covers: [AC3]
     test: {path: tests/test_facts_flink.py, name: test_flink_temporal_metrics_invalid_shape_is_unresolved}
   - id: T4
@@ -44,7 +44,7 @@ em `tests/test_facts_flink.py`. O payload deve conter `metrics` com
 `operatorId`, além de uma lista aninhada que não pode entrar em `attrs`.
 Antes do código o teste falha porque não existe `flink.metric`.
 
-Implementar em `sparkforge/facts/flink.py`:
+Implementar em `sparkforge_aws/facts/flink.py`:
 
 ```python
 EMITTED_KINDS = frozenset({

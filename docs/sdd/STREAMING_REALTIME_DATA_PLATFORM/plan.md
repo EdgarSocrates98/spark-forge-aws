@@ -9,11 +9,11 @@ upstream:
   sha256: "79d221d3db5ae647b26d1fa7492519ae0c39693598631a4c098cc8b677a3f6e3"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming.py, sparkforge/facts/pyspark_ast.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py]
+    files: [tests/test_facts_streaming.py, sparkforge_aws/facts/pyspark_ast.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py]
     covers: [AC1, AC7]
     test: {path: tests/test_facts_streaming.py, name: test_extract_structured_streaming_source_emits_anchored_facts}
   - id: T2
-    files: [tests/test_facts_streaming.py, sparkforge/facts/streaming.py]
+    files: [tests/test_facts_streaming.py, sparkforge_aws/facts/streaming.py]
     covers: [AC2, AC3, AC7]
     test: {path: tests/test_facts_streaming.py, name: test_extract_streaming_progress_emits_batch_source_sink_and_state_facts}
   - id: T3
@@ -25,7 +25,7 @@ tasks:
     covers: [AC3, AC5, AC7]
     test: {path: tests/test_fixtures_golden_streaming.py, name: test_all_required_fixtures_exist}
   - id: T5
-    files: [tests/test_analyze_streaming.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
+    files: [tests/test_analyze_streaming.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py]
     covers: [AC6]
     test: {path: tests/test_analyze_streaming.py, name: test_cli_and_core_emit_identical_streaming_envelope}
   - id: T6
@@ -56,7 +56,7 @@ python -m pytest tests/test_facts_streaming.py::test_extract_structured_streamin
 ```
 
 O vermelho esperado é `ImportError`/`AssertionError` porque os kinds ainda não existem.
-Implementar o detector estático em `sparkforge/facts/pyspark_ast.py`, preservando todos os
+Implementar o detector estático em `sparkforge_aws/facts/pyspark_ast.py`, preservando todos os
 kinds atuais, adicionando os kinds ao `EMITTED_KINDS`, usando `_subject` e emitindo
 `streaming.module_analyzed` como sentinela. Registrar o módulo nos dois inventários manuais.
 
@@ -64,7 +64,7 @@ Rodar o mesmo comando até verde; depois:
 
 ```bash
 python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q
-git add sparkforge/facts/pyspark_ast.py tests/test_facts_streaming.py tests/test_fixtures_kind_coverage.py tests/test_rules_catalog_reachability.py
+git add sparkforge_aws/facts/pyspark_ast.py tests/test_facts_streaming.py tests/test_fixtures_kind_coverage.py tests/test_rules_catalog_reachability.py
 git commit -m "feat(streaming): extract structured streaming source facts"
 ```
 
@@ -79,7 +79,7 @@ julgável; repetir a extração e comparar `to_dict()` byte a byte.
 python -m pytest tests/test_facts_streaming.py::test_extract_streaming_progress_emits_batch_source_sink_and_state_facts tests/test_facts_streaming.py::test_insufficient_progress_is_unresolved_not_a_trend -q
 ```
 
-O vermelho esperado é `ModuleNotFoundError: sparkforge.facts.streaming`. Implementar
+O vermelho esperado é `ModuleNotFoundError: sparkforge_aws.facts.streaming`. Implementar
 `extract_streaming_progress_path`, `extract_streaming_progress_tree` e `extract_streaming_progress_text`
 sem rede, aceitando JSON, lista de progressos e JSONL; parsear somente campos documentados;
 registrar linha/arquivo no subject; preservar ordem observada em `observed_index`; emitir
@@ -92,7 +92,7 @@ python -m pytest tests/test_facts_streaming.py -q
 Gates: `tests/test_rules_catalog_reachability.py`, `tests/test_fixtures_kind_coverage.py`.
 
 ```bash
-git add sparkforge/facts/streaming.py tests/test_facts_streaming.py
+git add sparkforge_aws/facts/streaming.py tests/test_facts_streaming.py
 git commit -m "feat(streaming): extract streaming query progress"
 ```
 
@@ -161,7 +161,7 @@ continua sendo a lista completa de facts.
 
 ```bash
 python -m pytest tests/test_analyze_streaming.py tests/test_adapters_tools.py -q
-git add sparkforge/adapters/_core.py sparkforge/adapters/cli.py sparkforge/adapters/tools.py tests/test_analyze_streaming.py
+git add sparkforge_aws/adapters/_core.py sparkforge_aws/adapters/cli.py sparkforge_aws/adapters/tools.py tests/test_analyze_streaming.py
 git commit -m "feat(streaming): expose unified cli and mcp analysis"
 ```
 
@@ -195,7 +195,7 @@ python -m pytest tests/test_reference_docs.py tests/test_surface_lock.py -q
 ```
 
 O vermelho esperado é página velha, tool não documentada ou surface lock divergente.
-Commitar somente a saída dos geradores e, por fim, rodar `sparkforge sdd check`.
+Commitar somente a saída dos geradores e, por fim, rodar `sparkforge-aws sdd check`.
 
 ```bash
 git add docs/surface.lock.json docs/guia/referencia

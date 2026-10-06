@@ -12,10 +12,10 @@ files:
   - {path: fixtures/plan/photon_join, action: create, reason: "plano Photon de groupBy com join, derivado da observacao de 2026-09-18 (dados sinteticos spark.range)"}
   - {path: fixtures/plan/photon_udf, action: create, reason: "plano Photon com ArrowEvalPython entre operadores PhotonArrow, mesma origem"}
   - {path: tests/test_fixtures_golden_plan.py, action: modify, reason: "REQUIRED_FIXTURES com os dois casos Photon"}
-  - {path: sparkforge/facts/spark_plan.py, action: modify, reason: "reconhece operadores de prefixo Photon e a secao == Photon Explanation ==, emite plan.photon; ArrowEvalPython passa a udf_type arrow; EMITTED_KINDS"}
-  - {path: sparkforge/rules/engine.py, action: modify, reason: "a recusa das regras de plano dispara tambem quando plan.photon esta entre os facts, sem depender do runtime"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "_runtime_reading le plan.photon como observacao de photon on, fonte plan"}
-  - {path: sparkforge/facts/runtime_detect.py, action: modify, reason: "_photon da precedencia a observacao sobre a declaracao, registra divergencia quando a declaracao discorda, e databricks.photon carrega a fonte"}
+  - {path: sparkforge_aws/facts/spark_plan.py, action: modify, reason: "reconhece operadores de prefixo Photon e a secao == Photon Explanation ==, emite plan.photon; ArrowEvalPython passa a udf_type arrow; EMITTED_KINDS"}
+  - {path: sparkforge_aws/rules/engine.py, action: modify, reason: "a recusa das regras de plano dispara tambem quando plan.photon esta entre os facts, sem depender do runtime"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "_runtime_reading le plan.photon como observacao de photon on, fonte plan"}
+  - {path: sparkforge_aws/facts/runtime_detect.py, action: modify, reason: "_photon da precedencia a observacao sobre a declaracao, registra divergencia quando a declaracao discorda, e databricks.photon carrega a fonte"}
   - {path: rules/catalog/spark-plan.yaml, action: modify, reason: "SF-PLAN-002 casa udf_type pandas ou arrow, e o texto deixa de afirmar pandas_udf para o caso arrow"}
   - {path: fixtures/plan/python_udf_in_plan, action: modify, reason: "golden regenerado: o ArrowEvalPython passa a udf_type arrow e o texto de SF-PLAN-002 muda; o veredito nao"}
   - {path: knowledge/databricks/runtime-matrix.md, action: modify, reason: "secao 4: o extrator deixa de ser lacuna aberta e passa a dizer o que faz com o plano Photon; U1 e U2 desta feature nomeados"}
@@ -57,9 +57,9 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| extrator | `sparkforge/facts/spark_plan.py`, `fixtures/plan/photon_*`, `tests/test_fixtures_golden_plan.py` | AC1, AC3, AC6, AC7 |
-| engine | `sparkforge/rules/engine.py` | AC2, AC7 |
-| detecção | `sparkforge/adapters/_core.py`, `sparkforge/facts/runtime_detect.py` | AC4, AC5 |
+| extrator | `sparkforge_aws/facts/spark_plan.py`, `fixtures/plan/photon_*`, `tests/test_fixtures_golden_plan.py` | AC1, AC3, AC6, AC7 |
+| engine | `sparkforge_aws/rules/engine.py` | AC2, AC7 |
+| detecção | `sparkforge_aws/adapters/_core.py`, `sparkforge_aws/facts/runtime_detect.py` | AC4, AC5 |
 | regra | `rules/catalog/spark-plan.yaml`, `fixtures/plan/python_udf_in_plan` | AC6 |
 | knowledge | `knowledge/databricks/runtime-matrix.md` e registros | AC8 |
 

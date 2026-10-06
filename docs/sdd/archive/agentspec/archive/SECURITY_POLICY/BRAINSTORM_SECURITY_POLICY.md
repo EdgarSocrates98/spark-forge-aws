@@ -18,17 +18,17 @@
 **Raw Input:** §16 de `prompt_new_evo.md`, "A seguranca agentic pode virar outro grande diferencial": mapear o Forge ao OWASP Agent Control Standard (inspecionavel, rastreavel, instrumentavel, hooks de middleware, politicas declarativas, enforcement em runtime), com um `AgentPolicy` declarativo (`allowed_tools`, `allowed_paths`, `allowed_hosts`, `max_cost`, `network_policy`, `approval_policy`, `autonomy_level`...), hooks (`BeforeToolCall`, `BeforeShell`, `BeforeWrite`, `BeforeModelCall`...) e decisoes `ALLOW/DENY/ASK/SANDBOX_ONLY/ALLOW_WITH_LIMITS`; opcionalmente AgentCore Gateway + Cedar.
 
 **Context Gathered:**
-- A cadeia de autorizacao ja existe e e imposta: `sparkforge/agents/autonomy.py:authorize()` (classe de tool derivada das anotacoes MCP, allowlist, denylist, perfil como teto, aprovacao por classe, confinamento de caminho) e `CallPolicy`, que `adapters/tools.py:call_tool` consulta antes de despachar; o handler nao roda quando a decisao recusa. Mas ela so morde quando alguem monta uma `CallPolicy` em codigo.
+- A cadeia de autorizacao ja existe e e imposta: `sparkforge_aws/agents/autonomy.py:authorize()` (classe de tool derivada das anotacoes MCP, allowlist, denylist, perfil como teto, aprovacao por classe, confinamento de caminho) e `CallPolicy`, que `adapters/tools.py:call_tool` consulta antes de despachar; o handler nao roda quando a decisao recusa. Mas ela so morde quando alguem monta uma `CallPolicy` em codigo.
 - O gap declarado em `docs/harness/AUTHORIZATION-CHAIN.md`, `CURRENT-HARNESS-GAP.md` (§41) e `THREAT-MODEL.md` (T-024 Parcial): nao ha hook `PreToolUse`; `terraform destroy` por `Bash` nunca passa pela cadeia. `.claude/settings.json` so tem o hook `SessionStart` do caveman, travado por `tests/test_execution_surface.py::HOOKS_DO_PROJETO`.
 - Protocolo conferido na documentacao oficial (2026-09-13): o `PreToolUse` recebe `tool_name` e `tool_input` (`command` no Bash) e so decide `allow`/`deny` -- `"ask"` NAO aparece como `permissionDecision` (busca literal no markdown da pagina de hooks: NOT FOUND). Exit 2 bloqueia; outro codigo nao-zero e erro nao-bloqueante. `ask` existe nas regras nativas `permissions.ask` do `settings.json`: avaliadas deny -> ask -> allow, pedem confirmacao ate em modo auto e dentro de subshell; so `bypassPermissions` pula. A propria documentacao avisa que regra de Bash casa o texto do comando e "isn't a security boundary around the program".
-- Medido: importar `sparkforge.agents.autonomy` custa 0,036 s e `yaml` 0,019 s; `sparkforge.adapters.tools` custa 0,476 s -- o hook, que roda em todo Bash, nao pode importa-lo.
+- Medido: importar `sparkforge_aws.agents.autonomy` custa 0,036 s e `yaml` 0,019 s; `sparkforge_aws.adapters.tools` custa 0,476 s -- o hook, que roda em todo Bash, nao pode importa-lo.
 - Regra 23: o pacote nao chama modelo; `BeforeModelCall` nao tem o que interceptar aqui.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/policy/` (novo: schema, carga, `decide`, hook), `adapters/{_core,cli,tools}.py`, `.sparkforge/policy.yaml`, `.claude/settings.json`, `fixtures/policy/` | Ao lado de `agents/autonomy.py`, que continua a cadeia |
+| Likely Location | `sparkforge_aws/policy/` (novo: schema, carga, `decide`, hook), `adapters/{_core,cli,tools}.py`, `.sparkforge/policy.yaml`, `.claude/settings.json`, `fixtures/policy/` | Ao lado de `agents/autonomy.py`, que continua a cadeia |
 | Relevant KB Domains | Nenhum dominio do KB do agentspec cobre hooks do Claude Code; fontes: documentacao oficial de hooks e de permissoes, `AUTHORIZATION-CHAIN.md`, `THREAT-MODEL.md` | Consultar no design |
 | IaC Patterns | Regras sobre `terraform`, `aws s3 rm`, `lakeformation revoke-permissions` | Nada de infraestrutura nova |
 
@@ -42,7 +42,7 @@
 | 2 | Sem arquivo de politica, o que o hook faz? (policy padrao commitada / nada / default no codigo) | **Policy padrao commitada**; repo sem arquivo = hook nao faz nada | Fecha o T-024 neste repo sem regressao em outros |
 | 3 | Se o hook quebrar? (para so com policy invalida / para sempre / passa sempre) | **Policy invalida bloqueia; pacote que nao importa passa com aviso** | Quem escreveu a policy acredita que ela morde |
 | 4 | Que amostras? (entradas sinteticas do hook / so unidade / transcripts reais) | **Entradas sinteticas do hook** | `fixtures/policy/` com stdin, policy e decisao esperada |
-| 5 | Onde mora a logica? (modulo unico / script fora / hook em shell) | **Modulo unico no pacote** | `sparkforge/policy/`, hook por `python -m` |
+| 5 | Onde mora a logica? (modulo unico / script fora / hook em shell) | **Modulo unico no pacote** | `sparkforge_aws/policy/`, hook por `python -m` |
 | 6 | Como realizar `ask`, se o hook so faz allow/deny? (gerar permissions.ask / padrao deny / ask vira deny) | **policy.yaml gera `permissions.ask`**; o hook so aplica `deny` | Uma fonte, gerador com teste de drift |
 
 ---
@@ -66,14 +66,14 @@
 
 ### Approach A: Modulo unico no pacote ⭐ Recommended
 
-**Description:** `sparkforge/policy/` com schema, carga e `decide()` puro; `call_tool` a usa quando ha `.sparkforge/policy.yaml`; o hook e `python -m sparkforge.policy.hook`; o gerador escreve `permissions.ask`.
+**Description:** `sparkforge_aws/policy/` com schema, carga e `decide()` puro; `call_tool` a usa quando ha `.sparkforge/policy.yaml`; o hook e `python -m sparkforge_aws.policy.hook`; o gerador escreve `permissions.ask`.
 
 **Pros:**
 - Uma fonte, uma decisao, testavel sem Claude Code.
 - O hook importa so o modulo de politica (~0,05 s).
 
 **Cons:**
-- O hook depende de `sparkforge` importavel no Python do host (tratado como fail-open com aviso).
+- O hook depende de `sparkforge-aws` importavel no Python do host (tratado como fail-open com aviso).
 
 **Why Recommended:** reusa a cadeia que ja existe e mantem a regra "hook consulta classe, nao lista de comandos a mao" do plano do harness.
 
@@ -116,7 +116,7 @@
 | 3 | Policy padrao commitada: destrutivos em `ask`, nada em `deny` | Fecha T-024 neste repo com o menor atrito | Deny por padrao |
 | 4 | Sintaxe de regra = a do Claude Code (`terraform destroy *`, `rules/catalog/**`) | Geracao 1:1 para `Bash(...)`/`Edit(...)` | Sintaxe propria |
 | 5 | Hook quebra comando composto (`&&`, `;`, `\|`, subshell) antes de casar; limite "texto, nao programa" declarado no THREAT-MODEL | Honestidade sobre o que morde | Afirmar fronteira de seguranca |
-| 6 | Policy invalida: hook exit 2 e `call_tool` recusa; `sparkforge` ausente: hook exit 0 com aviso no stderr | Quem escreveu acredita que morde; clone sem instalacao nao trava | Fail-closed sempre |
+| 6 | Policy invalida: hook exit 2 e `call_tool` recusa; `sparkforge-aws` ausente: hook exit 0 com aviso no stderr | Quem escreveu acredita que morde; clone sem instalacao nao trava | Fail-closed sempre |
 | 7 | Verbos `policy check`, `policy explain` (tool `sparkforge_policy_explain` READ_ONLY) e `policy sync-settings [--check]` (so CLI, razao declarada: grava `.claude/settings.json`) | Inspecionavel e rastreavel | Sem verbo |
 | 8 | Dono: `sf-security-reviewer` | Area de seguranca | - |
 
@@ -160,7 +160,7 @@ A cadeia de autorizacao do SparkForge decide e impoe dentro do processo Python, 
 ### Success Criteria (Draft)
 - [ ] Com a policy padrao, `terraform destroy` (inclusive composto) e `aws s3 rm` pedem confirmacao no Claude Code (regras `permissions.ask` geradas) e uma regra `deny` faz o hook sair 2 com o motivo.
 - [ ] `git status` e comandos fora das regras passam sem custo perceptivel (hook < 0,2 s).
-- [ ] Policy invalida: hook sai 2 e `call_tool` recusa; sem `sparkforge` importavel, o hook sai 0 com aviso.
+- [ ] Policy invalida: hook sai 2 e `call_tool` recusa; sem `sparkforge-aws` importavel, o hook sai 0 com aviso.
 - [ ] `policy sync-settings --check` falha quando `.claude/settings.json` diverge do `policy.yaml`.
 - [ ] `call_tool` com policy presente recusa tool de classe que exige aprovacao sem ela, e o handler nao roda.
 

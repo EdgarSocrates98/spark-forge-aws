@@ -4,7 +4,7 @@ proves: >
 
   O `Failure Reason` deste event log carrega uma URL de JDBC com senha dentro
   (`jdbc:postgresql://etl_user:...@warehouse.internal:5432/analytics`).
-  `sparkforge/facts/secrets.py::redact` a reconhece por `_URL_PASSWORD_RE`,
+  `sparkforge_aws/facts/secrets.py::redact` a reconhece por `_URL_PASSWORD_RE`,
   `event_log.py` grava `attrs.reason = "<redigido>"` e marca
   `attrs.redacted: true` -- e `build_exceptions` LE essa marca antes de qualquer
   regex, emitindo `spark.exception.unresolved` com `reason: reason_redigida`.

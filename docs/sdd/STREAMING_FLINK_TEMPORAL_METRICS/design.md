@@ -10,7 +10,7 @@ upstream:
 files:
   - {path: tests/test_facts_flink.py, action: modify, reason: "testes TDD para ponto válido, timestamp ausente e shape inválido"}
   - {path: tests/test_fixtures_golden_flink.py, action: modify, reason: "incluir fixture temporal no corpus obrigatório"}
-  - {path: sparkforge/facts/flink.py, action: modify, reason: "extrair flink.metric upstream de metrics explícito sem tocar Managed Flink"}
+  - {path: sparkforge_aws/facts/flink.py, action: modify, reason: "extrair flink.metric upstream de metrics explícito sem tocar Managed Flink"}
   - {path: fixtures/flink/flink_temporal_metrics/input/dump.json, action: create, reason: "artifact upstream com duas observações válidas e uma lacuna temporal"}
   - {path: fixtures/flink/flink_temporal_metrics/meta.yaml, action: create, reason: "contrato do golden temporal e kinds esperados"}
   - {path: fixtures/flink/flink_temporal_metrics/expected/facts.json, action: create, reason: "golden gerado pelo extrator determinístico"}
@@ -65,7 +65,7 @@ o ramo existente e permanece em `managed_flink.*`.
 
 - `knowledge/flink-streaming.md`, `knowledge/streaming/runtime-matrix.md` e
   `rules/catalog/flink.yaml`, lidos como contrato upstream e limites atuais.
-- `sparkforge/facts/transport.py`, lido para comparar o padrão existente de
+- `sparkforge_aws/facts/transport.py`, lido para comparar o padrão existente de
   `observed_at` e métrica numérica sem copiar a semântica de Kinesis.
-- `sparkforge/facts/flink.py`, `tests/test_facts_flink.py` e goldens Flink,
+- `sparkforge_aws/facts/flink.py`, `tests/test_facts_flink.py` e goldens Flink,
   lidos para preservar shape, ordenação, provenance e o namespace Managed.

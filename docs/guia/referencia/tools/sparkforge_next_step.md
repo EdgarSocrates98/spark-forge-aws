@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Decide o proximo passo (skill recomendada) a partir de routing.yaml -- o mesmo motor declarativo de sparkforge.rules.engine, mas sobre o estado do case e os achados atuais, nunca sobre o julgamento livre do agente. `blocked_by` e advisory: informa gates pendentes sem impedir a chamada.
+Decide o proximo passo (skill recomendada) a partir de routing.yaml -- o mesmo motor declarativo de sparkforge_aws.rules.engine, mas sobre o estado do case e os achados atuais, nunca sobre o julgamento livre do agente. `blocked_by` e advisory: informa gates pendentes sem impedir a chamada.
 
 ## Parâmetros
 
@@ -17,7 +17,7 @@ Decide o proximo passo (skill recomendada) a partir de routing.yaml -- o mesmo m
 
 ## Na CLI
 
-[`sparkforge next-step`](../cli/next-step.md)
+[`sparkforge-aws next-step`](../cli/next-step.md)
 
 ## Capacidade
 

@@ -23,7 +23,7 @@ Compoe facts de governanca Glue DQ ADVANCED, valida DQDL externo por sintaxe, ju
 
 ## Na CLI
 
-[`sparkforge analyze dq-ai`](../cli/analyze.md), [`sparkforge dq-ai assess`](../cli/dq-ai.md)
+[`sparkforge-aws analyze dq-ai`](../cli/analyze.md), [`sparkforge-aws dq-ai assess`](../cli/dq-ai.md)
 
 ## Capacidade
 

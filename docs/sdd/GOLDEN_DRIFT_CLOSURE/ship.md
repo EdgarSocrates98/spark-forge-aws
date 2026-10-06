@@ -27,7 +27,7 @@ regras ou superfícies.
 - `SPARKFORGE_REGEN_SCAN=1 python -m pytest tests/test_fixtures_golden_scan.py::test_golden[misto] -q -p no:cacheprovider` — `1 passed`.
 - `python -m pytest tests/test_fixtures_scenarios.py -q -p no:cacheprovider` — `37 passed`.
 - `python -m pytest tests/test_fixtures_kind_coverage.py tests/test_verify_wheel.py -q -p no:cacheprovider --basetemp .pytest-tmp-golden-drift-corpus-gate` — `116 passed`.
-- `sparkforge sdd check --repo . --feature GOLDEN_DRIFT_CLOSURE` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature GOLDEN_DRIFT_CLOSURE` — `ok: true`.
 
 ## Limites
 

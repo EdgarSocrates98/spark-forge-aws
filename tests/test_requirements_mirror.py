@@ -59,11 +59,13 @@ class TestExtraction:
         assert {"boto3", "mcp", "starlette", "uvicorn", "pytest", "ruff"} <= found
 
     def test_the_entry_point_is_not_mistaken_for_a_requirement(self):
-        """`[project.scripts]` declara `sparkforge = "...cli:main"`. Sem o corte
+        """`[project.scripts]` declara `sparkforge-aws = "...cli:main"`. Sem o corte
         antes dessa secao, o entry point viraria uma linha de requisito e o
         `pip install -r` quebraria."""
         assert not any("cli:main" in r for r in requirements_from_pyproject())
-        assert not any(r.lower().startswith("sparkforge") for r in requirements_from_pyproject())
+        assert not any(
+            r.lower().startswith("sparkforge-aws") for r in requirements_from_pyproject()
+        )
 
     def test_the_build_backend_is_not_a_requirement(self):
         """`[build-system]` fica fora do recorte: setuptools e requisito de

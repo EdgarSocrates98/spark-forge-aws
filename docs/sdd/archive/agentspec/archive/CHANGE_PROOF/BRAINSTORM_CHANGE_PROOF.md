@@ -41,7 +41,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/proof/` (modulo puro); `rules/catalog/proof_axes.yaml` (mapa eixo -> fonte, chave estavel por tipo de subject); `adapters/_core.py`, `cli.py`, `tools.py`; `agents/executors/sf-verifier.md`; `fixtures/proof/` | Verbo de topo: compoe sobre findings e facts, julga no processo, nao le artefato de job |
+| Likely Location | `sparkforge_aws/proof/` (modulo puro); `rules/catalog/proof_axes.yaml` (mapa eixo -> fonte, chave estavel por tipo de subject); `adapters/_core.py`, `cli.py`, `tools.py`; `agents/executors/sf-verifier.md`; `fixtures/proof/` | Verbo de topo: compoe sobre findings e facts, julga no processo, nao le artefato de job |
 | Relevant KB Domains | Validacao funcional (`funcval`), benchmark (`bench.*`), motor de regras (`judge`, `skipped`) | Reusa os veredictos que ja existem |
 | IaC Patterns | Nenhum | So codigo e registros manuais |
 
@@ -140,7 +140,7 @@
 |---|----------|-----------|----------------------|
 | 1 | Obrigacao derivada de `action.moves` por um mapa versionado `rules/catalog/proof_axes.yaml` (sem chave `rules:`) | Vocabulario fechado de 23 eixos; nao reescreve o catalogo | Anotar os 479 itens de `validation`; tres provas fixas |
 | 2 | Quatro desfechos: `refuted`, `not_refuted`, `inconclusive`, `unproven`; nunca `proven` | Proxy de funcval nao prova equivalencia (o `sf-synthesizer` ja proibe "resultado identico"); delta nao prova melhoria atribuivel | `proven` como no §20; `proven` so para medida exata |
-| 3 | Verbo de topo `sparkforge proof` e tool `sparkforge_proof` READ_ONLY | Compoe sobre findings e facts, como `arbitrate` e `root_cause` | Dentro do recibo; campo no `Finding` |
+| 3 | Verbo de topo `sparkforge-aws proof` e tool `sparkforge_proof` READ_ONLY | Compoe sobre findings e facts, como `arbitrate` e `root_cause` | Dentro do recibo; campo no `Finding` |
 | 4 | Obrigacao de resolucao para todo finding aplicado, julgando `--after-facts` no processo com `run_judge(..., return_skipped=True)` | A diferenca entre "resolvida" e "muda por falta de artefato" so aparece no `skipped`; um arquivo de findings do depois nao a carrega | `--after-findings` |
 | 5 | Resolucao: dispara de novo na mesma chave -> `refuted`; regra em `skipped` -> `unproven` com os kinds que faltam; avaliada e nao disparou -> `not_refuted` | Ausencia so vale se a regra podia disparar | Tratar ausencia como resolucao |
 | 6 | Chave estavel declarada por tipo de subject no mesmo YAML: `source_location` -> `(file, symbol)`; `tf_resource`, `stage`, `table`, `plan_node` -> `symbol`; `job_run` -> `job_name` quando existe; tipo sem chave -> resolucao `inconclusive` (`subject_sem_chave_estavel`) | `line`, `col`, `snippet`, `stage_id`, `job_run_id` e `event` mudam sem que nada seja resolvido | Comparar o `subject` inteiro |

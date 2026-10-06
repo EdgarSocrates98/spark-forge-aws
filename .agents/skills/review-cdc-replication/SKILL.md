@@ -15,9 +15,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze cdc
-  - sparkforge analyze schema-registry
-  - sparkforge judge
+  - sparkforge-aws analyze cdc
+  - sparkforge-aws analyze schema-registry
+  - sparkforge-aws judge
 subagent: true
 agent: cdc-contract-reviewer
 ---
@@ -36,23 +36,23 @@ Debezium com evento CDC ou tarefa DMS.
 2. Extraia o domínio:
 
    ```bash
-   sparkforge analyze cdc --path <dump-ou-diretorio> --artifact cdc --out .sparkforge/facts_cdc.json
-   sparkforge analyze cdc --path <dump-ou-diretorio> --artifact debezium --out .sparkforge/facts_debezium.json
-   sparkforge analyze cdc --path <dump-ou-diretorio> --artifact dms --out .sparkforge/facts_dms.json
+   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact cdc --out .sparkforge/facts_cdc.json
+   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact debezium --out .sparkforge/facts_debezium.json
+   sparkforge-aws analyze cdc --path <dump-ou-diretorio> --artifact dms --out .sparkforge/facts_dms.json
    ```
 
 3. Julgue fatos observados:
 
    ```bash
-   sparkforge judge --facts .sparkforge/facts_cdc.json --show-skipped
+   sparkforge-aws judge --facts .sparkforge/facts_cdc.json --show-skipped
    ```
 
    Em MCP, a extração é `sparkforge_analyze_cdc`.
    Para contrato/evolução de schema:
 
    ```bash
-   sparkforge analyze schema-registry --path <contract.json> --out .sparkforge/facts_schema.json
-   sparkforge judge --facts .sparkforge/facts_schema.json --show-skipped
+   sparkforge-aws analyze schema-registry --path <contract.json> --out .sparkforge/facts_schema.json
+   sparkforge-aws judge --facts .sparkforge/facts_schema.json --show-skipped
    ```
 
    Em MCP, a extração é `sparkforge_analyze_schema_registry`.
@@ -106,7 +106,7 @@ perdido; compatibilidade declarada não prova consumidor compatível.
 
 ## Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

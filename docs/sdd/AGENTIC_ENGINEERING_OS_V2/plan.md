@@ -8,13 +8,13 @@ upstream:
   path: docs/sdd/AGENTIC_ENGINEERING_OS_V2/design.md
   sha256: "47bc9f41ae32e6dade163f07b463c19fb79b60080f1f0e187e185f8240e65e83"
 tasks:
-  - {id: T1, files: [tests/test_agentic_os_v2.py, sparkforge/agentic/trust.py, sparkforge/agentic/memory.py], covers: [AC1, AC2], test: {path: tests/test_agentic_os_v2.py, name: test_memory_trust_gate_and_retrieval}}
-  - {id: T2, files: [tests/test_agentic_os_v2.py, sparkforge/context/quality.py], covers: [AC3], test: {path: tests/test_agentic_os_v2.py, name: test_context_quality_and_minimum_sufficient_context}}
-  - {id: T7, files: [tests/test_agentic_os_v2.py, sparkforge/agentic/checkpoint.py, sparkforge/protocols/forge.py, sparkforge/protocols/__init__.py], covers: [AC7], test: {path: tests/test_agentic_os_v2.py, name: test_checkpoint_and_forge_protocol_are_content_addressed}}
-  - {id: T3, files: [tests/test_agentic_os_v2.py, sparkforge/economy/ledger.py], covers: [AC4], test: {path: tests/test_agentic_os_v2.py, name: test_token_ledger_reconciliation_is_explicit}}
-  - {id: T8, files: [tests/test_agentic_os_v2.py, sparkforge/economy/model_router.py], covers: [AC5], test: {path: tests/test_agentic_os_v2.py, name: test_model_router_is_shadow_by_default}}
-  - {id: T4, files: [tests/test_agentic_os_v2.py, sparkforge/observability/agentops.py], covers: [AC6], test: {path: tests/test_agentic_os_v2.py, name: test_agentops_inspect_compare_baseline}}
-  - {id: T5, files: [tests/test_agentic_os_v2.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, sparkforge/agentic/__init__.py], covers: [AC8], test: {path: tests/test_agentic_os_v2.py, name: test_cli_mcp_and_doctor_surfaces}}
+  - {id: T1, files: [tests/test_agentic_os_v2.py, sparkforge_aws/agentic/trust.py, sparkforge_aws/agentic/memory.py], covers: [AC1, AC2], test: {path: tests/test_agentic_os_v2.py, name: test_memory_trust_gate_and_retrieval}}
+  - {id: T2, files: [tests/test_agentic_os_v2.py, sparkforge_aws/context/quality.py], covers: [AC3], test: {path: tests/test_agentic_os_v2.py, name: test_context_quality_and_minimum_sufficient_context}}
+  - {id: T7, files: [tests/test_agentic_os_v2.py, sparkforge_aws/agentic/checkpoint.py, sparkforge_aws/protocols/forge.py, sparkforge_aws/protocols/__init__.py], covers: [AC7], test: {path: tests/test_agentic_os_v2.py, name: test_checkpoint_and_forge_protocol_are_content_addressed}}
+  - {id: T3, files: [tests/test_agentic_os_v2.py, sparkforge_aws/economy/ledger.py], covers: [AC4], test: {path: tests/test_agentic_os_v2.py, name: test_token_ledger_reconciliation_is_explicit}}
+  - {id: T8, files: [tests/test_agentic_os_v2.py, sparkforge_aws/economy/model_router.py], covers: [AC5], test: {path: tests/test_agentic_os_v2.py, name: test_model_router_is_shadow_by_default}}
+  - {id: T4, files: [tests/test_agentic_os_v2.py, sparkforge_aws/observability/agentops.py], covers: [AC6], test: {path: tests/test_agentic_os_v2.py, name: test_agentops_inspect_compare_baseline}}
+  - {id: T5, files: [tests/test_agentic_os_v2.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, sparkforge_aws/agentic/__init__.py], covers: [AC8], test: {path: tests/test_agentic_os_v2.py, name: test_cli_mcp_and_doctor_surfaces}}
   - {id: T6, files: [README.md, GUIA_DE_USO.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CURRENT-STATE.md, docs/vnext/FINAL-REPORT.md, docs/vnext/adrs/ADR-012-agentic-os-v2-contracts.md], covers: [AC8], test: {path: tests/test_agentic_os_v2.py, name: test_documentation_describes_evidence_limits}}
 ---
 

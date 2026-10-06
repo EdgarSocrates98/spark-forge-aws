@@ -45,7 +45,7 @@
   "registered_location": {
     "hybrid_access_enabled": false,
     "registered": true,
-    "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/fato_venda",
+    "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/curated/fato_venda",
     "role_arn": "arn:aws:iam::222222222222:role/lf-registration",
     "status": "ok",
     "with_federation": false

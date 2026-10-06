@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.workspace import GraphFragment, compose_federated_graph, project_impact
+from sparkforge_aws.workspace import GraphFragment, compose_federated_graph, project_impact
 
 
 def _impact_graph():

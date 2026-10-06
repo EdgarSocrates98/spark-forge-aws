@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.policy.decide import (
+from sparkforge_aws.policy.decide import (
     ALLOW,
     ASK,
     DENY,
@@ -15,9 +15,9 @@ from sparkforge.policy.decide import (
     decidir_tool,
     dividir_comando,
 )
-from sparkforge.policy.load import PolicyError, Politica, Regra, carregar
-from sparkforge.policy.schema import SCHEMA, validar
-from sparkforge.policy.settings import regras_ask
+from sparkforge_aws.policy.load import PolicyError, Politica, Regra, carregar
+from sparkforge_aws.policy.schema import SCHEMA, validar
+from sparkforge_aws.policy.settings import regras_ask
 
 ROOT = Path(__file__).resolve().parents[1]
 R = [Regra("terraform destroy *", ASK, "x"), Regra("aws s3 rm *", DENY, "y")]
@@ -117,20 +117,20 @@ def test_regras_ask():
     regras = regras_ask(politica, {"CLOUD_MUTATION": ["sparkforge_x", "sparkforge_collect_a"]})
     assert regras == [
         "Bash(terraform destroy *)", "Edit(**/*.tf)", "Write(**/*.tf)",
-        "mcp__sparkforge__sparkforge_collect_a", "mcp__sparkforge__sparkforge_scan",
+        "mcp__sparkforge-aws__sparkforge_collect_a", "mcp__sparkforge-aws__sparkforge_scan",
     ]
 
 
 def test_settings_do_repositorio_em_dia_com_a_policy():
-    from sparkforge.adapters import _core
+    from sparkforge_aws.adapters import _core
 
     assert _core.policy_sync_settings(str(ROOT), check=True)["in_sync"] is True, (
-        "rode: sparkforge policy sync-settings"
+        "rode: sparkforge-aws policy sync-settings"
     )
 
 
 def test_uma_raiz_decide_como_antes_e_varias_aceitam_a_extra(tmp_path):
-    from sparkforge.agents.autonomy import _argumento_fora_da_raiz
+    from sparkforge_aws.agents.autonomy import _argumento_fora_da_raiz
 
     dentro, fora = tmp_path / "repo", tmp_path / "extra"
     dentro.mkdir()

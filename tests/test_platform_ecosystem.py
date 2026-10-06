@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.tools import call_tool
-from sparkforge.platform.ecosystem import load_platform_ecosystem
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.platform.ecosystem import load_platform_ecosystem
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "platform" / "ecosystem.yaml"
 

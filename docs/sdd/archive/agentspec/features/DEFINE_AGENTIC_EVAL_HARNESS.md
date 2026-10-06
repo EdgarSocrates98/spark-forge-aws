@@ -38,10 +38,10 @@ O nível de agente das evals do SparkForge (`evals/fase0.xml`, 10 pares) roda à
 |----------|------|
 | **MUST** | G1 — Extrator `host_transcript` lê o JSONL do Claude Code e emite facts de tool call (verbo canônico, ordem, bytes do resultado), resposta final e usage, com toda anomalia de forma recusada por nome |
 | **MUST** | G2 — Ground truth agêntico em `evals/agentic/fase0/suite.yaml`, que referencia as 10 perguntas de `fase0.xml` sem alterar o XML e acrescenta `required_tools`, `order` e perguntas de abstention |
-| **MUST** | G3 — `sparkforge eval grade` produz veredito por pergunta nas quatro medidas (resposta, abstention, tools, custo) e um `scorecard.json` sem nota composta |
-| **MUST** | G4 — `sparkforge eval compare` lê N scorecards por lado e emite classes `pass`/`fail`/`mixed`, a matriz de transição por pergunta e as recusas `suite_mismatch`/`single_sample` |
+| **MUST** | G3 — `sparkforge-aws eval grade` produz veredito por pergunta nas quatro medidas (resposta, abstention, tools, custo) e um `scorecard.json` sem nota composta |
+| **MUST** | G4 — `sparkforge-aws eval compare` lê N scorecards por lado e emite classes `pass`/`fail`/`mixed`, a matriz de transição por pergunta e as recusas `suite_mismatch`/`single_sample` |
 | **MUST** | G5 — Fixtures sintéticas de transcript com golden test do extrator e do grader, sem nenhum transcript real no repo |
-| **MUST** | G6 — Invariantes preservadas: `sparkforge/` não chama provider nem dispara processo de host (regra 23), e byte e token nunca se somam (regra 22) |
+| **MUST** | G6 — Invariantes preservadas: `sparkforge_aws/` não chama provider nem dispara processo de host (regra 23), e byte e token nunca se somam (regra 22) |
 | **SHOULD** | G7 — Runner `scripts/run_agentic_eval.py`: uma pergunta por sessão `claude -p`, um JSONL por pergunta, gravado fora do repo |
 | **SHOULD** | G8 — Primeiro baseline real registrado: scorecards commitados (só ids e números) e uma seção nova em `evals/README.md` |
 | **COULD** | G9 — A varredura de superfície de agente passa a proibir citação de `evals/agentic/` em `skills/`, `agents/`, `knowledge/` e nos espelhos `.claude/` e `.agents/` |
@@ -55,7 +55,7 @@ O nível de agente das evals do SparkForge (`evals/fase0.xml`, 10 pares) roda à
 - [ ] SC3 — `suite.yaml` cobre 10/10 perguntas de `fase0.xml` com `required_tools` não vazio e acrescenta ≥ 3 perguntas com `expects_abstention: true`, cada uma ancorada num fact `*.unresolved` que o corpus realmente emite (conferido por teste que roda o extrator sobre a fixture citada)
 - [ ] SC4 — `eval compare` sobre dois diretórios com hash de `suite.yaml` diferente sai com `suite_mismatch` e 0 transições emitidas; com N=1 em qualquer lado, o cabeçalho traz `single_sample: true`
 - [ ] SC5 — `scripts/check_evals.py` continua passando e `fase0.xml` tem 0 linhas alteradas
-- [ ] SC6 — o teste que varre imports segue verde: 0 ocorrências de `anthropic`, `openai`, `bedrock`, `litellm` e 0 de `subprocess` disparando `claude` sob `sparkforge/`
+- [ ] SC6 — o teste que varre imports segue verde: 0 ocorrências de `anthropic`, `openai`, `bedrock`, `litellm` e 0 de `subprocess` disparando `claude` sob `sparkforge_aws/`
 - [ ] SC7 — cada arquivo de teste novo cai em exatamente 1 lote de `tests/test_suite_batches.py::LOTES`, e o gate de lastro (`scripts/check_vnext_claims.py`) passa
 - [ ] SC8 (SHOULD) — uma execução do runner com N ≥ 3 por pergunta gera 13 × N transcripts, o `eval grade` pontua 100% deles sem exceção não tratada, e o scorecard resultante é commitado
 
@@ -74,7 +74,7 @@ O nível de agente das evals do SparkForge (`evals/fase0.xml`, 10 pares) roda à
 | AT-007 | Tool faltando | `required_tools: [analyze_pyspark, judge]` e transcript só com `judge` | `eval grade` | tools `missing:[analyze_pyspark]` |
 | AT-008 | Ordem violada | `order: [analyze_pyspark < judge]` e primeira ocorrência de `judge` antes da de `analyze_pyspark` | `eval grade` | tools `order_violated:[analyze_pyspark<judge]` |
 | AT-009 | Tool extra | Transcript com as tools exigidas mais `rules_lookup` | `eval grade` | tools `ok`; `tool_calls` conta 3 |
-| AT-010 | Normalização de canal | Um `tool_use` `mcp__sparkforge__sparkforge_judge` e outro Bash com `sparkforge judge ...` | `eval grade` | os dois viram o verbo canônico `judge` |
+| AT-010 | Normalização de canal | Um `tool_use` `mcp__sparkforge-aws__sparkforge_judge` e outro Bash com `sparkforge-aws judge ...` | `eval grade` | os dois viram o verbo canônico `judge` |
 | AT-011 | Bash não reconhecido | Bash com `ls fixtures/` | `eval grade` | contado como `other`, sem influir em `required_tools` |
 | AT-012 | Envelope quebrado | JSONL com linha não-JSON e `message` em forma de lista | `eval grade` | pergunta `ungraded`; lacunas `host_format_unknown`/`message_field_not_object` no scorecard; nenhuma exceção sobe |
 | AT-013 | Sem usage | Transcript sem `usage` nas linhas de assistente | `eval grade` | custo com `tokens_unresolved`; `tool_result_bytes` e `tool_calls` presentes |
@@ -108,7 +108,7 @@ O nível de agente das evals do SparkForge (`evals/fase0.xml`, 10 pares) roda à
 
 | Type | Constraint | Impact |
 |------|------------|--------|
-| Technical | Regra 23: `sparkforge/` não importa provider nem dispara host | Runner obrigatoriamente em `scripts/`; o pacote só lê arquivo |
+| Technical | Regra 23: `sparkforge_aws/` não importa provider nem dispara host | Runner obrigatoriamente em `scripts/`; o pacote só lê arquivo |
 | Technical | Regras 22 e 24: byte ≠ token; token só com transcript | Colunas separadas; sem usage sai `tokens_unresolved` |
 | Technical | Regra 25: dólar exige `cost_basis` | Nenhum campo monetário no scorecard |
 | Technical | Regra 27: medição nunca derruba a chamada | Linha ruim vira lacuna; pergunta sai `ungraded` e o resto segue |
@@ -126,8 +126,8 @@ O nível de agente das evals do SparkForge (`evals/fase0.xml`, 10 pares) roda à
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/collect/host_transcript.py` (extrator, ao lado de `host_usage.py`); lógica de grade e compare em módulo novo sob `sparkforge/` (o Design decide entre `sparkforge/facts/` e `sparkforge/evals/`, no molde de `sparkforge/facts/benchmark.py`); verbo em `sparkforge/adapters/cli.py` (tabela de despacho perto da linha 3647, como `("benchmark", None): _cmd_benchmark`); runner em `scripts/run_agentic_eval.py`; ground truth em `evals/agentic/fase0/suite.yaml`; fixtures em `fixtures/host_transcript/<caso>/{input,expected}/` | Segue o padrão `collect *` para quem lê artefato de fora e o padrão `benchmark` para comparar dois lados |
-| **KB Domains** | agentspec: `testing`, `python`, `pydantic`, `genai`. Repo: `evals/README.md`, `sparkforge/collect/host_usage.py`, `sparkforge/facts/benchmark.py`, `tests/test_evals_holdout.py`, `docs/agentic-evolution-report.md` | O KB do agentspec é genérico; os padrões decisivos estão no codebase |
+| **Deployment Location** | `sparkforge_aws/collect/host_transcript.py` (extrator, ao lado de `host_usage.py`); lógica de grade e compare em módulo novo sob `sparkforge_aws/` (o Design decide entre `sparkforge_aws/facts/` e `sparkforge_aws/evals/`, no molde de `sparkforge_aws/facts/benchmark.py`); verbo em `sparkforge_aws/adapters/cli.py` (tabela de despacho perto da linha 3647, como `("benchmark", None): _cmd_benchmark`); runner em `scripts/run_agentic_eval.py`; ground truth em `evals/agentic/fase0/suite.yaml`; fixtures em `fixtures/host_transcript/<caso>/{input,expected}/` | Segue o padrão `collect *` para quem lê artefato de fora e o padrão `benchmark` para comparar dois lados |
+| **KB Domains** | agentspec: `testing`, `python`, `pydantic`, `genai`. Repo: `evals/README.md`, `sparkforge_aws/collect/host_usage.py`, `sparkforge_aws/facts/benchmark.py`, `tests/test_evals_holdout.py`, `docs/agentic-evolution-report.md` | O KB do agentspec é genérico; os padrões decisivos estão no codebase |
 | **IaC Impact** | None | Nada provisionado. O runner usa o binário `claude` local |
 
 ---

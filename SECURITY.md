@@ -32,7 +32,7 @@ Quem reportou é avisado quando a correção entrar em `main`.
   `SessionStart` e comandos dos servidores MCP). A lista fechada está em
   `tests/test_execution_surface.py`, e a seção "Segurança" do `README.md` a descreve.
 - **Tools MCP e CLI**: leitura ou escrita fora da raiz do repositório, argumento que
-  alcança arquivo sem passar por `sparkforge.paths.resolve_within`, tool marcada como
+  alcança arquivo sem passar por `sparkforge_aws.paths.resolve_within`, tool marcada como
   só leitura que grava.
 - **Política** (`.sparkforge/policy.yaml`, hook `PreToolUse`, `permissions.ask`): comando
   que deveria ser negado e passa.

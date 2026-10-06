@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from sparkforge.facts.glue_streaming import extract_glue_streaming_path
+from sparkforge_aws.facts.glue_streaming import extract_glue_streaming_path
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "glue_streaming"
 

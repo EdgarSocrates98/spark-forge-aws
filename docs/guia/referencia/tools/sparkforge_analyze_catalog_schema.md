@@ -20,7 +20,7 @@ Extrai facts de um dump JSON ja coletado do Glue Data Catalog (`GetTables`/`GetT
 
 ## Na CLI
 
-[`sparkforge analyze catalog-schema`](../cli/analyze.md)
+[`sparkforge-aws analyze catalog-schema`](../cli/analyze.md)
 
 ## Capacidade
 

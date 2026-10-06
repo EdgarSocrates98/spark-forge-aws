@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.packs.manifest import (
+from sparkforge_aws.packs.manifest import (
     PackRefused,
     check_core,
     dentro_da_faixa,

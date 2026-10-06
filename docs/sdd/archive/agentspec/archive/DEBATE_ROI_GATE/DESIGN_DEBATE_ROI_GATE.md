@@ -46,13 +46,13 @@ politicas lidas do catalogo:
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/agentic/executor/gate.py` | Avaliação pura do par: sinais, recusa do sinal sem fonte, veredito ordenado; carga das duas políticas | stdlib + `yaml`, `safe_catalog_file` |
+| `sparkforge_aws/agentic/executor/gate.py` | Avaliação pura do par: sinais, recusa do sinal sem fonte, veredito ordenado; carga das duas políticas | stdlib + `yaml`, `safe_catalog_file` |
 | `run.py::_arbitra_pares` | Anexa `debate_gate` a cada entrada que vira plano | chamada ao gate |
 | `run.py::run_executor` | Grava um trace `debate_gate` por plano | `_persistir` existente |
 | `debate_run.start` | Três recusas novas antes do budget | constantes + `_recusa` |
 | `rules/catalog/debate_gate.yaml` | Limiar de severidade declarado | YAML de política |
 | `rules/catalog/action_kinds.yaml` | `reversible` nos 70 `kind`, com o critério no cabeçalho | YAML de vocabulário |
-| `sparkforge/adapters/tools.py` | Enum de recusa do debate e descrições de `arbitrate`/`debate start` | schema existente |
+| `sparkforge_aws/adapters/tools.py` | Enum de recusa do debate e descrições de `arbitrate`/`debate start` | schema existente |
 
 ---
 
@@ -200,10 +200,10 @@ Carga por `safe_catalog_file`, forma validada (`policy_version` inteiro, `debate
 |---|------|--------|---------|-------|--------------|
 | 1 | `rules/catalog/action_kinds.yaml` | Modify | Critério e `reversible` nos 70 `kind` | (general) | None |
 | 2 | `rules/catalog/debate_gate.yaml` | Create | Limiar de severidade | (general) | None |
-| 3 | `sparkforge/agentic/executor/gate.py` | Create | Sinais, veredito, carga das políticas | @python-developer | 1, 2 |
-| 4 | `sparkforge/agentic/executor/run.py` | Modify | `debate_gate` na entrada; trace | @python-developer | 3 |
-| 5 | `sparkforge/agentic/executor/debate_run.py` | Modify | Três recusas no `start` | @python-developer | 4 |
-| 6 | `sparkforge/adapters/tools.py` | Modify | Enum e descrições | @python-developer | 5 |
+| 3 | `sparkforge_aws/agentic/executor/gate.py` | Create | Sinais, veredito, carga das políticas | @python-developer | 1, 2 |
+| 4 | `sparkforge_aws/agentic/executor/run.py` | Modify | `debate_gate` na entrada; trace | @python-developer | 3 |
+| 5 | `sparkforge_aws/agentic/executor/debate_run.py` | Modify | Três recusas no `start` | @python-developer | 4 |
+| 6 | `sparkforge_aws/adapters/tools.py` | Modify | Enum e descrições | @python-developer | 5 |
 | 7 | `tests/test_agentic_executor_gate.py` | Create | Os quatro vereditos, sinais, política inválida, varredura de texto | @test-generator | 3 |
 | 8 | `fixtures/debate/gate_{experimentar_antes,nao_debater,unresolved}/` + `tests/test_fixtures_golden_debate.py` | Create/Modify | Goldens com `input/findings.json` e `input/facts.json` sintéticos (o harness passa a aceitar a união do próprio caso) | @test-generator | 5 |
 | 9 | `tests/test_rules_action_field.py`, `tests/test_rules_loader.py`, `tests/test_fixtures_golden_mcp_parity.py`, `tests/test_agentic_executor_run.py` | Modify | Trava de `reversible`, `NAO_SAO_AREA`, exceções de paridade, trace novo | (general) | 1-6 |

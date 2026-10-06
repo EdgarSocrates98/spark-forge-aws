@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.findings.models import Fact
-from sparkforge.finops.realized import GainError, realized_gain
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.finops.realized import GainError, realized_gain
 
 GB = 1_000_000_000
 

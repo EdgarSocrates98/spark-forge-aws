@@ -9,13 +9,13 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_path
-from sparkforge.facts.streaming import extract_streaming_progress_path
-from sparkforge.facts.streaming_composition import build_streaming_composition
-from sparkforge.facts.streaming_ops import extract_streaming_ops_path
-from sparkforge.facts.transport import extract_transport_path
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.iceberg_metadata import extract_iceberg_metadata_path
+from sparkforge_aws.facts.streaming import extract_streaming_progress_path
+from sparkforge_aws.facts.streaming_composition import build_streaming_composition
+from sparkforge_aws.facts.streaming_ops import extract_streaming_ops_path
+from sparkforge_aws.facts.transport import extract_transport_path
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_composition"

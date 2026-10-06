@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_FLINK_PLATFORM/define.md
   sha256: "67751fe8f9b33d4c50df63a829b10d64c797363e7c0ca1eab6fdd6fa2ef9df46"
 files:
-  - {path: sparkforge/facts/flink.py, action: create, reason: "extrator JSON/JSONL offline para Flink e Managed Flink"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "expor analyzer e envelope"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze flink"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar tool MCP"}
+  - {path: sparkforge_aws/facts/flink.py, action: create, reason: "extrator JSON/JSONL offline para Flink e Managed Flink"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "expor analyzer e envelope"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze flink"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar tool MCP"}
   - {path: rules/catalog/flink.yaml, action: create, reason: "findings apenas para checkpoint falho e backpressure observado"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "rota SF-FLINK para especialista streaming"}
   - {path: fixtures/flink, action: create, reason: "goldens Flink e Managed Flink"}

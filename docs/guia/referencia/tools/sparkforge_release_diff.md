@@ -19,7 +19,7 @@ O que muda de COMPONENTE entre duas releases, cada lado dado por um par (platafo
 
 ## Na CLI
 
-[`sparkforge release diff`](../cli/release.md)
+[`sparkforge-aws release diff`](../cli/release.md)
 
 ## Capacidade
 

@@ -6,7 +6,7 @@ descrição do runtime ou validação funcional.
 
 ## Separação de domínios
 
-`sparkforge analyze flink --artifact flink` lê fatos do Flink upstream:
+`sparkforge-aws analyze flink --artifact flink` lê fatos do Flink upstream:
 `flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`,
 `flink.state` e `flink.metric`. Source e sink são endpoints explícitos quando o dump traz
 `sources`/`source` e `sinks`/`sink`; métricas como backlog, lag e commits
@@ -81,8 +81,8 @@ ser unresolved e nomear o artefato que destrava a pergunta.
 ## Procedimento
 
 1. Salvar o dump e registrar origem, instante e runtime.
-2. Rodar `sparkforge analyze flink` no domínio correto.
-3. Conferir unresolved e procedência antes de `sparkforge judge`.
+2. Rodar `sparkforge-aws analyze flink` no domínio correto.
+3. Conferir unresolved e procedência antes de `sparkforge-aws judge`.
 4. Correlacionar checkpoint, operator, state, source, sink e transporte; trate
    `flink.source`/`flink.sink` como observações de endpoint, não como prova de
    saúde ou semântica de entrega.
@@ -91,7 +91,7 @@ ser unresolved e nomear o artefato que destrava a pergunta.
 
 ## Coleta Managed Flink read-only
 
-Para uma aplicação AWS, `sparkforge collect managed-flink` chama somente
+Para uma aplicação AWS, `sparkforge-aws collect managed-flink` chama somente
 `kinesisanalyticsv2.DescribeApplication` com `IncludeAdditionalDetails=false`.
 O artifact local normaliza nome/ARN, status, runtime, versão da aplicação,
 role, checkpoint, paralelismo, VPC, logging, localização do código sem copiar
@@ -99,9 +99,9 @@ role, checkpoint, paralelismo, VPC, logging, localização do código sem copiar
 comando de recoleta e cache offline-first.
 
 ```bash
-sparkforge collect managed-flink --repo . --application-name orders \
+sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 --now <ISO8601>
-sparkforge analyze flink \
+sparkforge-aws analyze flink \
   --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
   --artifact managed_flink
 ```
@@ -122,12 +122,12 @@ Para medir uma janela bounded, acrescente `--metrics-start <ISO8601>` e
 com múltiplo de 60 entre 60 e 86400:
 
 ```bash
-sparkforge collect managed-flink --repo . --application-name orders \
+sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 \
   --metrics-start 2026-10-03T00:00:00Z \
   --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
   --now 2026-10-03T02:05:00Z
-sparkforge analyze flink \
+sparkforge-aws analyze flink \
   --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1__metrics_*.json \
   --artifact managed_flink
 ```

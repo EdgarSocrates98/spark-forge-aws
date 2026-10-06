@@ -27,7 +27,7 @@ chosen: A
 
 ## Evidência que abriu a frente
 
-`sparkforge/facts/streaming.py` já extrai `streaming.progress.batch`,
+`sparkforge_aws/facts/streaming.py` já extrai `streaming.progress.batch`,
 `streaming.progress.event_time` e `streaming.progress.state_operator`, mas o
 fact `streaming.progress.series` resume apenas taxas e total de linhas do state.
 Assim, a evidência já presente não chega compactada ao judge para duração,

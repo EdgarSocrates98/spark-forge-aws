@@ -65,7 +65,7 @@ verdes, nenhuma falha. A suíte inteira em lotes não rodou.
 seguintes fecham sem recusa" ainda por medir. Pela regra do `sdd-ship` revista
 aqui, aquilo seria `draft` ou `abandoned`. O arquivo fica como está (regra 21).
 Até agora, `SDD_OPERATOR`, `SDD_OPERATOR_DURAVEL` e esta feature fecham com
-`sparkforge sdd check` sem recusa; `SDD_MIGRATION` e `SDD_EVAL` ainda não
+`sparkforge-aws sdd check` sem recusa; `SDD_MIGRATION` e `SDD_EVAL` ainda não
 existem, e é `SDD_EVAL` que consolida a verificação.
 
 ## Lições

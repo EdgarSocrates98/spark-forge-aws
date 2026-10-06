@@ -8,7 +8,7 @@
   },
   "refused": [
     {
-      "origin": "sparkforge",
+      "origin": "sparkforge-aws",
       "id": "span_task00",
       "reason": "componente_nao_tool"
     }

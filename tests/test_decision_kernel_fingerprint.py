@@ -1,6 +1,6 @@
-from sparkforge.decision.contracts import ContractLoader
-from sparkforge.decision.fingerprint import decision_fingerprint
-from sparkforge.decision.state import StateCompiler
+from sparkforge_aws.decision.contracts import ContractLoader
+from sparkforge_aws.decision.fingerprint import decision_fingerprint
+from sparkforge_aws.decision.state import StateCompiler
 
 
 def _raw(version="1", choice="safe"):

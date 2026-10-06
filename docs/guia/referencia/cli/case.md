@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge case`
+# `sparkforge-aws case`
 
 Gerencia o estado do case em .sparkforge/case.yaml.
 
@@ -8,16 +8,16 @@ Gerencia o estado do case em .sparkforge/case.yaml.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge case get`](#sparkforge-case-get) | Le o case atual. |
-| [`sparkforge case open`](#sparkforge-case-open) | Cria um case novo, em fase intake. |
-| [`sparkforge case update`](#sparkforge-case-update) | Atualiza fase, gate ou registra uso de skill no case. |
+| [`sparkforge-aws case get`](#sparkforge-aws-case-get) | Le o case atual. |
+| [`sparkforge-aws case open`](#sparkforge-aws-case-open) | Cria um case novo, em fase intake. |
+| [`sparkforge-aws case update`](#sparkforge-aws-case-update) | Atualiza fase, gate ou registra uso de skill no case. |
 
-## `sparkforge case get`
+## `sparkforge-aws case get`
 
 Le o case atual.
 
 ```bash
-sparkforge case get --help
+sparkforge-aws case get --help
 ```
 
 ### Opções
@@ -30,12 +30,12 @@ sparkforge case get --help
 
 [`sparkforge_case_get`](../tools/sparkforge_case_get.md), [`sparkforge_case_open`](../tools/sparkforge_case_open.md), [`sparkforge_case_update`](../tools/sparkforge_case_update.md)
 
-## `sparkforge case open`
+## `sparkforge-aws case open`
 
 Cria um case novo, em fase intake.
 
 ```bash
-sparkforge case open --help
+sparkforge-aws case open --help
 ```
 
 ### Opções
@@ -61,12 +61,12 @@ sparkforge case open --help
 
 [`sparkforge_case_get`](../tools/sparkforge_case_get.md), [`sparkforge_case_open`](../tools/sparkforge_case_open.md), [`sparkforge_case_update`](../tools/sparkforge_case_update.md)
 
-## `sparkforge case update`
+## `sparkforge-aws case update`
 
 Atualiza fase, gate ou registra uso de skill no case.
 
 ```bash
-sparkforge case update --help
+sparkforge-aws case update --help
 ```
 
 ### Opções

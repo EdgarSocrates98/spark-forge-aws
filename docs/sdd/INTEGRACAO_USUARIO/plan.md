@@ -9,39 +9,39 @@ upstream:
   sha256: "40cebfd5feb8e14d1a51a00e0d679c9473facc5a23d5d7ad3aec7352c4bacb23"
 tasks:
   - id: T1
-    files: [tests/test_integrate.py, sparkforge/integrate/__init__.py, sparkforge/integrate/sources.py, pyproject.toml]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/__init__.py, sparkforge_aws/integrate/sources.py, pyproject.toml]
     covers: [AC1]
     test: {path: tests/test_integrate.py, name: test_wheel_embute_skills_e_agents}
   - id: T2
-    files: [tests/test_integrate.py, sparkforge/integrate/render.py, scripts/sync_skills.py, tests/test_arvore_versionada.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/render.py, scripts/sync_skills.py, tests/test_arvore_versionada.py]
     covers: [AC6]
     test: {path: tests/test_integrate.py, name: test_conteudo_e_o_da_renderizacao_do_sync_skills}
   - id: T3
-    files: [tests/test_integrate.py, sparkforge/integrate/hosts.py, sparkforge/integrate/writer.py, sparkforge/integrate/__init__.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/hosts.py, sparkforge_aws/integrate/writer.py, sparkforge_aws/integrate/__init__.py]
     covers: [AC7]
     test: {path: tests/test_integrate.py, name: test_manifesto_dry_run_e_idempotencia}
   - id: T4
-    files: [tests/test_integrate.py, sparkforge/integrate/writer.py, sparkforge/integrate/__init__.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/writer.py, sparkforge_aws/integrate/__init__.py]
     covers: [AC3, AC5]
     test: {path: tests/test_integrate.py, name: test_integrate_devin_grava_global_e_preserva_mcp_existente}
   - id: T5
-    files: [tests/test_integrate.py, sparkforge/integrate/writer.py, sparkforge/integrate/__init__.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/writer.py, sparkforge_aws/integrate/__init__.py]
     covers: [AC4]
     test: {path: tests/test_integrate.py, name: test_integrate_codex_grava_toml_e_preserva_config}
   - id: T6
-    files: [tests/test_integrate.py, sparkforge/integrate/writer.py, sparkforge/integrate/__init__.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/writer.py, sparkforge_aws/integrate/__init__.py]
     covers: [AC8]
     test: {path: tests/test_integrate.py, name: test_detach_remove_so_o_proprio_e_recusa_o_editado}
   - id: T7
-    files: [tests/test_integrate.py, sparkforge/integrate/claude.py, sparkforge/integrate/__init__.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/claude.py, sparkforge_aws/integrate/__init__.py]
     covers: [AC2]
     test: {path: tests/test_integrate.py, name: test_integrate_claude_monta_plugin_e_recusa_sem_cli}
   - id: T8
-    files: [tests/test_integrate.py, sparkforge/integrate/conflict.py, sparkforge/integrate/__init__.py]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/conflict.py, sparkforge_aws/integrate/__init__.py]
     covers: [AC9, AC10]
     test: {path: tests/test_integrate.py, name: test_conflito_com_copia_vendorizada_tres_escolhas}
   - id: T9
-    files: [tests/test_integrate.py, sparkforge/integrate/__init__.py, sparkforge/doctor.py, sparkforge/adapters/_core.py, sparkforge/adapters/tools.py, sparkforge/adapters/cli.py, tests/test_doctor.py, tests/test_adapters_tools.py, tests/test_capability_parity.py, docs/guia/referencia/README.md, docs/guia/referencia/cli/README.md, docs/guia/referencia/cli/integrate.md, docs/guia/referencia/cli/detach.md, docs/guia/referencia/cli/doctor.md, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_doctor.md]
+    files: [tests/test_integrate.py, sparkforge_aws/integrate/__init__.py, sparkforge_aws/doctor.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/tools.py, sparkforge_aws/adapters/cli.py, tests/test_doctor.py, tests/test_adapters_tools.py, tests/test_capability_parity.py, docs/guia/referencia/README.md, docs/guia/referencia/cli/README.md, docs/guia/referencia/cli/integrate.md, docs/guia/referencia/cli/detach.md, docs/guia/referencia/cli/doctor.md, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_doctor.md]
     covers: [AC11]
     test: {path: tests/test_integrate.py, name: test_doctor_informa_integracao_por_host}
   - id: T10
@@ -59,10 +59,10 @@ verde depois, e o `ruff` passou em todas.
 ## Premissas do design
 
 - **D1:** o renderizador sai de `scripts/sync_skills.py` e vai para
-  `sparkforge/integrate/render.py`, junto com as tabelas de despacho. As funções que
+  `sparkforge_aws/integrate/render.py`, junto com as tabelas de despacho. As funções que
   leem perfis passam a receber `agents_src`. A fachada carrega `render.py` **pelo
   caminho** (`importlib.util.spec_from_file_location`), e não por
-  `import sparkforge...`. A razão: com instalação editável, o import pelo pacote acharia
+  `import sparkforge_aws...`. A razão: com instalação editável, o import pelo pacote acharia
   o `render.py` do disco dentro da visão `git archive` de
   `tests/test_arvore_versionada.py`, e o gate deixaria de conferir o renderizador
   commitado. Por isso `render.py` importa só a biblioteca padrão. O carregamento pelo
@@ -71,7 +71,7 @@ verde depois, e o `ruff` passou em todas.
 - **D2:** a plataforma `codex` gera o TOML com `name`, `description` e
   `developer_instructions` por `json.dumps`, sem biblioteca de TOML. Os executores não
   vão para o Codex, porque não têm `description` e o TOML exige esse campo.
-- **D3:** o bundle mora em `sparkforge/integrate/bundle/{skills,agents}`.
+- **D3:** o bundle mora em `sparkforge_aws/integrate/bundle/{skills,agents}`.
 - **D4:** `hosts.host(nome, home=, windows=, appdata=)`. No Windows o diretório de
   config do Devin inteiro vai para `%APPDATA%\devin`, com os agents e o
   `mcp_config.json`. `~/.agents/skills` é compartilhado e recebe a renderização
@@ -79,7 +79,7 @@ verde depois, e o `ruff` passou em todas.
 - **D5:** o manifesto guarda caminhos relativos ao HOME em POSIX (absolutos quando
   ficam fora dele) e o sha256 de cada arquivo. Os donos de um arquivo compartilhado
   são os hosts que o listam.
-- **D6–D7:** para JSON, só `mcpServers.sparkforge`. Para TOML, um bloco entre
+- **D6–D7:** para JSON, só `mcpServers.sparkforge-aws`. Para TOML, um bloco entre
   `# >>> sparkforge (gerenciado)` e `# <<< sparkforge`. Um `detach` devolve a config
   anterior.
 - **D8:** o executor do `claude` é injetável (`runner`, `which`). A primeira vez faz
@@ -95,9 +95,9 @@ verde depois, e o `ruff` passou em todas.
 A **T9** precisa de sete arquivos que o design não lista. Sem eles, o AC11 não
 fecha:
 
-- `sparkforge/adapters/_core.py`: é onde o `doctor` sonda o ambiente, e ele é também a
+- `sparkforge_aws/adapters/_core.py`: é onde o `doctor` sonda o ambiente, e ele é também a
   tool MCP `sparkforge_doctor`.
-- `sparkforge/adapters/tools.py`: a descrição da tool diz "nove checagens".
+- `sparkforge_aws/adapters/tools.py`: a descrição da tool diz "nove checagens".
 - `tests/test_doctor.py`: a lista `IDS` exata.
 - `tests/test_adapters_tools.py`: faz `len(checks) == 9`.
 - as páginas geradas `docs/guia/referencia/cli/doctor.md`,
@@ -130,7 +130,7 @@ O design precisa dessa emenda antes de o plano ir a `ready`.
 `tests/test_integrate.py`, primeira versão:
 
 ```python
-"""`sparkforge integrate` e `sparkforge detach`: a integracao por usuario.
+"""`sparkforge-aws integrate` e `sparkforge-aws detach`: a integracao por usuario.
 
 Todo teste aponta HOME, USERPROFILE e APPDATA para `tmp_path` e injeta o executor
 do `claude`: nenhum teste toca o HOME real nem chama o binario `claude` de verdade.
@@ -145,7 +145,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.integrate import sources
+from sparkforge_aws.integrate import sources
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -177,14 +177,14 @@ def test_wheel_embute_skills_e_agents(tmp_path):
     if build.returncode != 0:
         pytest.skip(f"`python -m build` indisponivel ou falhou: {build.stderr[-400:]}")
     (roda,) = sorted(out.glob("*.whl"))
-    prefixo = "sparkforge/integrate/bundle/"
+    prefixo = "sparkforge_aws/integrate/bundle/"
     with zipfile.ZipFile(roda) as wheel:
         nomes = wheel.namelist()
         assert f"{prefixo}skills/sdd-plan/SKILL.md" in nomes
         assert f"{prefixo}agents/sf-runtime-specialist.md" in nomes
         assert f"{prefixo}agents/executors/sf-judge.md" in nomes
-        # `sparkforge/agents/` e pacote Python: o bundle nao pode cair nele.
-        assert not [n for n in nomes if n.startswith("sparkforge/agents/") and n.endswith(".md")]
+        # `sparkforge_aws/agents/` e pacote Python: o bundle nao pode cair nele.
+        assert not [n for n in nomes if n.startswith("sparkforge_aws/agents/") and n.endswith(".md")]
         destino = tmp_path / "instalado"
         wheel.extractall(destino, members=[n for n in nomes if n.startswith(prefixo)])
 
@@ -192,7 +192,7 @@ def test_wheel_embute_skills_e_agents(tmp_path):
     sem_repo = tmp_path / "sem_repo"
     (sem_repo / "skills").mkdir(parents=True)
     (sem_repo / "agents").mkdir()
-    bundle = destino / "sparkforge" / "integrate" / "bundle"
+    bundle = destino / "sparkforge_aws" / "integrate" / "bundle"
     raiz = sources.content_root(repo_root=sem_repo, bundle=bundle)
     assert raiz == bundle
     assert _relativos(sources.skills_dir(raiz)) == _relativos(ROOT / "skills")
@@ -212,14 +212,14 @@ python -m pytest tests/test_integrate.py::test_wheel_embute_skills_e_agents -q -
 ```
 
 Falha esperada: erro de coleta com `ModuleNotFoundError: No module named
-'sparkforge.integrate'`. O pacote ausente é a unidade sob teste.
+'sparkforge_aws.integrate'`. O pacote ausente é a unidade sob teste.
 
 ### 3. Código mínimo
 
-`sparkforge/integrate/__init__.py`:
+`sparkforge_aws/integrate/__init__.py`:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -227,7 +227,7 @@ embute, e nunca dentro do repositorio. Desenho: docs/sdd/INTEGRACAO_USUARIO/desi
 """
 ```
 
-`sparkforge/integrate/sources.py`:
+`sparkforge_aws/integrate/sources.py`:
 
 ```python
 """Onde moram `skills/` e `agents/` que a integracao grava (D3).
@@ -237,8 +237,8 @@ Duas origens, nesta ordem:
 1. a raiz do repositorio, em desenvolvimento -- so vence com `pyproject.toml` e
    `skills/` presentes, para que um `site-packages/agents` de outro pacote nunca
    seja lido por engano;
-2. `sparkforge/integrate/bundle/`, onde o `force-include` do wheel poe as duas
-   pastas. Nao e `sparkforge/agents/`: esse nome ja e pacote Python.
+2. `sparkforge_aws/integrate/bundle/`, onde o `force-include` do wheel poe as duas
+   pastas. Nao e `sparkforge_aws/agents/`: esse nome ja e pacote Python.
 
 Os parametros `repo_root` e `bundle` existem para o teste apontar as duas raizes
 para `tmp_path`; o codigo de producao nunca os passa.
@@ -329,18 +329,18 @@ __all__ = [
 Em `pyproject.toml`, troque
 
 ```toml
-"knowledge" = "sparkforge/knowledge"
+"knowledge" = "sparkforge_aws/knowledge"
 ```
 
 por
 
 ```toml
-"knowledge" = "sparkforge/knowledge"
-# `skills/` e `agents/` vao para `sparkforge/integrate/bundle/`, e nao para
-# `sparkforge/agents/`, que ja e pacote Python. `sparkforge integrate` os le de la
+"knowledge" = "sparkforge_aws/knowledge"
+# `skills/` e `agents/` vao para `sparkforge_aws/integrate/bundle/`, e nao para
+# `sparkforge_aws/agents/`, que ja e pacote Python. `sparkforge-aws integrate` os le de la
 # quando nao ha repositorio (docs/sdd/INTEGRACAO_USUARIO/design.md, D3).
-"skills" = "sparkforge/integrate/bundle/skills"
-"agents" = "sparkforge/integrate/bundle/agents"
+"skills" = "sparkforge_aws/integrate/bundle/skills"
+"agents" = "sparkforge_aws/integrate/bundle/agents"
 ```
 
 e, no `include` do `[tool.hatch.build.targets.sdist]`, troque
@@ -367,14 +367,14 @@ Nesse caso rode `python -m pip install build` e repita.
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`. Esta tarefa move
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`. Esta tarefa move
 `disk_read` e `dependency` (`python scripts/verify_wheel.py` e
 `python scripts/gen_requirements.py --check`), que rodam na T10. O `pyproject.toml`
 não ganha dependência, só `force-include`.
 
 ### 6. Commit
 
-`git add sparkforge/integrate tests/test_integrate.py pyproject.toml` e
+`git add sparkforge_aws/integrate tests/test_integrate.py pyproject.toml` e
 `feat(integrate): ship skills and agents inside the wheel, and find them without the repo`
 
 ## T2 — um renderizador só, com a plataforma `codex`
@@ -395,7 +395,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.integrate import render, sources
+from sparkforge_aws.integrate import render, sources
 ```
 
 e acrescente ao fim do arquivo:
@@ -464,11 +464,11 @@ python -m pytest tests/test_integrate.py::test_conteudo_e_o_da_renderizacao_do_s
 ```
 
 Falha esperada: erro de coleta com `ImportError: cannot import name 'render' from
-'sparkforge.integrate'`.
+'sparkforge_aws.integrate'`.
 
 ### 3. Código mínimo
 
-`sparkforge/integrate/render.py`, inteiro. Da linha 22 até o fim de
+`sparkforge_aws/integrate/render.py`, inteiro. Da linha 22 até o fim de
 `_frontmatter_scalar`, o texto é o de `scripts/sync_skills.py`, da linha 70 à 484,
 **sem mudança**, exceto por dois trechos: a constante `PLATFORMS` (com o comentário
 acima dela) e o desvio `codex` em `render_agent`. O que vem depois de
@@ -477,7 +477,7 @@ acima dela) e o desvio `codex` em `render_agent`. O que vem depois de
 ```python
 """O renderizador por plataforma de skills e agents -- um so, para os espelhos do
 repositorio (`scripts/sync_skills.py`) e para a integracao por usuario
-(`sparkforge integrate`).
+(`sparkforge-aws integrate`).
 
 Movido de `scripts/sync_skills.py` pela feature INTEGRACAO_USUARIO (D1): o texto
 das decisoes abaixo e o de la, sem mudanca. O que mudou e so a assinatura das
@@ -488,7 +488,7 @@ pacote instalado nao tem `agents/` na raiz do repositorio -- e a plataforma
 Este modulo importa so a biblioteca padrao. `scripts/sync_skills.py` o carrega
 PELO CAMINHO do arquivo, e nao pelo pacote instalado, para que
 `tests/test_arvore_versionada.py` confira o espelho commitado contra o renderizador
-commitado; um import de `sparkforge.*` aqui quebraria esse carregamento.
+commitado; um import de `sparkforge_aws.*` aqui quebraria esse carregamento.
 """
 from __future__ import annotations
 
@@ -501,7 +501,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 # Fundamento medido: knowledge/devin/agents-and-subagents.md (retrieved
 # 2026-08-04). Desenho: D-1, D-2 e D-3 de
-# docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md.
+# docs/superpowers/specs/2026-08-04-sparkforge-aws-devin-subagentes-design.md.
 
 # `claude` e `github` recebem o arquivo INALTERADO. Nao ha round-trip de YAML
 # em caminho nenhum: parsear e re-serializar reordenaria as chaves e produziria
@@ -723,7 +723,7 @@ NON_DISPATCHABLE_SKILLS = {
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,
     # por default, nao gera subagente proprio (`max-nesting`): despachar quem
     # orquestra e perder justamente a orquestracao.
-    "sparkforge-diagnose": (
+    "sparkforge-aws-diagnose": (
         "abre o case e roteia. Despachar joga o ciclo de vida do case para um "
         "contexto que nao volta -- e o case e o que faz a investigacao atravessar "
         "sessoes e ferramentas"
@@ -1136,19 +1136,19 @@ bloco abaixo sem mudança. No lugar, ponha:
 
 ```python
 # --------------------------------------------------------------------------
-# Renderizacao por plataforma: mora em sparkforge/integrate/render.py
+# Renderizacao por plataforma: mora em sparkforge_aws/integrate/render.py
 # --------------------------------------------------------------------------
 # Um renderizador so para os espelhos deste repositorio e para a integracao por
-# usuario (`sparkforge integrate`), feature INTEGRACAO_USUARIO, D1. Este arquivo e
+# usuario (`sparkforge-aws integrate`), feature INTEGRACAO_USUARIO, D1. Este arquivo e
 # a fachada: reexporta os nomes que os testes e o `--check` usam e passa o proprio
 # `AGENTS_SRC` as funcoes que leem perfis.
 #
 # O modulo e carregado PELO CAMINHO, a partir de `ROOT`, e nao por
-# `import sparkforge...`. `tests/test_arvore_versionada.py` roda este script sobre
+# `import sparkforge_aws...`. `tests/test_arvore_versionada.py` roda este script sobre
 # uma copia de `git archive HEAD`; um import pelo pacote acharia o `render.py` do
 # disco (instalacao editavel), e o gate deixaria de conferir o renderizador
 # commitado. `render.py` so importa a biblioteca padrao, e por isso carrega sozinho.
-_RENDER_PATH = ROOT / "sparkforge" / "integrate" / "render.py"
+_RENDER_PATH = ROOT / "sparkforge_aws" / "integrate" / "render.py"
 _RENDER_SPEC = importlib.util.spec_from_file_location("_sparkforge_render", _RENDER_PATH)
 if _RENDER_SPEC is None or _RENDER_SPEC.loader is None:
     raise ImportError(f"renderizador nao encontrado: {_RENDER_PATH}")
@@ -1239,12 +1239,12 @@ por
     mudanca no tradutor sem regenerar os espelhos tambem cai aqui.
 
     Desde INTEGRACAO_USUARIO (D1) o tradutor mora em
-    `sparkforge/integrate/render.py`, e `sync_skills.py` o carrega pelo caminho a
+    `sparkforge_aws/integrate/render.py`, e `sync_skills.py` o carrega pelo caminho a
     partir da propria raiz -- por isso ele vem do commit junto.
     """
     alvos = [
         "scripts/sync_skills.py",
-        "sparkforge/integrate/render.py",
+        "sparkforge_aws/integrate/render.py",
         *_raizes_governadas(),
     ]
 ```
@@ -1264,12 +1264,12 @@ então roda depois do commit desta tarefa, na T10.
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate scripts/sync_skills.py tests/test_integrate.py tests/test_arvore_versionada.py`.
+`python -m ruff check sparkforge_aws/integrate scripts/sync_skills.py tests/test_integrate.py tests/test_arvore_versionada.py`.
 
 ### 6. Commit
 
-`git add sparkforge/integrate/render.py` e
-`refactor(sync): move the per-platform renderer into sparkforge.integrate and add codex`
+`git add sparkforge_aws/integrate/render.py` e
+`refactor(sync): move the per-platform renderer into sparkforge_aws.integrate and add codex`
 
 ## T3 — hosts, plano de escrita, manifesto, dry-run e idempotência
 
@@ -1290,8 +1290,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge import __version__
-from sparkforge.integrate import integrate, render, sources
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import integrate, render, sources
 ```
 
 Acrescente ao fim:
@@ -1350,11 +1350,11 @@ python -m pytest tests/test_integrate.py::test_manifesto_dry_run_e_idempotencia 
 ```
 
 Falha esperada: erro de coleta com `ImportError: cannot import name 'integrate' from
-'sparkforge.integrate'`.
+'sparkforge_aws.integrate'`.
 
 ### 3. Código mínimo
 
-`sparkforge/integrate/hosts.py`:
+`sparkforge_aws/integrate/hosts.py`:
 
 ```python
 """Onde cada host le agents, skills e MCP de USUARIO (D4).
@@ -1377,7 +1377,7 @@ from pathlib import Path
 
 HOSTS = ("claude", "devin", "codex", "copilot")
 
-MARKETPLACE = "sparkforge-local"
+MARKETPLACE = "sparkforge-aws-local"
 PLUGIN = "sparkforge-aws"
 
 FONTES = {
@@ -1492,12 +1492,12 @@ def host(
 
 
 def mcp_command(python: str | None = None) -> tuple[str, list[str]]:
-    """O servidor MCP pelo Python que TEM o sparkforge instalado, sem PYTHONPATH."""
-    return (python or sys.executable, ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"])
+    """O servidor MCP pelo Python que TEM o sparkforge-aws instalado, sem PYTHONPATH."""
+    return (python or sys.executable, ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"])
 
 
 def mcp_entry(nome: str, python: str | None = None) -> dict:
-    """A entrada `mcpServers.sparkforge` de um host de config JSON."""
+    """A entrada `mcpServers.sparkforge-aws` de um host de config JSON."""
     comando, args = mcp_command(python)
     entrada: dict = {"command": comando, "args": args}
     if nome == "copilot":
@@ -1520,7 +1520,7 @@ __all__ = [
 ]
 ```
 
-`sparkforge/integrate/writer.py`, primeira versão:
+`sparkforge_aws/integrate/writer.py`, primeira versão:
 
 ```python
 """Plano de escrita no HOME, manifesto, dry-run e idempotencia (D5).
@@ -1550,8 +1550,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sparkforge.integrate import render, sources
-from sparkforge.integrate.hosts import Host
+from sparkforge_aws.integrate import render, sources
+from sparkforge_aws.integrate.hosts import Host
 
 MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
 SCHEMA = 1
@@ -1732,10 +1732,10 @@ def apply_files(
     }
 ```
 
-`sparkforge/integrate/__init__.py`, inteiro:
+`sparkforge_aws/integrate/__init__.py`, inteiro:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -1746,9 +1746,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import host as _host
 
 # Os hosts que esta versao integra. `claude` entra com o marketplace local (D8).
 INTEGRAVEIS = ("devin", "codex", "copilot")
@@ -1808,14 +1808,14 @@ O mesmo comando → `1 passed`.
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`. `git add` dos dois
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`. `git add` dos dois
 `.py` novos. O gate de lastro roda na T10.
 
 ### 6. Commit
 
 `feat(integrate): write the user-scope plan with a manifest, dry-run and idempotence`
 
-## T4 — Devin e Copilot: agents, `~/.agents/skills` e `mcpServers.sparkforge`
+## T4 — Devin e Copilot: agents, `~/.agents/skills` e `mcpServers.sparkforge-aws`
 
 ### 1. Escrever o teste que falha
 
@@ -1876,9 +1876,9 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
     dados = json.loads(config.read_text(encoding="utf-8"))
     assert dados["mcpServers"]["outro"] == outro
-    assert dados["mcpServers"]["sparkforge"] == {
+    assert dados["mcpServers"]["sparkforge-aws"] == {
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
     }
     assert "PYTHONPATH" not in json.dumps(dados)
 
@@ -1888,10 +1888,10 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     assert (appdata / "devin" / "agents" / "sf-runtime-specialist.md").is_file()
     assert (appdata / "devin" / "mcp_config.json").is_file()
 
-    # `sparkforge` que o SparkForge nao escreveu: recusa, e o arquivo fica igual.
+    # `sparkforge-aws` que o SparkForge nao escreveu: recusa, e o arquivo fica igual.
     alheio = tmp_path / "home_alheia" / ".config" / "devin" / "mcp_config.json"
     alheio.parent.mkdir(parents=True)
-    texto = json.dumps({"mcpServers": {"sparkforge": {"command": "meu"}}})
+    texto = json.dumps({"mcpServers": {"sparkforge-aws": {"command": "meu"}}})
     alheio.write_text(texto, encoding="utf-8")
     recusado = integrate("devin", home=tmp_path / "home_alheia", windows=False)
     assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
@@ -1920,10 +1920,10 @@ def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
     assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
     dados = json.loads(config.read_text(encoding="utf-8"))
     assert dados["mcpServers"]["outro"] == outro
-    assert dados["mcpServers"]["sparkforge"] == {
+    assert dados["mcpServers"]["sparkforge-aws"] == {
         "type": "local",
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
         "tools": ["*"],
     }
 ```
@@ -1934,16 +1934,16 @@ def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
 python -m pytest tests/test_integrate.py::test_integrate_devin_grava_global_e_preserva_mcp_existente -q -p no:cacheprovider --basetemp=E:/sfpt_iu
 ```
 
-Falha esperada: `KeyError: 'sparkforge'` em `dados["mcpServers"]["sparkforge"]`. Os
+Falha esperada: `KeyError: 'sparkforge-aws'` em `dados["mcpServers"]["sparkforge-aws"]`. Os
 agents e as skills já são gravados, mas a config não.
 
 ### 3. Código mínimo
 
-Acrescente ao fim de `sparkforge/integrate/writer.py`:
+Acrescente ao fim de `sparkforge_aws/integrate/writer.py`:
 
 ```python
 # --------------------------------------------------------------------------
-# Config de usuario em JSON (Devin, Copilot): so `mcpServers.sparkforge` (D6)
+# Config de usuario em JSON (Devin, Copilot): so `mcpServers.sparkforge-aws` (D6)
 # --------------------------------------------------------------------------
 
 
@@ -1987,17 +1987,17 @@ def apply_json_config(
     manifesto: dict[str, Any],
     dry_run: bool,
 ) -> dict[str, Any]:
-    """Poe `mcpServers.sparkforge` no JSON de config do host e nada mais."""
+    """Poe `mcpServers.sparkforge-aws` no JSON de config do host e nada mais."""
     relativo = rel(home, caminho)
     registro = _registro_de_config(manifesto, nome, relativo)
     texto, dados = _json_de_config(caminho)
     if dados is None:
         return {"path": relativo, "status": "refused", "reason": "config_invalida"}
     servidores = dados.get("mcpServers")
-    if isinstance(servidores, dict) and "sparkforge" in servidores and registro is None:
+    if isinstance(servidores, dict) and "sparkforge-aws" in servidores and registro is None:
         return {"path": relativo, "status": "refused", "reason": "sparkforge_ja_configurado"}
     novo = dict(dados)
-    novo["mcpServers"] = {**(servidores or {}), "sparkforge": entrada}
+    novo["mcpServers"] = {**(servidores or {}), "sparkforge-aws": entrada}
     novo_texto = json.dumps(novo, indent=2, ensure_ascii=False) + "\n"
     status = "unchanged" if novo_texto == texto else "written"
     if registro is None:
@@ -2015,10 +2015,10 @@ def apply_json_config(
     return {"path": relativo, "status": status}
 ```
 
-`sparkforge/integrate/__init__.py`, inteiro:
+`sparkforge_aws/integrate/__init__.py`, inteiro:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -2029,10 +2029,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import Host, mcp_entry
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import Host, mcp_entry
+from sparkforge_aws.integrate.hosts import host as _host
 
 # Os hosts que esta versao integra. `claude` entra com o marketplace local (D8).
 INTEGRAVEIS = ("devin", "codex", "copilot")
@@ -2117,11 +2117,11 @@ O mesmo comando → `1 passed`. Depois
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`.
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`.
 
 ### 6. Commit
 
-`feat(integrate): devin and copilot, merging mcpServers.sparkforge into user config`
+`feat(integrate): devin and copilot, merging mcpServers.sparkforge-aws into user config`
 
 ## T5 — Codex: agents em TOML e o bloco marcado em `~/.codex/config.toml`
 
@@ -2170,21 +2170,21 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
     dados = tomllib.loads(texto)
     assert dados["model"] == "gpt-5"
     assert dados["mcp_servers"]["outro"] == {"command": "node", "args": ["servidor.js"]}
-    assert dados["mcp_servers"]["sparkforge"] == {
+    assert dados["mcp_servers"]["sparkforge-aws"] == {
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
     }
     for arquivo in (home / ".codex" / "agents").glob("*.toml"):
         agente = tomllib.loads(arquivo.read_text(encoding="utf-8"))
         assert set(agente) == {"name", "description", "developer_instructions"}
 
-    # `[mcp_servers.sparkforge]` escrito a mao: recusa, e o arquivo fica igual.
+    # `[mcp_servers.sparkforge-aws]` escrito a mao: recusa, e o arquivo fica igual.
     alheia = tmp_path / "alheia" / ".codex" / "config.toml"
     alheia.parent.mkdir(parents=True)
-    alheia.write_text('[mcp_servers.sparkforge]\ncommand = "meu"\n', encoding="utf-8")
+    alheia.write_text('[mcp_servers.sparkforge-aws]\ncommand = "meu"\n', encoding="utf-8")
     recusado = integrate("codex", home=tmp_path / "alheia")
     assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
-    assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge]\ncommand = "meu"\n'
+    assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge-aws]\ncommand = "meu"\n'
 ```
 
 ### 2. Rodar e ver falhar
@@ -2199,7 +2199,7 @@ o `config.toml` segue igual ao do usuário.
 
 ### 3. Código mínimo
 
-Em `sparkforge/integrate/writer.py`, troque
+Em `sparkforge_aws/integrate/writer.py`, troque
 
 ```python
 import hashlib
@@ -2224,7 +2224,7 @@ e acrescente ao fim do mesmo arquivo:
 # --------------------------------------------------------------------------
 # O Python 3.10 que o projeto suporta nao le TOML e o projeto nao tem dependencia
 # para isso; por isso o SparkForge nao reescreve o arquivo -- so poe, troca ou tira
-# o bloco entre os dois marcadores. `[mcp_servers.sparkforge]` fora do bloco foi
+# o bloco entre os dois marcadores. `[mcp_servers.sparkforge-aws]` fora do bloco foi
 # escrito por outra pessoa e sai recusa. Marcador sem par sai recusa tambem: nao
 # da para saber onde o bloco termina.
 
@@ -2234,11 +2234,11 @@ _TABELA_SPARKFORGE = re.compile(r"^\s*\[mcp_servers\.sparkforge\]", re.MULTILINE
 
 
 def toml_block(comando: str, args: list[str]) -> str:
-    """O bloco com `[mcp_servers.sparkforge]`. `json.dumps` produz string e array
+    """O bloco com `[mcp_servers.sparkforge-aws]`. `json.dumps` produz string e array
     validos de TOML (o escape do JSON e subconjunto do escape de string basica)."""
     return (
         f"{INICIO_TOML}\n"
-        "[mcp_servers.sparkforge]\n"
+        "[mcp_servers.sparkforge-aws]\n"
         f"command = {json.dumps(comando, ensure_ascii=False)}\n"
         f"args = {json.dumps(args, ensure_ascii=False)}\n"
         f"{FIM_TOML}\n"
@@ -2293,10 +2293,10 @@ def apply_toml_config(
     return {"path": relativo, "status": status}
 ```
 
-`sparkforge/integrate/__init__.py`, inteiro:
+`sparkforge_aws/integrate/__init__.py`, inteiro:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -2307,10 +2307,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import Host, mcp_command, mcp_entry
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import Host, mcp_command, mcp_entry
+from sparkforge_aws.integrate.hosts import host as _host
 
 # Os hosts que esta versao integra. `claude` entra com o marketplace local (D8).
 INTEGRAVEIS = ("devin", "codex", "copilot")
@@ -2402,7 +2402,7 @@ O mesmo comando → `1 passed`. As asserções de `tomllib` só rodam em Python 
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`.
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`.
 
 ### 6. Commit
 
@@ -2427,8 +2427,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge import __version__
-from sparkforge.integrate import detach, integrate, render, sources
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import detach, integrate, render, sources
 ```
 
 Acrescente ao fim:
@@ -2492,11 +2492,11 @@ python -m pytest tests/test_integrate.py::test_detach_remove_so_o_proprio_e_recu
 ```
 
 Falha esperada: erro de coleta com `ImportError: cannot import name 'detach' from
-'sparkforge.integrate'`.
+'sparkforge_aws.integrate'`.
 
 ### 3. Código mínimo
 
-Acrescente ao fim de `sparkforge/integrate/writer.py`:
+Acrescente ao fim de `sparkforge_aws/integrate/writer.py`:
 
 ```python
 # --------------------------------------------------------------------------
@@ -2515,7 +2515,7 @@ def _gravar_ou_apagar(caminho: Path, texto: str, *, apagar: bool, home: Path) ->
 def revert_json_config(
     registro: dict[str, Any], *, home: Path, dry_run: bool
 ) -> dict[str, Any]:
-    """Tira `mcpServers.sparkforge`; o resto do JSON fica. Se o integrate criou o
+    """Tira `mcpServers.sparkforge-aws`; o resto do JSON fica. Se o integrate criou o
     arquivo e ele ficou vazio, o arquivo sai."""
     relativo = registro["path"]
     caminho = Path(home) / relativo
@@ -2525,9 +2525,9 @@ def revert_json_config(
     if dados is None:
         return {"path": relativo, "status": "refused", "reason": "config_invalida"}
     servidores = dict(dados.get("mcpServers") or {})
-    if "sparkforge" not in servidores:
+    if "sparkforge-aws" not in servidores:
         return {"path": relativo, "status": "absent"}
-    del servidores["sparkforge"]
+    del servidores["sparkforge-aws"]
     novo = dict(dados)
     if servidores or registro.get("had_mcp_servers"):
         novo["mcpServers"] = servidores
@@ -2583,10 +2583,10 @@ def drop_manifest_if_empty(home: Path, manifesto: dict[str, Any]) -> None:
         _podar(caminho, home)
 ```
 
-`sparkforge/integrate/__init__.py`, inteiro:
+`sparkforge_aws/integrate/__init__.py`, inteiro:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -2597,10 +2597,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import Host, mcp_command, mcp_entry
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import Host, mcp_command, mcp_entry
+from sparkforge_aws.integrate.hosts import host as _host
 
 # Os hosts que esta versao integra. `claude` entra com o marketplace local (D8).
 INTEGRAVEIS = ("devin", "codex", "copilot")
@@ -2729,7 +2729,7 @@ O mesmo comando → `1 passed`.
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`.
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`.
 
 ### 6. Commit
 
@@ -2766,18 +2766,18 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     assert recusa["reason"] == "claude_cli_ausente"
     assert recusa["commands"] == [
         f"claude plugin marketplace add {marketplace} --scope user",
-        "claude plugin install sparkforge-aws@sparkforge-local --scope user --json",
+        "claude plugin install sparkforge-aws@sparkforge-aws-local --scope user --json",
     ]
     catalogo = json.loads((marketplace / ".claude-plugin" / "marketplace.json").read_text("utf-8"))
-    assert catalogo["name"] == "sparkforge-local"
+    assert catalogo["name"] == "sparkforge-aws-local"
     assert catalogo["plugins"][0]["name"] == "sparkforge-aws"
     assert catalogo["plugins"][0]["source"] == "./plugins/sparkforge-aws"
     manifesto = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
     assert (manifesto["name"], manifesto["version"]) == ("sparkforge-aws", __version__)
     mcp = json.loads((plugin / ".mcp.json").read_text("utf-8"))
-    assert mcp == {"mcpServers": {"sparkforge": {
+    assert mcp == {"mcpServers": {"sparkforge-aws": {
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
     }}}
     assert "PYTHONPATH" not in (plugin / ".mcp.json").read_text("utf-8")
     assert _conteudo(plugin / "agents") == _agents_renderizados(
@@ -2797,7 +2797,7 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     assert registrado["refused"] == []
     assert claude.chamadas == [
         ["/bin/claude", "plugin", "marketplace", "add", str(marketplace), "--scope", "user"],
-        ["/bin/claude", "plugin", "install", "sparkforge-aws@sparkforge-local",
+        ["/bin/claude", "plugin", "install", "sparkforge-aws@sparkforge-aws-local",
          "--scope", "user", "--json"],
     ]
     # Registrado e sem mudanca: a segunda execucao nao chama o CLI de novo.
@@ -2808,9 +2808,9 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert saiu["refused"] == []
     assert claude.chamadas[2:] == [
-        ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-local",
+        ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-aws-local",
          "--scope", "user"],
-        ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-local",
+        ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-aws-local",
          "--scope", "user"],
     ]
     assert not marketplace.exists()
@@ -2826,17 +2826,17 @@ Falha esperada: `TypeError: integrate() got an unexpected keyword argument 'whic
 
 ### 3. Código mínimo
 
-`sparkforge/integrate/claude.py`:
+`sparkforge_aws/integrate/claude.py`:
 
 ```python
 """Claude Code: o plugin por marketplace local (D8).
 
-Monta em `~/.sparkforge/claude/` o marketplace `sparkforge-local`, com o plugin
+Monta em `~/.sparkforge/claude/` o marketplace `sparkforge-aws-local`, com o plugin
 `sparkforge-aws` em `plugins/sparkforge-aws/` (skills, agents, `.mcp.json` e
 `.claude-plugin/plugin.json`), e o registra pelo proprio CLI do Claude:
 
     claude plugin marketplace add <dir> --scope user
-    claude plugin install sparkforge-aws@sparkforge-local --scope user --json
+    claude plugin install sparkforge-aws@sparkforge-aws-local --scope user --json
 
 Os flags foram conferidos no `--help` do Claude Code 2.1.283. `~/.claude/settings.json`
 nao e editado a mao: e formato interno do Claude, e muda sem aviso.
@@ -2854,7 +2854,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from sparkforge.integrate.hosts import (
+from sparkforge_aws.integrate.hosts import (
     MARKETPLACE,
     PLUGIN,
     claude_marketplace_dir,
@@ -2901,8 +2901,8 @@ def plugin_files(home: Path, *, version: str, python: str | None) -> list[tuple[
         "author": {"name": "SparkForge AWS"},
         "license": "MIT",
     }
-    # O Python que TEM o sparkforge instalado, sem PYTHONPATH para repositorio nenhum.
-    mcp = {"mcpServers": {"sparkforge": {"command": comando, "args": args}}}
+    # O Python que TEM o sparkforge-aws instalado, sem PYTHONPATH para repositorio nenhum.
+    mcp = {"mcpServers": {"sparkforge-aws": {"command": comando, "args": args}}}
     return [
         (marketplace / ".claude-plugin" / "marketplace.json", _json(catalogo)),
         (plugin / ".claude-plugin" / "plugin.json", _json(manifesto)),
@@ -3002,11 +3002,11 @@ __all__ = [
 ]
 ```
 
-`sparkforge/integrate/__init__.py`, inteiro. `INTEGRAVEIS` passa a ser `HOSTS`, e o
+`sparkforge_aws/integrate/__init__.py`, inteiro. `INTEGRAVEIS` passa a ser `HOSTS`, e o
 `claude` entra no `integrate` e no `detach`:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -3017,11 +3017,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import claude as _claude
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import claude as _claude
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
+from sparkforge_aws.integrate.hosts import host as _host
 
 INTEGRAVEIS = HOSTS
 
@@ -3179,13 +3179,13 @@ O mesmo comando → `1 passed`. Nenhuma chamada ao binário `claude`: o teste in
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`. O `# noqa: S603`
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`. O `# noqa: S603`
 em `claude.run` é o único do módulo: o argv é fixo, e `argv[0]` é o caminho que
 `shutil.which` achou.
 
 ### 6. Commit
 
-`git add sparkforge/integrate/claude.py` e
+`git add sparkforge_aws/integrate/claude.py` e
 `feat(integrate): claude code plugin through a local marketplace and the claude CLI`
 
 ## T8 — cópia vendorizada em dobro, e a guarda do escopo de usuário
@@ -3290,7 +3290,7 @@ Falha esperada: `TypeError: integrate() got an unexpected keyword argument 'repo
 
 ### 3. Código mínimo
 
-`sparkforge/integrate/conflict.py`:
+`sparkforge_aws/integrate/conflict.py`:
 
 ```python
 """Copia vendorizada em dobro no repositorio atual (D9).
@@ -3319,7 +3319,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from sparkforge.integrate import render, sources
+from sparkforge_aws.integrate import render, sources
 
 ESCOLHAS = ("overwrite", "merge", "ignore")
 
@@ -3483,10 +3483,10 @@ def resolve(
 __all__ = ["ESCOLHAS", "VENDOR_LOCATIONS", "choose", "detect", "is_source_repo", "resolve"]
 ```
 
-`sparkforge/integrate/__init__.py`, inteiro:
+`sparkforge_aws/integrate/__init__.py`, inteiro:
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -3498,12 +3498,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import claude as _claude
-from sparkforge.integrate import conflict as _conflict
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import claude as _claude
+from sparkforge_aws.integrate import conflict as _conflict
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
+from sparkforge_aws.integrate.hosts import host as _host
 
 INTEGRAVEIS = HOSTS
 
@@ -3706,14 +3706,14 @@ Desfaça antes do commit.
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge/integrate tests/test_integrate.py`.
+`python -m ruff check sparkforge_aws/integrate tests/test_integrate.py`.
 
 ### 6. Commit
 
-`git add sparkforge/integrate/conflict.py` e
+`git add sparkforge_aws/integrate/conflict.py` e
 `feat(integrate): ask before touching a vendored copy in the repo; never write there otherwise`
 
-## T9 — `sparkforge integrate`/`detach` na CLI, e o `doctor` por host
+## T9 — `sparkforge-aws integrate`/`detach` na CLI, e o `doctor` por host
 
 ### 1. Escrever o teste que falha
 
@@ -3732,11 +3732,11 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge import __version__
-from sparkforge import doctor as dr
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main as cli_main
-from sparkforge.integrate import detach, integrate, render, sources, status
+from sparkforge_aws import __version__
+from sparkforge_aws import doctor as dr
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main as cli_main
+from sparkforge_aws.integrate import detach, integrate, render, sources, status
 ```
 
 Acrescente ao fim:
@@ -3766,11 +3766,11 @@ def test_doctor_informa_integracao_por_host(tmp_path, monkeypatch, capsys):
     }
     devin = por_id["integracao_devin"]
     assert devin.status == dr.WARN
-    assert f"sparkforge {__version__}" in devin.detail
+    assert f"sparkforge-aws {__version__}" in devin.detail
     assert ".agents/skills/sdd-plan" in devin.detail
-    assert devin.unlock == "sparkforge integrate devin --scope user --on-conflict merge"
+    assert devin.unlock == "sparkforge-aws integrate devin --scope user --on-conflict merge"
     assert por_id["integracao_claude"].status == dr.SKIP
-    assert por_id["integracao_claude"].unlock == "sparkforge integrate claude --scope user"
+    assert por_id["integracao_claude"].unlock == "sparkforge-aws integrate claude --scope user"
     # Codex e Copilot nao estao integrados, mas leem `.agents/skills`: o dobro so
     # aparece quando o host esta integrado.
     assert por_id["integracao_codex"].status == dr.SKIP
@@ -3796,14 +3796,14 @@ python -m pytest tests/test_integrate.py::test_doctor_informa_integracao_por_hos
 ```
 
 Falha esperada: erro de coleta com `ImportError: cannot import name 'status' from
-'sparkforge.integrate'`.
+'sparkforge_aws.integrate'`.
 
 ### 3. Código mínimo
 
-`sparkforge/integrate/__init__.py`, inteiro (acrescenta `status`):
+`sparkforge_aws/integrate/__init__.py`, inteiro (acrescenta `status`):
 
 ```python
-"""Integracao do SparkForge por usuario: `sparkforge integrate` e `sparkforge detach`.
+"""Integracao do SparkForge por usuario: `sparkforge-aws integrate` e `sparkforge-aws detach`.
 
 Grava skills, agents e o registro do MCP nos diretorios de USUARIO de cada host
 (Claude Code, Devin CLI, Codex CLI, Copilot CLI), a partir do conteudo que o wheel
@@ -3815,12 +3815,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from sparkforge import __version__
-from sparkforge.integrate import claude as _claude
-from sparkforge.integrate import conflict as _conflict
-from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
-from sparkforge.integrate.hosts import host as _host
+from sparkforge_aws import __version__
+from sparkforge_aws.integrate import claude as _claude
+from sparkforge_aws.integrate import conflict as _conflict
+from sparkforge_aws.integrate import sources, writer
+from sparkforge_aws.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
+from sparkforge_aws.integrate.hosts import host as _host
 
 INTEGRAVEIS = HOSTS
 
@@ -4022,7 +4022,7 @@ def status(*, home: Path, repo: Path | None = None) -> dict[str, Any]:
 __all__ = ["INTEGRAVEIS", "detach", "integrate", "status"]
 ```
 
-Em `sparkforge/doctor.py`, troque
+Em `sparkforge_aws/doctor.py`, troque
 
 ```python
 from typing import Any
@@ -4035,14 +4035,14 @@ por
 ```python
 from typing import Any
 
-from sparkforge.integrate.hosts import HOSTS
+from sparkforge_aws.integrate.hosts import HOSTS
 
 OK, WARN
 ```
 
 No mesmo arquivo, a função nova entra logo antes de `resumo`:
 
-Em `sparkforge/doctor.py`, troque
+Em `sparkforge_aws/doctor.py`, troque
 
 ```python
 def resumo(checagens: list[Checagem], online: bool) -> dict[str, Any]:
@@ -4060,7 +4060,7 @@ def avaliar_integracoes(
     vendorizada em dobro no repositorio atual (INTEGRACAO_USUARIO, AC11)."""
     if erro:
         return [Checagem("integracao", WARN, f"manifesto de integracao nao lido: {erro}",
-                         "sparkforge integrate all --scope user --dry-run")]
+                         "sparkforge-aws integrate all --scope user --dry-run")]
     hosts = (manifesto or {}).get("hosts") or {}
     checagens = []
     for host in HOSTS:
@@ -4068,11 +4068,11 @@ def avaliar_integracoes(
         entrada = hosts.get(host)
         if entrada is None:
             checagens.append(Checagem(ident, SKIP, "integracao de usuario ausente",
-                                      f"sparkforge integrate {host} --scope user"))
+                                      f"sparkforge-aws integrate {host} --scope user"))
             continue
         versao = entrada.get("package_version") or "?"
         detalhe = (
-            f"integrado pelo sparkforge {versao}, "
+            f"integrado pelo sparkforge-aws {versao}, "
             f"{len(entrada.get('files') or {})} arquivo(s)"
         )
         dobro = sorted((em_dobro or {}).get(host) or [])
@@ -4080,7 +4080,7 @@ def avaliar_integracoes(
             checagens.append(Checagem(
                 ident, WARN,
                 f"{detalhe}; copia vendorizada em dobro no repositorio: {', '.join(dobro)}",
-                f"sparkforge integrate {host} --scope user --on-conflict merge",
+                f"sparkforge-aws integrate {host} --scope user --on-conflict merge",
             ))
             continue
         checagens.append(Checagem(ident, OK, detalhe))
@@ -4090,10 +4090,10 @@ def avaliar_integracoes(
 def resumo(checagens: list[Checagem], online: bool) -> dict[str, Any]:
 ```
 
-`sparkforge/adapters/_core.py`, no fim de `doctor()`. Esta é a porta da CLI **e** da
+`sparkforge_aws/adapters/_core.py`, no fim de `doctor()`. Esta é a porta da CLI **e** da
 tool MCP `sparkforge_doctor`:
 
-Em `sparkforge/adapters/_core.py`, troque
+Em `sparkforge_aws/adapters/_core.py`, troque
 
 ```python
     checagens.append(dr.avaliar_credencial(extras["boto3"], metodo, conta, erro, online))
@@ -4106,7 +4106,7 @@ por
     checagens.append(dr.avaliar_credencial(extras["boto3"], metodo, conta, erro, online))
 
     def integracao() -> dict[str, Any]:
-        from sparkforge.integrate import status as estado_da_integracao
+        from sparkforge_aws.integrate import status as estado_da_integracao
 
         return estado_da_integracao(home=Path.home(), repo=Path(repo))
 
@@ -4117,9 +4117,9 @@ por
     return dr.resumo(checagens, online=online)
 ```
 
-`sparkforge/adapters/tools.py`, na descrição de `sparkforge_doctor`:
+`sparkforge_aws/adapters/tools.py`, na descrição de `sparkforge_doctor`:
 
-Em `sparkforge/adapters/tools.py`, troque
+Em `sparkforge_aws/adapters/tools.py`, troque
 
 ```python
             "Confere se o ambiente esta pronto, em nove checagens com status ok, warn, fail "
@@ -4138,9 +4138,9 @@ por
             "dobro no repositorio). A credencial e conferida so "
 ```
 
-`sparkforge/adapters/cli.py`, quatro trocas. A ajuda do `doctor`:
+`sparkforge_aws/adapters/cli.py`, quatro trocas. A ajuda do `doctor`:
 
-Em `sparkforge/adapters/cli.py`, troque
+Em `sparkforge_aws/adapters/cli.py`, troque
 
 ```python
             "Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, "
@@ -4157,7 +4157,7 @@ por
 
 Os dois parsers novos, logo depois do `--online` do `doctor`:
 
-Em `sparkforge/adapters/cli.py`, troque
+Em `sparkforge_aws/adapters/cli.py`, troque
 
 ```python
         help="Confirma a credencial na AWS (STS get_caller_identity). Unico modo com rede.",
@@ -4217,7 +4217,7 @@ por
 
 Os handlers, logo depois de `_cmd_doctor`:
 
-Em `sparkforge/adapters/cli.py`, troque
+Em `sparkforge_aws/adapters/cli.py`, troque
 
 ```python
 def _cmd_doctor(args: argparse.Namespace) -> int:
@@ -4242,7 +4242,7 @@ def _perguntar(texto: str) -> str:
 
 
 def _cmd_integrate(args: argparse.Namespace) -> int:
-    from sparkforge.integrate import integrate
+    from sparkforge_aws.integrate import integrate
 
     resultado = integrate(
         args.host,
@@ -4258,7 +4258,7 @@ def _cmd_integrate(args: argparse.Namespace) -> int:
 
 
 def _cmd_detach(args: argparse.Namespace) -> int:
-    from sparkforge.integrate import detach
+    from sparkforge_aws.integrate import detach
 
     resultado = detach(args.host, home=Path.home(), dry_run=args.dry_run)
     _print(resultado)
@@ -4267,7 +4267,7 @@ def _cmd_detach(args: argparse.Namespace) -> int:
 
 E a tabela `_DISPATCH`:
 
-Em `sparkforge/adapters/cli.py`, troque
+Em `sparkforge_aws/adapters/cli.py`, troque
 
 ```python
     ("doctor", None): _cmd_doctor,
@@ -4361,7 +4361,7 @@ python -m pytest tests/test_doctor.py tests/test_capability_parity.py tests/test
 
 ### 5. Gates vizinhos
 
-`python -m ruff check sparkforge tests/test_integrate.py tests/test_doctor.py tests/test_adapters_tools.py tests/test_capability_parity.py`.
+`python -m ruff check sparkforge_aws tests/test_integrate.py tests/test_doctor.py tests/test_adapters_tools.py tests/test_capability_parity.py`.
 Esta tarefa move `tool_or_verb`. A referência gerada entra aqui. O surface lock fica
 **vermelho até a T10**, porque a descrição de `sparkforge_doctor` cresceu, e o
 build_report registra isso. `tests/test_surface_lock.py` é o teste da T10.
@@ -4401,35 +4401,35 @@ plataforma.
 por
 
 ````markdown
-## Integrar uma vez por máquina: `sparkforge integrate`
+## Integrar uma vez por máquina: `sparkforge-aws integrate`
 
 Com o pacote instalado, um comando por host deixa skills, agents e o servidor MCP
 disponíveis em **qualquer** repositório da máquina, sem copiar nada para dentro dele. O
-conteúdo sai do próprio wheel (`sparkforge/integrate/bundle/`), com ou sem acesso ao
+conteúdo sai do próprio wheel (`sparkforge_aws/integrate/bundle/`), com ou sem acesso ao
 GitHub.
 
 ```bash
-sparkforge integrate all --scope user --dry-run    # lista o que seria escrito
-sparkforge integrate all --scope user              # claude, devin, codex e copilot
-sparkforge integrate devin --scope user            # um host só
-sparkforge doctor                                  # integracao_<host>: presente, versão, cópia em dobro
-sparkforge detach all                              # remove só o que o SparkForge escreveu
+sparkforge-aws integrate all --scope user --dry-run    # lista o que seria escrito
+sparkforge-aws integrate all --scope user              # claude, devin, codex e copilot
+sparkforge-aws integrate devin --scope user            # um host só
+sparkforge-aws doctor                                  # integracao_<host>: presente, versão, cópia em dobro
+sparkforge-aws detach all                              # remove só o que o SparkForge escreveu
 ```
 
 | Host | Agents | Skills | MCP |
 |---|---|---|---|
-| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-local`, em `~/.sparkforge/claude/` | no plugin | `.mcp.json` do plugin |
-| Devin CLI | `~/.config/devin/agents/` (`%APPDATA%\devin\agents\` no Windows) | `~/.agents/skills/` | `~/.config/devin/mcp_config.json`, chave `mcpServers.sparkforge` |
-| Codex CLI | `~/.codex/agents/*.toml` | `~/.agents/skills/` | bloco marcado `[mcp_servers.sparkforge]` em `~/.codex/config.toml` |
-| Copilot CLI | `~/.copilot/agents/*.agent.md` | `~/.agents/skills/` | `~/.copilot/mcp-config.json`, chave `mcpServers.sparkforge` |
+| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-aws-local`, em `~/.sparkforge/claude/` | no plugin | `.mcp.json` do plugin |
+| Devin CLI | `~/.config/devin/agents/` (`%APPDATA%\devin\agents\` no Windows) | `~/.agents/skills/` | `~/.config/devin/mcp_config.json`, chave `mcpServers.sparkforge-aws` |
+| Codex CLI | `~/.codex/agents/*.toml` | `~/.agents/skills/` | bloco marcado `[mcp_servers.sparkforge-aws]` em `~/.codex/config.toml` |
+| Copilot CLI | `~/.copilot/agents/*.agent.md` | `~/.agents/skills/` | `~/.copilot/mcp-config.json`, chave `mcpServers.sparkforge-aws` |
 
 O Claude Code é registrado pelo próprio CLI dele (`claude plugin marketplace add` e
 `claude plugin install`). Sem o binário `claude` no PATH, o plugin fica montado e o
 comando sai 1 com a recusa `claude_cli_ausente` e os dois comandos para você rodar.
 
-O servidor MCP é chamado pelo Python que tem o `sparkforge` instalado, sem
+O servidor MCP é chamado pelo Python que tem o `sparkforge-aws` instalado, sem
 `PYTHONPATH` para repositório nenhum. Config de usuário que já existia é mesclada, nunca
-sobrescrita: só a entrada `sparkforge` entra, e um `sparkforge` que você mesmo escreveu
+sobrescrita: só a entrada `sparkforge-aws` entra, e um `sparkforge-aws` que você mesmo escreveu
 sai como recusa `sparkforge_ja_configurado`, sem tocar no arquivo.
 
 Tudo o que é gravado fica em `~/.sparkforge/integrations.json`, com o sha256 de cada
@@ -4451,7 +4451,7 @@ continua lendo `.github/agents` do repositório.
 
 ## Instalar as skills e os agents em outro repositório
 
-O caminho de cima (`sparkforge integrate`) instala uma vez por máquina. A cópia por
+O caminho de cima (`sparkforge-aws integrate`) instala uma vez por máquina. A cópia por
 repositório continua existindo para quando os arquivos precisam estar versionados
 dentro do projeto -- o Copilot coding agent na nuvem, por exemplo, só lê
 `.github/agents` do repositório. As skills e os perfis de agent chegam a outro
@@ -4475,7 +4475,7 @@ por
 | `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user`, `--dry-run`, `--on-conflict`. | [integrate](referencia/cli/integrate.md) |
 | `detach` | Remove a integração de usuário: só o que `~/.sparkforge/integrations.json` registrou e ainda tem o sha256 gravado. | [detach](referencia/cli/detach.md) |
 
-Sem tool MCP de propósito: escrever no HOME é decisão do operador. O detalhe está em [Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate).
+Sem tool MCP de propósito: escrever no HOME é decisão do operador. O detalhe está em [Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 
 ### Inteligência de código
 ```
@@ -4494,11 +4494,11 @@ a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cl
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele, integre uma vez por host:
 
 ```bash
-sparkforge integrate all --scope user   # Claude Code, Devin, Codex e Copilot CLI
-sparkforge detach all                   # desfaz, removendo só o que foi escrito
+sparkforge-aws integrate all --scope user   # Claude Code, Devin, Codex e Copilot CLI
+sparkforge-aws detach all                   # desfaz, removendo só o que foi escrito
 ```
 
-Os caminhos de cada host e a cópia em dobro no repositório estão em [Instalação](docs/guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate).
+Os caminhos de cada host e a cópia em dobro no repositório estão em [Instalação](docs/guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 ````
 
 Em `docs/superpowers/STATUS.md`, acrescente ao fim do arquivo, depois da seção de
@@ -4509,13 +4509,13 @@ Em `docs/superpowers/STATUS.md`, acrescente ao fim do arquivo, depois da seção
 ## INTEGRACAO_USUARIO — instalar uma vez por máquina, usar em qualquer repositório — **BUILD CONCLUÍDO** (T1–T10; ship pendente)
 
 O SparkForge chegava a um repositório por cópia (`scripts/install_skills.py`). Agora
-`sparkforge integrate <claude|devin|codex|copilot|all> --scope user` instala skills,
+`sparkforge-aws integrate <claude|devin|codex|copilot|all> --scope user` instala skills,
 agents e o MCP nos diretórios de usuário de cada host, a partir do wheel, e
-`sparkforge detach` desfaz. O ciclo SDD está em `docs/sdd/INTEGRACAO_USUARIO/`.
+`sparkforge-aws detach` desfaz. O ciclo SDD está em `docs/sdd/INTEGRACAO_USUARIO/`.
 
 **O que foi entregue.** O wheel embute `skills/` e `agents/` em
-`sparkforge/integrate/bundle/`. O renderizador por plataforma saiu de
-`scripts/sync_skills.py` para `sparkforge/integrate/render.py`, com a plataforma
+`sparkforge_aws/integrate/bundle/`. O renderizador por plataforma saiu de
+`scripts/sync_skills.py` para `sparkforge_aws/integrate/render.py`, com a plataforma
 `codex`, e é um só para os espelhos do repositório e para a integração. Claude Code
 entra por marketplace local em `~/.sparkforge/claude/`, registrado pelo `claude
 plugin`. Devin, Codex e Copilot CLI recebem os agents nos diretórios globais, as skills
@@ -4576,7 +4576,7 @@ python -m pytest tests/test_reference_docs.py tests/test_docs_coverage.py -q -p 
 python -m pytest tests/test_artifact_contents.py tests/test_verify_wheel.py tests/test_suite_batches.py -q -p no:cacheprovider --basetemp=E:/sfpt_iu
 python -m pytest tests/test_integrate.py -q -p no:cacheprovider --basetemp=E:/sfpt_iu
 python scripts/gen_requirements.py --check
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 ```
 
 E o comando do AC12, que é `verified_by` do define:

@@ -20,7 +20,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_orchestration.py::test_orchestration_preserves_unresolved_controls"}
   - id: AC3
     statement: "CLI e MCP compartilham o mesmo relatório de orchestration control plane."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze orchestration --path fixtures/orchestration/control-plane.yaml"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze orchestration --path fixtures/orchestration/control-plane.yaml"}
 success:
   - id: SC1
     metric: "Cada workflow mantém orchestrator, idempotency, retry, backfill, sensor e concurrency declarados"

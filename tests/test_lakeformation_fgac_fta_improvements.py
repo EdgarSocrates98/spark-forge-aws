@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.lakeformation.architecture import analyze_architecture
-from sparkforge.lakeformation.capabilities import capability, load_matrix
-from sparkforge.lakeformation.catalog_routing import route_catalogs
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.lakeformation.architecture import analyze_architecture
+from sparkforge_aws.lakeformation.capabilities import capability, load_matrix
+from sparkforge_aws.lakeformation.catalog_routing import route_catalogs
 
 
 def _payload(**overrides):

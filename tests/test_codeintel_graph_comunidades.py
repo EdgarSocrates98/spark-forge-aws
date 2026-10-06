@@ -9,14 +9,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.codeintel.graph import (
+from sparkforge_aws.codeintel.graph import (
     _ALGORITMO_DE_COMUNIDADE,
     _rotulo_mais_frequente,
     comunidades,
     nos_por_grau,
 )
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.search import buscar
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.search import buscar
 
 
 def _arvore(tmp_path: Path, fonte: str) -> Path:
@@ -200,7 +200,7 @@ def test_o_nome_nao_e_god_node_e_a_escolha_e_deliberada():
     V-BR-3 recusa para fan-in. Este teste existe para que a renomeacao "obvia"
     para `god_nodes` tenha de passar por cima de uma decisao escrita.
     """
-    from sparkforge.codeintel import graph
+    from sparkforge_aws.codeintel import graph
 
     assert not hasattr(graph, "god_nodes")
     assert hasattr(graph, "nos_por_grau")

@@ -34,7 +34,7 @@ O SparkForge cita 218 fontes de regra e 132 fontes de conhecimento e nao sabe di
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: modulo puro `sparkforge/knowledge_freshness.py` que, dados URL, data de validacao (o `retrieved` da regra ou do documento), o lock, `as_of` e o limiar, devolve `state` (`fixed`, `unverified`, `stale`, `aging`, `fresh`), `reason`, as datas usadas e o atributo `conflicted`. Precedencia: `fixed` > `stale` > `unverified` > `aging` > `fresh` |
+| **MUST** | G1: modulo puro `sparkforge_aws/knowledge_freshness.py` que, dados URL, data de validacao (o `retrieved` da regra ou do documento), o lock, `as_of` e o limiar, devolve `state` (`fixed`, `unverified`, `stale`, `aging`, `fresh`), `reason`, as datas usadas e o atributo `conflicted`. Precedencia: `fixed` > `stale` > `unverified` > `aging` > `fresh` |
 | **MUST** | G2: `stale` quando `changed_at` do lock e posterior a data de validacao; `aging` quando a fonte foi conferida e o `checked_at` e mais velho que o limiar em relacao a `as_of`; `fresh` quando foi conferida dentro do limiar; `unverified` quando e movel e nao tem `sha256`; `fixed` quando e `pinned` |
 | **MUST** | G3: limiar de `aging` = **14 dias**, declarado como convencao, versionado no codigo com a razao escrita (duas rodadas perdidas do refresh semanal), e devolvido em `freshness_policy` junto com `as_of` |
 | **MUST** | G4: `scripts/refresh_knowledge.py --update` grava `changed_at` = hoje quando o hash muda, preserva o `changed_at` anterior quando o hash nao muda, nao grava `changed_at` em fonte nova, e mantem os campos numa conferencia inalcancavel. `sync_metadata` (offline) preserva `changed_at` e nunca o cria |
@@ -102,9 +102,9 @@ O SparkForge cita 218 fontes de regra e 132 fontes de conhecimento e nao sabe di
 | Technical | Regra 20 | `unverified`, `sem_url` e `unresolved` saem nomeados; nada vira `fresh` por omissao |
 | Technical | Regra 26 | Os schemas de tres tools crescem; `check_surface_lock --update` com o crescimento declarado |
 | Technical | Contrato do `refresh_knowledge` | Nenhum modo sem rede carimba hash, `checked_at` ou `changed_at` |
-| Technical | `sparkforge/knowledge` e o destino do force-include do `knowledge/` no wheel | O modulo novo nao pode ser pacote com esse nome |
+| Technical | `sparkforge_aws/knowledge` e o destino do force-include do `knowledge/` no wheel | O modulo novo nao pode ser pacote com esse nome |
 | Technical | O finding e deterministico | Nada que dependa do lock ou do dia entra no `Finding` nem nos goldens atuais |
-| Technical | `scripts/` nao e pacote | Codigo compartilhado entre o script e o verbo mora em `sparkforge/`, e o script importa dele |
+| Technical | `scripts/` nao e pacote | Codigo compartilhado entre o script e o verbo mora em `sparkforge_aws/`, e o script importa dele |
 
 ---
 
@@ -112,7 +112,7 @@ O SparkForge cita 218 fontes de regra e 132 fontes de conhecimento e nao sabe di
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/knowledge_freshness.py`; `adapters/_core.py` e `adapters/tools.py` (`judge`, `rules_lookup`, `knowledge_path`, `report github`); `adapters/cli.py` (flag `--source-freshness`); `sparkforge/reporting/github.py`; `scripts/refresh_knowledge.py`; `agents/executors/sf-verifier.md` e espelhos; `fixtures/sarif/`; `docs/knowledge-freshness.md` | Nenhum recurso de nuvem |
+| **Deployment Location** | `sparkforge_aws/knowledge_freshness.py`; `adapters/_core.py` e `adapters/tools.py` (`judge`, `rules_lookup`, `knowledge_path`, `report github`); `adapters/cli.py` (flag `--source-freshness`); `sparkforge_aws/reporting/github.py`; `scripts/refresh_knowledge.py`; `agents/executors/sf-verifier.md` e espelhos; `fixtures/sarif/`; `docs/knowledge-freshness.md` | Nenhum recurso de nuvem |
 | **KB Domains** | Knowledge management (proveniencia de fonte), testing (pares com relogio injetado), CI/CD (workflow `refresh-knowledge`) | — |
 | **IaC Impact** | None | O workflow `refresh-knowledge.yml` nao muda; so o script |
 
@@ -122,10 +122,10 @@ O SparkForge cita 218 fontes de regra e 132 fontes de conhecimento e nao sabe di
 
 | ID | Assumption | If Wrong, Impact | Validated? |
 |----|------------|------------------|------------|
-| A-001 | O lock viaja no wheel junto com `knowledge/` (force-include para `sparkforge/knowledge`) | O estado sairia `unresolved` em todo pacote instalado | [x] `pyproject.toml` |
+| A-001 | O lock viaja no wheel junto com `knowledge/` (force-include para `sparkforge_aws/knowledge`) | O estado sairia `unresolved` em todo pacote instalado | [x] `pyproject.toml` |
 | A-002 | O lock junta as datas `retrieved` das duas origens numa lista sem dizer de qual origem cada uma veio (`scripts/refresh_knowledge.py::watchlist`) | — | [x] lido no script |
 | A-003 | A data de validacao de uma fonte de regra vem do catalogo (`sources[].retrieved`), que o pacote ja carrega | — | [x] 218 de 218 fontes com URL tem `retrieved` |
-| A-004 | Para o estado por documento, o pacote precisa ler a secao `Fontes` de `knowledge/**.md`; o leitor hoje mora so em `scripts/refresh_knowledge.py` | O DESIGN move o leitor para `sparkforge/` e o script passa a importa-lo, para nao haver duas copias | [x] DESIGN Decision 4 |
+| A-004 | Para o estado por documento, o pacote precisa ler a secao `Fontes` de `knowledge/**.md`; o leitor hoje mora so em `scripts/refresh_knowledge.py` | O DESIGN move o leitor para `sparkforge_aws/` e o script passa a importa-lo, para nao haver duas copias | [x] DESIGN Decision 4 |
 | A-005 | O `retrieved` do catalogo e carregado como `datetime.date` pelo YAML | A comparacao de datas precisaria normalizar texto | [x] visto na leitura do catalogo |
 | A-006 | Nenhum golden atual compara a saida inteira do `judge` ou do `rules_lookup` alem dos findings e regras | Se algum comparar, o campo novo quebra o golden e o DESIGN decide entre regenerar e fixar `as_of` | [x] Errada: `fixtures/mcp_parity` compara uma chamada real de `rules_lookup` e os schemas das tres tools; DESIGN Decisions 1 e 6 (opt-in, diff so aditivo) |
 

@@ -31,9 +31,9 @@ tasks:
 claims:
   - text: "Os seis templates copiados para uma feature EXEMPLO e carimbados em ordem passam no sdd check sem recusa e sem lacuna."
     evidence_ref: "tests/test_sdd_skills.py::test_templates_formam_feature_valida"
-  - text: "As seis skills sdd-* existem com name, as tres secoes obrigatorias e a citacao de sparkforge sdd check."
+  - text: "As seis skills sdd-* existem com name, as tres secoes obrigatorias e a citacao de sparkforge-aws sdd check."
     evidence_ref: "tests/test_sdd_skills.py::test_seis_skills_existem"
-  - text: "Todo verbo sparkforge citado entre crases nas seis skills e aceito pelo parser da CLI, e o detector recusa verbo inventado."
+  - text: "Todo verbo sparkforge-aws citado entre crases nas seis skills e aceito pelo parser da CLI, e o detector recusa verbo inventado."
     evidence_ref: "tests/test_sdd_skills.py::test_comandos_citados_existem"
   - text: "vendor/CREDITS.md credita superpowers e AgentSpec (MIT) e nomeia as seis skills."
     evidence_ref: "tests/test_sdd_skills.py::test_credito_das_bases"

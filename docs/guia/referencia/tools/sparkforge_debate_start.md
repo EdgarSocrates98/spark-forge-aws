@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do par `rules` em `<repo>/.sparkforge/debate/<debate_id>/plan.json`. O `debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve `created: false`. RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` nao declara `budget.max_rounds` (o default do codigo nunca vira teto), `no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado com outros facts ou outro budget, e `invalid_rules`. Antes do budget, o `debate_gate` do plano: `gate_experimentar_antes`, `gate_nao_debater` e `gate_unresolved` recusam o par cujo veredito nao e `debater`, nomeando a medida, as duas acoes com rollback, ou o sinal que falta. NAO gera argumento: nada neste projeto chama provider. Quem escreve cada submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge/`. Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca (autonomia L0).
+Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do par `rules` em `<repo>/.sparkforge/debate/<debate_id>/plan.json`. O `debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve `created: false`. RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` nao declara `budget.max_rounds` (o default do codigo nunca vira teto), `no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado com outros facts ou outro budget, e `invalid_rules`. Antes do budget, o `debate_gate` do plano: `gate_experimentar_antes`, `gate_nao_debater` e `gate_unresolved` recusam o par cujo veredito nao e `debater`, nomeando a medida, as duas acoes com rollback, ou o sinal que falta. NAO gera argumento: nada neste projeto chama provider. Quem escreve cada submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge_aws/`. Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca (autonomia L0).
 
 ## Parâmetros
 
@@ -20,7 +20,7 @@ Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcul
 | `facts` | array de object | não |  |
 | `facts_path` | string ou array de string | não | Um caminho, ou varios: a UNIAO dos facts do case, o mesmo conjunto do `arbitrate`. Subconjunto fabrica claim desancorada. |
 | `findings` | array de object | não |  |
-| `findings_path` | string | não | Arquivo gerado por `sparkforge judge --out` -- o do `arbitrate`. |
+| `findings_path` | string | não | Arquivo gerado por `sparkforge-aws judge --out` -- o do `arbitrate`. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
 | `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf ou plan.aqe. Plano com operador Photon (plan.photon) faz o mesmo sem declaracao e vence 'off', que vira divergencia 'photon:'. Sem databricks, vira divergencia 'photon:'. |
@@ -29,7 +29,7 @@ Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcul
 
 ## Na CLI
 
-[`sparkforge debate next`](../cli/debate.md), [`sparkforge debate start`](../cli/debate.md), [`sparkforge debate submit`](../cli/debate.md)
+[`sparkforge-aws debate next`](../cli/debate.md), [`sparkforge-aws debate start`](../cli/debate.md), [`sparkforge-aws debate submit`](../cli/debate.md)
 
 ## Capacidade
 

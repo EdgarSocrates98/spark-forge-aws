@@ -193,7 +193,7 @@ def _tabela_de_flags(parser: argparse.ArgumentParser) -> list[str]:
 def _pagina_cli(
     nome: str, ajuda: str, parser: argparse.ArgumentParser, cli_para_tools: dict[str, set[str]]
 ) -> str:
-    partes = [AVISO + f"# `sparkforge {nome}`\n", _cel(ajuda) or _cel(parser.description) or ""]
+    partes = [AVISO + f"# `sparkforge-aws {nome}`\n", _cel(ajuda) or _cel(parser.description) or ""]
     partes.append("")
     aninhado = _subparsers(parser)
     folhas: list[tuple[str, str, argparse.ArgumentParser]]
@@ -208,17 +208,19 @@ def _pagina_cli(
         partes.append("|---|---|")
         for verbo, texto, _ in folhas:
             ancora = verbo.replace(" ", "-")
-            partes.append(f"| [`sparkforge {verbo}`](#sparkforge-{ancora}) | {_cel(texto)} |")
+            partes.append(
+                f"| [`sparkforge-aws {verbo}`](#sparkforge-aws-{ancora}) | {_cel(texto)} |"
+            )
         partes.append("")
     else:
         folhas = [(nome, ajuda, parser)]
     for verbo, texto, sub_parser in folhas:
         if aninhado:
-            partes.append(f"## `sparkforge {verbo}`\n")
+            partes.append(f"## `sparkforge-aws {verbo}`\n")
             if texto:
                 partes.append(_cel(texto) + "\n")
         partes.append("```bash")
-        partes.append(f"sparkforge {verbo} --help")
+        partes.append(f"sparkforge-aws {verbo} --help")
         partes.append("```\n")
         partes.append("### Opções\n" if aninhado else "## Opções\n")
         partes.extend(_tabela_de_flags(sub_parser))
@@ -235,7 +237,7 @@ def _pagina_cli(
 
 
 def _render_cli(cli_para_tools: dict[str, set[str]]) -> dict[Path, str]:
-    from sparkforge.adapters.cli import build_parser
+    from sparkforge_aws.adapters.cli import build_parser
 
     parser = build_parser()
     sub = _subparsers(parser)
@@ -254,7 +256,7 @@ def _render_cli(cli_para_tools: dict[str, set[str]]) -> dict[Path, str]:
             nome, ajudas.get(nome, ""), sub.choices[nome], cli_para_tools
         )
         resumo = _cel(_primeira_frase(ajudas.get(nome, "")))
-        indice.append(f"| [`sparkforge {nome}`]({nome}.md) | {resumo} |")
+        indice.append(f"| [`sparkforge-aws {nome}`]({nome}.md) | {resumo} |")
     paginas[DEST / "cli" / "README.md"] = "\n".join(indice) + "\n"
     return paginas
 
@@ -311,7 +313,7 @@ def _pagina_tool(nome: str, tool: dict[str, Any], tool_para_cli: dict[str, set[s
     partes.append("## Na CLI\n")
     if verbos:
         partes.append(", ".join(
-            f"[`sparkforge {v}`](../cli/{v.split()[0]}.md)" for v in verbos
+            f"[`sparkforge-aws {v}`](../cli/{v.split()[0]}.md)" for v in verbos
         ))
     else:
         partes.append("Sem verbo de CLI declarado para esta tool.")
@@ -332,7 +334,7 @@ def _pagina_tool(nome: str, tool: dict[str, Any], tool_para_cli: dict[str, set[s
 
 def _render_tools(tool_para_cli: dict[str, set[str]],
                   tool_para_capacidade: dict[str, set[str]]) -> dict[Path, str]:
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     paginas: dict[Path, str] = {}
     familias: dict[str, list[str]] = {}

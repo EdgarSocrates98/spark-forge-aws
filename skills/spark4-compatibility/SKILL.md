@@ -1,6 +1,6 @@
 ---
 name: spark4-compatibility
-description: "Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e alguém pergunta \\\"o que quebra no Spark 4?\\\", \\\"essa config mudou de nome?\\\", \\\"ANSI mode vai estourar meu cast?\\\" ou \\\"meu JAR de Scala 2.12 funciona?\\\". Use também quando o job falha com `NoSuchMethodError`, `ClassNotFoundException` ou uma exceção de overflow que antes devolvia NULL. Se você está prestes a comparar o código com o guia de migração do Apache no olho, rode `sparkforge migrate glue dir --from 5.1 --to 6.0` e `sparkforge glue dependency-audit dir --glue 6.0` — a área `SF-SPARK4` guarda cada regra pela versão de **Spark**, não de Glue, e por isso vale igual num EMR."
+description: "Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e alguém pergunta \\\"o que quebra no Spark 4?\\\", \\\"essa config mudou de nome?\\\", \\\"ANSI mode vai estourar meu cast?\\\" ou \\\"meu JAR de Scala 2.12 funciona?\\\". Use também quando o job falha com `NoSuchMethodError`, `ClassNotFoundException` ou uma exceção de overflow que antes devolvia NULL. Se você está prestes a comparar o código com o guia de migração do Apache no olho, rode `sparkforge-aws migrate glue dir --from 5.1 --to 6.0` e `sparkforge-aws glue dependency-audit dir --glue 6.0` — a área `SF-SPARK4` guarda cada regra pela versão de **Spark**, não de Glue, e por isso vale igual num EMR."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge migrate glue
-  - sparkforge glue dependency-audit
-  - sparkforge judge
+  - sparkforge-aws migrate glue
+  - sparkforge-aws glue dependency-audit
+  - sparkforge-aws judge
 ---
 
 # Spark 4 Compatibility
@@ -25,9 +25,9 @@ A fronteira do Apache Spark 4 é diferente da fronteira do empacotamento da AWS,
 
 ## Procedimento
 
-1. `sparkforge migrate glue <dir> --from 5.1 --to 6.0` — as regras de `SF-SPARK4` aparecem no mesmo assessment, guardadas pela versão de Spark do alvo de cada degrau.
-2. `sparkforge glue dependency-audit <dir> --glue 6.0` — pins de `requirements*.txt` com `major` e binários `.jar` com `scala_minor`, cada um ao lado do achado que produziu.
-3. Para um motor que não é Glue, informe a versão de Spark direto: `sparkforge judge --facts <arquivo> --spark 4.1.1`. A guarda é por Spark, então a regra avalia sem chave `glue` nenhuma.
+1. `sparkforge-aws migrate glue <dir> --from 5.1 --to 6.0` — as regras de `SF-SPARK4` aparecem no mesmo assessment, guardadas pela versão de Spark do alvo de cada degrau.
+2. `sparkforge-aws glue dependency-audit <dir> --glue 6.0` — pins de `requirements*.txt` com `major` e binários `.jar` com `scala_minor`, cada um ao lado do achado que produziu.
+3. Para um motor que não é Glue, informe a versão de Spark direto: `sparkforge-aws judge --facts <arquivo> --spark 4.1.1`. A guarda é por Spark, então a regra avalia sem chave `glue` nenhuma.
 
    Leia o campo `runtime` da saída antes de acreditar em qualquer achado — ou na ausência dele. `detected_from` diz de onde cada versão saiu (`terraform`, `event_log`, `cli`), e `divergences` denuncia fontes que discordam entre si, o que é achado próprio (`SF-ENV-001`) e não detalhe de implementação. Uma flag que contradiz o que o event log declara não é preferência: é sinal de que alguém está julgando o job errado.
 
@@ -58,7 +58,7 @@ Spark 4.1 liga ANSI por padrão: overflow de inteiro, cast inválido e índice f
 
 Conhecimento de fundo, sob demanda: [`knowledge/spark/spark4-migration.md`](../../knowledge/spark/spark4-migration.md) traz o que a fonte declara e marca como *a verificar* o que ela não declara. [`docs/aws/glue/6.0/spark4.md`](../../docs/aws/glue/6.0/spark4.md) é a leitura pelo lado do Glue.
 
-Severidade e limiar de cada regra: `sparkforge rules lookup --id SF-SPARK4-001` (e seguintes).
+Severidade e limiar de cada regra: `sparkforge-aws rules lookup --id SF-SPARK4-001` (e seguintes).
 
 ## Protocolo
 
@@ -83,7 +83,7 @@ nunca um ajuste que a skill aplica para fazer o job passar.
 - **"Renomeei a config, então está resolvido."** Confirme que o nome novo é o que o Spark 4.1 lê, e não um terceiro nome intermediário de uma versão anterior.
 - **"O JAR é nosso, foi compilado aqui."** Compilado contra qual Scala? `scala_minor` é o que decide, não a origem do artefato.
 - **"Desliguei o ANSI e passou."** Passou a rodar; não passou a estar correto. O cast que estouraria continua produzindo o valor que o ANSI recusava.
-- **"A regra não disparou, logo não há risco."** Guarda por versão: fora da faixa, a regra é **pulada**, e `sparkforge judge --show-skipped` mostra a razão. Silêncio da ferramenta nunca é atestado de ausência de risco.
+- **"A regra não disparou, logo não há risco."** Guarda por versão: fora da faixa, a regra é **pulada**, e `sparkforge-aws judge --show-skipped` mostra a razão. Silêncio da ferramenta nunca é atestado de ausência de risco.
 
 
 ## Contrato de qualidade SparkForge (v1)
@@ -92,7 +92,7 @@ Esta skill trata **compatibilidade Spark 4, Glue e dependências**. Contrato com
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge migrate glue`, `sparkforge glue dependency-audit`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws migrate glue`, `sparkforge-aws glue dependency-audit`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

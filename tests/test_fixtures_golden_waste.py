@@ -21,11 +21,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.utilization import extract_utilization
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.findings.validate import validate_fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.utilization import extract_utilization
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.validate import validate_fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "waste"

@@ -26,8 +26,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters._core import AdapterError
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters._core import AdapterError
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "fixtures" / "cloudwatch_logs"
@@ -154,7 +154,7 @@ class TestAnalyzeErrorSignatures:
 
 class TestAsDuasTools:
     def test_estao_declaradas_e_despachaveis(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         novas = {
             "sparkforge_analyze_cloudwatch_logs",
@@ -166,7 +166,7 @@ class TestAsDuasTools:
     def test_as_duas_sao_LEITURA(self):
         """Nenhuma das duas escreve artefato nem sai para a rede: uma le o
         artefato que o coletor ja gravou, a outra deriva sobre facts."""
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         for nome in (
             "sparkforge_analyze_cloudwatch_logs",
@@ -179,7 +179,7 @@ class TestAsDuasTools:
     def test_a_descricao_da_tool_de_assinaturas_declara_a_UNIAO(self):
         """A recusa mora na descricao, e um teste a varre: alimentar a tool com
         metade dos facts nao devolve metade das respostas."""
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         descricao = TOOLS["sparkforge_analyze_error_signatures"]["description"]
         assert "UNIAO" in descricao or "UNIÃO" in descricao

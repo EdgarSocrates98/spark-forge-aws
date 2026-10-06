@@ -35,8 +35,8 @@ e como obtê-lo.\r
 não reavalia regra nenhuma. Ele decide o que o julgamento deixa em aberto: dois achados que\r
 mandam mover a **mesma** propriedade em direções opostas, se o lastro de um achado sustenta uma\r
 recomendação, qual medida falta para fechar a lacuna, e em que ordem as ações podem ser\r
-aplicadas. O resultado vai para o blackboard do case (`sparkforge blackboard summary`,\r
-`sparkforge decisions list`, `sparkforge decisions explain <id>`).\r
+aplicadas. O resultado vai para o blackboard do case (`sparkforge-aws blackboard summary`,\r
+`sparkforge-aws decisions list`, `sparkforge-aws decisions explain <id>`).\r
 \r
 **Se o achado saiu de debate entre agentes, `sparkforge_debate_referee` decide se\r
 ele pode ser publicado.** Ele arbitra o protocolo e recusa quatro coisas: hipótese\r
@@ -104,7 +104,7 @@ torta.\r
 \r
 `SF-WASTE-001` só dispara com as quatro medidas apontando na mesma direção — worker ocioso,\r
 memória e disco com folga, e **sem** skew que explique a ociosidade — e aponta para\r
-`sparkforge capacity`, que compara as capacidades que o job já rodou. `SF-WASTE-002` é o\r
+`sparkforge-aws capacity`, que compara as capacidades que o job já rodou. `SF-WASTE-002` é o\r
 oposto: utilização baixa **com** skew alto, e ali reduzir worker deixa a causa intacta e\r
 aumenta a duração.\r
 \r
@@ -214,4 +214,4 @@ decida, entre um e outro, se o achado justifica seguir ou se falta coleta.\r
 Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.\r
 \r
 Em plataforma sem despacho de subagente, a mesma decomposição sai por\r
-`sparkforge playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`."""
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`."""

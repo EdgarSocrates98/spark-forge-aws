@@ -1,7 +1,7 @@
 """A varredura e a fronteira entre o repositorio analisado e o motor.
 
 Ela existe como unidade desde que os quinze sitios de `rglob` -- catorze em
-`sparkforge/facts/` e um em `sparkforge/migration/collect.py` -- passaram a
+`sparkforge_aws/facts/` e um em `sparkforge_aws/migration/collect.py` -- passaram a
 chamar `iter_source_files`. Antes disso so tres pulavam sequer `__pycache__`, e
 apontar o motor para um repositorio com `.venv` varria o ambiente virtual
 inteiro: custo, ruido, e leitura de qualquer `*.json` que houvesse dentro.
@@ -20,7 +20,7 @@ import sys
 
 import pytest
 
-from sparkforge.facts.scan import ScanError, iter_source_files
+from sparkforge_aws.facts.scan import ScanError, iter_source_files
 
 
 def _criar(raiz: pathlib.Path, caminho: str, conteudo: str = "x = 1\n") -> pathlib.Path:
@@ -93,7 +93,7 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
 def test_nenhum_modulo_varre_com_glob_cru():
     """`glob` e `rglob` diretos sao a porta de entrada sem denylist.
 
-    O gate e estrutural e por AST, sobre `sparkforge/` INTEIRO -- 126 arquivos,
+    O gate e estrutural e por AST, sobre `sparkforge_aws/` INTEIRO -- 126 arquivos,
     nao os 25 de `facts/`. As duas formas contam: `glob("**/*.json")` anda a
     arvore igual a `rglob("*.json")`, e olhar so uma delas convida a evasao de
     uma tecla.
@@ -102,7 +102,7 @@ def test_nenhum_modulo_varre_com_glob_cru():
     a lista e conferida contra a realidade: entrada que sobra e mentira sobre o
     que o gate protege.
     """
-    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge"
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge_aws"
     infratores = []
     usadas = set()
     for arquivo in sorted(raiz.rglob("*.py")):
@@ -250,7 +250,7 @@ def test_teto_de_dados_existe_e_nao_e_infinito(tmp_path):
     medida errada: `truncate` da `st_size` real sem gravar byte de dado, e
     `st_size` e exatamente o que o teto le. Custa 0.19 s.
     """
-    from sparkforge.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES
+    from sparkforge_aws.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES
 
     _criar(tmp_path, "pequeno.json", "{}")
     with open(tmp_path / "patologico.json", "wb") as arquivo:
@@ -267,7 +267,7 @@ def test_json_logo_abaixo_do_teto_de_dados_passa(tmp_path):
     Sem este, baixar o teto de dados para qualquer valor menor -- inclusive
     para o teto de codigo -- continuaria passando no teste do teto.
     """
-    from sparkforge.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES
+    from sparkforge_aws.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES
 
     with open(tmp_path / "no_limite.json", "wb") as arquivo:
         arquivo.truncate(TAMANHO_MAXIMO_DADOS_BYTES)
@@ -424,7 +424,7 @@ def test_arquivo_no_limite_de_tamanho_ainda_entra(tmp_path):
     Sem este caso, trocar o limite por `>=` -- ou por qualquer teto menor --
     passaria despercebido.
     """
-    from sparkforge.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES
+    from sparkforge_aws.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES
 
     (tmp_path / "no_limite.py").write_bytes(b"#" * TAMANHO_MAXIMO_CODIGO_BYTES)
     (tmp_path / "um_a_mais.py").write_bytes(b"#" * (TAMANHO_MAXIMO_CODIGO_BYTES + 1))
@@ -466,7 +466,7 @@ def test_subpasta_ignorada_nao_e_descida(tmp_path, monkeypatch):
             visitadas.append(pasta)
             yield pasta, subpastas, arquivos
 
-    monkeypatch.setattr("sparkforge.facts.scan.os.walk", walk_espiao)
+    monkeypatch.setattr("sparkforge_aws.facts.scan.os.walk", walk_espiao)
     list(iter_source_files(tmp_path, "*.py"))
     assert not any(".venv" in pasta for pasta in visitadas)
 
@@ -509,7 +509,7 @@ def test_caminho_entregue_de_fora_da_raiz_nao_passa(tmp_path, monkeypatch):
         yield from walk_original(*args, **kwargs)
         yield str(fora), [], ["segredo.py"]
 
-    monkeypatch.setattr("sparkforge.facts.scan.os.walk", walk_com_intruso)
+    monkeypatch.setattr("sparkforge_aws.facts.scan.os.walk", walk_com_intruso)
     achados = sorted(p.name for p in iter_source_files(alvo, "*.py"))
     assert achados == ["job.py"]
 
@@ -577,7 +577,7 @@ def test_iter_source_files_continua_devolvendo_so_caminho(tmp_path):
     modulos de `facts/` iterando isto. A visibilidade do pulo entra AO LADO,
     nunca no lugar.
     """
-    from sparkforge.facts.scan import varrer_source_files
+    from sparkforge_aws.facts.scan import varrer_source_files
 
     _criar(tmp_path, "a/b.py")
     _criar(tmp_path, "z.py")
@@ -591,7 +591,7 @@ def test_iter_source_files_continua_devolvendo_so_caminho(tmp_path):
 
 
 def test_pulo_por_teto_de_tamanho_e_visivel(tmp_path):
-    from sparkforge.facts.scan import SIZE_ABOVE_LIMIT, varrer_source_files
+    from sparkforge_aws.facts.scan import SIZE_ABOVE_LIMIT, varrer_source_files
 
     _criar(tmp_path, "pequeno.py")
     (tmp_path / "gigante.py").write_text("#" * (2 * 1024 * 1024), encoding="utf-8")
@@ -601,7 +601,7 @@ def test_pulo_por_teto_de_tamanho_e_visivel(tmp_path):
 
 
 def test_pulo_por_atalho_de_arquivo_e_visivel(tmp_path):
-    from sparkforge.facts.scan import REPARSE_POINT, varrer_source_files
+    from sparkforge_aws.facts.scan import REPARSE_POINT, varrer_source_files
 
     _criar(tmp_path, "job.py")
     try:
@@ -622,7 +622,7 @@ def test_pulo_por_nao_ser_arquivo_regular_e_visivel(tmp_path, monkeypatch):
     """
     import os as _os
 
-    from sparkforge.facts.scan import NOT_A_REGULAR_FILE, varrer_source_files
+    from sparkforge_aws.facts.scan import NOT_A_REGULAR_FILE, varrer_source_files
 
     _criar(tmp_path, "job.py")
     walk_original = _os.walk
@@ -631,7 +631,7 @@ def test_pulo_por_nao_ser_arquivo_regular_e_visivel(tmp_path, monkeypatch):
         for pasta, subpastas, arquivos in walk_original(*args, **kwargs):
             yield pasta, subpastas, [*arquivos, "sumiu.py"]
 
-    monkeypatch.setattr("sparkforge.facts.scan.os.walk", walk_com_fantasma)
+    monkeypatch.setattr("sparkforge_aws.facts.scan.os.walk", walk_com_fantasma)
     varredura = varrer_source_files(tmp_path, "*.py")
     assert [p.name for p in varredura.arquivos] == ["job.py"]
     assert _pulos_por_razao(varredura.pulos, NOT_A_REGULAR_FILE) == ["sumiu.py"]
@@ -644,7 +644,7 @@ def test_pulo_por_nome_sensivel_e_visivel_sem_ler_o_arquivo(tmp_path, monkeypatc
     conteudo e nao entra tamanho -- o arquivo nao chega a ser aberto, provado
     aqui derrubando `read_bytes` e `read_text` antes de varrer.
     """
-    from sparkforge.facts.scan import SENSITIVE_NAME, varrer_source_files
+    from sparkforge_aws.facts.scan import SENSITIVE_NAME, varrer_source_files
 
     _criar(tmp_path, "config.json", "{}")
     _criar(tmp_path, "infra/prod.tfvars", 'senha = "nao-me-leia"\n')
@@ -669,7 +669,7 @@ def test_pulo_nunca_carrega_o_caminho_absoluto(tmp_path):
     dentro de qualquer relatorio que renderize o pulo, e nao acrescenta nada a
     decisao de quem le "ha um `.env` em `infra/` que eu nao li".
     """
-    from sparkforge.facts.scan import varrer_source_files
+    from sparkforge_aws.facts.scan import varrer_source_files
 
     _criar(tmp_path, "infra/.env", "TOKEN=x")
     varredura = varrer_source_files(tmp_path, "*")
@@ -683,7 +683,7 @@ def test_pulo_por_confinamento_e_visivel(tmp_path, monkeypatch):
     """O intruso vem de fora da raiz, e nem por isso o absoluto dele vaza."""
     import os as _os
 
-    from sparkforge.facts.scan import OUTSIDE_ROOT, varrer_source_files
+    from sparkforge_aws.facts.scan import OUTSIDE_ROOT, varrer_source_files
 
     fora = tmp_path.parent / "fora_do_confinamento"
     fora.mkdir(exist_ok=True)
@@ -697,7 +697,7 @@ def test_pulo_por_confinamento_e_visivel(tmp_path, monkeypatch):
         yield from walk_original(*args, **kwargs)
         yield str(fora), [], ["segredo.py"]
 
-    monkeypatch.setattr("sparkforge.facts.scan.os.walk", walk_com_intruso)
+    monkeypatch.setattr("sparkforge_aws.facts.scan.os.walk", walk_com_intruso)
     varredura = varrer_source_files(alvo, "*.py")
     assert [p.name for p in varredura.arquivos] == ["job.py"]
     fugitivos = [p for p in varredura.pulos if p.razao == OUTSIDE_ROOT]
@@ -707,7 +707,7 @@ def test_pulo_por_confinamento_e_visivel(tmp_path, monkeypatch):
 
 def test_pulo_por_erro_de_sistema_e_visivel(tmp_path, monkeypatch):
     """Arquivo ilegivel some da saida hoje. Sumir sem razao e o defeito."""
-    from sparkforge.facts.scan import OS_ERROR, varrer_source_files
+    from sparkforge_aws.facts.scan import OS_ERROR, varrer_source_files
 
     _criar(tmp_path, "job.py")
     _criar(tmp_path, "trancado.py")
@@ -765,7 +765,7 @@ def test_poda_de_ruido_e_de_cofre_sao_razoes_diferentes(tmp_path):
     le a saida decide coisas diferentes com cada um, e um unico
     `DIRECTORY_PRUNED` obrigaria a adivinhar qual foi.
     """
-    from sparkforge.facts.scan import (
+    from sparkforge_aws.facts.scan import (
         DIRECTORY_IGNORED,
         DIRECTORY_SENSITIVE,
         varrer_source_files,
@@ -783,7 +783,7 @@ def test_poda_de_ruido_e_de_cofre_sao_razoes_diferentes(tmp_path):
 
 def test_pulo_por_atalho_de_pasta_e_visivel(tmp_path):
     """A poda por atalho e a que fecha a junction, e era a mais calada de todas."""
-    from sparkforge.facts.scan import DIRECTORY_REPARSE_POINT, varrer_source_files
+    from sparkforge_aws.facts.scan import DIRECTORY_REPARSE_POINT, varrer_source_files
 
     _criar(tmp_path, "pkg/job.py")
     try:
@@ -802,7 +802,7 @@ def test_arquivo_fora_do_padrao_nao_vira_pulo(tmp_path):
     ruido e afogaria as razoes que importam, que e como um sinal de ponto cego
     morre na pratica.
     """
-    from sparkforge.facts.scan import varrer_source_files
+    from sparkforge_aws.facts.scan import varrer_source_files
 
     _criar(tmp_path, "job.py")
     _criar(tmp_path, "dados.json", "{}")
@@ -813,7 +813,7 @@ def test_arquivo_fora_do_padrao_nao_vira_pulo(tmp_path):
 
 def test_pulos_vem_em_ordem_estavel(tmp_path):
     """Mesma razao da ordem dos arquivos: saida comparavel entre execucoes."""
-    from sparkforge.facts.scan import varrer_source_files
+    from sparkforge_aws.facts.scan import varrer_source_files
 
     _criar(tmp_path, "job.py")
     for ruido in ("z_pkg/__pycache__/x.py", "a_pkg/__pycache__/y.py", "build/c.py"):
@@ -824,7 +824,7 @@ def test_pulos_vem_em_ordem_estavel(tmp_path):
 
 
 def test_raiz_inexistente_continua_sendo_erro_na_api_nova(tmp_path):
-    from sparkforge.facts.scan import varrer_source_files
+    from sparkforge_aws.facts.scan import varrer_source_files
 
     with pytest.raises(ScanError):
         varrer_source_files(tmp_path / "nao_existe", "*.py")

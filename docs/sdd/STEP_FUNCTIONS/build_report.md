@@ -41,7 +41,7 @@ claims:
     evidence_ref: "tests/test_agent_coverage.py::TestEveryToolIsReachable::test_no_tool_is_orphan"
   - text: "Antes das correcoes da revisao, os goldens de fixture passaram sem regeneracao: 3238 passed, 4 skipped (3217 de antes mais o corpus novo)."
     evidence_ref: "python -m pytest tests/test_fixtures_golden*.py -q (2026-09-19, em 6f82c00c)"
-  - text: "Na arvore final, os goldens de fixture passaram sem regeneracao: 3242 passed, 4 skipped e 1 error de teardown em tests/test_fixtures_golden_workload.py, causado por sparkforge sdd stamp/check rodado durante a suite (a CLI grava em .sparkforge/ e a guarda do conftest derruba o teste corrente); o arquivo rodado sozinho da 34 passed."
+  - text: "Na arvore final, os goldens de fixture passaram sem regeneracao: 3242 passed, 4 skipped e 1 error de teardown em tests/test_fixtures_golden_workload.py, causado por sparkforge-aws sdd stamp/check rodado durante a suite (a CLI grava em .sparkforge/ e a guarda do conftest derruba o teste corrente); o arquivo rodado sozinho da 34 passed."
     evidence_ref: "python -m pytest tests/test_fixtures_golden*.py -q (2026-09-19, em 8c5a764d) e python -m pytest tests/test_fixtures_golden_workload.py -q"
 change_id: null
 ---

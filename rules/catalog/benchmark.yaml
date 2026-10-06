@@ -1,6 +1,6 @@
 # Catálogo de regras — comparação entre duas execuções (benchmark antes/depois)
 #
-# Depende do comparador `sparkforge/facts/benchmark.py` (Fase 4a, Tasks 1 e 2),
+# Depende do comparador `sparkforge_aws/facts/benchmark.py` (Fase 4a, Tasks 1 e 2),
 # que é função PURA sobre `Fact`: a entrada de cada lado é o que
 # `analyze event-log` já produziu, e a saída são os cinco kinds `bench.*`.
 #
@@ -26,7 +26,7 @@
 # event logs, e um percentual de variação entre eles é o que é em Spark 3.0 e em
 # 3.5. Pior: `judge` recebe o runtime que a CLI montou, não o que o extrator viu
 # (é o absurdo já registrado no cabeçalho de `spark-ui.yaml`), então um escopo
-# não-vazio aqui só poderia subtrair cobertura — num `sparkforge judge` sem
+# não-vazio aqui só poderia subtrair cobertura — num `sparkforge-aws judge` sem
 # flags, `spark` sai vazio, `in_scope` falha FECHADA, e a área inteira sumiria.
 #
 # ─────────────────────────────────────────────────────────────────────────────

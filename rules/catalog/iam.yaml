@@ -30,7 +30,7 @@ area: SF-IAM
 #
 # TODAS elas leem `iam.access_decision`, que e a resposta de
 # `iam:SimulatePrincipalPolicy` e nao a leitura de um documento de policy. A
-# distincao esta no docstring de `sparkforge/facts/iam_access.py`: boundary,
+# distincao esta no docstring de `sparkforge_aws/facts/iam_access.py`: boundary,
 # SCP, `Deny` explicito e `Condition` nao aparecem no documento do role.
 
 rules:

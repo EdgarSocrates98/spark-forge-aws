@@ -18,7 +18,7 @@ Decomposicao de um coordenador (agents/*.md) em passos sequenciais -- o PISO de 
 
 ## Na CLI
 
-[`sparkforge playbook`](../cli/playbook.md)
+[`sparkforge-aws playbook`](../cli/playbook.md)
 
 ## Capacidade
 

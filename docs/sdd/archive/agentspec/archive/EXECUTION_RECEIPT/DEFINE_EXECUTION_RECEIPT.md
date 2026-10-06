@@ -34,7 +34,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: modulo puro `sparkforge/receipt/` com `build` (monta o recibo a partir de caminhos e de um `now` injetado) e `verify` (recalcula e diagnostica), sem I/O de rede e sem importar provider |
+| **MUST** | G1: modulo puro `sparkforge_aws/receipt/` com `build` (monta o recibo a partir de caminhos e de um `now` injetado) e `verify` (recalcula e diagnostica), sem I/O de rede e sem importar provider |
 | **MUST** | G2: `receipt_id` = `rcpt_` + sha256 do JSON canonico do recibo sem o proprio campo; o JSON canonico reutiliza um helper que ja existe no pacote, sem criar um setimo |
 | **MUST** | G3: parte `case` com caminho, sha256 e `case_id` de `.sparkforge/case.yaml`; parte `evidence` com caminho, sha256 e `fact_count` de cada arquivo de `--facts` (repetivel, a uniao) e `fact_ids_sha256`; parte `judgment` com caminho e sha256 dos findings, `rule_ids`, `fact_ids`, `catalog_version` e `schema_version` (lidos pelo mesmo `_signature_parts` do `report sign`) e, com `--report`, caminho e `signature` do report |
 | **MUST** | G4: sha256 de artefato de texto com CRLF normalizado para LF; a regra de normalizacao entra no hash via `receipt_version` |
@@ -45,7 +45,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 | **MUST** | G9: `tools` no verify: com o run presente no `traces.db`, recalcula `spans_sha256`; com o banco ausente ou sem o run, sai `not_rechecked` com a razao, listado, sem derrubar `valid` |
 | **MUST** | G10: `receipt_version` diferente da build: as partes que dependem de normalizacao saem `not_evaluable`, fora de `diverged` |
 | **MUST** | G11: `emitted_at` vem de `--now` (obrigatorio) e entra no hash; mesma entrada e mesmo `--now` dao o mesmo `receipt_id` e o mesmo arquivo byte a byte |
-| **MUST** | G12: CLI `sparkforge receipt emit` e `sparkforge receipt verify`; tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge/receipts/<receipt_id>.json`, caminhos de entrada confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) |
+| **MUST** | G12: CLI `sparkforge-aws receipt emit` e `sparkforge-aws receipt verify`; tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge/receipts/<receipt_id>.json`, caminhos de entrada confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) |
 | **SHOULD** | G13: parte `host`: com `--host-transcript`, `transcript_sha256`, `agent` e `model` lidos pelos facts `host.*` de `extract_host_transcript_path`; `provider` so de `--provider`; sem transcript, `host.model` e `host.agent` saem `unresolved` (`transcript_ausente`); sem provider, `host.provider` sai `unresolved` (`provider_nao_declarado`); mais de um modelo sai `modelos_multiplos` |
 | **SHOULD** | G14: parte `decision`: por arquivo de `.sparkforge/blackboard/*.jsonl` presente, caminho, sha256 e contagem; `decision_ids`; por ADR em `.sparkforge/blackboard/adr/`, caminho, sha256 e `rollback_present`; por debate em `.sparkforge/debate/<id>/`, id e sha256 do estado; sem nenhum deles, `unresolved` (`sem_arbitragem`) |
 | **SHOULD** | G15: parte `proof`: fact_ids `funcval.*` em `tests` e fact_ids de benchmark em `before_after`, so os presentes na uniao; nenhuma comparacao e nenhum ganho; sem nenhum, `unresolved` (`sem_prova_funcional`, `sem_benchmark`); no verify, fact_id citado que nao esta na uniao declarada faz a parte divergir |
@@ -116,7 +116,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 | Technical | Regra 26 | Duas tools movem a superficie; crescimento declarado no commit |
 | Technical | Regra 27: medicao nunca derruba a chamada | `traces.db` indisponivel deixa `tools` `unresolved`, e o emit segue |
 | Technical | Caso real nunca entra em arquivo | Fixture sintetica; o recibo, commitavel pela politica de `.sparkforge/`, nao carrega conteudo |
-| Technical | Modulo novo em `sparkforge/` | `iter_source_files` em vez de `Path.glob` (`test_facts_scan`); `git add` antes dos lotes; nenhum `def` aninhado repetido (codeintel) |
+| Technical | Modulo novo em `sparkforge_aws/` | `iter_source_files` em vez de `Path.glob` (`test_facts_scan`); `git add` antes dos lotes; nenhum `def` aninhado repetido (codeintel) |
 | Technical | Windows e Linux | Caminhos relativos em POSIX no recibo; CRLF normalizado (G4) |
 
 ---
@@ -125,7 +125,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/receipt/` (modulo novo); `adapters/_core.py`, `adapters/cli.py`, `adapters/tools.py`; `agents/executors/sf-synthesizer.md` e espelhos; `parity.yaml`; `manifest.json`; `fixtures/receipt/`; testes em `tests/test_receipt_*.py` | Nenhum recurso de nuvem |
+| **Deployment Location** | `sparkforge_aws/receipt/` (modulo novo); `adapters/_core.py`, `adapters/cli.py`, `adapters/tools.py`; `agents/executors/sf-synthesizer.md` e espelhos; `parity.yaml`; `manifest.json`; `fixtures/receipt/`; testes em `tests/test_receipt_*.py` | Nenhum recurso de nuvem |
 | **KB Domains** | Proveniencia e integridade (content addressing, JSON canonico), testing (golden byte a byte, adulteracao por parte, relogio injetado), observabilidade (spans do `traces.db`) | Contratos de referencia: `report sign`/`verify` e `telemetry export` |
 | **IaC Impact** | None | — |
 
@@ -137,9 +137,9 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 |----|------------|------------------|------------|
 | A-001 | A uniao `fixtures/graph/import_sem_jar_no_iac` + `fixtures/infra_code/fgac_com_jar_extra` existe com `expected/facts.json` e `expected/findings.json`, e o `arbitrate` sobre ela gera blackboard e ADR | Sem bloco `decision` nao vazio no golden; seria preciso outra fixture | [x] arquivos presentes; saida do `arbitrate` medida em 2026-09-08 (3 claims, 1 contradicao) |
 | A-002 | O transcript do host vira facts `host.*` com modelo por `extract_host_transcript_path`, o mesmo leitor do `telemetry export` | O bloco `host` precisaria de leitor proprio | [x] `adapters/_core.py:4693` |
-| A-003 | Os spans nao carregam `case_id` e nao guardam hash de I/O | Se carregassem, a ligacao case-run poderia ser conferida em vez de declarada | [x] zero ocorrencias em `sparkforge/observability/` |
+| A-003 | Os spans nao carregam `case_id` e nao guardam hash de I/O | Se carregassem, a ligacao case-run poderia ser conferida em vez de declarada | [x] zero ocorrencias em `sparkforge_aws/observability/` |
 | A-004 | Nenhum codigo poda o `traces.db`; ele so fica ausente em outra maquina e no CI por estar no gitignore | Se existisse poda, `not_rechecked` teria mais uma razao | [x] nenhum `DELETE FROM` em `observability/`; o BRAINSTORM dizia "podavel por desenho" e foi corrigido |
-| A-005 | O verify consegue reusar `compute_signature` e a leitura do bloco de assinatura sem importar `adapters` a partir de `sparkforge/receipt/` | Se `_split_report`/`_signature_parts` so existirem em `_core.py`, o DESIGN decide entre mover para `findings/` ou chamar pelo adapter | [x] So existem em `_core.py`; o adapter le e passa (DESIGN Decision 1) |
+| A-005 | O verify consegue reusar `compute_signature` e a leitura do bloco de assinatura sem importar `adapters` a partir de `sparkforge_aws/receipt/` | Se `_split_report`/`_signature_parts` so existirem em `_core.py`, o DESIGN decide entre mover para `findings/` ou chamar pelo adapter | [x] So existem em `_core.py`; o adapter le e passa (DESIGN Decision 1) |
 | A-006 | O `case.yaml` tem um `case_id` legivel por `store.load_case` | A parte `case` sairia so com hash | [x] `case/store.py:71` |
 | A-007 | O golden de paridade MCP aceita tool nova como adicao sem regenerar o golden inteiro | Se nao aceitar, o DESIGN decide regenerar sob o SDK 2.x | [x] `NOVAS_DEPOIS_DO_GOLDEN` em `tests/test_fixtures_golden_mcp_parity.py:73` |
 | A-008 | O span do proprio emit so e gravado no `traces.db` depois que o handler devolve | Se fosse gravado antes, `build` precisaria filtrar pelo `span_id` corrente | [x] Mais do que isso: `record()` roda depois do handler e so no buffer; o disco so no `atexit`. O emit le por `shared_ledger().spans_of` e o verify ancora por `span_id` (DESIGN Decision 2) |

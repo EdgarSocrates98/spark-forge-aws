@@ -56,7 +56,7 @@ estava sendo verificado por algo que não o cobria.** O AC2 prometia "os registr
 `config/`" e o gate olhava um. O AC4 apontava para um teste cego ao único documento que o
 próprio design nomeia como ofensor.
 
-Nos dois casos o `sparkforge sdd check` passou — ele confere a forma do artefato, não se o
+Nos dois casos o `sparkforge-aws sdd check` passou — ele confere a forma do artefato, não se o
 teste citado mede o que o critério afirma. **É uma limitação estrutural do gate de SDD**, e
 fica nomeada aqui como candidata a feature própria.
 
@@ -84,8 +84,8 @@ achado porque nenhuma olhava `config/agents.yaml`.
 | `python scripts/check_surface_lock.py` | 0 divergências |
 | `python scripts/verify_offline_bundle.py` | `"ok": true` |
 | `python scripts/check_vnext_claims.py` | 0 divergências |
-| `python -m ruff check sparkforge scripts tests` | limpo |
-| `sparkforge sdd check --repo . --feature CONFIG_OCA` | `ok: true`, 0 recusas, 0 lacunas |
+| `python -m ruff check sparkforge_aws scripts tests` | limpo |
+| `sparkforge-aws sdd check --repo . --feature CONFIG_OCA` | `ok: true`, 0 recusas, 0 lacunas |
 
 ## Pendências
 
@@ -94,7 +94,7 @@ achado porque nenhuma olhava `config/agents.yaml`.
   teste, com o nome da lacuna.
 - **U1 continua aberta:** a varredura alcança só o interior do repositório. Um consumidor
   externo dos contratos removidos é o que o `git revert` do commit da T2 cobre.
-- **Segunda camada oca, de código.** Os seis módulos de `sparkforge/tools/` que estavam por
+- **Segunda camada oca, de código.** Os seis módulos de `sparkforge_aws/tools/` que estavam por
   trás dos sete nomes **existem**; o que nunca existiu foi a declaração de tool MCP. Medido:
   `offline` tem leitor de produção, e `cost` não tem leitor nenhum. É outra feature.
 - **`config/agents.yaml` não pode entrar em `VIVOS`** sem exceção: ele tem

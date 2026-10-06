@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.collect import live_graph
+from sparkforge_aws.collect import live_graph
 
 
 class _FakeSts:

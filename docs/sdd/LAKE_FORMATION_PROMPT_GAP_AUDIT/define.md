@@ -35,7 +35,7 @@ success:
     source: "pytest --basetemp .pytest-temp tests/test_lakeformation_prompt_acceptance.py -q"
   - id: SC2
     metric: "SDD, offline, skills, surface, claims e status gates sem divergência"
-    source: "sparkforge sdd check; verify_offline_bundle; sync_skills --check; check_surface_lock; check_status_numbers --strict"
+    source: "sparkforge-aws sdd check; verify_offline_bundle; sync_skills --check; check_surface_lock; check_status_numbers --strict"
 out_of_scope:
   - "Chamadas ou mutações AWS, IAM, Lake Formation, RAM, KMS ou S3."
   - "Alterar a matriz de capability sem nova fonte oficial versionada."

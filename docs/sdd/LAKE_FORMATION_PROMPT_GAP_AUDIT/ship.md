@@ -28,14 +28,14 @@ capability, e progressive disclosure separa referências de Glue e EMR.
 
 - `pytest --basetemp .pytest-temp tests/test_lakeformation_prompt_acceptance.py -q` — exit 0; 16 passed.
 - `pytest --basetemp .pytest-temp tests/test_lakeformation_architecture.py tests/test_lakeformation_fgac_fta_improvements.py tests/test_lakeformation_prompt_acceptance.py -q` — exit 0; 37 passed.
-- `ruff check sparkforge/lakeformation/architecture.py tests/test_lakeformation_prompt_acceptance.py` — exit 0.
+- `ruff check sparkforge_aws/lakeformation/architecture.py tests/test_lakeformation_prompt_acceptance.py` — exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0; 58 checked.
 - `python scripts/sync_skills.py --check` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `pytest --basetemp E:\pytest-sf-temp tests/test_vnext_claims.py::TestGateReal::test_o_manifesto_do_repositorio_esta_consistente -q` — exit 0.
-- `sparkforge sdd check --repo . --feature LAKE_FORMATION_PROMPT_GAP_AUDIT` — exit 0.
+- `sparkforge-aws sdd check --repo . --feature LAKE_FORMATION_PROMPT_GAP_AUDIT` — exit 0.
 
 ## Limites
 

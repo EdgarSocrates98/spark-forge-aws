@@ -9,7 +9,7 @@ upstream:
   sha256: "16d46baba70ced63afe92989fd1822bb31c2f54bab188c930c332ddd087e0790"
 tasks:
   - id: T1
-    files: [tests/test_token_estimate_unico.py, sparkforge/agents/budget.py, sparkforge/tools/cost.py, sparkforge/context/funnel.py, sparkforge/providers/mock.py, sparkforge/codeintel/budget.py, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_token_estimate_unico.py, sparkforge_aws/agents/budget.py, sparkforge_aws/tools/cost.py, sparkforge_aws/context/funnel.py, sparkforge_aws/providers/mock.py, sparkforge_aws/codeintel/budget.py, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC1, AC2, AC3, AC4, AC5]
     test: {path: tests/test_token_estimate_unico.py, name: test_uma_definicao_e_os_sitios_a_usam}
 ---
@@ -17,14 +17,14 @@ tasks:
 # TOKEN_ESTIMATE_UNICO — plano
 
 Uma tarefa. O manifesto do design tem oito arquivos e uma mudança só: três sítios deixam a
-fórmula própria e passam a chamar `sparkforge/agents/budget.py::estimate_tokens` (D1). Partir
+fórmula própria e passam a chamar `sparkforge_aws/agents/budget.py::estimate_tokens` (D1). Partir
 em duas tarefas deixaria um commit com o código novo e a alegação auditada ainda dizendo
 "quatro vezes" — o gate de lastro vermelho atravessando commit, que é o que a ordem de
 dependência da skill proíbe.
 
 Premissas (D1–D4 do design): o dono é `agents/budget.py` (teto de `len/4`, mínimo 1, não-string
-vira JSON ordenado); `tools/cost.py` fica como alias pelo mesmo nome, porque `sparkforge.tools`
-o reexporta e `sparkforge/tools/cli.py` o chama; `codeintel/budget.py` fica fora; a propriedade
+vira JSON ordenado); `tools/cost.py` fica como alias pelo mesmo nome, porque `sparkforge_aws.tools`
+o reexporta e `sparkforge_aws/tools/cli.py` o chama; `codeintel/budget.py` fica fora; a propriedade
 de prefixo do AC2 é medida contra a fórmula antiga reproduzida no teste.
 
 Uma diferença de comportamento de `tools.cost.estimate_tokens` que não aparece em nenhum
@@ -51,14 +51,14 @@ from __future__ import annotations
 import inspect
 import random
 
-import sparkforge.tools as tools_pkg
-from sparkforge.agents import budget as dono
-from sparkforge.codeintel import budget as codeintel_budget
-from sparkforge.context import funnel
-from sparkforge.context.funnel import ContextChunk, ContextFunnel
-from sparkforge.providers import mock
-from sparkforge.providers.mock import MockModelProvider
-from sparkforge.tools import cost
+import sparkforge_aws.tools as tools_pkg
+from sparkforge_aws.agents import budget as dono
+from sparkforge_aws.codeintel import budget as codeintel_budget
+from sparkforge_aws.context import funnel
+from sparkforge_aws.context.funnel import ContextChunk, ContextFunnel
+from sparkforge_aws.providers import mock
+from sparkforge_aws.providers.mock import MockModelProvider
+from sparkforge_aws.tools import cost
 
 
 def _escolha_com_piso(chunks: list[ContextChunk], orcamento: int) -> list[ContextChunk]:
@@ -178,14 +178,14 @@ Falha esperada, exit 1, três `AssertionError`, nenhum erro de import:
 
 ### 3. Código mínimo
 
-`sparkforge/agents/budget.py` — a docstring do módulo e a da função; o corpo não muda:
+`sparkforge_aws/agents/budget.py` — a docstring do módulo e a da função; o corpo não muda:
 
 ```python
 """Deterministic context policies for token-efficient agent collaboration.
 
 `estimate_tokens` e a UNICA estimativa de token por caracteres do pacote:
-`sparkforge/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge/context/funnel.py`
-e `sparkforge/providers/mock.py` a chamam. `sparkforge/codeintel/budget.py::estimar_tokens`
+`sparkforge_aws/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge_aws/context/funnel.py`
+e `sparkforge_aws/providers/mock.py` a chamam. `sparkforge_aws/codeintel/budget.py::estimar_tokens`
 fica de fora de proposito -- mede bytes UTF-8 e nao decide corte; a docstring dele diz por que.
 """
 from __future__ import annotations
@@ -217,7 +217,7 @@ def estimate_tokens(value: Any) -> int:
 (o resto do arquivo — `fingerprint`, `deduplicate`, `select_context`, `compact_summary` — fica
 como está.)
 
-`sparkforge/tools/cost.py`, inteiro:
+`sparkforge_aws/tools/cost.py`, inteiro:
 
 ```python
 """Estimativa de custo em token.
@@ -226,12 +226,12 @@ como está.)
 contagem do provedor. Todo retorno carrega `is_estimate: True` para que nenhum
 consumidor trate o numero como medicao.
 
-A funcao e a de `sparkforge.agents.budget`, reexportada pelo mesmo nome porque
-`sparkforge.tools` a publica e `sparkforge/tools/cli.py` a chama: uma definicao so,
+A funcao e a de `sparkforge_aws.agents.budget`, reexportada pelo mesmo nome porque
+`sparkforge_aws.tools` a publica e `sparkforge_aws/tools/cli.py` a chama: uma definicao so,
 e `is` prova que e a mesma.
 """
 
-from sparkforge.agents.budget import estimate_tokens
+from sparkforge_aws.agents.budget import estimate_tokens
 
 __all__ = ["budget_report", "estimate_tokens"]
 
@@ -248,13 +248,13 @@ def budget_report(messages, limit=12000):
     }
 ```
 
-`sparkforge/context/funnel.py` — o import e o passo 3 de `build_minimal_context`:
+`sparkforge_aws/context/funnel.py` — o import e o passo 3 de `build_minimal_context`:
 
 ```python
 import hashlib
 from dataclasses import dataclass, field
 
-from sparkforge.agents.budget import estimate_tokens
+from sparkforge_aws.agents.budget import estimate_tokens
 ```
 
 ```python
@@ -271,7 +271,7 @@ from sparkforge.agents.budget import estimate_tokens
                 break
 ```
 
-`sparkforge/providers/mock.py`, inteiro:
+`sparkforge_aws/providers/mock.py`, inteiro:
 
 ```python
 """Deterministic Mock LLM Provider for Testing and CI."""
@@ -279,7 +279,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sparkforge.agents.budget import estimate_tokens
+from sparkforge_aws.agents.budget import estimate_tokens
 
 
 class MockModelProvider:
@@ -300,7 +300,7 @@ class MockModelProvider:
         }
 ```
 
-`sparkforge/codeintel/budget.py` — dois trechos da docstring do módulo. O parágrafo que
+`sparkforge_aws/codeintel/budget.py` — dois trechos da docstring do módulo. O parágrafo que
 contava as quatro estimativas (começa em "Token nao e mensuravel offline") passa a ser:
 
 ```text
@@ -333,7 +333,7 @@ das outras alegações:
 - linha da tabela "Estimador de token local, conservador, sem download" (VNX-603) passa a:
 
   ```text
-  | Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe **uma vez**: `sparkforge/agents/budget.py:estimate_tokens()` (teto de `len/4`, mínimo 1). `sparkforge/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py` a chamam — até TOKEN_ESTIMATE_UNICO eram quatro cópias, duas delas com piso. Parcial porque conta caractere e não byte UTF-8, e subestima texto acentuado; `sparkforge/codeintel/budget.py:estimar_tokens()` mede byte e fica fora de propósito, porque não decide corte | `tests/test_token_estimate_unico.py` |
+  | Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe **uma vez**: `sparkforge_aws/agents/budget.py:estimate_tokens()` (teto de `len/4`, mínimo 1). `sparkforge_aws/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge_aws/context/funnel.py` e `sparkforge_aws/providers/mock.py` a chamam — até TOKEN_ESTIMATE_UNICO eram quatro cópias, duas delas com piso. Parcial porque conta caractere e não byte UTF-8, e subestima texto acentuado; `sparkforge_aws/codeintel/budget.py:estimar_tokens()` mede byte e fica fora de propósito, porque não decide corte | `tests/test_token_estimate_unico.py` |
   ```
 
 - "Os quatro estimadores de token deste / repositório dividem o comprimento por uma constante e
@@ -360,7 +360,7 @@ das outras alegações:
 
 `docs/claims.lock.json` — a VNX-603 ganha o `context` novo (a linha da tabela acima) e a prova
 passa a ser o teste desta feature:
-`{"kind": "artifact", "path": "sparkforge/agents/budget.py", "symbol": "estimate_tokens",
+`{"kind": "artifact", "path": "sparkforge_aws/agents/budget.py", "symbol": "estimate_tokens",
 "test": "tests/test_token_estimate_unico.py"}`, com `note` datada dizendo a troca. Toda outra
 entrada que `python scripts/check_vnext_claims.py` listar é remediada pelo id da saída — editar
 `text`, `context` e `proof.expect.value` via `json.load`/`json.dump` com `ensure_ascii=False` e
@@ -388,7 +388,7 @@ python -m pytest tests/test_fixtures_golden*.py -q
 python scripts/check_vnext_claims.py
 python -m pytest tests/test_vnext_claims.py -q
 python -m pytest tests/test_docs_coverage.py tests/test_installed_provenance.py -q
-ruff check tests/test_token_estimate_unico.py sparkforge/agents/budget.py sparkforge/tools/cost.py sparkforge/context/funnel.py sparkforge/providers/mock.py sparkforge/codeintel/budget.py
+ruff check tests/test_token_estimate_unico.py sparkforge_aws/agents/budget.py sparkforge_aws/tools/cost.py sparkforge_aws/context/funnel.py sparkforge_aws/providers/mock.py sparkforge_aws/codeintel/budget.py
 ```
 
 A dos goldens (AC4) roda sem regenerar; se algum golden de achado mudar, pare: a afirmação do

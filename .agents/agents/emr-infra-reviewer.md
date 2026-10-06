@@ -44,7 +44,7 @@ de EC2 — compare pela área declarada no cabeçalho do arquivo de catálogo.
 `SF-EMRS` está medida, e nenhuma regra de uma alcança artefato da outra — mas ela é fronteira
 de **catálogo**, e só vale depois que alguém já escolheu o verbo. A fronteira de **despacho**
 é outra pergunta, e o repositório mede que ela não existe: `_PLATFORM_KEYS`
-(`sparkforge/facts/runtime_detect.py:403`) conhece exatamente duas identidades de plataforma,
+(`sparkforge_aws/facts/runtime_detect.py:403`) conhece exatamente duas identidades de plataforma,
 `emr` e `glue`, e nenhum fact `emrs.*` alimenta qualquer uma delas. Sobre um dump de
 `describe-cluster` sai `env.platform` com `resolved: emr`; sobre um `get-application` **não
 sai `env.platform` nenhum**. Quem escolhe o coordenador antes de abrir o artefato — que é o
@@ -191,7 +191,7 @@ Configuração de cluster não pede licença ao código. Toda recomendação sua
 `Configurations` diz o que ela faz com o dado dos jobs que já rodavam — e a própria
 `SF-EMR-005` mostra a forma, cobrando contagem **por partição** e não só o total.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
 lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
@@ -227,5 +227,5 @@ cluster de agora é quem está diante dele.
 Você coordena; não executa. Despache os executores na ordem do loop de fase e decida, entre
 um e outro, se o achado justifica seguir ou se falta coleta.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook emr-infra-reviewer` (CLI) ou a
+Em plataforma sem despacho de subagente: `sparkforge-aws playbook emr-infra-reviewer` (CLI) ou a
 tool MCP `sparkforge_playbook`.

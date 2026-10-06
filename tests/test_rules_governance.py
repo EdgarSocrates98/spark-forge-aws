@@ -31,8 +31,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.findings.models import area_of
-from sparkforge.rules.loader import catalog_dir, load_catalog
+from sparkforge_aws.findings.models import area_of
+from sparkforge_aws.rules.loader import catalog_dir, load_catalog
 
 VOCAB_FILE = "governance.yaml"
 

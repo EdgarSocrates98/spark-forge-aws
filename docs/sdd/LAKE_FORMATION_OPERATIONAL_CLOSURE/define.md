@@ -44,7 +44,7 @@ success:
     source: "tests/test_lakeformation_operational_closure.py::test_cli_and_mcp_operational_review_parity"
   - id: SC3
     metric: "Divergências nos gates de knowledge, surface, claims, skills e SDD"
-    source: "scripts/verify_offline_bundle.py, scripts/check_surface_lock.py, scripts/check_vnext_claims.py, sparkforge sdd check"
+    source: "scripts/verify_offline_bundle.py, scripts/check_surface_lock.py, scripts/check_vnext_claims.py, sparkforge-aws sdd check"
 out_of_scope:
   - "Conceder, revogar, simular ao vivo ou aceitar permissões Lake Formation, IAM, KMS ou RAM."
   - "Prometer ou estimar numericamente custo, latência, workers, tokens ou ganho sem benchmark/DPUSeconds observado."

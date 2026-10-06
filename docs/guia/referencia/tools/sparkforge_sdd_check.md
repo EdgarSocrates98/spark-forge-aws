@@ -18,7 +18,7 @@ Confere os artefatos de spec do SDD proprio (docs/sdd/<FEATURE>/<fase>.md: explo
 
 ## Na CLI
 
-[`sparkforge sdd check`](../cli/sdd.md), [`sparkforge sdd status`](../cli/sdd.md)
+[`sparkforge-aws sdd check`](../cli/sdd.md), [`sparkforge-aws sdd status`](../cli/sdd.md)
 
 ## Capacidade
 

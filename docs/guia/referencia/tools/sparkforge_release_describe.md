@@ -17,7 +17,7 @@ O que uma release E, segundo a fonte DAQUELA plataforma e so ela: cada component
 
 ## Na CLI
 
-[`sparkforge release describe`](../cli/release.md)
+[`sparkforge-aws release describe`](../cli/release.md)
 
 ## Capacidade
 

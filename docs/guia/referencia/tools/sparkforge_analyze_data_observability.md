@@ -16,7 +16,7 @@ Avalia SLI/SLO, freshness, completeness, latency, lag, throughput e availability
 
 ## Na CLI
 
-[`sparkforge analyze data-observability`](../cli/analyze.md)
+[`sparkforge-aws analyze data-observability`](../cli/analyze.md)
 
 ## Capacidade
 

@@ -11,16 +11,16 @@
 
 from __future__ import annotations
 
-from sparkforge.adapters import tools
-from sparkforge.agentic.trust import RoleContextPlan, TrustLabel
-from sparkforge.observability import context_ledger
+from sparkforge_aws.adapters import tools
+from sparkforge_aws.agentic.trust import RoleContextPlan, TrustLabel
+from sparkforge_aws.observability import context_ledger
 
 
 class TestTrustFloorExplicito:
     def test_floor_is_a_named_rank_not_enum_position(self):
         """Se alguem reordenar TrustLabel, a politica nao pode mudar junto.
         O rank e uma tabela escrita, nao a ordem de declaracao do enum."""
-        from sparkforge.agentic.trust import TRUST_RANK
+        from sparkforge_aws.agentic.trust import TRUST_RANK
 
         assert set(TRUST_RANK) == set(TrustLabel)
         assert TRUST_RANK[TrustLabel.SYSTEM] > TRUST_RANK[TrustLabel.POLICY]
@@ -85,8 +85,8 @@ class TestToolOutputCarregaEnvelopeDeConfianca:
 
     def test_unauthorized_result_also_carries_trust(self, tmp_path, monkeypatch):
         """Recusa tambem e saida de tool -- e dado, nao instrucao."""
-        from sparkforge.agents.autonomy import CallPolicy
-        from sparkforge.registry.models import ExecutionProfile
+        from sparkforge_aws.agents.autonomy import CallPolicy
+        from sparkforge_aws.registry.models import ExecutionProfile
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_t"

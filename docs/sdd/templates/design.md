@@ -24,7 +24,7 @@ covers:
 > Template da skill `sdd-design`. Troque `feature: EXEMPLO` pelo nome da
 > feature e ponha `status: draft` ao copiar. Todo caminho com
 > `action: modify` ou `delete` precisa existir hoje (confira com
-> `sparkforge code symbol` ou abrindo o arquivo); caminho novo é `create`. Toda
+> `sparkforge-aws code symbol` ou abrindo o arquivo); caminho novo é `create`. Toda
 > decisão tem `rejected` e `rollback`. Todo `AC` do define aparece em algum
 > `covers`.
 
@@ -36,5 +36,5 @@ covers:
 
 ## Conhecimento consultado
 
-Cite o que foi lido e por qual verbo (`sparkforge rules lookup`,
-`sparkforge knowledge path`), com a versão, nunca a memória do agente.
+Cite o que foi lido e por qual verbo (`sparkforge-aws rules lookup`,
+`sparkforge-aws knowledge path`), com a versão, nunca a memória do agente.

@@ -33,7 +33,7 @@
   "registered_location": {
     "hybrid_access_enabled": null,
     "registered": true,
-    "resource_arn": "arn:aws:s3:::sparkforge-demo/analytics/dim_cliente",
+    "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/analytics/dim_cliente",
     "role_arn": "arn:aws:iam::111111111111:role/lf-registration",
     "status": "ok",
     "with_federation": false

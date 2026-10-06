@@ -34,14 +34,14 @@ Depois de aplicar uma mudanca num job Glue, o operador compara runs a mao, sem N
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: modulo puro `sparkforge/finops/realized.py`: `realized_gain(baseline, candidate, declared)`; cada lado e uma lista de conjuntos de facts, um por arquivo |
+| **MUST** | G1: modulo puro `sparkforge_aws/finops/realized.py`: `realized_gain(baseline, candidate, declared)`; cada lado e uma lista de conjuntos de facts, um por arquivo |
 | **MUST** | G2: run = cada `glue.job_run` com `state` `SUCCEEDED`; os outros saem em `discarded` com a contagem por motivo (`run_nao_sucedido`); `job_name` diferente entre os lados, ou lado sem nenhum run valido, sai com codigo 2 |
 | **MUST** | G3: por lado e por metrica (`execution_time_s`, `dpu_seconds`, `cost`): N, mediana, minimo, maximo; delta = mediana do candidato menos a do baseline, em valor e em % do baseline |
 | **MUST** | G4: custo pelo `glue.run_cost` do mesmo `job_run_id`; run sem custo, ou moedas diferentes entre os runs, marca `custo_indisponivel` na metrica `cost` (regra 14) |
 | **MUST** | G5: volume de um run = soma de `bytes_read` dos `spark.sql.scan` do arquivo, SO quando o arquivo tem um run; medianas de volume dos dois lados alem da tolerancia -> `volume_diverge`; sem volume em algum lado -> `volume_desconhecido`; tolerancia de `workload.declared` (`volume_tolerance`) nos arquivos, senao a do capacity (0,25) |
 | **MUST** | G6: menos de 3 runs num lado -> `amostra_insuficiente`; as marcas acompanham o delta e nunca o escondem |
 | **MUST** | G7: `refused` fixo com `economia_mensal`, `atribuicao_causal`, `intervalo_de_confianca` |
-| **MUST** | G8: CLI `sparkforge gain --baseline <facts> [--baseline ...] --candidate <facts> [--candidate ...]` e tool `sparkforge_gain` READ_ONLY com `baseline_paths` e `candidate_paths` |
+| **MUST** | G8: CLI `sparkforge-aws gain --baseline <facts> [--baseline ...] --candidate <facts> [--candidate ...]` e tool `sparkforge_gain` READ_ONLY com `baseline_paths` e `candidate_paths` |
 | **SHOULD** | G9: a capacidade de cada lado (versao, worker, workers, autoscaling) sai como informacao |
 | **COULD** | G10: `docs/realized-gain.md` com a saida, as marcas e as recusas |
 
@@ -61,7 +61,7 @@ Depois de aplicar uma mudanca num job Glue, o operador compara runs a mao, sem N
 
 | ID | Scenario | Given | When | Then |
 |----|----------|-------|------|------|
-| AT-001 | Ganho observado | 3+ runs de uma capacidade no baseline e 3+ de outra no candidato, volume dentro da tolerancia | `sparkforge gain` | N, mediana, min, max por lado e o delta das medianas, sem marca |
+| AT-001 | Ganho observado | 3+ runs de uma capacidade no baseline e 3+ de outra no candidato, volume dentro da tolerancia | `sparkforge-aws gain` | N, mediana, min, max por lado e o delta das medianas, sem marca |
 | AT-002 | Amostra insuficiente | candidato com 2 runs | `gain` | delta presente, marcado `amostra_insuficiente` |
 | AT-003 | Jobs diferentes | baseline de um job, candidato de outro | `gain` | codigo 2 nomeando os dois jobs |
 | AT-004 | Run que falhou | um run `FAILED` no candidato | `gain` | fora da conta, em `discarded.run_nao_sucedido` |
@@ -101,7 +101,7 @@ Depois de aplicar uma mudanca num job Glue, o operador compara runs a mao, sem N
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/finops/realized.py` (novo), `sparkforge/adapters/{_core,cli,tools}.py`, `fixtures/gain/`, `docs/realized-gain.md` | Ao lado do relatorio financeiro |
+| **Deployment Location** | `sparkforge_aws/finops/realized.py` (novo), `sparkforge_aws/adapters/{_core,cli,tools}.py`, `fixtures/gain/`, `docs/realized-gain.md` | Ao lado do relatorio financeiro |
 | **KB Domains** | Nenhum dominio do KB do agentspec cobre FinOps de Glue | Padroes: `capacity/plan.py` (`_volume_de`, descarte, tolerancia), `facts/run_cost.py`, `finops/report.py` |
 | **IaC Impact** | None | — |
 

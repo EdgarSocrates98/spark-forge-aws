@@ -28,7 +28,7 @@ devin
 Verifique que as tools estao disponiveis:
 
 ```text
-Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
 ```
 
 Ou, na CLI:
@@ -42,7 +42,7 @@ devin mcp list
 1. Suba o servidor MCP:
 
 ```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 ```
 
 2. No Devin Desktop, adicione o MCP em **Devin Settings > MCP** com a URL `http://127.0.0.1:8765/mcp`.
@@ -61,7 +61,7 @@ curl -i http://127.0.0.1:8765/mcp
 |---|---|---|
 | `CatalogError: .../${CLAUDE_PLUGIN_ROOT}/...` | `.mcp.json` sendo usado no Devin | Use `.devin/mcp_config.json` |
 | `ModuleNotFoundError: mcp` | extra `[mcp]` nao instalado | `pip install "sparkforge-aws[mcp]"` |
-| `devin mcp list` nao mostra `sparkforge` | escopo global em vez de projeto | confira `.devin/mcp_config.json` na raiz |
+| `devin mcp list` nao mostra `sparkforge-aws` | escopo global em vez de projeto | confira `.devin/mcp_config.json` na raiz |
 | Desktop nao conecta | servidor HTTP nao rodando | suba com o comando acima |
 
 Veja `GUIA_DE_USO.md` secao 3.4, 3.5 e 3.6 para detalhes completos.
@@ -76,5 +76,5 @@ Veja `GUIA_DE_USO.md` secao 3.4, 3.5 e 3.6 para detalhes completos.
 
 ```bash
 python scripts/sync_skills.py --check
-python -m sparkforge.adapters.cli --help
+python -m sparkforge_aws.adapters.cli --help
 ```

@@ -40,7 +40,7 @@ success:
     source: "python -m pytest tests/test_lakeformation_prompt_acceptance.py -q"
   - id: SC2
     metric: "Gates declarados sem divergência"
-    source: "sparkforge sdd check, verify_offline_bundle, check_surface_lock, check_vnext_claims, sync_skills --check"
+    source: "sparkforge-aws sdd check, verify_offline_bundle, check_surface_lock, check_vnext_claims, sync_skills --check"
   - id: SC3
     metric: "CI do PR de fechamento verde nas matrizes disponíveis"
     source: "gh pr checks"

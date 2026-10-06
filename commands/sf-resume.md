@@ -10,7 +10,7 @@ Code). O estado sobrevive em `.sparkforge/case.yaml`, não na conversa.
 Rode:
 
 ```
-sparkforge resume --repo <raiz-do-repo> [--findings <arquivo-de-findings.json>] [--unresolved <n>] [--in-flight "<descrição>"]
+sparkforge-aws resume --repo <raiz-do-repo> [--findings <arquivo-de-findings.json>] [--unresolved <n>] [--in-flight "<descrição>"]
 ```
 
 Se você sabe que algo ficou pela metade quando a sessão anterior parou (um

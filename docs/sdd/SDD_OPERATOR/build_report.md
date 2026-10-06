@@ -31,7 +31,7 @@ claims:
     evidence_ref: "tests/test_sdd.py::test_funcval_blind_spot"
   - text: "Uma feature operator montada com case_open e change_sandbox reais passa no sdd check; sem check_delta sai funcval_not_comparison e, depois de change sandbox clean, change_missing."
     evidence_ref: "tests/test_sdd_operator.py::test_fluxo_operator_ponta_a_ponta"
-  - text: "Os quatro coordenadores citam sdd-define e sdd-build na prosa, com sparkforge case open e sparkforge sdd check, e nenhum as lista no skills do frontmatter."
+  - text: "Os quatro coordenadores citam sdd-define e sdd-build na prosa, com sparkforge-aws case open e sparkforge-aws sdd check, e nenhum as lista no skills do frontmatter."
     evidence_ref: "tests/test_sdd_operator.py::test_coordenadores_apontam_o_sdd"
   - text: "Os espelhos .claude, .agents e .github dos quatro agents e das tres skills conferem com a renderizacao."
     evidence_ref: "python scripts/sync_skills.py --check"
@@ -62,7 +62,7 @@ referência gerada").
    nem é JSON e exige a mesma recusa. O leitor `_itens_de_fact` foi extraído de
    `_ids_de_fact`, como o plano pedia; a conferência mora em `_conferir_funcval`.
 2. **T2, forma real do funcval.** O caso do plano (`subject: {"check": ...}`)
-   ficou. Um segundo caso usa a forma que `sparkforge/facts/funcval.py` emite de
+   ficou. Um segundo caso usa a forma que `sparkforge_aws/facts/funcval.py` emite de
    fato: `subject {type, symbol}` e o motivo em `attrs.reason`. O `unlock` nomeia
    o `symbol` (ou o subject cru, `chave=valor`, quando não há `symbol`) e o
    `reason`. Os dois códigos entraram no §5.0 do spec do núcleo no commit de T2.
@@ -72,7 +72,7 @@ referência gerada").
    `git worktree` em `2bed741a` (o núcleo antes de T1): falha em
    `funcval_not_comparison`, pelo motivo certo. A árvore principal não foi
    tocada. O arquivo de comparação é sintético, na forma de `_check_delta`,
-   como o design pedia; `sparkforge funcval compare` não roda no teste. O
+   como o design pedia; `sparkforge-aws funcval compare` não roda no teste. O
    negativo "sem sandbox" usa a própria tool (`change sandbox` com `clean`) em
    vez de um id inventado.
 4. **T4, D2 revista: prosa, e não o `skills:`.** O design mandava listar
@@ -86,7 +86,7 @@ referência gerada").
    `diagnose-lakeformation-access`, citada só na prosa. A escolha foi seguir
    esse precedente: frontmatter intacto e um parágrafo "Mudança no job pede
    spec" em cada coordenador. O teste de T4 inverteu a asserção (nada de `sdd-`
-   no frontmatter, as duas skills no corpo, mais `sparkforge case open`). D2 e
+   no frontmatter, as duas skills no corpo, mais `sparkforge-aws case open`). D2 e
    a seção T4 do plano foram reescritas, e o plano recarimbado. A alternativa
    que ficou de fora foi acrescentar as duas skills a `RELACAO_MEDIDA` e
    contrariar o registro de não-despacho.
@@ -96,7 +96,7 @@ referência gerada").
 6. **T5, acréscimo pedido no build (dentro do commit de T4).** As seções
    "Perfil operator" de `sdd-define`, `sdd-plan` e `sdd-build` deixaram de
    adiar para o "subprojeto C" e passaram a dar o caminho concreto:
-   - o `case_id` vem de `sparkforge case open` e fica em `.sparkforge/case.yaml`;
+   - o `case_id` vem de `sparkforge-aws case open` e fica em `.sparkforge/case.yaml`;
    - o aceite é `funcval` ou `fact`;
    - o `test` de tarefa do operador é a checagem que falha antes da mudança;
    - `red` e `green` no sandbox;
@@ -104,7 +104,7 @@ referência gerada").
    A linha de `funcval` da tabela do define e a lista de recusas passaram a
    citar os códigos novos. Os três arquivos entraram no manifesto do design e
    em `files` da T4, com recarimbo. Em `sdd-plan`, a primeira redação citava
-   `sparkforge judge` e acendeu `tests/test_skill_content.py` (skill que chama
+   `sparkforge-aws judge` e acendeu `tests/test_skill_content.py` (skill que chama
    `judge` precisa explicar o runtime). O texto passou a dizer "os achados
    `SF-FVAL`", porque a skill de plano não roda `judge`.
 7. **Registros fora do manifesto:** `docs/guia/referencia/` (sete páginas),

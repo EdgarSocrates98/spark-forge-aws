@@ -67,8 +67,8 @@ havia gate* e *o gate existe e alguém passou por cima* é a mesma que
 `dq.unresolved` faz entre "não há problema" e "ninguém olhou". Relatório que
 omite isso afirma um rigor que não foi prestado.
 
-Copie de `sparkforge case get --repo <raiz>` (campo `gate_overrides`) ou da seção
-"Overrides de gate" de `sparkforge resume`. Uma linha por override, na ordem em
+Copie de `sparkforge-aws case get --repo <raiz>` (campo `gate_overrides`) ou da seção
+"Overrides de gate" de `sparkforge-aws resume`. Uma linha por override, na ordem em
 que foram gravados:
 
 | Gate | Quando | Motivo |
@@ -87,12 +87,12 @@ invalida a assinatura, e `report verify` acusa no corpo.
 ## 12. Assinatura de correspondência
 
 O bloco abaixo é escrito por
-`sparkforge report sign --report <este arquivo> --findings <findings.json>`, e
-conferido por `sparkforge report verify` com os mesmos dois arquivos. Não o
+`sparkforge-aws report sign --report <este arquivo> --findings <findings.json>`, e
+conferido por `sparkforge-aws report verify` com os mesmos dois arquivos. Não o
 edite à mão: ele é recomputado inteiro a cada assinatura, e o corpo assinado é
 tudo que vem **antes** do delimitador de abertura — inclusive esta seção. Nada
 pode vir depois do delimitador de fechamento; texto ali ficaria fora da
 assinatura sem que o leitor tivesse como saber.
 
-<!-- sparkforge:signature -->
-<!-- /sparkforge:signature -->
+<!-- sparkforge-aws:signature -->
+<!-- /sparkforge-aws:signature -->

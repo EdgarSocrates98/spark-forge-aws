@@ -40,7 +40,7 @@ def test_referencia_em_dia(gerador, paginas):
 
 
 def test_toda_tool_e_skill_tem_pagina(gerador, paginas):
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     relativas = {p.relative_to(gerador.DEST).as_posix() for p in paginas}
     faltando = [f"tools/{t}.md" for t in TOOLS if f"tools/{t}.md" not in relativas]
@@ -65,7 +65,7 @@ def test_todo_comando_que_os_guias_ensinam_existe():
     ou entre crases tem que existir no parser real."""
     import argparse
 
-    from sparkforge.adapters.cli import build_parser
+    from sparkforge_aws.adapters.cli import build_parser
 
     verbos: set[str] = set()
     for acao in build_parser()._actions:
@@ -75,9 +75,9 @@ def test_todo_comando_que_os_guias_ensinam_existe():
     for guia in _guias():
         texto = guia.read_text(encoding="utf-8")
         # Verbo e palavra que comeca com letra: `--help`, `<comando>` e a linha
-        # de saida `sparkforge 0.5.0` nao citam verbo.
-        citados = set(re.findall(r"(?m)^\s*sparkforge\s+([a-z][a-z0-9-]*)", texto))
-        citados |= set(re.findall(r"`sparkforge\s+([a-z][a-z0-9-]*)", texto))
+        # de saida `sparkforge-aws 0.5.0` nao citam verbo.
+        citados = set(re.findall(r"(?m)^\s*sparkforge-aws\s+([a-z][a-z0-9-]*)", texto))
+        citados |= set(re.findall(r"`sparkforge-aws\s+([a-z][a-z0-9-]*)", texto))
         inventados += [f"{guia.relative_to(ROOT).as_posix()}: {v}" for v in citados - verbos]
     assert not inventados, inventados
 

@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.agents.autonomy import (
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.agents.autonomy import (
     AuthorizationDecision,
     ToolClass,
     authorize,
     tool_class,
 )
-from sparkforge.registry.models import ExecutionProfile
+from sparkforge_aws.registry.models import ExecutionProfile
 
 UMA_LEITURA_LOCAL = "sparkforge_analyze_pyspark"
 UMA_DE_REDE = "sparkforge_collect_glue_job"
@@ -40,7 +40,7 @@ def catalogo_falso(monkeypatch, **anotacoes_por_tool):
         nome: {"annotations": dict(anotacoes)}
         for nome, anotacoes in anotacoes_por_tool.items()
     }
-    monkeypatch.setattr("sparkforge.adapters.tools.TOOLS", falso)
+    monkeypatch.setattr("sparkforge_aws.adapters.tools.TOOLS", falso)
     return falso
 
 
@@ -748,7 +748,7 @@ class TestConfinamentoEhUmSoAlgoritmo:
     Duas implementacoes de confinamento nao divergem alto: divergem no dia em
     que alguem corrige uma e nao a outra. Este teste amarra os dois consumidores
     ao mesmo comportamento observavel, entao extrair o algoritmo para
-    `sparkforge/paths.py` e mante-lo la deixa de ser convencao e passa a ser
+    `sparkforge_aws/paths.py` e mante-lo la deixa de ser convencao e passa a ser
     coisa medida.
     """
 
@@ -757,7 +757,7 @@ class TestConfinamentoEhUmSoAlgoritmo:
 
     @pytest.mark.parametrize("nome", ESCAPAM)
     def test_os_dois_recusam_o_mesmo(self, tmp_path, nome):
-        from sparkforge.rules.loader import CatalogError, safe_catalog_file
+        from sparkforge_aws.rules.loader import CatalogError, safe_catalog_file
 
         raiz = tmp_path / "raiz"
         raiz.mkdir()
@@ -775,7 +775,7 @@ class TestConfinamentoEhUmSoAlgoritmo:
 
     @pytest.mark.parametrize("nome", FICAM)
     def test_os_dois_aceitam_o_mesmo(self, tmp_path, nome):
-        from sparkforge.rules.loader import safe_catalog_file
+        from sparkforge_aws.rules.loader import safe_catalog_file
 
         raiz = tmp_path / "raiz"
         raiz.mkdir()
@@ -889,7 +889,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # `SPARKFORGE_PACKS`, variavel do operador da mesma confianca de
             # `SPARKFORGE_CATALOG`. Aceitar diretorio pela tool abriria uma
             # leitura que o host escolhe; checar pack arbitrario e da CLI
-            # (`sparkforge pack check`).
+            # (`sparkforge-aws pack check`).
             "sparkforge_pack_list",
             # `knowledge_drift` (2026-09-13, §17) le o lock de `knowledge_dir()`
             # (ou `SPARKFORGE_SOURCES_LOCK`, variavel do operador) e o proprio
@@ -904,7 +904,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     )
 
     def test_toda_tool_menos_duas_declara_caminho(self):
-        from sparkforge.agents.autonomy import _e_chave_de_caminho
+        from sparkforge_aws.agents.autonomy import _e_chave_de_caminho
 
         sem_caminho = {
             nome
@@ -1027,7 +1027,7 @@ class TestAImposicaoNoDespacho:
         teste nao consegue distinguir uma tool recusada de uma tool que rodou e
         falhou por conta propria -- e a segunda ja teria lido o arquivo.
         """
-        from sparkforge.adapters import tools as modulo
+        from sparkforge_aws.adapters import tools as modulo
 
         chamadas = []
 
@@ -1045,7 +1045,7 @@ class TestAImposicaoNoDespacho:
         default, o catalogo inteiro passaria a recusar -- e imposicao que
         quebra tudo nao e imposicao, e regressao.
         """
-        from sparkforge.adapters.tools import call_tool
+        from sparkforge_aws.adapters.tools import call_tool
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         resultado = call_tool(UMA_LEITURA_LOCAL, {"path": "../../etc/passwd"})
@@ -1059,8 +1059,8 @@ class TestAImposicaoNoDespacho:
     def test_politica_que_recusa_impede_o_handler_de_rodar(self, monkeypatch, tmp_path):
         """O teste que prova a imposicao. Se ele passar sem o gate no despacho,
         e porque o gate nao existe."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         politica = CallPolicy(
@@ -1079,8 +1079,8 @@ class TestAImposicaoNoDespacho:
         """Recusa por autorizacao nao pode ser excecao crua nem recusa muda: o
         cliente tem de receber o mesmo `{"error", "exit_code"}` de qualquer
         outro erro de fronteira, com a RAZAO da cadeia dentro."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
 
         self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         politica = CallPolicy(
@@ -1099,8 +1099,8 @@ class TestAImposicaoNoDespacho:
         """Recusa acionavel: quem chamou precisa saber o que pedir. A cadeia ja
         carrega `required_approval`, e joga-lo fora no envelope transformaria
         uma decisao auditavel num "nao"."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
 
         chamadas = self.espiao(monkeypatch, UMA_MUTACAO_LOCAL)
         politica = CallPolicy(
@@ -1118,8 +1118,8 @@ class TestAImposicaoNoDespacho:
     def test_politica_que_autoriza_deixa_a_chamada_passar(self, monkeypatch, tmp_path):
         """Imposicao que so recusa e indistinguivel de tool quebrada. O caminho
         autorizado tem de chegar ao handler com os argumentos INTACTOS."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         alvo = tmp_path / "job.py"
@@ -1138,9 +1138,9 @@ class TestAImposicaoNoDespacho:
         """A allowlist e a denylist nao sao fonte nova: `AgentManifest` ja as
         declara e ja as valida por schema. `from_manifest()` e o que impede o
         despacho de inventar uma segunda lista ao lado daquela."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
-        from sparkforge.registry.models import AgentManifest
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
+        from sparkforge_aws.registry.models import AgentManifest
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         manifesto = AgentManifest(
@@ -1166,8 +1166,8 @@ class TestAImposicaoNoDespacho:
         um gerador autorizaria a primeira chamada e recusaria todas as
         seguintes, que e a forma de defeito de autorizacao mais dificil de
         enxergar: intermitente, e do lado que fecha."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         politica = CallPolicy(
@@ -1186,8 +1186,8 @@ class TestAImposicaoNoDespacho:
         existem. Se a politica o transformasse em recusa, o mesmo defeito de
         chamador passaria a se apresentar de duas formas conforme houvesse
         politica declarada ou nao -- e quem depura veria o sintoma errado."""
-        from sparkforge.adapters.tools import call_tool
-        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge_aws.adapters.tools import call_tool
+        from sparkforge_aws.agents.autonomy import CallPolicy
 
         politica = CallPolicy(
             agent="a",

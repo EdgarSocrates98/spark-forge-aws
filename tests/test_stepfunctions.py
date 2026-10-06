@@ -5,7 +5,7 @@ observado (U2 de `docs/sdd/STEP_FUNCTIONS/define.md`).
 """
 import json
 
-from sparkforge.facts.stepfunctions import (
+from sparkforge_aws.facts.stepfunctions import (
     DEFAULT_MAX_ATTEMPTS,
     DEFAULT_TIMEOUT_SECONDS,
     extract_stepfunctions,
@@ -218,8 +218,8 @@ def test_o_que_nao_le_sai_nomeado(tmp_path):
 
 
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     entrada = tmp_path / "entrada"
     entrada.mkdir()
@@ -241,7 +241,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["unresolved"] == 0
 
     erro = call_tool("sparkforge_analyze_step_functions", {"path": str(tmp_path / "nao-existe")})
-    assert "sparkforge analyze step-functions" in erro["error"]
+    assert "sparkforge-aws analyze step-functions" in erro["error"]
 
 
 TF_CARGA_DIARIA = """resource "aws_glue_job" "carga_diaria" {
@@ -265,10 +265,10 @@ def _glue_sync(nome_do_job: dict, retry: list, proximo: dict) -> dict:
 
 
 def test_fuse_liga_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.terraform import extract_terraform_tree
-    from sparkforge.rules.engine import judge
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.rules.engine import judge
+    from sparkforge_aws.rules.loader import load_catalog
 
     asl = {
         "StartAt": "Ligada",
@@ -347,8 +347,8 @@ TF_MAX_RETRIES_INTERPOLADO = """resource "aws_glue_job" "carga_diaria" {
 
 
 def _fundir(pasta, asl: dict, tf: str = TF_CARGA_DIARIA):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
 
     pasta.mkdir(parents=True, exist_ok=True)
     (pasta / "sm.asl.json").write_text(json.dumps(asl), encoding="utf-8")
@@ -359,8 +359,8 @@ def _fundir(pasta, asl: dict, tf: str = TF_CARGA_DIARIA):
 
 
 def _regras(facts, regra: str) -> list:
-    from sparkforge.rules.engine import judge
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.engine import judge
+    from sparkforge_aws.rules.loader import load_catalog
 
     return [a for a in judge(facts, load_catalog(), RUNTIME_GLUE) if a.rule_id == regra]
 
@@ -428,7 +428,7 @@ def test_max_attempts_ilegivel_sai_nomeado_com_estado_e_indice():
 
 
 def test_json_profundo_e_arquivo_grande_nao_derrubam(tmp_path, monkeypatch):
-    from sparkforge.facts import scan
+    from sparkforge_aws.facts import scan
 
     profundo = "[" * 200_000 + "]" * 200_000
     (tmp_path / "fundo.asl.json").write_text(profundo, encoding="utf-8")
@@ -460,7 +460,7 @@ def test_memory_error_do_decodificador_vira_recusa_nomeada(tmp_path, monkeypatch
     """
     import json as _json
 
-    from sparkforge.facts import stepfunctions
+    from sparkforge_aws.facts import stepfunctions
 
     def _estoura(*args, **kwargs):
         raise MemoryError("payload hostil")
@@ -676,6 +676,6 @@ def test_job_ambiguo_e_max_retries_nao_literal_saem_nomeados(tmp_path):
 
 
 def test_step_functions_e_extrator_de_evidencia_do_debate():
-    from sparkforge.agentic.executor import debate_evidence as de
+    from sparkforge_aws.agentic.executor import debate_evidence as de
 
     assert de._extrator("step-functions") is extract_stepfunctions_path

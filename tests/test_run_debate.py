@@ -17,7 +17,7 @@ from typing import Any
 import pytest
 
 from scripts import run_debate
-from sparkforge.adapters import _core
+from sparkforge_aws.adapters import _core
 from tests.test_debate_suite import PONTEIRO, ROTEIRO_LF_VENCE, _grant_id, _resolve
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.architecture.streaming import analyze_streaming_architecture
+from sparkforge_aws.architecture.streaming import analyze_streaming_architecture
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "realtime_architecture"

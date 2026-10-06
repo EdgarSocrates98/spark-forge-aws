@@ -5,7 +5,7 @@ Control Plane. The contract is `contracts/platform-graph-v1.schema.json` and the
 offline analyzer is:
 
 ```bash
-sparkforge analyze platform-graph \
+sparkforge-aws analyze platform-graph \
   --path platform-graph.yaml \
   --changed-node postgres.orders \
   --changed-attribute primary_key \

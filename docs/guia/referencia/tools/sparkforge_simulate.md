@@ -12,7 +12,7 @@ Simulate: o que uma mudanca de configuracao move, ESTRUTURALMENTE. Cada item de 
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `facts_path` | string ou array de string | sim | Facts do case, gerados por `sparkforge analyze * --out`. |
+| `facts_path` | string ou array de string | sim | Facts do case, gerados por `sparkforge-aws analyze * --out`. |
 | `sets` | array de string | sim | camada:chave=valor, por exemplo tf:max_concurrent_runs=1. |
 | `athena` | string | não |  |
 | `databricks` | string | não |  |
@@ -25,7 +25,7 @@ Simulate: o que uma mudanca de configuracao move, ESTRUTURALMENTE. Cada item de 
 
 ## Na CLI
 
-[`sparkforge simulate`](../cli/simulate.md)
+[`sparkforge-aws simulate`](../cli/simulate.md)
 
 ## Capacidade
 

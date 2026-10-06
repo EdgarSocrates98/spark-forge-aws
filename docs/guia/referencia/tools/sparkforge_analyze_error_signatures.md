@@ -20,7 +20,7 @@ Casa as assinaturas de `knowledge/errors/` contra os facts do case e emite `erro
 
 ## Na CLI
 
-[`sparkforge analyze cloudwatch-logs`](../cli/analyze.md), [`sparkforge analyze error-signatures`](../cli/analyze.md)
+[`sparkforge-aws analyze cloudwatch-logs`](../cli/analyze.md), [`sparkforge-aws analyze error-signatures`](../cli/analyze.md)
 
 ## Capacidade
 

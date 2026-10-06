@@ -9,15 +9,15 @@ resource "aws_glue_job" "etl_conf" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl_conf.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl_conf.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"       = "true"
-    "--spark-event-logs-path" = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path" = "s3://sparkforge-aws-demo/spark-logs/"
     "--job-bookmark-option"   = "job-bookmark-disable"
-    "--TempDir"               = "s3://sparkforge-demo/temp/"
+    "--TempDir"               = "s3://sparkforge-aws-demo/temp/"
     "--conf"                  = "spark.sql.shuffle.partitions=200 --conf spark.sql.adaptive.enabled=false --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.autoBroadcastJoinThreshold"
   }
 

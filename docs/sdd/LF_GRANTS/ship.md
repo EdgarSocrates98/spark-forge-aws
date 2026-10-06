@@ -11,7 +11,7 @@ hypothesis_outcome: confirmed
 registries: [reachability_lists, fixture_kind_coverage, snippet_measure, rules_catalog_gates, manifest_rule_count, runtime_scope_gates, offline_manifest, sources_lock, verify_wheel, status_numbers_gate, claims_gate, sync_skills, agents_parity]
 deviations:
   - "Seis commits na T2 onde o plano previa um: quatro passes de revisão de qualidade, quase todos sobre o texto do gatilho, que é um trecho de 200 caracteres da mensagem (design D5 tratou a leitura do recurso como um regex só)."
-  - "Tarefa extra fora do manifesto, por decisão do operador: sparkforge/facts/pyspark_ast.py passou a gravar o modo de escrita (mode=, insertInto(overwrite=), saveMode=, último .mode()) e a marcar mode_unresolved (21966c09, 2c05ac47)."
+  - "Tarefa extra fora do manifesto, por decisão do operador: sparkforge_aws/facts/pyspark_ast.py passou a gravar o modo de escrita (mode=, insertInto(overwrite=), saveMode=, último .mode()) e a marcar mode_unresolved (21966c09, 2c05ac47)."
   - "Decisão do operador: sob FGAC, sem registro coletado, o fact recusa registro_nao_coletado em vez de presumir tabela não registrada."
   - "Lado IAM mais estreito que o design: implicitDeny só acusa em <localização>/*, explicitDeny em recurso que contém a tabela; decisões contraditórias recusam; a acusação declara registration_scope, caveat e unchecked."
   - "Tabela de permissões: sob FGAC, write e overwrite exigem s3:PutObject e s3:DeleteObject, pela fonte getting-started-min-privs-job, que não separa os dois (o design separava sem fonte); ListBucket e KMS ficam em unchecked."

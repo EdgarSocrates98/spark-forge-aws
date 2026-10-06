@@ -5,8 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_streaming
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters._core import analyze_streaming
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 PROGRESS = ROOT / "fixtures" / "streaming" / "progress_positive" / "input" / "progress.jsonl"
@@ -54,7 +54,7 @@ def test_cli_and_core_emit_identical_streaming_envelope():
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming",
             "--path",

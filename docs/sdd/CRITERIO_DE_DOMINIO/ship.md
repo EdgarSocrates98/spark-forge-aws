@@ -12,11 +12,11 @@ registries: [sync_skills, agents_parity, surface_lock, generated_reference, rout
 deviations:
   - "D1 emendado no build (43de7901): a primeira versao nao contava condicao case nenhuma e reprovava glue-incremental-performance-architect; o explore contou a rota AGENT-006 por outro criterio. Agora conta a rota com condicao case cujo valor nao e sentinela __nome__."
   - "O golden fixtures/knowledge_drift/filtro_por_url foi regenerado pelo proprio teste (SPARKFORGE_REGEN_DRIFT=1), porque scripts/regen_fixtures.py nao cobre knowledge_drift; sairam quatro caminhos agents/<removido>.md e totals.agents foi de 8 para 4."
-  - "refresh_knowledge.py --offline --update nao atualiza knowledge/offline-manifest.json; o sha256 foi recalculado com sparkforge.tools.offline._content_sha256."
+  - "refresh_knowledge.py --offline --update nao atualiza knowledge/offline-manifest.json; o sha256 foi recalculado com sparkforge_aws.tools.offline._content_sha256."
   - "Arquivos fora do manifesto: tests/test_platform_compilers.py, docs/guia/07-conhecimento-e-catalogo.md, docs/vnext/CURRENT-STATE.md, docs/harness/CODEINTEL-GAP.md, docs/harness/CURRENT-HARNESS-GAP.md, skills/aws-database e skills/aws-observability (com espelhos e referencia gerada)."
   - "A T2 reintroduziu um nome removido pelo SF_STUBS em docs/vnext/AGENT-CATALOG.md; tests/test_sf_stubs.py pegou no ship, corrigido em commit proprio."
   - "Revisao em dois estagios por tarefa nao rodou; o controlador conferiu relatos, gates e um git grep final."
-  - "Corrigido depois do CI do PR #89: a secao nova de docs/gates-por-mudanca.md exige chave propria em sparkforge/sdd/change_kinds.yaml (tests/test_sdd.py::test_change_kinds_casa_com_os_titulos_do_documento), e a chave domain entrou; o design do SF_STUBS trocou o representante sf-analytics-specialist, removido aqui, por sf-security-reviewer, com a cascata recarimbada."
+  - "Corrigido depois do CI do PR #89: a secao nova de docs/gates-por-mudanca.md exige chave propria em sparkforge_aws/sdd/change_kinds.yaml (tests/test_sdd.py::test_change_kinds_casa_com_os_titulos_do_documento), e a chave domain entrou; o design do SF_STUBS trocou o representante sf-analytics-specialist, removido aqui, por sf-security-reviewer, com a cascata recarimbada."
 ---
 
 # CRITERIO_DE_DOMINIO — entrega
@@ -72,7 +72,7 @@ e as regras de 192 para 157. Todas as 157 são executáveis.
 | números | `python scripts/check_status_numbers.py --strict` (AC9) | exit 0 |
 | lastro | `python scripts/check_vnext_claims.py` | 0 divergências |
 | goldens | `python -m pytest tests/test_fixtures_golden*.py -q` | 3217 passed, 4 skipped |
-| estilo | `python -m ruff check sparkforge scripts tests` | limpo |
+| estilo | `python -m ruff check sparkforge_aws scripts tests` | limpo |
 
 ## Pendências
 
@@ -80,7 +80,7 @@ e as regras de 192 para 157. Todas as 157 são executáveis.
   `config/agentic-expansion.yaml` continuam como estavam (pendência do SF_STUBS).
 - Correção (2026-09-19, depois do ship): a documentação não dá esses dois atalhos como
   existentes. `docs/gates-por-mudanca.md` manda recalcular o `sha256` do
-  `offline-manifest.json` com `sparkforge.tools.offline._content_sha256`, e a docstring de
+  `offline-manifest.json` com `sparkforge_aws.tools.offline._content_sha256`, e a docstring de
   `tests/test_fixtures_golden_knowledge_drift.py` manda regenerar com
   `SPARKFORGE_REGEN_DRIFT=1`. Quem citou os comandos errados foi o plano do SF_STUBS.
 - `docs/agentic-evolution.md` tem mojibake anterior à feature.

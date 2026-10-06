@@ -4,7 +4,7 @@
 # prosa a metade "feature da spec" da metade "suporte da engine", e diz que uma
 # nao se deduz da outra. Prosa nao e consultavel e nao tem gate. Aqui a mesma
 # separacao vira DADO, com uma regra gravada em codigo por
-# `sparkforge/storage/feature_support.py`:
+# `sparkforge_aws/storage/feature_support.py`:
 #
 #   TODA CELULA AFIRMATIVA PRECISA DE EVIDENCIA PROPRIA. Nunca se infere "o
 #   Iceberg suporta, logo o Athena suporta". Celula sem fonte da engine e
@@ -34,10 +34,10 @@
 #
 # A VERSAO DE ICEBERG NAO E REPETIDA AQUI. Ela mora em
 # `knowledge/<plataforma>/runtime-matrix.yaml` e e carregada por
-# `sparkforge/facts/runtime_matrix.py`. Repeti-la seria a terceira copia do
+# `sparkforge_aws/facts/runtime_matrix.py`. Repeti-la seria a terceira copia do
 # mesmo fato. O que ESTA aqui e `min_library_version` -- a partir de qual
 # release da BIBLIOTECA a capacidade aparece -- e o cruzamento com a release da
-# plataforma e CALCULADO por `sparkforge/storage/readiness.py`.
+# plataforma e CALCULADO por `sparkforge_aws/storage/readiness.py`.
 #
 # `min_library_version` E LIMITE INFERIOR, e nunca prova de suporte.
 # ============================================================================
@@ -68,7 +68,7 @@
 # VOCABULARIO DE `status` (fechado, validado pelo carregador): SUPPORTED,
 # UNSUPPORTED, PARTIAL, READ_ONLY, WRITE_ONLY, PREVIEW, ENGINE_DEPENDENT,
 # VERSION_DEPENDENT, UNKNOWN, CONFLICTING. `source_type` reusa
-# `sparkforge/facts/runtime_matrix.py:SOURCE_TYPES` -- o mesmo vocabulario da
+# `sparkforge_aws/facts/runtime_matrix.py:SOURCE_TYPES` -- o mesmo vocabulario da
 # matriz de runtime, importado de la e nunca redeclarado.
 #
 # CHAVE DE VERSAO `"*"`: a fonte nao qualifica a afirmacao por versao da
@@ -188,7 +188,7 @@ engines:
       celula de engine e UNKNOWN.
   redshift:
     note: >-
-      Declarado pelo `ConsumerGraph` (`sparkforge/facts/consumers.py`).
+      Declarado pelo `ConsumerGraph` (`sparkforge_aws/facts/consumers.py`).
       Nenhuma fonte de Redshift sobre feature de Iceberg foi lida nesta coleta, e
       Redshift nao tem matriz de runtime neste repositorio -- entao nem a celula de
       engine nem o cruzamento por release respondem. Toda celula e UNKNOWN.

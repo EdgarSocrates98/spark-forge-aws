@@ -9,7 +9,7 @@
   },
   "registered_location": {
     "registered": null,
-    "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/arestas",
+    "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/curated/arestas",
     "status": "sem_permissao"
   },
   "status": "sem_permissao",

@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.change.apply import DIFF_MAX_BYTES, apply_patches, parse_unified_diff
-from sparkforge.change.plan import BOM, diff_unificado
-from sparkforge.change.refusals import (
+from sparkforge_aws.change.apply import DIFF_MAX_BYTES, apply_patches, parse_unified_diff
+from sparkforge_aws.change.plan import BOM, diff_unificado
+from sparkforge_aws.change.refusals import (
     ARQUIVO_FORA_DA_COPIA,
     CAMINHO_FORA_DA_RAIZ,
     DIFF_GRANDE_DEMAIS,

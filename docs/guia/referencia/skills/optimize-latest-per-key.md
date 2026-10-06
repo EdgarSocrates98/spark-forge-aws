@@ -2,12 +2,12 @@
 
 # Skill `optimize-latest-per-key`
 
-Use quando o job calcula o registro mais recente por chave (row_number/Window, max_by, max(struct), join-back) sobre tabelas Spark/Iceberg grandes, e suspeitar de Window global sem partitionBy, sort/shuffle de todo o histórico, empates por timestamp mal tratados, late data ou recomputação a cada ciclo. Use também quando perguntarem \"por que o latest demora tanto\", \"isso escala com o histórico inteiro\" ou \"o resultado muda entre execuções\", mesmo sem citar Window ou row_number. Se você está prestes a inspecionar a chamada de Window de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.window` e `pyspark.chain` em vez disso — eles dizem se a Window tem partitionBy e onde o join entra na cadeia, mas não decidem se a chave escolhida é a correta: isso é julgamento seu.
+Use quando o job calcula o registro mais recente por chave (row_number/Window, max_by, max(struct), join-back) sobre tabelas Spark/Iceberg grandes, e suspeitar de Window global sem partitionBy, sort/shuffle de todo o histórico, empates por timestamp mal tratados, late data ou recomputação a cada ciclo. Use também quando perguntarem \"por que o latest demora tanto\", \"isso escala com o histórico inteiro\" ou \"o resultado muda entre execuções\", mesmo sem citar Window ou row_number. Se você está prestes a inspecionar a chamada de Window de cabeça, rode `sparkforge-aws analyze pyspark` e filtre por `pyspark.window` e `pyspark.chain` em vez disso — eles dizem se a Window tem partitionBy e onde o join entra na cadeia, mas não decidem se a chave escolhida é a correta: isso é julgamento seu.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/optimize-latest-per-key/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze pyspark', 'sparkforge judge', 'sparkforge analyze terraform']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze pyspark', 'sparkforge-aws judge', 'sparkforge-aws analyze terraform']} |
 
 ## Procedimento (texto integral)
 
@@ -24,13 +24,13 @@ O extrator **não** sabe se `partitionBy` usa a chave de negócio certa, se o de
 #### 1. Extraia os facts
 
 ```bash
-sparkforge analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json
 ```
 
 #### 2. Filtre pelas duas estratégias mais comuns
 
 ```bash
-sparkforge analyze pyspark --path <arquivo> --kind pyspark.window --kind pyspark.chain --out .sparkforge/facts_latest.json
+sparkforge-aws analyze pyspark --path <arquivo> --kind pyspark.window --kind pyspark.chain --out .sparkforge/facts_latest.json
 ```
 
 `pyspark.window` traz `attrs.has_partition_by`, `attrs.has_order_by`, `attrs.has_frame`. Uma `Window` **sem** `has_partition_by` é o pior caso possível: ela vira uma única partição lógica, e `row_number`/`rank` ordenam o histórico inteiro numa única task — o análogo, em memória de execução, de um `coalesce(1)`.
@@ -40,12 +40,12 @@ sparkforge analyze pyspark --path <arquivo> --kind pyspark.window --kind pyspark
 #### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
 ```
 
 Sem flag de versão, porque não há de onde tirá-la e ela não faria diferença aqui: os facts saem de `analyze pyspark`, que lê AST e nunca observa runtime, e `SF-PY-003` é estrutural, sem `runtime_scope`. A saída de `judge` traz o campo `runtime` com o contexto efetivamente usado — vazio, `detected_from: []` — e as regras que `--show-skipped` listar com `reason: runtime_scope` são de infraestrutura Glue, que estes facts não alimentam.
 
-Isso tem uma consequência direta para esta skill: `max_by` e a semântica de empate **variam por versão**, e o motor não vai te avisar disso a partir deste `facts.json` — não existe regra de catálogo que guarde essa escolha. Antes de recomendar `max_by`, confirme a versão numa fonte real (o `.tf` do job, com `sparkforge analyze terraform` e os dois arquivos na mesma chamada, já que `--facts` é repetível; ou `--glue 5.1` declarado por você) e consulte `knowledge/runtime-compatibility.md`. Um `runtime` vazio na saída é o lembrete de que essa confirmação ainda não foi feita. Não existe regra estrutural própria para "Window sem partitionBy" no catálogo `SF-PY` — é um fact (`pyspark.window`) que você interpreta diretamente, não um `rule_id` pronto. Registre a leitura como hipótese com o `fact_id` do `pyspark.window`, não como se fosse um finding do catálogo.
+Isso tem uma consequência direta para esta skill: `max_by` e a semântica de empate **variam por versão**, e o motor não vai te avisar disso a partir deste `facts.json` — não existe regra de catálogo que guarde essa escolha. Antes de recomendar `max_by`, confirme a versão numa fonte real (o `.tf` do job, com `sparkforge-aws analyze terraform` e os dois arquivos na mesma chamada, já que `--facts` é repetível; ou `--glue 5.1` declarado por você) e consulte `knowledge/runtime-compatibility.md`. Um `runtime` vazio na saída é o lembrete de que essa confirmação ainda não foi feita. Não existe regra estrutural própria para "Window sem partitionBy" no catálogo `SF-PY` — é um fact (`pyspark.window`) que você interpreta diretamente, não um `rule_id` pronto. Registre a leitura como hipótese com o `fact_id` do `pyspark.window`, não como se fosse um finding do catálogo.
 
 #### 4. Confirme com execução, se disponível
 
@@ -98,9 +98,9 @@ contagem, o mesmo schema, as mesmas chaves e os mesmos agregados — e outra lin
 eixos passam; declare a chave com `--key` e diga por escrito que o eixo do valor não está
 coberto.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -130,7 +130,7 @@ Esta skill trata **seleção latest-per-key e custo de window/join**. Contrato c
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze pyspark`, `sparkforge judge`, `sparkforge analyze terraform`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze pyspark`, `sparkforge-aws judge`, `sparkforge-aws analyze terraform`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

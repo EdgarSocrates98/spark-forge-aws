@@ -12,7 +12,7 @@ registries: [reachability_lists, fixture_kind_coverage, snippet_measure, status_
 deviations:
   - "O gate de lastro reprovava a branch, e eu tinha aceitado o contrario. O implementador relatou exit 0 porque rodou o gate ANTES de criar os dois .py novos; a revisao final mediu, e o gate listou SEIS ids. Duas das alegacoes CAIRAM em vez de subir, porque stepfunctions.py e airflow_dag.py encolheram ~56 linhas cada dentro do corpus medido."
   - "O manifesto do design estava incompleto para o AC5: docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md carrega uma das alegacoes remediadas e nao estava no files:. A linha entrou e a cascata foi recarimbada."
-  - "A docstring do modulo novo afirmava as TRES varreduras do repositorio. Sao SETE, contadas na correcao -- a revisao achara seis e perdera uma. Uma delas e codigo de PRODUCAO (sparkforge/diagnosis/root_cause.py). A frase nova nao tem numeral fechado."
+  - "A docstring do modulo novo afirmava as TRES varreduras do repositorio. Sao SETE, contadas na correcao -- a revisao achara seis e perdera uma. Uma delas e codigo de PRODUCAO (sparkforge_aws/diagnosis/root_cause.py). A frase nova nao tem numeral fechado."
   - "A docstring datava a duplicacao no incremento do Step Functions; ela nasceu no do Airflow (f155fddf), e a mensagem do proprio commit que introduziu a docstring ja acertava."
   - "A docstring dizia que tres revisoes finais conferiram a mao que as copias nao divergiram. Varridos os 17 ship.md, existe UM registro de conferencia."
   - "O subagente da T1 travou esperando o proprio gate e nunca entregou relato. Em vez de herdar o buraco como na SFN_HISTORY, reproduzi o vermelho tirando o modulo do lugar e rodando o teste: o exit 2 do build_report e meu, visto."
@@ -26,7 +26,7 @@ deviations:
 
 **Confirmada.** A previsão podia falhar de três jeitos, e nenhum aconteceu:
 
-- **As duas funções existem uma vez só**, em `sparkforge/facts/glue_terraform.py`, e
+- **As duas funções existem uma vez só**, em `sparkforge_aws/facts/glue_terraform.py`, e
   nenhum dos dois extratores guarda cópia local. O teste confere por **identidade**, não
   por nome — um `from ... import` que trouxesse uma segunda cópia passaria num teste de
   nome e falha nesse.
@@ -62,14 +62,14 @@ a elas levantaria `AttributeError` sem explicação.
 |---|---|
 | módulo, extratores, goldens dos dois domínios, fusão, SDD (8 arquivos) | 323 passed |
 | as varreduras de extrator, causa raiz, árvore versionada, lotes (9 arquivos) | 876 passed, 2 skipped |
-| `python -m ruff check sparkforge scripts tests` | limpo |
+| `python -m ruff check sparkforge_aws scripts tests` | limpo |
 | `python scripts/sync_skills.py --check` | exit 0 |
 | `python scripts/verify_offline_bundle.py` | `"ok": true` |
 | `python scripts/check_surface_lock.py` | 0 divergências |
 | `python scripts/check_status_numbers.py --strict` (AC5) | 0 divergências |
 | `python scripts/check_vnext_claims.py` | 0 divergências |
 | `python -m pytest tests/test_fixtures_golden*.py -q` | 3299 passed, 4 skipped |
-| `sparkforge sdd check --repo . --feature GLUE_TERRAFORM` | `ok: true`, 0 recusas, 0 lacunas |
+| `sparkforge-aws sdd check --repo . --feature GLUE_TERRAFORM` | `ok: true`, 0 recusas, 0 lacunas |
 
 O `verified_by` de `kind: command` do define:
 

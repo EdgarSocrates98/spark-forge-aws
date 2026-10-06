@@ -1,7 +1,7 @@
 import pytest
 
-from sparkforge.facts.pyspark_ast import extract_source
-from sparkforge.findings.validate import (
+from sparkforge_aws.facts.pyspark_ast import extract_source
+from sparkforge_aws.findings.validate import (
     ValidationFailed,
     validate_business_rule,
     validate_fact,
@@ -179,8 +179,8 @@ class TestBenchmarkRefCitesAFactId:
     def test_the_expected_shape_is_the_shape_fact_id_really_has(self):
         """O padrao vive em `validate.py` e nao importa `models.py`. Este teste e
         o que impede as duas formas de divergirem sem ninguem notar."""
-        from sparkforge.findings.models import Fact
-        from sparkforge.findings.validate import _BENCH_REF
+        from sparkforge_aws.findings.models import Fact
+        from sparkforge_aws.findings.validate import _BENCH_REF
 
         fact = Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": 1})
         assert _BENCH_REF.match(fact.id), fact.id
@@ -245,9 +245,9 @@ class TestJsonSerializable:
     da causa."""
 
     def _real_finding(self):
-        from sparkforge.facts.pyspark_ast import extract_source
-        from sparkforge.rules.engine import judge
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.facts.pyspark_ast import extract_source
+        from sparkforge_aws.rules.engine import judge
+        from sparkforge_aws.rules.loader import load_catalog
 
         runtime = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
         facts = extract_source('df.coalesce(1)\n', "a.py")

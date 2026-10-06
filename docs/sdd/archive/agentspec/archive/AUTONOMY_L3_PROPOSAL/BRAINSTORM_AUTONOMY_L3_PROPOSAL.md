@@ -18,7 +18,7 @@
 **Raw Input:** L3 da autonomia (§15 de `prompt_new_evo.md`, "Propose to Production": open PR, attach evidence, attach benchmark, request human approval). Decidido antes: o pacote MONTA o pacote de PR em `.sparkforge/proposal/<id>/`, e quem roda git/gh é o host.
 
 **Context Gathered:**
-- O L2 (`sparkforge change sandbox`, PR #65) grava em `.sparkforge/sandbox/<id>/` as cópias `before/` e `after/` e um `report.json` com `files_changed`, `new`, `resolved`, `kept_count`, `moved_candidates`, `proof_obligations`, `next_steps`, `copy_skipped` e `scan_refused`. O `id` é sha256 do diff mais o manifesto do repositório. O diff original não fica guardado.
+- O L2 (`sparkforge-aws change sandbox`, PR #65) grava em `.sparkforge/sandbox/<id>/` as cópias `before/` e `after/` e um `report.json` com `files_changed`, `new`, `resolved`, `kept_count`, `moved_candidates`, `proof_obligations`, `next_steps`, `copy_skipped` e `scan_refused`. O `id` é sha256 do diff mais o manifesto do repositório. O diff original não fica guardado.
 - O `scan` de cada cópia grava `facts_<analyze>.json` e `findings.json` em `<cópia>/.sparkforge/scan/`, a entrada que `receipt emit` (§14) e `report sign` (§22) pedem.
 - `receipt_emit` exige `now` e é `_WRITE_IDEMPOTENT`; `report sign` grava um bloco de assinatura no fim de um relatório, amarrado a `fact_ids`, `rule_ids` e à versão do catálogo, e `report verify` diz qual parte divergiu.
 - O ship do L1–L2 recomendou "abrir branch e PR a partir do `after/` do sandbox, com o relatório no corpo do PR".
@@ -29,7 +29,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/change/proposal.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `skills/propose-change-pr/`, `.sparkforge/policy.yaml` | Estende o módulo do §15 |
+| Likely Location | `sparkforge_aws/change/proposal.py`, `sparkforge_aws/adapters/{_core,cli,tools}.py`, `skills/propose-change-pr/`, `.sparkforge/policy.yaml` | Estende o módulo do §15 |
 | Relevant KB Domains | Nenhum domínio do agentspec cobre o fluxo; `knowledge/` do projeto não tem página de git/gh | Padrões vêm do próprio repositório (sandbox, receipt, report sign, `run-debate`) |
 | IaC Patterns | N/A | Nada de infraestrutura |
 
@@ -52,7 +52,7 @@
 |------|----------|-------|-------|
 | Input files | `fixtures/change/*/input/` (repo, facts, request, `host.patch`) | 13 | Repos sintéticos com `main.tf`/`job.py` e diffs |
 | Output examples | `fixtures/change/*/expected.json` | 13 | Forma do relatório do sandbox |
-| Ground truth | `sparkforge/change/sandbox.py`, `receipt`, `report sign` | 3 | Contratos que o pacote compõe |
+| Ground truth | `sparkforge_aws/change/sandbox.py`, `receipt`, `report sign` | 3 | Contratos que o pacote compõe |
 | Related code | Skill `run-debate` (host executa, pacote não chama provider) | 1 | Molde da skill do host |
 
 **How samples will be used:**
@@ -66,7 +66,7 @@
 
 ### Approach A: `change propose` + skill do host ⭐ Recommended
 
-**Description:** `sparkforge/change/proposal.py` monta o pacote a partir do sandbox, sem git; `sparkforge change propose` e a tool `sparkforge_change_propose` gravam em `.sparkforge/proposal/<id>/`. Uma skill `propose-change-pr` guia o host a rodar o `commands.md`, parando para confirmação antes de `git push` e `gh pr create`.
+**Description:** `sparkforge_aws/change/proposal.py` monta o pacote a partir do sandbox, sem git; `sparkforge-aws change propose` e a tool `sparkforge_change_propose` gravam em `.sparkforge/proposal/<id>/`. Uma skill `propose-change-pr` guia o host a rodar o `commands.md`, parando para confirmação antes de `git push` e `gh pr create`.
 
 **Pros:**
 - Pacote testável por golden; git/gh nunca rodam no pacote.
@@ -119,7 +119,7 @@
 |---|----------|-----------|----------------------|
 | 1 | Entrada = sandbox já rodado; id da proposta = id do sandbox | O que se propõe é o que passou pelo scan antes/depois | Rodar o sandbox dentro do propose |
 | 2 | Recusas antes de gravar: `sandbox_inexistente`, `sandbox_nao_aplicado`, `sandbox_desatualizado` (arquivo do repo difere de `before/`), `achado_novo_bloqueante` (P0/P1 em `new`) | O diff foi validado sobre uma árvore; outra árvore invalida a prova | Nunca recusar; recusar qualquer novo |
-| 3 | Conteúdo: `change.patch`, `rollback.patch` (de `before/` para `after/`), `pr_body.md`, `commit_message.txt`, `branch.txt` (`sparkforge/change-<id8>`), `commands.md`, `evidence/sandbox_report.json`, `evidence/receipt.json`, `manifest.json` com sha256 | Auditável sem o sandbox | Só o diff |
+| 3 | Conteúdo: `change.patch`, `rollback.patch` (de `before/` para `after/`), `pr_body.md`, `commit_message.txt`, `branch.txt` (`sparkforge_aws/change-<id8>`), `commands.md`, `evidence/sandbox_report.json`, `evidence/receipt.json`, `manifest.json` com sha256 | Auditável sem o sandbox | Só o diff |
 | 4 | Anexos medidos opcionais (`--benchmark`, `--funcval`); sem eles, a medida sai como obrigação PENDENTE | Ganho só com dois runs medidos; o pacote nunca afirma | Estimar ganho |
 | 5 | `pr_body.md` assinado pelo `report sign` com os findings de `after/` | `report verify` confere depois | Sem assinatura |
 | 6 | Recibo com raiz em `after/`, spans de tool `unresolved` | O recibo não depende das chamadas anteriores do processo | Spans do processo |

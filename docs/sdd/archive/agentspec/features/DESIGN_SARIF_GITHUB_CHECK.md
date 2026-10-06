@@ -18,7 +18,7 @@
 
 ```text
 ┌───────────────────────────────────────────────────────────────────────────┐
-│                     sparkforge report github                               │
+│                     sparkforge-aws report github                               │
 ├───────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
 │  findings.json ─┐                                                          │
@@ -38,7 +38,7 @@
 │             ▼               ▼                     ▼              ▼         │
 │        sarif(dict)    summary(str)        annotations(list)   gate(bool)   │
 │             │               │                     │              │         │
-│  CLI ───────┼── .sparkforge/report/sparkforge.sarif (nome fixo)  │         │
+│  CLI ───────┼── .sparkforge/report/sparkforge-aws.sarif (nome fixo)  │         │
 │             │   .sparkforge/report/summary.md     (nome fixo)    │         │
 │             │   stdout: ::error file=..,line=..::msg              │         │
 │             │   exit: 1 se o gate disparar; 0 senao; 2 uso ───────┘         │
@@ -46,12 +46,12 @@
 │                 nao grava                                                  │
 └───────────────────────────────────────────────────────────────────────────┘
 
-WORKFLOW (fora do pacote, examples/github/sparkforge.yml)
+WORKFLOW (fora do pacote, examples/github/sparkforge-aws.yml)
   analyze pyspark --path jobs  → facts
   analyze terraform --path infra → facts
   judge --facts ... → findings
   report github --source-root jobs --source-root infra --fail-on P0
-  github/codeql-action/upload-sarif  ← .sparkforge/report/sparkforge.sarif
+  github/codeql-action/upload-sarif  ← .sparkforge/report/sparkforge-aws.sarif
   cat .sparkforge/report/summary.md >> $GITHUB_STEP_SUMMARY
 ```
 
@@ -61,16 +61,16 @@ WORKFLOW (fora do pacote, examples/github/sparkforge.yml)
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/reporting/__init__.py` | Pacote novo; nao importa `adapters` | Python |
-| `sparkforge/reporting/locate.py` | Resolve cada finding em `Localizado` ou `Recusa`, com a existencia do arquivo injetada (`existe: Callable[[str], bool]`) | Python puro |
-| `sparkforge/reporting/github.py` | `projetar(findings, facts, locais, *, category, fail_on, versao)` → `Projecao(sarif, summary, annotations, recusas, gate)`; escape de workflow command; limites do GitHub | Python puro, sem I/O |
+| `sparkforge_aws/reporting/__init__.py` | Pacote novo; nao importa `adapters` | Python |
+| `sparkforge_aws/reporting/locate.py` | Resolve cada finding em `Localizado` ou `Recusa`, com a existencia do arquivo injetada (`existe: Callable[[str], bool]`) | Python puro |
+| `sparkforge_aws/reporting/github.py` | `projetar(findings, facts, locais, *, category, fail_on, versao)` → `Projecao(sarif, summary, annotations, recusas, gate)`; escape de workflow command; limites do GitHub | Python puro, sem I/O |
 | `adapters/_core.py::report_github` | Le e valida `findings.json` e os `facts.json`, monta `existe` confinado a `--repo`, chama a projecao | Python |
 | `adapters/cli.py` | `report github`: grava os dois arquivos com nome fixo, imprime as anotacoes, devolve o exit code | argparse |
 | `adapters/tools.py` | `sparkforge_report_github`, `READ_ONLY` | TOOLS |
 | `fixtures/sarif/` | 4 casos + `_schema/sarif-schema-2.1.0.json` (OASIS, com `SOURCE.md`: URL e sha256) | JSON, golden |
 | `tests/test_fixtures_golden_sarif.py` | Golden, validacao de schema, gate | pytest |
 | `tests/test_reporting_github.py` | Unidade: localizacao, escape, limites; invariante sobre os 222 findings de `fixtures/` | pytest |
-| `docs/github-code-scanning.md`, `examples/github/sparkforge.yml` | Como ligar no repositorio de dados | Markdown, YAML |
+| `docs/github-code-scanning.md`, `examples/github/sparkforge-aws.yml` | Como ligar no repositorio de dados | Markdown, YAML |
 | `.github/workflows/ci.yml` | Job `sarif-upload`, so `workflow_dispatch` | GitHub Actions |
 
 ---
@@ -170,9 +170,9 @@ Motivos de recusa, na ordem de teste:
 **Context:** no eval harness, o scanner de seguranca recusou escrita em caminho vindo do argv. O workflow le a saida de lugar conhecido, e o GitHub so transforma em anotacao a linha `::cmd...::` inteira no stdout.
 
 **Choice:**
-- escrita em `<repo>/.sparkforge/report/sparkforge.sarif` e `<repo>/.sparkforge/report/summary.md`, ambos com `newline="\n"`;
+- escrita em `<repo>/.sparkforge/report/sparkforge-aws.sarif` e `<repo>/.sparkforge/report/summary.md`, ambos com `newline="\n"`;
 - stdout: so as linhas de anotacao, uma por finding localizado, na ordem do SARIF;
-- stderr: uma linha `sparkforge report github: <n> no SARIF, <m> sem localizacao, gate <P0|P1|off>: <ok|disparou>`;
+- stderr: uma linha `sparkforge-aws report github: <n> no SARIF, <m> sem localizacao, gate <P0|P1|off>: <ok|disparou>`;
 - exit code: 1 so pelo gate, 2 para erro de uso ou de entrada, 0 nos outros casos.
 
 **Rationale:** o workflow le caminhos fixos, e o stdout fica limpo para o parser de comandos do GitHub.
@@ -256,18 +256,18 @@ Nao grava. Declara caminho (`findings_path`, `facts_path`, `repo`), entao **nao*
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
 | 1 | `fixtures/sarif/_schema/sarif-schema-2.1.0.json` + `SOURCE.md` | Create | Schema OASIS versionado (URL, sha256, data) | (general) | None |
-| 2 | `sparkforge/reporting/__init__.py` | Create | Pacote | @agentspec:python:python-developer | None |
-| 3 | `sparkforge/reporting/locate.py` | Create | Resolucao e recusas (Decisions 2 e 3) | @agentspec:python:python-developer | 2 |
-| 4 | `sparkforge/reporting/github.py` | Create | Projecao SARIF, resumo, anotacoes, gate e limites | @agentspec:python:python-developer | 3 |
+| 2 | `sparkforge_aws/reporting/__init__.py` | Create | Pacote | @agentspec:python:python-developer | None |
+| 3 | `sparkforge_aws/reporting/locate.py` | Create | Resolucao e recusas (Decisions 2 e 3) | @agentspec:python:python-developer | 2 |
+| 4 | `sparkforge_aws/reporting/github.py` | Create | Projecao SARIF, resumo, anotacoes, gate e limites | @agentspec:python:python-developer | 3 |
 | 5 | `tests/test_reporting_github.py` | Create | Unidade + invariante sobre os 222 findings | @agentspec:test:test-generator | 3, 4 |
-| 6 | `sparkforge/adapters/_core.py` | Modify | `report_github`: leitura, validacao, `existe` confinado | (general) | 4 |
-| 7 | `sparkforge/adapters/cli.py` | Modify | Subcomando `report github`, escrita com nome fixo, exit code | (general) | 6 |
-| 8 | `sparkforge/adapters/tools.py` | Modify | `sparkforge_report_github` + schema de entrada e saida | (general) | 6 |
+| 6 | `sparkforge_aws/adapters/_core.py` | Modify | `report_github`: leitura, validacao, `existe` confinado | (general) | 4 |
+| 7 | `sparkforge_aws/adapters/cli.py` | Modify | Subcomando `report github`, escrita com nome fixo, exit code | (general) | 6 |
+| 8 | `sparkforge_aws/adapters/tools.py` | Modify | `sparkforge_report_github` + schema de entrada e saida | (general) | 6 |
 | 9 | `fixtures/sarif/{pyspark_com_linha,terraform,so_runtime,misto}/` | Create | `input/` (findings, facts, arvore minima), `meta.yaml` (source_roots, fail_on, category), `expected/` (sarif, summary, annotations, exit_code) | (general) | 7 |
 | 10 | `tests/test_fixtures_golden_sarif.py` | Create | Golden byte a byte, schema OASIS, gate | @agentspec:test:test-generator | 1, 9 |
 | 11 | `scripts/regen_fixtures.py` | Modify | `regen_sarif` | (general) | 9 |
 | 12 | Registros manuais (`tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `parity.yaml`, agent coverage, `manifest.json`) | Modify | Tool nova | (general) | 8 |
-| 13 | `docs/github-code-scanning.md` + `examples/github/sparkforge.yml` | Create | Guia e workflow de exemplo | @agentspec:cloud:ci-cd-specialist | 7 |
+| 13 | `docs/github-code-scanning.md` + `examples/github/sparkforge-aws.yml` | Create | Guia e workflow de exemplo | @agentspec:cloud:ci-cd-specialist | 7 |
 | 14 | `.github/workflows/ci.yml` | Modify | Job `sarif-upload` (`workflow_dispatch`, `security-events: write`) | @agentspec:cloud:ci-cd-specialist | 7 |
 | 15 | `README.md`, `docs/superpowers/STATUS.md`, `CLAUDE.md` (tabela de verbos, contagem de tools) | Modify | Documentacao com numeros medidos | (general) | all |
 | 16 | `docs/surface.lock.json`, `docs/claims.lock.json` + docs auditados | Modify | Gates (`--update`; remediacao por lista de ids) | (general) | all |
@@ -289,13 +289,13 @@ Nao grava. Declara caminho (`findings_path`, `facts_path`, `repo`), entao **nao*
 **Agent Discovery:**
 - Scanned: agentes do plugin agentspec e os da sessao.
 - Matched by: tipo de arquivo, palavra-chave (python, test, CI), caminho.
-- Nota de execucao: um escritor por vez na arvore. O briefing de cada agente leva as armadilhas do repositorio: lotes por arquivo, `git add` de `.py` novo, sem `.glob` em `sparkforge/`, sem `def` duplicado no mesmo escopo, os 7 registros manuais, e arquivo vazio na raiz.
+- Nota de execucao: um escritor por vez na arvore. O briefing de cada agente leva as armadilhas do repositorio: lotes por arquivo, `git add` de `.py` novo, sem `.glob` em `sparkforge_aws/`, sem `def` duplicado no mesmo escopo, os 7 registros manuais, e arquivo vazio na raiz.
 
 ---
 
 ## Code Patterns
 
-### Pattern 1: localizacao pura (`sparkforge/reporting/locate.py`)
+### Pattern 1: localizacao pura (`sparkforge_aws/reporting/locate.py`)
 
 ```python
 from __future__ import annotations
@@ -439,7 +439,7 @@ def _existe_sob(repo: Path) -> Callable[[str], bool]:
 4. github.projetar → sarif, summary, annotations, gate (limites aplicados e nomeados)
    │
    ▼
-5a. CLI: grava .sparkforge/report/{sparkforge.sarif, summary.md}; anotacoes no stdout;
+5a. CLI: grava .sparkforge/report/{sparkforge-aws.sarif, summary.md}; anotacoes no stdout;
     contagem no stderr; exit 0|1
 5b. MCP: devolve o mesmo, sem gravar
    │
@@ -514,7 +514,7 @@ def _existe_sob(repo: Path) -> Callable[[str], bool]:
 - Nenhum caminho do argv usado para escrita. A leitura do argv (`--findings`, `--facts`) segue o padrao dos outros verbos, e `--source-root` e confinado a `--repo` por `resolve()` + `is_relative_to`.
 - Texto de finding vai para o stdout como anotacao, e ele pode conter `::` ou quebra de linha. O escape T2 impede que o finding injete outro workflow command.
 - O resumo Markdown inclui texto das regras (do catalogo, controlado pelo repositorio) e caminhos. Sem HTML cru: `|` e quebras de linha escapados nas celulas.
-- O Snyk Code roda sobre `sparkforge/reporting` e o handler da CLI antes do commit.
+- O Snyk Code roda sobre `sparkforge_aws/reporting` e o handler da CLI antes do commit.
 
 ---
 

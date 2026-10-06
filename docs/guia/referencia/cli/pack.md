@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge pack`
+# `sparkforge-aws pack`
 
 Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_PACKS).
 
@@ -8,15 +8,15 @@ Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_PACKS).
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge pack check`](#sparkforge-pack-check) | Roda cada fixture do pack pelo judge. Sai 1 quando uma regra do pack nao dispara no fixture que a declara, ou quando o pack e recusado. |
-| [`sparkforge pack list`](#sparkforge-pack-list) | Packs ativos, recusados com o motivo, e o mapa prefixo -> pack. |
+| [`sparkforge-aws pack check`](#sparkforge-aws-pack-check) | Roda cada fixture do pack pelo judge. Sai 1 quando uma regra do pack nao dispara no fixture que a declara, ou quando o pack e recusado. |
+| [`sparkforge-aws pack list`](#sparkforge-aws-pack-list) | Packs ativos, recusados com o motivo, e o mapa prefixo -> pack. |
 
-## `sparkforge pack check`
+## `sparkforge-aws pack check`
 
 Roda cada fixture do pack pelo judge. Sai 1 quando uma regra do pack nao dispara no fixture que a declara, ou quando o pack e recusado.
 
 ```bash
-sparkforge pack check --help
+sparkforge-aws pack check --help
 ```
 
 ### Opções
@@ -29,12 +29,12 @@ sparkforge pack check --help
 
 [`sparkforge_pack_list`](../tools/sparkforge_pack_list.md)
 
-## `sparkforge pack list`
+## `sparkforge-aws pack list`
 
 Packs ativos, recusados com o motivo, e o mapa prefixo -> pack.
 
 ```bash
-sparkforge pack list --help
+sparkforge-aws pack list --help
 ```
 
 ### Opções

@@ -1,8 +1,8 @@
 """Golden do corpus de LOG do CloudWatch: a linha redigida, e o que ela casa.
 
 Arquivo dedicado, mesma razao dos demais `test_fixtures_golden_*.py`: o golden
-guarda os facts de `sparkforge/facts/cloudwatch_logs.py` e os de
-`sparkforge/errors/matcher.py::build_signature_matches` pelo caminho de LOG --
+guarda os facts de `sparkforge_aws/facts/cloudwatch_logs.py` e os de
+`sparkforge_aws/errors/matcher.py::build_signature_matches` pelo caminho de LOG --
 o segundo caminho que o matcher passou a ter.
 
 ## O que este corpus mede, e por que ele nao cabe no de excecao
@@ -65,23 +65,23 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.errors.matcher import build_signature_matches
-from sparkforge.facts.catalog_schema import extract_catalog_schema_path
-from sparkforge.facts.cloudwatch_logs import EMITTED_KINDS as CW_LOG_KINDS
-from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
-from sparkforge.facts.consumers import extract_consumers_path
-from sparkforge.facts.event_log import extract_event_log_path
-from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
-from sparkforge.facts.lakeformation import build_lakeformation
-from sparkforge.facts.lakeformation_grants import extract_lakeformation_tree
-from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
-from sparkforge.facts.migration import extract_migration_tree
-from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
-from sparkforge.facts.s3_listing import extract_s3_listing_path
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.errors.matcher import build_signature_matches
+from sparkforge_aws.facts.catalog_schema import extract_catalog_schema_path
+from sparkforge_aws.facts.cloudwatch_logs import EMITTED_KINDS as CW_LOG_KINDS
+from sparkforge_aws.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
+from sparkforge_aws.facts.consumers import extract_consumers_path
+from sparkforge_aws.facts.event_log import extract_event_log_path
+from sparkforge_aws.facts.iceberg_metadata import extract_iceberg_metadata_tree
+from sparkforge_aws.facts.lakeformation import build_lakeformation
+from sparkforge_aws.facts.lakeformation_grants import extract_lakeformation_tree
+from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant
+from sparkforge_aws.facts.migration import extract_migration_tree
+from sparkforge_aws.facts.pyspark_ast import extract_tree as extract_pyspark_tree
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "cloudwatch_logs"
@@ -113,7 +113,7 @@ REQUIRED_FIXTURES = {
     "python_worker_morreu_com_udf",
     # As QUATRO da familia de Lake Formation (2026-09-09). Cada uma traz o
     # `main.tf` do lado, porque o companheiro que a regra exige e derivado
-    # dele por `sparkforge/facts/lakeformation.py`.
+    # dele por `sparkforge_aws/facts/lakeformation.py`.
     "credencial_vendida_negada_com_fgac",
     "get_data_access_negado_com_resolver",
     "glue_api_negada_com_fgac",
@@ -341,8 +341,8 @@ class TestAsQuatroQueSoOLogAlcanca:
         de classe, entao `build_signature_matches` sobre `spark.exception`
         nunca as alcanca. Sem esta assercao, "o log destrava quatro" seria
         afirmacao sobre um caminho que ninguem mediu."""
-        from sparkforge.errors.matcher import DeterministicErrorMatcher
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.errors.matcher import DeterministicErrorMatcher
+        from sparkforge_aws.findings.models import Fact
 
         assinaturas = {
             s["id"]: s["signature"] for s in DeterministicErrorMatcher().signatures

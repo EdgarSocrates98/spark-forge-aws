@@ -16,7 +16,7 @@ Descreve a topologia declarativa do Forge Lab/Digital Twin, incluindo Kafka, Fli
 
 ## Na CLI
 
-[`sparkforge analyze forge-lab`](../cli/analyze.md)
+[`sparkforge-aws analyze forge-lab`](../cli/analyze.md)
 
 ## Capacidade
 

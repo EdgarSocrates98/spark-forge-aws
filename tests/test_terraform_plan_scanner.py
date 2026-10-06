@@ -1,6 +1,6 @@
 """Tests for Terraform Plan Risk Scanner."""
 
-from sparkforge.terraform.plan_analyzer import TerraformPlanAnalyzer
+from sparkforge_aws.terraform.plan_analyzer import TerraformPlanAnalyzer
 
 
 def test_terraform_plan_safe_create():

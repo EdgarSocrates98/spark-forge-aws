@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.decision import (
+from sparkforge_aws.decision import (
     ArtifactCache,
     CacheKind,
     FactCache,

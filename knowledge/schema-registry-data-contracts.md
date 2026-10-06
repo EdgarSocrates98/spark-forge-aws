@@ -50,9 +50,9 @@ idêntica.
 Quando a fonte é o Glue Schema Registry, use o collector somente de leitura:
 
 ```bash
-sparkforge collect schema-registry --repo . --registry-name events \
+sparkforge-aws collect schema-registry --repo . --registry-name events \
   --max-schemas 100 --now <ISO8601>
-sparkforge analyze schema-registry \
+sparkforge-aws analyze schema-registry \
   --path .sparkforge/artifacts/schema_registry/events.json
 ```
 

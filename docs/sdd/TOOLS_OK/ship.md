@@ -64,7 +64,7 @@ verificados no build (`build_report.md`, T1, `status: done`).
 | `claims_gate` | `python scripts/check_vnext_claims.py` | 0 divergências |
 | `claims_gate` | `python -m pytest tests/test_vnext_claims.py tests/test_docs_coverage.py tests/test_installed_provenance.py -q` | 174 passed, 5 skipped |
 | números correntes | `python scripts/check_status_numbers.py --strict` | 0 divergências |
-| lint | `python -m ruff check sparkforge scripts tests` | sem achados |
+| lint | `python -m ruff check sparkforge_aws scripts tests` | sem achados |
 
 Nenhum `change_kinds` de `tool_or_verb` ou `agent_or_skill`: a feature não
 acrescenta tool, skill nem verbo — só o bloco em `CLAUDE.md`/`AGENTS.md`, o
@@ -79,7 +79,7 @@ não se aplicam.
   causa.
 - **Grader não confere citação de `fact_id`/`rule_id`.** Fora de escopo por
   decisão do define: o grader atual confere tools, não se a resposta cita o
-  fact ou a regra que a sustenta. Mudança própria em `sparkforge/evals`.
+  fact ou a regra que a sustenta. Mudança própria em `sparkforge_aws/evals`.
 - **Abordagens B e C do explore seguem registradas, não descartadas.** Se um
   limiar mais alto de `tools_ok` for exigido depois, ou se outro modelo não
   repetir o efeito, C (hook `PreToolUse` que recusa `Read` de artefato com

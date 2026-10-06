@@ -16,7 +16,7 @@ deviations:
   - "O teste de T1 entrou por heredoc (cat >>), nao pela ferramenta de edicao; o arquivo ficou sem CR."
   - "Um git stash foi feito com check_vnext_claims.py rodando em segundo plano; o gate rodou de novo no ship, com 0."
   - "Arquivo vazio str apareceu na raiz durante o define; apagado, fora de commit."
-  - "Nota conhecida, sem edicao: SDD_MIGRATION/build_report.md sustenta 'sdd check descobre as mesmas seis features' com evidence_ref sparkforge/sdd/checks.py, um arquivo e nao um teste ou saida. Fica como esta; a feature entregue nao e reescrita."
+  - "Nota conhecida, sem edicao: SDD_MIGRATION/build_report.md sustenta 'sdd check descobre as mesmas seis features' com evidence_ref sparkforge_aws/sdd/checks.py, um arquivo e nao um teste ou saida. Fica como esta; a feature entregue nao e reescrita."
   - "Build num agente so: sem subagente por tarefa, sem revisao em dois estagios, sem revisor novo na revisao final, e sem a leitura do operador por fase (o escopo veio fechado pelo chamador)."
 ---
 
@@ -57,7 +57,7 @@ surface lock 532007 → 532882 (+875).
 
 Critério de `kind: command`, rodado agora:
 
-- `AC7`: `python -c "import sys;from sparkforge.adapters.cli import main;sys.exit(main(sys.argv[1:]))" sdd check --repo .`
+- `AC7`: `python -c "import sys;from sparkforge_aws.adapters.cli import main;sys.exit(main(sys.argv[1:]))" sdd check --repo .`
   — exit 0, `ok: true`.
 
 Fora do mapa, rodados porque a entrega os move:
@@ -65,7 +65,7 @@ Fora do mapa, rodados porque a entrega os move:
 `python scripts/check_surface_lock.py --update` (+875 bytes em skills),
 `python scripts/check_vnext_claims.py` (0 divergências),
 `python scripts/check_status_numbers.py --strict` (0 divergências) e
-`python -m ruff check sparkforge/sdd tests` (limpo).
+`python -m ruff check sparkforge_aws/sdd tests` (limpo).
 
 Bateria de 15 arquivos pedida pelo chamador: 1455 verdes. A suíte inteira em
 lotes não rodou.

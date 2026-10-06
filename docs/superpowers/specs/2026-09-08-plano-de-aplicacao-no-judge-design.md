@@ -2,7 +2,7 @@
 
 **Data:** 2026-09-08
 **Estado:** desenho aprovado, implementação não iniciada
-**Depende de:** `docs/superpowers/specs/2026-09-08-sparkforge-executor-agentico-design.md`
+**Depende de:** `docs/superpowers/specs/2026-09-08-sparkforge-aws-executor-agentico-design.md`
 (o executor determinístico, PR #42)
 **Fecha:** o executor produz ordem, lastro e lacunas, e nada disso chega a quem
 lê o resultado
@@ -17,7 +17,7 @@ literalmente no texto das regras), restrições de sequenciamento (10 grupos de
 eixo de medida compartilhado), lastro por achado (sobre o corpus: 89 `high`, 50
 `low`, 18 `medium`), contradições e lacunas nomeadas.
 
-**Nada disso chega ao operador.** O único caminho é `sparkforge arbitrate`, que
+**Nada disso chega ao operador.** O único caminho é `sparkforge-aws arbitrate`, que
 exige montar dois arquivos JSON à mão — e a união dos facts, que é o insumo
 correto, foi justamente o que a implementação do executor errou primeiro
 (§12.9 do spec anterior). O pipeline que o agente percorre continua sendo
@@ -63,7 +63,7 @@ e depois é parte da entrega, não observação posterior (regra 28).
 
 ## 3. Onde o código mora
 
-Módulo novo `sparkforge/agentic/executor/digest.py`:
+Módulo novo `sparkforge_aws/agentic/executor/digest.py`:
 
 ```python
 def plan_digest(
@@ -125,7 +125,7 @@ em `_core.py`, que já tem 243 KB.
       }
     ],
     "persisted": false,
-    "note": "calculado, nao gravado. O registro auditavel e `sparkforge arbitrate`."
+    "note": "calculado, nao gravado. O registro auditavel e `sparkforge-aws arbitrate`."
   }
 }
 ```
@@ -317,7 +317,7 @@ execução que alguém observou.
 python - <<'PY'
 import json
 
-from sparkforge.adapters._core import judge_findings
+from sparkforge_aws.adapters._core import judge_findings
 
 CASOS = [
     ["fixtures/timeout/heartbeat_perdido/input/facts.json"],

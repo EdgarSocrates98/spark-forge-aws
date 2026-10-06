@@ -15,7 +15,7 @@
       "timestamp_ms": 1788948000000.0
     },
     "attrs": {
-      "message": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-demo/curated/fato_venda/dt=2026-09-09/part-7.snappy.parquet",
+      "message": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-aws-demo/curated/fato_venda/dt=2026-09-09/part-7.snappy.parquet",
       "log_stream": "jr_fnf1"
     },
     "provenance": {
@@ -69,22 +69,22 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "prefix": "s3://sparkforge-demo/curated/fato_venda/",
+      "prefix": "s3://sparkforge-aws-demo/curated/fato_venda/",
       "truncated": false
     },
     "provenance": {
       "artifact": "s3/listing.json",
-      "artifact_sha256": "0899a2760158e8fd1f81c77b033c2bbe2a1341a4518fc556efc66e1254276412",
+      "artifact_sha256": "57ee56d3c18ab6a9a8a9eb8d4ea28b20eb3690132b34664f62d38815ee8d2140",
       "extractor": "s3_listing@0.1.0"
     }
   },
   {
-    "id": "f_392c7a",
+    "id": "f_1afad4",
     "schema_version": 1,
     "kind": "s3.prefix_summary",
     "subject": {
       "type": "table",
-      "symbol": "s3://sparkforge-demo/curated/fato_venda/ [parquet/snappy]"
+      "symbol": "s3://sparkforge-aws-demo/curated/fato_venda/ [parquet/snappy]"
     },
     "measures": {
       "file_count": 2,
@@ -96,13 +96,13 @@
       "max_file_bytes": 4194304
     },
     "attrs": {
-      "prefix": "s3://sparkforge-demo/curated/fato_venda/",
+      "prefix": "s3://sparkforge-aws-demo/curated/fato_venda/",
       "format": "parquet",
       "compression": "snappy"
     },
     "provenance": {
       "artifact": "s3/listing.json",
-      "artifact_sha256": "0899a2760158e8fd1f81c77b033c2bbe2a1341a4518fc556efc66e1254276412",
+      "artifact_sha256": "57ee56d3c18ab6a9a8a9eb8d4ea28b20eb3690132b34664f62d38815ee8d2140",
       "extractor": "s3_listing@0.1.0"
     }
   },
@@ -123,7 +123,7 @@
     "attrs": {
       "signature_id": "ERR-SPARK-013",
       "matched_on": "log_line",
-      "matched_line": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-demo/curated/fato_venda/dt=2026-09-09/part-7."
+      "matched_line": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-aws-demo/curated/fato_venda/dt=2026-09-09/par"
     },
     "provenance": {
       "artifact": "logs/etl-curated_jr_fnf1_aws-glue_jobs_error.json",

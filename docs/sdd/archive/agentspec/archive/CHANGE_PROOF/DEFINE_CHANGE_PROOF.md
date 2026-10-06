@@ -34,7 +34,7 @@ O SparkForge recomenda mudancas com `validation` e `rollback` em prosa -- 479 it
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: modulo puro `sparkforge/proof/` que recebe findings aplicados, veredictos ja julgados, facts de comparacao e o resultado do `judge` sobre o depois, e devolve as obrigacoes e os desfechos; nao importa `adapters` nem provider |
+| **MUST** | G1: modulo puro `sparkforge_aws/proof/` que recebe findings aplicados, veredictos ja julgados, facts de comparacao e o resultado do `judge` sobre o depois, e devolve as obrigacoes e os desfechos; nao importa `adapters` nem provider |
 | **MUST** | G2: `rules/catalog/proof_axes.yaml` (sem chave `rules:`), versionado, com: (a) para cada um dos 23 eixos de `action.moves`, a fonte (`funcval`, `bench` ou `none`), a medida de bench quando houver, `improves_when` (`decreases`) para eixo de bench, `proxy` quando a medida nao e o eixo, e `unlock` (a medida que destravaria) quando a fonte e `none`; (b) a chave estavel por tipo de subject |
 | **MUST** | G3: obrigacao de resolucao para todo finding de `--applied`: `judge` com `return_skipped=True` sobre `--after-facts`; dispara de novo na mesma chave estavel -> `refuted`; regra em `skipped` -> `unproven` com os kinds que faltam; avaliada e nao disparou -> `not_refuted`; tipo de subject sem chave declarada -> `inconclusive` (`subject_sem_chave_estavel`) |
 | **MUST** | G4: obrigacao de correcao para eixo `correctness.*`: algum `SF-FVAL-001..004` nos veredictos -> `refuted` (com os rule_ids); `SF-FVAL-005` -> `inconclusive`; sem `funcval.analyzed` na uniao -> `unproven` (`funcval compare`) |
@@ -42,7 +42,7 @@ O SparkForge recomenda mudancas com `validation` e `rollback` em prosa -- 479 it
 | **MUST** | G6: com mais de um finding em `--applied`, obrigacoes de bench -> `inconclusive` (`attribution_shared`); resolucao e correcao seguem por finding |
 | **MUST** | G7: desfechos so `refuted`, `not_refuted`, `inconclusive`, `unproven`; `refused` fixo com `proven` e `gain_estimate`; o delta de bench repassado como medido, com `proxy` quando o mapa declara |
 | **MUST** | G8: finding de `--applied` ausente de `--findings` -> `unresolved` (`applied_nao_encontrado`); finding fora de `--applied` fica fora da prova |
-| **MUST** | G9: CLI `sparkforge proof --findings F --facts U [--facts ...] --after-facts A [--after-facts ...] --applied RULE[:symbol] ...` e tool `sparkforge_proof` (`_READ_ONLY`, declara `findings_path`, `facts_path`, `after_facts_path`) |
+| **MUST** | G9: CLI `sparkforge-aws proof --findings F --facts U [--facts ...] --after-facts A [--after-facts ...] --applied RULE[:symbol] ...` e tool `sparkforge_proof` (`_READ_ONLY`, declara `findings_path`, `facts_path`, `after_facts_path`) |
 | **SHOULD** | G10: `sf-verifier` ganha a checagem 7 ("a mudanca aplicada se sustentou?"); `parity.yaml` ganha "prove what an applied change did and did not break" |
 | **SHOULD** | G11: teste do mapa: todo eixo usado em `moves` tem entrada; toda fonte e medida apontam para kind em algum `EMITTED_KINDS`; toda regra de veredito citada existe no catalogo |
 | **COULD** | G12: `docs/change-proof.md` com os desfechos, a precedencia, a chave estavel e a lista dos eixos sem comparador |
@@ -111,7 +111,7 @@ O SparkForge recomenda mudancas com `validation` e `rollback` em prosa -- 479 it
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/proof/`; `rules/catalog/proof_axes.yaml`; `adapters/_core.py`, `cli.py`, `tools.py`; `agents/executors/sf-verifier.md` e espelhos; `parity.yaml`; `manifest.json`; `fixtures/proof/`; `tests/test_proof_*.py`, `tests/test_fixtures_golden_proof.py` | Nenhum recurso de nuvem |
+| **Deployment Location** | `sparkforge_aws/proof/`; `rules/catalog/proof_axes.yaml`; `adapters/_core.py`, `cli.py`, `tools.py`; `agents/executors/sf-verifier.md` e espelhos; `parity.yaml`; `manifest.json`; `fixtures/proof/`; `tests/test_proof_*.py`, `tests/test_fixtures_golden_proof.py` | Nenhum recurso de nuvem |
 | **KB Domains** | Validacao funcional (`funcval`), benchmark (`bench.*`), motor de regras (`judge`, `skipped`) | Veredictos reusados, nunca reimplementados |
 | **IaC Impact** | None | — |
 

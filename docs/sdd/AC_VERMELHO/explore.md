@@ -30,7 +30,7 @@ chosen: A
 ## Origem
 
 Cinco features seguidas tiveram critério verificado por teste que não cobria o que o
-critério afirmava, e o `sparkforge sdd check` passou em todas: ele confere que o
+critério afirmava, e o `sparkforge-aws sdd check` passou em todas: ele confere que o
 `verified_by` existe e tem forma, não que o teste mede o critério. Na CONFIG_OCA (#95)
 isso produziu os dois críticos. Pedido do operador em 2026-09-21.
 
@@ -56,8 +56,8 @@ teste:
   inteiro. Ligação por **node id** o pegaria — e é exatamente o caso que precisa de guarda
   declarada.
 
-Onde o código mora: `sparkforge/sdd/checks.py::_gate_red` (hoje só exige `red.exit != 0`
-por tarefa) e `sparkforge/sdd/schema/define.json` (o item de `acceptance` tem
+Onde o código mora: `sparkforge_aws/sdd/checks.py::_gate_red` (hoje só exige `red.exit != 0`
+por tarefa) e `sparkforge_aws/sdd/schema/define.json` (o item de `acceptance` tem
 `additionalProperties: false`).
 
 ## Perguntas feitas

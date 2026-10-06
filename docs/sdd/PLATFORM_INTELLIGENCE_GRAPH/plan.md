@@ -9,11 +9,11 @@ upstream:
   sha256: "5eaf22d770cfb8b7f6ce9e48bc39862a756cd1b8f5944591cbb8acd961d6317c"
 tasks:
   - id: T1
-    files: [sparkforge/platform/__init__.py, sparkforge/platform/graph.py, contracts/platform-graph-v1.schema.json, fixtures/platform/graph.yaml, tests/test_platform_graph.py]
+    files: [sparkforge_aws/platform/__init__.py, sparkforge_aws/platform/graph.py, contracts/platform-graph-v1.schema.json, fixtures/platform/graph.yaml, tests/test_platform_graph.py]
     covers: [AC1, AC2]
     test: {path: tests/test_platform_graph.py, name: test_platform_graph_loads_and_fingerprints_deterministically}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml]
     covers: [AC3]
     test: {path: tests/test_platform_graph.py, name: test_platform_graph_cli_and_mcp_share_contract}
   - id: T3

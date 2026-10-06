@@ -18,7 +18,7 @@ approaches:
       - "mexe em muitas descricoes, move superficie e espelhos"
       - "efeito incerto: no baseline o agente muitas vezes nem procura a tool"
   - id: C
-    summary: "Hook PreToolUse (sparkforge.policy.hook) recusa Read de artefato que tem verbo (event log, plano, facts.json) e aponta o verbo."
+    summary: "Hook PreToolUse (sparkforge_aws.policy.hook) recusa Read de artefato que tem verbo (event log, plano, facts.json) e aponta o verbo."
     tradeoffs:
       - "o unico que garante o uso"
       - "so no Claude Code com o hook ligado; atrapalha quem quer ler de proposito"

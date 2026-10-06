@@ -14,11 +14,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.event_log import extract_event_log_path
-from sparkforge.facts.terraform import extract_terraform_diff
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.event_log import extract_event_log_path
+from sparkforge_aws.facts.terraform import extract_terraform_diff
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "tfdiff"
@@ -155,7 +155,7 @@ class TestAdversarial:
     def test_the_migration_finding_carries_both_versions(self):
         """Sem as duas versoes o achado diz "migrou" e obriga o revisor a ir ao
         git descobrir de que para que -- e o par origem/alvo e exatamente a
-        entrada de `sparkforge.migration.assessment.assess`."""
+        entrada de `sparkforge_aws.migration.assessment.assess`."""
         _, facts, _, _ = run_fixture(FIXTURES / "glue_version_migrado")
         versao = next(
             f for f in facts if f.kind == "tf.attribute" and f.attrs.get("key") == "glue_version"

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.context.gateway_models import GatewayProfile
-from sparkforge.evals.runner import EvaluationRunner
-from sparkforge.evals.token_benchmark import load_benchmark_suite
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.context.gateway_models import GatewayProfile
+from sparkforge_aws.evals.runner import EvaluationRunner
+from sparkforge_aws.evals.token_benchmark import load_benchmark_suite
 
 
 def test_profile_benchmark_records_separate_token_state() -> None:

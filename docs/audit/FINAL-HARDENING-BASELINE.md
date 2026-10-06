@@ -36,7 +36,7 @@ onda e a higiene de evidencia delas e tratada na propria wave.
 governa selecao de contexto no `ContextGateway`, mas `AgentHandoff` era so um
 contrato de dados — nenhum caminho o admitia contra o plano do receptor.
 Fechamento nesta onda: admission gate deterministico em
-`sparkforge/agentic/handoff.py` com decisao ALLOW/DENY/REVIEW, preservacao
+`sparkforge_aws/agentic/handoff.py` com decisao ALLOW/DENY/REVIEW, preservacao
 DATA_ONLY, teto de trust declarado, taint por varredura lexical, defesa de
 confused deputy e filtragem por seccao — tudo com negacao nomeada, nunca
 sumico.

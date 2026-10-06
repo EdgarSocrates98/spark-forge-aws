@@ -17,7 +17,7 @@ Lista as dependencias DECLARADAS de um job Glue -- pin de `requirements*.txt` (`
 
 ## Na CLI
 
-[`sparkforge glue dependency-audit`](../cli/glue.md)
+[`sparkforge-aws glue dependency-audit`](../cli/glue.md)
 
 ## Capacidade
 

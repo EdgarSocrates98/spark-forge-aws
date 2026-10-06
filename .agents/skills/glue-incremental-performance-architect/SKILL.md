@@ -12,9 +12,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze pyspark
-  - sparkforge analyze call-graph
-  - sparkforge judge
+  - sparkforge-aws analyze pyspark
+  - sparkforge-aws analyze call-graph
+  - sparkforge-aws judge
 ---
 
 # Glue Incremental Performance Architect
@@ -30,8 +30,8 @@ A missão completa, os 20 entregáveis esperados, e por que "aumentar workers" n
 ### 2. Mapeie a biblioteca
 
 ```bash
-sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json
-sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/callgraph.json
+sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json
+sparkforge-aws analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/callgraph.json
 ```
 
 `callgraph.reachable_spark_work` mostra, por função, todo o trabalho Spark (`pyspark.*`) alcançável a partir de cada entrypoint — é como se separa o que o fluxo full aciona do que o incremental aciona sem ler a biblioteca inteira à mão. Duas entradas com call graphs que convergem no mesmo trabalho pesado é o primeiro sinal de scan global disfarçado de incremental.
@@ -39,7 +39,7 @@ sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/c
 ### 3. Julgue o inventário
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
 ```
 
 Sem flag de versão neste ponto, e de propósito: o `facts.json` do passo 2 vem de `analyze pyspark`, que lê AST e não observa runtime, então `runtime` volta vazio com `detected_from: []` — e as regras `SF-PY-*` deste inventário são estruturais, sem `runtime_scope`, então nada é perdido. Digitar uma versão aqui seria declarar de memória o que ninguém verificou.
@@ -47,8 +47,8 @@ Sem flag de versão neste ponto, e de propósito: o `facts.json` do passo 2 vem 
 Numa investigação deste tamanho, porém, o eixo de infraestrutura **não** pode ficar descoberto até o fim: o que aparecer em `--show-skipped` com `reason: runtime_scope` são as seis regras `SF-GLUE-*`, e elas continuam puladas em toda rodada seguinte enquanto o runtime for vazio. Feche isso cedo, extraindo a fonte em vez de declarando o palpite:
 
 ```bash
-sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
-sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json --show-skipped
+sparkforge-aws analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
+sparkforge-aws judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json --show-skipped
 ```
 
 `--facts` é repetível, e a partir daí `runtime.detected_from` passa a dizer `["terraform"]` e a matriz de compatibilidade preenche `spark`, `python` e `iceberg` junto — o contexto que toda recomendação versionada desta investigação vai precisar. Se o repositório tem mais de um módulo declarando `glue_version` diferente, `runtime.divergences` mostra os dois: num job com fluxos full e incremental isso costuma ser dois jobs Glue distintos, e descobrir isso na primeira rodada vale mais que qualquer finding de código.
@@ -58,7 +58,7 @@ Preste atenção especial a `SF-PY-004` (action ou write dentro de loop): se apa
 ### 4. Deixe next-step orquestrar as skills especializadas
 
 ```bash
-sparkforge next-step --repo <repo> --findings .sparkforge/findings.json
+sparkforge-aws next-step --repo <repo> --findings .sparkforge/findings.json
 ```
 
 Chame de novo depois de cada rodada de achados novos — a árvore de roteamento manda para `design-incremental-processing`, `optimize-latest-per-key`, `analyze-batch-loop`, `diagnose-oom`, `optimize-parquet-layout`, `optimize-iceberg-table` e `review-glue-terraform` na ordem que a evidência pede, não na ordem que parece intuitiva.
@@ -70,7 +70,7 @@ Só depois que full, incremental, latest-per-key, batching e OOM estiverem todos
 ### 6. Crie experimentos, meça e valide
 
 ```bash
-sparkforge validate --findings .sparkforge/findings.json
+sparkforge-aws validate --findings .sparkforge/findings.json
 ```
 
 Uma variável principal por experimento; sem baseline capturado (`benchmark-pyspark-job`) não há como provar impacto.
@@ -98,7 +98,7 @@ Encerrar só com mais workers, mudança de `shuffle.partitions`, hint de broadca
 
 ## Quando NÃO usar
 
-- O job tem um único fluxo simples e um sintoma isolado: use `sparkforge-diagnose` ou a skill específica direto.
+- O job tem um único fluxo simples e um sintoma isolado: use `sparkforge-aws-diagnose` ou a skill específica direto.
 - Você só quer revisar código, PR ou Terraform, sem investigar full/incremental: use a skill focada correspondente.
 - Já mapeou tudo e falta apenas medir: vá direto para `benchmark-pyspark-job`.
 
@@ -116,9 +116,9 @@ latest-per-key ou de bookmark — as quatro decidem **quais linhas existem no de
 quanto tempo o job leva. Um desempate de timestamp trocado não muda contagem nenhuma e muda a
 linha que ficou.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -148,7 +148,7 @@ Esta skill trata **arquitetura de performance para Glue full/incremental**. Cont
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze pyspark`, `sparkforge analyze call-graph`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze pyspark`, `sparkforge-aws analyze call-graph`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

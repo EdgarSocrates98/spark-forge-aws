@@ -107,7 +107,7 @@ O `tune` recusa `spark.network.timeout`, `spark.sql.broadcastTimeout` e `spark.s
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/facts/event_log.py`, `sparkforge/tuning/spark_conf.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `rules/catalog/{spark-ui,timeout}.yaml`, `CLAUDE.md`, `AGENTS.md` | Extensão do que existe, sem módulo novo |
+| **Deployment Location** | `sparkforge_aws/facts/event_log.py`, `sparkforge_aws/tuning/spark_conf.py`, `sparkforge_aws/adapters/{_core,cli,tools}.py`, `rules/catalog/{spark-ui,timeout}.yaml`, `CLAUDE.md`, `AGENTS.md` | Extensão do que existe, sem módulo novo |
 | **KB Domains** | spark (agentspec); `knowledge/spark/`, `knowledge/glue/runtime-matrix.md` | Tabela de versão do critério ao lado da do AQE |
 | **IaC Impact** | None | Terraform só como procedência de `tf.spark_conf` |
 

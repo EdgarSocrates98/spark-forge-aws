@@ -20,7 +20,7 @@ Extrai facts determinísticos de dumps JSON/JSONL sanitizados para checkpoint St
 
 ## Na CLI
 
-[`sparkforge analyze streaming-integrations`](../cli/analyze.md)
+[`sparkforge-aws analyze streaming-integrations`](../cli/analyze.md)
 
 ## Capacidade
 

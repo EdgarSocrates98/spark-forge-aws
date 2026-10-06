@@ -20,7 +20,7 @@ Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions
 
 ## Na CLI
 
-[`sparkforge analyze sfn-history`](../cli/analyze.md)
+[`sparkforge-aws analyze sfn-history`](../cli/analyze.md)
 
 ## Capacidade
 

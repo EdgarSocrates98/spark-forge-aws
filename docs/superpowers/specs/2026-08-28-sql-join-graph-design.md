@@ -29,7 +29,7 @@ e o perfil de
 
 `plan.join` existe desde a Fase 1 e carrega `strategy`, `join_type`, `is_broadcast` e
 `build_side` — este último extraído do token `BuildLeft`/`BuildRight`
-(`sparkforge/facts/spark_plan.py:804`). Ele diz que o lado de build é o **esquerdo**.
+(`sparkforge_aws/facts/spark_plan.py:804`). Ele diz que o lado de build é o **esquerdo**.
 
 Nada diz **o que** está do lado esquerdo.
 
@@ -58,7 +58,7 @@ de outro dia, outro ambiente, outro volume.
 
 **Entra:**
 
-- Dois kinds novos em `sparkforge/facts/sql_metrics.py`: `spark.sql.join` e
+- Dois kinds novos em `sparkforge_aws/facts/sql_metrics.py`: `spark.sql.join` e
   `spark.sql.join_input`.
 - Cenários novos em `fixtures/sql_metrics/`, o domínio que já existe.
 

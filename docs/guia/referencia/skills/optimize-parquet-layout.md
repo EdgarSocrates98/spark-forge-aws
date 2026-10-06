@@ -2,12 +2,12 @@
 
 # Skill `optimize-parquet-layout`
 
-Use quando datasets Parquet no S3 (fora do Iceberg) sofrem com small files, listing lento, milhares de objetos por prefixo, arquivo por chave na escrita, ou leitura que não faz partition/predicate pushdown. Use também quando a pergunta for \"o S3 tá cheio de arquivinho\", \"a leitura desse dataset demora antes mesmo da primeira task rodar\" ou \"cada execução gera um arquivo por cliente\", mesmo que ninguém fale em Parquet. Se você está prestes a contar arquivo com `aws s3 ls` no olho, salve `aws s3api list-objects-v2` num arquivo e rode `sparkforge analyze s3-listing` — ele emite `s3.prefix_summary` e o `judge` aplica `SF-PQ-001`, `SF-PQ-003` e `SF-PQ-005`. Para o lado da leitura, `sparkforge analyze plan` emite `plan.file_scan` e cobre `SF-PQ-002` e `SF-PQ-004`; `analyze pyspark` e `analyze catalog-schema` fecham escrita e cardinalidade.
+Use quando datasets Parquet no S3 (fora do Iceberg) sofrem com small files, listing lento, milhares de objetos por prefixo, arquivo por chave na escrita, ou leitura que não faz partition/predicate pushdown. Use também quando a pergunta for \"o S3 tá cheio de arquivinho\", \"a leitura desse dataset demora antes mesmo da primeira task rodar\" ou \"cada execução gera um arquivo por cliente\", mesmo que ninguém fale em Parquet. Se você está prestes a contar arquivo com `aws s3 ls` no olho, salve `aws s3api list-objects-v2` num arquivo e rode `sparkforge-aws analyze s3-listing` — ele emite `s3.prefix_summary` e o `judge` aplica `SF-PQ-001`, `SF-PQ-003` e `SF-PQ-005`. Para o lado da leitura, `sparkforge-aws analyze plan` emite `plan.file_scan` e cobre `SF-PQ-002` e `SF-PQ-004`; `analyze pyspark` e `analyze catalog-schema` fecham escrita e cardinalidade.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/optimize-parquet-layout/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/storage/iceberg-performance.md', '../../knowledge/storage/iceberg-catalog.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze s3-listing', 'sparkforge analyze plan', 'sparkforge analyze pyspark']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/storage/iceberg-performance.md', '../../knowledge/storage/iceberg-catalog.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze s3-listing', 'sparkforge-aws analyze plan', 'sparkforge-aws analyze pyspark']} |
 
 ## Procedimento (texto integral)
 
@@ -22,18 +22,18 @@ Seu trabalho é **coletar as quatro fontes, rodar, e ler `--show-skipped` para s
 #### 1. Escrita: extraia o padrão de particionamento do código
 
 ```bash
-sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json --kind pyspark.write --kind pyspark.partitioning
+sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json --kind pyspark.write --kind pyspark.partitioning
 ```
 
 `pyspark.write` traz modo e destino de cada escrita; `pyspark.partitioning` traz `coalesce`/`repartition`, se o argumento é literal, e o valor alvo. É aqui que aparece o writer por chave de alta cardinalidade e o `coalesce(1)` disfarçado de "arquivo único".
 
 #### 2. Armazenamento: liste o prefixo e extraia o sumário
 
-Não existe `sparkforge collect s3-listing`, e isso é decisão de desenho, não lacuna: listar um prefixo grande custa uma chamada por 1000 objetos, e quem paga essa conta decide o escopo e a paginação com o olho no bucket. **Você coleta, o extrator lê.**
+Não existe `sparkforge-aws collect s3-listing`, e isso é decisão de desenho, não lacuna: listar um prefixo grande custa uma chamada por 1000 objetos, e quem paga essa conta decide o escopo e a paginação com o olho no bucket. **Você coleta, o extrator lê.**
 
 ```bash
 aws s3api list-objects-v2 --bucket <bucket> --prefix <prefixo> > listing.json
-sparkforge analyze s3-listing --path listing.json --out .sparkforge/facts_s3.json
+sparkforge-aws analyze s3-listing --path listing.json --out .sparkforge/facts_s3.json
 ```
 
 Sai um `s3.prefix_summary` **por grupo (formato, compressão)**, não um por prefixo: um prefixo real mistura Parquet com `_SUCCESS` de 0 byte e log em `.gz`, e um sumário único faria a média de bytes ser puxada pelo arquivo de controle — e `SF-PQ-003` (`format: text` + `compression: gzip`) nunca casaria num prefixo majoritariamente Parquet, mesmo com um `.gz` de 4 GB ali.
@@ -43,7 +43,7 @@ Sai um `s3.prefix_summary` **por grupo (formato, compressão)**, não um por pre
 #### 3. Leitura: extraia o plano físico
 
 ```bash
-sparkforge analyze plan --path <explain>.txt --out .sparkforge/facts_plan.json
+sparkforge-aws analyze plan --path <explain>.txt --out .sparkforge/facts_plan.json
 ```
 
 `plan.file_scan` é o que responde as duas perguntas do lado da leitura: `SF-PQ-002` (tabela particionada com `PartitionFilters` vazio — está lendo tudo) e `SF-PQ-004` (razão entre colunas de `ReadSchema` e colunas referenciadas). Gere o `explain` com `df.explain("formatted")`; o procedimento completo, e o que fazer quando o Spark trunca a lista de campos, está em `analyze-spark-plan`.
@@ -51,7 +51,7 @@ sparkforge analyze plan --path <explain>.txt --out .sparkforge/facts_plan.json
 #### 4. Catálogo: confirme a cardinalidade real da partição
 
 ```bash
-sparkforge analyze catalog-schema --path <dump-glue-catalog.json> --out .sparkforge/facts_catalog.json
+sparkforge-aws analyze catalog-schema --path <dump-glue-catalog.json> --out .sparkforge/facts_catalog.json
 ```
 
 Produz `catalog.table_partitions` (valores distintos, bytes médios por partição) — é o que `SF-PQ-005` consome para decidir se a cardinalidade é baixa demais (não filtra nada) ou alta demais (small files por desenho).
@@ -59,7 +59,7 @@ Produz `catalog.table_partitions` (valores distintos, bytes médios por partiç�
 #### 5. Execução: sintoma indireto no event log
 
 ```bash
-sparkforge analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog.json
+sparkforge-aws analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog.json
 ```
 
 `spark.stage.task_count` comparado a `spark.cluster.cores` (`SF-UI-006`) é o sinal indireto de small files do lado da leitura: contagem de tasks muito acima dos cores disponíveis, cada uma processando pouco dado, é a assinatura de ler muitos arquivos pequenos. É corroboração, não substituto: quem responde sobre o armazenamento é a listagem do passo 2.
@@ -67,7 +67,7 @@ sparkforge analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog
 #### 6. Julgue
 
 ```bash
-sparkforge judge \
+sparkforge-aws judge \
   --facts .sparkforge/facts.json \
   --facts .sparkforge/facts_s3.json \
   --facts .sparkforge/facts_plan.json \
@@ -78,7 +78,7 @@ sparkforge judge \
 
 `--facts` é repetível: informe todos os arquivos (pyspark, listagem S3, plano, catálogo, event log) na mesma chamada para ter todos os achados numa passada — `judge` une e deduplica antes de julgar. Regra que correlaciona fontes diferentes só dispara assim, e `SF-PQ-005` é exatamente isso: exige `s3.prefix_summary` **e** `catalog.table_partitions`, e nenhum dos dois responde sozinho.
 
-Isso é também o que resolve a versão, sem você digitar nenhuma: unir os facts é unir as fontes de runtime junto. O event log do passo 5 declara a versão do Spark observada (`spark.runtime_version`); se você acrescentar `sparkforge analyze terraform`, o `glue_version` do `.tf` preenche `glue` e a matriz de compatibilidade deriva o resto. Leia o campo `runtime` da saída — ele traz o contexto efetivamente usado, `detected_from` diz de quais fontes saiu, e `divergences` aparece quando elas discordam.
+Isso é também o que resolve a versão, sem você digitar nenhuma: unir os facts é unir as fontes de runtime junto. O event log do passo 5 declara a versão do Spark observada (`spark.runtime_version`); se você acrescentar `sparkforge-aws analyze terraform`, o `glue_version` do `.tf` preenche `glue` e a matriz de compatibilidade deriva o resto. Leia o campo `runtime` da saída — ele traz o contexto efetivamente usado, `detected_from` diz de quais fontes saiu, e `divergences` aparece quando elas discordam.
 
 Nenhuma das regras desta skill (`SF-PQ-*`, `SF-PY-005`, `SF-PY-010`) declara `runtime_scope`, então um `runtime` vazio não custa nada aqui: o que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, e o que interessa nesta análise vai aparecer em `skipped` com `reason: requires_facts` — coleta que faltou, tratada na seção abaixo. Não confunda os dois motivos ao ler a lista. Use `--glue 5.1` apenas para declarar uma versão que você sabe de fonte confiável.
 
@@ -102,7 +102,7 @@ As cinco `SF-PQ-*` têm extrator. O que elas não têm é o artefato **até voc�
 - `SF-PQ-001` e `SF-PQ-003` só existem se houver uma listagem S3 completa. Sem ela, saem em `skipped` com `reason: requires_facts` e `missing: ["s3.prefix_summary"]`. Com ela truncada, o extrator emite `s3.unresolved` e o resultado é o **mesmo skip** — a diferença aparece no `unresolved` da saída de `analyze`, não no `judge`. Confira os dois.
 - `SF-PQ-002` e `SF-PQ-004` só existem se alguém rodou `df.explain("formatted")` e salvou. `SF-PQ-004` some também quando o Spark truncou a lista de campos (`plan.unresolved`, `reason: truncated_field_list`), porque contar lista parcial infla a razão em silêncio.
 
-A regra de leitura é uma só: **`skipped` com `reason: requires_facts` é coleta faltando, não ausência de problema.** `sparkforge rules lookup --id SF-PQ-001` devolve o limiar e a explicação para diagnóstico manual quando a coleta é inviável, mas isso é hipótese sua, não achado do motor.
+A regra de leitura é uma só: **`skipped` com `reason: requires_facts` é coleta faltando, não ausência de problema.** `sparkforge-aws rules lookup --id SF-PQ-001` devolve o limiar e a explicação para diagnóstico manual quando a coleta é inviável, mas isso é hipótese sua, não achado do motor.
 
 ### Referência rápida
 
@@ -116,14 +116,14 @@ A regra de leitura é uma só: **`skipped` com `reason: requires_facts` é colet
 | `SF-PY-005` | `pyspark.partitioning` | `coalesce(1)` forçando tudo por uma task |
 | `SF-PY-010` | `pyspark.partitioning` | `repartition(n)` com `n` literal arbitrário |
 
-Não memorize os limiares — consulte com `sparkforge rules lookup --id <ID>`.
+Não memorize os limiares — consulte com `sparkforge-aws rules lookup --id <ID>`.
 
 ### Quando NÃO usar
 
 - A tabela tem metadados Iceberg (data/delete files, manifests, snapshots): use `optimize-iceberg-table`.
 - O desbalanceamento é hot key em join/agregação, não no layout de escrita: use `diagnose-data-skew`.
 - Só quer ajustar workers ou argumentos do job: use `tune-glue-job`.
-- Ainda não isolou se o layout de arquivo é mesmo o gargalo dominante: comece por `sparkforge-diagnose`.
+- Ainda não isolou se o layout de arquivo é mesmo o gargalo dominante: comece por `sparkforge-aws-diagnose`.
 
 ### Red flags
 
@@ -140,9 +140,9 @@ compactar junta arquivos sem mudar linha; e remover UDF do caminho do filtro, qu
 desta skill para pruning ausente, muda a expressão que decide quais linhas são lidas. A do
 meio é a única que não move o dado.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -180,7 +180,7 @@ Esta skill trata **layout Parquet, arquivos, partições e pruning**. Contrato c
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze s3-listing`, `sparkforge analyze plan`, `sparkforge analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze s3-listing`, `sparkforge-aws analyze plan`, `sparkforge-aws analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

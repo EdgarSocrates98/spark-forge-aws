@@ -20,7 +20,7 @@
  scripts/refresh_knowledge.py --update ──(hash mudou)──> knowledge/sources.lock.json
         │  importa o leitor de `Fontes`                    {pinned, sha256, checked_at,
         v                                                   changed_at (novo), retrieved[]}
- sparkforge/knowledge_freshness.py (puro)                          │
+ sparkforge_aws/knowledge_freshness.py (puro)                          │
    fontes_de_knowledge(root) -> URL -> {docs, retrieved}           │ carregar_lock(root)
    estado(url, validado_em, lock, as_of) -> Estado ◄───────────────┘
    mapa(fontes, lock, as_of) -> {source_freshness, freshness_policy}
@@ -39,7 +39,7 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/knowledge_freshness.py` | `Estado`, `estado()`, `mapa()`, `carregar_lock()`, `fontes_de_knowledge()` (leitor de `Fontes` movido do script) e a politica (`AGING_DAYS = 14`, `AGING_BASIS`) | stdlib (`datetime`, `json`, `re`) |
+| `sparkforge_aws/knowledge_freshness.py` | `Estado`, `estado()`, `mapa()`, `carregar_lock()`, `fontes_de_knowledge()` (leitor de `Fontes` movido do script) e a politica (`AGING_DAYS = 14`, `AGING_BASIS`) | stdlib (`datetime`, `json`, `re`) |
 | `scripts/refresh_knowledge.py` | `compare` grava `changed_at`; `knowledge_sources()` passa a delegar ao leitor do pacote | — |
 | `_core.judge_findings`, `rules_lookup`, `knowledge_path` | Parametros `source_freshness: bool = False` e `as_of: str | None = None`; com a flag, os campos novos no topo | — |
 | `_core.report_github` + `reporting/github.py::projetar` | `source_freshness` (mapa ja calculado) opcional; secao nova no resumo so quando presente | — |
@@ -175,18 +175,18 @@ O SARIF e as anotacoes nao mudam.
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/knowledge_freshness.py` | Create | Estado, mapa, politica, lock e leitor de `Fontes` | @agentspec:python:python-developer | None |
+| 1 | `sparkforge_aws/knowledge_freshness.py` | Create | Estado, mapa, politica, lock e leitor de `Fontes` | @agentspec:python:python-developer | None |
 | 2 | `scripts/refresh_knowledge.py` | Modify | `changed_at` no `compare`; o leitor delega ao pacote | @agentspec:python:python-developer | 1 |
 | 3 | `tests/test_knowledge_freshness.py` | Create | Pares por estado, precedencia, borda do limiar, `conflicted`, `sem_url`, `unresolved`, leitor de `Fontes` | @agentspec:test:test-generator | 1 |
 | 4 | `tests/test_refresh_knowledge.py` | Modify | Os quatro casos do `changed_at` com `fetch` falso; `sync_metadata` preserva | @agentspec:test:test-generator | 2 |
-| 5 | `sparkforge/adapters/_core.py` | Modify | Flag e `as_of` em `judge_findings`, `rules_lookup`, `knowledge_path` e `report_github` | (general) | 1 |
-| 6 | `sparkforge/reporting/github.py` | Modify | `projetar(..., freshness=None)` e a secao do resumo | @agentspec:python:python-developer | 1 |
-| 7 | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py` | Modify | Flags da CLI; `inputSchema`/`outputSchema` e descricoes | (general) | 5 |
+| 5 | `sparkforge_aws/adapters/_core.py` | Modify | Flag e `as_of` em `judge_findings`, `rules_lookup`, `knowledge_path` e `report_github` | (general) | 1 |
+| 6 | `sparkforge_aws/reporting/github.py` | Modify | `projetar(..., freshness=None)` e a secao do resumo | @agentspec:python:python-developer | 1 |
+| 7 | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py` | Modify | Flags da CLI; `inputSchema`/`outputSchema` e descricoes | (general) | 5 |
 | 8 | `tests/test_fixtures_golden_mcp_parity.py` | Modify | `ALTERADAS_DEPOIS_DO_GOLDEN` e o diff aditivo | (general) | 7 |
 | 9 | `tests/test_adapters_tools.py`, `tests/test_adapters_knowledge.py`, `tests/test_adapters_rules_knowledge.py`, `tests/test_reporting_github.py` | Modify | Saida real com a flag valida contra o schema; sem a flag, igual a hoje | @agentspec:test:test-generator | 5–7 |
 | 10 | `fixtures/sarif/freshness/` + `scripts/regen_fixtures.py` + `tests/test_fixtures_golden_sarif.py` | Create/Modify | Caso novo com lock sintetico; `saidas_sarif` e o teste da CLI leem `source_freshness`/`as_of`/`knowledge` do `meta.yaml` | (general) | 6, 7 |
 | 11 | `agents/executors/sf-verifier.md` + espelhos (`scripts/sync_skills.py`) | Modify | Checagem 6 | (general) | 5 |
-| 12 | `docs/knowledge-freshness.md`, `docs/superpowers/STATUS.md`, `examples/github/sparkforge.yml` | Create/Modify | Guia, distribuicao datada, flag no workflow de exemplo | (general) | all |
+| 12 | `docs/knowledge-freshness.md`, `docs/superpowers/STATUS.md`, `examples/github/sparkforge-aws.yml` | Create/Modify | Guia, distribuicao datada, flag no workflow de exemplo | (general) | all |
 | 13 | `docs/surface.lock.json`, `docs/claims.lock.json` + docs auditados | Modify (se o gate acusar) | Gates | (general) | all |
 | 14 | `.claude/sdd/reports/BUILD_REPORT_KNOWLEDGE_FRESHNESS.md` | Create | Relatorio | (general) | all |
 

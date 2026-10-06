@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.tools import call_tool
-from sparkforge.orchestration.topology import load_orchestration
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.orchestration.topology import load_orchestration
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "orchestration" / "control-plane.yaml"
 

@@ -63,19 +63,19 @@ DOMAIN_REFS: dict[str, list[str]] = {
 }
 
 FALLBACK_VERBS = {
-    "analyze-functional-rules": ["sparkforge analyze data-quality"],
-    "aws-database": ["sparkforge rules lookup"],
-    "aws-iam": ["sparkforge collect iam-access"],
-    "aws-messaging-and-streaming": ["sparkforge rules lookup"],
-    "aws-security": ["sparkforge collect iam-access"],
-    "aws-serverless": ["sparkforge rules lookup"],
-    "aws-storage": ["sparkforge rules lookup"],
-    "design-data-architecture": ["sparkforge next-step"],
-    "design-s3-data-lake": ["sparkforge next-step"],
-    "review-terraform-data-platform": ["sparkforge analyze terraform"],
-    "provision-s3-tables-table": ["sparkforge rules lookup"],
-    "harden-s3-bucket": ["sparkforge collect iam-access"],
-    "tool-specialist-routing": ["sparkforge next-step"],
+    "analyze-functional-rules": ["sparkforge-aws analyze data-quality"],
+    "aws-database": ["sparkforge-aws rules lookup"],
+    "aws-iam": ["sparkforge-aws collect iam-access"],
+    "aws-messaging-and-streaming": ["sparkforge-aws rules lookup"],
+    "aws-security": ["sparkforge-aws collect iam-access"],
+    "aws-serverless": ["sparkforge-aws rules lookup"],
+    "aws-storage": ["sparkforge-aws rules lookup"],
+    "design-data-architecture": ["sparkforge-aws next-step"],
+    "design-s3-data-lake": ["sparkforge-aws next-step"],
+    "review-terraform-data-platform": ["sparkforge-aws analyze terraform"],
+    "provision-s3-tables-table": ["sparkforge-aws rules lookup"],
+    "harden-s3-bucket": ["sparkforge-aws collect iam-access"],
+    "tool-specialist-routing": ["sparkforge-aws next-step"],
 }
 
 FOCUS: dict[str, str] = {
@@ -99,7 +99,7 @@ FOCUS: dict[str, str] = {
     "optimize-variable-volume-job": "capacidade e comportamento de jobs com volume variável",
     "review-data-validation": "validação de dados, consequência e custo da checagem",
     "review-pyspark-pr": "revisão de PR PySpark com fatos, plano e call graph",
-    "sparkforge-diagnose": "triagem inicial e roteamento determinístico de casos SparkForge",
+    "sparkforge-aws-diagnose": "triagem inicial e roteamento determinístico de casos SparkForge",
     "tune-glue-job": "capacidade e configuração de jobs Glue após gargalo comprovado",
     "spark4-compatibility": "compatibilidade Spark 4, Glue e dependências",
     "lakeformation-architecture": "arquitetura Lake Formation, FGAC, FTA e autorização",
@@ -171,10 +171,10 @@ def normalize_frontmatter(front: str) -> str:
 
 def primary_verbs(name: str, body: str) -> list[str]:
     found: list[str] = []
-    for verb in re.findall(r"sparkforge [a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?", body):
+    for verb in re.findall(r"sparkforge-aws [a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?", body):
         if verb not in found:
             found.append(verb)
-    return found[:3] or FALLBACK_VERBS.get(name, ["sparkforge next-step"])
+    return found[:3] or FALLBACK_VERBS.get(name, ["sparkforge-aws next-step"])
 
 
 def domain_refs(name: str) -> list[str]:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 
-from sparkforge.evals.decision_replay import (
+from sparkforge_aws.evals.decision_replay import (
     MAX_INPUT_VOLUME_DELTA,
     compare_replay_benchmark,
     load_replay_suite,

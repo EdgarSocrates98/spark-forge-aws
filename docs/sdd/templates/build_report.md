@@ -26,7 +26,7 @@ change_id: null
 > passando. Quem escreve os dois aqui é o controlador, a partir do relato do
 > subagente. Tarefa `skipped` ou `blocked` diz o motivo no corpo. Toda claim
 > aponta `evidence_ref`. No perfil `operator`, `change_id` é o id devolvido por
-> `sparkforge change sandbox`, e tarefa sem pytest registra `moved`.
+> `sparkforge-aws change sandbox`, e tarefa sem pytest registra `moved`.
 
 ## Desvios do plano
 

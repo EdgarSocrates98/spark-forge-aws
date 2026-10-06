@@ -33,7 +33,7 @@
       "Conceder só o que falta mantém o menor privilégio. Trocar o modelo de acesso (FGAC ou FTA) muda quem vende a credencial, e é decisão de plataforma, não de job."
     ],
     "validation": [
-      "Com `side: lf`, recoletar com `sparkforge collect lakeformation`; com `side: iam`, recoletar com `sparkforge collect iam-access --role-arn <runtime-role> --resource-arn <localização>/* --action <attrs.action>`, repetindo `--action` para cada ação que a operação exige (na escrita sob FGAC, append ou overwrite, `s3:PutObject` e `s3:DeleteObject`). Rodar `sparkforge fuse` de novo: o `lakeformation.missing_grant` do recurso precisa sumir.",
+      "Com `side: lf`, recoletar com `sparkforge-aws collect lakeformation`; com `side: iam`, recoletar com `sparkforge-aws collect iam-access --role-arn <runtime-role> --resource-arn <localização>/* --action <attrs.action>`, repetindo `--action` para cada ação que a operação exige (na escrita sob FGAC, append ou overwrite, `s3:PutObject` e `s3:DeleteObject`). Rodar `sparkforge-aws fuse` de novo: o `lakeformation.missing_grant` do recurso precisa sumir.",
       "Reexecutar o job e confirmar que `ERR-LF-001` sai do log do run. Nenhum eixo de dado é exigido: a mudança é de permissão, não de conteúdo."
     ],
     "rollback": [

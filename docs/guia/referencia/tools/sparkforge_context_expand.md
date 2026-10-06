@@ -18,7 +18,7 @@ Resolve uma ref ctx://v1 no cache local, valida integridade SHA-256 e escopo aut
 
 ## Na CLI
 
-[`sparkforge context expand`](../cli/context.md), [`sparkforge context start`](../cli/context.md)
+[`sparkforge-aws context expand`](../cli/context.md), [`sparkforge-aws context start`](../cli/context.md)
 
 ## Capacidade
 

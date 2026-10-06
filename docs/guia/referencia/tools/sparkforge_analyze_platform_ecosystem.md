@@ -16,7 +16,7 @@ Normaliza inventário de serving/OLAP, conectores de ingestão e CDC, AI Data En
 
 ## Na CLI
 
-[`sparkforge analyze platform-ecosystem`](../cli/analyze.md)
+[`sparkforge-aws analyze platform-ecosystem`](../cli/analyze.md)
 
 ## Capacidade
 

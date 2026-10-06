@@ -21,7 +21,7 @@ import pathlib
 
 import pytest
 
-from sparkforge.facts.s3_listing import (
+from sparkforge_aws.facts.s3_listing import (
     EMITTED_KINDS,
     extract_s3_listing,
     extract_s3_listing_path,

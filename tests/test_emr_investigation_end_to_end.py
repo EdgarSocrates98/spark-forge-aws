@@ -21,11 +21,11 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters._core import build_runtime_context
-from sparkforge.facts.emr_cluster import extract_emr_cluster_path
-from sparkforge.facts.pyspark_ast import extract_source
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters._core import build_runtime_context
+from sparkforge_aws.facts.emr_cluster import extract_emr_cluster_path
+from sparkforge_aws.facts.pyspark_ast import extract_source
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "emr"
@@ -147,7 +147,7 @@ class TestTheRuntimeIsInferredNotDeclared:
         regra pulada, cobertura apagada em silencio. Fixado aqui porque nenhuma
         regra da area usa `runtime_scope` hoje, entao so este teste segura.
         """
-        from sparkforge.rules.version_scope import in_scope
+        from sparkforge_aws.rules.version_scope import in_scope
 
         facts = list(extract_emr_cluster_path(CLUSTER, repo_root=ROOT))
         contexto = build_runtime_context(facts=facts).to_dict()

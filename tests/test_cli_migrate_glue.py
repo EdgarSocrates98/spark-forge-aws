@@ -11,7 +11,7 @@ DECISAO REGISTRADA -- o comando aceita DIRETORIO **ou** ARQUIVO.
 
 A interface publicada aceitava um `.py`, e quebra-la em silencio seria
 trocar um defeito por outro. Aceitar os dois nao e concessao: e a convencao
-que todo verbo de `sparkforge/adapters/_core.py` ja segue (`is_dir()` chama
+que todo verbo de `sparkforge_aws/adapters/_core.py` ja segue (`is_dir()` chama
 o extrator de arvore, arquivo chama o de caminho) e ela existe porque uma
 migracao de Glue e julgada sobre o CONJUNTO de artefatos do job -- codigo,
 `requirements*.txt` e `.jar` --, que so um diretorio carrega. Um `.py`
@@ -27,7 +27,7 @@ import json
 
 import pytest
 
-from sparkforge.cli.forge import main
+from sparkforge_aws.cli.forge import main
 
 
 def _job(raiz):

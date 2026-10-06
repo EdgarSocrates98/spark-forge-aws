@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from sparkforge.adapters.cli import build_parser, main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.collect import aws as collect_aws
+from sparkforge_aws.adapters.cli import build_parser, main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.collect import aws as collect_aws
 
 JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
 
@@ -151,7 +151,7 @@ class TestFuse:
         # Nao ha `analyze sql` na CLI (extrator de SQL nao esta cabeado, mesmo
         # gap dos outros extratores da Fase 1) -- gera o arquivo de facts
         # direto pela API Python, como um coletor externo faria.
-        from sparkforge.facts.sql_literal import extract_sql_path
+        from sparkforge_aws.facts.sql_literal import extract_sql_path
 
         facts = extract_sql_path(lib / "q.sql", repo_root=lib)
         path = repo / "sql_facts.json"
@@ -385,7 +385,7 @@ class TestStrictGatesNaCLI:
         return run(args, capsys)
 
     def _bench_facts(self, repo, kinds):
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.findings.models import Fact
 
         path = repo / "facts_gate.json"
         path.write_text(
@@ -423,7 +423,7 @@ class TestStrictGatesNaCLI:
         assert main(["case", "update", "--repo", str(repo), "--phase", "validation"]) == 2
         err = capsys.readouterr().err
         assert "baseline_captured" in err
-        assert "sparkforge benchmark" in err
+        assert "sparkforge-aws benchmark" in err
 
     def test_o_booleano_manual_nao_destrava_sob_rigor(self, repo, capsys):
         """D-4b-2: `--gate-value true` seria override sem motivo e sem registro."""
@@ -609,7 +609,7 @@ class TestCaseOpenNaoApagaRigorEmSilencio:
     def test_a_tool_mcp_recusa_pelo_mesmo_caminho(self, repo, capsys):
         """Os tres adaptadores chegam ao mesmo lugar -- senao a garantia seria
         so da CLI, e o MCP viraria a porta dos fundos."""
-        from sparkforge.adapters.tools import call_tool
+        from sparkforge_aws.adapters.tools import call_tool
 
         self._estrito_com_override(repo, capsys)
         recusa = call_tool(
@@ -628,11 +628,11 @@ class TestCaseOpenNaoApagaRigorEmSilencio:
 class TestErrorsAreActionable:
     def test_missing_case_names_the_command_that_fixes_it(self, repo, capsys):
         assert main(["case", "get", "--repo", str(repo)]) == 2
-        assert "sparkforge case open" in capsys.readouterr().err
+        assert "sparkforge-aws case open" in capsys.readouterr().err
 
     def test_missing_facts_file_is_actionable(self, repo, capsys):
         assert main(["judge", "--facts", str(repo / "nope.json"), "--glue", "5.0"]) == 2
-        assert "sparkforge analyze pyspark" in capsys.readouterr().err
+        assert "sparkforge-aws analyze pyspark" in capsys.readouterr().err
 
 
 class TestRuntimeAndRules:
@@ -712,7 +712,7 @@ class TestValidateChecksTheBenchmarkRef:
 
     def _facts_file(self, tmp_path, *ids_source):
         """Facts REAIS, para que os ids saiam de `Fact.id` e nao de literais."""
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.findings.models import Fact
 
         facts = [
             Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": n})
@@ -766,7 +766,7 @@ class TestValidateChecksTheBenchmarkRef:
             ["validate", "--findings", str(path), "--facts", str(tmp_path / "nope.json")]
         ) == 2
         err = capsys.readouterr().err
-        assert "sparkforge benchmark --before" in err
+        assert "sparkforge-aws benchmark --before" in err
         assert "analyze pyspark" not in err
 
 
@@ -831,13 +831,13 @@ class TestCollect:
         assert json.loads(output)["cache_hit"] is True
 
     def test_missing_boto3_names_pip_install_and_manual_path(self, repo, capsys, monkeypatch):
-        from sparkforge.collect.base import CollectorUnavailable
+        from sparkforge_aws.collect.base import CollectorUnavailable
 
         def boom():
             raise CollectorUnavailable(
                 "boto3 nao disponivel. Instale com `pip install 'sparkforge-aws[aws]'` "
                 "para usar coletores AWS, ou colete o artefato manualmente (AWS CLI ou "
-                "console) e registre-o com `sparkforge.collect.register_artifact`."
+                "console) e registre-o com `sparkforge_aws.collect.register_artifact`."
             )
 
         monkeypatch.setattr(collect_aws, "require_boto3", boom)
@@ -858,14 +858,14 @@ class TestCollect:
         assert "jr_3.jsonl" in err
 
     def test_verify_reports_missing_artifact_with_recollect_command(self, repo, capsys):
-        from sparkforge.collect.base import ArtifactEntry, register_artifact
+        from sparkforge_aws.collect.base import ArtifactEntry, register_artifact
 
         entry = ArtifactEntry(
             kind="event_log",
             path=".sparkforge/artifacts/eventlog/jr_gone.jsonl",
             sha256="a" * 64,
             source="s3://bucket/prefix/jr_gone/",
-            collect_command="sparkforge collect event-log --job-run jr_gone",
+            collect_command="sparkforge-aws collect event-log --job-run jr_gone",
             collected_at="2026-07-29T00:00:00Z",
         )
         register_artifact(entry, repo)
@@ -1483,7 +1483,7 @@ class TestBenchmark:
         err = capsys.readouterr().err
         assert "--after" in err
         assert "--before" not in err
-        assert "sparkforge analyze event-log" in err
+        assert "sparkforge-aws analyze event-log" in err
         assert "analyze pyspark" not in err
 
     def test_the_message_names_the_before_side_when_it_is_the_one_missing(self, repo, capsys):
@@ -1500,11 +1500,11 @@ class TestBenchmark:
         caminhos precisam continuar corretos -- e nenhum deles fala de lado."""
         assert main(["analyze", "call-graph", "--facts", str(repo / "nope.json")]) == 2
         err = capsys.readouterr().err
-        assert "sparkforge analyze pyspark" in err
+        assert "sparkforge-aws analyze pyspark" in err
         assert "--before" not in err and "--after" not in err
 
         assert main(["judge", "--facts", str(repo / "nope.json"), "--glue", "5.0"]) == 2
-        assert "sparkforge analyze pyspark" in capsys.readouterr().err
+        assert "sparkforge-aws analyze pyspark" in capsys.readouterr().err
 
 
 _FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
@@ -1641,8 +1641,8 @@ class TestFuncvalPlan:
             == 2
         )
         err = capsys.readouterr().err
-        assert "sparkforge analyze pyspark" in err
-        assert "sparkforge analyze catalog-schema" in err
+        assert "sparkforge-aws analyze pyspark" in err
+        assert "sparkforge-aws analyze catalog-schema" in err
 
     def test_out_into_a_missing_directory_is_actionable(self, repo, capsys):
         pyspark_facts, _ = self._facts(repo, capsys)
@@ -1656,7 +1656,7 @@ class TestFuncvalPlan:
             )
             == 2
         )
-        assert "sparkforge funcval plan" in capsys.readouterr().err
+        assert "sparkforge-aws funcval plan" in capsys.readouterr().err
 
 
 class TestFuncvalCompare:
@@ -1847,7 +1847,7 @@ class TestFuncvalCompare:
             == 2
         )
         err = capsys.readouterr().err
-        assert "sparkforge funcval compare" in err
+        assert "sparkforge-aws funcval compare" in err
 
     def test_a_plan_ref_from_another_plan_is_refused(self, repo, capsys):
         """O ponto cego que `build_comparison` nao ve: o modulo recebe o `attrs`
@@ -1876,7 +1876,7 @@ class TestFuncvalCompare:
         )
         err = capsys.readouterr().err
         assert "f_000000" in err
-        assert "sparkforge funcval plan" in err
+        assert "sparkforge-aws funcval plan" in err
 
     def test_the_real_plan_ref_passes(self, repo, capsys):
         """A outra metade: sem ela, a recusa acima passaria por rejeitar tudo."""
@@ -1949,7 +1949,7 @@ class TestFuncvalCompare:
         )
         err = capsys.readouterr().err
         assert "--plan" in err
-        assert "sparkforge funcval plan" in err
+        assert "sparkforge-aws funcval plan" in err
 
     def test_missing_result_file_says_who_measures(self, repo, capsys):
         """O resultado e do operador, e a mensagem tem que dizer isso: mandar
@@ -2237,14 +2237,14 @@ class TestCliMcpEquivalence:
             assert plataforma in erro, plataforma
 
     def test_collect_verify_matches(self, repo, capsys):
-        from sparkforge.collect.base import ArtifactEntry, register_artifact
+        from sparkforge_aws.collect.base import ArtifactEntry, register_artifact
 
         entry = ArtifactEntry(
             kind="event_log",
             path=".sparkforge/artifacts/eventlog/jr_x.jsonl",
             sha256="a" * 64,
             source="s3://bucket/prefix/jr_x/",
-            collect_command="sparkforge collect event-log --job-run jr_x",
+            collect_command="sparkforge-aws collect event-log --job-run jr_x",
             collected_at="2026-07-29T00:00:00Z",
         )
         register_artifact(entry, repo)
@@ -2305,7 +2305,7 @@ class TestEmrFlag:
 
 class TestGlueJobRunsCommands:
     def test_analyze_cloudwatch_prints_metric_facts(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         artifact = tmp_path / "cw.json"
         artifact.write_text(
@@ -2334,7 +2334,7 @@ class TestGlueJobRunsCommands:
         assert payload["by_kind"]["glue.metric"] == 1
 
     def test_analyze_glue_job_runs_writes_out_file(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         runs_dir = tmp_path / "runs"
         runs_dir.mkdir()
@@ -2415,14 +2415,14 @@ class TestSqlMetricsCommand:
         return alvo
 
     def test_analyze_sql_metrics_prints_scan_facts(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         assert main(["analyze", "sql-metrics", "--path", str(self._log(tmp_path))]) == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["by_kind"]["spark.sql.scan"] == 1
 
     def test_out_file_carries_the_measured_bytes(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         out = tmp_path / "facts.json"
         code = main(
@@ -2457,7 +2457,7 @@ class TestWorkloadCommand:
         return alvo
 
     def test_workload_is_a_top_level_verb(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         code = main(
             ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
@@ -2470,7 +2470,7 @@ class TestWorkloadCommand:
         assert payload["axes"]["skew_risk"]["confidence"] == "measured"
 
     def test_axes_without_evidence_are_listed_as_unknown(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         main(
             ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
@@ -2561,7 +2561,7 @@ class TestCapacityCommand:
         return facts, historico
 
     def test_capacity_is_a_top_level_verb(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts, historico = self._monta(tmp_path)
         code = main(
@@ -2586,7 +2586,7 @@ class TestCapacityCommand:
         assert payload["chosen"]["safety"] == "REVIEW"
 
     def test_out_file_carries_the_whole_plan(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts, historico = self._monta(tmp_path)
         out = tmp_path / "plan.json"
@@ -2667,7 +2667,7 @@ class TestFinopsCommand:
         return facts
 
     def test_finops_is_a_top_level_verb(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts = self._monta(tmp_path)
         code = main(["finops", "--facts", str(facts), "--job-name", "etl"])
@@ -2715,7 +2715,7 @@ class TestTuneCommand:
         return facts
 
     def test_tune_derives_from_the_measured_shuffle(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts = self._monta(tmp_path)
         code = main(["tune", "--facts", str(facts)])
@@ -2729,7 +2729,7 @@ class TestTuneCommand:
         assert payload["runtime"]["aqe_default"] is True
 
     def test_out_writes_the_full_report(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts = self._monta(tmp_path)
         destino = tmp_path / "tune.json"
@@ -2749,7 +2749,7 @@ class TestCaseHypothesisSurface:
     """
 
     def _case(self, tmp_path):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         main(
             [
@@ -2768,7 +2768,7 @@ class TestCaseHypothesisSurface:
         return tmp_path
 
     def test_the_three_parts_are_required_together(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         repo = self._case(tmp_path)
         capsys.readouterr()
@@ -2778,7 +2778,7 @@ class TestCaseHypothesisSurface:
         assert "prediction" in capsys.readouterr().err
 
     def test_a_hypothesis_is_recorded_with_its_experiment(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         repo = self._case(tmp_path)
         capsys.readouterr()
@@ -2803,7 +2803,7 @@ class TestCaseHypothesisSurface:
         assert case["hypotheses"][0]["status"] == "open"
 
     def test_closing_needs_an_outcome(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         repo = self._case(tmp_path)
         capsys.readouterr()
@@ -2814,7 +2814,7 @@ class TestCaseHypothesisSurface:
 
     def test_the_loop_closes_and_resume_stops_showing_it(self, tmp_path, capsys):
         """O ciclo inteiro: abre, fecha, e `resume` para de listar."""
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         repo = self._case(tmp_path)
         main(
@@ -2864,7 +2864,7 @@ class TestEconomyReportCommand:
     `.sparkforge/traces.db` real do repositorio."""
 
     def test_an_unknown_run_refuses_by_name(self, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         code = main(["economy", "report", "--run-id", "run_inexistente"])
 
@@ -2874,7 +2874,7 @@ class TestEconomyReportCommand:
         assert {"reason": "run_unresolved", "count": 1} in payload["unresolved"]
 
     def test_the_surface_at_rest_comes_in_the_payload(self, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         main(["economy", "report", "--run-id", "run_inexistente"])
         payload = json.loads(capsys.readouterr().out)
@@ -2891,9 +2891,9 @@ class TestEconomyReportCommand:
         longa, isso deixava o relatorio vazio ate o processo terminar. Este
         e o caso que estava quebrado: SEM `flush()` nenhum, no MESMO
         processo, `call_tool` grava e `economy report` tem que enxergar."""
-        from sparkforge.adapters import tools
-        from sparkforge.adapters.cli import main
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.adapters.cli import main
+        from sparkforge_aws.observability import context_ledger
 
         run_id = "run_mesmo_processo"
         ledger = context_ledger.ContextLedger(

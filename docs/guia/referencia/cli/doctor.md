@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge doctor`
+# `sparkforge-aws doctor`
 
 Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. Sai 1 com alguma falha.
 
@@ -8,14 +8,14 @@ Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowled
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge doctor agentic`](#sparkforge-doctor-agentic) | Confere readiness local do plano agêntico, sem rede. |
+| [`sparkforge-aws doctor agentic`](#sparkforge-aws-doctor-agentic) | Confere readiness local do plano agêntico, sem rede. |
 
-## `sparkforge doctor agentic`
+## `sparkforge-aws doctor agentic`
 
 Confere readiness local do plano agêntico, sem rede.
 
 ```bash
-sparkforge doctor agentic --help
+sparkforge-aws doctor agentic --help
 ```
 
 ### Opções

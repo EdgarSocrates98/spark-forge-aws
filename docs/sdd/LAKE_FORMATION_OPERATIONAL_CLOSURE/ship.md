@@ -42,7 +42,7 @@ houve benchmark AWS nem DPUSeconds observado nesta feature.
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-lf-knowledge tests/test_offline_expansion.py tests/test_refresh_knowledge.py -q` (exit 0; 43 passed)
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-batches tests/test_suite_batches.py -q` (exit 0; 4 passed)
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-sdd tests/test_sdd.py -q` (exit 0; 165 passed)
-- `sparkforge sdd check --repo . --feature LAKE_FORMATION_OPERATIONAL_CLOSURE` (exit 0; sem recusas ou lacunas)
+- `sparkforge-aws sdd check --repo . --feature LAKE_FORMATION_OPERATIONAL_CLOSURE` (exit 0; sem recusas ou lacunas)
 
 ## Checklist da revisão contra a main `8b8fb54a`
 

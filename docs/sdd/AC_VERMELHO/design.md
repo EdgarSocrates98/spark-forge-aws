@@ -9,8 +9,8 @@ upstream:
   sha256: "b5c21733458e22a326813765e35ab39fca5e5919535df967df1f9aa1e2cfc1f7"
 files:
   - {path: tests/test_sdd_ac_vermelho.py, action: create, reason: "os quatro testes de AC1 a AC4, sobre features sinteticas em tmp_path"}
-  - {path: sparkforge/sdd/checks.py, action: modify, reason: "_gate_acceptance_red novo, registrado na tupla de gates do build_report ao lado de _gate_red"}
-  - {path: sparkforge/sdd/schema/define.json, action: modify, reason: "campo opcional guard (string, minLength 1) no item de acceptance, que hoje tem additionalProperties false"}
+  - {path: sparkforge_aws/sdd/checks.py, action: modify, reason: "_gate_acceptance_red novo, registrado na tupla de gates do build_report ao lado de _gate_red"}
+  - {path: sparkforge_aws/sdd/schema/define.json, action: modify, reason: "campo opcional guard (string, minLength 1) no item de acceptance, que hoje tem additionalProperties false"}
   - {path: docs/sdd/CONTRATO.md, action: modify, reason: "a recusa acceptance_never_red entra na tabela de recusas, e guard entra no campo acceptance"}
   - {path: docs/sdd/templates/define.md, action: modify, reason: "o template mostra como declarar guard"}
   - {path: skills/sdd-define/SKILL.md, action: modify, reason: "quando declarar guard, e que o verified_by precisa ser visto vermelho"}
@@ -64,14 +64,14 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| o gate | `sparkforge/sdd/checks.py`, `tests/test_sdd_ac_vermelho.py` | AC1, AC2, AC4 |
-| a guarda no schema | `sparkforge/sdd/schema/define.json` | AC3 |
+| o gate | `sparkforge_aws/sdd/checks.py`, `tests/test_sdd_ac_vermelho.py` | AC1, AC2, AC4 |
+| a guarda no schema | `sparkforge_aws/sdd/schema/define.json` | AC3 |
 | documentação e skills | `docs/sdd/CONTRATO.md`, `docs/sdd/templates/define.md`, `skills/sdd-define/SKILL.md`, `skills/sdd-build/SKILL.md` | AC5 |
 | registros | `docs/surface.lock.json`, `docs/claims.lock.json` | AC6 |
 
 ## Onde o gate mora
 
-`sparkforge/sdd/checks.py::_GATES["build_report"]` já roda `_gate_red`, que confere
+`sparkforge_aws/sdd/checks.py::_GATES["build_report"]` já roda `_gate_red`, que confere
 `red.exit != 0` **por tarefa**. O gate novo roda na mesma tupla e confere **por critério**:
 ele lê `ctx.artefatos["define"]`, `["plan"]` e `["ship"]`, e só age com o ship ausente ou
 fora de `done`.

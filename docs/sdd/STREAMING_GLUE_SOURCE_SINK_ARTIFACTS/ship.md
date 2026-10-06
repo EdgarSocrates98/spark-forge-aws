@@ -38,7 +38,7 @@ ACs.
 - `python scripts/check_status_numbers.py --strict`.
 - `python scripts/verify_offline_bundle.py --check`.
 - `python scripts/check_surface_lock.py`.
-- `sparkforge sdd check --repo . --feature STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`.
 - Suíte completa não executada; permanece para fase explicitamente solicitada.
 
 ## Limites

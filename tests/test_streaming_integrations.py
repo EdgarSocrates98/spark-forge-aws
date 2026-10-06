@@ -7,12 +7,12 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters._core import analyze_streaming_integrations
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.facts.streaming_integrations import extract_streaming_integrations_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters._core import analyze_streaming_integrations
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.facts.streaming_integrations import extract_streaming_integrations_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_integrations"
@@ -69,7 +69,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-integrations",
             "--path",

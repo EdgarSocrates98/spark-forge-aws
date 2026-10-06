@@ -1,6 +1,6 @@
 # DEFINE: Autonomia L3 — pacote de proposta de PR
 
-> `sparkforge change propose --sandbox <id>` monta em `.sparkforge/proposal/<id>/` o pacote de um PR — patch, rollback, corpo assinado, evidência, recibo e os comandos que o host roda — a partir de um sandbox já validado, sem executar git nem gh.
+> `sparkforge-aws change propose --sandbox <id>` monta em `.sparkforge/proposal/<id>/` o pacote de um PR — patch, rollback, corpo assinado, evidência, recibo e os comandos que o host roda — a partir de um sandbox já validado, sem executar git nem gh.
 
 ## Metadata
 
@@ -51,7 +51,7 @@ O sandbox do L2 prova o que um diff move nos achados, mas termina num `report.js
 - [ ] Golden do pacote igual byte a byte em 2 execuções seguidas com o mesmo `now` (idempotência)
 - [ ] 4 de 4 recusas cobertas por golden ou teste de unidade, cada uma sem nenhum arquivo gravado
 - [ ] `report verify` devolve `status: verified` para o `pr_body.md` de 1 pacote golden
-- [ ] 0 chamada a `subprocess`, `git` ou `gh` em `sparkforge/change/proposal.py` (teste por AST)
+- [ ] 0 chamada a `subprocess`, `git` ou `gh` em `sparkforge_aws/change/proposal.py` (teste por AST)
 - [ ] `git apply --check` do `change.patch` passa contra a árvore de origem no teste, e o `rollback.patch` devolve os bytes originais
 - [ ] Policy padrão com 2 regras novas em `ask`, e `.claude/settings.json` regenerado com `Bash(git push *)` e `Bash(gh pr create *)`
 - [ ] Tools 102 -> 103; suíte em 9 lotes com 0 falha; gates de lastro, números e superfície sem divergência
@@ -105,7 +105,7 @@ O sandbox do L2 prova o que um diff move nos achados, mas termina num `report.js
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/change/{proposal,refusals}.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `skills/propose-change-pr/`, `.sparkforge/policy.yaml`, `.gitignore` | Estende o módulo do §15 |
+| **Deployment Location** | `sparkforge_aws/change/{proposal,refusals}.py`, `sparkforge_aws/adapters/{_core,cli,tools}.py`, `skills/propose-change-pr/`, `.sparkforge/policy.yaml`, `.gitignore` | Estende o módulo do §15 |
 | **KB Domains** | Nenhum domínio do agentspec cobre o fluxo; padrões do próprio repositório (sandbox, receipt, report sign, skill `run-debate`) | O design lê os três módulos |
 | **IaC Impact** | None | |
 
@@ -119,7 +119,7 @@ O sandbox do L2 prova o que um diff move nos achados, mas termina num `report.js
 | A-002 | O diff original não fica guardado; `change.patch` regenerado de `before/` para `after/` nos `files_changed` equivale a ele para `git apply` | Patch diferente do validado | [ ] conferir com `git apply --check` no build |
 | A-003 | O scan de `after/` deixa `facts_<analyze>.json` e `findings.json` em `after/.sparkforge/scan/`, entrada válida para `receipt_emit` e `report sign` | Recibo e assinatura sem entrada | [x] `_scan_gravar` |
 | A-004 | O bloco de assinatura do `report sign` não atrapalha a leitura do corpo no GitHub | Corpo do PR poluído | [ ] conferir os delimitadores no design |
-| A-005 | O recibo aceita montar a parte de spans como `unresolved` sem `run_id` do processo | Recibo dependente das chamadas anteriores | [ ] conferir em `sparkforge/receipt/` no design |
+| A-005 | O recibo aceita montar a parte de spans como `unresolved` sem `run_id` do processo | Recibo dependente das chamadas anteriores | [ ] conferir em `sparkforge_aws/receipt/` no design |
 | A-006 | Regra `bash` com `ask` vira `Bash(<regra>)` no `permissions.ask` pelo `sync-settings` | Confirmação só na skill | [x] `policy/settings.py::regras_ask` |
 
 ---

@@ -1,6 +1,6 @@
-from sparkforge.dq_ai.assessment import build_assessment_facts
-from sparkforge.facts.glue_dq_advanced import extract_glue_dq_advanced
-from sparkforge.reporting.dq_ai import build_dq_ai_report
+from sparkforge_aws.dq_ai.assessment import build_assessment_facts
+from sparkforge_aws.facts.glue_dq_advanced import extract_glue_dq_advanced
+from sparkforge_aws.reporting.dq_ai import build_dq_ai_report
 
 
 def test_report_has_exactly_three_views_and_zero_provider_calls():

@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge debate`
+# `sparkforge-aws debate`
 
 Conduz e arbitra o protocolo de debate do case. Nao gera argumento: quem escreve cada submissao e o host.
 
@@ -8,17 +8,17 @@ Conduz e arbitra o protocolo de debate do case. Nao gera argumento: quem escreve
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge debate next`](#sparkforge-debate-next) | O brief do lado da vez, ou `done` com a Decision. Grava a Decision no fechamento; depois dele devolve sempre o mesmo `done`. |
-| [`sparkforge debate referee`](#sparkforge-debate-referee) | Diz se o fechamento declarado pode ser publicado: hipotese que sobrevive, claim sem evidencia, objecao sem replica, referencia pendurada. |
-| [`sparkforge debate start`](#sparkforge-debate-start) | Congela o plano de debate do par --rules A,B em <repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml. |
-| [`sparkforge debate submit`](#sparkforge-debate-submit) | Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual. |
+| [`sparkforge-aws debate next`](#sparkforge-aws-debate-next) | O brief do lado da vez, ou `done` com a Decision. Grava a Decision no fechamento; depois dele devolve sempre o mesmo `done`. |
+| [`sparkforge-aws debate referee`](#sparkforge-aws-debate-referee) | Diz se o fechamento declarado pode ser publicado: hipotese que sobrevive, claim sem evidencia, objecao sem replica, referencia pendurada. |
+| [`sparkforge-aws debate start`](#sparkforge-aws-debate-start) | Congela o plano de debate do par --rules A,B em <repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml. |
+| [`sparkforge-aws debate submit`](#sparkforge-aws-debate-submit) | Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual. |
 
-## `sparkforge debate next`
+## `sparkforge-aws debate next`
 
 O brief do lado da vez, ou `done` com a Decision. Grava a Decision no fechamento; depois dele devolve sempre o mesmo `done`.
 
 ```bash
-sparkforge debate next --help
+sparkforge-aws debate next --help
 ```
 
 ### Opções
@@ -32,12 +32,12 @@ sparkforge debate next --help
 
 [`sparkforge_debate_next`](../tools/sparkforge_debate_next.md), [`sparkforge_debate_start`](../tools/sparkforge_debate_start.md), [`sparkforge_debate_submit`](../tools/sparkforge_debate_submit.md)
 
-## `sparkforge debate referee`
+## `sparkforge-aws debate referee`
 
 Diz se o fechamento declarado pode ser publicado: hipotese que sobrevive, claim sem evidencia, objecao sem replica, referencia pendurada.
 
 ```bash
-sparkforge debate referee --help
+sparkforge-aws debate referee --help
 ```
 
 ### Opções
@@ -50,12 +50,12 @@ sparkforge debate referee --help
 
 [`sparkforge_debate_referee`](../tools/sparkforge_debate_referee.md)
 
-## `sparkforge debate start`
+## `sparkforge-aws debate start`
 
 Congela o plano de debate do par --rules A,B em <repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml.
 
 ```bash
-sparkforge debate start --help
+sparkforge-aws debate start --help
 ```
 
 ### Opções
@@ -79,12 +79,12 @@ sparkforge debate start --help
 
 [`sparkforge_debate_next`](../tools/sparkforge_debate_next.md), [`sparkforge_debate_start`](../tools/sparkforge_debate_start.md), [`sparkforge_debate_submit`](../tools/sparkforge_debate_submit.md)
 
-## `sparkforge debate submit`
+## `sparkforge-aws debate submit`
 
 Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual.
 
 ```bash
-sparkforge debate submit --help
+sparkforge-aws debate submit --help
 ```
 
 ### Opções

@@ -9,7 +9,7 @@ upstream:
   sha256: "8394911db5ccb3a8b239b1434e4fafb07c110eb1def792bedd5f01557d213890"
 files:
   - {path: tests/test_facts_glue_streaming.py, action: modify, reason: "Cobrir objeto/lista, aliases, campos escalares, ausência e formato inválido."}
-  - {path: sparkforge/facts/glue_streaming.py, action: modify, reason: "Emitir facts explícitos de source/sink e unresolved nomeado."}
+  - {path: sparkforge_aws/facts/glue_streaming.py, action: modify, reason: "Emitir facts explícitos de source/sink e unresolved nomeado."}
   - {path: fixtures/glue_streaming, action: modify, reason: "Adicionar endpoints ao corpus positivo e regenerar goldens/metas."}
   - {path: scripts/regen_glue_streaming_fixtures.py, action: modify, reason: "Manter regeneração determinística do corpus."}
   - {path: knowledge/glue-streaming-rtm.md, action: modify, reason: "Documentar endpoints e limites de observação."}

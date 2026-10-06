@@ -45,7 +45,7 @@ A QUINTA ENTRADA NAO E UM RUNTIME, e ela cabe aqui sem mecanismo novo. A matriz
 do Control-M Automation API (`knowledge/controlm/`) tem DOIS eixos e nao um --
 capacidade com fronteira de versao, e componente com exigencia por versao --,
 entao ela nao tem `versions:` e nao carrega por `_carrega_matriz_fechada` (a
-razao mora em `sparkforge/controlm/__init__.py`). O que ela tem em comum com as
+razao mora em `sparkforge_aws/controlm/__init__.py`). O que ela tem em comum com as
 quatro e exatamente o que ESTE arquivo precisa: um `.md` com tabelas e um
 `.yaml` que ninguem obriga a concordar com elas. `matrix.drift_view()` achata os
 dois eixos e as recusas em `{chave: {coluna: valor}}`, que e a forma que o
@@ -70,8 +70,8 @@ from typing import Any
 
 import pytest
 
-from sparkforge.controlm import matrix as controlm_matrix
-from sparkforge.facts import runtime_matrix
+from sparkforge_aws.controlm import matrix as controlm_matrix
+from sparkforge_aws.facts import runtime_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
 KNOWLEDGE = ROOT / "knowledge"
@@ -151,7 +151,7 @@ class Plataforma:
 def _chave(rotulo: str) -> str:
     """Normaliza o rotulo de linha para a chave do YAML.
 
-    Mesma normalizacao de `sparkforge.facts.runtime_detect._emr_key`: o prefixo
+    Mesma normalizacao de `sparkforge_aws.facts.runtime_detect._emr_key`: o prefixo
     `emr-` cai, o resto sobrevive cru -- inclusive `spark-8.0.0`, que e release
     label de verdade e nao um numero.
     """

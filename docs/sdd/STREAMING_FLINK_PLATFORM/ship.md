@@ -27,9 +27,9 @@ compatível, exactly-once ou comportamento de uma aplicação não observada.
 
 ## Entrega
 
-- extrator determinístico `sparkforge/facts/flink.py` para job, operator,
+- extrator determinístico `sparkforge_aws/facts/flink.py` para job, operator,
   checkpoint, state, aplicação Managed Flink, config, connector e metric;
-- `sparkforge analyze flink` e `sparkforge_analyze_flink`, com seleção explícita
+- `sparkforge-aws analyze flink` e `sparkforge_analyze_flink`, com seleção explícita
   de `flink` ou `managed_flink`;
 - regras `SF-FLINK-001` para checkpoint falho e `SF-FLINK-002` para backpressure
   positivo observado, sem disparar por métrica ausente;
@@ -49,7 +49,7 @@ compatível, exactly-once ou comportamento de uma aplicação não observada.
 | surface | `python scripts/check_surface_lock.py` | exit 0; 0 divergências |
 | conhecimento | `python scripts/verify_offline_bundle.py` | exit 0; 60 documentos |
 | números correntes | `python scripts/check_status_numbers.py --strict` | exit 0; 0 divergências |
-| SDD | `sparkforge sdd check --repo . --feature STREAMING_FLINK_PLATFORM` | `ok: true`; 0 recusas; 0 unresolved |
+| SDD | `sparkforge-aws sdd check --repo . --feature STREAMING_FLINK_PLATFORM` | `ok: true`; 0 recusas; 0 unresolved |
 
 ## Rollback
 

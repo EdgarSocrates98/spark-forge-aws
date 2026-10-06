@@ -1,5 +1,5 @@
 # Catálogo de regras — compatibilidade de migração entre versões de Glue
-# Depende do extrator `sparkforge/facts/migration.py` (Tasks 4–6 desta fase), que
+# Depende do extrator `sparkforge_aws/facts/migration.py` (Tasks 4–6 desta fase), que
 # observa sinais de migração no código-fonte sem julgar. Julgamento -- se um sinal é
 # bloqueante para uma versão-alvo -- pertence a esta regra, com `runtime_scope`
 # declarado quando (e só quando) a fronteira de versão está confirmada na matriz de
@@ -267,7 +267,7 @@ rules:
       precisa de avaliação. O que seria defeito é tratá-la como se não fosse.
     proposed_change:
       - Rodar a avaliação de migração para o par (`previous_value` -> `value`)
-        sobre o código do job, não só sobre o Terraform -- `sparkforge.migration.assessment.assess`
+        sobre o código do job, não só sobre o Terraform -- `sparkforge_aws.migration.assessment.assess`
         expande o caminho em degraus e aplica o catálogo `SF-MIG` em cada um.
       - Tratar os gates de dados, performance e custo dessa avaliação como trabalho
         do PR, não como formalidade -- eles nascem `BLOCKED` porque exigem execução

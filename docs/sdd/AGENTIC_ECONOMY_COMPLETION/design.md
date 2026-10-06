@@ -8,14 +8,14 @@ upstream:
   path: docs/sdd/AGENTIC_ECONOMY_COMPLETION/define.md
   sha256: "09ed7d9a4d2afc67aad54aa898a4421c4e865847d46388eef2aef650f3e8a577"
 files:
-  - {path: sparkforge/workspace/federation.py, action: create, reason: "compositor público para SemanticGraph, live artifact e bridges explícitas"}
-  - {path: sparkforge/workspace/__init__.py, action: modify, reason: "exportar compose_workspace_graph"}
-  - {path: sparkforge/workspace/manifest.py, action: modify, reason: "validar bridges declaradas no workspace manifest"}
+  - {path: sparkforge_aws/workspace/federation.py, action: create, reason: "compositor público para SemanticGraph, live artifact e bridges explícitas"}
+  - {path: sparkforge_aws/workspace/__init__.py, action: modify, reason: "exportar compose_workspace_graph"}
+  - {path: sparkforge_aws/workspace/manifest.py, action: modify, reason: "validar bridges declaradas no workspace manifest"}
   - {path: tests/test_workspace_federation.py, action: create, reason: "AC1: união static/live sem inferência"}
-  - {path: sparkforge/knowledge_engine/packs.py, action: modify, reason: "cachear assinatura de descriptors e evitar releitura de corpos"}
+  - {path: sparkforge_aws/knowledge_engine/packs.py, action: modify, reason: "cachear assinatura de descriptors e evitar releitura de corpos"}
   - {path: tests/test_knowledge_compiler.py, action: modify, reason: "AC2: hit e invalidação do cache de descriptors"}
-  - {path: sparkforge/adapters/mcp_compact.py, action: modify, reason: "publicar execute_read e execute_mutation com annotations distintas"}
-  - {path: sparkforge/adapters/mcp.py, action: modify, reason: "mensagem e catálogo da nova superfície compacta"}
+  - {path: sparkforge_aws/adapters/mcp_compact.py, action: modify, reason: "publicar execute_read e execute_mutation com annotations distintas"}
+  - {path: sparkforge_aws/adapters/mcp.py, action: modify, reason: "mensagem e catálogo da nova superfície compacta"}
   - {path: fixtures/mcp_parity/compact_tools_list.json, action: modify, reason: "golden dos nomes compactos"}
   - {path: fixtures/mcp_parity/compact_calls.json, action: modify, reason: "casos de parity do executor read"}
   - {path: tests/test_adapters_mcp_compact.py, action: modify, reason: "AC3: annotations, roteamento e refusals por intenção"}

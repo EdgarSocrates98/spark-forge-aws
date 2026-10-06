@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.evals.suite import load_suite
-from sparkforge.sdd.checks import check
-from sparkforge.sdd.status import status
+from sparkforge_aws.evals.suite import load_suite
+from sparkforge_aws.sdd.checks import check
+from sparkforge_aws.sdd.status import status
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE_DIR = ROOT / "evals" / "agentic" / "sdd"
@@ -94,7 +94,7 @@ def test_suite_carrega_e_exige_as_tools():
 
 def test_runner_conhece_a_suite_sdd():
     from scripts import run_agentic_eval as runner
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     assert runner.SDD_SUITE_DIR == SUITE_DIR
     assert runner._suite_dir("sdd") == SUITE_DIR

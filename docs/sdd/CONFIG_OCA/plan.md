@@ -53,7 +53,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters.tools import TOOLS
+from sparkforge_aws.adapters.tools import TOOLS
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -90,7 +90,7 @@ MAPA = (
         "config/agentic-expansion.yaml",
         "tools",
         _tool_existe,
-        "entrada em sparkforge.adapters.tools.TOOLS",
+        "entrada em sparkforge_aws.adapters.tools.TOOLS",
     ),
 )
 
@@ -145,7 +145,7 @@ python -m pytest tests/test_config_declarado_existe.py -q
 
 Falha esperada: **exit 1**, `2 failed`. O `test_todo_nome_declarado_resolve` lista as sete
 linhas `config/agentic-expansion.yaml :: tools :: sparkforge_... (deveria ser entrada em
-sparkforge.adapters.tools.TOOLS)`, e o `test_toda_tool_declarada_existe` acusa as sete
+sparkforge_aws.adapters.tools.TOOLS)`, e o `test_toda_tool_declarada_existe` acusa as sete
 ainda no texto do registro. **Não é erro de coleta** — as duas falham por asserção.
 
 ### 3. Código mínimo
@@ -168,7 +168,7 @@ Exit 0, 2 passed.
 ```bash
 python -m pytest tests/test_sf_stubs.py tests/test_criterio_de_dominio.py -q
 python -m pytest tests/test_agent_coverage.py tests/test_router_agents.py -q
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 ```
 
 Faça `git add` do arquivo novo antes de qualquer teste que confira a árvore versionada.
@@ -228,7 +228,7 @@ def test_o_registro_de_subagents_saiu_e_ninguem_o_le():
 
     Os contratos existiam -- 16 de 16 -- e eram BYTE-IDENTICOS abaixo de `## Contract`;
     a descricao de cada um era o proprio nome com o hifen trocado por espaco. Nenhum
-    modulo de `sparkforge/`, `scripts/` ou `tests/` os lia, ao contrario de `skills/` e
+    modulo de `sparkforge_aws/`, `scripts/` ou `tests/` os lia, ao contrario de `skills/` e
     `agents/`, que varios leem. A lacuna U1 do define -- um consumidor FORA do
     repositorio -- nao e alcancavel daqui, e o rollback do D3 e a rede dela.
     """
@@ -236,7 +236,7 @@ def test_o_registro_de_subagents_saiu_e_ninguem_o_le():
     assert not (ROOT / "subagents").exists()
 
     # E nenhum modulo passou a citar o que saiu.
-    for diretorio in ("sparkforge", "scripts", "tests"):
+    for diretorio in ("sparkforge-aws", "scripts", "tests"):
         for arquivo in sorted((ROOT / diretorio).rglob("*.py")):
             if arquivo.name == "test_config_declarado_existe.py":
                 continue
@@ -329,7 +329,7 @@ refactor(config): remove sixteen subagent contracts that nothing dispatched
 
 The sixteen files existed, and that was all. Below `## Contract` they were
 byte-identical, and each one's description was its own name with the hyphen
-turned into a space. Nothing in `sparkforge/`, `scripts/` or `tests/` read the
+turned into a space. Nothing in `sparkforge_aws/`, `scripts/` or `tests/` read the
 registry or the contracts, while `skills/` and `agents/` are read by several
 modules each.
 

@@ -14,7 +14,7 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze cloudwatch
+  - sparkforge-aws analyze cloudwatch
 ---
 
 # AWS Observability
@@ -84,7 +84,7 @@ o despacho é recusado.
   cobertura própria; CloudTrail aqui é operational auditing, não threat hunting.
 - **Análise de Spark UI / event log de job Glue/EMR**: use `analyze-spark-ui`
   (leitura de abas do Spark UI e facts de event log) ou o verbo
-  `sparkforge analyze cloudwatch` (métricas de run) — estes extraem facts
+  `sparkforge-aws analyze cloudwatch` (métricas de run) — estes extraem facts
   determinísticos do artefato; a observabilidade AWS aqui é configuração e
   depuração da infraestrutura de monitoramento.
 - **Revisar Terraform de plataforma de dados**: `review-terraform-data-platform`
@@ -151,7 +151,7 @@ Esta skill trata **observabilidade AWS, métricas, logs e sinais de execução**
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze cloudwatch`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze cloudwatch`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

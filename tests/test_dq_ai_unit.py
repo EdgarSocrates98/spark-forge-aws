@@ -1,7 +1,7 @@
 import json
 
-from sparkforge.dq_ai.assessment import build_assessment_facts
-from sparkforge.facts.glue_dq_advanced import (
+from sparkforge_aws.dq_ai.assessment import build_assessment_facts
+from sparkforge_aws.facts.glue_dq_advanced import (
     extract_glue_dq_advanced,
     extract_glue_dq_advanced_path,
 )

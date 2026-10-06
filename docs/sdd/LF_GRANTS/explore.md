@@ -6,20 +6,20 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "Extrator derivado sparkforge/facts/lakeformation_missing_grant.py, chamado em fuse(), que recebe a uniao dos facts (error.signature_match, lakeformation.grant, iam.access_decision, lakeformation.access_model, lakeformation.registered_location, sql.write_statement, escritas PySpark, runtime) e emite lakeformation.missing_grant ou lakeformation.missing_grant.unresolved; tabela operacao->permissao como dado em knowledge/ com fonte T1; regra nova SF-LF-011 que consome o fact; build_access_graph passa a consumir o fact quando existe."
+    summary: "Extrator derivado sparkforge_aws/facts/lakeformation_missing_grant.py, chamado em fuse(), que recebe a uniao dos facts (error.signature_match, lakeformation.grant, iam.access_decision, lakeformation.access_model, lakeformation.registered_location, sql.write_statement, escritas PySpark, runtime) e emite lakeformation.missing_grant ou lakeformation.missing_grant.unresolved; tabela operacao->permissao como dado em knowledge/ com fonte T1; regra nova SF-LF-011 que consome o fact; build_access_graph passa a consumir o fact quando existe."
     tradeoffs:
       - "unico caminho em que a permissao ausente vira achado julgado por judge"
       - "ERR-LF-001 passa a ter evidence_required que algum extrator emite"
       - "uma definicao so do que falta: grafo e regra leem o mesmo fact"
       - "mais caro em registros manuais: listas de extrator, surface lock, gate de lastro, goldens"
   - id: B
-    summary: "Verbo de composicao sparkforge lakeformation missing-grant, irmao de access_graph, que devolve a permissao ausente sem emitir fact nem regra."
+    summary: "Verbo de composicao sparkforge-aws lakeformation missing-grant, irmao de access_graph, que devolve a permissao ausente sem emitir fact nem regra."
     tradeoffs:
       - "diff menor, nao toca o motor de regras"
       - "judge nunca acusa; ERR-LF-001 segue com evidencia que nenhum extrator emite"
       - "nao atende o pedido de uma regra que cruza com a falha"
   - id: C
-    summary: "Derivar missing_grant dentro de sparkforge/errors/matcher.py quando uma assinatura ERR-LF-* casa."
+    summary: "Derivar missing_grant dentro de sparkforge_aws/errors/matcher.py quando uma assinatura ERR-LF-* casa."
     tradeoffs:
       - "sem arquivo novo"
       - "o matcher recebe log, nao a uniao dos facts; passaria a depender de grant, IAM e codigo"
@@ -44,8 +44,8 @@ artefato primeiro."
 
 - **Os coletores já existem.** `collect lakeformation` produz `lakeformation.grant`,
   `lakeformation.registered_location` e `lakeformation.data_lake_settings`
-  (`sparkforge/facts/lakeformation_grants.py`). `collect iam-access` produz
-  `iam.access_decision` (`sparkforge/facts/iam_access.py`), por
+  (`sparkforge_aws/facts/lakeformation_grants.py`). `collect iam-access` produz
+  `iam.access_decision` (`sparkforge_aws/facts/iam_access.py`), por
   `iam:SimulatePrincipalPolicy` e não pelo documento da policy. A escolha foi deliberada:
   boundary, SCP, deny explícito e condição não aparecem no documento do role.
 - **Regras que leem esses kinds existem, mas cada uma lê um kind só:** `SF-LF-007` a
@@ -55,7 +55,7 @@ artefato primeiro."
   `lakeformation.missing_grant` em `evidence_required`, e nenhum extrator emite esse kind
   (`rules/catalog/errors.yaml`, comentários em torno de `SF-ERR-006` e `SF-ERR-014`). Por
   isso `SF-ERR-006` só consegue dizer que "algum elo falta" e manda `investigate`.
-- **`build_access_graph`** (`sparkforge/lakeformation/graph.py`) fixa `SELECT` ou `ALL`
+- **`build_access_graph`** (`sparkforge_aws/lakeformation/graph.py`) fixa `SELECT` ou `ALL`
   como o que a perna LF exige, sem olhar a operação que falhou. Sob escrita, isso acusa a
   permissão errada.
 
@@ -86,7 +86,7 @@ A lacuna real, portanto, não é coletor: é o fact derivado que ERR-LF-001 já 
    - modelo `both` ou desconhecido sai `unresolved`.
    Restrição que decorre disso: a escrita sob FGAC depende também da versão (o Glue 5.0
    não escreve, o 5.1 escreve). O extrator consulta o eixo que já existe como dado em
-   `sparkforge/facts/lakeformation_matrix.py`, e runtime desconhecido sai `unresolved`.
+   `sparkforge_aws/facts/lakeformation_matrix.py`, e runtime desconhecido sai `unresolved`.
    Rejeitadas: ignorar o modelo (sob FGAC aponta o grant do LF quando o que falta é IAM)
    e restringir a feature a FTA.
 4. **O que fazer com `build_access_graph`.** Resposta: o grafo consome
@@ -100,7 +100,7 @@ A lacuna real, portanto, não é coletor: é o fact derivado que ERR-LF-001 já 
 - **A** (recomendada) põe a derivação num extrator, onde a união dos facts já chega (em
   `fuse()`), e dá à regra um fact que ela consegue ler. A regra 33 exige isso: "permissão
   exigida ∉ conjunto concedido" não cabe nos seis comparadores de
-  `sparkforge/rules/expr.py`.
+  `sparkforge_aws/rules/expr.py`.
 - **B** resolve a pergunta para quem chama o verbo, mas não produz achado. `judge` continua
   cego, e a evidência de `ERR-LF-001` continua sendo um kind que nenhum extrator emite.
 - **C** economiza um arquivo e paga com acoplamento: o matcher de erro passaria a receber

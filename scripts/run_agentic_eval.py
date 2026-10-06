@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Roda o nivel de agente de uma suite: uma sessao `claude -p` por pergunta.
 
-FORA do pacote de proposito (regra 23): `sparkforge/` nao dispara host nem chama
-provider, e o grader (`python -m sparkforge.evals grade`) so le arquivo. Este script e o
+FORA do pacote de proposito (regra 23): `sparkforge_aws/` nao dispara host nem chama
+provider, e o grader (`python -m sparkforge_aws.evals grade`) so le arquivo. Este script e o
 unico lugar do repositorio que gasta token, e so quando o operador o roda --
 nunca no CI.
 
@@ -18,7 +18,7 @@ Para cada pergunta da suite:
 
 `run.json` e `scorecard.json` ficam em cada execucao, e o conjunto
 `~/.sparkforge/agentic-evals/<suite>-<data>/` junta os N scorecards (`r1.json`...)
-para `python -m sparkforge.evals compare`. `run.json` registra argv,
+para `python -m sparkforge_aws.evals compare`. `run.json` registra argv,
 `claude --version`, data, a suite (id e sha256), o workspace de prova e o
 status de cada pergunta. Pergunta que falhou no host (`host_failed`) segue sem
 transcript, e o grader a conta como `transcript_not_found` -- nunca como erro.
@@ -45,7 +45,7 @@ Superficie de tools (`--surface`), acrescentada em 2026-09-15 para medir se o
 TAMANHO da superficie muda o comportamento do agente. `full` e o servidor MCP
 inteiro. `suite` nega, por `--disallowedTools`, toda tool do registro que o
 gabarito da suite nao exige -- a lista sai de `required_tools` contra
-`sparkforge.adapters.tools.TOOLS`, nunca do argv. Os dois bracos gravam em
+`sparkforge_aws.adapters.tools.TOOLS`, nunca do argv. Os dois bracos gravam em
 `run.json` quantas tools MCP o agente pode ver.
 
 Uso:
@@ -68,9 +68,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from sparkforge.adapters.tools import TOOLS  # noqa: E402
-from sparkforge.evals.cli import SCORECARD, eval_grade  # noqa: E402
-from sparkforge.evals.suite import QUESTION_ID, Question, Suite, load_suite  # noqa: E402
+from sparkforge_aws.adapters.tools import TOOLS  # noqa: E402
+from sparkforge_aws.evals.cli import SCORECARD, eval_grade  # noqa: E402
+from sparkforge_aws.evals.suite import QUESTION_ID, Question, Suite, load_suite  # noqa: E402
 
 AGENTIC = ROOT / "evals" / "agentic"
 SUITE_DIR = AGENTIC / "fase0"
@@ -91,21 +91,21 @@ FONTES = {
     "project,local": "project,local",
     "user,project,local": "user,project,local",
 }
-WORKSPACE_DIRS = ("sparkforge", "rules", "knowledge", "skills", "agents", "fixtures")
+WORKSPACE_DIRS = ("sparkforge_aws", "rules", "knowledge", "skills", "agents", "fixtures")
 WORKSPACE_FILES = ("CLAUDE.md", "AGENTS.md", "AGENT_PROTOCOL.md", "pyproject.toml")
 SEM_GABARITO = {"expected", "meta.yaml", "host_transcript", "__pycache__", ".pytest_cache"}
 ALLOWED_TOOLS = ",".join(
     (
-        "mcp__sparkforge",
-        "Bash(sparkforge:*)",
-        "Bash(python -m sparkforge:*)",
+        "mcp__sparkforge-aws",
+        "Bash(sparkforge-aws:*)",
+        "Bash(python -m sparkforge_aws:*)",
         "Read",
         "Grep",
         "Glob",
     )
 )
 SUPERFICIES = ("full", "suite")
-MCP_PREFIX = "mcp__sparkforge__"
+MCP_PREFIX = "mcp__sparkforge-aws__"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -418,7 +418,7 @@ def main(argv: list[str] | None = None) -> int:
         (conjunto / f"r{rodada}.json").write_text(scorecard + "\n", encoding="utf-8")
         print(f"run {run_id}: {destino / SCORECARD}", flush=True)
     print(
-        f"conjunto {conjunto.name}: python -m sparkforge.evals compare --suite {suite.id} "
+        f"conjunto {conjunto.name}: python -m sparkforge_aws.evals compare --suite {suite.id} "
         f"--baseline <baseline> --candidate {conjunto.name}",
         flush=True,
     )

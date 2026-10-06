@@ -14,12 +14,12 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.agentic.executor.authority import (
+from sparkforge_aws.agentic.executor.authority import (
     in_scope,
     load_authority_map,
     tier_for_url,
 )
-from sparkforge.agentic.models import EvidenceAuthority
+from sparkforge_aws.agentic.models import EvidenceAuthority
 
 
 @pytest.fixture(scope="module")

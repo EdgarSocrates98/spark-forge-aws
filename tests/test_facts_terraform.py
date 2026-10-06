@@ -1,13 +1,13 @@
 import textwrap
 
-from sparkforge.facts.terraform import (
+from sparkforge_aws.facts.terraform import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     extract_terraform,
     extract_terraform_path,
     extract_terraform_tree,
 )
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.validate import validate_fact
 
 EXPECTED_KINDS = {
     "tf.attribute",

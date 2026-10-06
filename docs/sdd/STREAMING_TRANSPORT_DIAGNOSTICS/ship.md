@@ -35,14 +35,14 @@ de diagnóstico causal, throughput, custo ou cobertura produtiva.
 ## Entrega
 
 - Extrator determinístico para dumps JSON/JSONL Kafka, MSK e Kinesis.
-- Tool MCP e comando `sparkforge analyze transport` compartilhando o core.
+- Tool MCP e comando `sparkforge-aws analyze transport` compartilhando o core.
 - Goldens positivos e cegos, com aliases Kinesis API e campos ausentes nomeados.
 - Knowledge, fontes, manifest, parity, surface e referências regeneradas.
 - SDD da feature corrigido para o schema oficial e com RED/GREEN registrado.
 
 ## Gates
 
-- `sparkforge sdd check --repo . --feature STREAMING_TRANSPORT_DIAGNOSTICS`: exit 0,
+- `sparkforge-aws sdd check --repo . --feature STREAMING_TRANSPORT_DIAGNOSTICS`: exit 0,
   `ok: true`, zero recusas e zero unresolved.
 - Lote direcionado: `877 passed`.
 - `python scripts/check_status_numbers.py --strict`: exit 0.

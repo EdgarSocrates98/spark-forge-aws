@@ -36,10 +36,10 @@ catalogo em qualquer dia, que e o que o `rules_lookup` promete.
 
 | Verbo | Flag | O que ganha |
 |---|---|---|
-| `sparkforge judge` / `sparkforge_judge` | `--source-freshness` / `source_freshness: true` | `source_freshness` (so as URLs citadas na pagina) e `freshness_policy` |
-| `sparkforge rules lookup` / `sparkforge_rules_lookup` | idem | idem, para as regras da pagina |
-| `sparkforge knowledge path` / `sparkforge_knowledge_path` | idem | Com `--file`, o estado de cada URL da secao `Fontes` do documento; sem `--file`, `freshness_by_doc` (contagem por estado) |
-| `sparkforge report github` | `--source-freshness` | Secao "Fontes que pedem releitura" no resumo do PR |
+| `sparkforge-aws judge` / `sparkforge_judge` | `--source-freshness` / `source_freshness: true` | `source_freshness` (so as URLs citadas na pagina) e `freshness_policy` |
+| `sparkforge-aws rules lookup` / `sparkforge_rules_lookup` | idem | idem, para as regras da pagina |
+| `sparkforge-aws knowledge path` / `sparkforge_knowledge_path` | idem | Com `--file`, o estado de cada URL da secao `Fontes` do documento; sem `--file`, `freshness_by_doc` (contagem por estado) |
+| `sparkforge-aws report github` | `--source-freshness` | Secao "Fontes que pedem releitura" no resumo do PR |
 
 Detalhes que valem para todos:
 - `--as-of AAAA-MM-DD` fixa o dia de referencia; sem ele, e hoje em UTC.
@@ -63,7 +63,7 @@ Revalidar uma fonte e reler a pagina e subir o `retrieved` da regra (ou do
 documento) para uma data igual ou posterior ao `changed_at`.
 
 **O leitor da secao `Fontes`** mora em
-`sparkforge/knowledge_freshness.py::fontes_de_knowledge`, e o script importa
+`sparkforge_aws/knowledge_freshness.py::fontes_de_knowledge`, e o script importa
 dele: uma copia so, usada tanto pelo refresh quanto pelo `knowledge_path` no
 pacote instalado.
 
@@ -92,7 +92,7 @@ O estado responde "esta fonte mudou depois de eu le-la?". O radar (§17 de
 ser relido e rodado de novo**.
 
 ```bash
-sparkforge knowledge drift [--source <url do lock>] [--as-of AAAA-MM-DD]
+sparkforge-aws knowledge drift [--source <url do lock>] [--as-of AAAA-MM-DD]
 ```
 
 O filtro chama `source`, e nao `url`, de proposito: o INV-009 recusa argumento

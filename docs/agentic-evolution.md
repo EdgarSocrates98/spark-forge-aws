@@ -1,9 +1,9 @@
 # Evolu‡Æo Agˆntica do SparkForge
 
 > **Dois pacotes com nome parecido, e eles não são a mesma coisa.** Este
-> documento descreve `sparkforge/agents/` — `ConversationRoom`,
+> documento descreve `sparkforge_aws/agents/` — `ConversationRoom`,
 > `AutonomyController`, `Supervisor`, `budget`, `model_policy` —, a camada de
-> orquestração que existe desde a expansão agêntica. `sparkforge/agentic/`
+> orquestração que existe desde a expansão agêntica. `sparkforge_aws/agentic/`
 > (2026-09-03) é OUTRO pacote: entidades de primeira classe (`Claim`,
 > `Evidence`, `Decision`), protocolo de debate, arbitragem e blackboard JSONL,
 > e ele é **biblioteca sem produtor** — nada no produto escreve nessas
@@ -82,10 +82,10 @@ efetivamente promocao e avaliacao conforme a politica declarada.
 Operação local:
 
 ```bash
-python -m sparkforge.evals candidate validate --repo .
-python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant
-python -m sparkforge.evals candidate promote --repo . --candidate routing-variant --allow-active
-python -m sparkforge.evals candidate rollback --repo . --candidate routing-variant --previous routing-baseline
+python -m sparkforge_aws.evals candidate validate --repo .
+python -m sparkforge_aws.evals candidate evaluate --repo . --candidate routing-variant
+python -m sparkforge_aws.evals candidate promote --repo . --candidate routing-variant --allow-active
+python -m sparkforge_aws.evals candidate rollback --repo . --candidate routing-variant --previous routing-baseline
 ```
 
 ### Hardening de evidence e lifecycle
@@ -119,8 +119,8 @@ O caminho surrogate continua offline e nao executa comandos externos. Os modos
 bundle e external sao opt-in pela CLI:
 
 ```bash
-python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant --bundle path/to/bundle.json
-python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant --external-command command-id
+python -m sparkforge_aws.evals candidate evaluate --repo . --candidate routing-variant --bundle path/to/bundle.json
+python -m sparkforge_aws.evals candidate evaluate --repo . --candidate routing-variant --external-command command-id
 ```
 
 ### Active promotion provenance

@@ -9,7 +9,7 @@ resource "aws_glue_job" "etl_clean_observed" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl_clean.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl_clean.py"
     python_version  = "3"
   }
 
@@ -17,10 +17,10 @@ resource "aws_glue_job" "etl_clean_observed" {
   # presentes. Este job NAO pode aparecer nos findings de SF-GLUE-002.
   default_arguments = {
     "--enable-spark-ui"                  = "true"
-    "--spark-event-logs-path"            = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"            = "s3://sparkforge-aws-demo/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
     "--job-bookmark-option"              = "job-bookmark-disable"
-    "--TempDir"                          = "s3://sparkforge-demo/temp/"
+    "--TempDir"                          = "s3://sparkforge-aws-demo/temp/"
   }
 
   execution_property {
@@ -39,7 +39,7 @@ resource "aws_glue_job" "etl_no_observability_a" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl_a.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl_a.py"
     python_version  = "3"
   }
 
@@ -47,7 +47,7 @@ resource "aws_glue_job" "etl_no_observability_a" {
   # ofensor de SF-GLUE-002 neste arquivo.
   default_arguments = {
     "--job-bookmark-option" = "job-bookmark-disable"
-    "--TempDir"             = "s3://sparkforge-demo/temp/"
+    "--TempDir"             = "s3://sparkforge-aws-demo/temp/"
   }
 }
 
@@ -62,7 +62,7 @@ resource "aws_glue_job" "etl_no_observability_b" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl_b.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl_b.py"
     python_version  = "3"
   }
 
@@ -72,6 +72,6 @@ resource "aws_glue_job" "etl_no_observability_b" {
   # (que tem os dois argumentos) mascare nenhum dos dois.
   default_arguments = {
     "--job-bookmark-option" = "job-bookmark-disable"
-    "--TempDir"             = "s3://sparkforge-demo/temp/"
+    "--TempDir"             = "s3://sparkforge-aws-demo/temp/"
   }
 }

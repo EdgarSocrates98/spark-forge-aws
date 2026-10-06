@@ -21,15 +21,15 @@
 - `knowledge/sources.lock.json` tem **247** fontes; cada entrada ja carrega `rules` (ids que a citam) e `docs` (paginas de `knowledge/`). **21** foram conferidas por hash (`sha256`, `checked_at`); **0** tem `changed_at`; **15** sao fixas por versao. O primeiro salto do grafo (fonte -> regras e docs) ja existe no lock.
 - `scripts/refresh_knowledge.py::render_report` ja lista, por URL que mudou, as regras e as paginas que a citam e o `retrieved` declarado.
 - **O refresh semanal falha desde 2026-08-10, cinco execucoes seguidas.** A conferencia roda e o commit do lock e feito; o passo do PR quebra com `pull request create failed: GraphQL: GitHub Actions is not permitted to create or approve pull requests (createPullRequest)` -- configuracao do repositorio (Settings -> Actions -> General). As paginas da BMC devolvem 403 e o script as marca ilegiveis, sem tratar como "nao mudou".
-- `sparkforge/knowledge_freshness.py` ja calcula o estado de uma citacao (`estado`, `mapa`, `carregar_lock` com `SPARKFORGE_SOURCES_LOCK`, `fontes_de_knowledge`) e o script do refresh importa dele.
-- Ligacoes que existem em arquivo: evals citam `rule_id` 57 vezes em 12 arquivos; agentes, 50 vezes em 13 arquivos, e declaram `rule_areas` (lido por `sparkforge/case/playbook.py`); skills nao citam `rule_id`. Regra -> golden e o `expected/findings.json` de cada fixture (`tests/test_fixtures_kind_coverage.py::_rules_fired_in_goldens`, so em teste).
-- O wheel leva `sparkforge`, `rules/catalog` e `knowledge` (`pyproject.toml`). `fixtures/`, `evals/` e `agents/` NAO vao no pip install.
+- `sparkforge_aws/knowledge_freshness.py` ja calcula o estado de uma citacao (`estado`, `mapa`, `carregar_lock` com `SPARKFORGE_SOURCES_LOCK`, `fontes_de_knowledge`) e o script do refresh importa dele.
+- Ligacoes que existem em arquivo: evals citam `rule_id` 57 vezes em 12 arquivos; agentes, 50 vezes em 13 arquivos, e declaram `rule_areas` (lido por `sparkforge_aws/case/playbook.py`); skills nao citam `rule_id`. Regra -> golden e o `expected/findings.json` de cada fixture (`tests/test_fixtures_kind_coverage.py::_rules_fired_in_goldens`, so em teste).
+- O wheel leva `sparkforge-aws`, `rules/catalog` e `knowledge` (`pyproject.toml`). `fixtures/`, `evals/` e `agents/` NAO vao no pip install.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/knowledge_drift.py` (novo), `scripts/refresh_knowledge.py`, `adapters/{_core,cli,tools}.py`, `docs/knowledge-freshness.md` | Modulo puro ao lado de `knowledge_freshness.py`; duas portas |
+| Likely Location | `sparkforge_aws/knowledge_drift.py` (novo), `scripts/refresh_knowledge.py`, `adapters/{_core,cli,tools}.py`, `docs/knowledge-freshness.md` | Modulo puro ao lado de `knowledge_freshness.py`; duas portas |
 | Relevant KB Domains | Nenhum dominio do KB do agentspec cobre proveniencia de conhecimento; a fonte e o proprio repositorio | Padroes: `knowledge_freshness`, `_rules_fired_in_goldens`, `playbook` |
 | IaC Patterns | GitHub Actions (`refresh-knowledge.yml`) | O workflow nao muda; a permissao de abrir PR e configuracao do operador |
 
@@ -54,7 +54,7 @@
 | Input files | `knowledge/sources.lock.json` + um lock sintetico com `changed_at` | 247 fontes reais | O sintetico marca mudanca depois do `retrieved` de algumas regras reais |
 | Output examples | `scripts/refresh_knowledge.py::render_report` | 1 | Forma atual do relatorio; o radar acrescenta a secao de impacto |
 | Ground truth | `fixtures/*/*/expected/findings.json`, `evals/**`, `agents/*.md` | 432 fixtures, 12 arquivos de eval, 13 agentes com `rule_id` | O impacto esperado e conferivel por grep |
-| Related code | `sparkforge/knowledge_freshness.py`, `tests/test_fixtures_kind_coverage.py`, `sparkforge/case/playbook.py`, `fixtures/sarif/freshness` | 4 | Estado por citacao, regra -> golden, `rule_areas`, lock sintetico em golden |
+| Related code | `sparkforge_aws/knowledge_freshness.py`, `tests/test_fixtures_kind_coverage.py`, `sparkforge_aws/case/playbook.py`, `fixtures/sarif/freshness` | 4 | Estado por citacao, regra -> golden, `rule_areas`, lock sintetico em golden |
 
 **How samples will be used:**
 
@@ -68,7 +68,7 @@
 
 ### Approach A: Calculado na leitura ⭐ Recommended
 
-**Description:** `sparkforge/knowledge_drift.py` recebe lock, catalogo, secoes `Fontes` e a raiz do repositorio (opcional). Para cada URL com `changed_at`, pega as citacoes (regras e docs), da a cada uma o estado de `knowledge_freshness.estado`, e para cada regra `stale` segue os saltos por arquivo: goldens, evals, agentes. Sem raiz de repositorio, os tres saltos saem `unresolved` (`sem_repositorio`). Verbo `sparkforge knowledge drift`, tool `sparkforge_knowledge_drift`, e a secao "Impacto" do PR do refresh, todos pela mesma funcao.
+**Description:** `sparkforge_aws/knowledge_drift.py` recebe lock, catalogo, secoes `Fontes` e a raiz do repositorio (opcional). Para cada URL com `changed_at`, pega as citacoes (regras e docs), da a cada uma o estado de `knowledge_freshness.estado`, e para cada regra `stale` segue os saltos por arquivo: goldens, evals, agentes. Sem raiz de repositorio, os tres saltos saem `unresolved` (`sem_repositorio`). Verbo `sparkforge-aws knowledge drift`, tool `sparkforge_knowledge_drift`, e a secao "Impacto" do PR do refresh, todos pela mesma funcao.
 
 **Pros:**
 - Reusa o calculo de estado que ja existe e que o script ja importa.

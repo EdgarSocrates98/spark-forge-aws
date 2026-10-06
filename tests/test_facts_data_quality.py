@@ -2,7 +2,7 @@ import ast
 
 import pytest
 
-from sparkforge.facts.data_quality import (
+from sparkforge_aws.facts.data_quality import (
     EMITTED_KINDS,
     extract_data_quality,
     extract_data_quality_path,
@@ -1397,7 +1397,7 @@ def test_a_coluna_nao_muda_o_grupo_de_same_subject():
     # distingue identidade de fact SEM mexer no agrupamento que o `absent` de
     # SF-DQ-002 usa. Se isto quebrar, a regra passa a disparar sobre check
     # protegido.
-    from sparkforge.rules.engine import _subject_group_key
+    from sparkforge_aws.rules.engine import _subject_group_key
 
     facts = _facts(
         "ruins = vendas.filter(vendas.valor < 0).count()\n"

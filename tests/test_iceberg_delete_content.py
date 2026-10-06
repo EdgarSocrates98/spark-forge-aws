@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.iceberg_metadata import (
+from sparkforge_aws.facts.iceberg_metadata import (
     _CONTENT_DE_DELETE,
     extract_iceberg_metadata,
 )

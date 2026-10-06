@@ -12,12 +12,12 @@ Escreve, no fim do relatorio, o bloco que prova CORRESPONDENCIA entre o texto, a
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `findings_path` | string | sim | Findings (JSON) gerados por `sparkforge judge --out`. |
+| `findings_path` | string | sim | Findings (JSON) gerados por `sparkforge-aws judge --out`. |
 | `report_path` | string | sim | Markdown do relatorio. E reescrito no lugar. |
 
 ## Na CLI
 
-[`sparkforge report sign`](../cli/report.md), [`sparkforge report verify`](../cli/report.md)
+[`sparkforge-aws report sign`](../cli/report.md), [`sparkforge-aws report verify`](../cli/report.md)
 
 ## Capacidade
 

@@ -76,7 +76,7 @@ The package remains a local Python runtime. Dependencies flow from pure evidence
 | `PolicyResolver` | Resolve exactly one policy by candidate family, kind, contract id/version; expose policy version and digest. | YAML registry + typed Python model |
 | `BundleFileAdapter` | Read a local JSON/YAML bundle from a declared path and normalize it through the canonical validator. | Filesystem adapter; no execution or network |
 | `AuthorizedCommandAdapter` | Invoke one explicitly allowlisted executable with argv, bounded timeout/output and a temporary input manifest; parse the returned bundle through the same validator. | `subprocess.run(..., shell=False)` and JSON |
-| `EvolutionService` | Orchestrate policy resolution, paired replay, comparison, gates, receipt sequencing and promotion. | Existing `sparkforge/evals/evolution.py` facade |
+| `EvolutionService` | Orchestrate policy resolution, paired replay, comparison, gates, receipt sequencing and promotion. | Existing `sparkforge_aws/evals/evolution.py` facade |
 | `Replay benchmark` | Run the current paired baseline/candidate benchmark once per evaluation and preserve reports as distinct sides. | Existing `run_replay_benchmark` in `decision_replay.py` |
 | `Legacy receipt facade` | Read old receipts and mark missing current fields as compatibility gaps. | Existing receipt reader extended with explicit legacy state |
 | `Evolution registry` | Store policy map and candidate family metadata without introducing infrastructure. | `config/evolution/prompt_agents.yaml` |
@@ -292,11 +292,11 @@ The sequence is an ordering proof, not a wall-clock claim. No timestamp is used 
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/evals/evidence.py` | Create | Canonical bundle, evidence refs, transcript/economy provenance, refusal codes, canonical digest and strict parser. | (general) | None |
-| 2 | `sparkforge/evals/policy.py` | Create | Typed policy key/resolver, policy collection parser, policy digest and missing/ambiguous policy errors. | (general) | 1 |
-| 3 | `sparkforge/evals/evidence_adapters.py` | Create | Bundle-file and authorized-command adapters with allowlist, bounded subprocess and shared normalization. | @sf-security-reviewer | 1, 2 |
-| 4 | `sparkforge/evals/evolution.py` | Modify | Consume resolved policies and bundles, remove duplicate replay execution, write v2 chained receipts, preserve legacy facade and enforce promotion evidence. | (general) | 1, 2, 3, 5 |
-| 5 | `sparkforge/evals/decision_replay.py` | Modify | Accept policy-provided corpus minimum on the new path while preserving standalone legacy suite reads and paired report shape. | (general) | 2 |
+| 1 | `sparkforge_aws/evals/evidence.py` | Create | Canonical bundle, evidence refs, transcript/economy provenance, refusal codes, canonical digest and strict parser. | (general) | None |
+| 2 | `sparkforge_aws/evals/policy.py` | Create | Typed policy key/resolver, policy collection parser, policy digest and missing/ambiguous policy errors. | (general) | 1 |
+| 3 | `sparkforge_aws/evals/evidence_adapters.py` | Create | Bundle-file and authorized-command adapters with allowlist, bounded subprocess and shared normalization. | @sf-security-reviewer | 1, 2 |
+| 4 | `sparkforge_aws/evals/evolution.py` | Modify | Consume resolved policies and bundles, remove duplicate replay execution, write v2 chained receipts, preserve legacy facade and enforce promotion evidence. | (general) | 1, 2, 3, 5 |
+| 5 | `sparkforge_aws/evals/decision_replay.py` | Modify | Accept policy-provided corpus minimum on the new path while preserving standalone legacy suite reads and paired report shape. | (general) | 2 |
 | 6 | `config/evolution/prompt_agents.yaml` | Modify | Replace global-only policy with explicit family/kind/contract policy entry; add command allowlist metadata and v2 registry version. | (general) | 2, 3 |
 | 7 | `tests/test_evaluation_evidence.py` | Create | Unit tests for canonicalization, required identities, tampering, transcript/usage/cost unresolved states and legacy conversion. | (general) | 1 |
 | 8 | `tests/test_evaluation_adapters.py` | Create | File/command adapter equivalence, allowlist, bounded output, invalid output and no-provider tests. | @sf-security-reviewer | 1, 3, 6 |
@@ -556,7 +556,7 @@ Path handling is repository-relative and confined to the declared repository/art
 - Keep raw transcripts and secrets out of receipts and fixtures. Persist hashes, source refs and bounded reason codes only.
 - Constrain fixture, input-manifest and receipt paths to the repository or declared artifact root; reject traversal and symlink escapes where path resolution can detect them.
 - Require independent typed evidence refs for CI, benchmark and review. `ci_verified: true` by itself cannot satisfy the new gate.
-- Keep provider/network imports out of `sparkforge/evals`; enforce with an AST/import test. The core is offline even when a bundle declares `live_external`.
+- Keep provider/network imports out of `sparkforge_aws/evals`; enforce with an AST/import test. The core is offline even when a bundle declares `live_external`.
 - Preserve unresolved states. A missing transcript, invalid usage hash or absent cost basis must never become zero, an empty success or a promotion proof.
 
 ## Observability

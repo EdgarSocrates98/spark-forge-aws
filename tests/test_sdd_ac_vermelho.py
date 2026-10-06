@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.sdd.checks import check
+from sparkforge_aws.sdd.checks import check
 from tests.test_sdd import _codigos, _define_meta, _meta, _reescreve, _restampa, feature_limpa
 
 ROOT = Path(__file__).resolve().parents[1]

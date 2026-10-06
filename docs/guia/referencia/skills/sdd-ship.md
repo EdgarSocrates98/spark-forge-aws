@@ -7,7 +7,7 @@ Use quando o build_report.md da feature está pronto e é hora de entregar — \
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-ship/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge sdd check', 'sparkforge sdd stamp', 'sparkforge change propose']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws change propose']} |
 
 ## Procedimento (texto integral)
 
@@ -20,7 +20,7 @@ disciplina desta skill.
 
 ### Antes de começar
 
-1. `sparkforge sdd check --repo . --feature <F>` com o `build_report.md` em
+1. `sparkforge-aws sdd check --repo . --feature <F>` com o `build_report.md` em
    `ready` ou `done`, e sem recusa. Ship sobre build incompleto é
    `phase_out_of_order`.
 2. Todas as tarefas do relatório em `done`, ou `skipped`/`blocked` com o motivo
@@ -31,7 +31,7 @@ disciplina desta skill.
 ### Derivar os gates
 
 1. Leia `change_kinds` do define.
-2. Para cada chave, `sparkforge/sdd/change_kinds.yaml` dá a `section` de
+2. Para cada chave, `sparkforge_aws/sdd/change_kinds.yaml` dá a `section` de
    `docs/gates-por-mudanca.md` e os `registries` exigidos. Exemplo: skill nova é
    `agent_or_skill` (`sync_skills`, `agents_parity`) mais `tool_or_verb`
    (`surface_lock`, `generated_reference`).
@@ -89,8 +89,8 @@ O de `docs/sdd/README.md#o-laço-de-cada-fase`, fechado assim:
 2. Escreva `ship.md` com `registries`, `hypothesis_outcome`, `deviations` e o
    corpo (hipótese, pendências, gates rodados, comandos de `kind: command` com
    o exit, e `## Lições`).
-3. `sparkforge sdd stamp --repo . docs/sdd/<F>/ship.md`.
-4. `sparkforge sdd check --repo . --feature <F>`: `ok` verdadeiro, zero recusa e
+3. `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/ship.md`.
+4. `sparkforge-aws sdd check --repo . --feature <F>`: `ok` verdadeiro, zero recusa e
    zero lacuna. Então `status: done`.
 5. Commit.
 6. Integração. **Antes de oferecer**, rode de novo os testes da entrega e
@@ -116,15 +116,15 @@ substituída depois vira `status: superseded`.
 ### Perfil operator
 
 - O `ship.md` mora em `.sparkforge/sdd/<F>/`, como as outras fases:
-  `sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+  `sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>`.
 - O pacote do PR sai de
-  `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`,
+  `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`,
   sobre o `change_id` que o build registrou, e o PR pela skill
   `propose-change-pr` (passos em
   `docs/sdd/README.md#caminho-da-mudança-do-operador`). Sem `--funcval` e
   `--benchmark`, o pacote diz PENDENTE.
-- `confirmed` exige medida: `sparkforge funcval compare` para a semântica e
-  `sparkforge benchmark` entre runs para o desempenho. Economia estimada não
+- `confirmed` exige medida: `sparkforge-aws funcval compare` para a semântica e
+  `sparkforge-aws benchmark` entre runs para o desempenho. Economia estimada não
   fecha hipótese.
 - **Grave o que leu.** `evidence: [{change_id, report_sha256}]`, uma entrada
   por `change_id` citado (o do build, o de `moved`, o de `finding`), com o
@@ -154,12 +154,12 @@ substituída depois vira `status: superseded`.
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o build | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| carimbar | `sparkforge sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
-| estado geral | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
-| semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
-| desempenho (operator) | `sparkforge benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
-| PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
+| conferir o build | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
+| estado geral | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
+| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
+| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
+| PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Gates que aparecem em quase toda entrega de dev:
 
@@ -194,7 +194,7 @@ Esta skill trata **fechamento, gates, evidência e rollback do SDD**. Contrato c
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge sdd check`, `sparkforge sdd stamp`, `sparkforge change propose`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws sdd stamp`, `sparkforge-aws change propose`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

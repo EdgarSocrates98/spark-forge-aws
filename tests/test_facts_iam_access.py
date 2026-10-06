@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.iam_access import EMITTED_KINDS, extract_iam_access_path
+from sparkforge_aws.facts.iam_access import EMITTED_KINDS, extract_iam_access_path
 
 
 def _artefato(tmp_path: Path, resultados: list[dict], **extra) -> Path:

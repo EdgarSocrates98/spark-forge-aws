@@ -9,15 +9,15 @@ upstream:
   sha256: "700969e0144189e849eb189053054d40e52e02d593216668aeccab4cf3e8b0e3"
 tasks:
   - id: T1
-    files: [tests/test_dq_ai_unit.py, sparkforge/facts/glue_dq_advanced.py, sparkforge/dq_ai/assessment.py, knowledge/glue/dq-advanced-matrix.yaml]
+    files: [tests/test_dq_ai_unit.py, sparkforge_aws/facts/glue_dq_advanced.py, sparkforge_aws/dq_ai/assessment.py, knowledge/glue/dq-advanced-matrix.yaml]
     covers: [AC1, AC2]
     test: {path: tests/test_dq_ai_unit.py, name: test_sampling_controls_keep_documented_defaults_unobserved}
   - id: T2
-    files: [tests/test_dq_ai_security.py, sparkforge/facts/glue_dq_advanced.py, sparkforge/dq_ai/assessment.py, rules/catalog/data-quality-ai.yaml]
+    files: [tests/test_dq_ai_security.py, sparkforge_aws/facts/glue_dq_advanced.py, sparkforge_aws/dq_ai/assessment.py, rules/catalog/data-quality-ai.yaml]
     covers: [AC3]
     test: {path: tests/test_dq_ai_security.py, name: test_authorization_requires_all_external_evidence_parts}
   - id: T3
-    files: [knowledge/glue/dq-advanced-matrix.yaml, knowledge/glue/dq-advanced-matrix.md, knowledge/offline-manifest.json, knowledge/sources.lock.json, rules/catalog/data-quality-ai.yaml, manifest.json, sparkforge/reporting/dq_ai.py]
+    files: [knowledge/glue/dq-advanced-matrix.yaml, knowledge/glue/dq-advanced-matrix.md, knowledge/offline-manifest.json, knowledge/sources.lock.json, rules/catalog/data-quality-ai.yaml, manifest.json, sparkforge_aws/reporting/dq_ai.py]
     covers: [AC4]
     test: {path: tests/test_dq_ai_report.py, name: test_report_exposes_documented_claims_and_risk_context}
   - id: T4

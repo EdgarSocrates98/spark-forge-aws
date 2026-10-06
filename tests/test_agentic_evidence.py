@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from sparkforge.agentic.evidence import (
+from sparkforge_aws.agentic.evidence import (
     aggregate_strength,
     classify_source,
     detect_conflicts,
     verify_evidence,
 )
-from sparkforge.agentic.models import Evidence, EvidenceAuthority
+from sparkforge_aws.agentic.models import Evidence, EvidenceAuthority
 
 
 class TestClassifySource:

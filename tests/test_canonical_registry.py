@@ -1,7 +1,7 @@
 """Tests for SparkForge Canonical Registry (Phase 2)."""
 import pytest
 
-from sparkforge.registry import (
+from sparkforge_aws.registry import (
     AgentManifest,
     ModelPolicy,
     ModelTier,
@@ -54,7 +54,7 @@ def test_tool_manifest_validation():
     tool = ToolManifest(
         id="sparkforge_analyze_pyspark",
         name="sparkforge_analyze_pyspark",
-        namespace="sparkforge.facts",
+        namespace="sparkforge_aws.facts",
         description="Extract deterministic AST facts from PySpark code",
         input_schema={"type": "object", "properties": {"path": {"type": "string"}}},
         output_schema={"type": "array"},

@@ -3,8 +3,8 @@
 Este guia mostra como achar **por que** um job do AWS Glue está lento, usando o SparkForge.
 Todos os exemplos usam arquivos sintéticos da pasta `fixtures/` e foram rodados de verdade.
 
-Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge` é o comando instalado.
-Se ele não for encontrado, troque por `python -m sparkforge.adapters.cli`. É o mesmo programa.
+Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge-aws` é o comando instalado.
+Se ele não for encontrado, troque por `python -m sparkforge_aws.adapters.cli`. É o mesmo programa.
 
 ## Receita rápida
 
@@ -13,15 +13,15 @@ passos extraem os dados dos três e devolvem os problemas em ordem de gravidade.
 
 ```bash
 # 1. pasta temporária para os resultados (fora do repositório)
-SAIDA=/tmp/sparkforge-guia; mkdir -p "$SAIDA"
+SAIDA=/tmp/sparkforge-aws-guia; mkdir -p "$SAIDA"
 # 2. o código
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --out "$SAIDA/facts_pyspark.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$SAIDA/facts_pyspark.json"
 # 3. o plano físico
-sparkforge analyze plan --path fixtures/plan/pruning_absent/input/plan.txt --out "$SAIDA/facts_plan.json"
+sparkforge-aws analyze plan --path fixtures/plan/pruning_absent/input/plan.txt --out "$SAIDA/facts_plan.json"
 # 4. o event log
-sparkforge analyze event-log --path fixtures/eventlog/skewed_stage/input/eventlog.jsonl --out "$SAIDA/facts_eventlog.json"
+sparkforge-aws analyze event-log --path fixtures/eventlog/skewed_stage/input/eventlog.jsonl --out "$SAIDA/facts_eventlog.json"
 # 5. causas em ordem, e o que ficou sem avaliar
-sparkforge root-cause --facts "$SAIDA/facts_pyspark.json" --facts "$SAIDA/facts_plan.json" \
+sparkforge-aws root-cause --facts "$SAIDA/facts_pyspark.json" --facts "$SAIDA/facts_plan.json" \
   --facts "$SAIDA/facts_eventlog.json" --glue 5.0 --detail-level summary
 ```
 
@@ -87,17 +87,17 @@ Os termos do próprio SparkForge (fact, finding, recusa) estão em [01-conceitos
 |---|---|---|
 | Código do job | Os arquivos `.py` | Já estão no seu repositório |
 | Plano físico | O que o Spark decidiu executar | Rode `df.explain("formatted")` ou `EXPLAIN FORMATTED <consulta>` e salve o texto num arquivo |
-| Event log | O registro de tudo que o Spark executou (é o que a Spark UI mostra) | `sparkforge collect event-log` (acessa AWS) |
-| Métricas do CloudWatch | CPU, memória e outras métricas do run | `sparkforge collect cloudwatch` (acessa AWS) |
-| Histórico de runs | Duração e DPU de cada execução | `sparkforge collect glue-job-runs` (acessa AWS) |
+| Event log | O registro de tudo que o Spark executou (é o que a Spark UI mostra) | `sparkforge-aws collect event-log` (acessa AWS) |
+| Métricas do CloudWatch | CPU, memória e outras métricas do run | `sparkforge-aws collect cloudwatch` (acessa AWS) |
+| Histórico de runs | Duração e DPU de cada execução | `sparkforge-aws collect glue-job-runs` (acessa AWS) |
 
 Os comandos `collect` acessam sua conta AWS. Por isso eles não foram rodados neste guia.
 As flags abaixo foram conferidas no `--help`:
 
 ```bash
-sparkforge collect event-log --repo . --job-run <id-do-run> --bucket <bucket> --prefix <prefixo> --now <ISO8601>
-sparkforge collect cloudwatch --repo . --job-name <job> --job-run <id-do-run> --start <ISO8601> --end <ISO8601> --now <ISO8601>
-sparkforge collect glue-job-runs --repo . --job-name <job> --now <ISO8601>
+sparkforge-aws collect event-log --repo . --job-run <id-do-run> --bucket <bucket> --prefix <prefixo> --now <ISO8601>
+sparkforge-aws collect cloudwatch --repo . --job-name <job> --job-run <id-do-run> --start <ISO8601> --end <ISO8601> --now <ISO8601>
+sparkforge-aws collect glue-job-runs --repo . --job-name <job> --now <ISO8601>
 ```
 
 `--now` é a data e hora atual no formato ISO 8601, por exemplo `2026-09-13T10:00:00Z`.
@@ -107,7 +107,7 @@ sparkforge collect glue-job-runs --repo . --job-name <job> --now <ISO8601>
 ### 1. Confirme a versão do runtime
 
 ```bash
-sparkforge runtime detect --facts "$SAIDA/facts_eventlog.json" --glue 5.0
+sparkforge-aws runtime detect --facts "$SAIDA/facts_eventlog.json" --glue 5.0
 ```
 
 ```json
@@ -130,7 +130,7 @@ sparkforge runtime detect --facts "$SAIDA/facts_eventlog.json" --glue 5.0
 ### 2. Extraia facts do código
 
 ```bash
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --out "$SAIDA/facts_pyspark.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$SAIDA/facts_pyspark.json"
 ```
 
 ```json
@@ -151,7 +151,7 @@ extraído com arquivo e linha.
 ### 3. Extraia facts do plano físico
 
 ```bash
-sparkforge analyze plan --path fixtures/plan/pruning_absent/input/plan.txt --out "$SAIDA/facts_plan.json"
+sparkforge-aws analyze plan --path fixtures/plan/pruning_absent/input/plan.txt --out "$SAIDA/facts_plan.json"
 ```
 
 ```json
@@ -171,7 +171,7 @@ partição chegou até a leitura.
 ### 4. Extraia facts do event log
 
 ```bash
-sparkforge analyze event-log --path fixtures/eventlog/skewed_stage/input/eventlog.jsonl --out "$SAIDA/facts_eventlog.json"
+sparkforge-aws analyze event-log --path fixtures/eventlog/skewed_stage/input/eventlog.jsonl --out "$SAIDA/facts_eventlog.json"
 ```
 
 ```json
@@ -197,9 +197,9 @@ Duas leituras extras do mesmo tipo de arquivo:
 
 ```bash
 # bytes e arquivos lidos por consulta SQL
-sparkforge analyze sql-metrics --path fixtures/sql_metrics/scan_parquet_measured/input/eventlog.jsonl --detail-level summary
+sparkforge-aws analyze sql-metrics --path fixtures/sql_metrics/scan_parquet_measured/input/eventlog.jsonl --detail-level summary
 # métricas do CloudWatch já coletadas
-sparkforge analyze cloudwatch --path fixtures/glue_job_run/correlated/cloudwatch/synthetic-job_jr_0001.json --detail-level summary
+sparkforge-aws analyze cloudwatch --path fixtures/glue_job_run/correlated/cloudwatch/synthetic-job_jr_0001.json --detail-level summary
 ```
 
 Trecho real do primeiro: `"kind": "spark.sql.scan", "measures": { "files_read": 3, "bytes_read": 47185920 }`.
@@ -207,7 +207,7 @@ Trecho real do primeiro: `"kind": "spark.sql.scan", "measures": { "files_read": 
 ### 5. Julgue os facts contra o catálogo de regras
 
 ```bash
-sparkforge judge --facts "$SAIDA/facts_pyspark.json" --facts "$SAIDA/facts_plan.json" \
+sparkforge-aws judge --facts "$SAIDA/facts_pyspark.json" --facts "$SAIDA/facts_plan.json" \
   --facts "$SAIDA/facts_eventlog.json" --glue 5.0 --out "$SAIDA/findings.json"
 ```
 
@@ -258,7 +258,7 @@ disparam com todas na mesma chamada.
 ### 6. Ordene as causas e veja o que ficou sem avaliar
 
 ```bash
-sparkforge root-cause --facts "$SAIDA/facts_pyspark.json" --facts "$SAIDA/facts_plan.json" \
+sparkforge-aws root-cause --facts "$SAIDA/facts_pyspark.json" --facts "$SAIDA/facts_plan.json" \
   --facts "$SAIDA/facts_eventlog.json" --glue 5.0 --detail-level summary
 ```
 
@@ -301,7 +301,7 @@ E a parte que mostra o que **não** foi avaliado:
 `tune` calcula `spark.sql.shuffle.partitions` a partir do shuffle **medido**:
 
 ```bash
-sparkforge tune --facts fixtures/tuning/valor_atual_vem_do_codigo/input/facts.json
+sparkforge-aws tune --facts fixtures/tuning/valor_atual_vem_do_codigo/input/facts.json
 ```
 
 ```json
@@ -367,12 +367,12 @@ medida existe e em `refused` quando falta:
 Os fixtures ficam em `fixtures/tuning/`. Para juntar as medidas:
 
 ```bash
-sparkforge analyze event-log --path eventlog.jsonl --out facts_log.json      # memória por executor
-sparkforge collect parquet-footer --prefix s3://bucket/tabela/ --out footer.json
-sparkforge analyze parquet-footer --path footer.json --out facts_footer.json  # row groups
-sparkforge analyze plan --path plano_com_custo.txt --out facts_plan.json     # df.explain("cost")
-sparkforge fuse --facts facts_log.json --facts facts_footer.json --facts facts_plan.json --out facts.json
-sparkforge tune --facts facts.json --headroom 0.2
+sparkforge-aws analyze event-log --path eventlog.jsonl --out facts_log.json      # memória por executor
+sparkforge-aws collect parquet-footer --prefix s3://bucket/tabela/ --out footer.json
+sparkforge-aws analyze parquet-footer --path footer.json --out facts_footer.json  # row groups
+sparkforge-aws analyze plan --path plano_com_custo.txt --out facts_plan.json     # df.explain("cost")
+sparkforge-aws fuse --facts facts_log.json --facts facts_footer.json --facts facts_plan.json --out facts.json
+sparkforge-aws tune --facts facts.json --headroom 0.2
 ```
 
 `--headroom` é opcional e vale para o overhead e o `broadcastTimeout`: 0.2 acrescenta 20% sobre
@@ -396,8 +396,8 @@ categorias (regra 15):
 O diagnóstico é derivado pelo `fuse`. Rode o `fuse` antes do `judge`:
 
 ```bash
-sparkforge fuse --facts fixtures/timeout/timeout_com_spill_e_skew/input/facts.json --out "$SAIDA/facts_timeout.json"
-sparkforge judge --facts "$SAIDA/facts_timeout.json" --glue 5.0
+sparkforge-aws fuse --facts fixtures/timeout/timeout_com_spill_e_skew/input/facts.json --out "$SAIDA/facts_timeout.json"
+sparkforge-aws judge --facts "$SAIDA/facts_timeout.json" --glue 5.0
 ```
 
 Trecho real do fact derivado e do achado:
@@ -455,7 +455,7 @@ devolve zero achados. Até isso mudar, faça a leitura à mão: se `SF-UI-001` (
 
 - Agent coordenador: [spark-performance-architect](../referencia/agents/spark-performance-architect.md).
 - Job com carga full e incremental, OOM depois de horas: [glue-incremental-performance-architect](../referencia/agents/glue-incremental-performance-architect.md).
-- Skills focadas: [sparkforge-diagnose](../referencia/skills/sparkforge-diagnose.md),
+- Skills focadas: [sparkforge-aws-diagnose](../referencia/skills/sparkforge-aws-diagnose.md),
   [analyze-spark-plan](../referencia/skills/analyze-spark-plan.md),
   [analyze-spark-ui](../referencia/skills/analyze-spark-ui.md),
   [diagnose-data-skew](../referencia/skills/diagnose-data-skew.md),
@@ -474,8 +474,8 @@ devolve zero achados. Até isso mudar, faça a leitura à mão: se `SF-UI-001` (
 ## Próximos passos
 
 1. Corrija o achado de maior severidade. Mude uma coisa por vez.
-2. Antes de mudar, defina o que conferir no resultado com `sparkforge funcval plan` (veja a
+2. Antes de mudar, defina o que conferir no resultado com `sparkforge-aws funcval plan` (veja a
    [referência do funcval](../referencia/cli/funcval.md)).
-3. Rode o job de novo e compare os dois runs com `sparkforge benchmark` (veja a
+3. Rode o job de novo e compare os dois runs com `sparkforge-aws benchmark` (veja a
    [referência do benchmark](../referencia/cli/benchmark.md)). Só escreva "melhorou X%" com essa medida.
 4. Se a dúvida virar custo ou capacidade, siga para [custo-e-capacidade.md](custo-e-capacidade.md).

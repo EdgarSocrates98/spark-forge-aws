@@ -43,8 +43,8 @@ O exemplo do §18 é exato: entre três configurações que cumprem o SLA, escol
 
 **Entra:**
 
-- `sparkforge/capacity/`: o `CapacityPlan`, o `Candidate` e a `Refusal`.
-- Verbo de topo `sparkforge capacity` e a tool MCP correspondente.
+- `sparkforge_aws/capacity/`: o `CapacityPlan`, o `Candidate` e a `Refusal`.
+- Verbo de topo `sparkforge-aws capacity` e a tool MCP correspondente.
 - Contrato de `--history`: um arquivo de facts por run anterior.
 - `reliability_target` e `volume_tolerance` no `workload.yaml` que C2 criou.
 - Domínio de fixture próprio, com módulo golden.
@@ -143,7 +143,7 @@ Arquivo com zero ou com mais de um `glue.job_run` é **recusado com o caminho**,
 
 ## 4. Modelo
 
-Mecanismo próprio em `sparkforge/capacity/`, não extrator — escolher capacidade é juízo, e o precedente é o `WorkloadFingerprint` de C2 e o `MigrationAssessment`.
+Mecanismo próprio em `sparkforge_aws/capacity/`, não extrator — escolher capacidade é juízo, e o precedente é o `WorkloadFingerprint` de C2 e o `MigrationAssessment`.
 
 ```python
 Candidate(
@@ -177,7 +177,7 @@ CapacityPlan(
 ## 5. Superfície
 
 ```
-sparkforge capacity --facts <facts.json> --job-name <job> --job-run <id> --history <dir> [--out F]
+sparkforge-aws capacity --facts <facts.json> --job-name <job> --job-run <id> --history <dir> [--out F]
 ```
 
 **Verbo de topo**, pela mesma regra que `benchmark`, `fuse` e `workload`: os verbos sob `analyze` extraem facts de um artefato, e este não extrai nada — classifica o que outros já extraíram.

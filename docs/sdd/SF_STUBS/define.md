@@ -39,7 +39,7 @@ acceptance:
 success:
   - id: SC1
     metric: "Regras executaveis antes e depois (157 e 157), e nao executaveis (35 e 0)"
-    source: "sparkforge.rules.loader.load_catalog() contado por executable, em 91643841 e no fim do build"
+    source: "sparkforge_aws.rules.loader.load_catalog() contado por executable, em 91643841 e no fim do build"
   - id: SC2
     metric: "Goldens de findings que mudaram, e, nos goldens de assessment, os campos que mudaram"
     source: "testes de golden de fixtures e cenarios rodados sem regenerar; nos assessment.json de fixtures/scenarios e evals/holdout, que carregam a contagem do catalogo, o diff depois da regeneracao"
@@ -74,7 +74,7 @@ agentes, e nenhuma casa com um finding real. É nome de domínio sem artefato.
 ## Fontes citadas
 
 - `docs/sdd/SF_STUBS/explore.md`, seção Medidas (2026-09-19, `main` em `91643841`).
-- `sparkforge/rules/loader.py`, a validação de `executable` nas duas direções.
+- `sparkforge_aws/rules/loader.py`, a validação de `executable` nas duas direções.
 - `tests/test_agent_coverage.py`: área sem coordenador e tool órfã.
 
 ## Critérios

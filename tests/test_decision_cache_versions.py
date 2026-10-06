@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from sparkforge.decision import ArtifactCache, CacheKind, ContractLoader, DecisionCache
-from sparkforge.decision.cache import decision_cache_key
-from sparkforge.decision.runtime import BoundedDecisionKernel
+from sparkforge_aws.decision import ArtifactCache, CacheKind, ContractLoader, DecisionCache
+from sparkforge_aws.decision.cache import decision_cache_key
+from sparkforge_aws.decision.runtime import BoundedDecisionKernel
 
 
 def test_decision_key_contains_policy_and_calibration_versions():

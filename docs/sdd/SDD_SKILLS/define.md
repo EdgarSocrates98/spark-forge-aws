@@ -6,8 +6,8 @@ profile: dev
 status: ready
 hypothesis:
   claim: "Seis skills sdd-* canonicas, espelhadas por sync_skills, dao a quem clona o repo o ciclo spec, plan, build com TDD e ship ancorado no sdd check, sem plugin de usuario."
-  prediction: "As features SDD_OPERATOR, SDD_MIGRATION e SDD_EVAL, escritas com essas skills, fecham com sparkforge sdd check sem recusa, e os gates de skill passam com as seis."
-  experiment: "Escrever as skills e os templates, usar as skills para escrever as tres features seguintes, e rodar sparkforge sdd check --repo . mais os testes de skill."
+  prediction: "As features SDD_OPERATOR, SDD_MIGRATION e SDD_EVAL, escritas com essas skills, fecham com sparkforge-aws sdd check sem recusa, e os gates de skill passam com as seis."
+  experiment: "Escrever as skills e os templates, usar as skills para escrever as tres features seguintes, e rodar sparkforge-aws sdd check --repo . mais os testes de skill."
 acceptance:
   - id: AC1
     statement: "As seis skills sdd-explore, sdd-define, sdd-design, sdd-plan, sdd-build e sdd-ship existem em skills/ com frontmatter valido e as secoes obrigatorias."
@@ -16,7 +16,7 @@ acceptance:
     statement: "Os seis templates de docs/sdd/templates/ formam uma feature que passa no sdd check quando copiados para uma pasta de feature e carimbados em ordem."
     verified_by: {kind: test, ref: "tests/test_sdd_skills.py::test_templates_formam_feature_valida"}
   - id: AC3
-    statement: "Toda linha de comando sparkforge citada nas skills sdd-* e aceita pelo parser da CLI."
+    statement: "Toda linha de comando sparkforge-aws citada nas skills sdd-* e aceita pelo parser da CLI."
     verified_by: {kind: test, ref: "tests/test_sdd_skills.py::test_comandos_citados_existem"}
   - id: AC4
     statement: "vendor/CREDITS.md credita AgentSpec e superpowers, com licenca e o que foi usado como base."
@@ -27,7 +27,7 @@ acceptance:
 success:
   - id: SC1
     metric: "Recusas do sdd check sobre docs/sdd depois de B, C, D e E"
-    source: "sparkforge sdd check --repo . (refused)"
+    source: "sparkforge-aws sdd check --repo . (refused)"
 out_of_scope:
   - "Detalhe do perfil operator alem de apontar para change sandbox e case (subprojeto C)."
   - "Desativar plugins e mover historico (subprojeto D)."
@@ -43,7 +43,7 @@ change_kinds: [agent_or_skill, tool_or_verb]
 
 ## Problema
 
-O nucleo (`sparkforge sdd check|status|stamp`) confere artefatos, mas nada no
+O nucleo (`sparkforge-aws sdd check|status|stamp`) confere artefatos, mas nada no
 repositorio ensina um agente a escreve-los. Hoje quem ensina sao dois plugins de
 nivel usuario (superpowers e AgentSpec), que nao vem com o clone e nao chegam ao
 Devin nem ao Copilot.

@@ -1,6 +1,6 @@
 # Catálogo de regras — execução de job Amazon EMR on EKS (`emr-containers`)
 #
-# Depende do extrator `sparkforge/facts/emr_eks.py`, que lê o dump já coletado
+# Depende do extrator `sparkforge_aws/facts/emr_eks.py`, que lê o dump já coletado
 # de DUAS chamadas guardadas no mesmo arquivo — `describe-virtual-cluster` e
 # `describe-job-run` —, sob as chaves de topo `virtualCluster` e `jobRun`. A
 # pesquisa de fontes que decidiu o que entra e o que fica de fora está em
@@ -49,13 +49,13 @@
 # E MESMO ASSIM as quatro regras declaram `runtime_scope: {}`. "Poder" não é
 # "dever", e o que decide é uma medida a mais, feita nesta Task: **nenhuma fonte
 # alimenta `RuntimeContext.spark` a partir de um artefato `emrc.*`**.
-# `sparkforge/facts/runtime_detect.py` deriva Spark de `GLUE_MATRIX` (por
+# `sparkforge_aws/facts/runtime_detect.py` deriva Spark de `GLUE_MATRIX` (por
 # `glue_version`) e de `EMR_MATRIX` (por release de EMR on EC2, proibida aqui),
 # e lê direto de `spark.runtime_version` do event log. O `releaseLabel` do EMR
 # on EKS não entra em nenhuma das três — a matriz existe publicada pela AWS, e
 # ninguém a wireou. Uma regra desta área com `{spark: ">=3.0"}` passaria no
 # golden (as fixtures declaram `runtime` no `meta.yaml`) e seria PULADA em toda
-# execução real de `sparkforge judge` sobre um dump de EMR on EKS, porque
+# execução real de `sparkforge-aws judge` sobre um dump de EMR on EKS, porque
 # `in_scope` falha FECHADA. Golden verde por SKIP é pior que vermelho: ninguém
 # investiga o que passou. É a mesma conclusão de `emr-serverless.yaml`, por um
 # caminho diferente — lá a matriz não existia; aqui ela existe e não está ligada.
@@ -419,7 +419,7 @@ rules:
     validation:
       - DescribeJobRun de uma submissão nova mostrando s3MonitoringConfiguration.logUri ou cloudWatchMonitoringConfiguration.logGroupName preenchido.
       - "Objetos efetivamente gravados no destino escolhido para esse job novo — configuração declarada e objeto escrito são duas afirmações diferentes, e é a segunda que fecha."
-      - "O event log localizado e legível por sparkforge analyze_event_log, que é a capacidade que o achado diz estar perdida."
+      - "O event log localizado e legível por sparkforge-aws analyze_event_log, que é a capacidade que o achado diz estar perdida."
       - "Contagem total e contagem por chave de negócio do destino de dados iguais às do último run comparável: acrescentar destino de log não pode mudar o resultado do job, e se mudou, a mudança foi outra."
     rollback:
       - Remover o bloco de monitoramento da submissão devolve o estado anterior. O que não volta é o log dos jobs executados no intervalo — e não há por que voltar, porque o estado anterior é o que este achado acusa.
@@ -527,7 +527,7 @@ rules:
       - "Este achado é P2 de propósito: o job executou, e log de container pode existir. Tratá-lo como P1 o poria no mesmo patamar de não haver destino nenhum, que é uma perda maior."
     validation:
       - DescribeJobRun de uma submissão nova mostrando persistentAppUI com o valor ENABLED.
-      - "O event log daquele job novo localizado e legível por sparkforge analyze_event_log, com stages e métricas — é a capacidade que o achado diz estar perdida, e só o artefato prova que ela voltou."
+      - "O event log daquele job novo localizado e legível por sparkforge-aws analyze_event_log, com stages e métricas — é a capacidade que o achado diz estar perdida, e só o artefato prova que ela voltou."
       - "Contagem total e contagem por chave de negócio do destino de dados iguais às do run anterior comparável: ligar a UI é mudança de observabilidade e não pode mudar o resultado; se mudou, mudou outra coisa junto."
     rollback:
       - "Voltar a passar persistentAppUI: DISABLED nas submissões. É alteração no que monta o start-job-run, não no job run já executado — não existe update-job-run."

@@ -43,7 +43,7 @@ git), de 2026-09-17: a camada `sf-*`/`agentic-sf-*` nasceu no commit `308fa4dd`
 ## Medidas (2026-09-19, `main` em `91643841`)
 
 - `rules/catalog/agentic-sf-*.yaml`: 35 arquivos, **1 regra cada, 0 executáveis, 0 com
-  `sources`**. Todas `executable: false`, `when: {all: []}`. `sparkforge/rules/loader.py`
+  `sources`**. Todas `executable: false`, `when: {all: []}`. `sparkforge_aws/rules/loader.py`
   chama isso de "área de coordenação": ela nunca produz finding.
 - `agents/sf-*.md`: 30 coordenadores. **11** declaram ao menos uma área executável
   (`sf-orchestrator`, `sf-pyspark-specialist`, `sf-runtime-specialist`,

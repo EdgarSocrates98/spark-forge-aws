@@ -13,16 +13,16 @@ prove o contrario.
 
 | plano | superficie |
 |---|---|
-| Agentic Runtime | `sparkforge/agentic/` — dispatch, handoff admission, executores |
-| Decision Plane | `sparkforge/decision/` — kernel bounded, receipts, fachada legado |
+| Agentic Runtime | `sparkforge_aws/agentic/` — dispatch, handoff admission, executores |
+| Decision Plane | `sparkforge_aws/decision/` — kernel bounded, receipts, fachada legado |
 | Governor | gates de autoridade/autonomia no runtime agentic |
-| Recovery | `sparkforge/agentic/recovery.py` — policy deterministica |
-| Trust Plane | `sparkforge/agentic/trust.py` — TrustEnvelope, TrustLabel, Taint |
+| Recovery | `sparkforge_aws/agentic/recovery.py` — policy deterministica |
+| Trust Plane | `sparkforge_aws/agentic/trust.py` — TrustEnvelope, TrustLabel, Taint |
 | Memory | handoff-aware, `MEMORY` rank — evidencia, nunca autoridade |
-| Context Gateway | `sparkforge/context/` — role plans, profiles, fail-closed |
+| Context Gateway | `sparkforge_aws/context/` — role plans, profiles, fail-closed |
 | Model Router contracts | SHADOW-only; `provider_availability` unresolved por desenho |
 | AgentOps contracts | ledger, spans, `tokens_status`/`cost_status` com `unresolved` |
-| Forge Protocol v1 | `sparkforge/protocols/forge.py` — preservado, sem quebra |
+| Forge Protocol v1 | `sparkforge_aws/protocols/forge.py` — preservado, sem quebra |
 | MCP surface architecture | 143 tools full / 7 compact — trava em `docs/surface.lock.json` |
 
 ## O que ainda pode mudar durante o freeze

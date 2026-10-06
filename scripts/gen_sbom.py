@@ -131,7 +131,7 @@ SERIAL_NAMESPACE = uuid.UUID("6f3f1f7e-9f3a-5a2b-8c41-2a7c0d5b9e10")
 def project_version() -> str:
     """A versao declarada em `pyproject.toml`.
 
-    Lida do TOML e nao de `sparkforge.__version__` de proposito: o SBOM descreve
+    Lida do TOML e nao de `sparkforge_aws.__version__` de proposito: o SBOM descreve
     o que o BUILD produziu, e quem define isso e o `pyproject.toml`. Importar o
     pacote traria a versao do que estivesse no `sys.path`, que pode ser outra
     coisa -- e o gate de procedencia deste repositorio existe justamente porque
@@ -308,8 +308,8 @@ def build_sbom(dist: Path, python_version: str = DEFAULT_PYTHON) -> dict:
                 # ele foi resolvido. Sem esta linha, quem le o SBOM leria a
                 # lista como se ela valesse em qualquer ambiente -- e ela nao
                 # vale: `rpds-py` resolve para versoes diferentes em 3.10 e 3.11.
-                {"name": "sparkforge:lock", "value": f"locks/py{python_version}.txt"},
-                {"name": "sparkforge:resolved-for", "value": f"cpython-{python_version}"},
+                {"name": "sparkforge-aws:lock", "value": f"locks/py{python_version}.txt"},
+                {"name": "sparkforge-aws:resolved-for", "value": f"cpython-{python_version}"},
             ],
         },
         "components": components,

@@ -9,7 +9,7 @@ upstream:
   sha256: "b3366dffd7b6b90efaef89c0bf5a51a762adbc897128f06e80ef411caecedac8"
 tasks:
   - id: T1
-    files: [tests/test_facts_transport.py, sparkforge/facts/transport.py]
+    files: [tests/test_facts_transport.py, sparkforge_aws/facts/transport.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_facts_transport.py, name: test_kafka_explicit_lag_observations_emit_series_and_reject_insufficient}
   - id: T2

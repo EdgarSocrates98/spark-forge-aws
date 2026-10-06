@@ -1,8 +1,8 @@
 """Golden do corpus de PERMISSAO do Lake Formation.
 
 Arquivo dedicado, mesma razao dos demais `test_fixtures_golden_*.py`: o golden
-guarda os facts de `sparkforge/facts/lakeformation_grants.py`, que le o artefato
-de `sparkforge collect lakeformation`.
+guarda os facts de `sparkforge_aws/facts/lakeformation_grants.py`, que le o artefato
+de `sparkforge-aws collect lakeformation`.
 
 ## O que este corpus mede, e o que ele NAO mede
 
@@ -36,15 +36,15 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.lakeformation import build_lakeformation
-from sparkforge.facts.lakeformation_grants import (
+from sparkforge_aws.facts.lakeformation import build_lakeformation
+from sparkforge_aws.facts.lakeformation_grants import (
     EMITTED_KINDS,
     extract_lakeformation_tree,
 )
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "lakeformation"

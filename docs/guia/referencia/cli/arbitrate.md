@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge arbitrate`
+# `sparkforge-aws arbitrate`
 
 Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. Nao estima ganho, nao publica score, nao executa debate.
 
 ```bash
-sparkforge arbitrate --help
+sparkforge-aws arbitrate --help
 ```
 
 ## Opções

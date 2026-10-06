@@ -27,27 +27,27 @@ Vocabulário de estado:
 
 | Capacidade | Dono canônico | Estado | Evidência |
 |---|---|---|---|
-| Kernel de execução determinístico | `sparkforge/agentic/executor/run.py` (`run_executor`) | INTEGRATED | exposto via `arbitrate` em `adapters/_core.py:5673` |
-| Declaração de capabilities de runtime | `sparkforge/agentic/runtime.py` | INTEGRATED | `RuntimeCapabilities`, `can_spawn_parallel`, `execution_strategy` |
-| Orçamento de agente | `sparkforge/agentic/budget.py` | PARTIAL | usado no caminho do Decision Plane (`decision_plane.py:238`); fora do executor |
-| Governor | `sparkforge/agentic/governor.py` | PARTIAL | só `DecisionPlaneService.active` resolve governor (`decision_plane.py:230`) |
-| Recovery policy | `sparkforge/agentic/recovery.py` | PARTIAL | `RecoveryPolicy` completa (8 classes de falha); nenhuma chamada no caminho de execução |
-| Segurança determinística | `sparkforge/agentic/security.py` | PARTIAL | validações existem; não são invocadas por `call_tool` |
-| Trust plane | `sparkforge/agentic/trust.py` | PARTIAL | **FASE 3:** `call_tool` anexa `_trust` (`TOOL_OUTPUT`/`data_only`/`taint`) a todo resultado, recusa incluída; `taint` aterrissa em `metadata` do span; `TRUST_RANK` explícito substitui posição do enum em `RoleContextPlan.allows`. Falta: `RoleContextPlan` governando seleção de contexto (fase 4) e `AgentHandoff` no executor |
-| Debate | `sparkforge/agentic/debate.py` + `executor/debate_run.py` | INTEGRATED | verbos `debate_*` em `_core.py` |
-| Arbitragem | `sparkforge/agentic/arbitration.py` | INTEGRATED | chamado por `run_executor` |
-| Blackboard | `sparkforge/agentic/blackboard.py` | INTEGRATED | append/read por executor |
-| Checkpoint semântico | `sparkforge/agentic/checkpoint.py` | PARTIAL | `save`/`load` content-addressed; sem teste de fronteira de processo |
-| Memória de decisão | `sparkforge/agentic/memory.py` | PARTIAL | `DecisionMemoryRecord` rico (freshness, invalidation, quarantine, runtime); recuperação precisa auditar se esses campos governam a seleção |
-| Autonomia | `sparkforge/agentic/autonomy.py` | PARTIAL | `validate_autonomy_boundary` deliberadamente não chamado pelo executor (ver docstring `run.py:48-66`) |
+| Kernel de execução determinístico | `sparkforge_aws/agentic/executor/run.py` (`run_executor`) | INTEGRATED | exposto via `arbitrate` em `adapters/_core.py:5673` |
+| Declaração de capabilities de runtime | `sparkforge_aws/agentic/runtime.py` | INTEGRATED | `RuntimeCapabilities`, `can_spawn_parallel`, `execution_strategy` |
+| Orçamento de agente | `sparkforge_aws/agentic/budget.py` | PARTIAL | usado no caminho do Decision Plane (`decision_plane.py:238`); fora do executor |
+| Governor | `sparkforge_aws/agentic/governor.py` | PARTIAL | só `DecisionPlaneService.active` resolve governor (`decision_plane.py:230`) |
+| Recovery policy | `sparkforge_aws/agentic/recovery.py` | PARTIAL | `RecoveryPolicy` completa (8 classes de falha); nenhuma chamada no caminho de execução |
+| Segurança determinística | `sparkforge_aws/agentic/security.py` | PARTIAL | validações existem; não são invocadas por `call_tool` |
+| Trust plane | `sparkforge_aws/agentic/trust.py` | PARTIAL | **FASE 3:** `call_tool` anexa `_trust` (`TOOL_OUTPUT`/`data_only`/`taint`) a todo resultado, recusa incluída; `taint` aterrissa em `metadata` do span; `TRUST_RANK` explícito substitui posição do enum em `RoleContextPlan.allows`. Falta: `RoleContextPlan` governando seleção de contexto (fase 4) e `AgentHandoff` no executor |
+| Debate | `sparkforge_aws/agentic/debate.py` + `executor/debate_run.py` | INTEGRATED | verbos `debate_*` em `_core.py` |
+| Arbitragem | `sparkforge_aws/agentic/arbitration.py` | INTEGRATED | chamado por `run_executor` |
+| Blackboard | `sparkforge_aws/agentic/blackboard.py` | INTEGRATED | append/read por executor |
+| Checkpoint semântico | `sparkforge_aws/agentic/checkpoint.py` | PARTIAL | `save`/`load` content-addressed; sem teste de fronteira de processo |
+| Memória de decisão | `sparkforge_aws/agentic/memory.py` | PARTIAL | `DecisionMemoryRecord` rico (freshness, invalidation, quarantine, runtime); recuperação precisa auditar se esses campos governam a seleção |
+| Autonomia | `sparkforge_aws/agentic/autonomy.py` | PARTIAL | `validate_autonomy_boundary` deliberadamente não chamado pelo executor (ver docstring `run.py:48-66`) |
 
 ### Plano de contexto
 
 | Capacidade | Dono canônico | Estado | Evidência |
 |---|---|---|---|
-| Context Gateway | `sparkforge/context/gateway.py` | INTEGRATED | perfis `economy`/`balanced`/`deep` em `gateway_profiles.yaml` |
-| Qualidade de contexto | `sparkforge/context/quality.py` | PARTIAL | `ContextQualityReport` computado em `_core.py:9595` para um verbo; métricas não governam promoção de política |
-| Progressive disclosure | `sparkforge/context/progressive.py` | INTEGRATED | usado pelo Gateway |
+| Context Gateway | `sparkforge_aws/context/gateway.py` | INTEGRATED | perfis `economy`/`balanced`/`deep` em `gateway_profiles.yaml` |
+| Qualidade de contexto | `sparkforge_aws/context/quality.py` | PARTIAL | `ContextQualityReport` computado em `_core.py:9595` para um verbo; métricas não governam promoção de política |
+| Progressive disclosure | `sparkforge_aws/context/progressive.py` | INTEGRATED | usado pelo Gateway |
 | Medição de bytes de payload | `observability/context_ledger.py` | INTEGRATED | `call_tool` grava `payload_bytes` por chamada |
 | Host token usage | `context/host_usage.py` | PARTIAL | consome transcript do host quando existe; ausência sai `tokens_unresolved` |
 
@@ -55,11 +55,11 @@ Vocabulário de estado:
 
 | Capacidade | Dono canônico | Estado | Evidência |
 |---|---|---|---|
-| Ledger unificado | `sparkforge/economy/ledger.py` | PARTIAL | `TokenLedger.reconcile` com defeito P0 (§3.2) |
-| Router legado (tiers) | `sparkforge/economy/router.py` | INTEGRATED | `CapabilityModelRouter`, autoritativo hoje |
-| Router adaptativo (scorecard) | `sparkforge/economy/model_router.py` | PARTIAL | `risk`/`required_reasoning`/`complexity` decorativos (§3.3) |
-| Custo de provider | `sparkforge/economy/provider_cost.py` | PARTIAL | `None` honesto para custo incompleto; não reconciliado com ledger |
-| Detector de desperdício | `sparkforge/economy/waste_detector.py` | DUPLICATE | `TokenWasteDetector.analyze_trace` duplica padrões de `agentops._waste` (duplicate_tool_call, premium_model_on_simple_task) |
+| Ledger unificado | `sparkforge_aws/economy/ledger.py` | PARTIAL | `TokenLedger.reconcile` com defeito P0 (§3.2) |
+| Router legado (tiers) | `sparkforge_aws/economy/router.py` | INTEGRATED | `CapabilityModelRouter`, autoritativo hoje |
+| Router adaptativo (scorecard) | `sparkforge_aws/economy/model_router.py` | PARTIAL | `risk`/`required_reasoning`/`complexity` decorativos (§3.3) |
+| Custo de provider | `sparkforge_aws/economy/provider_cost.py` | PARTIAL | `None` honesto para custo incompleto; não reconciliado com ledger |
+| Detector de desperdício | `sparkforge_aws/economy/waste_detector.py` | DUPLICATE | `TokenWasteDetector.analyze_trace` duplica padrões de `agentops._waste` (duplicate_tool_call, premium_model_on_simple_task) |
 | Decision Plane (shadow) | `economy/decision_plane.py` + `decision/` | INTEGRATED | `activation_ready` permanece `false` por contrato |
 
 ### Plano de observabilidade
@@ -76,7 +76,7 @@ Vocabulário de estado:
 | Capacidade | Dono canônico | Estado | Evidência |
 |---|---|---|---|
 | Forge Protocol (A2A) | `protocols/forge.py` | PARTIAL | contratos públicos completos; nenhum adapter produz/consome envelopes |
-| Forge Lab | `sparkforge/lab/` | INTEGRATED | CLI-first, plan-only, oracle independente |
+| Forge Lab | `sparkforge_aws/lab/` | INTEGRATED | CLI-first, plan-only, oracle independente |
 | MCP | `adapters/mcp.py`, `mcp_compact.py` | INTEGRATED | 141 tools full, 7 compact; sem matriz de conformidade |
 | Doctor agentic | `_core.agentic_doctor` | PARTIAL | checa existência de arquivos, não prontidão do circuito |
 
@@ -144,7 +144,7 @@ complexidade), tudo com `unresolved` quando a evidência não existe.
 ## 5. Limites desta auditoria
 
 - A classificação `PARTIAL`/`INTEGRATED` é por análise estática do grafo de
-  chamadas dentro de `sparkforge/`; ferramentas externas podem compor os módulos
+  chamadas dentro de `sparkforge_aws/`; ferramentas externas podem compor os módulos
   de outra forma. Não é claim exaustivo sobre todos os 141 tools.
 - Números citados são os medidos nesta leitura; a tabela *Números correntes* do
   `docs/superpowers/STATUS.md` continua a fonte de verdade operacional.

@@ -20,7 +20,7 @@ Extrai facts do arquivo `.py` de um DAG do Apache Airflow. Le por AST e NUNCA im
 
 ## Na CLI
 
-[`sparkforge analyze airflow-dag`](../cli/analyze.md)
+[`sparkforge-aws analyze airflow-dag`](../cli/analyze.md)
 
 ## Capacidade
 

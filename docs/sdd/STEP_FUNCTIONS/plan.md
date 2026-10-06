@@ -9,15 +9,15 @@ upstream:
   sha256: "aff948caeb8f42656dfd11cb1b1163ac560e34016ce3fcb53e66257bfb654cbd"
 tasks:
   - id: T1
-    files: [sparkforge/facts/stepfunctions.py, tests/test_stepfunctions.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [sparkforge_aws/facts/stepfunctions.py, tests/test_stepfunctions.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC1, AC2]
     test: {path: tests/test_stepfunctions.py, name: test_task_glue_vira_fact_com_retry_efetivo}
   - id: T2
-    files: [tests/test_stepfunctions.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_adapters_tools.py, tests/test_harness_authorization.py, tests/test_fixtures_golden_mcp_parity.py, parity.yaml, manifest.json, agents/glue-infra-reviewer.md, .codex/agents/glue-infra-reviewer.toml, docs/surface.lock.json, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_step_functions.md, docs/guia/06-extrair-julgar-compor.md, docs/superpowers/STATUS.md, README.md, CLAUDE.md, AGENTS.md, GUIA_DE_USO.md, .devin/README.md, docs/harness/AUTHORIZATION-CHAIN.md, docs/harness/CURRENT-HARNESS-GAP.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_stepfunctions.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_adapters_tools.py, tests/test_harness_authorization.py, tests/test_fixtures_golden_mcp_parity.py, parity.yaml, manifest.json, agents/glue-infra-reviewer.md, .codex/agents/glue-infra-reviewer.toml, docs/surface.lock.json, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_step_functions.md, docs/guia/06-extrair-julgar-compor.md, docs/superpowers/STATUS.md, README.md, CLAUDE.md, AGENTS.md, GUIA_DE_USO.md, .devin/README.md, docs/harness/AUTHORIZATION-CHAIN.md, docs/harness/CURRENT-HARNESS-GAP.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC7]
     test: {path: tests/test_stepfunctions.py, name: test_cli_e_tool_devolvem_os_mesmos_facts}
   - id: T3
-    files: [tests/test_stepfunctions.py, sparkforge/facts/stepfunctions.py, sparkforge/facts/fusion.py, rules/catalog/stepfunctions.yaml, rules/catalog/routing.yaml, agents/glue-infra-reviewer.md, fixtures/stepfunctions, tests/test_fixtures_golden_stepfunctions.py, scripts/regen_fixtures.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py, manifest.json, knowledge/sources.lock.json, .codex/agents/glue-infra-reviewer.toml, tests/test_databricks_rule_audit.py, tests/test_sf_stubs.py, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json, fixtures/scenarios/glue_60_fgac_com_jar/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, evals/holdout/lote_misto_iceberg_parquet/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/guia/07-conhecimento-e-catalogo.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_stepfunctions.py, sparkforge_aws/facts/stepfunctions.py, sparkforge_aws/facts/fusion.py, rules/catalog/stepfunctions.yaml, rules/catalog/routing.yaml, agents/glue-infra-reviewer.md, fixtures/stepfunctions, tests/test_fixtures_golden_stepfunctions.py, scripts/regen_fixtures.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py, manifest.json, knowledge/sources.lock.json, .codex/agents/glue-infra-reviewer.toml, tests/test_databricks_rule_audit.py, tests/test_sf_stubs.py, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json, fixtures/scenarios/glue_60_fgac_com_jar/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, evals/holdout/lote_misto_iceberg_parquet/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/guia/07-conhecimento-e-catalogo.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC3, AC4, AC5, AC6, AC8]
     test: {path: tests/test_fixtures_golden_stepfunctions.py, name: test_golden}
   - id: T4
@@ -93,7 +93,7 @@ observado (U2 de `docs/sdd/STEP_FUNCTIONS/define.md`).
 """
 import json
 
-from sparkforge.facts.stepfunctions import (
+from sparkforge_aws.facts.stepfunctions import (
     DEFAULT_MAX_ATTEMPTS,
     DEFAULT_TIMEOUT_SECONDS,
     extract_stepfunctions,
@@ -312,12 +312,12 @@ git add tests/test_stepfunctions.py
 python -m pytest tests/test_stepfunctions.py -q
 ```
 
-Falha esperada: `ModuleNotFoundError: No module named 'sparkforge.facts.stepfunctions'` na
+Falha esperada: `ModuleNotFoundError: No module named 'sparkforge_aws.facts.stepfunctions'` na
 coleta — o módulo ausente é a unidade sob teste.
 
 ### 3. Código mínimo
 
-`sparkforge/facts/stepfunctions.py` (arquivo novo, inteiro):
+`sparkforge_aws/facts/stepfunctions.py` (arquivo novo, inteiro):
 
 ```python
 """Extrator de Facts a partir da definicao de uma state machine do AWS Step Functions.
@@ -383,8 +383,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sparkforge.facts.scan import iter_source_files
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.facts.scan import iter_source_files
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "stepfunctions@0.1.0"
 
@@ -780,7 +780,7 @@ Sem função aninhada (duas `def` de mesmo nome no mesmo escopo quebram
 ### 4. Rodar e ver passar
 
 ```bash
-git add sparkforge/facts/stepfunctions.py
+git add sparkforge_aws/facts/stepfunctions.py
 python -m pytest tests/test_stepfunctions.py -q
 ```
 
@@ -792,7 +792,7 @@ Extrator (`docs/gates-por-mudanca.md`, "Acrescentar ou alterar um EXTRATOR de fa
 o módulo ainda NÃO entra nas duas listas manuais: entra em T3, no mesmo commit do golden.
 
 ```bash
-python -m ruff check sparkforge/facts/stepfunctions.py tests/test_stepfunctions.py
+python -m ruff check sparkforge_aws/facts/stepfunctions.py tests/test_stepfunctions.py
 python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q
 python -m pytest tests/test_facts_scan.py tests/test_harness_untrusted.py tests/test_databricks_rule_audit.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py -q
@@ -838,7 +838,7 @@ documento e em `docs/claims.lock.json`, e rode o gate de novo até `exit 0`.
 
 `feat(facts): read AWS Step Functions ASL definitions into sfn.* facts`
 
-Arquivos: `sparkforge/facts/stepfunctions.py`, `tests/test_stepfunctions.py`,
+Arquivos: `sparkforge_aws/facts/stepfunctions.py`, `tests/test_stepfunctions.py`,
 `docs/superpowers/STATUS.md`, `README.md`, `docs/guia/06-extrair-julgar-compor.md`,
 `docs/harness/CODEINTEL-GAP.md`, `docs/claims.lock.json`.
 
@@ -850,8 +850,8 @@ Acrescente ao fim de `tests/test_stepfunctions.py`:
 
 ```python
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     entrada = tmp_path / "entrada"
     entrada.mkdir()
@@ -873,7 +873,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["unresolved"] == 0
 
     erro = call_tool("sparkforge_analyze_step_functions", {"path": str(tmp_path / "nao-existe")})
-    assert "sparkforge analyze step-functions" in erro["error"]
+    assert "sparkforge-aws analyze step-functions" in erro["error"]
 ```
 
 ### 2. Rodar e ver falhar
@@ -886,22 +886,22 @@ Falha esperada: `SystemExit: 2` do argparse (`invalid choice: 'step-functions'`)
 
 ### 3. Código mínimo
 
-**`sparkforge/adapters/_core.py`** — import. Troque
+**`sparkforge_aws/adapters/_core.py`** — import. Troque
 
 ```python
-from sparkforge.facts.sql_metrics import extract_sql_metrics_path
-from sparkforge.facts.terraform import (
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge_aws.facts.terraform import (
 ```
 
 por
 
 ```python
-from sparkforge.facts.sql_metrics import extract_sql_metrics_path
-from sparkforge.facts.stepfunctions import (
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge_aws.facts.stepfunctions import (
     extract_stepfunctions_path,
     extract_stepfunctions_tree,
 )
-from sparkforge.facts.terraform import (
+from sparkforge_aws.facts.terraform import (
 ```
 
 E a função pública, logo antes da seção de benchmark. Troque
@@ -935,7 +935,7 @@ def _extract_step_functions_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o .asl.json da state machine, para a saida salva de\n"
             f"  `aws stepfunctions describe-state-machine`, ou para o diretorio com eles:\n"
-            f"    sparkforge analyze step-functions --path statemachines/ "
+            f"    sparkforge-aws analyze step-functions --path statemachines/ "
             f"--out .sparkforge/facts_sfn.json",
             exit_code=2,
         )
@@ -955,7 +955,7 @@ def analyze_step_functions(
     return _facts_page(facts, "sfn.unresolved", kind, limit, cursor, detail_level)
 ```
 
-**`sparkforge/adapters/cli.py`** — subcomando. Troque
+**`sparkforge_aws/adapters/cli.py`** — subcomando. Troque
 
 ```python
     _add_detail_level(ctm_analyze_p)
@@ -1021,7 +1021,7 @@ por
     ("analyze", "step-functions"): _cmd_analyze_step_functions,
 ```
 
-**`sparkforge/adapters/tools.py`** — declaração. Troque
+**`sparkforge_aws/adapters/tools.py`** — declaração. Troque
 
 ```python
     "sparkforge_analyze_data_quality": {
@@ -1312,7 +1312,7 @@ python scripts/sync_skills.py --check
 python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/test_agent_coverage.py tests/test_docs_coverage.py -q
 python -m pytest tests/test_harness_authorization.py tests/test_capability_parity.py tests/test_adapters_code_surface.py tests/test_mcp_modern_era.py -q
 python -m pytest tests/test_fixtures_golden_mcp_parity.py -q
-python -m ruff check sparkforge/adapters tests/test_stepfunctions.py tests/test_adapters_tools.py tests/test_harness_authorization.py
+python -m ruff check sparkforge_aws/adapters tests/test_stepfunctions.py tests/test_adapters_tools.py tests/test_harness_authorization.py
 ```
 
 (backup e devolução do `.claude/agents/README.md` em volta de `test_agents_parity.py`.)
@@ -1383,10 +1383,10 @@ def _glue_sync(nome_do_job: dict, retry: list, proximo: dict) -> dict:
 
 
 def test_fuse_liga_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.terraform import extract_terraform_tree
-    from sparkforge.rules.engine import judge
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.rules.engine import judge
+    from sparkforge_aws.rules.loader import load_catalog
 
     asl = {
         "StartAt": "Ligada",
@@ -1466,12 +1466,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.stepfunctions import build_sfn_glue_link, extract_stepfunctions_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.models import sort_facts
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.stepfunctions import build_sfn_glue_link, extract_stepfunctions_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.models import sort_facts
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "stepfunctions"
@@ -2146,7 +2146,7 @@ em `[link] = ...` no teste do `fuse`.
 
 ### 3. Código mínimo
 
-**3a. A derivação, em `sparkforge/facts/stepfunctions.py`** (D5).
+**3a. A derivação, em `sparkforge_aws/facts/stepfunctions.py`** (D5).
 
 No docstring do módulo, troque
 
@@ -2312,7 +2312,7 @@ def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
                     proveniencia,
                     job_name=nome,
                     resources=[simbolo for _, simbolo in candidatos],
-                    unblocked_by="sparkforge analyze terraform no aws_glue_job, e fuse",
+                    unblocked_by="sparkforge-aws analyze terraform no aws_glue_job, e fuse",
                 )
             )
             continue
@@ -2360,19 +2360,19 @@ E no `__all__`, troque `    "EXTRACTOR_ID",` por
     "build_sfn_glue_link",
 ```
 
-**3b. `sparkforge/facts/fusion.py`.** Imports: troque
+**3b. `sparkforge_aws/facts/fusion.py`.** Imports: troque
 
 ```python
-from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
+from sparkforge_aws.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
 ```
 
 por
 
 ```python
-from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
-from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
-from sparkforge.facts.stepfunctions import build_sfn_glue_link
-from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
+from sparkforge_aws.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
+from sparkforge_aws.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
+from sparkforge_aws.facts.stepfunctions import build_sfn_glue_link
+from sparkforge_aws.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
 ```
 
 E no fim de `fuse`, troque
@@ -2409,7 +2409,7 @@ por
 ```yaml
 # Catálogo de regras — como o AWS Step Functions dispara o job Glue
 #
-# Depende de `sparkforge/facts/stepfunctions.py`, que lê a definição ASL (o
+# Depende de `sparkforge_aws/facts/stepfunctions.py`, que lê a definição ASL (o
 # `.asl.json` do repositório, ou a saída salva de `aws stepfunctions
 # describe-state-machine`) e, em `fuse`, liga o estado Task ao `aws_glue_job` de mesmo
 # `name` (`sfn.glue_job_link`). As frases citadas estão em
@@ -2493,7 +2493,7 @@ rules:
     tradeoffs:
       - "Esperar o job custa tempo de execução do workflow; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
     validation:
-      - "`sparkforge analyze step-functions --path <definição corrigida>` mostra o `sfn.task` com `pattern: sync`, e `sparkforge judge` não produz mais SF-SFN-001 para o estado."
+      - "`sparkforge-aws analyze step-functions --path <definição corrigida>` mostra o `sfn.task` com `pattern: sync`, e `sparkforge-aws judge` não produz mais SF-SFN-001 para o estado."
       - "EIXO DE RESULTADO — numa execução de teste, o estado seguinte lê a saída completa do job: a contagem de linhas que ele lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun."
       - "Uma execução de teste em que o job falha termina a state machine em falha (ou no Catch declarado), e não segue para o estado seguinte."
     rollback:
@@ -2553,7 +2553,7 @@ rules:
     tradeoffs:
       - "Retry sobre o job inteiro compra resiliência com o custo de um JobRun completo por tentativa; retry no próprio Glue compra a mesma resiliência com outro custo — e as duas camadas juntas são a SF-SFN-004."
     validation:
-      - "`sparkforge analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito."
+      - "`sparkforge-aws analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge-aws judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito."
       - "EIXO DE RESULTADO — numa execução de teste em que o job falha na primeira tentativa, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: a tentativa extra não duplicou nem perdeu linha."
       - "O histórico da execução (`aws stepfunctions get-execution-history`) mostra, para o estado, no máximo 1 + `MaxAttempts` agendamentos do Task."
     rollback:
@@ -2605,7 +2605,7 @@ rules:
     tradeoffs:
       - "Separar só a chamada do Glue numa STANDARD aninhada preserva a EXPRESS para o resto, ao custo de uma state machine a mais para manter."
     validation:
-      - "`sparkforge analyze step-functions` sobre a saída nova de `describe-state-machine` mostra o `sfn.task` do Glue com `state_machine_type: STANDARD`, ou com `pattern: request_response`, e `sparkforge judge` não produz mais SF-SFN-003."
+      - "`sparkforge-aws analyze step-functions` sobre a saída nova de `describe-state-machine` mostra o `sfn.task` do Glue com `state_machine_type: STANDARD`, ou com `pattern: request_response`, e `sparkforge-aws judge` não produz mais SF-SFN-003."
       - "EIXO DE RESULTADO — uma execução de teste termina com o JobRun em `SUCCEEDED` antes do estado seguinte, e o destino tem a contagem que o job escreveu."
     rollback:
       - "Reverter o commit da definição e do tipo no IaC que publica a state machine, e republicá-la."
@@ -2642,7 +2642,7 @@ rules:
       knowledge/stepfunctions/glue-integration.md, lacuna 1.
     proposed_change:
       - "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Step Functions (onde `MaxAttempts` e `ErrorEquals` são explícitos e aparecem no histórico da execução), ou o retrier do Step Functions restrito a erros de chamada e o retry do job no Glue."
-      - "Antes de escolher, medir: um histórico de execução real com falha (`aws stepfunctions get-execution-history`) e os JobRuns do job no mesmo intervalo (`sparkforge collect glue-job-runs`) mostram quantos JobRuns uma falha produziu de fato."
+      - "Antes de escolher, medir: um histórico de execução real com falha (`aws stepfunctions get-execution-history`) e os JobRuns do job no mesmo intervalo (`sparkforge-aws collect glue-job-runs`) mostram quantos JobRuns uma falha produziu de fato."
     action:
       kind: orchestration.restrict_run_policy
       target: glue.max_retries
@@ -2658,7 +2658,7 @@ rules:
     tradeoffs:
       - "Retry no Step Functions é visível no histórico da execução e configurável por erro; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
     validation:
-      - "`sparkforge fuse` sobre os facts de `analyze step-functions` e `analyze terraform` mostra o `sfn.glue_job_link` com `glue_max_retries: 0` ou `sfn_retry_effective: 0`, e `sparkforge judge` não produz mais SF-SFN-004."
+      - "`sparkforge-aws fuse` sobre os facts de `analyze step-functions` e `analyze terraform` mostra o `sfn.glue_job_link` com `glue_max_retries: 0` ou `sfn_retry_effective: 0`, e `sparkforge-aws judge` não produz mais SF-SFN-004."
       - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
     rollback:
       - "Restaurar o `max_retries` anterior no Terraform e o retrier anterior na definição ASL, e reaplicar os dois."
@@ -2676,7 +2676,7 @@ regra e vai a 3, longe do teto).
 
 ```yaml
 fallback:
-  recommended_skill: sparkforge-diagnose
+  recommended_skill: sparkforge-aws-diagnose
 ```
 
 por
@@ -2705,7 +2705,7 @@ por
       este coordenador ja le --, e nao no codigo do job.
 
 fallback:
-  recommended_skill: sparkforge-diagnose
+  recommended_skill: sparkforge-aws-diagnose
 ```
 
 **3e. Coordenador — `agents/glue-infra-reviewer.md`.** Troque
@@ -2787,14 +2787,14 @@ por
 Imports: troque
 
 ```python
-from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge_aws.facts.sql_literal import extract_sql_path  # noqa: E402
 ```
 
 por
 
 ```python
-from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
-from sparkforge.facts.stepfunctions import (  # noqa: E402
+from sparkforge_aws.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge_aws.facts.stepfunctions import (  # noqa: E402
     build_sfn_glue_link,
     extract_stepfunctions_tree,
 )
@@ -2803,14 +2803,14 @@ from sparkforge.facts.stepfunctions import (  # noqa: E402
 e troque
 
 ```python
-from sparkforge.migration.assessment import assess  # noqa: E402
+from sparkforge_aws.migration.assessment import assess  # noqa: E402
 ```
 
 por
 
 ```python
-from sparkforge.findings.models import sort_facts  # noqa: E402
-from sparkforge.migration.assessment import assess  # noqa: E402
+from sparkforge_aws.findings.models import sort_facts  # noqa: E402
+from sparkforge_aws.migration.assessment import assess  # noqa: E402
 ```
 
 Constante: troque
@@ -2888,7 +2888,7 @@ por
 **3h. Regenerar e LER o golden.**
 
 ```bash
-git add sparkforge/facts/stepfunctions.py tests/test_fixtures_golden_stepfunctions.py
+git add sparkforge_aws/facts/stepfunctions.py tests/test_fixtures_golden_stepfunctions.py
 python scripts/regen_fixtures.py glue_sem_sync glue_retry_implicito glue_retry_explicito express_com_sync glue_limpo definicao_ilegivel retry_duas_camadas job_name_dinamico retry_so_no_step_functions retry_so_no_glue
 ```
 
@@ -3031,7 +3031,7 @@ python -m pytest tests/test_fixtures_scenarios.py tests/test_evals_holdout.py -q
 python scripts/sync_skills.py --check
 python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/test_reference_docs.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py tests/test_facts_scan.py -q
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 python scripts/check_status_numbers.py --strict
 python scripts/check_vnext_claims.py
 ```
@@ -3061,7 +3061,7 @@ da seção `## Fontes` do documento antes de ela entrar no lock. Escreva
 
 > **Lido em 2026-09-19.** Seis páginas oficiais da AWS: quatro do guia do AWS Step
 > Functions e duas da API do AWS Glue. Quem consome: o extrator
-> `sparkforge/facts/stepfunctions.py` (os dois defaults publicados moram lá, com a URL
+> `sparkforge_aws/facts/stepfunctions.py` (os dois defaults publicados moram lá, com a URL
 > ao lado) e as quatro regras de `rules/catalog/stepfunctions.yaml`. Frase entre aspas é
 > citação literal; o resto é leitura nossa, e diz de qual frase veio.
 
@@ -3162,7 +3162,7 @@ python scripts/refresh_knowledge.py --offline --update
 Manifesto offline — o `sha256` pela função que o gate confere, nunca por outro hash:
 
 ```bash
-python -c "import json; from pathlib import Path; from sparkforge.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); doc = 'knowledge/stepfunctions/glue-integration.md'; m['documents'] = [d for d in m['documents'] if d['path'] != doc] + [{'path': doc, 'title': 'glue-integration', 'sha256': _content_sha256(Path(doc))}]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
+python -c "import json; from pathlib import Path; from sparkforge_aws.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); doc = 'knowledge/stepfunctions/glue-integration.md'; m['documents'] = [d for d in m['documents'] if d['path'] != doc] + [{'path': doc, 'title': 'glue-integration', 'sha256': _content_sha256(Path(doc))}]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
 ```
 
 (O manifesto está ordenado por `path` e gravado como `json.dumps(indent=2)` mais `\n` —
@@ -3206,19 +3206,19 @@ lê a definição. Todos os exemplos usam arquivos sintéticos de `fixtures/step
 mkdir -p /tmp/sf
 
 # 1. Extrair os facts da definicao (.asl.json, saida de describe-state-machine, ou diretorio)
-sparkforge analyze step-functions \
+sparkforge-aws analyze step-functions \
   --path fixtures/stepfunctions/glue_sem_sync/input --out /tmp/sf/facts_sfn.json
 
 # 2. Julgar: SF-SFN-001 a 003 leem so o ASL
-sparkforge judge --facts /tmp/sf/facts_sfn.json
+sparkforge-aws judge --facts /tmp/sf/facts_sfn.json
 
 # 3. Com o Terraform do job: extrair os dois lados, fundir e julgar
-sparkforge analyze step-functions \
+sparkforge-aws analyze step-functions \
   --path fixtures/stepfunctions/retry_duas_camadas/input --out /tmp/sf/sfn.json
-sparkforge analyze terraform \
+sparkforge-aws analyze terraform \
   --path fixtures/stepfunctions/retry_duas_camadas/input --out /tmp/sf/tf.json
-sparkforge fuse --facts /tmp/sf/sfn.json --facts /tmp/sf/tf.json --out /tmp/sf/fundidos.json
-sparkforge judge --facts /tmp/sf/fundidos.json
+sparkforge-aws fuse --facts /tmp/sf/sfn.json --facts /tmp/sf/tf.json --out /tmp/sf/fundidos.json
+sparkforge-aws judge --facts /tmp/sf/fundidos.json
 ```
 
 A definição vem do repositório (o `.asl.json` que o IaC publica) ou da conta: a saída de
@@ -3250,7 +3250,7 @@ sai `undeclared`, nunca `STANDARD` por suposição.
 A `SF-SFN-004` afirma só que as duas camadas existem. **Quantas vezes o job roda numa
 falha não é documentado** — o retry do Glue é outro JobRun, e o `.sync` acompanha o
 primeiro. Medir exige um histórico de execução real com falha e os JobRuns do mesmo
-intervalo (`sparkforge collect glue-job-runs`).
+intervalo (`sparkforge-aws collect glue-job-runs`).
 
 ## O que ele não faz
 

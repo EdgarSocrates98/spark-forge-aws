@@ -13,7 +13,7 @@ tasks:
     red: {command: "python -m pytest tests/test_glue_terraform.py -q", exit: 2}
     green: {command: "python -m pytest tests/test_glue_terraform.py -q", exit: 0}
 claims:
-  - text: "As duas funcoes tem uma definicao so, em sparkforge/facts/glue_terraform.py, e os dois extratores usam ELA: a conferencia e por identidade, nao por nome."
+  - text: "As duas funcoes tem uma definicao so, em sparkforge_aws/facts/glue_terraform.py, e os dois extratores usam ELA: a conferencia e por identidade, nao por nome."
     evidence_ref: "tests/test_glue_terraform.py::test_a_definicao_e_unica_e_os_dois_extratores_importam"
   - text: "As tres origens de max_retries respondem o mesmo de antes, inclusive o not_literal conservador quando ha tf.unresolved de max_retries no MESMO arquivo."
     evidence_ref: "tests/test_glue_terraform.py::test_as_tres_origens_de_max_retries_e_o_indice_por_nome"
@@ -41,13 +41,13 @@ deixaria a árvore vermelha entre dois commits.
 ## O vermelho, e como ele foi obtido
 
 `red` é **exit 2**, erro de coleta, com a linha decisiva
-`ModuleNotFoundError: No module named 'sparkforge.facts.glue_terraform'`. O módulo ausente
+`ModuleNotFoundError: No module named 'sparkforge_aws.facts.glue_terraform'`. O módulo ausente
 era a unidade sob teste.
 
 **Esse exit é meu, e vale dizer como.** O subagente da T1 travou esperando o próprio gate
 de lastro e nunca entregou relato — o mesmo padrão que, na SFN_HISTORY, deixou a T4 em
 `skipped` para sempre. Desta vez, em vez de herdar o buraco, **reproduzi o vermelho**: tirei
-`sparkforge/facts/glue_terraform.py` do lugar, rodei o teste, li o `ModuleNotFoundError` e
+`sparkforge_aws/facts/glue_terraform.py` do lugar, rodei o teste, li o `ModuleNotFoundError` e
 capturei o exit, e devolvi o arquivo. O verde veio logo depois, 3 passed.
 
 ## O que a revisão final achou
@@ -72,7 +72,7 @@ dentro do corpus medido. Refatoração que remove código move alegação para b
 
 - **"As TRÊS varreduras do repositório"** era artigo definido e exaustivo. A revisão achou
   seis lugares que discriminam por `EMITTED_KINDS`; a correção contou de novo e achou
-  **sete**, incluindo uma em **produção** (`sparkforge/diagnosis/root_cause.py`, que monta
+  **sete**, incluindo uma em **produção** (`sparkforge_aws/diagnosis/root_cause.py`, que monta
   o mapa `emitted_by`) e uma que a própria revisão perdera
   (`tests/test_rules_errors.py`). As sete já ignoravam o módulo corretamente: o defeito era
   o numeral. A frase nova não tem numeral fechado — ela diz que é a lista **do que foi

@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge report`
+# `sparkforge-aws report`
 
 Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi derivado daquela evidencia com aquele catalogo. Nunca autoria.
 
@@ -8,16 +8,16 @@ Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi derivado daque
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge report github`](#sparkforge-report-github) | Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede. |
-| [`sparkforge report sign`](#sparkforge-report-sign) | Escreve o bloco de assinatura no fim do relatorio. Reassinar e barato e devolve o mesmo arquivo quando nada mudou. |
-| [`sparkforge report verify`](#sparkforge-report-verify) | Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo ou corpo. Sai com codigo 1 quando nao corresponde. |
+| [`sparkforge-aws report github`](#sparkforge-aws-report-github) | Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede. |
+| [`sparkforge-aws report sign`](#sparkforge-aws-report-sign) | Escreve o bloco de assinatura no fim do relatorio. Reassinar e barato e devolve o mesmo arquivo quando nada mudou. |
+| [`sparkforge-aws report verify`](#sparkforge-aws-report-verify) | Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo ou corpo. Sai com codigo 1 quando nao corresponde. |
 
-## `sparkforge report github`
+## `sparkforge-aws report github`
 
 Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede.
 
 ```bash
-sparkforge report github --help
+sparkforge-aws report github --help
 ```
 
 ### Opções
@@ -37,12 +37,12 @@ sparkforge report github --help
 
 [`sparkforge_report_github`](../tools/sparkforge_report_github.md)
 
-## `sparkforge report sign`
+## `sparkforge-aws report sign`
 
 Escreve o bloco de assinatura no fim do relatorio. Reassinar e barato e devolve o mesmo arquivo quando nada mudou.
 
 ```bash
-sparkforge report sign --help
+sparkforge-aws report sign --help
 ```
 
 ### Opções
@@ -56,12 +56,12 @@ sparkforge report sign --help
 
 [`sparkforge_report_sign`](../tools/sparkforge_report_sign.md), [`sparkforge_report_verify`](../tools/sparkforge_report_verify.md)
 
-## `sparkforge report verify`
+## `sparkforge-aws report verify`
 
 Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo ou corpo. Sai com codigo 1 quando nao corresponde.
 
 ```bash
-sparkforge report verify --help
+sparkforge-aws report verify --help
 ```
 
 ### Opções

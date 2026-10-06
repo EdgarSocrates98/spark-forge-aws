@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.collect import streaming
-from sparkforge.collect.base import CollectorUnavailable, load_manifest
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.collect import streaming
+from sparkforge_aws.collect.base import CollectorUnavailable, load_manifest
 
 
 class FakeS3:
@@ -181,7 +181,7 @@ def test_kinesis_temporal_metrics_feed_transport_analyzer(monkeypatch, tmp_path)
         metrics_period=60,
     )
 
-    from sparkforge.facts.transport import extract_transport_path
+    from sparkforge_aws.facts.transport import extract_transport_path
 
     facts = extract_transport_path(tmp_path / entry.path, artifact_type="kinesis")
     metric_facts = [fact for fact in facts if fact.kind == "kinesis.metric"]

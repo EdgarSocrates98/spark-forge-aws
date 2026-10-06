@@ -18,7 +18,7 @@ Avalia subir o format version de uma tabela Iceberg CONTRA quem a consome. Cruza
 
 ## Na CLI
 
-[`sparkforge iceberg assess-upgrade`](../cli/iceberg.md)
+[`sparkforge-aws iceberg assess-upgrade`](../cli/iceberg.md)
 
 ## Capacidade
 

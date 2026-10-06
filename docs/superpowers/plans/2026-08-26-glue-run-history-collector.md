@@ -10,9 +10,9 @@
 
 **Convenções do repositório que valem em toda tarefa:**
 
-- `now` é sempre parâmetro, nunca lido do relógio (`sparkforge/collect/aws.py:16`).
+- `now` é sempre parâmetro, nunca lido do relógio (`sparkforge_aws/collect/aws.py:16`).
 - `boto3` nunca é importado no topo de um módulo; só `require_boto3()` toca o import.
-- Fact nunca aplica limiar, nunca atribui severidade (`sparkforge/findings/models.py:32`).
+- Fact nunca aplica limiar, nunca atribui severidade (`sparkforge_aws/findings/models.py:32`).
 - Todo comando roda com prefixo `rtk` (ver `CLAUDE.md`): `rtk pytest`, `rtk git commit`.
 
 ---
@@ -24,9 +24,9 @@
 | Arquivo | Responsabilidade |
 |---|---|
 | `knowledge/glue/observability.yaml` | Tabela de retenção do CloudWatch por período, legível por máquina |
-| `sparkforge/facts/cloudwatch_retention.py` | Carregador fail-closed do YAML acima, no molde de `facts/pricing.py` |
-| `sparkforge/facts/cloudwatch.py` | Extrator do artefato CloudWatch em facts `glue.metric` |
-| `sparkforge/facts/glue_job_run.py` | Extrator do diretório de runs em facts de run, distribuição e outcome |
+| `sparkforge_aws/facts/cloudwatch_retention.py` | Carregador fail-closed do YAML acima, no molde de `facts/pricing.py` |
+| `sparkforge_aws/facts/cloudwatch.py` | Extrator do artefato CloudWatch em facts `glue.metric` |
+| `sparkforge_aws/facts/glue_job_run.py` | Extrator do diretório de runs em facts de run, distribuição e outcome |
 | `tests/test_facts_cloudwatch.py` | Testes do extrator de métricas |
 | `tests/test_facts_glue_job_run.py` | Testes do extrator de histórico |
 | `tests/test_cloudwatch_retention.py` | Testes do carregador de retenção |
@@ -36,11 +36,11 @@
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/collect/base.py:29` | `ARTIFACT_KINDS` ganha `"glue_job_run"` |
-| `sparkforge/collect/aws.py` | `glue_job_run_path`, `collect_glue_job_runs`, período derivado em `collect_cloudwatch` |
-| `sparkforge/adapters/_core.py` | `collect_glue_job_runs`, `analyze_cloudwatch`, `analyze_glue_job_runs` |
-| `sparkforge/adapters/cli.py` | Três parsers, três handlers, três entradas de despacho |
-| `sparkforge/adapters/tools.py` | Três schemas de tool, três handlers, três entradas de despacho |
+| `sparkforge_aws/collect/base.py:29` | `ARTIFACT_KINDS` ganha `"glue_job_run"` |
+| `sparkforge_aws/collect/aws.py` | `glue_job_run_path`, `collect_glue_job_runs`, período derivado em `collect_cloudwatch` |
+| `sparkforge_aws/adapters/_core.py` | `collect_glue_job_runs`, `analyze_cloudwatch`, `analyze_glue_job_runs` |
+| `sparkforge_aws/adapters/cli.py` | Três parsers, três handlers, três entradas de despacho |
+| `sparkforge_aws/adapters/tools.py` | Três schemas de tool, três handlers, três entradas de despacho |
 | `manifest.json:80` | Lista `tools` ganha as três |
 | `parity.yaml:438` | Capability de coleta ganha a CLI e a tool novas |
 | `knowledge/glue/observability.md` | Seção de retenção apontando para o YAML |
@@ -52,7 +52,7 @@
 
 ## Task 1: Conhecimento de retenção do CloudWatch
 
-A derivação de período depende de quanto tempo o CloudWatch guarda pontos de cada granularidade. Esse número não pode nascer em constante Python: `sparkforge/facts/pricing.py` existe justamente porque número sem procedência envelhece em silêncio e passa por preciso.
+A derivação de período depende de quanto tempo o CloudWatch guarda pontos de cada granularidade. Esse número não pode nascer em constante Python: `sparkforge_aws/facts/pricing.py` existe justamente porque número sem procedência envelhece em silêncio e passa por preciso.
 
 **Files:**
 - Create: `knowledge/glue/observability.yaml`
@@ -80,7 +80,7 @@ Crie `knowledge/glue/observability.yaml` com os valores lidos. Substitua `<AAAA-
 # exige a tabela, e a tabela precisa de fonte com data.
 #
 # Numero de retencao codificado em Python seria o defeito que
-# `sparkforge/facts/pricing.py` existe para nao repetir.
+# `sparkforge_aws/facts/pricing.py` existe para nao repetir.
 
 schema_version: 1
 
@@ -102,7 +102,7 @@ retention:
     retrieved: "<AAAA-MM-DD>"
 ```
 
-`source_type` precisa ser um dos valores de `SOURCE_TYPES` em `sparkforge/facts/runtime_matrix.py`. Abra o arquivo e confirme o valor exato antes de escrever; se `official_doc` não estiver na lista, use o que estiver.
+`source_type` precisa ser um dos valores de `SOURCE_TYPES` em `sparkforge_aws/facts/runtime_matrix.py`. Abra o arquivo e confirme o valor exato antes de escrever; se `official_doc` não estiver na lista, use o que estiver.
 
 - [ ] **Step 3: Apontar o Markdown para o YAML**
 
@@ -113,7 +113,7 @@ Em `knowledge/glue/observability.md`, imediatamente antes da seção `## Fontes`
 
 A granularidade do ponto decide por quanto tempo o CloudWatch o guarda. A tabela está em
 [`observability.yaml`](observability.yaml), legível por máquina e carregada por
-`sparkforge/facts/cloudwatch_retention.py` — não é repetida aqui de propósito: duas cópias do
+`sparkforge_aws/facts/cloudwatch_retention.py` — não é repetida aqui de propósito: duas cópias do
 mesmo número divergem, e a que o código lê é a do YAML.
 
 Consequência prática: consultar um run antigo com período curto devolve série vazia. Vazio por
@@ -173,7 +173,7 @@ rtk git commit -m "docs(knowledge): retencao de metrica do CloudWatch, com data 
 ## Task 2: Carregador da retenção
 
 **Files:**
-- Create: `sparkforge/facts/cloudwatch_retention.py`
+- Create: `sparkforge_aws/facts/cloudwatch_retention.py`
 - Test: `tests/test_cloudwatch_retention.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -184,7 +184,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts import cloudwatch_retention as cwr
+from sparkforge_aws.facts import cloudwatch_retention as cwr
 
 
 class TestTable:
@@ -221,7 +221,7 @@ class TestPeriodForAge:
 rtk pytest tests/test_cloudwatch_retention.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.cloudwatch_retention'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.cloudwatch_retention'`.
 
 - [ ] **Step 3: Implementar o carregador**
 
@@ -236,7 +236,7 @@ diferente, remedio diferente.
 
 Derivar o periodo da idade do run exige a tabela de retencao, e a tabela
 precisa vir de `knowledge/glue/observability.yaml`, com fonte e data, pela
-mesma razao de `sparkforge/facts/pricing.py`: numero envelhecido nao parece
+mesma razao de `sparkforge_aws/facts/pricing.py`: numero envelhecido nao parece
 errado, parece preciso.
 
 Fail-closed no mesmo molde: entrada sem `source`, `source_type` ou `retrieved`
@@ -250,8 +250,8 @@ from typing import Any
 
 import yaml
 
-from sparkforge.facts.runtime_matrix import SOURCE_TYPES
-from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
+from sparkforge_aws.facts.runtime_matrix import SOURCE_TYPES
+from sparkforge_aws.knowledge_ref import knowledge_dir, safe_knowledge_file
 
 _ARQUIVO = "glue/observability.yaml"
 _CAMPOS_DE_EVIDENCIA = ("source", "source_type", "retrieved")
@@ -324,7 +324,7 @@ Esperado: PASS, 6 testes. Se `test_recent_run_gets_the_finest_period` falhar por
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/cloudwatch_retention.py tests/test_cloudwatch_retention.py
+rtk git add sparkforge_aws/facts/cloudwatch_retention.py tests/test_cloudwatch_retention.py
 rtk git commit -m "feat(knowledge): carregador fail-closed da retencao de metrica"
 ```
 
@@ -333,8 +333,8 @@ rtk git commit -m "feat(knowledge): carregador fail-closed da retencao de metric
 ## Task 3: Novo kind de artefato e caminho do run
 
 **Files:**
-- Modify: `sparkforge/collect/base.py:29`
-- Modify: `sparkforge/collect/aws.py` (após `glue_job_path`, linha 122)
+- Modify: `sparkforge_aws/collect/base.py:29`
+- Modify: `sparkforge_aws/collect/aws.py` (após `glue_job_path`, linha 122)
 - Test: `tests/test_collect_base.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -344,20 +344,20 @@ Acrescente a `tests/test_collect_base.py`:
 ```python
 class TestGlueJobRunKind:
     def test_glue_job_run_is_an_accepted_kind(self):
-        from sparkforge.collect.base import ArtifactEntry
+        from sparkforge_aws.collect.base import ArtifactEntry
 
         entry = ArtifactEntry(
             kind="glue_job_run",
             path=".sparkforge/artifacts/glue_job_run/job_jr_1.json",
             sha256="a" * 64,
             source="glue:get_job_runs:job",
-            collect_command="sparkforge collect glue-job-runs --job-name job",
+            collect_command="sparkforge-aws collect glue-job-runs --job-name job",
             collected_at="2026-08-26T00:00:00Z",
         )
         assert entry.kind == "glue_job_run"
 
     def test_path_helper_separates_job_from_run(self):
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         assert (
             aws.glue_job_run_path("my-job", "jr_abc")
@@ -375,7 +375,7 @@ Esperado: FAIL com `ValueError: kind desconhecido: 'glue_job_run'`.
 
 - [ ] **Step 3: Implementar**
 
-Em `sparkforge/collect/base.py`, dentro de `ARTIFACT_KINDS`, acrescente `"glue_job_run",` logo após `"cloudwatch",`:
+Em `sparkforge_aws/collect/base.py`, dentro de `ARTIFACT_KINDS`, acrescente `"glue_job_run",` logo após `"cloudwatch",`:
 
 ```python
 ARTIFACT_KINDS = (
@@ -392,7 +392,7 @@ ARTIFACT_KINDS = (
 )
 ```
 
-Em `sparkforge/collect/aws.py`, logo após `glue_job_path`:
+Em `sparkforge_aws/collect/aws.py`, logo após `glue_job_path`:
 
 ```python
 def glue_job_run_path(job_name: str, job_run_id: str) -> str:
@@ -410,7 +410,7 @@ Esperado: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/collect/base.py sparkforge/collect/aws.py tests/test_collect_base.py
+rtk git add sparkforge_aws/collect/base.py sparkforge_aws/collect/aws.py tests/test_collect_base.py
 rtk git commit -m "feat(collect): kind glue_job_run e o caminho de um run por arquivo"
 ```
 
@@ -419,7 +419,7 @@ rtk git commit -m "feat(collect): kind glue_job_run e o caminho de um run por ar
 ## Task 4: Coletor `collect_glue_job_runs`
 
 **Files:**
-- Modify: `sparkforge/collect/aws.py` (após `collect_glue_job`, linha 328)
+- Modify: `sparkforge_aws/collect/aws.py` (após `collect_glue_job`, linha 328)
 - Test: `tests/test_collect_aws.py`
 
 - [ ] **Step 1: Escrever o fake e o primeiro teste**
@@ -488,11 +488,11 @@ class TestCollectGlueJobRuns:
 rtk pytest tests/test_collect_aws.py::TestCollectGlueJobRuns -v
 ```
 
-Esperado: FAIL com `AttributeError: module 'sparkforge.collect.aws' has no attribute 'collect_glue_job_runs'`.
+Esperado: FAIL com `AttributeError: module 'sparkforge_aws.collect.aws' has no attribute 'collect_glue_job_runs'`.
 
 - [ ] **Step 3: Implementar o coletor**
 
-Em `sparkforge/collect/aws.py`, acrescente perto do topo, junto das outras constantes de módulo:
+Em `sparkforge_aws/collect/aws.py`, acrescente perto do topo, junto das outras constantes de módulo:
 
 ```python
 # Estados em que um job run nao muda mais. So estes viram artefato: gravar um
@@ -588,7 +588,7 @@ def _write_job_run(
 ) -> dict[str, Any]:
     rel_path = glue_job_run_path(job_name, run_id)
     collect_command = (
-        f"sparkforge collect glue-job-runs --job-name {job_name} --max-runs 30"
+        f"sparkforge-aws collect glue-job-runs --job-name {job_name} --max-runs 30"
     )
     hit = _offline_hit(root, rel_path)
     if hit is not None:
@@ -744,7 +744,7 @@ Esperado: PASS, incluindo os 9 casos de `TestCollectGlueJobRuns`.
 - [ ] **Step 7: Commit**
 
 ```bash
-rtk git add sparkforge/collect/aws.py tests/test_collect_aws.py
+rtk git add sparkforge_aws/collect/aws.py tests/test_collect_aws.py
 rtk git commit -m "feat(collect): historico de runs Glue, um artefato por run terminal"
 ```
 
@@ -753,7 +753,7 @@ rtk git commit -m "feat(collect): historico de runs Glue, um artefato por run te
 ## Task 5: Período derivado em `collect_cloudwatch`
 
 **Files:**
-- Modify: `sparkforge/collect/aws.py:340-405`
+- Modify: `sparkforge_aws/collect/aws.py:340-405`
 - Test: `tests/test_collect_aws.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -846,10 +846,10 @@ Esperado: FAIL — o primeiro caso acusa `{30} != {60}`.
 
 - [ ] **Step 3: Implementar**
 
-No topo de `sparkforge/collect/aws.py`, junto dos outros imports:
+No topo de `sparkforge_aws/collect/aws.py`, junto dos outros imports:
 
 ```python
-from sparkforge.facts.cloudwatch_retention import period_for_age_days
+from sparkforge_aws.facts.cloudwatch_retention import period_for_age_days
 ```
 
 Substitua o corpo de `collect_cloudwatch` entre `client = boto3.client("cloudwatch")` e a montagem de `queries` por:
@@ -916,7 +916,7 @@ Esperado: PASS. Um teste antigo que asserte `Period == 30` deve ser atualizado p
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/collect/aws.py tests/test_collect_aws.py
+rtk git add sparkforge_aws/collect/aws.py tests/test_collect_aws.py
 rtk git commit -m "fix(collect): periodo do CloudWatch derivado da idade do run"
 ```
 
@@ -925,7 +925,7 @@ rtk git commit -m "fix(collect): periodo do CloudWatch derivado da idade do run"
 ## Task 6: Extrator `analyze cloudwatch`
 
 **Files:**
-- Create: `sparkforge/facts/cloudwatch.py`
+- Create: `sparkforge_aws/facts/cloudwatch.py`
 - Test: `tests/test_facts_cloudwatch.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -937,7 +937,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts.cloudwatch import extract_cloudwatch_path
+from sparkforge_aws.facts.cloudwatch import extract_cloudwatch_path
 
 
 def _artifact(tmp_path: Path, results: list[dict], period: int = 60) -> Path:
@@ -1033,7 +1033,7 @@ class TestExtract:
 rtk pytest tests/test_facts_cloudwatch.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.cloudwatch'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.cloudwatch'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -1060,8 +1060,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sparkforge.collect.aws import CLOUDWATCH_METRICS
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.collect.aws import CLOUDWATCH_METRICS
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "cloudwatch@0.1.0"
 
@@ -1182,7 +1182,7 @@ Esperado: PASS, 4 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/cloudwatch.py tests/test_facts_cloudwatch.py
+rtk git add sparkforge_aws/facts/cloudwatch.py tests/test_facts_cloudwatch.py
 rtk git commit -m "feat(facts): extrator do artefato CloudWatch que faltava"
 ```
 
@@ -1191,7 +1191,7 @@ rtk git commit -m "feat(facts): extrator do artefato CloudWatch que faltava"
 ## Task 7: Facts por run
 
 **Files:**
-- Create: `sparkforge/facts/glue_job_run.py`
+- Create: `sparkforge_aws/facts/glue_job_run.py`
 - Test: `tests/test_facts_glue_job_run.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1205,7 +1205,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
+from sparkforge_aws.facts.glue_job_run import extract_glue_job_runs_path
 
 
 def _write_run(root: Path, run_id: str, **extra) -> Path:
@@ -1309,9 +1309,9 @@ class TestRunFacts:
 
 class TestPercentileParity:
     def test_matches_the_sibling_extractors(self):
-        from sparkforge.facts.event_log import _nearest_rank as event_log_rank
-        from sparkforge.facts.glue_job_run import _nearest_rank as run_rank
-        from sparkforge.facts.iceberg_metadata import _nearest_rank as iceberg_rank
+        from sparkforge_aws.facts.event_log import _nearest_rank as event_log_rank
+        from sparkforge_aws.facts.glue_job_run import _nearest_rank as run_rank
+        from sparkforge_aws.facts.iceberg_metadata import _nearest_rank as iceberg_rank
 
         values = [1, 2, 3, 10, 20, 1000]
         for pct in (50, 95, 99, 100):
@@ -1324,7 +1324,7 @@ class TestPercentileParity:
 rtk pytest tests/test_facts_glue_job_run.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.glue_job_run'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.glue_job_run'`.
 
 - [ ] **Step 3: Implementar os facts por run**
 
@@ -1332,7 +1332,7 @@ Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.glue_
 """Extrator do historico de runs Glue em Facts.
 
 Le o diretorio de artefatos `glue_job_run` -- um JSON por run terminal, escrito
-por `sparkforge.collect.aws.collect_glue_job_runs` -- e emite tres camadas: o
+por `sparkforge_aws.collect.aws.collect_glue_job_runs` -- e emite tres camadas: o
 fact por run, a distribuicao por grupo de capacidade e estado, e a contagem de
 desfecho por grupo de capacidade.
 
@@ -1351,7 +1351,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "glue_job_run@0.1.0"
 
@@ -1582,7 +1582,7 @@ Esperado: PASS, 7 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/glue_job_run.py tests/test_facts_glue_job_run.py
+rtk git add sparkforge_aws/facts/glue_job_run.py tests/test_facts_glue_job_run.py
 rtk git commit -m "feat(facts): fact por run Glue, com DPU observado ou derivado"
 ```
 
@@ -1591,7 +1591,7 @@ rtk git commit -m "feat(facts): fact por run Glue, com DPU observado ou derivado
 ## Task 8: Distribuição e desfecho por capacidade
 
 **Files:**
-- Modify: `sparkforge/facts/glue_job_run.py`
+- Modify: `sparkforge_aws/facts/glue_job_run.py`
 - Test: `tests/test_facts_glue_job_run.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1709,7 +1709,7 @@ Esperado: FAIL — `IndexError` ou lista vazia, porque nenhum fact `glue.job_run
 - [ ] **Step 3: Implementar**
 
 Acrescente o import que o agrupamento precisa, junto dos outros no topo de
-`sparkforge/facts/glue_job_run.py` (ele não existia até aqui de propósito — import sem uso
+`sparkforge_aws/facts/glue_job_run.py` (ele não existia até aqui de propósito — import sem uso
 reprova no lint):
 
 ```python
@@ -1904,7 +1904,7 @@ Esperado: PASS, 13 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/glue_job_run.py tests/test_facts_glue_job_run.py
+rtk git add sparkforge_aws/facts/glue_job_run.py tests/test_facts_glue_job_run.py
 rtk git commit -m "feat(facts): distribuicao por capacidade e estado, e a contagem de desfecho"
 ```
 
@@ -1913,7 +1913,7 @@ rtk git commit -m "feat(facts): distribuicao por capacidade e estado, e a contag
 ## Task 9: Correlação com os facts de CloudWatch
 
 **Files:**
-- Modify: `sparkforge/facts/glue_job_run.py`
+- Modify: `sparkforge_aws/facts/glue_job_run.py`
 - Test: `tests/test_facts_glue_job_run.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1972,7 +1972,7 @@ class TestCorrelation:
         ]
 
         assert len(missing) == 1
-        assert "sparkforge collect cloudwatch" in missing[0].attrs["collect_command"]
+        assert "sparkforge-aws collect cloudwatch" in missing[0].attrs["collect_command"]
         assert "--job-run jr_1" in missing[0].attrs["collect_command"]
 
     def test_without_the_directory_correlation_is_declared_not_silent(self, tmp_path):
@@ -1998,10 +1998,10 @@ Esperado: FAIL com `TypeError: extract_glue_job_runs_path() got an unexpected ke
 
 - [ ] **Step 3: Implementar**
 
-Acrescente o import no topo de `sparkforge/facts/glue_job_run.py`:
+Acrescente o import no topo de `sparkforge_aws/facts/glue_job_run.py`:
 
 ```python
-from sparkforge.facts.cloudwatch import extract_cloudwatch_path
+from sparkforge_aws.facts.cloudwatch import extract_cloudwatch_path
 ```
 
 E troque a assinatura e o corpo de `extract_glue_job_runs_path`:
@@ -2093,7 +2093,7 @@ def _correlate(job_name: str, run_id: str, cloudwatch_dir: Path | None) -> list[
                 "cloudwatch_artifact_missing",
                 "Nenhum artefato de metrica para este run no diretorio informado.",
                 collect_command=(
-                    f"sparkforge collect cloudwatch --repo . --job-name {job_name} "
+                    f"sparkforge-aws collect cloudwatch --repo . --job-name {job_name} "
                     f"--job-run {run_id} --start <ISO8601> --end <ISO8601> --now <ISO8601>"
                 ),
             )
@@ -2113,7 +2113,7 @@ Esperado: PASS, 16 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/glue_job_run.py tests/test_facts_glue_job_run.py
+rtk git add sparkforge_aws/facts/glue_job_run.py tests/test_facts_glue_job_run.py
 rtk git commit -m "feat(facts): correlacao run-metrica, com a lacuna nomeando o comando"
 ```
 
@@ -2122,8 +2122,8 @@ rtk git commit -m "feat(facts): correlacao run-metrica, com a lacuna nomeando o 
 ## Task 10: Camada `_core` e CLI
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py`
-- Modify: `sparkforge/adapters/cli.py`
+- Modify: `sparkforge_aws/adapters/_core.py`
+- Modify: `sparkforge_aws/adapters/cli.py`
 - Test: `tests/test_adapters_cli.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -2133,7 +2133,7 @@ Acrescente a `tests/test_adapters_cli.py`:
 ```python
 class TestGlueJobRunsCommands:
     def test_analyze_cloudwatch_prints_metric_facts(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         artifact = tmp_path / "cw.json"
         artifact.write_text(
@@ -2162,7 +2162,7 @@ class TestGlueJobRunsCommands:
         assert payload["by_kind"]["glue.metric"] == 1
 
     def test_analyze_glue_job_runs_writes_out_file(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         runs_dir = tmp_path / "runs"
         runs_dir.mkdir()
@@ -2221,8 +2221,8 @@ def _extract_cloudwatch_facts(path: str) -> list[Fact]:
     if not target.is_file():
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
-            f"  Aponte para um artefato gravado por `sparkforge collect cloudwatch`:\n"
-            f"    sparkforge analyze cloudwatch "
+            f"  Aponte para um artefato gravado por `sparkforge-aws collect cloudwatch`:\n"
+            f"    sparkforge-aws analyze cloudwatch "
             f"--path .sparkforge/artifacts/cloudwatch/<job>_<run>.json",
             exit_code=2,
         )
@@ -2254,7 +2254,7 @@ def analyze_glue_job_runs(
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o DIRETORIO de artefatos de run, nao para um arquivo:\n"
-            f"    sparkforge analyze glue-job-runs "
+            f"    sparkforge-aws analyze glue-job-runs "
             f"--path .sparkforge/artifacts/glue_job_run/ --job-name <job>",
             exit_code=2,
         )
@@ -2284,8 +2284,8 @@ def collect_glue_job_runs(
 Acrescente os imports correspondentes no topo do arquivo, junto dos outros extratores:
 
 ```python
-from sparkforge.facts.cloudwatch import extract_cloudwatch_path
-from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
+from sparkforge_aws.facts.cloudwatch import extract_cloudwatch_path
+from sparkforge_aws.facts.glue_job_run import extract_glue_job_runs_path
 ```
 
 - [ ] **Step 4: Implementar em `cli.py`**
@@ -2421,7 +2421,7 @@ Esperado: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/adapters/_core.py sparkforge/adapters/cli.py tests/test_adapters_cli.py
+rtk git add sparkforge_aws/adapters/_core.py sparkforge_aws/adapters/cli.py tests/test_adapters_cli.py
 rtk git commit -m "feat(cli): collect glue-job-runs e os dois analyze novos"
 ```
 
@@ -2430,7 +2430,7 @@ rtk git commit -m "feat(cli): collect glue-job-runs e os dois analyze novos"
 ## Task 11: Tools MCP, manifesto e paridade
 
 **Files:**
-- Modify: `sparkforge/adapters/tools.py`
+- Modify: `sparkforge_aws/adapters/tools.py`
 - Modify: `manifest.json:80`
 - Modify: `parity.yaml:438`
 - Test: `tests/test_adapters_tools.py`, `tests/test_adapters_mcp.py`, `tests/test_capability_parity.py`
@@ -2442,7 +2442,7 @@ Acrescente a `tests/test_adapters_tools.py`:
 ```python
 class TestGlueJobRunTools:
     def test_the_three_new_tools_are_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         novas = {
             "sparkforge_collect_glue_job_runs",
@@ -2477,7 +2477,7 @@ Esperado: FAIL com `AssertionError` — os três nomes não estão declarados.
 
 - [ ] **Step 3: Declarar as tools**
 
-Em `sparkforge/adapters/tools.py`, junto de `sparkforge_collect_cloudwatch` (linha 3405):
+Em `sparkforge_aws/adapters/tools.py`, junto de `sparkforge_collect_cloudwatch` (linha 3405):
 
 ```python
     "sparkforge_collect_glue_job_runs": {
@@ -2637,7 +2637,7 @@ Esperado: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
-rtk git add sparkforge/adapters/tools.py manifest.json parity.yaml tests/test_adapters_tools.py .claude .agents
+rtk git add sparkforge_aws/adapters/tools.py manifest.json parity.yaml tests/test_adapters_tools.py .claude .agents
 rtk git commit -m "feat(mcp): tres tools de historico, com manifesto e paridade fechados"
 ```
 
@@ -2755,9 +2755,9 @@ Esperado: PASS. Qualquer falha aqui é regressão introduzida por esta entrega �
 Na seção do README que lista os comandos de `collect` e `analyze`, acrescente as três linhas no formato das vizinhas:
 
 ```markdown
-| `sparkforge collect glue-job-runs` | Histórico de execuções de um job, um artefato por run terminal |
-| `sparkforge analyze cloudwatch` | Facts `glue.metric` de um artefato de métricas já coletado |
-| `sparkforge analyze glue-job-runs` | Facts de histórico: run, distribuição por capacidade e desfecho |
+| `sparkforge-aws collect glue-job-runs` | Histórico de execuções de um job, um artefato por run terminal |
+| `sparkforge-aws analyze cloudwatch` | Facts `glue.metric` de um artefato de métricas já coletado |
+| `sparkforge-aws analyze glue-job-runs` | Facts de histórico: run, distribuição por capacidade e desfecho |
 ```
 
 Confira o formato real da tabela antes de colar — se a seção usar lista em vez de tabela, siga a lista.

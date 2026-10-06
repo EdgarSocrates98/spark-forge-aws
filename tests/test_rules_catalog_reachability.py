@@ -1,6 +1,6 @@
 """Toda regra do catalogo precisa ser alcancavel, ou dizer que nao e.
 
-O motor (`sparkforge/rules/engine.py`) reporta uma regra nao avaliada de duas
+O motor (`sparkforge_aws/rules/engine.py`) reporta uma regra nao avaliada de duas
 formas, e a diferenca e operacional, nao cosmetica:
 
     requires_facts -> "dispara assim que voce coletar o artefato"
@@ -23,19 +23,19 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.dq_ai import assessment as dq_ai_assessment
-from sparkforge.dqdl import validator as dqdl_validator
+from sparkforge_aws.dq_ai import assessment as dq_ai_assessment
+from sparkforge_aws.dqdl import validator as dqdl_validator
 
-# `matcher` NAO mora em `sparkforge/facts/`, e essa e a diferenca que importa
+# `matcher` NAO mora em `sparkforge_aws/facts/`, e essa e a diferenca que importa
 # aqui: as duas varreduras automaticas do repositorio -- a de
 # `tests/test_harness_untrusted.py` (`pkgutil.iter_modules(facts_pkg)`) e a de
-# `scripts/check_status_numbers.py` (`glob` em `sparkforge/facts/*.py`) --
+# `scripts/check_status_numbers.py` (`glob` em `sparkforge_aws/facts/*.py`) --
 # enumeram por DIRETORIO e nunca vao ve-lo. Esta lista e manual, entao ela o
 # ve; as outras duas nao. Sem ele aqui, os dois kinds `error.signature*`
 # contam como orfaos e a primeira regra da area SF-ERR seria forcada a
 # `blocked_on` sobre um modulo que ja esta no repositorio.
-from sparkforge.errors import matcher
-from sparkforge.facts import (
+from sparkforge_aws.errors import matcher
+from sparkforge_aws.facts import (
     airflow_dag,
     athena_cost,
     athena_workgroup,
@@ -114,7 +114,7 @@ from sparkforge.facts import (
     utilization,
     workload,
 )
-from sparkforge.rules.loader import catalog_dir, load_catalog
+from sparkforge_aws.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (
     # `airflow_dag` entra nas DUAS listas manuais no MESMO commit da area SF-AIRFLOW:
@@ -123,8 +123,8 @@ EXTRACTORS = (
     airflow_dag,
     athena_workgroup,
     athena_cost,
-    # `matcher` (`sparkforge/errors/matcher.py`) e o unico desta tupla fora de
-    # `sparkforge/facts/`. Ele emite `error.signature_match` e
+    # `matcher` (`sparkforge_aws/errors/matcher.py`) e o unico desta tupla fora de
+    # `sparkforge_aws/facts/`. Ele emite `error.signature_match` e
     # `error.signature.unresolved` a partir de `spark.exception` -- fato, nao
     # juizo: o que fazer com a assinatura casada e regra, e regra mora no
     # catalogo.
@@ -292,7 +292,7 @@ EXTRACTORS = (
     # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)
     # contam como orfaos, e a primeira regra que os consumir seria forcada a
     # `blocked_on` sobre um extrator que ja esta no repositorio desde
-    # `sparkforge/facts/workload.py`.
+    # `sparkforge_aws/facts/workload.py`.
     workload,
 )
 

@@ -25,7 +25,7 @@
     "explanation": "O mesmo executor teve tasks acima do critério de cópia especulativa do Spark — max(multiplier × mediana, tempo mínimo) — em dois ou mais stages, e essas tasks não leram mais que a mediana do stage, contando input e shuffle lido. A partição não explica a lentidão; o nó explica: worker degradado, disco lento, rede ou vizinho barulhento. Skew é o caso oposto, a task lenta porque leu mais.",
     "proposed_change": [
       "Investigar o worker do executor nomeado (disco, rede e CPU do nó no mesmo intervalo) antes de mexer em configuração.",
-      "Se o nó não puder ser trocado, ligar spark.speculation como mitigação — `sparkforge tune` propõe o valor com os stages medidos."
+      "Se o nó não puder ser trocado, ligar spark.speculation como mitigação — `sparkforge-aws tune` propõe o valor com os stages medidos."
     ],
     "expected_effect": "",
     "benchmark_ref": "",

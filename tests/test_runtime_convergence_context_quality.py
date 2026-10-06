@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from sparkforge.context.quality import (
+from sparkforge_aws.context.quality import (
     ContextObservation,
     ContextQualityReport,
     CounterfactualContextBenchmark,
@@ -81,7 +81,7 @@ class TestEixosDistintos:
 class TestCounterfactualAblation:
     def test_minimum_sufficient_empirico(self):
         # Cada ablacao remove um item; recall medido de verdade por passo.
-        from sparkforge.context.quality import ContextObservation as C
+        from sparkforge_aws.context.quality import ContextObservation as C
 
         def report_sem(removidos):
             items = [i for i in full_items if i.item_id not in removidos]

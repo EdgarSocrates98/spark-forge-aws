@@ -18,21 +18,21 @@
 **Raw Input:** §5 de `prompt_new_evo.md`: "Criaria imediatamente o conceito de **Forge Pack**". Um pack declara `facts`, `collectors`, `rules`, `knowledge`, `agents`, `skills`, `evals`, `capabilities`, `dependencies`, `compatibility`, `security` e `sources`, e se instala por `forge pack install spark-aws`. "O sistema central continua pequeno e confiavel." O §31 poe "Formalizacao do Forge Pack specification" no P0 (item 8) e o "Forge Pack SDK / registry" no P3; o §33 poe "Forge Pack architecture / SDK" como item 1 do TOP 10.
 
 **Context Gathered:**
-- Nao existe pack hoje. `rules/catalog/` e `knowledge/` moram na raiz e entram no wheel por `force-include` (`pyproject.toml`, decisao D-A da Fase 0). A leitura e de UMA raiz: `catalog_dir()` e `knowledge_dir()` resolvem variavel de ambiente -> raiz do repo -> pacote (`sparkforge/rules/loader.py:41`, `sparkforge/knowledge_ref.py:25`).
+- Nao existe pack hoje. `rules/catalog/` e `knowledge/` moram na raiz e entram no wheel por `force-include` (`pyproject.toml`, decisao D-A da Fase 0). A leitura e de UMA raiz: `catalog_dir()` e `knowledge_dir()` resolvem variavel de ambiente -> raiz do repo -> pacote (`sparkforge_aws/rules/loader.py:41`, `sparkforge_aws/knowledge_ref.py:25`).
 - Medido: **42** chamadas a `catalog_dir()`/`knowledge_dir()` em **17** arquivos, e **54** a `load_catalog(` em **12** (30 em `scripts/regen_fixtures.py`, 6 em `scripts/check_evals.py`, 9 em `adapters/_core.py`).
 - O loader ja recusa `id` duplicado entre arquivos (`loader.py:329`) e tem `_REQUIRED`; `action` recusa chave desconhecida.
-- Extratores sao descobertos por varredura de `EMITTED_KINDS` em `sparkforge.facts` (`diagnosis/root_cause.py::_modulo_por_kind`).
-- `sparkforge/registry/` (ADR-001) existe, mas e outra coisa: manifestos de agente/skill/tool/time lidos de `config/*.yaml` para os compiladores de plataforma. Nao carrega regra nem knowledge.
-- `sparkforge/cli/forge.py` ja declara `prog="forge"` (doctor, inspect), mas nenhum script `forge` esta em `[project.scripts]`.
+- Extratores sao descobertos por varredura de `EMITTED_KINDS` em `sparkforge_aws.facts` (`diagnosis/root_cause.py::_modulo_por_kind`).
+- `sparkforge_aws/registry/` (ADR-001) existe, mas e outra coisa: manifestos de agente/skill/tool/time lidos de `config/*.yaml` para os compiladores de plataforma. Nao carrega regra nem knowledge.
+- `sparkforge_aws/cli/forge.py` ja declara `prog="forge"` (doctor, inspect), mas nenhum script `forge` esta em `[project.scripts]`.
 - Area sem rota nao quebra: `case/router.py::next_step` cai no `fallback` do `routing.yaml`. A exigencia de rota e coordenador (`tests/test_agent_coverage.py`) cobre as areas do core.
 - Freshness le um lock so: `knowledge_dir()/sources.lock.json` (`knowledge_freshness.py:53`, `carregar_lock`).
-- `Finding` nao tem campo de origem; tem `catalog_version`. Nao ha `__version__` em `sparkforge/`: a versao mora no `pyproject.toml` (0.5.0) e em `manifest.json`.
+- `Finding` nao tem campo de origem; tem `catalog_version`. Nao ha `__version__` em `sparkforge_aws/`: a versao mora no `pyproject.toml` (0.5.0) e em `manifest.json`.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/packs/` (modulo puro), `rules/loader.py`, `knowledge_ref.py`, `knowledge_freshness.py`, `adapters/{_core,cli,tools}.py`, `fixtures/packs/` | Carga em varias raizes nos loaders que ja existem; verbo novo de topo |
+| Likely Location | `sparkforge_aws/packs/` (modulo puro), `rules/loader.py`, `knowledge_ref.py`, `knowledge_freshness.py`, `adapters/{_core,cli,tools}.py`, `fixtures/packs/` | Carga em varias raizes nos loaders que ja existem; verbo novo de topo |
 | Relevant KB Domains | Nenhum dominio do KB do agentspec cobre empacotamento ou registro (o indice tem dbt, spark, airflow...). Fonte e o proprio repositorio | Define se apoia no codigo medido acima |
 | IaC Patterns | N/A | Nada de infraestrutura |
 
@@ -71,7 +71,7 @@
 
 ### Approach A: Varias raizes nos loaders ⭐ Recommended
 
-**Description:** Modulo `sparkforge/packs/` le `SPARKFORGE_PACKS` e o `pack.yaml` de cada diretorio, valida e devolve os packs ativos e os recusados. `load_catalog()` passa a devolver core + regras dos packs ativos; `knowledge_path` lista `packs/<id>/<arquivo>`; a freshness da regra de pack le o lock do proprio pack. Verbo `sparkforge pack list|check` com tool READ_ONLY.
+**Description:** Modulo `sparkforge_aws/packs/` le `SPARKFORGE_PACKS` e o `pack.yaml` de cada diretorio, valida e devolve os packs ativos e os recusados. `load_catalog()` passa a devolver core + regras dos packs ativos; `knowledge_path` lista `packs/<id>/<arquivo>`; a freshness da regra de pack le o lock do proprio pack. Verbo `sparkforge-aws pack list|check` com tool READ_ONLY.
 
 **Pros:**
 - Segue o molde que ja existe (`SPARKFORGE_CATALOG`, `catalog_dir()`, contencao por `resolve_within`, recusa de id duplicado).
@@ -88,7 +88,7 @@
 
 ### Approach B: Merge por comando
 
-**Description:** `sparkforge pack merge` escreve um catalogo mesclado para onde `SPARKFORGE_CATALOG` aponta; o loader nao muda.
+**Description:** `sparkforge-aws pack merge` escreve um catalogo mesclado para onde `SPARKFORGE_CATALOG` aponta; o loader nao muda.
 
 **Pros:**
 - Nenhuma mudanca no carregamento.
@@ -148,7 +148,7 @@
 | Sobrescrever regra do core | Resultado imprevisivel para quem nao sabe do pack (pergunta 4) | No |
 | Rota de pack para coordenador | Exigiria validar agente (decisao 7) | Yes |
 | A2A capabilities, migrations, source-watchers | Plataforma, fora do pacote | Yes |
-| Script `forge` em `[project.scripts]` | O verbo mora na CLI `sparkforge` que ja existe; `forge.py` e outra superficie | Yes |
+| Script `forge` em `[project.scripts]` | O verbo mora na CLI `sparkforge-aws` que ja existe; `forge.py` e outra superficie | Yes |
 
 ---
 
@@ -183,7 +183,7 @@ Uma equipe que quer regras e knowledge proprios sobre os mesmos artefatos precis
 
 ### Constraints Identified
 - Nenhum `import` de codigo de pack (so leitura de YAML/Markdown/JSON).
-- Contencao de caminho por `sparkforge.paths.resolve_within`, como em `safe_catalog_file`.
+- Contencao de caminho por `sparkforge_aws.paths.resolve_within`, como em `safe_catalog_file`.
 - CI e gates rodam sem a variavel; `check_status_numbers` continua contando 190 regras.
 - Tool nova move os registros manuais (lista literal, amostra, formas de erro, contagem de caminho, `NOVAS_DEPOIS_DO_GOLDEN`, manifest, parity, coordenador, surface lock, claims, status).
 - Regra 23: nada chama provider.

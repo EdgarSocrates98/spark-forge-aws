@@ -26,7 +26,7 @@ Ordena os achados de `judge` por consequencia DECLARADA e nomeia a LACUNA. Use q
 
 ## Na CLI
 
-[`sparkforge root-cause`](../cli/root-cause.md)
+[`sparkforge-aws root-cause`](../cli/root-cause.md)
 
 ## Capacidade
 

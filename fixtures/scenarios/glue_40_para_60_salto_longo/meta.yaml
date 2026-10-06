@@ -18,7 +18,7 @@ proves: >
   E prova a DEDUPLICACAO num caso realista, nao sintetico: `by_step` tem nove
   entradas e `report()` tem cinco, porque SF-MIG-001 e SF-MIG-002 nascem tres
   vezes cada -- uma por degrau cujo alvo satisfaz `glue >= 5.0`. As duas visoes
-  respondem perguntas diferentes (DECISAO 1b de `sparkforge/migration/
+  respondem perguntas diferentes (DECISAO 1b de `sparkforge_aws/migration/
   assessment.py`) e o cenario mede as duas ao mesmo tempo, sobre o mesmo job.
   Quatro artefatos de tipos diferentes numa arvore so: `.py`, `requirements.txt`
   e `.jar`. `pandas==2.2.0` esta no requirements ACIMA do piso e nao e acusado

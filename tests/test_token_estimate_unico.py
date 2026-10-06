@@ -9,14 +9,14 @@ from __future__ import annotations
 import inspect
 import random
 
-import sparkforge.tools as tools_pkg
-from sparkforge.agents import budget as dono
-from sparkforge.codeintel import budget as codeintel_budget
-from sparkforge.context import funnel
-from sparkforge.context.funnel import ContextChunk, ContextFunnel
-from sparkforge.providers import mock
-from sparkforge.providers.mock import MockModelProvider
-from sparkforge.tools import cost
+import sparkforge_aws.tools as tools_pkg
+from sparkforge_aws.agents import budget as dono
+from sparkforge_aws.codeintel import budget as codeintel_budget
+from sparkforge_aws.context import funnel
+from sparkforge_aws.context.funnel import ContextChunk, ContextFunnel
+from sparkforge_aws.providers import mock
+from sparkforge_aws.providers.mock import MockModelProvider
+from sparkforge_aws.tools import cost
 
 
 def _escolha_com_piso(chunks: list[ContextChunk], orcamento: int) -> list[ContextChunk]:
@@ -119,12 +119,12 @@ def test_mock_nunca_afirma_zero_token():
 
 
 def test_valor_que_nao_serializa_em_json_nao_levanta():
-    """A API publica `sparkforge.tools.estimate_tokens` nunca levantou para set, bytes,
+    """A API publica `sparkforge_aws.tools.estimate_tokens` nunca levantou para set, bytes,
     Path ou objeto: antes contava `str(valor)`. O dono unico cai para `str()` so quando o
     JSON falha, e entrada que ja serializava continua com o mesmo numero."""
     from pathlib import Path
 
-    from sparkforge.tools import estimate_tokens
+    from sparkforge_aws.tools import estimate_tokens
 
     for valor in ({1, 2}, b"ab", Path("x"), object(), {1: "a", "b": 2}):
         assert estimate_tokens(valor) >= 1

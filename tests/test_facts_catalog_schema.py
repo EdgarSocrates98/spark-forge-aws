@@ -1,11 +1,11 @@
-from sparkforge.facts.catalog_schema import (
+from sparkforge_aws.facts.catalog_schema import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     extract_catalog_schema,
 )
-from sparkforge.findings.validate import validate_fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.findings.validate import validate_fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 EXPECTED_KINDS = {
     "catalog.table_schema",
@@ -175,7 +175,7 @@ class TestUnblocksSfAth003:
     faltava o fact `catalog.table_partitions`, que este extrator produz.
     Nao e parte do trabalho de fusao (`fusion.py`), mas e um efeito colateral
     direto de dar o shape certo a este fact; ver docstring de
-    `sparkforge/facts/catalog_schema.py`."""
+    `sparkforge_aws/facts/catalog_schema.py`."""
 
     def test_fires_when_partition_count_exceeds_threshold_without_projection(self):
         payload = {

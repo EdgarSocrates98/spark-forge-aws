@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_OPERATIONS_AND_SERVING/define.md
   sha256: "e1ae118b33212f47531e20e207b4807a151d34e6ed19e12aff51f413d874059c"
 files:
-  - {path: sparkforge/facts/streaming_ops.py, action: create, reason: "extrair contrato operacional offline com redaction"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "publicar facts no core de análise"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze streaming-ops"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar MCP read-only"}
+  - {path: sparkforge_aws/facts/streaming_ops.py, action: create, reason: "extrair contrato operacional offline com redaction"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "publicar facts no core de análise"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze streaming-ops"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar MCP read-only"}
   - {path: rules/catalog/streaming-operations.yaml, action: create, reason: "julgar lacunas SLO FinOps segurança"}
   - {path: fixtures/streaming_ops, action: create, reason: "corpus complete missing redaction"}
   - {path: tests/test_facts_streaming_ops.py, action: create, reason: "contrato e redaction"}

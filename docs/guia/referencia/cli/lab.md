@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge lab`
+# `sparkforge-aws lab`
 
 Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita.
 
@@ -8,29 +8,29 @@ Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirma�
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge lab analyze`](#sparkforge-lab-analyze) | Aponta artifacts capturados para análise posterior. |
-| [`sparkforge lab compare`](#sparkforge-lab-compare) | Compara dois receipts/runs sem afirmar performance. |
-| [`sparkforge lab describe`](#sparkforge-lab-describe) | Descreve um cenário |
-| [`sparkforge lab doctor`](#sparkforge-lab-doctor) | Verifica host, registry e perfis sem iniciar serviços. |
-| [`sparkforge lab down`](#sparkforge-lab-down) | Derruba projeto Compose |
-| [`sparkforge lab gc`](#sparkforge-lab-gc) | Planeja coleta de runs |
-| [`sparkforge lab inspect`](#sparkforge-lab-inspect) | Inspeciona run/receipt e verifica hash. |
-| [`sparkforge lab plan`](#sparkforge-lab-plan) | Compila cenário em actions |
-| [`sparkforge lab profiles`](#sparkforge-lab-profiles) | Lista profiles e requisitos declarados. |
-| [`sparkforge lab promote-fixture`](#sparkforge-lab-promote-fixture) | Promove run revisado para fixture curated. |
-| [`sparkforge lab reproduce`](#sparkforge-lab-reproduce) | Verifica receipt e devolve plano reproduzível. |
-| [`sparkforge lab run`](#sparkforge-lab-run) | Planeja ou executa cenário |
-| [`sparkforge lab scenarios`](#sparkforge-lab-scenarios) | Lista o Golden 20 e suas fidelidades. |
-| [`sparkforge lab shell`](#sparkforge-lab-shell) | Planeja shell de serviço |
-| [`sparkforge lab up`](#sparkforge-lab-up) | Sobe profile Compose |
-| [`sparkforge lab verify`](#sparkforge-lab-verify) | Verifica registry, Golden 20, schemas e action plans offline. |
+| [`sparkforge-aws lab analyze`](#sparkforge-aws-lab-analyze) | Aponta artifacts capturados para análise posterior. |
+| [`sparkforge-aws lab compare`](#sparkforge-aws-lab-compare) | Compara dois receipts/runs sem afirmar performance. |
+| [`sparkforge-aws lab describe`](#sparkforge-aws-lab-describe) | Descreve um cenário |
+| [`sparkforge-aws lab doctor`](#sparkforge-aws-lab-doctor) | Verifica host, registry e perfis sem iniciar serviços. |
+| [`sparkforge-aws lab down`](#sparkforge-aws-lab-down) | Derruba projeto Compose |
+| [`sparkforge-aws lab gc`](#sparkforge-aws-lab-gc) | Planeja coleta de runs |
+| [`sparkforge-aws lab inspect`](#sparkforge-aws-lab-inspect) | Inspeciona run/receipt e verifica hash. |
+| [`sparkforge-aws lab plan`](#sparkforge-aws-lab-plan) | Compila cenário em actions |
+| [`sparkforge-aws lab profiles`](#sparkforge-aws-lab-profiles) | Lista profiles e requisitos declarados. |
+| [`sparkforge-aws lab promote-fixture`](#sparkforge-aws-lab-promote-fixture) | Promove run revisado para fixture curated. |
+| [`sparkforge-aws lab reproduce`](#sparkforge-aws-lab-reproduce) | Verifica receipt e devolve plano reproduzível. |
+| [`sparkforge-aws lab run`](#sparkforge-aws-lab-run) | Planeja ou executa cenário |
+| [`sparkforge-aws lab scenarios`](#sparkforge-aws-lab-scenarios) | Lista o Golden 20 e suas fidelidades. |
+| [`sparkforge-aws lab shell`](#sparkforge-aws-lab-shell) | Planeja shell de serviço |
+| [`sparkforge-aws lab up`](#sparkforge-aws-lab-up) | Sobe profile Compose |
+| [`sparkforge-aws lab verify`](#sparkforge-aws-lab-verify) | Verifica registry, Golden 20, schemas e action plans offline. |
 
-## `sparkforge lab analyze`
+## `sparkforge-aws lab analyze`
 
 Aponta artifacts capturados para análise posterior.
 
 ```bash
-sparkforge lab analyze --help
+sparkforge-aws lab analyze --help
 ```
 
 ### Opções
@@ -44,12 +44,12 @@ sparkforge lab analyze --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab compare`
+## `sparkforge-aws lab compare`
 
 Compara dois receipts/runs sem afirmar performance.
 
 ```bash
-sparkforge lab compare --help
+sparkforge-aws lab compare --help
 ```
 
 ### Opções
@@ -64,12 +64,12 @@ sparkforge lab compare --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab describe`
+## `sparkforge-aws lab describe`
 
 Descreve um cenário
 
 ```bash
-sparkforge lab describe --help
+sparkforge-aws lab describe --help
 ```
 
 ### Opções
@@ -87,12 +87,12 @@ sparkforge lab describe --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab doctor`
+## `sparkforge-aws lab doctor`
 
 Verifica host, registry e perfis sem iniciar serviços.
 
 ```bash
-sparkforge lab doctor --help
+sparkforge-aws lab doctor --help
 ```
 
 ### Opções
@@ -105,12 +105,12 @@ sparkforge lab doctor --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab down`
+## `sparkforge-aws lab down`
 
 Derruba projeto Compose
 
 ```bash
-sparkforge lab down --help
+sparkforge-aws lab down --help
 ```
 
 ### Opções
@@ -128,12 +128,12 @@ sparkforge lab down --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab gc`
+## `sparkforge-aws lab gc`
 
 Planeja coleta de runs
 
 ```bash
-sparkforge lab gc --help
+sparkforge-aws lab gc --help
 ```
 
 ### Opções
@@ -151,12 +151,12 @@ sparkforge lab gc --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab inspect`
+## `sparkforge-aws lab inspect`
 
 Inspeciona run/receipt e verifica hash.
 
 ```bash
-sparkforge lab inspect --help
+sparkforge-aws lab inspect --help
 ```
 
 ### Opções
@@ -170,12 +170,12 @@ sparkforge lab inspect --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab plan`
+## `sparkforge-aws lab plan`
 
 Compila cenário em actions
 
 ```bash
-sparkforge lab plan --help
+sparkforge-aws lab plan --help
 ```
 
 ### Opções
@@ -193,12 +193,12 @@ sparkforge lab plan --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab profiles`
+## `sparkforge-aws lab profiles`
 
 Lista profiles e requisitos declarados.
 
 ```bash
-sparkforge lab profiles --help
+sparkforge-aws lab profiles --help
 ```
 
 ### Opções
@@ -211,12 +211,12 @@ sparkforge lab profiles --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab promote-fixture`
+## `sparkforge-aws lab promote-fixture`
 
 Promove run revisado para fixture curated.
 
 ```bash
-sparkforge lab promote-fixture --help
+sparkforge-aws lab promote-fixture --help
 ```
 
 ### Opções
@@ -232,12 +232,12 @@ sparkforge lab promote-fixture --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab reproduce`
+## `sparkforge-aws lab reproduce`
 
 Verifica receipt e devolve plano reproduzível.
 
 ```bash
-sparkforge lab reproduce --help
+sparkforge-aws lab reproduce --help
 ```
 
 ### Opções
@@ -251,12 +251,12 @@ sparkforge lab reproduce --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab run`
+## `sparkforge-aws lab run`
 
 Planeja ou executa cenário
 
 ```bash
-sparkforge lab run --help
+sparkforge-aws lab run --help
 ```
 
 ### Opções
@@ -274,12 +274,12 @@ sparkforge lab run --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab scenarios`
+## `sparkforge-aws lab scenarios`
 
 Lista o Golden 20 e suas fidelidades.
 
 ```bash
-sparkforge lab scenarios --help
+sparkforge-aws lab scenarios --help
 ```
 
 ### Opções
@@ -293,12 +293,12 @@ sparkforge lab scenarios --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab shell`
+## `sparkforge-aws lab shell`
 
 Planeja shell de serviço
 
 ```bash
-sparkforge lab shell --help
+sparkforge-aws lab shell --help
 ```
 
 ### Opções
@@ -316,12 +316,12 @@ sparkforge lab shell --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab up`
+## `sparkforge-aws lab up`
 
 Sobe profile Compose
 
 ```bash
-sparkforge lab up --help
+sparkforge-aws lab up --help
 ```
 
 ### Opções
@@ -339,12 +339,12 @@ sparkforge lab up --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge lab verify`
+## `sparkforge-aws lab verify`
 
 Verifica registry, Golden 20, schemas e action plans offline.
 
 ```bash
-sparkforge lab verify --help
+sparkforge-aws lab verify --help
 ```
 
 ### Opções

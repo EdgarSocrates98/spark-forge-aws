@@ -10,7 +10,7 @@ retomarem de onde parou.
 Rode:
 
 ```
-sparkforge handoff --repo <raiz-do-repo> [--findings <arquivo-de-findings.json>] [--unresolved <n>] [--in-flight "<descrição>"]
+sparkforge-aws handoff --repo <raiz-do-repo> [--findings <arquivo-de-findings.json>] [--unresolved <n>] [--in-flight "<descrição>"]
 ```
 
 Isso escreve `.sparkforge/handoff.md` (leitura humana) a partir do mesmo payload

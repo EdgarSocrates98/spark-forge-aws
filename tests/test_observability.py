@@ -1,6 +1,6 @@
 """Tests for SparkForge Local-First Observability (Phase 9)."""
 
-from sparkforge.observability import AgentOpsTracker, SQLiteTraceStore
+from sparkforge_aws.observability import AgentOpsTracker, SQLiteTraceStore
 
 
 def test_agentops_tracer_and_sqlite_store(tmp_path):

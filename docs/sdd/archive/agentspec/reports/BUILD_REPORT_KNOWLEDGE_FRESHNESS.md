@@ -22,8 +22,8 @@ Branch `feat/knowledge-freshness`, a partir da `main` (com #50, #51 e #52).
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | B1–B5; B6 (commit e PR) em seguida |
-| **Files Created** | `sparkforge/knowledge_freshness.py`, `tests/test_knowledge_freshness.py`, `tests/test_adapters_freshness.py`, `fixtures/sarif/freshness/`, `docs/knowledge-freshness.md` |
-| **Files Modified** | `scripts/refresh_knowledge.py`, `adapters/{_core,cli,tools}.py`, `reporting/github.py`, `scripts/regen_fixtures.py`, `tests/{test_refresh_knowledge,test_fixtures_golden_sarif,test_fixtures_golden_mcp_parity}.py`, `sf-verifier` + espelhos, `examples/github/sparkforge.yml`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + `docs/harness/{CODEINTEL-GAP,CURRENT-HARNESS-GAP}.md` |
+| **Files Created** | `sparkforge_aws/knowledge_freshness.py`, `tests/test_knowledge_freshness.py`, `tests/test_adapters_freshness.py`, `fixtures/sarif/freshness/`, `docs/knowledge-freshness.md` |
+| **Files Modified** | `scripts/refresh_knowledge.py`, `adapters/{_core,cli,tools}.py`, `reporting/github.py`, `scripts/regen_fixtures.py`, `tests/{test_refresh_knowledge,test_fixtures_golden_sarif,test_fixtures_golden_mcp_parity}.py`, `sf-verifier` + espelhos, `examples/github/sparkforge-aws.yml`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + `docs/harness/{CODEINTEL-GAP,CURRENT-HARNESS-GAP}.md` |
 | **Tests Passing** | Suite completa, um processo por arquivo: 267 arquivos, 12 230 passed, 0 failed, 9 skipped |
 | **Agents Used** | Nenhum delegado: o build foi direto |
 
@@ -54,7 +54,7 @@ Branch `feat/knowledge-freshness`, a partir da `main` (com #50, #51 e #52).
 ### Lint Check
 
 ```text
-ruff check sparkforge scripts tests -> All checks passed!
+ruff check sparkforge_aws scripts tests -> All checks passed!
 ```
 
 **Status:** ✅ Pass
@@ -88,7 +88,7 @@ Snyk Code (knowledge_freshness.py, refresh_knowledge.py): 0
 | 3 | `SPARKFORGE_KNOWLEDGE` apontando para um diretorio so com lock quebrou a CLI: o `build_parser` le a matriz do Control-M de knowledge | `SPARKFORGE_SOURCES_LOCK`, que troca so o lock |
 | 4 | Snyk (Low): variavel de ambiente para `Path` sem checagem | Caminho resolvido e so `.json` existente; senao `lock_ilegivel` |
 | 5 | Dois findings da mesma regra saiam como linhas iguais no resumo | Coluna "Sujeito" |
-| 6 | `tests/test_facts_scan.py` recusou `rglob` em `sparkforge/`, e so no lote completo | `iter_source_files`; mesmos 52 arquivos |
+| 6 | `tests/test_facts_scan.py` recusou `rglob` em `sparkforge_aws/`, e so no lote completo | `iter_source_files`; mesmos 52 arquivos |
 | 7 | VNX-670 e razao (`contains`), e o script de remediacao so trata numero | Ajustada a mao, com nota no manifesto |
 
 ---

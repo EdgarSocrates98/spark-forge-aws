@@ -32,7 +32,7 @@ jobs:
         # Guarda no unico passo irreversivel do desenho. Sem ela e possivel
         # publicar 0.5.0 sob a tag v0.6.0, e o PyPI nao aceita reescrita.
         #
-        # `sys.path.insert(0,'.')` importa `sparkforge` diretamente do
+        # `sys.path.insert(0,'.')` importa `sparkforge-aws` diretamente do
         # checkout -- o mesmo padrao que o gate de procedencia (Task 6) combate
         # em geral. Aqui e intencional: queremos a versao do FONTE, para
         # compara-la com a tag que o humano digitou, nao a de um pacote ja
@@ -47,7 +47,7 @@ jobs:
         env:
           TAG: ${{ github.event.inputs.tag }}
         run: |
-          PKG=$(python -c "import sys; sys.path.insert(0,'.'); import sparkforge; print(sparkforge.__version__)")
+          PKG=$(python -c "import sys; sys.path.insert(0,'.'); import sparkforge_aws; print(sparkforge_aws.__version__)")
           if [ "v$PKG" != "$TAG" ]; then
             echo "tag $TAG diverge da versao do pacote v$PKG (formato esperado: v<versao>, minusculo)" >&2
             exit 1

@@ -4,7 +4,7 @@
 
 **Goal:** Tornar alcançável, pela CLI e pelo MCP, o motor de migração que as fases G1–G7 construíram, e fechar as lacunas restantes do mapa que têm consumidor real.
 
-**Architecture:** Nenhum motor novo. `sparkforge/migration/assessment.py:assess()` já expande o par de versões em degraus, julga com o catálogo e agrega com gates fail-closed. O que falta é **porta de entrada** (CLI, MCP), **composição de artefato** (hoje `assess()` recebe uma lista de `Fact` pronta) e as três capacidades cujo consumidor passou a existir depois de G1–G7.
+**Architecture:** Nenhum motor novo. `sparkforge_aws/migration/assessment.py:assess()` já expande o par de versões em degraus, julga com o catálogo e agrega com gates fail-closed. O que falta é **porta de entrada** (CLI, MCP), **composição de artefato** (hoje `assess()` recebe uma lista de `Fact` pronta) e as três capacidades cujo consumidor passou a existir depois de G1–G7.
 
 **Tech Stack:** Python 3.10/3.11 (stdlib + PyYAML), pytest, o catálogo de regras e o modelo `Fact`/`Finding` existentes.
 
@@ -16,7 +16,7 @@
 
 Medido em 2026-08-22, depois de fechar G1–G7:
 
-- `sparkforge/cli/forge.py:16` importa `GlueMigrationAnalyzer` — correspondência de substring, sem fonte, sem `runtime_scope`, com `--to` default `"5.1"` fixado no código. **`forge migrate glue` roda o analisador antigo.**
+- `sparkforge_aws/cli/forge.py:16` importa `GlueMigrationAnalyzer` — correspondência de substring, sem fonte, sem `runtime_scope`, com `--to` default `"5.1"` fixado no código. **`forge migrate glue` roda o analisador antigo.**
 - Das 41 tools MCP, nenhuma é de migração. As próximas são `sparkforge_judge`, `sparkforge_rules_lookup` e `sparkforge_runtime_detect` — dá para compor o resultado com três chamadas à mão, não por uma entrada de migração.
 
 Consequência: as dez regras de `SF-MIG`, `SF-SPARK4` e `SF-LF` são alcançáveis por quem chama `assess()` em Python ou lê o YAML. Pela CLI e pelo MCP, não. **H1 vem primeiro porque transforma trabalho já feito em capacidade alcançável, sem construir nada novo.**
@@ -37,7 +37,7 @@ Consequência: as dez regras de `SF-MIG`, `SF-SPARK4` e `SF-LF` são alcançáve
 ## Convenções deste repositório que valem para todas as fases
 
 - Comentários e docstrings em português, explicando *por quê*, nunca *o quê*.
-- `python -m ruff check sparkforge scripts tests` não pode acusar nada novo nos arquivos tocados. Limite de linha 100. O repositório tem 258 achados de baseline — meça antes e depois.
+- `python -m ruff check sparkforge_aws scripts tests` não pode acusar nada novo nos arquivos tocados. Limite de linha 100. O repositório tem 258 achados de baseline — meça antes e depois.
 - Nenhum teste afirma contagem copiada. Conte derivando, ou asserte estrutura.
 - `Fact` é observação ancorada e **nunca** contém juízo nem limiar. Limiar mora na regra.
 - Mensagem de commit vai em **arquivo**, com `git commit -F`. Here-string do PowerShell (`@'...'@`) e backtick corrompem a mensagem no Bash — aconteceu duas vezes nesta sessão.
@@ -48,10 +48,10 @@ Consequência: as dez regras de `SF-MIG`, `SF-SPARK4` e `SF-LF` são alcançáve
 ## H1 — a porta de entrada
 
 **Files:**
-- Modify: `sparkforge/cli/forge.py`
-- Modify: `sparkforge/adapters/tools.py`, `sparkforge/adapters/_core.py`
-- Delete: `sparkforge/migration/glue/analyzer.py`, `tests/test_migration_glue.py`
-- Modify: `sparkforge/migration/__init__.py`, `tests/test_migration_assessment.py`
+- Modify: `sparkforge_aws/cli/forge.py`
+- Modify: `sparkforge_aws/adapters/tools.py`, `sparkforge_aws/adapters/_core.py`
+- Delete: `sparkforge_aws/migration/glue/analyzer.py`, `tests/test_migration_glue.py`
+- Modify: `sparkforge_aws/migration/__init__.py`, `tests/test_migration_assessment.py`
 
 - [x] **Step 1: medir quem consome o analisador antigo**
 
@@ -59,7 +59,7 @@ Run:
 ```bash
 TOKENSAVE_DISABLE_GREP_HOOK=1 grep -rn "GlueMigrationAnalyzer\|MigrationFinding\|migration.glue" --include=*.py --include=*.yaml --include=*.json --include=*.md .
 ```
-Expected: `sparkforge/cli/forge.py`, `sparkforge/migration/__init__.py`, `sparkforge/migration/glue/`, `tests/test_migration_glue.py`, mais as citações em `STATUS.md` e no manifesto de alegações. Anote cada uma — todas precisam ser tratadas, e as de documento viram registro histórico, não apagamento.
+Expected: `sparkforge_aws/cli/forge.py`, `sparkforge_aws/migration/__init__.py`, `sparkforge_aws/migration/glue/`, `tests/test_migration_glue.py`, mais as citações em `STATUS.md` e no manifesto de alegações. Anote cada uma — todas precisam ser tratadas, e as de documento viram registro histórico, não apagamento.
 
 - [x] **Step 2: escrever o teste do comando novo, e vê-lo falhar**
 
@@ -70,7 +70,7 @@ def test_o_comando_usa_o_motor_de_regras_e_nao_o_analisador_antigo(tmp_path, cap
     (tmp_path / "job.py").write_text(
         "import com.amazonaws.services.s3.AmazonS3\n", encoding="utf-8"
     )
-    from sparkforge.cli.forge import main
+    from sparkforge_aws.cli.forge import main
 
     codigo = main(["migrate", "glue", str(tmp_path), "--from", "4.0", "--to", "6.0"])
     saida = json.loads(capsys.readouterr().out)
@@ -86,11 +86,11 @@ Run: `python -m pytest tests/test_cli_migrate_glue.py -v` — deve FALHAR.
 
 - [x] **Step 3: religar o comando**
 
-Em `sparkforge/cli/forge.py`, trocar o import e o corpo de `cmd_migrate_glue`:
+Em `sparkforge_aws/cli/forge.py`, trocar o import e o corpo de `cmd_migrate_glue`:
 
 ```python
-from sparkforge.facts import migration as facts_migration
-from sparkforge.migration import assessment
+from sparkforge_aws.facts import migration as facts_migration
+from sparkforge_aws.migration import assessment
 
 
 def cmd_migrate_glue(args: argparse.Namespace) -> int:
@@ -126,7 +126,7 @@ Run: `python -m pytest tests/test_cli_migrate_glue.py -v` — PASS.
 
 - [x] **Step 5: a tool MCP**
 
-Acrescentar `sparkforge_migration_assess` a `sparkforge/adapters/tools.py`, com handler em `_core.py` no molde dos vizinhos (`_h_analyze_*`). Entrada: `path` (diretório), `source`, `target`. Saída: o `to_dict()` do assessment, sob `_may_fail`.
+Acrescentar `sparkforge_migration_assess` a `sparkforge_aws/adapters/tools.py`, com handler em `_core.py` no molde dos vizinhos (`_h_analyze_*`). Entrada: `path` (diretório), `source`, `target`. Saída: o `to_dict()` do assessment, sob `_may_fail`.
 
 A §70 do prompt manda **expandir** em vez de multiplicar: esta é a única tool nova da fase, e ela absorve o que `sparkforge_spark4_migration_scan` e `sparkforge_jar_compatibility_scan` devolveriam — as regras que julgam Spark 4 e binário de Scala já estão no catálogo e saem no mesmo assessment.
 
@@ -134,9 +134,9 @@ Gates que uma tool nova cobra: `tests/test_adapters_tools.py`, `tests/test_adapt
 
 - [x] **Step 6: apagar o analisador antigo**
 
-Só depois dos passos acima verdes. Apagar `sparkforge/migration/glue/`, `tests/test_migration_glue.py`, os reexports de `sparkforge/migration/__init__.py`, e a exceção de `tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor` que isentava `glue/analyzer.py`.
+Só depois dos passos acima verdes. Apagar `sparkforge_aws/migration/glue/`, `tests/test_migration_glue.py`, os reexports de `sparkforge_aws/migration/__init__.py`, e a exceção de `tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor` que isentava `glue/analyzer.py`.
 
-Conferir que `docs/claims.lock.json` não tem alegação `PROVADA` apontando para `sparkforge/migration/glue/analyzer.py` — o `STATUS.md` registra que existe uma. Se existir, ela vira `REMOVIDA` com nota dizendo que o artefato foi apagado e por quê.
+Conferir que `docs/claims.lock.json` não tem alegação `PROVADA` apontando para `sparkforge_aws/migration/glue/analyzer.py` — o `STATUS.md` registra que existe uma. Se existir, ela vira `REMOVIDA` com nota dizendo que o artefato foi apagado e por quê.
 
 - [x] **Step 7: gates e commit**
 
@@ -145,7 +145,7 @@ python -m pytest tests/test_cli_migrate_glue.py tests/test_migration_assessment.
   tests/test_adapters_tools.py tests/test_adapters_mcp.py tests/test_agent_coverage.py \
   tests/test_docs_coverage.py tests/test_capability_parity.py -q
 python scripts/check_vnext_claims.py
-python -m ruff check sparkforge tests --output-format concise
+python -m ruff check sparkforge_aws tests --output-format concise
 ```
 
 Commit: `feat(cli): forge migrate glue passa a usar o motor de regras`.
@@ -154,11 +154,11 @@ Commit: `feat(cli): forge migrate glue passa a usar o motor de regras`.
 
 ## H2 — composição de artefato e etapas do contrato
 
-**Files:** `sparkforge/migration/assessment.py`, `tests/test_migration_assessment.py`
+**Files:** `sparkforge_aws/migration/assessment.py`, `tests/test_migration_assessment.py`
 
 - [x] **Step 1: `collect()` — a composição que falta**
 
-`assess()` recebe `list[Fact]`. Quem chama pela CLI precisa que alguém componha os extratores. Criar `sparkforge/migration/collect.py` com uma função que, dado um diretório, chama `extract_migration_tree` e, quando houver `.tf`, também `extract_terraform_tree`, e devolve a união ordenada.
+`assess()` recebe `list[Fact]`. Quem chama pela CLI precisa que alguém componha os extratores. Criar `sparkforge_aws/migration/collect.py` com uma função que, dado um diretório, chama `extract_migration_tree` e, quando houver `.tf`, também `extract_terraform_tree`, e devolve a união ordenada.
 
 Por que função separada e não dentro de `assess()`: `assess()` é puro sobre facts e é isso que torna testável julgar sem tocar disco. A composição é I/O, e I/O tem lugar próprio — mesmo motivo pelo qual `extract_migration_tree` não vive dentro de `judge`.
 
@@ -181,7 +181,7 @@ Commit: `feat(migration): assessment compoe os artefatos do job e nomeia os eixo
 
 ## H3 — bloqueio por consumidor incompatível (§25)
 
-**Files:** `sparkforge/migration/assessment.py` ou regra nova, `sparkforge/storage/feature_support.py`, `rules/catalog/`
+**Files:** `sparkforge_aws/migration/assessment.py` ou regra nova, `sparkforge_aws/storage/feature_support.py`, `rules/catalog/`
 
 - [x] **Step 1: decidir a forma, e registrar a decisão**
 
@@ -206,7 +206,7 @@ Commit: `feat(rules): consumidor incompativel bloqueia a recomendacao`.
 ## H4 — as duas CLIs que faltam
 
 - [x] **`forge glue dependency-audit` (§16).** Entrada: diretório. Lê `mig.python_dep` (que já carrega `major`) e `mig.jar_binary` (que já carrega `scala_minor`), julga com o catálogo e devolve pins, conflitos e risco de ABI. O motor existe; é composição de CLI.
-- [x] **`forge iceberg assess-upgrade --from 2 --to 3` (§24).** Consulta `sparkforge/storage/feature_support.py` para as engines do inventário de consumidores e devolve `SAFE`/`CONDITIONAL`/`BLOCKED`/`UNRESOLVED`. **Nunca executa o upgrade** — a §94 do prompt é explícita.
+- [x] **`forge iceberg assess-upgrade --from 2 --to 3` (§24).** Consulta `sparkforge_aws/storage/feature_support.py` para as engines do inventário de consumidores e devolve `SAFE`/`CONDITIONAL`/`BLOCKED`/`UNRESOLVED`. **Nunca executa o upgrade** — a §94 do prompt é explícita.
 
 Cada uma com teste de CLI no molde de H1. Commits separados.
 
@@ -215,7 +215,7 @@ Cada uma com teste de CLI no molde de H1. Commits separados.
 ## H5 — preço e benchmark
 
 - [x] **Preço (§51).** Pesquisar a página oficial de pricing do AWS Glue e registrar como conhecimento com `retrieved`, região e tipo de worker. **Não codificar "-30%"**: o prompt proíbe explicitamente, e preço muda. Se a fonte não separar preço por versão de runtime, diga isso em vez de inferir.
-- [x] **Benchmark por runtime (§52).** `sparkforge/facts/benchmark.py` já compara execuções. Falta parametrizar por versão de runtime e recusar comparação sem as duas execuções — sem baseline não há prova de melhoria, e o repositório já tem gate com essa forma (`missing_evidence`).
+- [x] **Benchmark por runtime (§52).** `sparkforge_aws/facts/benchmark.py` já compara execuções. Falta parametrizar por versão de runtime e recusar comparação sem as duas execuções — sem baseline não há prova de melhoria, e o repositório já tem gate com essa forma (`missing_evidence`).
 
 **Escreva no relatório o que a fonte não sustentar.** Preço 30% menor não é performance 30% maior, e a §52 manda medir as duas coisas separadamente.
 

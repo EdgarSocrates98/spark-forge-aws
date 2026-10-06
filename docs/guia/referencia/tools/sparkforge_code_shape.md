@@ -19,7 +19,7 @@ A FORMA do grafo de codigo: comunidades (grupos que se chamam mais entre si) e o
 
 ## Na CLI
 
-[`sparkforge code shape`](../cli/code.md)
+[`sparkforge-aws code shape`](../cli/code.md)
 
 ## Capacidade
 

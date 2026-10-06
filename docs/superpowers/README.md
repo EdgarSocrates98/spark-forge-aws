@@ -15,7 +15,7 @@ de control plane, streaming, Forge Lab e economia observada sem reescrever o
 histórico congelado.
 
 Spec novo nasce em `docs/sdd/<FEATURE>/`, pelas skills `sdd-*` e conferido por
-`sparkforge sdd check`. O fluxo está em [`docs/sdd/README.md`](../sdd/README.md).
+`sparkforge-aws sdd check`. O fluxo está em [`docs/sdd/README.md`](../sdd/README.md).
 
 Spec antigo que ficou obsoleto não é reescrito: ganha uma seção de desvios. O
 histórico do plugin AgentSpec, que também especificou frentes deste

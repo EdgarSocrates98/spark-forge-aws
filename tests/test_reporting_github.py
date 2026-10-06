@@ -13,15 +13,15 @@ from typing import Any
 import jsonschema
 import pytest
 
-from sparkforge.reporting import github
-from sparkforge.reporting.github import (
+from sparkforge_aws.reporting import github
+from sparkforge_aws.reporting.github import (
     LIMITE_RESULTADOS,
     LIMITE_SUMARIO_BYTES,
     anotacao,
     gate_disparou,
     projetar,
 )
-from sparkforge.reporting.locate import Localizado, Recusa, localizar
+from sparkforge_aws.reporting.locate import Localizado, Recusa, localizar
 
 ROOT = Path(__file__).resolve().parents[1]
 ESQUEMA = ROOT / "fixtures" / "sarif" / "_schema" / "sarif-schema-2.1.0.json"
@@ -105,7 +105,7 @@ class TestLocalizar:
         # runtime, sem linha em arquivo nenhum, e nao evidencia pendurada.
         # `rule_id` precisa ser uma regra que DE FATO le o kind daquele fact
         # (`requires_facts`), senao a forma do subject sozinha nao basta mais.
-        from sparkforge.adapters._core import build_runtime
+        from sparkforge_aws.adapters._core import build_runtime
 
         _, ambiente = build_runtime(
             glue="5.0", emr="7.5.0", databricks="15.4", python="3.11", iceberg="1.6.1",

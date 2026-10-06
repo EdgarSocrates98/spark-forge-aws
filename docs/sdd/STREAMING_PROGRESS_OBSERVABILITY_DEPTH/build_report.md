@@ -10,23 +10,23 @@ upstream:
 tasks:
   - id: T1
     status: done
-    red: {command: "python -m pytest tests/test_facts_streaming.py::test_progress_series_summarizes_temporal_state_and_watermark tests/test_facts_streaming.py::test_progress_series_unresolved_for_invalid_temporal_measurement -q --basetemp=E:\\temp\\sparkforge-progress-depth-t1", exit: 1}
-    green: {command: "python -m pytest tests/test_facts_streaming.py::test_progress_series_summarizes_temporal_state_and_watermark tests/test_facts_streaming.py::test_progress_series_unresolved_for_invalid_temporal_measurement -q --basetemp=E:\\temp\\sparkforge-progress-depth-t1-green", exit: 0}
+    red: {command: "python -m pytest tests/test_facts_streaming.py::test_progress_series_summarizes_temporal_state_and_watermark tests/test_facts_streaming.py::test_progress_series_unresolved_for_invalid_temporal_measurement -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t1", exit: 1}
+    green: {command: "python -m pytest tests/test_facts_streaming.py::test_progress_series_summarizes_temporal_state_and_watermark tests/test_facts_streaming.py::test_progress_series_unresolved_for_invalid_temporal_measurement -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t1-green", exit: 0}
   - id: T2
     status: done
-    red: {command: "python -m pytest tests/test_streaming_rules.py::test_progress_observability_depth_rules_are_evidence_first -q --basetemp=E:\\temp\\sparkforge-progress-depth-t2", exit: 1}
-    green: {command: "python -m pytest tests/test_streaming_rules.py::test_progress_observability_depth_rules_are_evidence_first -q --basetemp=E:\\temp\\sparkforge-progress-depth-t2-green", exit: 0}
+    red: {command: "python -m pytest tests/test_streaming_rules.py::test_progress_observability_depth_rules_are_evidence_first -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t2", exit: 1}
+    green: {command: "python -m pytest tests/test_streaming_rules.py::test_progress_observability_depth_rules_are_evidence_first -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t2-green", exit: 0}
   - id: T3
     status: done
-    red: {command: "python -m pytest tests/test_fixtures_golden_streaming.py::TestGolden::test_facts_match_golden -q --basetemp=E:\\temp\\sparkforge-progress-depth-t3", exit: 1}
-    green: {command: "python -m pytest tests/test_fixtures_golden_streaming.py -q --basetemp=E:\\temp\\sparkforge-progress-depth-golden-green", exit: 0}
+    red: {command: "python -m pytest tests/test_fixtures_golden_streaming.py::TestGolden::test_facts_match_golden -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t3", exit: 1}
+    green: {command: "python -m pytest tests/test_fixtures_golden_streaming.py -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-golden-green", exit: 0}
   - id: T4
     status: done
-    red: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_progress_observability_depth_coverage -q --basetemp=E:\\temp\\sparkforge-progress-depth-t4", exit: 1}
-    green: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_progress_observability_depth_coverage -q --basetemp=E:\\temp\\sparkforge-progress-depth-t4-green", exit: 0}
+    red: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_progress_observability_depth_coverage -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t4", exit: 1}
+    green: {command: "python -m pytest tests/test_docs_coverage.py::test_streaming_progress_observability_depth_coverage -q --basetemp=E:\\temp\\sparkforge_aws-progress-depth-t4-green", exit: 0}
 claims:
   - text: "streaming.progress.series resume span temporal, duração de batch, memória agregada do state e watermark somente quando as medidas observadas são completas."
-    evidence_ref: "sparkforge/facts/streaming.py; tests/test_facts_streaming.py::test_progress_series_summarizes_temporal_state_and_watermark"
+    evidence_ref: "sparkforge_aws/facts/streaming.py; tests/test_facts_streaming.py::test_progress_series_summarizes_temporal_state_and_watermark"
   - text: "Watermark inválido ou série temporal incompleta permanece unresolved nomeado; o extrator não usa ordem do arquivo para preencher a lacuna."
     evidence_ref: "tests/test_facts_streaming.py::test_progress_series_unresolved_for_invalid_temporal_measurement"
   - text: "SF-STREAM-013 e SF-STREAM-014 exigem série com duas observações e runtime evidence antes de julgar sintomas de watermark parado ou memória crescente."

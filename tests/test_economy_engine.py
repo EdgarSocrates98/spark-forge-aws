@@ -1,6 +1,6 @@
 """Tests for SparkForge Token Economy Engine (Phase 3)."""
 
-from sparkforge.economy import (
+from sparkforge_aws.economy import (
     ArtifactCache,
     CapabilityModelRouter,
     ExecutionProfile,

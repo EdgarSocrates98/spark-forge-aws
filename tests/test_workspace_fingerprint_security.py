@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.paths import WorkspaceScanPolicy, scan_repository
-from sparkforge.workspace.manifest import fingerprint
+from sparkforge_aws.paths import WorkspaceScanPolicy, scan_repository
+from sparkforge_aws.workspace.manifest import fingerprint
 
 
 def test_workspace_scanner_names_denied_and_oversized_files(tmp_path: Path) -> None:

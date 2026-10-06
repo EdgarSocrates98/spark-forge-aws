@@ -105,7 +105,7 @@ Todo par de contradição direta que a arbitragem não fecha vira plano de debat
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/agentic/executor/{gate,run,debate_run}.py`, `rules/catalog/{action_kinds,debate_gate}.yaml`, `sparkforge/adapters/tools.py` (enum e descrições) | Estende os executores determinístico e de debate |
+| **Deployment Location** | `sparkforge_aws/agentic/executor/{gate,run,debate_run}.py`, `rules/catalog/{action_kinds,debate_gate}.yaml`, `sparkforge_aws/adapters/tools.py` (enum e descrições) | Estende os executores determinístico e de debate |
 | **KB Domains** | Nenhum domínio do agentspec cobre arbitragem; padrões do repositório (`plan.py`, `digest`, `proof_axes.yaml`, recusas nomeadas do `debate_run`) | O design lê esses módulos |
 | **IaC Impact** | None | |
 
@@ -120,7 +120,7 @@ Todo par de contradição direta que a arbitragem não fecha vira plano de debat
 | A-003 | `sparkforge_debate_start` está no golden 1.29 | Exceção de paridade desnecessária ou esquecida | [x] `fixtures/mcp_parity/tools_list_{stdio,http}.json` |
 | A-004 | `experiments_from` liga cada experimento ao `Unknown` que ele mede, de modo que "lacuna citando o par com experimento" é conferível | `experimentar_antes` sem base | [ ] conferir em `executor/unknowns.py` no design |
 | A-005 | A reversibilidade de cada um dos 70 `kind` é decidível pela descrição e pelas regras que o usam | Declaração errada muda veredito | [ ] lista revisada no design, com o critério escrito no cabeçalho do YAML |
-| A-006 | `finding.severity` é a severidade efetiva (depois de `severity_by`), não o `severity_default` | Limiar aplicado à severidade errada | [x] `sparkforge/findings/models.py` |
+| A-006 | `finding.severity` é a severidade efetiva (depois de `severity_by`), não o `severity_default` | Limiar aplicado à severidade errada | [x] `sparkforge_aws/findings/models.py` |
 
 ---
 

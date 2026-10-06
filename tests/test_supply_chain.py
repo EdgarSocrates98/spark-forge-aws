@@ -147,7 +147,7 @@ class TestLockParserFailsClosed:
             gen_lock.parse("attrs\n")
 
     def test_rejects_a_file_that_ends_mid_entry(self):
-        text = "# sparkforge-lock: scope=required license=MIT\nattrs==26.1.0 \\\n"
+        text = "# sparkforge-aws-lock: scope=required license=MIT\nattrs==26.1.0 \\\n"
         with pytest.raises(ValueError, match="termina no meio"):
             gen_lock.parse(text)
 
@@ -172,7 +172,7 @@ class TestLockCheckIsOffline:
     def test_check_reports_a_pin_that_lost_its_hash(self, tmp_path, monkeypatch):
         monkeypatch.setattr(gen_lock, "LOCK_DIR", tmp_path)
         (tmp_path / "py3.10.txt").write_text(
-            "# sparkforge-lock: scope=required license=MIT\nattrs==26.1.0 \\\n",
+            "# sparkforge-aws-lock: scope=required license=MIT\nattrs==26.1.0 \\\n",
             encoding="utf-8",
         )
         problemas = gen_lock.check("3.10")

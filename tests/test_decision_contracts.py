@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.economy.decision_contracts import ContractError, ContractRegistry
+from sparkforge_aws.economy.decision_contracts import ContractError, ContractRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -1,5 +1,5 @@
 # Catálogo de regras — compatibilidade de código com o Apache Spark 4
-# Depende do extrator `sparkforge/facts/migration.py`, que observa os sinais
+# Depende do extrator `sparkforge_aws/facts/migration.py`, que observa os sinais
 # (`mig.renamed_conf`, `mig.removed_api`, `mig.python_dep`, `mig.jar_binary`)
 # sem julgar.
 #

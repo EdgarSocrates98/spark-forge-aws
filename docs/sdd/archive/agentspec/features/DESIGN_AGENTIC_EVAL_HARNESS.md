@@ -13,7 +13,7 @@
 | **Status** | ✅ Complete (Built) |
 
 > **Desvios do build (2026-09-11).** Este documento é registro histórico. O build divergiu dele em pontos que mudam o uso, e a lista completa com as razões está em `.claude/sdd/reports/BUILD_REPORT_AGENTIC_EVAL_HARNESS.md` ("Deviations from Design"). Os que mudam como se usa:
-> - o verbo não é `sparkforge eval …`, e sim `python -m sparkforge.evals grade|compare` (`sparkforge/evals/cli.py`), porque `tests/test_harness_boundary.py` proíbe runtime importar avaliação. Por isso as linhas de `_core.py`/`cli.py` do diagrama e do manifesto não existem;
+> - o verbo não é `sparkforge-aws eval …`, e sim `python -m sparkforge_aws.evals grade|compare` (`sparkforge_aws/evals/cli.py`), porque `tests/test_harness_boundary.py` proíbe runtime importar avaliação. Por isso as linhas de `_core.py`/`cli.py` do diagrama e do manifesto não existem;
 > - a CLI recebe nomes sob bases fixas, e não caminhos;
 > - o runner roda numa cópia de prova sem gabarito;
 > - `suite.py` lê `fase0.xml` sem parser XML;
@@ -21,9 +21,9 @@
 
 **Design confidence: 0.80.** Nenhum domínio do KB do agentspec (`testing`, `python`, `pydantic`, `genai`) traz padrão de avaliação de agente sobre transcript. O que sustenta o desenho é o codebase:
 
-- `sparkforge/collect/host_usage.py` — leitura do transcript com lacunas nomeadas;
-- `sparkforge/facts/benchmark.py` — dois lados comparados, com recusa por nome;
-- o par `_cmd_*` → `_core.*` → módulo puro de `sparkforge/adapters/`;
+- `sparkforge_aws/collect/host_usage.py` — leitura do transcript com lacunas nomeadas;
+- `sparkforge_aws/facts/benchmark.py` — dois lados comparados, com recusa por nome;
+- o par `_cmd_*` → `_core.*` → módulo puro de `sparkforge_aws/adapters/`;
 - os registros manuais de extrator conferidos nos testes.
 
 Todo dado de formato citado abaixo foi medido, não suposto.
@@ -46,13 +46,13 @@ Todo dado de formato citado abaixo foi medido, não suposto.
 │                                                                          │
 │  scripts/run_agentic_eval.py                                             │
 │    para cada pergunta de suite.yaml:                                     │
-│      claude -p --session-id <uuid> --mcp-config <sparkforge> ... "<q>"   │
+│      claude -p --session-id <uuid> --mcp-config <sparkforge-aws> ... "<q>"   │
 │      copia ~/.claude/projects/*/<uuid>.jsonl → <out>/<run_id>/<qid>.jsonl│
 │    grava <out>/<run_id>/run.json (argv, claude --version, data)          │
 └───────────────────────────────┬──────────────────────────────────────────┘
                                 │  arquivos (fora do repo)
 ┌───────────────────────────────▼──────────────────────────────────────────┐
-│  sparkforge/  (só lê arquivo; sem provider, sem subprocess)              │
+│  sparkforge_aws/  (só lê arquivo; sem provider, sem subprocess)              │
 │                                                                          │
 │  facts/host_transcript.py ──► Fact: host.transcript  host.tool_call      │
 │   (extrator, EMITTED_KINDS)        host.final_answer host.usage          │
@@ -69,7 +69,7 @@ Todo dado de formato citado abaixo foi medido, não suposto.
 │  evals/compare.py  N scorecards A × N scorecards B ──► compare.json      │
 │                                                                          │
 │  adapters/_core.py  eval_grade() / eval_compare()                        │
-│  adapters/cli.py    `sparkforge eval grade` / `sparkforge eval compare`  │
+│  adapters/cli.py    `sparkforge-aws eval grade` / `sparkforge-aws eval compare`  │
 └──────────────────────────────────────────────────────────────────────────┘
         ▲                                   ▲
         │ golden (CI)                       │ ground truth (versionado)
@@ -85,12 +85,12 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/facts/host_transcript.py` | Extrator. Lê um JSONL do Claude Code e emite facts `host.*` com lacunas nomeadas. Reusa a validação de usage de `host_usage` | Python 3 stdlib (`json`), `Fact` de `sparkforge/findings/models.py` |
-| `sparkforge/evals/suite.py` | Carrega `suite.yaml`, resolve `source: fase0.xml#N` para pergunta e resposta, valida o schema e calcula o `sha256` da suíte resolvida | PyYAML (já dependência do catálogo), `xml.etree` |
-| `sparkforge/evals/grade.py` | Função pura: facts de N transcripts + `Suite` → scorecard (veredito por pergunta e agregados) | stdlib (`statistics.median_low`) |
-| `sparkforge/evals/compare.py` | Função pura: dois conjuntos de scorecards → classes `pass`/`fail`/`mixed`, transições e recusas | stdlib |
-| `sparkforge/adapters/_core.py` | `eval_grade(suite_dir, transcripts_dir)` e `eval_compare(baseline_dir, candidate_dir)`: I/O de arquivo e montagem do payload | já existente |
-| `sparkforge/adapters/cli.py` | Verbo aninhado `eval` com `grade` e `compare`, no molde de `release describe/diff` | argparse, já existente |
+| `sparkforge_aws/facts/host_transcript.py` | Extrator. Lê um JSONL do Claude Code e emite facts `host.*` com lacunas nomeadas. Reusa a validação de usage de `host_usage` | Python 3 stdlib (`json`), `Fact` de `sparkforge_aws/findings/models.py` |
+| `sparkforge_aws/evals/suite.py` | Carrega `suite.yaml`, resolve `source: fase0.xml#N` para pergunta e resposta, valida o schema e calcula o `sha256` da suíte resolvida | PyYAML (já dependência do catálogo), `xml.etree` |
+| `sparkforge_aws/evals/grade.py` | Função pura: facts de N transcripts + `Suite` → scorecard (veredito por pergunta e agregados) | stdlib (`statistics.median_low`) |
+| `sparkforge_aws/evals/compare.py` | Função pura: dois conjuntos de scorecards → classes `pass`/`fail`/`mixed`, transições e recusas | stdlib |
+| `sparkforge_aws/adapters/_core.py` | `eval_grade(suite_dir, transcripts_dir)` e `eval_compare(baseline_dir, candidate_dir)`: I/O de arquivo e montagem do payload | já existente |
+| `sparkforge_aws/adapters/cli.py` | Verbo aninhado `eval` com `grade` e `compare`, no molde de `release describe/diff` | argparse, já existente |
 | `evals/agentic/fase0/suite.yaml` | Ground truth agêntico: 10 referências a `fase0.xml` e 3 perguntas de abstention | YAML |
 | `scripts/run_agentic_eval.py` | Runner fora do pacote: uma sessão `claude -p` por pergunta, cópia do transcript persistido e `run.json` | Python 3 stdlib (`subprocess`, `uuid`) |
 | `fixtures/host_transcript/` | Corpus sintético: transcripts por desfecho, suíte mínima, scorecards e compare esperados | JSONL/YAML/JSON |
@@ -99,16 +99,16 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 
 ## Key Decisions
 
-### Decision 1: O extrator emite `Fact` e mora em `sparkforge/facts/`, não em `collect/`
+### Decision 1: O extrator emite `Fact` e mora em `sparkforge_aws/facts/`, não em `collect/`
 
 | Attribute | Value |
 |-----------|-------|
 | **Status** | Accepted |
 | **Date** | 2026-09-10 |
 
-**Context:** `host_usage.py` mora em `collect/` e devolve um dict, porque só alimenta o `economy report`. O harness precisa de sequência de tools, resposta e usage por arquivo, com procedência, e o brainstorm escolheu "compor sobre facts, como `benchmark`". Em `sparkforge/`, extrator é o módulo que declara `EMITTED_KINDS` (critério de `test_harness_untrusted.py` e de `docs/harness/BASELINE.md`), e os extratores que leem arquivo local ficam em `facts/` (`event_log.py`, `parquet_footer.py`).
+**Context:** `host_usage.py` mora em `collect/` e devolve um dict, porque só alimenta o `economy report`. O harness precisa de sequência de tools, resposta e usage por arquivo, com procedência, e o brainstorm escolheu "compor sobre facts, como `benchmark`". Em `sparkforge_aws/`, extrator é o módulo que declara `EMITTED_KINDS` (critério de `test_harness_untrusted.py` e de `docs/harness/BASELINE.md`), e os extratores que leem arquivo local ficam em `facts/` (`event_log.py`, `parquet_footer.py`).
 
-**Choice:** `sparkforge/facts/host_transcript.py` com `EXTRACTOR_ID = "host_transcript@0.1.0"`, `EMITTED_KINDS` fechado e `extract_host_transcript_path(path) -> list[Fact]`. A validação numérica de usage vem de `sparkforge.collect.host_usage._somar_usage`, importada e não copiada. `host_usage.py` fica intocado e segue servindo o `economy report`.
+**Choice:** `sparkforge_aws/facts/host_transcript.py` com `EXTRACTOR_ID = "host_transcript@0.1.0"`, `EMITTED_KINDS` fechado e `extract_host_transcript_path(path) -> list[Fact]`. A validação numérica de usage vem de `sparkforge_aws.collect.host_usage._somar_usage`, importada e não copiada. `host_usage.py` fica intocado e segue servindo o `economy report`.
 
 **Rationale:** `Fact` traz `provenance.extractor`, `schema_version` e `sort_facts`, e entra no mesmo corpus golden de todo extrator. Os testes de cobertura de kind passam a verificar os kinds `host.*`, em vez de eles existirem sem ninguém conferir.
 
@@ -175,14 +175,14 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 | **Status** | Accepted |
 | **Date** | 2026-09-10 |
 
-**Context:** O mesmo verbo chega por dois canais: `mcp__<servidor>__sparkforge_judge` (o servidor pode vir prefixado por plugin) e Bash `sparkforge judge --facts x`. Descobrir o conjunto de verbos por `build_parser()` ou `TOOLS` faria `evals/` depender de `adapters/`, e inverteria a camada.
+**Context:** O mesmo verbo chega por dois canais: `mcp__<servidor>__sparkforge_judge` (o servidor pode vir prefixado por plugin) e Bash `sparkforge-aws judge --facts x`. Descobrir o conjunto de verbos por `build_parser()` ou `TOOLS` faria `evals/` depender de `adapters/`, e inverteria a camada.
 
 **Choice:** Três regras, em ordem:
 1. `name` casa `^mcp__.+__sparkforge_(?P<v>[a-z0-9_]+)$`. Verbo = `v`, canal `mcp`.
-2. `name == "Bash"`. O `input.command` é quebrado em `&&`, `||`, `;` e `|`. Em cada segmento, depois de tirar prefixos opcionais (`rtk`, `uv run`, `python -m`), o primeiro token precisa ser `sparkforge`. Verbo = token seguinte, mais `_` e o token depois dele quando esse casar `^[a-z][a-z-]*$`. `-` vira `_`. Canal `bash`. Vale só a primeira ocorrência por segmento.
+2. `name == "Bash"`. O `input.command` é quebrado em `&&`, `||`, `;` e `|`. Em cada segmento, depois de tirar prefixos opcionais (`rtk`, `uv run`, `python -m`), o primeiro token precisa ser `sparkforge-aws`. Verbo = token seguinte, mais `_` e o token depois dele quando esse casar `^[a-z][a-z-]*$`. `-` vira `_`. Canal `bash`. Vale só a primeira ocorrência por segmento.
 3. Qualquer outro caso: canal `other`, verbo `null`. Entra em `other_calls` e em `tool_calls`, nunca em `required_tools`.
 
-**Rationale:** É determinístico e testável isoladamente, e não adivinha. `sparkforge judge facts.json` dá `judge`, porque `facts.json` não casa o padrão. `sparkforge analyze pyspark lib/` dá `analyze_pyspark`.
+**Rationale:** É determinístico e testável isoladamente, e não adivinha. `sparkforge-aws judge facts.json` dá `judge`, porque `facts.json` não casa o padrão. `sparkforge-aws analyze pyspark lib/` dá `analyze_pyspark`.
 
 **Alternatives Rejected:**
 1. Conjunto de verbos lido de `build_parser()` — rejeitada: dependência para cima.
@@ -190,8 +190,8 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 
 **Consequences:**
 - Um verbo de três palavras vira os dois primeiros tokens (`code search`, por exemplo, sai `code_search`, que é também o nome da tool).
-- Invocação por caminho absoluto do executável (`/usr/bin/sparkforge`) não casa. Cai em `other` e fica contada. A lacuna está registrada, não é silenciosa.
-- Verbo de uma palavra seguido de argumento posicional só com letras minúsculas (`sparkforge judge cases`) vira `judge_cases`. O efeito é um falso `missing:[judge]`, visível no scorecard, nunca um acerto fabricado. O snippet foi rodado contra 9 casos em 2026-09-10 (MCP simples, MCP com prefixo de plugin, Bash com flag, cadeia `&&` com `rtk`, `python -m`, argumento com `.`, `ls`, tool não-Bash e comando vazio), e todos saíram como esta decisão descreve. O teste 15 fixa esta borda como caso conhecido.
+- Invocação por caminho absoluto do executável (`/usr/bin/sparkforge-aws`) não casa. Cai em `other` e fica contada. A lacuna está registrada, não é silenciosa.
+- Verbo de uma palavra seguido de argumento posicional só com letras minúsculas (`sparkforge-aws judge cases`) vira `judge_cases`. O efeito é um falso `missing:[judge]`, visível no scorecard, nunca um acerto fabricado. O snippet foi rodado contra 9 casos em 2026-09-10 (MCP simples, MCP com prefixo de plugin, Bash com flag, cadeia `&&` com `rtk`, `python -m`, argumento com `.`, `ls`, tool não-Bash e comando vazio), e todos saíram como esta decisão descreve. O teste 15 fixa esta borda como caso conhecido.
 
 ---
 
@@ -202,7 +202,7 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 | **Status** | Accepted |
 | **Date** | 2026-09-10 |
 
-**Context:** `tests/test_facts_scan.py::test_nenhum_modulo_varre_com_glob_cru` reprova por AST qualquer `.glob`, `.rglob` ou `.iglob` sob `sparkforge/`. `iter_source_files` tem teto de tamanho, e um arquivo pulado por tamanho viraria pergunta sem transcript sem ninguém ver.
+**Context:** `tests/test_facts_scan.py::test_nenhum_modulo_varre_com_glob_cru` reprova por AST qualquer `.glob`, `.rglob` ou `.iglob` sob `sparkforge_aws/`. `iter_source_files` tem teto de tamanho, e um arquivo pulado por tamanho viraria pergunta sem transcript sem ninguém ver.
 
 **Choice:** `_core.eval_grade` lista o diretório com `os.scandir`, sem recursão, filtra `name.endswith(".jsonl")` e ordena por nome. O stem do arquivo é o `qid`. Pergunta da suíte sem arquivo sai `ungraded` com `transcript_not_found`. Arquivo sem pergunta correspondente vai para `unmatched_transcripts` no scorecard.
 
@@ -225,7 +225,7 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 
 **Context:** A-002. O `stream-json` tem envelope próprio (`system`, `result`) que o extrator não conhece. O arquivo de sessão é o formato que A-001 conferiu.
 
-**Choice:** O runner gera um `uuid4`, chama `claude -p --session-id <uuid> --output-format json ...` e, depois do exit, localiza `~/.claude/projects/*/<uuid>.jsonl` e o copia para `<out>/<run_id>/<qid>.jsonl`. O glob está em `scripts/`, fora do alcance do gate de AST, que só varre `sparkforge/`. O JSON final de stdout vai para `<qid>.result.json` e não é pontuado.
+**Choice:** O runner gera um `uuid4`, chama `claude -p --session-id <uuid> --output-format json ...` e, depois do exit, localiza `~/.claude/projects/*/<uuid>.jsonl` e o copia para `<out>/<run_id>/<qid>.jsonl`. O glob está em `scripts/`, fora do alcance do gate de AST, que só varre `sparkforge_aws/`. O JSON final de stdout vai para `<qid>.result.json` e não é pontuado.
 
 **Rationale:** Um formato só, o que já foi medido. O `result.json` fica guardado para o operador conferir e não entra no grader.
 
@@ -308,13 +308,13 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/facts/host_transcript.py` | Create | Extrator `host.*` (Decisions 1, 4, 7) | @python-developer | None |
-| 2 | `sparkforge/evals/__init__.py` | Create | Pacote, docstring com o contrato (sem provider, sem subprocess) | @python-developer | None |
-| 3 | `sparkforge/evals/suite.py` | Create | Carga, resolução e hash da suíte (Decision 3) | @python-developer | 2 |
-| 4 | `sparkforge/evals/grade.py` | Create | Scorecard (Decisions 2, 8) | @python-developer | 1, 3 |
-| 5 | `sparkforge/evals/compare.py` | Create | Classes, transições e recusas | @python-developer | 4 |
-| 6 | `sparkforge/adapters/_core.py` | Modify | `eval_grade`, `eval_compare` (Decision 5) | @python-developer | 4, 5 |
-| 7 | `sparkforge/adapters/cli.py` | Modify | Parser `eval {grade,compare}` e despacho `("eval","grade")`, `("eval","compare")` | @python-developer | 6 |
+| 1 | `sparkforge_aws/facts/host_transcript.py` | Create | Extrator `host.*` (Decisions 1, 4, 7) | @python-developer | None |
+| 2 | `sparkforge_aws/evals/__init__.py` | Create | Pacote, docstring com o contrato (sem provider, sem subprocess) | @python-developer | None |
+| 3 | `sparkforge_aws/evals/suite.py` | Create | Carga, resolução e hash da suíte (Decision 3) | @python-developer | 2 |
+| 4 | `sparkforge_aws/evals/grade.py` | Create | Scorecard (Decisions 2, 8) | @python-developer | 1, 3 |
+| 5 | `sparkforge_aws/evals/compare.py` | Create | Classes, transições e recusas | @python-developer | 4 |
+| 6 | `sparkforge_aws/adapters/_core.py` | Modify | `eval_grade`, `eval_compare` (Decision 5) | @python-developer | 4, 5 |
+| 7 | `sparkforge_aws/adapters/cli.py` | Modify | Parser `eval {grade,compare}` e despacho `("eval","grade")`, `("eval","compare")` | @python-developer | 6 |
 | 8 | `evals/agentic/fase0/suite.yaml` | Create | Ground truth agêntico: 10 refs e 3 perguntas de abstention | @sf-agent-evaluation-specialist | 3 |
 | 9 | `fixtures/host_transcript/<caso>/input/transcript.jsonl` (≥ 10 casos) | Create | Corpus sintético, um por desfecho, incluindo `not_a_transcript` (primeira linha sem `type`) | @sf-agent-evaluation-specialist | 1 |
 | 10 | `fixtures/host_transcript/<caso>/expected/facts.json` | Create | Golden do extrator | @test-generator | 1, 9 |
@@ -323,7 +323,7 @@ Dependências sempre descem, sem ciclo: `cli` → `_core` → `evals.*` → `fac
 | 13 | `tests/test_fixtures_golden_host_transcript.py` | Create | `FIXTURES = ROOT / "fixtures" / "host_transcript"`; golden de facts, scorecard e compare; determinismo (lote `goldens-2`) | @test-generator | 10, 11, 12 |
 | 14 | `tests/test_evals_suite.py` | Create | Schema, resolução `fase0.xml#N`, hash estável a reformatação e sensível à resposta; âncoras de abstention existem no corpus (lote `d-e`) | @test-generator | 3, 8 |
 | 15 | `tests/test_evals_normalize.py` | Create | Tabela de casos da Decision 4 (lote `d-e`) | @test-generator | 1 |
-| 16 | `tests/test_evals_invariants.py` | Create | AST sob `sparkforge/`: 0 import de `anthropic`, `openai`, `bedrock`, `litellm`; 0 import de `subprocess` em `sparkforge/evals/` e `facts/host_transcript.py`; scorecard sem campo que some byte com token (lote `d-e`) | @test-generator | 1–5 |
+| 16 | `tests/test_evals_invariants.py` | Create | AST sob `sparkforge_aws/`: 0 import de `anthropic`, `openai`, `bedrock`, `litellm`; 0 import de `subprocess` em `sparkforge_aws/evals/` e `facts/host_transcript.py`; scorecard sem campo que some byte com token (lote `d-e`) | @test-generator | 1–5 |
 | 17 | `tests/test_cli_eval.py` | Create | Os dois verbos de ponta a ponta sobre as fixtures (lote `a-c`) | @test-generator | 7 |
 | 18 | `tests/test_rules_catalog_reachability.py` | Modify | `host_transcript` na tupla `EXTRACTORS`, com comentário do porquê | @test-generator | 1 |
 | 19 | `tests/test_fixtures_kind_coverage.py` | Modify | `"host_transcript": host_transcript` em `EXTRACTORS` | @test-generator | 1 |
@@ -378,8 +378,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from sparkforge.collect.host_usage import _somar_usage
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.collect.host_usage import _somar_usage
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "host_transcript@0.1.0"
 
@@ -446,7 +446,7 @@ def canonical_verb(name: str, tool_input: dict[str, Any]) -> tuple[str, str | No
                     if tuple(tokens[: len(prefixo)]) == prefixo:
                         tokens = tokens[len(prefixo):]
                         break
-                if tokens[:1] == ["sparkforge"] and len(tokens) > 1 and _PALAVRA.match(tokens[1]):
+                if tokens[:1] == ["sparkforge-aws"] and len(tokens) > 1 and _PALAVRA.match(tokens[1]):
                     partes = [tokens[1]]
                     if len(tokens) > 2 and _PALAVRA.match(tokens[2]):
                         partes.append(tokens[2])
@@ -555,14 +555,14 @@ Regras de schema, validadas por `suite.py` com erro nomeado e nunca por default 
 2. ~/sf-evals/<run_id>/{<qid>.jsonl, <qid>.result.json, run.json}   × 3 runs
    │
    ▼
-3. sparkforge eval grade --suite evals/agentic/fase0 --transcripts ~/sf-evals/<run_id> --out <run_id>.scorecard.json
+3. sparkforge-aws eval grade --suite evals/agentic/fase0 --transcripts ~/sf-evals/<run_id> --out <run_id>.scorecard.json
    │   _core: os.scandir → extract_host_transcript_path por arquivo → Suite → grade
    ▼
 4. Operador copia os scorecards (só ids e números) para evals/agentic/fase0/baselines/<data>/
    │
    ▼
 5. Após uma mudança agêntica: repete 1–3 e roda
-   sparkforge eval compare --baseline evals/agentic/fase0/baselines/<data> --candidate <dir>
+   sparkforge-aws eval compare --baseline evals/agentic/fase0/baselines/<data> --candidate <dir>
    │
    ▼
 6. compare.json: transições por pergunta; o operador decide (regra 30: o harness não conclui)
@@ -576,9 +576,9 @@ Regras de schema, validadas por `suite.py` com erro nomeado e nunca por default 
 |-----------------|-----------------|----------------|
 | Claude Code CLI (`claude -p`) | Subprocess, **só em `scripts/run_agentic_eval.py`** | A sessão já logada do operador; o runner não lê nem grava credencial |
 | `~/.claude/projects/*/<uuid>.jsonl` | Leitura de arquivo pelo runner | Nenhuma |
-| Servidor MCP do SparkForge | `--mcp-config` apontando para o `sparkforge mcp` local; `--strict-mcp-config` opcional para isolar | Nenhuma |
+| Servidor MCP do SparkForge | `--mcp-config` apontando para o `sparkforge-aws mcp` local; `--strict-mcp-config` opcional para isolar | Nenhuma |
 
-Nenhuma integração nova dentro de `sparkforge/`.
+Nenhuma integração nova dentro de `sparkforge_aws/`.
 
 ---
 
@@ -660,7 +660,7 @@ Nenhuma integração nova dentro de `sparkforge/`.
 
 - **Transcript é conteúdo não confiável.** Nenhum fact carrega `tool_use.input` nem `tool_result.content`, a resposta é truncada em 200 caracteres e o scorecard nunca copia `path` (Decision 7).
 - **Caso real nunca entra no repo.** O runner grava fora do repo por padrão e recusa `--out` dentro da árvore do git (checagem com `git rev-parse --show-toplevel`). O que se commita são as fixtures sintéticas e os scorecards.
-- **Regra 23.** `tests/test_evals_invariants.py` prova por AST: 0 import de provider em `sparkforge/` e 0 `subprocess` em `sparkforge/evals/` e em `facts/host_transcript.py`. O `subprocess` do runner mora só em `scripts/`.
+- **Regra 23.** `tests/test_evals_invariants.py` prova por AST: 0 import de provider em `sparkforge_aws/` e 0 `subprocess` em `sparkforge_aws/evals/` e em `facts/host_transcript.py`. O `subprocess` do runner mora só em `scripts/`.
 - **Credenciais.** O runner herda a sessão do operador e não lê nem grava token. `run.json` grava argv, e argv não contém segredo, porque o runner não aceita chave por flag.
 - **Holdout (COULD).** A varredura de superfície de agente passa a recusar citação de `evals/agentic`, porque resposta resolvida nas instruções é resposta disponível.
 

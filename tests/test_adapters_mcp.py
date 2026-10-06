@@ -31,8 +31,8 @@ pytest.importorskip("starlette", reason="starlette vem com o extra `mcp`")
 import anyio  # noqa: E402
 from mcp import Client  # noqa: E402
 
-from sparkforge.adapters.mcp import build_http_app, build_server  # noqa: E402
-from sparkforge.adapters.tools import TOOLS  # noqa: E402
+from sparkforge_aws.adapters.mcp import build_http_app, build_server  # noqa: E402
+from sparkforge_aws.adapters.tools import TOOLS  # noqa: E402
 
 ROOT = str(Path(__file__).resolve().parents[1])
 
@@ -271,12 +271,12 @@ class TestSpec71OTransporteHttpNaoServeFonte:
     """
 
     def test_stdio_serve_o_catalogo_inteiro(self):
-        from sparkforge.adapters.mcp import tools_do_transporte
+        from sparkforge_aws.adapters.mcp import tools_do_transporte
 
         assert tools_do_transporte("stdio") == TOOLS
 
     def test_http_nao_serve_a_tool_de_leitura_de_fonte(self):
-        from sparkforge.adapters.mcp import TOOLS_COM_FONTE, tools_do_transporte
+        from sparkforge_aws.adapters.mcp import TOOLS_COM_FONTE, tools_do_transporte
 
         servidas = tools_do_transporte("http")
         assert set(TOOLS) - set(servidas) == set(TOOLS_COM_FONTE)
@@ -291,7 +291,7 @@ class TestSpec71OTransporteHttpNaoServeFonte:
         HTTP, em silencio -- e e isso que este teste pega, derivando a mesma
         resposta pelo outputSchema.
         """
-        from sparkforge.adapters.mcp import TOOLS_COM_FONTE
+        from sparkforge_aws.adapters.mcp import TOOLS_COM_FONTE
 
         def _tem_snippet(schema):
             if "oneOf" in schema:
@@ -316,7 +316,7 @@ class TestSpec71OTransporteHttpNaoServeFonte:
 def test_a_chamada_pelo_servidor_mcp_grava_o_canal_no_span(server, tmp_path, monkeypatch):
     """O export OTLP so da `mcp.method.name` a quem veio pelo MCP; o canal
     precisa sair daqui MEDIDO, com o transporte do servidor."""
-    from sparkforge.observability import context_ledger
+    from sparkforge_aws.observability import context_ledger
 
     ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_mcp")
     monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)

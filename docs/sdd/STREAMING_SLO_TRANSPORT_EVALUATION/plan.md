@@ -9,11 +9,11 @@ upstream:
   sha256: "46b34d1b9fa22bc78acfcaaaf2a9806275439e4dbf7f92fb4df227f124380df8"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming_slo.py, sparkforge/facts/streaming_slo.py, sparkforge/facts/transport.py]
+    files: [tests/test_facts_streaming_slo.py, sparkforge_aws/facts/streaming_slo.py, sparkforge_aws/facts/transport.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_facts_streaming_slo.py, name: test_evaluates_transport_slo_by_declared_identity}
   - id: T2
-    files: [sparkforge/facts/streaming_composition.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_analyze_streaming_composition.py]
+    files: [sparkforge_aws/facts/streaming_composition.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_analyze_streaming_composition.py]
     covers: [AC4]
     test: {path: tests/test_analyze_streaming_composition.py, name: test_transport_slo_cli_and_mcp_envelopes_match}
   - id: T3

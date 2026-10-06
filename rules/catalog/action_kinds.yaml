@@ -512,7 +512,7 @@ axes:
     nature: risk
     description: Quais papeis de no rodam em capacidade que o provedor pode reclamar.
   observability.diagnostic_artifacts:
-    # `_check_observability` (sparkforge/facts/terraform.py) devolve
+    # `_check_observability` (sparkforge_aws/facts/terraform.py) devolve
     # confirmed/unknown/absent como `kind` -- ternario categorico, no mesmo
     # molde de `_check_graphframes_jar`. Existir ou nao existir o artefato de
     # diagnostico nao e grandeza medida.
@@ -603,7 +603,7 @@ axes:
   # Ele NAO e `correctness.write_result`, e `SF-CTM-002` separa os dois em voz
   # alta: "mexer em `When` e mudanca de QUANDO, e nao pode mover o QUE".
   schedule.ordered_dates:
-    # `_specific_dates` (sparkforge/facts/controlm_jobs.py) escreve
+    # `_specific_dates` (sparkforge_aws/facts/controlm_jobs.py) escreve
     # `specific_dates_count` em `measures`, com o comentario do proprio
     # extrator: "Contar aqui e medir; decidir se 401 e demais e limiar, e
     # limiar mora na regra." E grandeza, com fact que a produz.

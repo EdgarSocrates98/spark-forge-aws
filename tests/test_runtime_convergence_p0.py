@@ -15,16 +15,16 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.economy.ledger import LedgerEvent, TokenLedger
-from sparkforge.economy.model_router import (
+from sparkforge_aws.economy.ledger import LedgerEvent, TokenLedger
+from sparkforge_aws.economy.model_router import (
     AdaptiveModelRouter,
     ModelCandidate,
     ModelRoutingInput,
     ModelScorecard,
 )
-from sparkforge.observability.agentops import inspect_run
-from sparkforge.observability.store import SQLiteTraceStore
-from sparkforge.observability.tracer import AgentOpsTracker, ExecutionTrace, TraceSpan
+from sparkforge_aws.observability.agentops import inspect_run
+from sparkforge_aws.observability.store import SQLiteTraceStore
+from sparkforge_aws.observability.tracer import AgentOpsTracker, ExecutionTrace, TraceSpan
 
 
 class TestCostBasisSoEventosComCusto:

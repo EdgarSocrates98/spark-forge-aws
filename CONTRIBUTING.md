@@ -23,7 +23,7 @@ Use `locks/py3.10.txt` no Python 3.10 e `locks/py3.12.txt` no 3.12. O projeto mi
 ### Lint
 
 ```bash
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 ```
 
 ### Testes
@@ -80,7 +80,7 @@ python scripts/check_surface_lock.py
 - Mudança grande passa pelo SDD do próprio repositório: as skills `sdd-explore`,
   `sdd-define`, `sdd-design`, `sdd-plan`, `sdd-build` e `sdd-ship`, com os artefatos em
   `docs/sdd/<FEATURE>/` e cada fase conferida por
-  `sparkforge sdd check --repo . --feature <F>`. O fluxo está em `docs/sdd/README.md`.
+  `sparkforge-aws sdd check --repo . --feature <F>`. O fluxo está em `docs/sdd/README.md`.
   `docs/superpowers/specs/` e `plans/` estão congelados, e o histórico do AgentSpec
   está em `docs/sdd/archive/agentspec/`.
 - Agente se edita na fonte `agents/<nome>.md`, nunca no espelho `.claude/agents/`:

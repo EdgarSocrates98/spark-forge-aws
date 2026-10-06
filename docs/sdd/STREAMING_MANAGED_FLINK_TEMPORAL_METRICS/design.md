@@ -9,11 +9,11 @@ upstream:
   sha256: "7ce82ba330a887a69bdb1daa1e28856b34533e680f5cb28e0d109df531e582b6"
 files:
   - {path: tests/test_collect_managed_flink.py, action: modify, reason: "fake clients, temporal window, cache, analyzer, parity and documentation contract"}
-  - {path: sparkforge/collect/managed_flink.py, action: modify, reason: "AWS/KinesisAnalytics temporal queries, normalization, bounded pagination and cache path"}
-  - {path: sparkforge/facts/flink.py, action: modify, reason: "unwrap temporal observations while retaining managed_flink metric facts and unresolved declarations"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "propagate temporal window through existing collector"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "expose optional start/end/period on collect managed-flink"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "declare temporal parameters in existing MCP schema and handler"}
+  - {path: sparkforge_aws/collect/managed_flink.py, action: modify, reason: "AWS/KinesisAnalytics temporal queries, normalization, bounded pagination and cache path"}
+  - {path: sparkforge_aws/facts/flink.py, action: modify, reason: "unwrap temporal observations while retaining managed_flink metric facts and unresolved declarations"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "propagate temporal window through existing collector"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "expose optional start/end/period on collect managed-flink"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "declare temporal parameters in existing MCP schema and handler"}
   - {path: parity.yaml, action: modify, reason: "keep CLI/MCP/file parity contract current"}
   - {path: manifest.json, action: modify, reason: "refresh generated surface manifest without adding a tool"}
   - {path: knowledge/flink-streaming.md, action: modify, reason: "document official Managed Flink CloudWatch metrics and unresolved limits"}

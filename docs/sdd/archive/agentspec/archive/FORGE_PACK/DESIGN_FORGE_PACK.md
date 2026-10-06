@@ -21,7 +21,7 @@
 │  SPARKFORGE_PACKS = dirA<os.pathsep>dirB        (ausente = core so)       │
 │        │                                                                  │
 │        ▼                                                                  │
-│  sparkforge/packs/load.py::resolve()                                      │
+│  sparkforge_aws/packs/load.py::resolve()                                      │
 │     ├─ caminho inexistente ──────────────► CatalogError (exit 2, AT-015)  │
 │     ├─ manifest.py: pack.yaml (id, version, prefix, core) + versao        │
 │     ├─ rules/*.yaml ─► loader._validate_rule (MESMO schema do core)       │
@@ -29,8 +29,8 @@
 │              │                                  │                         │
 │              ▼                                  ▼                         │
 │  rules/loader.py::load_catalog()        _core.pack_list / pack_check      │
-│   (directory=None) core + packs ativos   ├─ CLI `sparkforge pack list`    │
-│              │                           ├─ CLI `sparkforge pack check`   │
+│   (directory=None) core + packs ativos   ├─ CLI `sparkforge-aws pack list`    │
+│              │                           ├─ CLI `sparkforge-aws pack check`   │
 │              ▼                           └─ tool `sparkforge_pack_list`   │
 │  judge / root_cause / proof / simulate / rules_lookup (sem mudanca)      │
 │              │                                                            │
@@ -47,10 +47,10 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/packs/manifest.py` | Le e valida `pack.yaml`; compara a faixa `core:` com a versao instalada | PyYAML, `importlib.metadata` |
-| `sparkforge/packs/load.py` | Resolve `SPARKFORGE_PACKS`, carrega as regras de cada pack pelo validador do loader, aplica as recusas, devolve `PackSet` | Python puro |
-| `sparkforge/packs/check.py` | Roda os fixtures de um pack pelo `judge` e compara com o `expect.yaml` de cada um | `rules.engine.judge` |
-| `sparkforge/rules/loader.py` | `_validate_rule` extraido do laco; `load_catalog()` sem `directory` acrescenta as regras dos packs ativos | Python |
+| `sparkforge_aws/packs/manifest.py` | Le e valida `pack.yaml`; compara a faixa `core:` com a versao instalada | PyYAML, `importlib.metadata` |
+| `sparkforge_aws/packs/load.py` | Resolve `SPARKFORGE_PACKS`, carrega as regras de cada pack pelo validador do loader, aplica as recusas, devolve `PackSet` | Python puro |
+| `sparkforge_aws/packs/check.py` | Roda os fixtures de um pack pelo `judge` e compara com o `expect.yaml` de cada um | `rules.engine.judge` |
+| `sparkforge_aws/rules/loader.py` | `_validate_rule` extraido do laco; `load_catalog()` sem `directory` acrescenta as regras dos packs ativos | Python |
 | Schemas de finding e de regra | `rule_id`/`id` alargado para `^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-[0-9]{3}$` | JSON Schema |
 | `_core` + CLI + tool | `pack_list`, `pack_check`, `knowledge_path` com `packs`, freshness por pack | adapters existentes |
 
@@ -165,7 +165,7 @@ Conteudo em lugar fixo, sem declaracao: `rules/*.yaml` (mesmo formato do catalog
 
 **Context:** O host precisa saber quais packs estao ativos e por que um foi recusado. Checar um pack e tarefa de quem o escreve, no terminal ou no CI dele.
 
-**Choice:** `sparkforge_pack_list` (`_READ_ONLY`, sem parametro de caminho: le a variavel). CLI `sparkforge pack list` e `sparkforge pack check <dir>`. Tools 92 -> 93, READ_ONLY 60 -> 61; a tool nova entra no conjunto `sem_caminho` de `test_harness_authorization.py`, entao as que declaram caminho continuam 86. Dono: `agents/spark-performance-architect.md` (ja cita `sparkforge_judge` e `sparkforge_rules_lookup`).
+**Choice:** `sparkforge_pack_list` (`_READ_ONLY`, sem parametro de caminho: le a variavel). CLI `sparkforge-aws pack list` e `sparkforge-aws pack check <dir>`. Tools 92 -> 93, READ_ONLY 60 -> 61; a tool nova entra no conjunto `sem_caminho` de `test_harness_authorization.py`, entao as que declaram caminho continuam 86. Dono: `agents/spark-performance-architect.md` (ja cita `sparkforge_judge` e `sparkforge_rules_lookup`).
 
 **Rationale:** menor superficie que atende as tres personas; `pack check` pela MCP exigiria declarar caminho e confinar diretorio arbitrario para uma tarefa que o host nao faz.
 
@@ -218,12 +218,12 @@ Conteudo em lugar fixo, sem declaracao: `rules/*.yaml` (mesmo formato do catalog
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/rules/loader.py` | Modify | `_validate_rule` extraido; `load_catalog()` sem `directory` acrescenta packs | (general) | None |
-| 2 | `sparkforge/packs/{__init__,manifest,load,check}.py` | Create | Manifesto, versao, carga, recusas, check | (general) | 1 |
+| 1 | `sparkforge_aws/rules/loader.py` | Modify | `_validate_rule` extraido; `load_catalog()` sem `directory` acrescenta packs | (general) | None |
+| 2 | `sparkforge_aws/packs/{__init__,manifest,load,check}.py` | Create | Manifesto, versao, carga, recusas, check | (general) | 1 |
 | 3 | `tests/test_packs_manifest.py`, `tests/test_packs_load.py` | Create | Unidade: cada recusa, versao, carga, ordem | (general) | 2 |
-| 4 | `sparkforge/findings/schemas/finding.schema.json`, `sparkforge/adapters/tools.py` (2 padroes) | Modify | `rule_id` alargado | (general) | None |
-| 5 | `sparkforge/adapters/_core.py` | Modify | `pack_list`, `pack_check`, `knowledge_path` com `packs`, freshness por pack, `rules_lookup` sem chaves `_` | (general) | 2 |
-| 6 | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py` | Modify | Grupo `pack`; tool `sparkforge_pack_list` | (general) | 5 |
+| 4 | `sparkforge_aws/findings/schemas/finding.schema.json`, `sparkforge_aws/adapters/tools.py` (2 padroes) | Modify | `rule_id` alargado | (general) | None |
+| 5 | `sparkforge_aws/adapters/_core.py` | Modify | `pack_list`, `pack_check`, `knowledge_path` com `packs`, freshness por pack, `rules_lookup` sem chaves `_` | (general) | 2 |
+| 6 | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py` | Modify | Grupo `pack`; tool `sparkforge_pack_list` | (general) | 5 |
 | 7 | `fixtures/packs/acme-platform/` (+ packs de recusa) e `tests/test_fixtures_golden_packs.py` | Create | Golden de ponta a ponta com `SPARKFORGE_PACKS` | (general) | 5, 6 |
 | 8 | Registros: `test_adapters_tools.py`, `test_harness_authorization.py` (`sem_caminho`), `test_fixtures_golden_mcp_parity.py` (`NOVAS_DEPOIS_DO_GOLDEN`, `PADROES_ALARGADOS`), `manifest.json`, `parity.yaml`, `agents/spark-performance-architect.md` + `sync_skills` | Modify | Tool nova e schema alargado | (general) | 6 |
 | 9 | `docs/forge-pack.md`, STATUS, contagens de tool, surface lock, claims | Create/Modify | Spec do pack e numeros | (general) | 8 |
@@ -285,7 +285,7 @@ def load_catalog(directory=None, validate_exprs=False):
     base = directory or catalog_dir()
     rules = _load_core(base, validate_exprs)          # o laco de hoje, via _validate_rule
     if directory is None:
-        from sparkforge.packs import resolve          # import tardio: packs importa o loader
+        from sparkforge_aws.packs import resolve          # import tardio: packs importa o loader
         rules.extend(resolve().rules())
     return sorted(rules, key=lambda r: r["id"])
 ```

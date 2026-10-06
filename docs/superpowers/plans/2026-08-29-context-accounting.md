@@ -19,7 +19,7 @@
 **APIs reais que este plano consome** (medidas em 2026-08-29):
 
 ```
-sparkforge.observability.tracer:
+sparkforge_aws.observability.tracer:
   TraceSpan(span_id, run_id, parent_span_id, name, component_type, start_time,
             end_time=None, input_tokens=0, output_tokens=0, cached_tokens=0,
             estimated_cost_usd=0.0, status="ok", metadata={})
@@ -35,12 +35,12 @@ sparkforge.observability.tracer:
                            estimated_cost_usd=0.0, status="ok") -> None
                  .finish_trace(trace, status="completed") -> None
 
-sparkforge.observability.store:
+sparkforge_aws.observability.store:
   SQLiteTraceStore(db_path=None)      # default: Path.cwd()/".sparkforge"/"traces.db"
     .save_trace(trace) -> None        # INSERT OR REPLACE em `traces` e `spans`
     .get_trace(run_id) -> dict | None
 
-sparkforge.adapters.tools:
+sparkforge_aws.adapters.tools:
   TOOLS: dict[str, dict]              # 58 hoje
   _HANDLERS: dict[str, Callable]
   call_tool(name, arguments, *, policy=None) -> dict
@@ -71,10 +71,10 @@ sem quebrar o caso que já existe.
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/observability/context_ledger.py` | Abrir e fechar o span de uma chamada de tool; medir bytes; nunca deixar erro escapar |
-| `sparkforge/observability/surface.py` | Medir o catálogo em repouso: schemas, skills, knowledge |
-| `sparkforge/collect/host_usage.py` | Ler o transcript do host e extrair usage; recusar formato desconhecido |
-| `sparkforge/economy/report.py` | Compor o relatório sobre o ledger |
+| `sparkforge_aws/observability/context_ledger.py` | Abrir e fechar o span de uma chamada de tool; medir bytes; nunca deixar erro escapar |
+| `sparkforge_aws/observability/surface.py` | Medir o catálogo em repouso: schemas, skills, knowledge |
+| `sparkforge_aws/collect/host_usage.py` | Ler o transcript do host e extrair usage; recusar formato desconhecido |
+| `sparkforge_aws/economy/report.py` | Compor o relatório sobre o ledger |
 | `docs/surface.lock.json` | Os números medidos do catálogo em repouso |
 | `scripts/check_surface_lock.py` | O gate: mede e compara com o lock |
 | `tests/test_context_ledger.py` | Testes do span por chamada |
@@ -87,10 +87,10 @@ sem quebrar o caso que já existe.
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/observability/tracer.py` | `TraceSpan` ganha `payload_bytes`, `payload_basis`, `detail_level`, `item_count`, `outcome`, `cost_basis`; `end_span` ganha `cost_basis` e recusa custo sem base |
-| `sparkforge/observability/store.py` | As seis colunas novas em `spans` |
-| `sparkforge/adapters/tools.py` | `call_tool` abre e fecha o span nos quatro caminhos; declara a tool `sparkforge_economy_report` |
-| `sparkforge/adapters/_core.py`, `cli.py` | O verbo `economy report` |
+| `sparkforge_aws/observability/tracer.py` | `TraceSpan` ganha `payload_bytes`, `payload_basis`, `detail_level`, `item_count`, `outcome`, `cost_basis`; `end_span` ganha `cost_basis` e recusa custo sem base |
+| `sparkforge_aws/observability/store.py` | As seis colunas novas em `spans` |
+| `sparkforge_aws/adapters/tools.py` | `call_tool` abre e fecha o span nos quatro caminhos; declara a tool `sparkforge_economy_report` |
+| `sparkforge_aws/adapters/_core.py`, `cli.py` | O verbo `economy report` |
 | `manifest.json`, `parity.yaml`, `agents/spark-performance-architect.md` | A tool nova |
 | `tests/test_observability.py` | As duas chamadas de `end_span` passam a informar `cost_basis` |
 
@@ -99,8 +99,8 @@ sem quebrar o caso que já existe.
 ## Task 1: Os campos que faltam, e o custo que passa a exigir fonte
 
 **Files:**
-- Modify: `sparkforge/observability/tracer.py`
-- Modify: `sparkforge/observability/store.py`
+- Modify: `sparkforge_aws/observability/tracer.py`
+- Modify: `sparkforge_aws/observability/store.py`
 - Modify: `tests/test_observability.py`
 - Test: `tests/test_context_ledger.py`
 
@@ -119,7 +119,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.observability.tracer import AgentOpsTracker, TraceSpan
+from sparkforge_aws.observability.tracer import AgentOpsTracker, TraceSpan
 
 
 class TestOsCamposNovos:
@@ -197,7 +197,7 @@ Expected: FAIL com `TypeError: TraceSpan.__init__() got an unexpected keyword ar
 
 - [ ] **Step 3: Implementar**
 
-Em `sparkforge/observability/tracer.py`, o dataclass `TraceSpan` ganha seis campos
+Em `sparkforge_aws/observability/tracer.py`, o dataclass `TraceSpan` ganha seis campos
 depois de `metadata` (ordem importa: todos têm default, então vão depois dos que já
 têm default):
 
@@ -267,7 +267,7 @@ E `end_span` passa a exigir a base quando há custo:
         span.status = status
 ```
 
-Em `sparkforge/observability/store.py`, a tabela `spans` ganha as seis colunas
+Em `sparkforge_aws/observability/store.py`, a tabela `spans` ganha as seis colunas
 (no `CREATE TABLE`, depois de `metadata_json` e antes do `FOREIGN KEY`):
 
 ```python
@@ -352,8 +352,8 @@ Expected: PASS. Reporte a contagem real.
 - [ ] **Step 5: Commit**
 
 ```bash
-python -m ruff check sparkforge/observability tests/test_context_ledger.py tests/test_observability.py
-git add sparkforge/observability tests/test_context_ledger.py tests/test_observability.py
+python -m ruff check sparkforge_aws/observability tests/test_context_ledger.py tests/test_observability.py
+git add sparkforge_aws/observability tests/test_context_ledger.py tests/test_observability.py
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -364,8 +364,8 @@ Mensagem: `feat(observability): o span ganha byte, e o custo passa a exigir font
 ## Task 2: O span por chamada de tool
 
 **Files:**
-- Create: `sparkforge/observability/context_ledger.py`
-- Modify: `sparkforge/adapters/tools.py` (`call_tool`)
+- Create: `sparkforge_aws/observability/context_ledger.py`
+- Modify: `sparkforge_aws/adapters/tools.py` (`call_tool`)
 - Test: `tests/test_context_ledger.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -384,8 +384,8 @@ class TestOSpanDaChamada:
     def test_a_successful_call_records_the_exact_bytes(self, tmp_path, monkeypatch):
         import json
 
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -404,8 +404,8 @@ class TestOSpanDaChamada:
         assert spans[0]["outcome"] == "ok"
 
     def test_the_declared_item_count_is_carried_not_guessed(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -419,8 +419,8 @@ class TestOSpanDaChamada:
         assert span["item_count"] == resultado["returned_count"]
 
     def test_the_requested_detail_level_is_recorded(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -438,8 +438,8 @@ class TestOSpanDaChamada:
     def test_a_tool_span_never_carries_provider_tokens_or_cost(
         self, tmp_path, monkeypatch
     ):
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -461,8 +461,8 @@ class TestOsTresCaminhosDeErro:
     barata se elas nao fossem contadas."""
 
     def test_an_adapter_error_records_a_span(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -477,10 +477,10 @@ class TestOsTresCaminhosDeErro:
         assert span["payload_bytes"] > 0
 
     def test_an_unauthorized_call_records_a_span(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.agents.autonomy import CallPolicy
-        from sparkforge.observability.context_ledger import ContextLedger
-        from sparkforge.registry.models import ExecutionProfile
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.agents.autonomy import CallPolicy
+        from sparkforge_aws.observability.context_ledger import ContextLedger
+        from sparkforge_aws.registry.models import ExecutionProfile
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -503,8 +503,8 @@ class TestOsTresCaminhosDeErro:
         ANTES do despacho: nao houve payload nenhum para medir."""
         import pytest
 
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -522,8 +522,8 @@ class TestLedgerQuebradoNaoQuebraATool:
     def test_an_unwritable_ledger_does_not_change_the_result(
         self, tmp_path, monkeypatch
     ):
-        from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         impossivel = tmp_path / "arquivo_no_lugar_do_diretorio"
         impossivel.write_text("nao sou diretorio", encoding="utf-8")
@@ -542,11 +542,11 @@ class TestLedgerQuebradoNaoQuebraATool:
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_context_ledger.py -k "OSpanDaChamada or Erro or Quebrado" -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.observability.context_ledger'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.observability.context_ledger'`
 
 - [ ] **Step 3: Implementar**
 
-Crie `sparkforge/observability/context_ledger.py`:
+Crie `sparkforge_aws/observability/context_ledger.py`:
 
 ```python
 """O span de uma chamada de tool: quantos bytes ela poe na janela de contexto.
@@ -578,8 +578,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from sparkforge.observability.store import SQLiteTraceStore
-from sparkforge.observability.tracer import ExecutionTrace, TraceSpan
+from sparkforge_aws.observability.store import SQLiteTraceStore
+from sparkforge_aws.observability.tracer import ExecutionTrace, TraceSpan
 
 PAYLOAD_BASIS = 'len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))'
 
@@ -656,10 +656,10 @@ class ContextLedger:
         return list(trace["spans"]) if trace else []
 ```
 
-Em `sparkforge/adapters/tools.py`, no topo do módulo (junto dos outros imports):
+Em `sparkforge_aws/adapters/tools.py`, no topo do módulo (junto dos outros imports):
 
 ```python
-from sparkforge.observability.context_ledger import ContextLedger
+from sparkforge_aws.observability.context_ledger import ContextLedger
 ```
 
 e, logo depois de `_HANDLERS`, o ledger do processo:
@@ -736,8 +736,8 @@ regra é que ele nunca muda o resultado.
 - [ ] **Step 5: Commit**
 
 ```bash
-python -m ruff check sparkforge/observability sparkforge/adapters/tools.py tests/test_context_ledger.py
-git add sparkforge/observability sparkforge/adapters/tools.py tests/test_context_ledger.py
+python -m ruff check sparkforge_aws/observability sparkforge_aws/adapters/tools.py tests/test_context_ledger.py
+git add sparkforge_aws/observability sparkforge_aws/adapters/tools.py tests/test_context_ledger.py
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -748,7 +748,7 @@ Mensagem: `feat(observability): um span por chamada de tool, nos quatro caminhos
 ## Task 3: O catálogo em repouso
 
 **Files:**
-- Create: `sparkforge/observability/surface.py`
+- Create: `sparkforge_aws/observability/surface.py`
 - Test: `tests/test_observability_surface.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -763,7 +763,7 @@ e conta byte.
 """
 from __future__ import annotations
 
-from sparkforge.observability.surface import measure_surface
+from sparkforge_aws.observability.surface import measure_surface
 
 
 class TestAMedidaEstatica:
@@ -797,7 +797,7 @@ class TestAMedidaEstatica:
     def test_nothing_is_executed(self):
         """A medida le disco. Se ela chamasse uma tool, um `path` inexistente
         derrubaria a medicao -- e o teste abaixo prova que ela nao chama."""
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         chamadas = []
         original = tools.call_tool
@@ -812,7 +812,7 @@ class TestAMedidaEstatica:
 
 class TestRecusa:
     def test_an_unreadable_document_is_named_not_skipped(self, tmp_path):
-        from sparkforge.observability.surface import measure_directory
+        from sparkforge_aws.observability.surface import measure_directory
 
         (tmp_path / "bom.md").write_text("conteudo", encoding="utf-8")
         (tmp_path / "ruim.md").write_bytes(b"\xff\xfe invalido \x00")
@@ -826,11 +826,11 @@ class TestRecusa:
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_observability_surface.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.observability.surface'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.observability.surface'`
 
 - [ ] **Step 3: Implementar**
 
-Crie `sparkforge/observability/surface.py`:
+Crie `sparkforge_aws/observability/surface.py`:
 
 ```python
 """Quanto pesa a superficie do SparkForge ANTES de qualquer chamada.
@@ -892,7 +892,7 @@ def measure_tool_catalogue() -> dict[str, Any]:
     Le `TOOLS` direto -- e o mesmo objeto que o servidor serializa, e medir a
     partir dele nao exige subir servidor nenhum.
     """
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     por_nome = {nome: _bytes_of(declaracao) for nome, declaracao in TOOLS.items()}
     return {
@@ -944,8 +944,8 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-python -m ruff check sparkforge/observability/surface.py tests/test_observability_surface.py
-git add sparkforge/observability/surface.py tests/test_observability_surface.py
+python -m ruff check sparkforge_aws/observability/surface.py tests/test_observability_surface.py
+git add sparkforge_aws/observability/surface.py tests/test_observability_surface.py
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -974,7 +974,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.observability.surface import measure_surface
+from sparkforge_aws.observability.surface import measure_surface
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / "docs" / "surface.lock.json"
@@ -1054,7 +1054,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sparkforge.observability.surface import (  # noqa: E402 -- depois do sys.path
+from sparkforge_aws.observability.surface import (  # noqa: E402 -- depois do sys.path
     SERIALIZATION_BASIS,
     measure_surface,
 )
@@ -1171,7 +1171,7 @@ Mensagem: `feat(gate): a superficie travada por lock, e nao por limiar`
 ## Task 5: O usage que o host registrou
 
 **Files:**
-- Create: `sparkforge/collect/host_usage.py`
+- Create: `sparkforge_aws/collect/host_usage.py`
 - Test: `tests/test_collect_host_usage.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1189,7 +1189,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.collect.host_usage import read_host_usage
+from sparkforge_aws.collect.host_usage import read_host_usage
 
 
 def _transcript(tmp_path, linhas):
@@ -1299,16 +1299,16 @@ class TestRecusas:
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_collect_host_usage.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.collect.host_usage'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.collect.host_usage'`
 
 - [ ] **Step 3: Implementar**
 
-Crie `sparkforge/collect/host_usage.py`:
+Crie `sparkforge_aws/collect/host_usage.py`:
 
 ```python
 """O usage que o HOST registrou -- o unico token de provider que existe aqui.
 
-O SparkForge nao chama provider nenhum: medido, `sparkforge/` nao importa
+O SparkForge nao chama provider nenhum: medido, `sparkforge_aws/` nao importa
 `anthropic`, `openai`, `bedrock` nem `litellm`. Quem gasta token e o host
 executando os agents. Este modulo le o que o host gravou, e por isso entra pela
 porta do `collect *` -- a unica parte do projeto que ja le artefato de fora.
@@ -1396,8 +1396,8 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-python -m ruff check sparkforge/collect/host_usage.py tests/test_collect_host_usage.py
-git add sparkforge/collect/host_usage.py tests/test_collect_host_usage.py
+python -m ruff check sparkforge_aws/collect/host_usage.py tests/test_collect_host_usage.py
+git add sparkforge_aws/collect/host_usage.py tests/test_collect_host_usage.py
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -1408,7 +1408,7 @@ Mensagem: `feat(collect): o usage do host, lido do formato que existe e recusado
 ## Task 6: O relatório
 
 **Files:**
-- Create: `sparkforge/economy/report.py`
+- Create: `sparkforge_aws/economy/report.py`
 - Test: `tests/test_economy_report.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1424,12 +1424,12 @@ porque byte de payload e token de provider nao sao a mesma unidade.
 """
 from __future__ import annotations
 
-from sparkforge.economy.report import build_context_report
-from sparkforge.observability.context_ledger import ContextLedger
+from sparkforge_aws.economy.report import build_context_report
+from sparkforge_aws.observability.context_ledger import ContextLedger
 
 
 def _ledger_com_chamadas(tmp_path, monkeypatch):
-    from sparkforge.adapters import tools
+    from sparkforge_aws.adapters import tools
 
     ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
     monkeypatch.setattr(tools, "_LEDGER", ledger)
@@ -1521,11 +1521,11 @@ class TestRecusas:
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_economy_report.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.economy.report'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.economy.report'`
 
 - [ ] **Step 3: Implementar**
 
-Crie `sparkforge/economy/report.py`:
+Crie `sparkforge_aws/economy/report.py`:
 
 ```python
 """O relatorio de contexto: o que esta execucao poe na janela.
@@ -1547,9 +1547,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from sparkforge.collect.host_usage import read_host_usage
-from sparkforge.observability.context_ledger import ContextLedger
-from sparkforge.observability.surface import measure_surface
+from sparkforge_aws.collect.host_usage import read_host_usage
+from sparkforge_aws.observability.context_ledger import ContextLedger
+from sparkforge_aws.observability.surface import measure_surface
 
 
 def build_context_report(
@@ -1606,8 +1606,8 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-python -m ruff check sparkforge/economy/report.py tests/test_economy_report.py
-git add sparkforge/economy/report.py tests/test_economy_report.py
+python -m ruff check sparkforge_aws/economy/report.py tests/test_economy_report.py
+git add sparkforge_aws/economy/report.py tests/test_economy_report.py
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -1618,7 +1618,7 @@ Mensagem: `feat(economy): o relatorio de contexto, com byte e token lado a lado`
 ## Task 7: A superfície — verbo e tool
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py`, `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py`, `manifest.json`, `parity.yaml`, `agents/spark-performance-architect.md`
+- Modify: `sparkforge_aws/adapters/_core.py`, `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py`, `manifest.json`, `parity.yaml`, `agents/spark-performance-architect.md`
 - Test: `tests/test_adapters_cli.py`, `tests/test_adapters_tools.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1642,7 +1642,7 @@ class TestEconomyReportCommand:
     """`economy report` e verbo de TOPO: compoe sobre o ledger, nao le artefato."""
 
     def test_an_unknown_run_refuses_by_name(self, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         code = main(["economy", "report", "--run-id", "run_inexistente"])
 
@@ -1652,7 +1652,7 @@ class TestEconomyReportCommand:
         assert {"reason": "run_unresolved", "count": 1} in payload["unresolved"]
 
     def test_the_surface_at_rest_comes_in_the_payload(self, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         main(["economy", "report", "--run-id", "run_inexistente"])
         payload = json.loads(capsys.readouterr().out)
@@ -1667,11 +1667,11 @@ Expected: FAIL — `argument {analyze,...}: invalid choice: 'economy'` e a lista
 
 - [ ] **Step 3: Implementar**
 
-Em `sparkforge/adapters/_core.py`, junto do import de `build_conf_advice`:
+Em `sparkforge_aws/adapters/_core.py`, junto do import de `build_conf_advice`:
 
 ```python
-from sparkforge.economy.report import build_context_report
-from sparkforge.observability.context_ledger import ContextLedger
+from sparkforge_aws.economy.report import build_context_report
+from sparkforge_aws.observability.context_ledger import ContextLedger
 ```
 
 e a função, antes do bloco `# funcval`:
@@ -1700,7 +1700,7 @@ def economy_report(run_id: str, host_transcript: str = "") -> dict[str, Any]:
     )
 ```
 
-Em `sparkforge/adapters/cli.py`, o parser (junto dos outros verbos de topo,
+Em `sparkforge_aws/adapters/cli.py`, o parser (junto dos outros verbos de topo,
 antes do bloco `# funcval`):
 
 ```python
@@ -1746,7 +1746,7 @@ e o despacho, junto de `("tune", None)`:
     ("economy", "report"): _cmd_economy_report,
 ```
 
-Em `sparkforge/adapters/tools.py`, a declaração (antes de
+Em `sparkforge_aws/adapters/tools.py`, a declaração (antes de
 `"sparkforge_funcval_plan"`):
 
 ```python
@@ -1892,8 +1892,8 @@ sobe de 57 para 58 — atualize e reporte.
 - [ ] **Step 5: Commit**
 
 ```bash
-python -m ruff check sparkforge/adapters tests/test_adapters_cli.py tests/test_adapters_tools.py
-git add sparkforge/adapters manifest.json parity.yaml agents .claude .agents .github tests
+python -m ruff check sparkforge_aws/adapters tests/test_adapters_cli.py tests/test_adapters_tools.py
+git add sparkforge_aws/adapters manifest.json parity.yaml agents .claude .agents .github tests
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -1928,7 +1928,7 @@ E atualize os números medidos de tools nos lugares que os citam — meça, não
 copie:
 
 ```bash
-python -c "from sparkforge.adapters import tools; print(len(tools.TOOLS))"
+python -c "from sparkforge_aws.adapters import tools; print(len(tools.TOOLS))"
 ```
 
 - [ ] **Step 3: STATUS**

@@ -12,10 +12,10 @@ autonomo, le como "nada encontrado" -- e a versao de orientacao do defeito que
 
 import pytest
 
-from sparkforge.adapters._core import build_runtime_context
-from sparkforge.facts.runtime_detect import GLUE_MATRIX, detect_runtime
-from sparkforge.rules.loader import load_catalog
-from sparkforge.rules.version_scope import in_scope
+from sparkforge_aws.adapters._core import build_runtime_context
+from sparkforge_aws.facts.runtime_detect import GLUE_MATRIX, detect_runtime
+from sparkforge_aws.rules.loader import load_catalog
+from sparkforge_aws.rules.version_scope import in_scope
 
 # Runtime EMR-like: Spark e Iceberg detectados, NENHUMA chave `glue`.
 # E o cenario que a Fase 5 existe para servir.
@@ -46,7 +46,7 @@ def _detected(**sources: dict[str, str]) -> dict[str, str]:
 EMR_MINIMAL = _detected(event_log={"spark_version": "3.5.1"})
 
 # Runtime VAZIO -- o padrao real da CLI, nao um cenario exotico.
-# `sparkforge judge` sem `--glue/--spark/--python/--iceberg/--athena` chama
+# `sparkforge-aws judge` sem `--glue/--spark/--python/--iceberg/--athena` chama
 # `build_runtime_context()` sem argumento nenhum, e o resultado e
 # `{'glue': '', 'spark': '', 'python': '', 'iceberg': '', 'athena': '', ...}`:
 # TODA chave presente e TODA chave vazia, entao `in_scope` falha fechada em
@@ -55,7 +55,7 @@ EMR_MINIMAL = _detected(event_log={"spark_version": "3.5.1"})
 # E o caso que os dois EMR acima nao pegam, porque os dois trazem `spark`
 # preenchido. Foi por baixo dessa folga que a Task 3c passou: a Task 2 moveu 19
 # regras de `{glue: "*"}` para `{spark: ">=3.0"}`, os testes viram `spark`
-# detectado nos dois runtimes e aprovaram -- enquanto `sparkforge judge` sobre
+# detectado nos dois runtimes e aprovaram -- enquanto `sparkforge-aws judge` sobre
 # um `.py`, um plano ou um event log apagava SF-PY, SF-PQ, SF-PLAN, SF-UI e
 # SF-CG inteiras. Analise estatica nao precisa de Spark detectado para valer.
 #
@@ -477,7 +477,7 @@ def _vanished_areas(runtime: dict[str, str]) -> set[str]:
 
 # Runtimes conhecidos. Os de Glue saem de `GLUE_MATRIX` para que uma versao
 # nova na matriz seja coberta sem editar este arquivo; os sem Glue saem de
-# `NON_GLUE_RUNTIMES`, entao o runtime VAZIO -- o padrao real de `sparkforge
+# `NON_GLUE_RUNTIMES`, entao o runtime VAZIO -- o padrao real de `sparkforge-aws
 # judge` -- e exercitado aqui pela mesma definicao usada la em cima, sem
 # segunda copia que possa divergir.
 ALL_RUNTIMES: list[tuple[str, dict[str, str]]] = [
@@ -581,7 +581,7 @@ AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     # `GLUE_MATRIX`), entao a area sobrevive em qualquer analise real de um job
     # que rode em Spark 4.
     #
-    # O RESIDUO, declarado porque nao some: no runtime `vazio-cli` -- `sparkforge
+    # O RESIDUO, declarado porque nao some: no runtime `vazio-cli` -- `sparkforge-aws
     # judge` sem flag e sem fact de versao -- a area some por falta de deteccao,
     # nao por afirmacao falsa. Isso e o fail-closed do `runtime_scope`
     # (`rules/catalog/README.md`, "O guarda falha fechado"), e aparece para o
@@ -697,8 +697,8 @@ class TestNoRuleVanishesFromBothSides:
     """
 
     def test_a_glue_rule_without_glue_job_terraform_is_reported(self, tmp_path):
-        from sparkforge.facts.terraform import extract_terraform_tree
-        from sparkforge.rules.engine import judge
+        from sparkforge_aws.facts.terraform import extract_terraform_tree
+        from sparkforge_aws.rules.engine import judge
 
         (tmp_path / "main.tf").write_text(
             'resource "aws_emr_cluster" "x" {\n  release_label = "emr-7.5.0"\n}\n',

@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters.cli import main
+from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "simulate"

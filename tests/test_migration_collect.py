@@ -6,8 +6,8 @@ tocar disco. `collect()` e a metade de I/O -- mesma separacao que faz
 """
 from pathlib import Path
 
-from sparkforge.facts import migration as facts_migration
-from sparkforge.migration import collect as collect_mod
+from sparkforge_aws.facts import migration as facts_migration
+from sparkforge_aws.migration import collect as collect_mod
 
 JOB = (
     "import com.amazonaws.services.s3.AmazonS3\n"
@@ -70,7 +70,7 @@ class TestTerraformSoQuandoExiste:
 class TestInventarioDeConsumidoresPorConvencao:
     """O inventario e procurado onde o extrator o declara, nao adivinhado.
 
-    `sparkforge/facts/consumers.py` nomeia `.sparkforge/consumers.yaml` como a
+    `sparkforge_aws/facts/consumers.py` nomeia `.sparkforge/consumers.yaml` como a
     convencao. Varrer todo `*.yaml` da arvore acharia o inventario, e junto com
     ele todo workflow de CI e todo arquivo de configuracao -- cada um virando um
     `env.consumers_analyzed` que afirma "inventario lido" sobre arquivo que nao
@@ -130,7 +130,7 @@ class TestDumpDeMetadadosIceberg:
     Sem `iceberg.table_property`, `SF-ENV-002` nunca dispara a partir do
     diretorio do job: o codigo observa `format-version` numa linha de fonte,
     sem identidade de tabela. O dump de metadados tem a tabela, e a convencao
-    de onde ele mora ja existe -- `sparkforge collect iceberg-metadata` escreve
+    de onde ele mora ja existe -- `sparkforge-aws collect iceberg-metadata` escreve
     em `.sparkforge/artifacts/iceberg/<db_tabela>.json`.
     """
 

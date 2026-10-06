@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/AIRFLOW_DAG/define.md
   sha256: "76faac9ecdf9b65cb1298e49e6a1dbf2e145d4b4d86f58698386b74cf12d3593"
 files:
-  - {path: sparkforge/facts/airflow_dag.py, action: create, reason: "extrator por AST (af.dag, af.task, af.dependency, af.unresolved, af.analyzed) e a derivacao pura af.glue_job_link (D1, D2, D5)"}
+  - {path: sparkforge_aws/facts/airflow_dag.py, action: create, reason: "extrator por AST (af.dag, af.task, af.dependency, af.unresolved, af.analyzed) e a derivacao pura af.glue_job_link (D1, D2, D5)"}
   - {path: tests/test_airflow_dag.py, action: create, reason: "AC1, AC2, AC6 e AC7"}
-  - {path: sparkforge/facts/fusion.py, action: modify, reason: "fuse() chama build_af_glue_link, como ja chama build_sfn_glue_link (D5)"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "funcao publica de analyze airflow-dag (D3)"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "subcomando analyze airflow-dag --path (D3)"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "tool sparkforge_analyze_airflow_dag, READ_ONLY (D3)"}
+  - {path: sparkforge_aws/facts/fusion.py, action: modify, reason: "fuse() chama build_af_glue_link, como ja chama build_sfn_glue_link (D5)"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "funcao publica de analyze airflow-dag (D3)"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "subcomando analyze airflow-dag --path (D3)"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "tool sparkforge_analyze_airflow_dag, READ_ONLY (D3)"}
   - {path: rules/catalog/airflow.yaml, action: create, reason: "area SF-AIRFLOW, SF-AIRFLOW-001 a 004 (D4)"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "rota AGENT-087 por findings_area SF-AIRFLOW para glue-infra-reviewer (D6)"}
   - {path: agents/glue-infra-reviewer.md, action: modify, reason: "declara SF-AIRFLOW, cita a tool nova e ganha a description (D6)"}
@@ -34,7 +34,7 @@ files:
   - {path: tests/test_harness_authorization.py, action: modify, reason: "contagem de tools que declaram caminho"}
   - {path: tests/test_fixtures_golden_mcp_parity.py, action: modify, reason: "tool nova depois do golden entra em NOVAS_DEPOIS_DO_GOLDEN"}
   - {path: tests/test_databricks_rule_audit.py, action: modify, reason: "airflow_dag entra em SO_AWS: o extrator le DAG que dispara job AWS, e as regras tem runtime_scope vazio (D4)"}
-  - {path: sparkforge/agentic/executor/debate_evidence.py, action: modify, reason: "airflow-dag na allowlist de extratores de evidencia, como step-functions"}
+  - {path: sparkforge_aws/agentic/executor/debate_evidence.py, action: modify, reason: "airflow-dag na allowlist de extratores de evidencia, como step-functions"}
   - {path: docs/agentic-evolution-report.md, action: modify, reason: "a contagem da allowlist de extratores"}
   - {path: parity.yaml, action: modify, reason: "capacidade com tools, cli e knowledge"}
   - {path: manifest.json, action: modify, reason: "tools e knowledge_base.rule_count"}
@@ -60,7 +60,7 @@ files:
   - {path: docs/claims.lock.json, action: modify, reason: "arquivo .py novo e contagens movem alegacoes"}
 decisions:
   - id: D1
-    choice: "Modulo sparkforge/facts/airflow_dag.py, prefixo de kind af. (nenhum kind existente comeca com af). Le .py por ast.parse, NUNCA executa o arquivo. Kinds: af.dag (dag_id, schedule literal ou marca, default_args com retries e execution_timeout literais), af.task (operator_class, task_id, os argumentos literais que a regra julga, has_downstream efetivo), af.dependency (upstream, downstream, forma declarada), af.unresolved (reason: invalid_python, read_error, size_above_limit, dag_dinamico, arg_nao_literal, dependencia_dinamica, task_id_nao_literal, multiplos_dags -- dois DAGs no mesmo arquivo tornam default_args ilegivel em vez de herdar do primeiro; emenda do plano), af.analyzed (sempre). Molde de leitura: sparkforge/facts/pyspark_ast.py; molde de dominio: sparkforge/facts/stepfunctions.py."
+    choice: "Modulo sparkforge_aws/facts/airflow_dag.py, prefixo de kind af. (nenhum kind existente comeca com af). Le .py por ast.parse, NUNCA executa o arquivo. Kinds: af.dag (dag_id, schedule literal ou marca, default_args com retries e execution_timeout literais), af.task (operator_class, task_id, os argumentos literais que a regra julga, has_downstream efetivo), af.dependency (upstream, downstream, forma declarada), af.unresolved (reason: invalid_python, read_error, size_above_limit, dag_dinamico, arg_nao_literal, dependencia_dinamica, task_id_nao_literal, multiplos_dags -- dois DAGs no mesmo arquivo tornam default_args ilegivel em vez de herdar do primeiro; emenda do plano), af.analyzed (sempre). Molde de leitura: sparkforge_aws/facts/pyspark_ast.py; molde de dominio: sparkforge_aws/facts/stepfunctions.py."
     rejected: ["importar o DAG e usar DagBag: executa codigo do operador, e o repositorio nao executa artefato", "ler o DAG serializado do banco do Airflow: exige acesso, e o define poe fora de escopo"]
     rollback: "git revert dos commits da feature"
   - id: D2
@@ -68,7 +68,7 @@ decisions:
     rejected: ["assumir o default quando o argumento nao e literal: seria afirmar o que nao se leu"]
     rollback: "git revert do commit"
   - id: D3
-    choice: "Verbo sparkforge analyze airflow-dag --path <arquivo|diretorio> e tool MCP sparkforge_analyze_airflow_dag (path, detail_level), READ_ONLY, no molde de analyze step-functions. Teto de tamanho pelo mesmo _teto_para do scan."
+    choice: "Verbo sparkforge-aws analyze airflow-dag --path <arquivo|diretorio> e tool MCP sparkforge_analyze_airflow_dag (path, detail_level), READ_ONLY, no molde de analyze step-functions. Teto de tamanho pelo mesmo _teto_para do scan."
     rejected: ["reaproveitar analyze pyspark: o extrator de PySpark julga transformacao, e um DAG nao e job"]
     rollback: "git revert do commit"
   - id: D4
@@ -105,7 +105,7 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| extrator | `sparkforge/facts/airflow_dag.py`, `tests/test_airflow_dag.py` | AC1, AC2 |
+| extrator | `sparkforge_aws/facts/airflow_dag.py`, `tests/test_airflow_dag.py` | AC1, AC2 |
 | verbo e tool | `_core.py`, `cli.py`, `tools.py`, `parity.yaml`, testes de superfície | AC7 |
 | regras e área | `rules/catalog/airflow.yaml`, `routing.yaml`, `glue-infra-reviewer`, corpus e golden | AC3–AC5, AC8 |
 | derivação | `build_af_glue_link` e `fusion.py` | AC6 |
@@ -115,13 +115,13 @@ covers:
 
 - Precedente inteiro: `docs/sdd/STEP_FUNCTIONS/` (extrator, verbo, tool, área com quatro
   regras, derivação em `fuse`, corpus). O CI do #90 passou com ele.
-- Precedente de leitura de Python: `sparkforge/facts/pyspark_ast.py`
+- Precedente de leitura de Python: `sparkforge_aws/facts/pyspark_ast.py`
   (`extract_source`, `extract_path`, `extract_tree`).
 - `SF-AIRFLOW` é nome de área que já existiu vazio e saiu no #88; volta com regra que
   julga.
 - As funcoes que leem o `aws_glue_job` do Terraform sao gemeas das de `stepfunctions.py`
   e ficam duplicadas de proposito: um leitor de DAG nao importa um leitor de ASL. Um
-  modulo compartilhado (`sparkforge/facts/glue_terraform.py`) fica como pendencia, fora
+  modulo compartilhado (`sparkforge_aws/facts/glue_terraform.py`) fica como pendencia, fora
   desta feature.
 - O lado do Glue já é fact: `tf.attribute` com `key: name` e `key: max_retries` no mesmo
   recurso.

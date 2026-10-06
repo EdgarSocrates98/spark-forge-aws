@@ -19,7 +19,7 @@ Julga a migracao de um job entre um par de versoes com o catalogo versionado (`S
 
 ## Na CLI
 
-[`sparkforge migrate controlm`](../cli/migrate.md), [`sparkforge migrate emr`](../cli/migrate.md), [`sparkforge migrate glue`](../cli/migrate.md)
+[`sparkforge-aws migrate controlm`](../cli/migrate.md), [`sparkforge-aws migrate emr`](../cli/migrate.md), [`sparkforge-aws migrate glue`](../cli/migrate.md)
 
 ## Capacidade
 

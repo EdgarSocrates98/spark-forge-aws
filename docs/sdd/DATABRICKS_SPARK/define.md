@@ -42,10 +42,10 @@ acceptance:
 success:
   - id: SC1
     metric: "Regras com runtime_scope vazio classificadas como neutras, com escopo novo e em excecao auditada"
-    source: "saida do teste tests/test_databricks_rule_audit.py e sparkforge rules lookup --index"
+    source: "saida do teste tests/test_databricks_rule_audit.py e sparkforge-aws rules lookup --index"
   - id: SC2
     metric: "Findings iguais e divergentes entre a fixture Glue e a Databricks pareada"
-    source: "sparkforge judge sobre as duas fixtures, comparado pelo teste AC8"
+    source: "sparkforge-aws judge sobre as duas fixtures, comparado pelo teste AC8"
 out_of_scope:
   - "_delta_log, definicao de job/cluster pela Jobs API e billing em DBU: incrementos seguintes."
   - "Coletores collect_databricks_* pela REST API (abordagem C do explore)."
@@ -62,10 +62,10 @@ unknowns:
     unlock: "Descobrir como Photon aparece no event log (nome de operador no plano, propriedade de ambiente). A pagina T1 docs.databricks.com/aws/en/compute/photon (2026-09-11) documenta so a cor na UI e runtime_engine = PHOTON na API. Destrava: event log observado com Photon ligado, ou fonte T1."
   - id: U3
     blocks: [AC6]
-    unlock: "Derivar a lista fechada de termos especificos de AWS lendo a remediacao das regras de runtime_scope vazio por sparkforge rules lookup --index, com a lista revisada pelo operador."
+    unlock: "Derivar a lista fechada de termos especificos de AWS lendo a remediacao das regras de runtime_scope vazio por sparkforge-aws rules lookup --index, com a lista revisada pelo operador."
   - id: U4
     blocks: [AC7]
-    unlock: "Ler com sparkforge code search o que extratores e tune fazem hoje com valor nao numerico em spark.sql.shuffle.partitions."
+    unlock: "Ler com sparkforge-aws code search o que extratores e tune fazem hoje com valor nao numerico em spark.sql.shuffle.partitions."
 change_kinds: [extractor, knowledge_doc, rule, rule_runtime_scope, fixture_corpus, tool_or_verb, claims]
 ---
 

@@ -21,7 +21,7 @@
 |--------|-------|
 | **Tasks Completed** | 11/11 (entradas do manifesto) |
 | **Files Created** | 5 modulos + 4 testes + 13 casos golden (54 arquivos) + manual + 3 paginas de referencia |
-| **Lines of Code** | 938 em `sparkforge/change/` (5 arquivos); 479 de teste |
+| **Lines of Code** | 938 em `sparkforge_aws/change/` (5 arquivos); 479 de teste |
 | **Build Time** | 1 sessao |
 | **Tests Passing** | 12 704 passed, 13 skipped, 0 failed (suite em 9 lotes) |
 | **Agents Used** | 0 (build direto; manifesto com Python puro, testes e registros no molde do repositorio) |
@@ -32,9 +32,9 @@
 
 | # | Task | Agent | Status | Duration | Notes |
 |---|------|-------|--------|----------|-------|
-| 1 | `sparkforge/change/{__init__,plan}.py` | (direct) | ✅ Complete | - | L1 puro |
-| 2 | `sparkforge/change/apply.py` | (direct) | ✅ Complete | - | Aplicador estrito |
-| 3 | `sparkforge/change/sandbox.py` (+ `refusals.py`) | (direct) | ✅ Complete | - | `refusals.py` fora do manifesto (desvio 1) |
+| 1 | `sparkforge_aws/change/{__init__,plan}.py` | (direct) | ✅ Complete | - | L1 puro |
+| 2 | `sparkforge_aws/change/apply.py` | (direct) | ✅ Complete | - | Aplicador estrito |
+| 3 | `sparkforge_aws/change/sandbox.py` (+ `refusals.py`) | (direct) | ✅ Complete | - | `refusals.py` fora do manifesto (desvio 1) |
 | 4 | `_core.change_plan/change_sandbox` | (direct) | ✅ Complete | - | Compoe `build_conf_advice`, `scan`, `simulate.diff`, `proof.load_policy` |
 | 5 | CLI `change plan|sandbox` | (direct) | ✅ Complete | - | `change_action` na cadeia de `getattr` |
 | 6 | Tools `sparkforge_change_plan` / `_sandbox` | (direct) | ✅ Complete | - | READ_ONLY / `_WRITE_IDEMPOTENT` |
@@ -60,11 +60,11 @@
 
 | File | Lines | Agent | Verified | Notes |
 | ---- | ----- | ----- | -------- | ----- |
-| `sparkforge/change/__init__.py` | 36 | (direct) | ✅ | API publica |
-| `sparkforge/change/refusals.py` | 89 | (direct) | ✅ | 14 nomes de recusa com `unlock` |
-| `sparkforge/change/plan.py` | 269 | (direct) | ✅ | L1 |
-| `sparkforge/change/apply.py` | 249 | (direct) | ✅ | Parser e aplicador |
-| `sparkforge/change/sandbox.py` | 295 | (direct) | ✅ | L2 |
+| `sparkforge_aws/change/__init__.py` | 36 | (direct) | ✅ | API publica |
+| `sparkforge_aws/change/refusals.py` | 89 | (direct) | ✅ | 14 nomes de recusa com `unlock` |
+| `sparkforge_aws/change/plan.py` | 269 | (direct) | ✅ | L1 |
+| `sparkforge_aws/change/apply.py` | 249 | (direct) | ✅ | Parser e aplicador |
+| `sparkforge_aws/change/sandbox.py` | 295 | (direct) | ✅ | L2 |
 | `tests/test_change_plan.py` | 136 | (direct) | ✅ | Troca, recusas, nao escreve, sem subprocess/provider |
 | `tests/test_change_apply.py` | 107 | (direct) | ✅ | Formas recusadas, tudo ou nada, CRLF, BOM, insercao |
 | `tests/test_change_sandbox.py` | 113 | (direct) | ✅ | Arvore intacta, id estavel, limpeza, artefatos, erros de entrada |
@@ -79,7 +79,7 @@
 ### Lint Check
 
 ```text
-ruff check sparkforge tests/test_change_*.py tests/test_fixtures_golden_change.py tests/test_adapters_tools.py
+ruff check sparkforge_aws tests/test_change_*.py tests/test_fixtures_golden_change.py tests/test_adapters_tools.py
 All checks passed!
 ```
 
@@ -136,7 +136,7 @@ total       12704 passed, 13 skipped, 0 failed
 
 | # | Decision Point | Options Considered | Chose | Rationale |
 |---|----------------|--------------------|-------|-----------|
-| 1 | Onde moram os nomes de recusa | Em `plan.py`, em cada modulo, ou num modulo proprio | `sparkforge/change/refusals.py` | Tres modulos levantam e a tool declara no schema; um lugar so evita divergir calado |
+| 1 | Onde moram os nomes de recusa | Em `plan.py`, em cada modulo, ou num modulo proprio | `sparkforge_aws/change/refusals.py` | Tres modulos levantam e a tool declara no schema; um lugar so evita divergir calado |
 | 2 | Recusas alem do DEFINE | So as listadas, ou nomear tambem valor igual, valor que nao cabe e diff ilegivel | `valor_ja_igual`, `valor_invalido`, `diff_malformado` | Regra 20: toda saida sem diff diz por que; engolir seria silencio |
 | 3 | Diff LF sobre arquivo CRLF | Recusar (estrito) ou tolerar o fim de linha | Tolerar so o fim de linha; a linha nova adota o do arquivo | `git diff` gera LF; recusar no Windows por um byte que nao muda conteudo seria atrito sem protecao |
 | 4 | Artefatos coletados na copia | Deixar fora (`.sparkforge` e podado) ou copiar `.sparkforge/artifacts/` | Copiar | Sem eles o `scan` da copia julgaria menos do que o do repositorio, e a diferenca de achados mentiria |
@@ -149,7 +149,7 @@ total       12704 passed, 13 skipped, 0 failed
 
 | Deviation | Reason | Impact |
 |-----------|--------|--------|
-| `sparkforge/change/refusals.py` alem dos tres modulos | Decisao 1 acima | Nenhum no comportamento |
+| `sparkforge_aws/change/refusals.py` alem dos tres modulos | Decisao 1 acima | Nenhum no comportamento |
 | `ESTADO_PROPRIO` fora de `copy_skipped` | Issue 1 (idempotencia) | O relatorio nao lista `.sparkforge`; a copia continua sem ele |
 | `.sparkforge/artifacts/` copiado | Decisao 4 | O `scan` da copia ve o que o do repositorio ve |
 | `applied: false` explicito no plano | Contrato do L1 legivel na saida | Nenhum schema antigo mudou |

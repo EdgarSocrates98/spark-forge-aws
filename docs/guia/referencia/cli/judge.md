@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge judge`
+# `sparkforge-aws judge`
 
 Aplica o catalogo de regras versionado sobre facts ja extraidos.
 
 ```bash
-sparkforge judge --help
+sparkforge-aws judge --help
 ```
 
 ## Opções

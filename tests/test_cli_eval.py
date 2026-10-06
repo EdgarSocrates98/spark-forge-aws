@@ -1,4 +1,4 @@
-"""`python -m sparkforge.evals grade|compare` de ponta a ponta, sobre as fixtures.
+"""`python -m sparkforge_aws.evals grade|compare` de ponta a ponta, sobre as fixtures.
 
 A CLI aceita NOMES sob bases fixas -- a suite em `<cwd>/evals/agentic/`, as
 execucoes em `RUNS_ROOT`, os baselines em `evals/agentic/<suite>/baselines/`.
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.evals import cli
+from sparkforge_aws.evals import cli
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "host_transcript"

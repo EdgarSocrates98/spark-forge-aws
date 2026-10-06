@@ -276,7 +276,7 @@
     "measures": {},
     "attrs": {
       "reason": "partition_status_unknown",
-      "detail": "db.pedidos: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge analyze catalog-schema`."
+      "detail": "db.pedidos: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge-aws analyze catalog-schema`."
     },
     "provenance": {
       "artifact": "plan.txt",
@@ -299,7 +299,7 @@
     "measures": {},
     "attrs": {
       "reason": "partition_status_unknown",
-      "detail": "db.clientes: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge analyze catalog-schema`."
+      "detail": "db.clientes: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge-aws analyze catalog-schema`."
     },
     "provenance": {
       "artifact": "plan.txt",

@@ -1,6 +1,6 @@
 # DEFINE: SARIF + GitHub Check
 
-> Um verbo `sparkforge report github` que projeta os findings ja julgados em SARIF 2.1.0 (Code Scanning), num resumo Markdown e em anotacoes de workflow para o PR, com recusa nomeada para todo finding sem linha no repositorio, sem rede e sem provider.
+> Um verbo `sparkforge-aws report github` que projeta os findings ja julgados em SARIF 2.1.0 (Code Scanning), num resumo Markdown e em anotacoes de workflow para o PR, com recusa nomeada para todo finding sem linha no repositorio, sem rede e sem provider.
 
 ## Metadata
 
@@ -34,8 +34,8 @@ Os findings do SparkForge existem so como JSON e texto de CLI. Quem abre ou revi
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: `sparkforge report github --findings F --facts X [--facts Y...] --repo . [--fail-on P0\|P1] [--category <nome>]` compoe sobre findings e facts, sem ler artefato |
-| **MUST** | G2: SARIF 2.1.0 em `.sparkforge/report/sparkforge.sarif` (nome fixo, sob `--repo`) so com os findings localizados. Resolucao: `subject` com `file` e `line`; senao, o primeiro fact de `evidence` cujo `subject` tenha `file` e `line`; e o arquivo precisa existir sob `--repo` |
+| **MUST** | G1: `sparkforge-aws report github --findings F --facts X [--facts Y...] --repo . [--fail-on P0\|P1] [--category <nome>]` compoe sobre findings e facts, sem ler artefato |
+| **MUST** | G2: SARIF 2.1.0 em `.sparkforge/report/sparkforge-aws.sarif` (nome fixo, sob `--repo`) so com os findings localizados. Resolucao: `subject` com `file` e `line`; senao, o primeiro fact de `evidence` cujo `subject` tenha `file` e `line`; e o arquivo precisa existir sob `--repo` |
 | **MUST** | G3: resumo Markdown em `.sparkforge/report/summary.md` com TODOS os findings. Os sem localizacao ficam numa secao propria, com o motivo (`runtime`, `arquivo_fora_do_repo`, `sem_linha`) |
 | **MUST** | G4: nenhum finding some. Para toda entrada, SARIF + recusa = total de findings |
 | **MUST** | G5: `tool.driver.rules` a partir dos proprios findings: `id`, `name`, `shortDescription` (titulo), `fullDescription` (explicacao), `help` (proposed_change, validation, rollback) e `helpUri` (primeira `sources[].url`); `level` por severidade (P0/P1 `error`, P2 `warning`, P3/P4 `note`); `precision` pelo `confidence`; sem `security-severity`; sem `partialFingerprints` |
@@ -43,15 +43,15 @@ Os findings do SparkForge existem so como JSON e texto de CLI. Quem abre ou revi
 | **SHOULD** | G7: `--fail-on P0\|P1`: exit 1 quando ha finding localizado ou nao daquela severidade ou pior; 0 caso contrario; 2 para erro de uso (convencao do repositorio) |
 | **SHOULD** | G8: anotacoes `::error\|warning\|notice file=,line=,title=::` no stdout, uma por finding localizado, com os valores escapados |
 | **SHOULD** | G9: tool MCP `sparkforge_report_github`, `READ_ONLY`, que devolve SARIF, resumo, contagens e recusas, sem gravar |
-| **SHOULD** | G10: `docs/github-code-scanning.md` + `examples/github/sparkforge.yml` (analyze → judge → report github → `upload-sarif` + step summary) |
-| **COULD** | G11: job do `ci.yml` so por `workflow_dispatch` que sobe o SARIF das fixtures (`category: sparkforge-fixtures`) e prova que o GitHub aceitou |
+| **SHOULD** | G10: `docs/github-code-scanning.md` + `examples/github/sparkforge-aws.yml` (analyze → judge → report github → `upload-sarif` + step summary) |
+| **COULD** | G11: job do `ci.yml` so por `workflow_dispatch` que sobe o SARIF das fixtures (`category: sparkforge-aws-fixtures`) e prova que o GitHub aceitou |
 
 ---
 
 ## Success Criteria
 
 - [ ] SC1: todo SARIF gerado nos testes valida contra o `sarif-schema-2.1.0.json` da OASIS, versionado no repositorio com URL e sha256 de origem.
-- [ ] SC2: **4** casos em `fixtures/sarif/` (PySpark, Terraform, so runtime, misto) batem byte a byte com os goldens `sparkforge.sarif`, `summary.md` e `annotations.txt`.
+- [ ] SC2: **4** casos em `fixtures/sarif/` (PySpark, Terraform, so runtime, misto) batem byte a byte com os goldens `sparkforge-aws.sarif`, `summary.md` e `annotations.txt`.
 - [ ] SC3: sobre os findings de todos os `fixtures/**/expected/findings.json` (**222** hoje), a soma de resultados SARIF e de recusas e igual ao total, e **0** resultados SARIF tem arquivo inexistente ou linha ausente.
 - [ ] SC4: `--fail-on P0` sai **1** com um P0 e **0** so com P1; `--fail-on P1` sai **1** com um P1; sem `--fail-on`, sai **0**.
 - [ ] SC5: um valor de anotacao com `%`, `\r`, `\n`, `:` e `,` sai escapado conforme o `actions/toolkit` (A-003), e o teste cobre os cinco caracteres.
@@ -82,7 +82,7 @@ Os findings do SparkForge existem so como JSON e texto de CLI. Quem abre ou revi
 
 ## Out of Scope
 
-- `sparkforge scan .` (descobrir, extrair e julgar tudo de uma vez).
+- `sparkforge-aws scan .` (descobrir, extrair e julgar tudo de uma vez).
 - Mostrar so os findings novos do PR: o proprio Code Scanning ja compara com a base.
 - Checks API, check com nome proprio e PR Review Bot: exigem rede e token no pacote.
 - `doctor`, TUI e GitHub Action publicada no Marketplace.
@@ -111,7 +111,7 @@ Os findings do SparkForge existem so como JSON e texto de CLI. Quem abre ou revi
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | Projecao em modulo novo (`sparkforge/report/github.py` ou equivalente, a fixar no DESIGN); verbo em `adapters/_core.py` (ao lado de `report_sign` e `report_verify`), `adapters/cli.py` e `adapters/tools.py`; `fixtures/sarif/`; schema OASIS versionado; `docs/` e `examples/github/`; um job em `.github/workflows/ci.yml` | O modulo de projecao nao importa o adapter |
+| **Deployment Location** | Projecao em modulo novo (`sparkforge_aws/report/github.py` ou equivalente, a fixar no DESIGN); verbo em `adapters/_core.py` (ao lado de `report_sign` e `report_verify`), `adapters/cli.py` e `adapters/tools.py`; `fixtures/sarif/`; schema OASIS versionado; `docs/` e `examples/github/`; um job em `.github/workflows/ci.yml` | O modulo de projecao nao importa o adapter |
 | **KB Domains** | CI/CD (GitHub Actions), testing (golden e validacao por JSON Schema), static analysis reporting (SARIF 2.1.0) | — |
 | **IaC Impact** | Modify existing (`ci.yml`, um job manual) | Nenhum recurso de nuvem |
 

@@ -1,6 +1,6 @@
 # BUILD REPORT: Autonomia L3 — pacote de proposta de PR
 
-> Implementation report for `sparkforge change propose` e a skill `propose-change-pr`
+> Implementation report for `sparkforge-aws change propose` e a skill `propose-change-pr`
 
 ## Metadata
 
@@ -20,7 +20,7 @@
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | 10/10 (grupos do manifesto) |
-| **Files Created** | `sparkforge/change/proposal.py`, `skills/propose-change-pr/SKILL.md`, `tests/test_change_proposal.py`, 2 casos golden em `fixtures/change/` |
+| **Files Created** | `sparkforge_aws/change/proposal.py`, `skills/propose-change-pr/SKILL.md`, `tests/test_change_proposal.py`, 2 casos golden em `fixtures/change/` |
 | **Lines of Code** | módulo novo de ~400 linhas; portas em `_core`, `cli`, `tools` |
 | **Build Time** | 1 sessão |
 | **Tests Passing** | 12 864 passed, 13 skipped, 0 failed (9 lotes, 1a passada) |
@@ -49,7 +49,7 @@
 
 | File | Agent | Verified | Notes |
 | ---- | ----- | -------- | ----- |
-| `sparkforge/change/proposal.py` | (direct) | ✅ | Sem `subprocess`, `os` nem chamada de sistema (teste por AST) |
+| `sparkforge_aws/change/proposal.py` | (direct) | ✅ | Sem `subprocess`, `os` nem chamada de sistema (teste por AST) |
 | `skills/propose-change-pr/SKILL.md` | (direct) | ✅ | Seções padrão e `## Não faz` |
 | `tests/test_change_proposal.py` | (direct) | ✅ | Pacote, recusas, severidade, AST |
 | `fixtures/change/proposta_{completa,resolve}/` | (direct) | ✅ | Com e sem assinatura; com benchmark anexado |

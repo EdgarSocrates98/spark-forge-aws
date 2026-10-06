@@ -23,7 +23,7 @@ AS QUATRO AFIRMACOES QUE ESTE ARQUIVO EXISTE PARA PRENDER
 
 import pytest
 
-from sparkforge.codeintel import budget
+from sparkforge_aws.codeintel import budget
 
 # ------------------------------------------------------------ estimativa
 

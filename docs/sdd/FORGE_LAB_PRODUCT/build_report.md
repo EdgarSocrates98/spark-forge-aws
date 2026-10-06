@@ -57,7 +57,7 @@ antes do ship, junto com as suítes do repositório.
 - `python -m py_compile` nos módulos novos e no adaptador CLI — exit 0.
 - `python scripts/gen_reference_docs.py` — referência CLI regenerada.
 - `python scripts/check_surface_lock.py --update` — superfície sem divergência.
-- `sparkforge sdd check --repo . --feature FORGE_LAB_PRODUCT` — estrutura upstream válida.
+- `sparkforge-aws sdd check --repo . --feature FORGE_LAB_PRODUCT` — estrutura upstream válida.
 
 Nenhum runtime L1/L2 foi iniciado neste build; imagens, digests e disponibilidade
 do host permanecem evidência dependente de `lab doctor`/execução explícita.

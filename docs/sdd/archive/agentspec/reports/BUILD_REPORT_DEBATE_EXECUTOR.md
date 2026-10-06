@@ -22,7 +22,7 @@ Branch `feat/debate-executor`, empilhado sobre `feat/eval-harness-agentico` (`37
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | B1 (parcial → fechada no B5), B2–B7; B8 não rodado, com o motivo registrado |
-| **Files Created** | `sparkforge/agentic/executor/{debate_run,debate_evidence}.py`; `sparkforge/evals/debate_grade.py`; `scripts/run_debate.py`; `skills/run-debate/` + espelhos; `evals/agentic/debate/` (3 casos + união); `fixtures/debate/` (13 casos); 7 arquivos de teste |
+| **Files Created** | `sparkforge_aws/agentic/executor/{debate_run,debate_evidence}.py`; `sparkforge_aws/evals/debate_grade.py`; `scripts/run_debate.py`; `skills/run-debate/` + espelhos; `evals/agentic/debate/` (3 casos + união); `fixtures/debate/` (13 casos); 7 arquivos de teste |
 | **Tests Passing** | Suíte completa, um processo por arquivo (257 arquivos): 11 964 passaram, 0 falharam, 9 skipped (nenhum desta entrega) |
 | **Agents Used** | 4 agentes general-purpose em sequência, um por bloco, sem dois escritores na árvore ao mesmo tempo |
 | **Custo de host** | Smoke B1: US$ 0,02; smoke com brief real: US$ 0,0723 |
@@ -54,9 +54,9 @@ Branch `feat/debate-executor`, empilhado sobre `feat/eval-harness-agentico` (`37
 
 | File | Verified | Notes |
 | ---- | -------- | ----- |
-| `sparkforge/agentic/executor/debate_run.py` | ✅ | `start`/`next_step`/`submit`; fechamento pelo `referee_over_blackboard` numa cópia temporária, gravando só a decisão final (blackboard append-only) |
-| `sparkforge/agentic/executor/debate_evidence.py` | ✅ | Allowlist de 22 extratores, caminho confinado ao case, `.sparkforge/` fora do alcance, sha1 do artefato gravado |
-| `sparkforge/evals/debate_grade.py` + subcomando `debate` | ✅ | `correct_winner`, `wrong_winner`, `correct_unresolved`, `false_resolution`, `missed_resolution` + `decisive_fact` |
+| `sparkforge_aws/agentic/executor/debate_run.py` | ✅ | `start`/`next_step`/`submit`; fechamento pelo `referee_over_blackboard` numa cópia temporária, gravando só a decisão final (blackboard append-only) |
+| `sparkforge_aws/agentic/executor/debate_evidence.py` | ✅ | Allowlist de 22 extratores, caminho confinado ao case, `.sparkforge/` fora do alcance, sha1 do artefato gravado |
+| `sparkforge_aws/evals/debate_grade.py` + subcomando `debate` | ✅ | `correct_winner`, `wrong_winner`, `correct_unresolved`, `false_resolution`, `missed_resolution` + `decisive_fact` |
 | `scripts/run_debate.py` | ✅ | Workspace de prova, nomes neutros de caso, `stdin=DEVNULL`, `no_json_block` |
 | `skills/run-debate/SKILL.md` | ✅ | Não despachável; espelhos via `sync_skills.py` |
 | `evals/agentic/debate/{lf_vence,graph_vence,sem_fato}` | ✅ | Decididos por `lakeformation.grant` reextraído via `lakeformation-grants` |
@@ -68,7 +68,7 @@ Branch `feat/debate-executor`, empilhado sobre `feat/eval-harness-agentico` (`37
 ### Lint Check
 
 ```text
-ruff check sparkforge scripts tests -> limpo
+ruff check sparkforge_aws scripts tests -> limpo
 ```
 
 **Status:** ✅ Pass

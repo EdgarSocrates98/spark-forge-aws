@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts.cloudwatch import EMITTED_KINDS, extract_cloudwatch_path
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.facts.cloudwatch import EMITTED_KINDS, extract_cloudwatch_path
+from sparkforge_aws.findings.validate import validate_fact
 
 
 def _artifact(tmp_path: Path, results: list[dict], period: int = 60) -> Path:

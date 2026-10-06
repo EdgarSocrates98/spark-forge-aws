@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.lakeformation.architecture import analyze_architecture
+from sparkforge_aws.lakeformation.architecture import analyze_architecture
 
 
 def _payload(**overrides):

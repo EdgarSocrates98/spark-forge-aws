@@ -40,12 +40,12 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/facts/utilization.py` | Ganha `SOURCE_KINDS = frozenset({"glue.metric"})`, a guarda que o `fuse` consulta | constante |
-| `sparkforge/facts/fusion.py` | Deriva a utilização depois do timeout, com a asserção de namespace | molde do bloco de timeout |
-| `sparkforge/adapters/_core.py` | `analyze_workload` (+ `_extract_workload_facts`), `collect_parquet_footer`, e `"workload"` em `_scan_extrair` | molde de `analyze_consumers` e `collect_athena_workgroup` |
-| `sparkforge/scan/plan.py` | `workload.yaml` da raiz vira `Entrada("workload", "workload.yaml", "nome")` | uma checagem de arquivo |
-| `sparkforge/adapters/cli.py` | `analyze workload` e `collect parquet-footer` | argparse |
-| `sparkforge/adapters/tools.py` | `sparkforge_analyze_workload` (`_READ_ONLY`) e `sparkforge_collect_parquet_footer` (`_WRITE_LOCAL_OPEN_WORLD`) | schemas existentes (`_ANALYZE_FACTS_SCHEMA`, `_COLLECT_ARTIFACT_SCHEMA`) |
+| `sparkforge_aws/facts/utilization.py` | Ganha `SOURCE_KINDS = frozenset({"glue.metric"})`, a guarda que o `fuse` consulta | constante |
+| `sparkforge_aws/facts/fusion.py` | Deriva a utilização depois do timeout, com a asserção de namespace | molde do bloco de timeout |
+| `sparkforge_aws/adapters/_core.py` | `analyze_workload` (+ `_extract_workload_facts`), `collect_parquet_footer`, e `"workload"` em `_scan_extrair` | molde de `analyze_consumers` e `collect_athena_workgroup` |
+| `sparkforge_aws/scan/plan.py` | `workload.yaml` da raiz vira `Entrada("workload", "workload.yaml", "nome")` | uma checagem de arquivo |
+| `sparkforge_aws/adapters/cli.py` | `analyze workload` e `collect parquet-footer` | argparse |
+| `sparkforge_aws/adapters/tools.py` | `sparkforge_analyze_workload` (`_READ_ONLY`) e `sparkforge_collect_parquet_footer` (`_WRITE_LOCAL_OPEN_WORLD`) | schemas existentes (`_ANALYZE_FACTS_SCHEMA`, `_COLLECT_ARTIFACT_SCHEMA`) |
 
 ---
 
@@ -99,7 +99,7 @@ def collect_parquet_footer(repo: str, *, prefix: str, now: str, max_files: int =
     try:
         entry = collect_parquet.collect_parquet_footer(prefix, Path(repo), now=now, max_files=max_files)
     except ValueError as exc:
-        raise AdapterError(f"{exc}\n  Rode: sparkforge collect parquet-footer --repo ... --prefix ... --max-files <1..teto>", exit_code=2) from exc
+        raise AdapterError(f"{exc}\n  Rode: sparkforge-aws collect parquet-footer --repo ... --prefix ... --max-files <1..teto>", exit_code=2) from exc
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
@@ -120,12 +120,12 @@ def collect_parquet_footer(repo: str, *, prefix: str, now: str, max_files: int =
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/facts/utilization.py` | Modify | `SOURCE_KINDS` | @python-developer | None |
-| 2 | `sparkforge/facts/fusion.py` | Modify | Derivação guardada | @python-developer | 1 |
-| 3 | `sparkforge/adapters/_core.py` | Modify | `analyze_workload`, `collect_parquet_footer`, `_scan_extrair` | @python-developer | None |
-| 4 | `sparkforge/scan/plan.py` | Modify | `workload.yaml` da raiz | @python-developer | 3 |
-| 5 | `sparkforge/adapters/cli.py` | Modify | Dois comandos | @python-developer | 3 |
-| 6 | `sparkforge/adapters/tools.py` | Modify | Duas tools | @python-developer | 3 |
+| 1 | `sparkforge_aws/facts/utilization.py` | Modify | `SOURCE_KINDS` | @python-developer | None |
+| 2 | `sparkforge_aws/facts/fusion.py` | Modify | Derivação guardada | @python-developer | 1 |
+| 3 | `sparkforge_aws/adapters/_core.py` | Modify | `analyze_workload`, `collect_parquet_footer`, `_scan_extrair` | @python-developer | None |
+| 4 | `sparkforge_aws/scan/plan.py` | Modify | `workload.yaml` da raiz | @python-developer | 3 |
+| 5 | `sparkforge_aws/adapters/cli.py` | Modify | Dois comandos | @python-developer | 3 |
+| 6 | `sparkforge_aws/adapters/tools.py` | Modify | Duas tools | @python-developer | 3 |
 | 7 | `fixtures/scan/workload_na_raiz/` | Create | Golden do `scan` | @test-generator | 4 |
 | 8 | `tests/test_cli_ports.py` | Create | AT-001 a AT-011 | @test-generator | 1-6 |
 | 9 | Registros de tool nova (lista, amostra real, FAILABLE, writers, harness 94, paridade MCP, `parity.yaml`, `manifest.json`, agentes + `sync_skills`), `.claude/settings.json` (`policy sync-settings`), surface, claims, referência | Modify | Tool nova | (general) | 6 |

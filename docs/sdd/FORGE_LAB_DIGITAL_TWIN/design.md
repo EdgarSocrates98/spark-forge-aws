@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/FORGE_LAB_DIGITAL_TWIN/define.md
   sha256: "64d91ea569a716657c45cfa28e09c10816bdf16bc2130a1de29315d9268a925e"
 files:
-  - {path: sparkforge/lab/__init__.py, action: create, reason: "API do contrato offline do Forge Lab."}
-  - {path: sparkforge/lab/spec.py, action: create, reason: "Loader, validação e descrição determinística da topologia."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Núcleo compartilhado do analisador Forge Lab."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze forge-lab."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP read-only com contrato estruturado."}
+  - {path: sparkforge_aws/lab/__init__.py, action: create, reason: "API do contrato offline do Forge Lab."}
+  - {path: sparkforge_aws/lab/spec.py, action: create, reason: "Loader, validação e descrição determinística da topologia."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Núcleo compartilhado do analisador Forge Lab."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo analyze forge-lab."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP read-only com contrato estruturado."}
   - {path: parity.yaml, action: modify, reason: "Registro de paridade do analisador Forge Lab."}
   - {path: labs/forge-lab/lab.yaml, action: create, reason: "Topologia e cenários versionados."}
   - {path: labs/forge-lab/compose.yaml, action: create, reason: "Blueprint de serviços por profile, com imagens configuráveis."}

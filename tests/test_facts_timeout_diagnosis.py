@@ -6,8 +6,8 @@ que o executor foi removido, e a razao da stage que falhou.
 """
 from __future__ import annotations
 
-from sparkforge.facts.timeout_diagnosis import extract_timeout_diagnosis
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.timeout_diagnosis import extract_timeout_diagnosis
+from sparkforge_aws.findings.models import Fact
 
 
 def _run(state="TIMEOUT", run_id="jr_1"):
@@ -145,7 +145,7 @@ class TestRecusas:
 
 class TestSchema:
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         casos = [
             [_run()],

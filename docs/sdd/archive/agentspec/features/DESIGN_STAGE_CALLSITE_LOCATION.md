@@ -43,9 +43,9 @@ _mensagem(finding, local) → acrescenta local.nota
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/reporting/locate.py` | `indice_de_callsites`, `_caminho_de_stage`, `_por_sufixo`; `Localizado.nota`; motivos novos em `MOTIVOS` | Python puro |
-| `sparkforge/reporting/github.py` | Constroi o indice uma vez; `_mensagem` acrescenta a nota ao resultado SARIF, a anotacao e a linha do resumo | Python puro |
-| `sparkforge/adapters/tools.py` | Enum `reason` do `_REPORT_GITHUB_SCHEMA` com os motivos novos | — |
+| `sparkforge_aws/reporting/locate.py` | `indice_de_callsites`, `_caminho_de_stage`, `_por_sufixo`; `Localizado.nota`; motivos novos em `MOTIVOS` | Python puro |
+| `sparkforge_aws/reporting/github.py` | Constroi o indice uma vez; `_mensagem` acrescenta a nota ao resultado SARIF, a anotacao e a linha do resumo | Python puro |
+| `sparkforge_aws/adapters/tools.py` | Enum `reason` do `_REPORT_GITHUB_SCHEMA` com os motivos novos | — |
 | `fixtures/sarif/{stage_python,stage_scala,stage_negativos}/` | Casos novos | JSON + event log + arvore |
 | `tests/test_reporting_github.py` | Unidade dos caminhos de stage e invariante do corpus ("nenhum stage sai `runtime`") | pytest |
 | `tests/test_fixtures_golden_sarif.py` | Lista de casos: 4 → 7; cobertura de motivos | pytest |
@@ -133,9 +133,9 @@ Para Scala so existe o nome base (`Etl.scala`), e o mesmo algoritmo roda com uma
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/reporting/locate.py` | Modify | Indice, caminho de stage, sufixo, Scala, motivos | @agentspec:python:python-developer | None |
-| 2 | `sparkforge/reporting/github.py` | Modify | Indice uma vez; nota na mensagem | @agentspec:python:python-developer | 1 |
-| 3 | `sparkforge/adapters/tools.py` | Modify | Enum de `reason` com os 4 motivos novos | (general) | 1 |
+| 1 | `sparkforge_aws/reporting/locate.py` | Modify | Indice, caminho de stage, sufixo, Scala, motivos | @agentspec:python:python-developer | None |
+| 2 | `sparkforge_aws/reporting/github.py` | Modify | Indice uma vez; nota na mensagem | @agentspec:python:python-developer | 1 |
+| 3 | `sparkforge_aws/adapters/tools.py` | Modify | Enum de `reason` com os 4 motivos novos | (general) | 1 |
 | 4 | `tests/test_reporting_github.py` | Modify | Unidade (AT-001 a AT-009) + invariante do corpus | @agentspec:test:test-generator | 1, 2 |
 | 5 | `fixtures/sarif/{stage_python,stage_scala,stage_negativos}/` | Create | Casos novos, derivados de `fixtures/bridge/` | (general) | 2 |
 | 6 | `tests/test_fixtures_golden_sarif.py` | Modify | 7 casos; cobertura de motivos | (general) | 5 |

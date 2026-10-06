@@ -20,7 +20,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_analytics_microscope.py::test_duckdb_microscope_is_read_only_and_structured"}
   - id: AC3
     statement: "CLI e MCP chamam o mesmo núcleo para dbt e DuckDB."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze dbt-artifacts --path fixtures/analytics/dbt"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze dbt-artifacts --path fixtures/analytics/dbt"}
 success:
   - id: SC1
     metric: "Dependências e SQL mutável não resolvido aparecem com código explícito"

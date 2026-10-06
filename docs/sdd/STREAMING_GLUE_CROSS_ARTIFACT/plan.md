@@ -9,11 +9,11 @@ upstream:
   sha256: "d790a6dcf9da0690b1ed96bd4b69383bcb537546ca431c0942aa5ee23517382a"
 tasks:
   - id: T1
-    files: [sparkforge/facts/streaming_glue_cross.py, tests/test_streaming_glue_cross_artifact.py]
+    files: [sparkforge_aws/facts/streaming_glue_cross.py, tests/test_streaming_glue_cross_artifact.py]
     covers: [AC1, AC2]
     test: {path: tests/test_streaming_glue_cross_artifact.py, name: test_matches_effective_glue_job_to_terraform_resource}
   - id: T2
-    files: [sparkforge/facts/fusion.py, tests/test_streaming_glue_cross_artifact.py]
+    files: [sparkforge_aws/facts/fusion.py, tests/test_streaming_glue_cross_artifact.py]
     covers: [AC4]
     test: {path: tests/test_streaming_glue_cross_artifact.py, name: test_fuse_cross_artifact_is_guarded_and_idempotent}
   - id: T3

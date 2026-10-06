@@ -38,7 +38,7 @@ chosen: A
    selectors (`kind` + atributos exatos), e cada node/edge precisa carregar os
    `fact_id` que o sustentam ou um `unresolved` nomeado.
 3. O que evita crescimento desnecessário de superfície? A modalidade entra no
-   compositor `sparkforge analyze streaming-composition`; não nasce tool nova.
+   compositor `sparkforge-aws analyze streaming-composition`; não nasce tool nova.
 
 ## Abordagens
 

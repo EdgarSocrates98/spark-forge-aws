@@ -23,7 +23,7 @@ Coleta metadata, compatibilidade declarada e latest schema version do AWS Glue S
 
 ## Na CLI
 
-[`sparkforge collect schema-registry`](../cli/collect.md)
+[`sparkforge-aws collect schema-registry`](../cli/collect.md)
 
 ## Capacidade
 

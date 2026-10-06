@@ -1,6 +1,6 @@
 ---
 name: analyze-batch-loop
-description: "Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração. Use também quando perguntarem \\\"por que esse batch demora mais a cada lote\\\", \\\"por que tem tantos commits/snapshots\\\" ou \\\"o job cresce com o número de lotes\\\", mesmo sem mencionar loop explicitamente. Se você está prestes a contar iterações e estimar custo acumulado de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.loop` em vez disso — cada ocorrência já vem marcada com se contém action, write e a profundidade de aninhamento."
+description: "Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração. Use também quando perguntarem \\\"por que esse batch demora mais a cada lote\\\", \\\"por que tem tantos commits/snapshots\\\" ou \\\"o job cresce com o número de lotes\\\", mesmo sem mencionar loop explicitamente. Se você está prestes a contar iterações e estimar custo acumulado de cabeça, rode `sparkforge-aws analyze pyspark` e filtre por `pyspark.loop` em vez disso — cada ocorrência já vem marcada com se contém action, write e a profundidade de aninhamento."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze pyspark
-  - sparkforge judge
-  - sparkforge funcval plan
+  - sparkforge-aws analyze pyspark
+  - sparkforge-aws judge
+  - sparkforge-aws funcval plan
 ---
 
 # Analyze Batch Loop
@@ -26,7 +26,7 @@ metadata:
 ### 1. Extraia os facts
 
 ```bash
-sparkforge analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json --kind pyspark.loop
+sparkforge-aws analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json --kind pyspark.loop
 ```
 
 Sem `--kind`, a saída traz todos os facts; com `--kind pyspark.loop`, você já recebe só os loops relevantes. Cada `pyspark.loop` vem com `measures.loop_depth` (aninhamento) e `attrs.contains_action`/`attrs.contains_write`.
@@ -34,7 +34,7 @@ Sem `--kind`, a saída traz todos os facts; com `--kind pyspark.loop`, você já
 ### 2. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
 ```
 
 Sem flag de versão: `SF-PY-004`, a regra que decide esta análise, é estrutural e não declara `runtime_scope` — passar ou omitir a versão não muda se ela dispara. E não haveria de onde tirá-la: os facts vêm de `analyze pyspark`, que lê AST e nunca observa versão de runtime. O campo `runtime` da saída volta vazio, com `detected_from: []`, e isso é o retrato correto do que foi observado, não uma falha. As regras que aparecem em `--show-skipped` com `reason: runtime_scope` são as de infraestrutura Glue, fora do alcance deste `facts.json`. Só declare `--glue 5.1` se souber a versão de fonte confiável e a pergunta tiver virado de infra; para inferir em vez de digitar, junte os facts do Terraform na mesma chamada (`--facts` é repetível).
@@ -93,9 +93,9 @@ visível e **o que** um run parcial deixa gravado: o laço commitava por iteraç
 commita uma vez. Se algum consumidor lia entre iterações, o resultado que ele via muda, e
 nenhum dos quatro eixos mede isso — eles comparam o estado final.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -133,7 +133,7 @@ Esta skill trata **laços de processamento, actions, writes e recomputação de 
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze pyspark`, `sparkforge judge`, `sparkforge funcval plan`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze pyspark`, `sparkforge-aws judge`, `sparkforge-aws funcval plan`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

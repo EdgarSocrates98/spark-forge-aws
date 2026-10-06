@@ -116,7 +116,7 @@ Trust Lab ── 32 ataques determinísticos contra defesas reais
 
 ## 7. Economy
 
-- `sparkforge/economy/reconcile.py` é a autoridade única de reconciliação:
+- `sparkforge_aws/economy/reconcile.py` é a autoridade única de reconciliação:
   `ReconciliationReport` lista conflitos nomeados (`field`, `sources`,
   `resolution`) em vez de fundir em silêncio.
 - `inspect_run` publica `reconciliation` — o consumidor vê de onde veio cada
@@ -336,7 +336,7 @@ Gates do CI executados localmente (equivalentes do job `test` + `wheel` +
 
 | Gate | Resultado |
 |---|---|
-| `ruff check sparkforge scripts tests` | All checks passed |
+| `ruff check sparkforge_aws scripts tests` | All checks passed |
 | `sync_skills.py --check` | OK — mirrors em dia |
 | `gen_requirements.py --check` | OK |
 | `gen_lock.py --check` | OK — 3 locks, 160 entradas pinadas |

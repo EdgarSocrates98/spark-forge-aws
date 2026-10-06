@@ -14,23 +14,23 @@ hypothesis:
 acceptance:
   - id: AC1
     statement: "Registry, fidelidade, profiles, modes e imagens sem latest são validados por um contrato único."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli lab doctor --repo ."}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli lab doctor --repo ."}
   - id: AC2
     statement: "Golden 20 e cenários DSL carregam, compilam para actions reutilizáveis e mantêm oracle, baseline, recovery e artefatos declarados."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli lab scenarios --repo . --json"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli lab scenarios --repo . --json"}
   - id: AC3
     statement: "Compose e Testcontainers geram planos do mesmo cenário e nenhuma ação mutável executa sem execute e confirm explícitos."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli lab plan kafka-consumer-lag-001 --repo ."}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli lab plan kafka-consumer-lag-001 --repo ."}
   - id: AC4
     statement: "Capture, receipt, oracle, promoção de fixture, classificação de resultado, blast radius e equivalência multi-engine possuem contratos offline verificáveis."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli lab verify --repo ."}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli lab verify --repo ."}
   - id: AC5
     statement: "CLI expõe doctor, profiles, scenarios, describe, plan, run, inspect, analyze, compare, promote-fixture, reproduce, up, down, gc e shell com guardas operacionais."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli lab --help"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli lab --help"}
 success:
   - id: SC1
     metric: "Cenários válidos / cenários declarados"
-    source: "saída de sparkforge lab scenarios --json"
+    source: "saída de sparkforge-aws lab scenarios --json"
   - id: SC2
     metric: "Fidelidade, confirmação e unresolved preservados no plan/receipt"
     source: "JSON de lab plan e receipt"

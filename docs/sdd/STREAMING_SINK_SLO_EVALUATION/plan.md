@@ -9,11 +9,11 @@ upstream:
   sha256: "60cc757bc988c280f683a6b0ad19d4ea8fce90a9bf96797ce86f13f513757e9a"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming_slo.py, sparkforge/facts/streaming_slo.py, sparkforge/facts/streaming_ops.py]
+    files: [tests/test_facts_streaming_slo.py, sparkforge_aws/facts/streaming_slo.py, sparkforge_aws/facts/streaming_ops.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_facts_streaming_slo.py, name: test_evaluates_sink_output_slo}
   - id: T2
-    files: [sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_analyze_streaming_composition.py]
+    files: [sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_analyze_streaming_composition.py]
     covers: [AC4]
     test: {path: tests/test_analyze_streaming_composition.py, name: test_sink_slo_cli_and_mcp_envelopes_match}
   - id: T3

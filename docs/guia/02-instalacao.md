@@ -20,16 +20,16 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 
 # 4. Conferir a versão
-sparkforge --version
+sparkforge-aws --version
 
 # 5. Conferir que o catálogo de regras foi encontrado
-sparkforge rules lookup --id SF-PY-001
+sparkforge-aws rules lookup --id SF-PY-001
 ```
 
 No Windows (PowerShell), troque o passo 2 por
 `python -m venv .venv; .venv\Scripts\Activate.ps1`.
 
-Deu certo se o passo 4 imprimir `sparkforge <versão>` e o passo 5 devolver
+Deu certo se o passo 4 imprimir `sparkforge-aws <versão>` e o passo 5 devolver
 `"total_count": 1`. Se precisar falar com a AWS ou usar MCP, veja
 [extras](#4-instalar-extras-se-precisar).
 
@@ -37,8 +37,8 @@ Deu certo se o passo 4 imprimir `sparkforge <versão>` e o passo 5 devolver
 
 Instalar o pacote `sparkforge-aws` coloca dois comandos no seu terminal:
 
-- `sparkforge`: a CLI principal, com todos os analisadores e verbos.
-- `sparkforge-tools`: um utilitário menor de apoio (índice offline de
+- `sparkforge-aws`: a CLI principal, com todos os analisadores e verbos.
+- `sparkforge-aws-tools`: um utilitário menor de apoio (índice offline de
   knowledge, estimativa de tokens e extração de linhagem).
 
 O pacote já traz dentro dele o catálogo de regras (`rules/catalog/`) e a base
@@ -153,25 +153,25 @@ pip install "sparkforge-aws[parquet]"   # pelo PyPI, com leitura de Parquet
 ### A CLI responde
 
 ```bash
-sparkforge --version
+sparkforge-aws --version
 ```
 
 Saída:
 
 ```text
-sparkforge 0.5.0
+sparkforge-aws 0.5.0
 ```
 
 (O número é o da versão que você instalou.)
 
 ```bash
-sparkforge --help
+sparkforge-aws --help
 ```
 
 Saída encurtada:
 
 ```text
-usage: sparkforge [-h] [--version]
+usage: sparkforge-aws [-h] [--version]
                   {analyze,migrate,glue,iceberg,release,controlm,benchmark,workload,...} ...
 
 Analise deterministica de jobs AWS Glue PySpark: extracao de facts, julgamento
@@ -185,7 +185,7 @@ Este comando não precisa de nenhum arquivo seu. Ele consulta uma regra real do
 catálogo embarcado:
 
 ```bash
-sparkforge rules lookup --id SF-PY-001
+sparkforge-aws rules lookup --id SF-PY-001
 ```
 
 Saída encurtada:
@@ -219,20 +219,20 @@ devolve `total_count: 0` e `rules: []`, sem erro: é assim que o comando diz
 ### A base de conhecimento foi encontrada
 
 ```bash
-sparkforge knowledge path
+sparkforge-aws knowledge path
 ```
 
 A saída mostra a pasta raiz de `knowledge/` em `root` e a lista de arquivos em
 `available`. Instalado do código-fonte, `root` aponta para a pasta do clone.
 Instalado pelo PyPI, aponta para dentro do `site-packages`.
 
-### O `sparkforge-tools` responde
+### O `sparkforge-aws-tools` responde
 
-O comando `sparkforge-tools` está registrado no `pyproject.toml` em
+O comando `sparkforge-aws-tools` está registrado no `pyproject.toml` em
 `[project.scripts]`. Os subcomandos dele são `offline`, `cost` e `lineage`.
 
 ```bash
-sparkforge-tools offline verify
+sparkforge-aws-tools offline verify
 ```
 
 Saída real, rodada na raiz do repositório:
@@ -255,8 +255,8 @@ comando na raiz do clone, ou passe `--repo <pasta-do-clone>`.
 | Canal | Como chega | Para quem |
 |---|---|---|
 | Plugin do Claude Code | `.claude-plugin/plugin.json`, instalado via marketplace ou path local | Claude Code |
-| MCP (`sparkforge.adapters.mcp`) | `.mcp.json`, transportes `stdio` e `http` | Devin Desktop, Devin CLI, GitHub Copilot |
-| `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
+| MCP (`sparkforge_aws.adapters.mcp`) | `.mcp.json`, transportes `stdio` e `http` | Devin Desktop, Devin CLI, GitHub Copilot |
+| `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge-aws` em qualquer shell/CI |
 | Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
 
 O servidor MCP, cliente por cliente, está em [MCP](04-mcp.md).
@@ -264,7 +264,7 @@ O servidor MCP, cliente por cliente, está em [MCP](04-mcp.md).
 ## `pip install sparkforge-aws`: o pacote carrega o catálogo dentro dele
 
 ```bash
-pip install sparkforge-aws            # CLI sparkforge sozinho
+pip install sparkforge-aws            # CLI sparkforge-aws sozinho
 pip install "sparkforge-aws[aws]"     # + boto3, para os extratores que leem AWS
 pip install "sparkforge-aws[mcp]"     # + servidor MCP (stdio e streamable HTTP)
 ```
@@ -285,8 +285,8 @@ repositório antes.
 Para localizar `knowledge/` a partir do pacote instalado:
 
 ```bash
-sparkforge knowledge path                                  # imprime a raiz
-sparkforge knowledge path --file glue/runtime-matrix.md     # imprime um arquivo específico
+sparkforge-aws knowledge path                                  # imprime a raiz
+sparkforge-aws knowledge path --file glue/runtime-matrix.md     # imprime um arquivo específico
 ```
 
 `rules lookup` também devolve os caminhos já resolvidos: cada regra retornada
@@ -299,25 +299,25 @@ Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte (a contagem corrente de fixtures está na tabela
 *Números correntes* de [`docs/superpowers/STATUS.md`](../superpowers/STATUS.md)).
-Se `sparkforge` acabar sendo importado do repositório em vez do `site-packages`
+Se `sparkforge-aws` acabar sendo importado do repositório em vez do `site-packages`
 nesse processo, o gate falha com mensagem explícita em vez de comparar o
 repositório consigo mesmo. O gate é `python scripts/verify_wheel.py`; o que
 ele verifica está em [Espelhos e dependências](12-espelhos-e-dependencias.md).
 
-## Integrar uma vez por máquina: `sparkforge integrate`
+## Integrar uma vez por máquina: `sparkforge-aws integrate`
 
 Com o pacote instalado, um comando por host deixa skills, agents e o servidor MCP
 disponíveis em **qualquer** repositório da máquina, sem copiar nada para dentro dele. O
-conteúdo sai do próprio wheel (`sparkforge/integrate/bundle/`), com ou sem acesso ao
+conteúdo sai do próprio wheel (`sparkforge_aws/integrate/bundle/`), com ou sem acesso ao
 GitHub.
 
 ```bash
-sparkforge integrate all --scope user --dry-run    # lista o que seria escrito, sem escrever
-sparkforge integrate all --scope user              # claude, devin, codex e copilot
-sparkforge integrate devin --scope user            # um host só
-sparkforge doctor                                  # uma checagem integracao_<host> por host
-sparkforge detach all --dry-run                    # lista o que seria removido
-sparkforge detach all                              # remove só o que o SparkForge escreveu
+sparkforge-aws integrate all --scope user --dry-run    # lista o que seria escrito, sem escrever
+sparkforge-aws integrate all --scope user              # claude, devin, codex e copilot
+sparkforge-aws integrate devin --scope user            # um host só
+sparkforge-aws doctor                                  # uma checagem integracao_<host> por host
+sparkforge-aws detach all --dry-run                    # lista o que seria removido
+sparkforge-aws detach all                              # remove só o que o SparkForge escreveu
 ```
 
 O host é `claude`, `devin`, `codex`, `copilot` ou `all`. `--scope user` é obrigatório
@@ -332,33 +332,33 @@ são informação e não mudam o código: sem nenhuma recusa, ele é 0.
 
 | Host | Agents | Skills | MCP |
 |---|---|---|---|
-| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-local`, em `~/.sparkforge/claude/plugins/sparkforge-aws/agents/` | no mesmo plugin, `skills/` | `.mcp.json` do plugin |
-| Devin CLI | `~/.config/devin/agents/` (`%APPDATA%\devin\agents\` no Windows) | `~/.agents/skills/` | `~/.config/devin/mcp_config.json` (`%APPDATA%\devin\mcp_config.json` no Windows), chave `mcpServers.sparkforge` |
-| Codex CLI | `$CODEX_HOME/agents/*.toml` (padrão `~/.codex/agents/`) | `~/.agents/skills/` | bloco marcado `[mcp_servers.sparkforge]` em `$CODEX_HOME/config.toml` |
-| Copilot CLI | `~/.copilot/agents/*.agent.md` | `~/.agents/skills/` | `~/.copilot/mcp-config.json`, chave `mcpServers.sparkforge` |
+| Claude Code | plugin `sparkforge-aws` do marketplace local `sparkforge-aws-local`, em `~/.sparkforge/claude/plugins/sparkforge-aws/agents/` | no mesmo plugin, `skills/` | `.mcp.json` do plugin |
+| Devin CLI | `~/.config/devin/agents/` (`%APPDATA%\devin\agents\` no Windows) | `~/.agents/skills/` | `~/.config/devin/mcp_config.json` (`%APPDATA%\devin\mcp_config.json` no Windows), chave `mcpServers.sparkforge-aws` |
+| Codex CLI | `$CODEX_HOME/agents/*.toml` (padrão `~/.codex/agents/`) | `~/.agents/skills/` | bloco marcado `[mcp_servers.sparkforge-aws]` em `$CODEX_HOME/config.toml` |
+| Copilot CLI | `~/.copilot/agents/*.agent.md` | `~/.agents/skills/` | `~/.copilot/mcp-config.json`, chave `mcpServers.sparkforge-aws` |
 
 `~/.agents/skills/` é lido pelos três hosts de baixo, e os três gravam a mesma
 renderização: o arquivo é um só, com um dono por host no manifesto, e só sai do disco
 quando o último host que o usa é desintegrado. Os perfis executores não vão para o
 Codex, porque não têm `description` e o TOML de agent do Codex exige uma.
 
-O servidor MCP é chamado pelo Python que tem o `sparkforge` instalado
-(`python -m sparkforge.adapters.mcp --transport stdio`), sem `PYTHONPATH` para
+O servidor MCP é chamado pelo Python que tem o `sparkforge-aws` instalado
+(`python -m sparkforge_aws.adapters.mcp --transport stdio`), sem `PYTHONPATH` para
 repositório nenhum. A config de usuário que já existia é mesclada, nunca sobrescrita:
-só a entrada `sparkforge` entra. No `detach`, a config que ainda é exatamente o que o
+só a entrada `sparkforge-aws` entra. No `detach`, a config que ainda é exatamente o que o
 `integrate` gravou volta byte a byte ao que era antes (ou sai, se foi o `integrate` que
-a criou); se você mexeu em outras partes dela, sai só a entrada `sparkforge`, no estilo
+a criou); se você mexeu em outras partes dela, sai só a entrada `sparkforge-aws`, no estilo
 do arquivo.
 
 O Claude Code é registrado pelo próprio CLI dele:
 
 ```bash
 claude plugin marketplace add ~/.sparkforge/claude --scope user
-claude plugin install sparkforge-aws@sparkforge-local --scope user --json
+claude plugin install sparkforge-aws@sparkforge-aws-local --scope user --json
 ```
 
 O `integrate` roda esses dois comandos por você (e, nas vezes seguintes, `claude plugin
-marketplace update sparkforge-local` e `claude plugin update sparkforge-aws@sparkforge-local`
+marketplace update sparkforge-aws-local` e `claude plugin update sparkforge-aws@sparkforge-aws-local`
 quando o conteúdo mudou). Cada chamada ao CLI tem limite de 120 segundos. O `detach`
 chama primeiro `claude plugin uninstall` e `claude plugin marketplace remove`, e só
 depois apaga os arquivos. Os dois rodam sempre, sem consultar a lista antes: um erro
@@ -382,7 +382,7 @@ que você editou depois fica no lugar e sai como recusa `editado_pelo_usuario`. 
 config de usuário sai só a entrada que o `integrate` pôs. Quando o último host sai, o
 manifesto também sai.
 
-`sparkforge doctor` lê o manifesto e mostra uma checagem `integracao_<host>` por host:
+`sparkforge-aws doctor` lê o manifesto e mostra uma checagem `integracao_<host>` por host:
 ausente, integrado e em que versão do pacote, defasado quando o pacote instalado é
 outro, e a cópia em dobro no repositório atual, quando houver. O comando sugerido para
 a cópia em dobro é o `--on-conflict merge` quando alguma entrada de fato sairia; quando
@@ -402,7 +402,7 @@ Sob o HOME (o `%APPDATA%` padrão, `~\AppData\Roaming`, e o `~/.codex`), o arqui
 registrado pelo caminho relativo ao HOME e não há raiz a comparar. Trocar a raiz grava
 no lugar novo, e os arquivos gravados sob a antiga saem como órfãos no mesmo
 `integrate` (listados em `removed`); o que você editou lá fica, como recusa
-`editado_pelo_usuario`. A entrada `sparkforge` da config antiga (o `mcp_config.json` do
+`editado_pelo_usuario`. A entrada `sparkforge-aws` da config antiga (o `mcp_config.json` do
 Devin, o `config.toml` do Codex) continua registrada no manifesto e sai no `detach`,
 junto com a da raiz nova.
 
@@ -449,7 +449,7 @@ tocado, com qualquer `--on-conflict`. O `doctor` pula os mesmos casos.
 |---|---|---|
 | `claude_cli_ausente` | O binário `claude` não está no PATH. O plugin fica montado em `~/.sparkforge/claude/` e a recusa traz os comandos. | Instale o Claude Code e rode os dois comandos `claude plugin` acima, ou rode o `integrate claude` de novo. |
 | `claude_cli_falhou` / `claude_cli_timeout` | Um comando `claude plugin` saiu com erro ou passou de 120 segundos. A recusa traz o comando e o fim da saída. | Rode o comando mostrado à mão e depois o `integrate` de novo. |
-| `sparkforge_ja_configurado` | A config de usuário já tem um `sparkforge` que você mesmo escreveu. O arquivo não é tocado. | Tire a sua entrada, ou mantenha-a e ignore a recusa. |
+| `sparkforge_ja_configurado` | A config de usuário já tem um `sparkforge-aws` que você mesmo escreveu. O arquivo não é tocado. | Tire a sua entrada, ou mantenha-a e ignore a recusa. |
 | `config_invalida` / `bloco_toml_quebrado` | A config de usuário não se lê como JSON, ou o bloco marcado do `config.toml` perdeu um dos marcadores. | Conserte o arquivo e rode de novo. |
 | `editado_pelo_usuario` | O arquivo (ou a entrada de config) mudou depois do `integrate`. | Nada: ele fica. Para trocar pela versão do pacote, apague-o e rode o `integrate`. |
 | `arquivo_do_usuario` | Já existe no destino um arquivo diferente que o SparkForge nunca gravou. | Renomeie ou apague o seu, se quiser o do pacote. |
@@ -488,7 +488,7 @@ Três estados não são recusa do `integrate`, mas pedem atenção:
 
 ## Instalar as skills e os agents em outro repositório
 
-O caminho de cima (`sparkforge integrate`) instala uma vez por máquina. A cópia por
+O caminho de cima (`sparkforge-aws integrate`) instala uma vez por máquina. A cópia por
 repositório continua existindo para quando os arquivos precisam estar versionados
 dentro do projeto: o Copilot coding agent na nuvem, por exemplo, só lê
 `.github/agents` do repositório. Se você usar os dois caminhos no mesmo repositório,
@@ -498,7 +498,7 @@ por `scripts/install_skills.py`, que escreve os diretórios de cada plataforma.
 No próprio repositório:
 
 ```bash
-cd /caminho/do/repositorio && python /caminho/do/sparkforge/scripts/install_skills.py --all
+cd /caminho/do/repositorio && python /caminho/do/sparkforge_aws/scripts/install_skills.py --all
 ```
 
 Apenas Claude Code:
@@ -558,7 +558,7 @@ pip install -e .
 
 Rodar `pip install -e .` de novo depois do `git pull` é importante quando a
 versão mudou: é esse passo que registra comandos novos (como o
-`sparkforge-tools`) e atualiza os metadados do pacote.
+`sparkforge-aws-tools`) e atualiza os metadados do pacote.
 
 Pelo PyPI:
 
@@ -567,6 +567,11 @@ pip install --upgrade sparkforge-aws
 ```
 
 Com extras, repita os colchetes: `pip install --upgrade "sparkforge-aws[mcp]"`.
+
+Quem vem da distribuição antiga `sparkforge` (anterior ao rename) deve removê-la
+antes: `pip uninstall sparkforge`. Os nomes de distribuição são independentes, e
+o `pip` não sabe que um substitui o outro — sem esse passo, o comando `sparkforge`
+velho continua no PATH apontando para um pacote que não existe mais.
 
 ## Desinstalar
 
@@ -580,7 +585,7 @@ se não precisar mais delas.
 
 ## Erros comuns e como resolver
 
-### `sparkforge: command not found` (ou "não é reconhecido como comando")
+### `sparkforge-aws: command not found` (ou "não é reconhecido como comando")
 
 A pasta de scripts do Python não está no PATH, ou o ambiente virtual não está
 ativo.
@@ -590,13 +595,13 @@ ativo.
    pacote está instalado:
 
    ```bash
-   python -m sparkforge.adapters.cli --help
+   python -m sparkforge_aws.adapters.cli --help
    ```
 
    No Windows sem venv, os scripts ficam em
    `<pasta-do-Python>\Scripts`; acrescente essa pasta ao PATH.
 
-### `sparkforge-tools` não é encontrado, mas `sparkforge` é
+### `sparkforge-aws-tools` não é encontrado, mas `sparkforge-aws` é
 
 A instalação é antiga, de antes de o comando ser registrado. Reinstale:
 
@@ -604,13 +609,13 @@ A instalação é antiga, de antes de o comando ser registrado. Reinstale:
 pip install -e .
 ```
 
-Enquanto isso, `python -m sparkforge.tools.cli offline verify` funciona.
+Enquanto isso, `python -m sparkforge_aws.tools.cli offline verify` funciona.
 
-### `pip show sparkforge-aws` mostra uma versão diferente de `sparkforge --version`
+### `pip show sparkforge-aws` mostra uma versão diferente de `sparkforge-aws --version`
 
 Em instalação editável antiga, os metadados do pip podem ficar parados na
 versão do dia em que você instalou, enquanto o código já é o novo. A versão
-que vale é a de `sparkforge --version`. Rodar `pip install -e .` de novo
+que vale é a de `sparkforge-aws --version`. Rodar `pip install -e .` de novo
 alinha as duas.
 
 ### Extra ausente
@@ -641,7 +646,7 @@ que só o Claude Code expande. Em outra ferramenta, registre o servidor sem
 essa variável:
 
 ```bash
-python -m sparkforge.adapters.mcp --transport stdio
+python -m sparkforge_aws.adapters.mcp --transport stdio
 ```
 
 O `GUIA_DE_USO.md` traz a configuração por ferramenta (Devin CLI, Devin

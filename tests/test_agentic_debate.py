@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.agentic.debate import (
+from sparkforge_aws.agentic.debate import (
     Debate,
     DebateBudget,
     DebateRound,

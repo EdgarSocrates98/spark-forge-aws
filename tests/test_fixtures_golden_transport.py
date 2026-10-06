@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.transport import extract_transport_tree
-from sparkforge.findings.models import sort_facts
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.facts.transport import extract_transport_tree
+from sparkforge_aws.findings.models import sort_facts
+from sparkforge_aws.findings.validate import validate_fact
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "transport"

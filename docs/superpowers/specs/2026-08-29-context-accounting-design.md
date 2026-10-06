@@ -16,13 +16,13 @@ se confirma em cinco pontos:
 | `sparkforge_inventory` é declarada e não existe | confirmado — não está em `TOOLS` |
 | Não há verbo que busque fact por id | confirmado — zero tools com `fact`/`evidence` no nome |
 | `.rtk/filters.toml` é template | confirmado — 13 linhas, 11 são comentário |
-| `confidence=0.95` cravado no RCA | confirmado — `sparkforge/reliability/rca.py:90` |
+| `confidence=0.95` cravado no RCA | confirmado — `sparkforge_aws/reliability/rca.py:90` |
 | Três sistemas de budget | confirmado — `agents/autonomy.py`, `agents/supervisor.py`, `economy/budget.py` |
 
 ### 1.1 A premissa que muda
 
 O documento pede *Provider Token Telemetry*: "cada chamada real deveria produzir
-usage". Medido: `sparkforge/` **não importa** `anthropic`, `openai`, `bedrock`
+usage". Medido: `sparkforge_aws/` **não importa** `anthropic`, `openai`, `bedrock`
 nem `litellm` em lugar nenhum — existe `providers/mock.py`, e
 `economy/router.py` devolve `estimated_cost_usd: float = 0.001` cravado no
 dataclass.
@@ -40,7 +40,7 @@ esta medição existir antes.
 
 ### 1.2 O ledger já existe, e dois campos dele mentem
 
-`sparkforge/observability/store.py` cria `.sparkforge/traces.db` com as tabelas
+`sparkforge_aws/observability/store.py` cria `.sparkforge/traces.db` com as tabelas
 `traces` e `spans`. `TraceSpan` já declara `component_type` — com `"tool"` entre
 os valores previstos —, `input_tokens`, `output_tokens`, `cached_tokens` e
 `estimated_cost_usd`. Nenhum caminho de execução escreve nele.
@@ -183,7 +183,7 @@ parser adivinhado.
 
 ## 5. Superfície
 
-Verbo de topo `sparkforge economy report` e tool `sparkforge_economy_report`,
+Verbo de topo `sparkforge-aws economy report` e tool `sparkforge_economy_report`,
 pela mesma razão de `capacity`, `finops` e `tune`: não lê artefato, compõe sobre
 o ledger. Devolve payload por verbo, o efeito medido do `detail_level`, o peso
 do catálogo em repouso e — quando houver — o usage do host **ao lado**, nunca

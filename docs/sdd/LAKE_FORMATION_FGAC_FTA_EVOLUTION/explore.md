@@ -8,7 +8,7 @@ approaches:
   - id: A
     summary: "Estender o núcleo determinístico existente com uma matriz version-aware, analyzer de routing/decisão e integração CLI/MCP, preservando facts e regras como fontes de evidência."
     tradeoffs:
-      - "Reutiliza `sparkforge/facts`, `rules/catalog`, knowledge e grafo existentes."
+      - "Reutiliza `sparkforge_aws/facts`, `rules/catalog`, knowledge e grafo existentes."
       - "Exige contratos novos para ownership, operação, modo de acesso e estados unresolved."
       - "Permite adicionar Glue, EMR e EMR Serverless sem duplicar diagnósticos."
   - id: B
@@ -35,7 +35,7 @@ chosen: A
 ## Perguntas feitas, uma por vez
 
 1. A mudança é no SparkForge ou em um job de operador? Resposta: no SparkForge; o prompt pede evolução arquitetural do repositório.
-2. O sistema já possui fatos, regras e coletors de Lake Formation? Resposta: sim; `sparkforge/facts/lakeformation.py`, `sparkforge/facts/lakeformation_matrix.py`, `sparkforge/lakeformation/graph.py`, `rules/catalog/lakeformation.yaml`, `rules/catalog/glue-cross-account.yaml` e testes correspondentes já existem.
+2. O sistema já possui fatos, regras e coletors de Lake Formation? Resposta: sim; `sparkforge_aws/facts/lakeformation.py`, `sparkforge_aws/facts/lakeformation_matrix.py`, `sparkforge_aws/lakeformation/graph.py`, `rules/catalog/lakeformation.yaml`, `rules/catalog/glue-cross-account.yaml` e testes correspondentes já existem.
 3. O núcleo deve inferir permissão ou administrar AWS? Resposta: não; deve preservar evidence-first, estados `unresolved` e simulação IAM, sem conceder permissões nem alterar recursos.
 4. Qual recorte fecha a primeira entrega? Resposta: capability/decision plane version-aware para Glue, EMR on EC2 e EMR Serverless; routing de contas/catálogos; decisão FGAC/FTA; credential-vending preflight; diagnóstico estruturado; integração de CLI/MCP; conhecimento, docs, skills e golden/negative fixtures.
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.decision.contracts import ContractLoader, ContractValidationError
-from sparkforge.decision.state import StateCompiler
+from sparkforge_aws.decision.contracts import ContractLoader, ContractValidationError
+from sparkforge_aws.decision.state import StateCompiler
 
 
 def _contract(**changes):

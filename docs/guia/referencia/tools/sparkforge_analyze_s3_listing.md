@@ -20,7 +20,7 @@ Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, p95 e m
 
 ## Na CLI
 
-[`sparkforge analyze s3-listing`](../cli/analyze.md)
+[`sparkforge-aws analyze s3-listing`](../cli/analyze.md)
 
 ## Capacidade
 

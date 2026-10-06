@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.agentic.checkpoint import SemanticCheckpoint
+from sparkforge_aws.agentic.checkpoint import SemanticCheckpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -54,7 +54,7 @@ class TestResumeRealCrossProcess:
         # Runtime A: constroi o estado semantico, checkpointa, termina.
         script_a = f"""
 import json
-from sparkforge.agentic.checkpoint import SemanticCheckpoint
+from sparkforge_aws.agentic.checkpoint import SemanticCheckpoint
 state = {json.dumps(_STATE)}
 ck = SemanticCheckpoint(**state)
 ck.save({str(destino)!r}.replace('\\\\', '\\\\'))
@@ -67,7 +67,7 @@ print(ck.id)
         # Runtime B: processo novo, sem nada em memoria -- carrega e retoma.
         script_b = f"""
 import json, sys
-from sparkforge.agentic.checkpoint import SemanticCheckpoint
+from sparkforge_aws.agentic.checkpoint import SemanticCheckpoint
 ck = SemanticCheckpoint.load({str(destino)!r}.replace('\\\\', '\\\\'))
 print(json.dumps(ck.to_dict(), sort_keys=True))
 """

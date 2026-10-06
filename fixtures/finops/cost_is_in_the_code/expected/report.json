@@ -45,7 +45,7 @@
       "detail": "Nenhum destes muda trocando worker. Um job que varre dez vezes o que precisa e caro em qualquer capacidade."
     },
     "capacity": {
-      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, que compara as capacidades observadas contra o SLA declarado."
+      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge-aws capacity`, que compara as capacidades observadas contra o SLA declarado."
     },
     "none_found": false
   },

@@ -20,7 +20,7 @@ Extrai facts do TEXTO de um plano fisico ja salvo em disco: a saida de `df.expla
 
 ## Na CLI
 
-[`sparkforge analyze plan`](../cli/analyze.md)
+[`sparkforge-aws analyze plan`](../cli/analyze.md)
 
 ## Capacidade
 

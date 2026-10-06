@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.economy.decision_models import (
+from sparkforge_aws.economy.decision_models import (
     BudgetSnapshot,
     DecisionInput,
     DecisionStatus,

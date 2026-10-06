@@ -23,7 +23,7 @@ tasks:
   - id: T4
     status: done
     red: {command: "python -m pytest -q (execucao local interrompida pelo operador em 36%, sem novas falhas)", exit: 130}
-    green: {command: "python -m pytest -q -o cache_dir=E:/sparkforge-pytest-full-final/cache", exit: 0}
+    green: {command: "python -m pytest -q -o cache_dir=E:/sparkforge_aws-pytest-full-final/cache", exit: 0}
 claims:
   - text: "Static semantic facts and declared live Glue/Lake Formation/S3 graph facts compose into one bounded federated graph only through explicit bridge edges; undeclared links remain absent and live unresolved evidence is preserved."
     evidence_ref: "tests/test_workspace_federation.py::test_static_and_live_graph_compose_with_explicit_bridge"
@@ -32,7 +32,7 @@ claims:
   - text: "Compact MCP publishes seven stable operations and separates read-only and mutation execution, refusing an annotation-mode mismatch before dispatch."
     evidence_ref: "tests/test_adapters_mcp_compact.py::test_compact_router_enforces_execution_mode_from_target_annotation"
   - text: "The complete local monolithic suite passed 13479 tests with 14 skips; this is a local result, not a claim that remote CI is green."
-    evidence_ref: "python -m pytest -q -o cache_dir=E:/sparkforge-pytest-full-final/cache"
+    evidence_ref: "python -m pytest -q -o cache_dir=E:/sparkforge_aws-pytest-full-final/cache"
 ---
 
 # AGENTIC_ECONOMY_COMPLETION — relatório do build
@@ -65,7 +65,7 @@ operador e a nova execução completa que a substituiu:
 | `python -m compileall -q` nos arquivos alterados | limpo |
 | `python scripts/check_surface_lock.py` | 0 divergências |
 | `python scripts/check_vnext_claims.py` | 0 divergências, após remover `test-runs/` temporário e reler 4 claims |
-| `sparkforge sdd check --repo . --feature AGENTIC_ECONOMY_COMPLETION` | `ok: true` |
+| `sparkforge-aws sdd check --repo . --feature AGENTIC_ECONOMY_COMPLETION` | `ok: true` |
 
 ## Decisões e limites
 
@@ -84,7 +84,7 @@ O teste monolítico é resultado local. Não há afirmação de CI remoto totalm
 
 A suíte criou 15 arquivos `.py` temporários sob `test-runs/`, fazendo o gate de
 claims comparar a árvore de trabalho com um corpus contaminado. O diretório foi
-movido para `E:/sparkforge-test-runs-archive-20260927` (recuperável), os quatro
+movido para `E:/sparkforge-aws-test-runs-archive-20260927` (recuperável), os quatro
 proofs foram reexecutados em árvore limpa e os valores publicados foram atualizados
 para `862`, `12009`, `296410` e `12665`. Isso é remediação de lastro, não uma
 alteração de produto.

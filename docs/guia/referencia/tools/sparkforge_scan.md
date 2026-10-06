@@ -27,7 +27,7 @@ Roda sozinho os analyzes que cabem num repositorio e julga a uniao. Artefato col
 
 ## Na CLI
 
-[`sparkforge scan`](../cli/scan.md)
+[`sparkforge-aws scan`](../cli/scan.md)
 
 ## Capacidade
 

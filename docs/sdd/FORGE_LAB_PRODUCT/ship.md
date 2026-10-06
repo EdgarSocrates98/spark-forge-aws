@@ -54,15 +54,15 @@ Concluídos em 2026-10-02, após todas as fases e correções de guardas:
   skipped`; `goldens-4`: `309 passed`; `g-z`: `5889 passed, 6 skipped`).
 - `python scripts/sync_skills.py --check`: OK.
 - `python scripts/gen_reference_docs.py --check`: OK.
-- `python -m sparkforge.adapters.cli policy check --repo .`: OK.
+- `python -m sparkforge_aws.adapters.cli policy check --repo .`: OK.
 - `python scripts/check_surface_lock.py`: `0 divergencia(s)`.
 - `python scripts/check_status_numbers.py --strict`: `0 divergencia(s)`.
 - `python scripts/verify_offline_bundle.py --repo .`: `offline=true`, `69`
   artefatos verificados, `failed=[]`.
 - `python scripts/check_vnext_claims.py`: `0 divergencia(s)`.
-- `python -m sparkforge.adapters.cli sdd check --repo . --feature
+- `python -m sparkforge_aws.adapters.cli sdd check --repo . --feature
   FORGE_LAB_PRODUCT`: `ok=true`.
-- `python -m sparkforge.adapters.cli lab verify --repo .`: válido, 11
+- `python -m sparkforge_aws.adapters.cli lab verify --repo .`: válido, 11
   componentes, 20 cenários e 240 ações.
 - `git diff --check`: OK.
 

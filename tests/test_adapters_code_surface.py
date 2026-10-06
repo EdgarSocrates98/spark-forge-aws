@@ -19,8 +19,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -356,7 +356,7 @@ class TestFrescorEmTodaConsulta:
         (raiz / "jobs" / "etl.py").write_text(_JOB, encoding="utf-8")
         resultado = call_tool(name, _args_minimos(raiz, name))
         assert resultado["error_code"] == "INDEX_MISSING", name
-        assert resultado["action"] == "sparkforge code sync"
+        assert resultado["action"] == "sparkforge-aws code sync"
         assert resultado["exit_code"] == 2
         assert "error" in resultado, "a frase acionavel nao pode ser trocada pelo codigo"
 
@@ -391,7 +391,7 @@ class TestFrescorEmTodaConsulta:
         )
         assert resultado["error_code"] == "STALE_INDEX"
         assert resultado["changed_files"] >= 26
-        assert resultado["action"] == "sparkforge code sync"
+        assert resultado["action"] == "sparkforge-aws code sync"
 
     def test_status_responde_mesmo_com_o_indice_ausente(self, tmp_path):
         """A excecao, e ela e o motivo de `code_status` existir separada.
@@ -621,7 +621,7 @@ class TestCliEMcpNaoDivergem:
     """
 
     def test_search_devolve_o_mesmo_payload_pelos_dois_caminhos(self, arvore, capsys):
-        from sparkforge.adapters.cli import main as cli_main
+        from sparkforge_aws.adapters.cli import main as cli_main
 
         assert cli_main(["code", "search", "carregar", "--root", str(arvore)]) == 0
         pela_cli = json.loads(capsys.readouterr().out)
@@ -631,7 +631,7 @@ class TestCliEMcpNaoDivergem:
         assert pela_cli["results"] == pelo_mcp["results"]
 
     def test_status_devolve_as_mesmas_contagens(self, arvore, capsys):
-        from sparkforge.adapters.cli import main as cli_main
+        from sparkforge_aws.adapters.cli import main as cli_main
 
         assert cli_main(["code", "status", "--root", str(arvore)]) == 0
         pela_cli = json.loads(capsys.readouterr().out)
@@ -643,13 +643,13 @@ class TestCliEMcpNaoDivergem:
 class TestOMotorNaoLeFolhaDeFonteDoRepositorioDeTrabalho:
     """A mutacao da tarefa acontece sobre COPIA, e este teste prova a copia.
 
-    Indexar uma copia do proprio `sparkforge/codeintel/` em tmpdir, estraga-la e
+    Indexar uma copia do proprio `sparkforge_aws/codeintel/` em tmpdir, estraga-la e
     reindexar so e seguro se a indexacao NUNCA escrever na arvore de origem. A
     prova e comparar o mtime dos arquivos da origem antes e depois.
     """
 
     def test_indexar_nao_toca_o_fonte(self, tmp_path):
-        origem = ROOT / "sparkforge" / "codeintel"
+        origem = ROOT / "sparkforge_aws" / "codeintel"
         copia = tmp_path / "copia" / "codeintel"
         copia.parent.mkdir()
         shutil.copytree(origem, copia, ignore=shutil.ignore_patterns("__pycache__"))
@@ -714,7 +714,7 @@ class TestTodoArgumentoLidoEDeclarado:
         return lidas
 
     def test_nenhum_handler_le_chave_que_o_schema_nao_declara(self):
-        from sparkforge.adapters.tools import _HANDLERS
+        from sparkforge_aws.adapters.tools import _HANDLERS
 
         faltando = {}
         for nome, spec in TOOLS.items():

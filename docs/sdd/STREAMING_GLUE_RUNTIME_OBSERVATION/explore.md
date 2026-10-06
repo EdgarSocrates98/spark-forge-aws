@@ -35,13 +35,13 @@ ligação entre definição efetiva e execução observada. O repositório já p
 
 ## Evidência consultada
 
-- `sparkforge rules lookup --category glue_streaming`: cinco regras existentes,
+- `sparkforge-aws rules lookup --category glue_streaming`: cinco regras existentes,
   incluindo `SF-GLUESTREAM-001` a `SF-GLUESTREAM-005`.
-- `sparkforge sdd status --repo .`: feature nova ainda inexistente; base em
+- `sparkforge-aws sdd status --repo .`: feature nova ainda inexistente; base em
   `6a93d30`.
-- `sparkforge/facts/glue_streaming.py`: definição efetiva observa versão, modo,
+- `sparkforge_aws/facts/glue_streaming.py`: definição efetiva observa versão, modo,
   linguagem, fonte, capacidade e restrições.
-- `sparkforge/facts/glue_job_run.py`: run terminal observa versão, worker type,
+- `sparkforge_aws/facts/glue_job_run.py`: run terminal observa versão, worker type,
   workers, estado e duração.
 
 ## Perguntas e decisão operacional

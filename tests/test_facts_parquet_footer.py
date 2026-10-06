@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.parquet_footer import EMITTED_KINDS, extract_parquet_footer
+from sparkforge_aws.facts.parquet_footer import EMITTED_KINDS, extract_parquet_footer
 
 
 def _coluna(nome, tipo="INT64", **kw):

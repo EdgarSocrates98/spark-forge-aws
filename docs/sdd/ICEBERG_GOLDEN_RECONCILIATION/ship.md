@@ -28,7 +28,7 @@ código de produção.
 - `python -m pytest tests/test_fixtures_golden_iceberg.py::TestGolden::test_declared_kinds_all_present -q -p no:cacheprovider --basetemp .pytest-tmp-iceberg-kinds-green` — `14 passed`.
 - `python -m pytest tests/test_fixtures_golden_iceberg.py -q -p no:cacheprovider --basetemp .pytest-tmp-iceberg-green` — `94 passed`.
 - `python -m pytest tests/test_fixtures_kind_coverage.py tests/test_verify_wheel.py -q -p no:cacheprovider --basetemp .pytest-tmp-iceberg-corpus-gate` — `116 passed`.
-- `sparkforge sdd check --repo . --feature ICEBERG_GOLDEN_RECONCILIATION` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature ICEBERG_GOLDEN_RECONCILIATION` — `ok: true`.
 
 ## Limites
 

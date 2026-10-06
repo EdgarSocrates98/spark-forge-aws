@@ -5,8 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_streaming_ops
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters._core import analyze_streaming_ops
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,7 +28,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-ops",
             "--path",

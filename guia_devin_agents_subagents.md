@@ -24,7 +24,7 @@
 >
 > O que **sobreviveu** e virou desenho está em
 > [`GUIA_DE_USO.md`](GUIA_DE_USO.md) §3 (uso) e em
-> [`docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md`](docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md)
+> [`docs/superpowers/specs/2026-08-04-sparkforge-aws-devin-subagentes-design.md`](docs/superpowers/specs/2026-08-04-sparkforge-aws-devin-subagentes-design.md)
 > (decisões).
 
 # Guia Mestre: Arquitetura, Configuração e Operação de Agents e Subagents no Devin

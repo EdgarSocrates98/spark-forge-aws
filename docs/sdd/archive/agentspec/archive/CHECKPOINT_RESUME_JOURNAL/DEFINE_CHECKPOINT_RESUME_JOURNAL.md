@@ -34,7 +34,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | `sparkforge/durable.py`: `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`; falha deixa o original intacto), `append_line` (sob trava de arquivo; cauda sem `\n` vai para `<arquivo>.torn` e o arquivo volta ao último `\n` antes do append) e `read_jsonl` (tolera só a cauda cortada e a devolve como `torn_tail`; linha inválida no meio é erro com o número da linha) |
+| **MUST** | `sparkforge_aws/durable.py`: `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`; falha deixa o original intacto), `append_line` (sob trava de arquivo; cauda sem `\n` vai para `<arquivo>.torn` e o arquivo volta ao último `\n` antes do append) e `read_jsonl` (tolera só a cauda cortada e a devolve como `torn_tail`; linha inválida no meio é erro com o número da linha) |
 | **MUST** | Escrita e leitura durável em `case.yaml` (`save_case`), `plan.json` e `decision.json` do debate, os 10 JSONL do blackboard e `submissions.jsonl` |
 | **MUST** | Journal commitável em `<raiz>/.sparkforge/journal.jsonl`: evento `started` (`seq`, `prev`, `call`, `verb`, `port`, `args`, `at`) e `finished` (`seq`, `prev`, `started_seq`, `outcome`, `outputs` ou `outputs_unresolved`) |
 | **MUST** | Gancho nas duas portas: `tools.call_tool` (MCP) e `cli._dispatch` (CLI); o conjunto de verbos é `readOnlyHint: false` menos `code_*` (27), e um teste trava a igualdade; na CLI, verbo → tool pelo `parity.yaml` |
@@ -43,7 +43,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 | **MUST** | `at` = o `now` que o verbo recebeu (18 de 27), senão `null`; nada lido do relógio |
 | **MUST** | Regra 27: falha do journal não derruba o verbo; o resultado ganha `journal: "unrecorded"` com o motivo |
 | **MUST** | `resume` ganha o bloco `journal` (`last_seq`, `open_calls`, `chain`, `torn_tail`) e `in_flight_source` (`caller`, `journal`, `none`); o texto do chamador continua aceito e vence |
-| **MUST** | `sparkforge journal verify --repo <raiz>` (só CLI): `intact`, `broken` (com o `seq` da quebra), `torn_tail`, `absent`; exit 1 em `broken` |
+| **MUST** | `sparkforge-aws journal verify --repo <raiz>` (só CLI): `intact`, `broken` (com o `seq` da quebra), `torn_tail`, `absent`; exit 1 em `broken` |
 | **SHOULD** | `handoff.md`, seção "Em voo na interrupcao", lista os `open_calls` com "sem finished (caiu ou ainda roda)" |
 | **SHOULD** | Chamada recusada pela policy não grava evento (não executou) |
 | **COULD** | Manual `docs/guia/usos/` do case ganha a seção do journal e do `verify` |
@@ -68,7 +68,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 
 | ID | Scenario | Given | When | Then |
 |----|----------|-------|------|------|
-| AT-001 | Par pela CLI | Case sintético em `tmp` | `sparkforge case open` pela CLI | `journal.jsonl` com `started` (`seq` 1, `prev` nulo, `port: cli`, `at` = o `--now`) e `finished` (`seq` 2, `started_seq` 1, `outcome: ok`, `outputs` com o sha256 de `case.yaml`) |
+| AT-001 | Par pela CLI | Case sintético em `tmp` | `sparkforge-aws case open` pela CLI | `journal.jsonl` com `started` (`seq` 1, `prev` nulo, `port: cli`, `at` = o `--now`) e `finished` (`seq` 2, `started_seq` 1, `outcome: ok`, `outputs` com o sha256 de `case.yaml`) |
 | AT-002 | Par pelo MCP | O mesmo case | `call_tool("sparkforge_case_update", ...)` | Evento `started`/`finished` com `port: mcp`, `prev` = sha256 da linha anterior |
 | AT-003 | Verbo de leitura | Case com journal | `sparkforge_resume`, `sparkforge_judge` | Nenhum evento novo |
 | AT-004 | Conjunto travado | `TOOLS` | Teste de conjunto | Journalizados = `readOnlyHint: false` menos `code_*`; tool nova que grava sem entrar derruba o teste |
@@ -119,7 +119,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/durable.py` (novo), `sparkforge/journal/` (novo), `sparkforge/case/{store,resume}.py`, `sparkforge/agentic/blackboard.py`, `sparkforge/agentic/executor/debate_run.py`, `sparkforge/adapters/{tools,cli,_core}.py` | Um módulo de escrita durável usado pelos donos de estado; journal com gancho nas duas portas |
+| **Deployment Location** | `sparkforge_aws/durable.py` (novo), `sparkforge_aws/journal/` (novo), `sparkforge_aws/case/{store,resume}.py`, `sparkforge_aws/agentic/blackboard.py`, `sparkforge_aws/agentic/executor/debate_run.py`, `sparkforge_aws/adapters/{tools,cli,_core}.py` | Um módulo de escrita durável usado pelos donos de estado; journal com gancho nas duas portas |
 | **KB Domains** | `genai` (`concepts/state-machines`, `patterns/agentic-workflow`) só como contexto; padrões do repositório: `receipt/` (content-addressed, sem chave), `debate_run` (estado só em arquivo), `policy/` (classe pela anotação, `raiz_do_projeto`) | Nenhum domínio do agentspec cobre journal ou escrita atômica |
 | **IaC Impact** | None | |
 

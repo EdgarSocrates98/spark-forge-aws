@@ -2,7 +2,7 @@
 
 Confirme sempre contra o runtime **efetivo** do cluster. Esta tabela orienta; não substitui a aba *Environment* do Spark UI, o `describe-cluster` do cluster analisado, nem as release notes da release label.
 
-O espelho executável desta página é `EMR_MATRIX`, em [`../../sparkforge/facts/runtime_detect.py`](../../sparkforge/facts/runtime_detect.py). Divergir entre os dois é bug de dado, e `tests/test_runtime_emr_matrix.py` falha quando acontece.
+O espelho executável desta página é `EMR_MATRIX`, em [`../../sparkforge_aws/facts/runtime_detect.py`](../../sparkforge_aws/facts/runtime_detect.py). Divergir entre os dois é bug de dado, e `tests/test_runtime_emr_matrix.py` falha quando acontece.
 
 ## 1. O que a coluna `-amzn-N` significa, e por que ela importa aqui
 
@@ -11,7 +11,7 @@ A AWS não embarca o artefato da Apache: embarca um fork com patches próprios, 
 Duas consequências, e a segunda já causou defeito neste repositório:
 
 1. **O sufixo é informação real e não é descartado.** Um cluster rodando `3.3.2-amzn-0.1` não roda o mesmo binário que um `3.3.2` da Apache; esconder isso do relatório esconderia a única pista de um `NoSuchMethodError` que só existe no fork. O valor cru sobrevive em `RuntimeContext.spark` e em `attrs.observed` do fact `env.runtime_signal`.
-2. **Toda comparação de `runtime_scope` é contra versão Apache.** `sparkforge/rules/version_scope.py` compara truncando no primeiro segmento com sufixo de vendor. Isso já funcionava para a forma de um nível (`3.5.6-amzn-2` → `3.5.6`), mas **falhava** para a forma de dois níveis que só existe em EMR 6.x: `3.3.2-amzn-0.1` era lido como `3.3.2.0.1`, maior que `3.3.2`, e `== 3.3.2` dava falso. Quatro releases usam essa forma — 6.8.1, 6.9.1, 6.10.1, 6.11.1 — e nelas toda regra com range exato era pulada em silêncio. Corrigido na mesma entrega desta matriz.
+2. **Toda comparação de `runtime_scope` é contra versão Apache.** `sparkforge_aws/rules/version_scope.py` compara truncando no primeiro segmento com sufixo de vendor. Isso já funcionava para a forma de um nível (`3.5.6-amzn-2` → `3.5.6`), mas **falhava** para a forma de dois níveis que só existe em EMR 6.x: `3.3.2-amzn-0.1` era lido como `3.3.2.0.1`, maior que `3.3.2`, e `== 3.3.2` dava falso. Quatro releases usam essa forma — 6.8.1, 6.9.1, 6.10.1, 6.11.1 — e nelas toda regra com range exato era pulada em silêncio. Corrigido na mesma entrega desta matriz.
 
 ## 2. Matriz 7.x
 

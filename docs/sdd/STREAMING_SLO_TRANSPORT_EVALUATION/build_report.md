@@ -30,9 +30,9 @@ tasks:
     green: {command: "python scripts/check_surface_lock.py; python scripts/check_status_numbers.py --strict; python scripts/verify_offline_bundle.py --check; python scripts/gen_reference_docs.py --check; python scripts/sync_skills.py --check", exit: 0}
 claims:
   - text: "mode=slo avalia séries diretamente observadas de kafka.lag e kinesis.shard por transport_key, sem exigir query_name para fontes de transporte."
-    evidence_ref: "sparkforge/facts/streaming_slo.py; tests/test_facts_streaming_slo.py"
+    evidence_ref: "sparkforge_aws/facts/streaming_slo.py; tests/test_facts_streaming_slo.py"
   - text: "Kafka lag usa records e Kinesis iterator age usa ms; timestamps timezone-aware e cobertura de janela são pré-condições."
-    evidence_ref: "sparkforge/facts/streaming_slo.py; sparkforge/facts/transport.py; tests/test_facts_streaming_slo.py"
+    evidence_ref: "sparkforge_aws/facts/streaming_slo.py; sparkforge_aws/facts/transport.py; tests/test_facts_streaming_slo.py"
   - text: "CLI, MCP e core preservam o mesmo envelope e os mesmos source_fact_ids para SLO de transporte."
     evidence_ref: "tests/test_analyze_streaming_composition.py::test_transport_slo_cli_and_mcp_envelopes_match"
   - text: "Goldens Kafka met, Kinesis violated e transport unresolved cobrem fatos, composição e regras existentes."

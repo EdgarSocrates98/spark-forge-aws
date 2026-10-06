@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge handoff`
+# `sparkforge-aws handoff`
 
 Escreve .sparkforge/handoff.md e imprime o payload.
 
 ```bash
-sparkforge handoff --help
+sparkforge-aws handoff --help
 ```
 
 ## Opções

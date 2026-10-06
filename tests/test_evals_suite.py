@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 from defusedxml import ElementTree as DefusedET
 
-from sparkforge.evals.suite import SuiteError, load_suite
+from sparkforge_aws.evals.suite import SuiteError, load_suite
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE_DIR = ROOT / "evals" / "agentic" / "fase0"

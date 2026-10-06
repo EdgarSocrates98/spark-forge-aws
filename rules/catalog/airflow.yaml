@@ -1,6 +1,6 @@
 # Catálogo de regras — como o DAG do Apache Airflow dispara o job Glue
 #
-# Depende de `sparkforge/facts/airflow_dag.py`, que lê o arquivo `.py` do DAG por AST
+# Depende de `sparkforge_aws/facts/airflow_dag.py`, que lê o arquivo `.py` do DAG por AST
 # (nunca o executa) e, em `fuse`, liga a task ao `aws_glue_job` de mesmo `name`
 # (`af.glue_job_link`). As frases citadas estão em
 # `knowledge/airflow/glue-operator.md`; o desenho, em `docs/sdd/AIRFLOW_DAG/design.md`.
@@ -26,7 +26,7 @@
 # A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado por
 # task, nunca um por arquivo. O `subject.symbol` é o `task_id` literal quando há um.
 #
-# POR QUE `attrs.operator_family` e não o nome da classe: `sparkforge/rules/expr.py` tem
+# POR QUE `attrs.operator_family` e não o nome da classe: `sparkforge_aws/rules/expr.py` tem
 # seis comparadores e nenhuma função, e `where` só compara por igualdade (regra 33). O
 # predicado "é um operador de job Glue" -- que precisa aceitar `GlueJobOperator` e o
 # legado `AwsGlueJobOperator` -- é derivado no extrator e chega aqui como valor.
@@ -89,7 +89,7 @@ rules:
     tradeoffs:
       - "Esperar o job custa tempo de execução da task; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
     validation:
-      - "`sparkforge analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-001 para a task."
+      - "`sparkforge-aws analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-001 para a task."
       - "EIXO DE RESULTADO — numa execução de teste, a tarefa seguinte lê a saída completa do job: a contagem de linhas que ela lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun."
       - "Uma execução de teste em que o job falha marca a task como `failed` e não segue para a tarefa a jusante."
     rollback:
@@ -148,7 +148,7 @@ rules:
     tradeoffs:
       - "Parar o job junto com a task economiza o resto do JobRun e arrisca saída parcial; deixar o job correr preserva a escrita e paga o run inteiro que ninguém vai usar."
     validation:
-      - "`sparkforge analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge judge` não produz mais SF-AIRFLOW-002 para a task."
+      - "`sparkforge-aws analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge-aws judge` não produz mais SF-AIRFLOW-002 para a task."
       - "EIXO DE RESULTADO — numa execução de teste em que o prazo estoura, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que antes da execução: a interrupção não deixou linha parcial."
       - "`aws glue get-job-run --job-name <job> --run-id <id>` mostra o JobRun em `STOPPED` no mesmo minuto em que a task foi marcada como falha, e não `RUNNING` depois dela."
     rollback:
@@ -205,7 +205,7 @@ rules:
     tradeoffs:
       - "A espera diferida devolve o slot e paga com uma peça a mais na infraestrutura; a espera síncrona é mais simples e paga com o slot ocupado pelo tempo do job."
     validation:
-      - "`sparkforge analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-003 para a task."
+      - "`sparkforge-aws analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-003 para a task."
       - "EIXO DE RESULTADO — numa execução de teste, o destino tem a mesma contagem total e por chave de negócio que a execução síncrona equivalente: mudar a forma de esperar não muda o que o job escreve."
       - "Na execução de teste, a task passa pelo estado `deferred` e o slot fica livre no intervalo: o número de tarefas em execução no pool durante o job é menor do que era."
     rollback:
@@ -246,7 +246,7 @@ rules:
       knowledge/airflow/glue-operator.md, lacuna 1.
     proposed_change:
       - "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Airflow (onde `retries` e `retry_delay` são explícitos e aparecem no histórico da task), ou `retries = 0` na task e o retry no próprio Glue."
-      - "Antes de escolher, medir: os JobRuns do job no intervalo de uma falha real (`sparkforge collect glue-job-runs`) ao lado das tentativas da task no Airflow mostram quantos JobRuns uma falha produziu de fato."
+      - "Antes de escolher, medir: os JobRuns do job no intervalo de uma falha real (`sparkforge-aws collect glue-job-runs`) ao lado das tentativas da task no Airflow mostram quantos JobRuns uma falha produziu de fato."
       - "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um JobRun que escreve de novo (SF-GLUE-004)."
     action:
       kind: orchestration.restrict_run_policy
@@ -263,7 +263,7 @@ rules:
     tradeoffs:
       - "Retry no Airflow é visível no histórico da task e configurável por DAG; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
     validation:
-      - "`sparkforge fuse` sobre os facts de `analyze airflow-dag` e `analyze terraform` mostra o `af.glue_job_link` com `glue_max_retries: 0` ou `airflow_retries_effective: 0`, e `sparkforge judge` não produz mais SF-AIRFLOW-004."
+      - "`sparkforge-aws fuse` sobre os facts de `analyze airflow-dag` e `analyze terraform` mostra o `af.glue_job_link` com `glue_max_retries: 0` ou `airflow_retries_effective: 0`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-004."
       - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
       - "O histórico da task no Airflow mostra, para a falha, no máximo 1 + `retries` tentativas, e `get-job-runs` mostra o número de JobRuns que a camada escolhida justifica."
     rollback:

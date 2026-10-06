@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from sparkforge.context.context_tree import build_context_tree
-from sparkforge.context.host_usage import HostTokenState
+from sparkforge_aws.context.context_tree import build_context_tree
+from sparkforge_aws.context.host_usage import HostTokenState
 
 
 def test_context_tree_keeps_payload_and_provider_tokens_separate() -> None:

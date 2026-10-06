@@ -9,11 +9,11 @@ upstream:
   sha256: "cf559a166b743acec6902a069613c71e404b0ad45b386aa2c371a4e281e942ee"
 tasks:
   - id: T1
-    files: [tests/test_collect_schema_registry.py, sparkforge/collect/schema_registry.py]
+    files: [tests/test_collect_schema_registry.py, sparkforge_aws/collect/schema_registry.py]
     covers: [AC1, AC2]
     test: {path: tests/test_collect_schema_registry.py, name: test_collector_paginates_and_preserves_schema_versions}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml, tests/test_collect_schema_registry.py]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml, tests/test_collect_schema_registry.py]
     covers: [AC3]
     test: {path: tests/test_collect_schema_registry.py, name: test_cli_and_mcp_schema_registry_collection_match}
   - id: T3

@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/STEP_FUNCTIONS/define.md
   sha256: "da628411f242bd489413b3a7ee5a4eb8cd5a38200578668ce6a08e3eaebb0e68"
 files:
-  - {path: sparkforge/facts/stepfunctions.py, action: create, reason: "extrator de ASL: sfn.state_machine, sfn.task, sfn.unresolved, sfn.analyzed; e a derivacao pura sfn.glue_job_link sobre a uniao dos facts (D1, D2, D5)"}
+  - {path: sparkforge_aws/facts/stepfunctions.py, action: create, reason: "extrator de ASL: sfn.state_machine, sfn.task, sfn.unresolved, sfn.analyzed; e a derivacao pura sfn.glue_job_link sobre a uniao dos facts (D1, D2, D5)"}
   - {path: tests/test_stepfunctions.py, action: create, reason: "AC1, AC2, AC6 e AC7"}
-  - {path: sparkforge/facts/fusion.py, action: modify, reason: "fuse() chama a derivacao sfn.glue_job_link, no molde de build_lakeformation (D5)"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "funcao publica de analyze step-functions (D3)"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "subcomando analyze step-functions --path (D3)"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "tool sparkforge_analyze_step_functions, READ_ONLY (D3)"}
+  - {path: sparkforge_aws/facts/fusion.py, action: modify, reason: "fuse() chama a derivacao sfn.glue_job_link, no molde de build_lakeformation (D5)"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "funcao publica de analyze step-functions (D3)"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "subcomando analyze step-functions --path (D3)"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "tool sparkforge_analyze_step_functions, READ_ONLY (D3)"}
   - {path: rules/catalog/stepfunctions.yaml, action: create, reason: "area SF-SFN, SF-SFN-001 a SF-SFN-004 (D4)"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "rota AGENT por findings_area SF-SFN para glue-infra-reviewer (D6)"}
   - {path: agents/glue-infra-reviewer.md, action: modify, reason: "declara SF-SFN em rule_areas e cita a tool nova (D6); espelhos pelo sync, .codex a mao"}
@@ -58,7 +58,7 @@ files:
   - {path: docs/claims.lock.json, action: modify, reason: "len(TOOLS), corpus de .py e contagens movem alegacoes"}
 decisions:
   - id: D1
-    choice: "Um modulo so, sparkforge/facts/stepfunctions.py, com prefixo de kind sfn. (a CLI oficial e aws stepfunctions, e sfn e o prefixo de ARN arn:aws:states e do nome curto usado pela propria AWS em SFN; nenhum kind existente comeca com sfn). Le .asl.json, .json com StartAt e States, e a saida de describe-state-machine (objeto com definition string e type). Caminha States recursivamente em Parallel.Branches[] e Map.ItemProcessor (e o legado Map.Iterator). Kinds: sfn.state_machine (1 por arquivo: tipo STANDARD, EXPRESS ou undeclared; query language), sfn.task (1 por Task: path do estado, resource, service, api, pattern request_response|sync|callback, job_name, job_name_dynamic, retriers com error_equals, max_attempts efetivo e max_attempts_defaulted, has_catch, timeout_seconds ou timeout_declared false), sfn.unresolved (reason: invalid_json, read_error, not_a_state_machine, definition_not_string, state_not_an_object, resource_absent, resource_dynamic; e na derivacao job_name_dynamic, job_definition_absent, job_definition_ambiguous, glue_max_retries_not_literal), sfn.analyzed (sempre)."
+    choice: "Um modulo so, sparkforge_aws/facts/stepfunctions.py, com prefixo de kind sfn. (a CLI oficial e aws stepfunctions, e sfn e o prefixo de ARN arn:aws:states e do nome curto usado pela propria AWS em SFN; nenhum kind existente comeca com sfn). Le .asl.json, .json com StartAt e States, e a saida de describe-state-machine (objeto com definition string e type). Caminha States recursivamente em Parallel.Branches[] e Map.ItemProcessor (e o legado Map.Iterator). Kinds: sfn.state_machine (1 por arquivo: tipo STANDARD, EXPRESS ou undeclared; query language), sfn.task (1 por Task: path do estado, resource, service, api, pattern request_response|sync|callback, job_name, job_name_dynamic, retriers com error_equals, max_attempts efetivo e max_attempts_defaulted, has_catch, timeout_seconds ou timeout_declared false), sfn.unresolved (reason: invalid_json, read_error, not_a_state_machine, definition_not_string, state_not_an_object, resource_absent, resource_dynamic; e na derivacao job_name_dynamic, job_definition_absent, job_definition_ambiguous, glue_max_retries_not_literal), sfn.analyzed (sempre)."
     rejected: ["ler aws_sfn_state_machine do Terraform: o definition costuma vir de templatefile ou jsonencode, fora do alcance estatico (fora de escopo no define)", "kind generico orch.*: Control-M ja tem ctm.*, e cada orquestrador tem semantica de retry propria"]
     rollback: "git revert dos commits da feature"
   - id: D2
@@ -66,7 +66,7 @@ decisions:
     rejected: ["deixar o default para a regra: a regra nao sabe o default, e expr nao tem funcao (regra 33)"]
     rollback: "git revert do commit"
   - id: D3
-    choice: "Verbo sparkforge analyze step-functions --path <arquivo|diretorio>, e tool MCP sparkforge_analyze_step_functions com os mesmos argumentos (path, detail_level como as vizinhas analyze_*), READ_ONLY, erro acionavel citando o comando. Funcao em _core no molde de _extract_controlm_jobs_facts."
+    choice: "Verbo sparkforge-aws analyze step-functions --path <arquivo|diretorio>, e tool MCP sparkforge_analyze_step_functions com os mesmos argumentos (path, detail_level como as vizinhas analyze_*), READ_ONLY, erro acionavel citando o comando. Funcao em _core no molde de _extract_controlm_jobs_facts."
     rejected: ["coletor aws stepfunctions describe-state-machine: exige credencial; o operador cola a saida em arquivo e o analyze le"]
     rollback: "git revert do commit"
   - id: D4
@@ -103,7 +103,7 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| extrator | `sparkforge/facts/stepfunctions.py`, `tests/test_stepfunctions.py` | AC1, AC2 |
+| extrator | `sparkforge_aws/facts/stepfunctions.py`, `tests/test_stepfunctions.py` | AC1, AC2 |
 | verbo e tool | `_core.py`, `cli.py`, `tools.py`, `parity.yaml`, testes de superfície | AC7 |
 | regras e área | `rules/catalog/stepfunctions.yaml`, `routing.yaml`, `glue-infra-reviewer`, corpus e golden | AC3–AC5, AC8 |
 | derivação | `build_sfn_glue_link` e `fusion.py` | AC6 |
@@ -111,9 +111,9 @@ covers:
 
 ## Medidas que sustentam o desenho
 
-- Precedente de forma: `sparkforge/facts/controlm_jobs.py` (JSON versionado como fonte) e
+- Precedente de forma: `sparkforge_aws/facts/controlm_jobs.py` (JSON versionado como fonte) e
   o conjunto de 30 arquivos que ele tocou (medido por `git grep` em 2026-09-19).
-- Precedente de cruzamento: `build_lakeformation` chamado em `sparkforge/facts/fusion.py`.
+- Precedente de cruzamento: `build_lakeformation` chamado em `sparkforge_aws/facts/fusion.py`.
 - O lado do Glue já é fact: `tf.attribute` com `key: max_retries` (lido pela
   `SF-GLUE-004`) e `key: name` no mesmo recurso.
 - `glue-infra-reviewer` declara hoje `SF-GLUE` e `SF-ENV`.

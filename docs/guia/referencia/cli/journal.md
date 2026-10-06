@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge journal`
+# `sparkforge-aws journal`
 
 Journal de eventos do case (.sparkforge/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash.
 
@@ -8,14 +8,14 @@ Journal de eventos do case (.sparkforge/journal.jsonl): um started e um finished
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge journal verify`](#sparkforge-journal-verify) | Recalcula a cadeia: intact, broken (com o seq da quebra), torn_tail ou absent. Sai 1 em broken. |
+| [`sparkforge-aws journal verify`](#sparkforge-aws-journal-verify) | Recalcula a cadeia: intact, broken (com o seq da quebra), torn_tail ou absent. Sai 1 em broken. |
 
-## `sparkforge journal verify`
+## `sparkforge-aws journal verify`
 
 Recalcula a cadeia: intact, broken (com o seq da quebra), torn_tail ou absent. Sai 1 em broken.
 
 ```bash
-sparkforge journal verify --help
+sparkforge-aws journal verify --help
 ```
 
 ### Opções

@@ -52,7 +52,7 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
   fixtures foi necessário para o contrato declarativo; a entrada foi removida
   antes do stamp do design.
 - A nova decisão de despacho exigiu registrar `lakeformation-architecture` em
-  `sparkforge/integrate/render.py`, `tests/test_sync_render.py`, `manifest.json`
+  `sparkforge_aws/integrate/render.py`, `tests/test_sync_render.py`, `manifest.json`
   e nos registros gerados de superfície e referência.
 - O plan foi ampliado para declarar `docs/surface.lock.json`, porque o novo MCP
   tool mediu crescimento da superfície; o lock registra 115 tools, 52 skills e

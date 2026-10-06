@@ -9,14 +9,14 @@ upstream:
   sha256: "5a7576a7df05bdbb179527daf1b907eb8fa2bcbfdfdd99b580a99be94bdcbfa1"
 files:
   - {path: tests/test_sfn_history.py, action: modify, reason: "os quatro testes de AC1 a AC4, escritos antes do codigo"}
-  - {path: sparkforge/facts/sfn_history.py, action: modify, reason: "os tres tipos entram em _TIPOS_CONHECIDOS; ExecutionRedriven ganha razao propria; a numeracao passa pelo teste de ancestralidade entre entradas de mesmo nome; build_sfn_retry_observado recusa o artefato com redrive"}
+  - {path: sparkforge_aws/facts/sfn_history.py, action: modify, reason: "os tres tipos entram em _TIPOS_CONHECIDOS; ExecutionRedriven ganha razao propria; a numeracao passa pelo teste de ancestralidade entre entradas de mesmo nome; build_sfn_retry_observado recusa o artefato com redrive"}
   - {path: rules/catalog/sfn-history.yaml, action: modify, reason: "o bloco de abertura da area e a explanation da SF-SFNX-001 passam a dizer que a contagem nao atravessa um redrive, e por que"}
   - {path: fixtures/sfn_history/execucao_com_redrive/meta.yaml, action: create, reason: "a fixture de AC1 e AC2: historico com ExecutionRedriven mais o ASL pareado, SF-SFNX-001 calada"}
   - {path: fixtures/sfn_history/parallel_estado_homonimo/meta.yaml, action: create, reason: "a fixture de AC3: dois ramos de um Parallel com um estado de mesmo nome, nenhum sfn.attempt daquele nome"}
   - {path: fixtures/sfn_history/retry_em_ramo_unico/meta.yaml, action: create, reason: "a fixture NEGATIVA de AC4: reentrada sequencial do mesmo estado continua numerada 1..n, e e ela que mata a troca do teste de ancestralidade por um teste so de contagem"}
   - {path: tests/test_fixtures_golden_sfn_history.py, action: modify, reason: "as tres fixtures entram em REQUIRED_FIXTURES, a lista escrita a mao que impede o corpus de encolher calado"}
   - {path: knowledge/stepfunctions/execution-history.md, action: modify, reason: "AC6: as lacunas 8 e 9 sao reescritas para o que o extrator passou a recusar, e a 9 registra o que ainda faltaria para MEDIR o redrive"}
-  - {path: knowledge/offline-manifest.json, action: modify, reason: "o sha256 do documento editado, regravado por sparkforge.tools.offline._content_sha256"}
+  - {path: knowledge/offline-manifest.json, action: modify, reason: "o sha256 do documento editado, regravado por sparkforge_aws.tools.offline._content_sha256"}
   - {path: docs/surface.lock.json, action: modify, reason: "editar um .md de knowledge/ move knowledge.total_bytes e knowledge.by_name_sha256: measure_surface mede o conteudo byte a byte. Sem isto, test_surface_lock::TestOLockBateComAMedida::test_the_knowledge_matches fica vermelho"}
   - {path: fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json, action: modify, reason: "a consequencia medida do D5: a explanation da regra viaja dentro do Finding, e a SF-SFNX-001 aparece em UM so golden do repositorio. Regenerado no mesmo commit da mudanca de prosa"}
   - {path: docs/guia/usos/step-functions.md, action: modify, reason: "as duas razoes novas de sfn.unresolved entram na pagina: recusa que o operador ve e a pagina nao nomeia e lacuna de documentacao"}
@@ -75,9 +75,9 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| tipos conhecidos e a razão do redrive | `sparkforge/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC1 |
-| recusa do confronto na derivação | `sparkforge/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC2 |
-| ancestralidade entre entradas de mesmo nome | `sparkforge/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC3, AC4 |
+| tipos conhecidos e a razão do redrive | `sparkforge_aws/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC1 |
+| recusa do confronto na derivação | `sparkforge_aws/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC2 |
+| ancestralidade entre entradas de mesmo nome | `sparkforge_aws/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC3, AC4 |
 | corpus de fixture e golden | `fixtures/sfn_history/*` (3 novas), `fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json`, `tests/test_fixtures_golden_sfn_history.py`, `rules/catalog/sfn-history.yaml` | AC5 |
 | conhecimento e guia | `knowledge/stepfunctions/execution-history.md`, `knowledge/offline-manifest.json`, `docs/surface.lock.json`, `docs/guia/usos/step-functions.md` | AC6 |
 | registros | `docs/superpowers/STATUS.md`, `docs/claims.lock.json`, `docs/harness/CODEINTEL-GAP.md` | AC7 |
@@ -124,7 +124,7 @@ vez de virarem desvio do build:
 ## Conhecimento consultado
 
 `knowledge/stepfunctions/execution-history.md` §5, lacunas 8 e 9, lidas por
-`sparkforge knowledge path` em 2026-09-20 — são elas que dão os 62 `Valid Values`, os três
+`sparkforge-aws knowledge path` em 2026-09-20 — são elas que dão os 62 `Valid Values`, os três
 tipos que faltam, a semântica do redrive e a premissa não publicada do `previousEventId`
 por ramo. As páginas que as sustentam estão na seção `## Fontes` do mesmo documento, com
 a data de leitura.

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from sparkforge.agentic.arbitration import (
+from sparkforge_aws.agentic.arbitration import (
     arbitrate,
     assess_claim,
     compute_independence_score,
     detect_false_consensus,
 )
-from sparkforge.agentic.models import Claim, ClaimType, Evidence, EvidenceAuthority
+from sparkforge_aws.agentic.models import Claim, ClaimType, Evidence, EvidenceAuthority
 
 
 class TestAssessClaim:

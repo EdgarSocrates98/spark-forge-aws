@@ -9,7 +9,7 @@ upstream:
   sha256: "75bec8852eeab24ead2e7f2cc741b4bf7c0a5bcf24a8afe29f2ff9520477da21"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming.py, sparkforge/facts/streaming.py]
+    files: [tests/test_facts_streaming.py, sparkforge_aws/facts/streaming.py]
     covers: [AC1, AC2]
     test: {path: tests/test_facts_streaming.py, name: test_progress_series_summarizes_temporal_state_and_watermark}
   - id: T2

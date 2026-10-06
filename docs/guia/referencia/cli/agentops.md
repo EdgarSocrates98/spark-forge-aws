@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge agentops`
+# `sparkforge-aws agentops`
 
 Inspeciona runs locais, compara baseline e atribui desperdicio observado.
 
@@ -8,18 +8,18 @@ Inspeciona runs locais, compara baseline e atribui desperdicio observado.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge agentops baseline`](#sparkforge-agentops-baseline) | Salva ou compara baseline local. |
-| [`sparkforge agentops compare`](#sparkforge-agentops-compare) | Compara dois runs locais. |
-| [`sparkforge agentops critical-path`](#sparkforge-agentops-critical-path) | Maiores duracoes, retries e waiting medidos do run. |
-| [`sparkforge agentops inspect`](#sparkforge-agentops-inspect) | Inspeciona um run local. |
-| [`sparkforge agentops timeline`](#sparkforge-agentops-timeline) | Linha do tempo do run, por lane de componente. |
+| [`sparkforge-aws agentops baseline`](#sparkforge-aws-agentops-baseline) | Salva ou compara baseline local. |
+| [`sparkforge-aws agentops compare`](#sparkforge-aws-agentops-compare) | Compara dois runs locais. |
+| [`sparkforge-aws agentops critical-path`](#sparkforge-aws-agentops-critical-path) | Maiores duracoes, retries e waiting medidos do run. |
+| [`sparkforge-aws agentops inspect`](#sparkforge-aws-agentops-inspect) | Inspeciona um run local. |
+| [`sparkforge-aws agentops timeline`](#sparkforge-aws-agentops-timeline) | Linha do tempo do run, por lane de componente. |
 
-## `sparkforge agentops baseline`
+## `sparkforge-aws agentops baseline`
 
 Salva ou compara baseline local.
 
 ```bash
-sparkforge agentops baseline --help
+sparkforge-aws agentops baseline --help
 ```
 
 ### Opções
@@ -36,12 +36,12 @@ sparkforge agentops baseline --help
 
 [`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
-## `sparkforge agentops compare`
+## `sparkforge-aws agentops compare`
 
 Compara dois runs locais.
 
 ```bash
-sparkforge agentops compare --help
+sparkforge-aws agentops compare --help
 ```
 
 ### Opções
@@ -57,12 +57,12 @@ sparkforge agentops compare --help
 
 [`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
-## `sparkforge agentops critical-path`
+## `sparkforge-aws agentops critical-path`
 
 Maiores duracoes, retries e waiting medidos do run.
 
 ```bash
-sparkforge agentops critical-path --help
+sparkforge-aws agentops critical-path --help
 ```
 
 ### Opções
@@ -77,12 +77,12 @@ sparkforge agentops critical-path --help
 
 [`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
-## `sparkforge agentops inspect`
+## `sparkforge-aws agentops inspect`
 
 Inspeciona um run local.
 
 ```bash
-sparkforge agentops inspect --help
+sparkforge-aws agentops inspect --help
 ```
 
 ### Opções
@@ -97,12 +97,12 @@ sparkforge agentops inspect --help
 
 [`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
-## `sparkforge agentops timeline`
+## `sparkforge-aws agentops timeline`
 
 Linha do tempo do run, por lane de componente.
 
 ```bash
-sparkforge agentops timeline --help
+sparkforge-aws agentops timeline --help
 ```
 
 ### Opções

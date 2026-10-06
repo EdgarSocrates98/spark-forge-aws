@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.workload.axis import Axis, unknown_axis
+from sparkforge_aws.workload.axis import Axis, unknown_axis
 
 
 class TestContrato:
@@ -25,7 +25,7 @@ class TestContrato:
             Axis(value="high", confidence="measured", basis="", evidence=("a1",))
 
     def test_unknown_axis_carries_what_is_missing(self):
-        eixo = unknown_axis("glue.job_run.distribution", "sparkforge collect glue-job-runs ...")
+        eixo = unknown_axis("glue.job_run.distribution", "sparkforge-aws collect glue-job-runs ...")
 
         assert eixo.value == "unknown"
         assert eixo.confidence == "unknown"

@@ -9,11 +9,11 @@ upstream:
   sha256: "5f31ec5b3a12de463f6b77b6ef32e318cf1d92cea2222b5cf2f8cff9fd15580b"
 tasks:
   - id: T1
-    files: [sparkforge/lab/__init__.py, sparkforge/lab/spec.py, labs/forge-lab/lab.yaml, tests/test_forge_lab.py]
+    files: [sparkforge_aws/lab/__init__.py, sparkforge_aws/lab/spec.py, labs/forge-lab/lab.yaml, tests/test_forge_lab.py]
     covers: [AC1]
     test: {path: tests/test_forge_lab.py, name: test_forge_lab_validates_topology_and_scenarios}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml, labs/forge-lab/compose.yaml]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml, labs/forge-lab/compose.yaml]
     covers: [AC2]
     test: {path: tests/test_forge_lab.py, name: test_forge_lab_analysis_is_offline_and_structured}
   - id: T3

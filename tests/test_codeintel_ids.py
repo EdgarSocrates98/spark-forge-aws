@@ -10,7 +10,7 @@ segredo entrar no banco: `def connect(password="hunter2")` levaria a senha para
 o indice, que persiste em disco. Valor literal e substituido por marcador.
 """
 
-from sparkforge.codeintel.ids import node_id, normalizar_assinatura
+from sparkforge_aws.codeintel.ids import node_id, normalizar_assinatura
 
 
 def test_mesmo_simbolo_no_mesmo_lugar_da_o_mesmo_id():

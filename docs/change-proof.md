@@ -1,10 +1,10 @@
 # Change Proof
 
-Depois que o operador aplica uma recomendação, `sparkforge proof` diz o que
+Depois que o operador aplica uma recomendação, `sparkforge-aws proof` diz o que
 cada obrigação de prova daquela mudança concluiu (§20 de `prompt_new_evo.md`).
 
 ```bash
-sparkforge proof --findings findings.json \
+sparkforge-aws proof --findings findings.json \
   --facts pyspark.json --facts funcval.json --facts bench.json \
   --after-facts depois-pyspark.json \
   --applied SF-PY-002

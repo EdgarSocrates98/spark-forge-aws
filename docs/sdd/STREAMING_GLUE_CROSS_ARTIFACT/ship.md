@@ -30,7 +30,7 @@ distingue drift de evidência insuficiente e preserva a cadeia de facts.
 - `python scripts/check_surface_lock.py`.
 - `python scripts/verify_offline_bundle.py --check`.
 - `python scripts/check_status_numbers.py --strict`.
-- `sparkforge sdd check --repo . --feature STREAMING_GLUE_CROSS_ARTIFACT`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_GLUE_CROSS_ARTIFACT`.
 - Suíte completa não executada; permanece para a próxima fase solicitada.
 
 ## Limites

@@ -1,6 +1,6 @@
 # Data Platform Ecosystem Inventory
 
-`sparkforge analyze platform-ecosystem --path <ecosystem.yaml>` normalizes
+`sparkforge-aws analyze platform-ecosystem --path <ecosystem.yaml>` normalizes
 Serving/OLAP, ingestion/connectors, AI Data Engineering and optional radar
 integrations.
 

@@ -40,7 +40,7 @@ Gateway, Code Intelligence, Decision Plane, ContextLedger, traces SQLite,
 economy router, security guardrails, workflow handoff, Forge Lab, evals e
 adapters CLI/MCP. Gaps verificáveis para esta entrega:
 
-- `sparkforge.agentic.memory` registra decisão sem candidate/trust/outcome gate e
+- `sparkforge_aws.agentic.memory` registra decisão sem candidate/trust/outcome gate e
   recupera somente por overlap de palavras;
 - não há envelope público que carregue origin, trust, taint,
   instruction_authority, scope e freshness por unidade de contexto;

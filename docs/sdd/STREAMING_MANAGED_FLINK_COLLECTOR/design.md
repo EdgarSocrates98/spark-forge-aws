@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/STREAMING_MANAGED_FLINK_COLLECTOR/define.md
   sha256: "b431e1a8f702b016c4fd1aa22d0fbc9370583d53d42d21be043134df4a94e9a8"
 files:
-  - {path: sparkforge/collect/managed_flink.py, action: create, reason: "Cliente kinesisanalyticsv2 read-only, normalização, redaction, limites, cache e manifesto."}
-  - {path: sparkforge/collect/base.py, action: modify, reason: "Registrar kind managed_flink_application no contrato de artifacts."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Adapter compartilhado de coleta e envelope de erro/cache."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo collect managed-flink."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP read-only de aquisição."}
+  - {path: sparkforge_aws/collect/managed_flink.py, action: create, reason: "Cliente kinesisanalyticsv2 read-only, normalização, redaction, limites, cache e manifesto."}
+  - {path: sparkforge_aws/collect/base.py, action: modify, reason: "Registrar kind managed_flink_application no contrato de artifacts."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Adapter compartilhado de coleta e envelope de erro/cache."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo collect managed-flink."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP read-only de aquisição."}
   - {path: parity.yaml, action: modify, reason: "Paridade CLI/MCP/files do collector."}
   - {path: manifest.json, action: modify, reason: "Registrar nova tool MCP na superfície publicada."}
   - {path: tests/test_collect_managed_flink.py, action: create, reason: "Cliente falso, redaction, cache, analyzer e paridade."}
@@ -72,4 +72,4 @@ estado, versão, checkpoint, paralelismo, VPC e logging retornados pelo
 
 - AWS Managed Service for Apache Flink `DescribeApplication` API v2:
   https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_DescribeApplication.html
-- `sparkforge rules lookup --category streaming` e `knowledge/streaming/runtime-matrix.md` para manter runtime e lacunas version-aware.
+- `sparkforge-aws rules lookup --category streaming` e `knowledge/streaming/runtime-matrix.md` para manter runtime e lacunas version-aware.

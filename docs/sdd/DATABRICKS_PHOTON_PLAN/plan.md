@@ -9,19 +9,19 @@ upstream:
   sha256: "35e8417d733c178e3eb907a6e2234aed089aef5fcfceab3ba47000b04294634b"
 tasks:
   - id: T1
-    files: [tests/test_databricks_photon_plan.py, sparkforge/facts/spark_plan.py, fixtures/plan/photon_join, fixtures/plan/photon_udf, tests/test_fixtures_golden_plan.py, docs/claims.lock.json]
+    files: [tests/test_databricks_photon_plan.py, sparkforge_aws/facts/spark_plan.py, fixtures/plan/photon_join, fixtures/plan/photon_udf, tests/test_fixtures_golden_plan.py, docs/claims.lock.json]
     covers: [AC1, AC3]
     test: {path: tests/test_databricks_photon_plan.py, name: test_plano_photon_gera_fact_de_photon}
   - id: T2
-    files: [tests/test_databricks_photon_plan.py, sparkforge/rules/engine.py]
+    files: [tests/test_databricks_photon_plan.py, sparkforge_aws/rules/engine.py]
     covers: [AC2, AC7]
     test: {path: tests/test_databricks_photon_plan.py, name: test_fact_de_photon_recusa_regra_de_plano_sem_declaracao}
   - id: T3
-    files: [tests/test_databricks_photon_plan.py, sparkforge/adapters/_core.py, sparkforge/facts/runtime_detect.py]
+    files: [tests/test_databricks_photon_plan.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/facts/runtime_detect.py]
     covers: [AC4, AC5]
     test: {path: tests/test_databricks_photon_plan.py, name: test_photon_off_contra_plano_photon_diverge}
   - id: T4
-    files: [tests/test_databricks_photon_plan.py, sparkforge/facts/spark_plan.py, rules/catalog/spark-plan.yaml, fixtures/plan/python_udf_in_plan, fixtures/plan/photon_udf]
+    files: [tests/test_databricks_photon_plan.py, sparkforge_aws/facts/spark_plan.py, rules/catalog/spark-plan.yaml, fixtures/plan/python_udf_in_plan, fixtures/plan/photon_udf]
     covers: [AC6]
     test: {path: tests/test_databricks_photon_plan.py, name: test_arrow_eval_python_nao_afirma_pandas}
   - id: T5
@@ -203,9 +203,9 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.facts.spark_plan import extract_plan_path
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.spark_plan import extract_plan_path
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 PLANOS = ROOT / "fixtures" / "plan"
@@ -255,7 +255,7 @@ def test_plano_sem_photon_nao_muda_veredito():
 3. Vermelho: `python -m pytest tests/test_databricks_photon_plan.py::test_plano_photon_gera_fact_de_photon -q`
    — `assert 0 == 1` (nenhum `plan.photon`).
 
-4. Código, em `sparkforge/facts/spark_plan.py`:
+4. Código, em `sparkforge_aws/facts/spark_plan.py`:
    - `EMITTED_KINDS` ganha `"plan.photon"`.
    - Constante `_PHOTON_PREFIX = "Photon"` e `_PHOTON_EXPLANATION = "photon explanation"`,
      com comentário citando `knowledge/databricks/runtime-matrix.md` §4 e dizendo que a
@@ -284,7 +284,7 @@ def test_plano_sem_photon_nao_muda_veredito():
 
 ```python
 def test_fact_de_photon_recusa_regra_de_plano_sem_declaracao():
-    from sparkforge.findings.models import Fact
+    from sparkforge_aws.findings.models import Fact
 
     base = _facts("photon_join")
     join = Fact(
@@ -310,7 +310,7 @@ def test_udf_sob_photon_continua_julgada():
 
 2. Vermelho: `python -m pytest tests/test_databricks_photon_plan.py::test_fact_de_photon_recusa_regra_de_plano_sem_declaracao -q`
    — `AssertionError` em `"SF-PLAN-003" not in ...`.
-3. Código, em `sparkforge/rules/engine.py`: `_photon_recusa(rule, runtime, present_kinds)`
+3. Código, em `sparkforge_aws/rules/engine.py`: `_photon_recusa(rule, runtime, present_kinds)`
    passa a disparar quando `"plan.photon" in present_kinds` OU (runtime databricks e
    photon `on`). `_PHOTON_NAO_CALA` ganha `"plan.aqe"`, com o motivo: o nó
    `AdaptiveSparkPlan` continua no plano Photon observado (§4), e SF-PLAN-004 lê esse
@@ -327,7 +327,7 @@ def test_udf_sob_photon_continua_julgada():
 
 ```python
 def test_photon_off_contra_plano_photon_diverge():
-    from sparkforge.adapters._core import build_runtime
+    from sparkforge_aws.adapters._core import build_runtime
 
     context, facts = build_runtime(databricks="19", photon="off", facts=_facts("photon_join"))
     assert context.photon == "on"
@@ -337,7 +337,7 @@ def test_photon_off_contra_plano_photon_diverge():
 
 
 def test_plano_photon_cala_sf_env_006():
-    from sparkforge.adapters._core import build_runtime
+    from sparkforge_aws.adapters._core import build_runtime
 
     context, facts = build_runtime(databricks="19", facts=_facts("photon_join"))
     assert "SF-ENV-006" not in {f.rule_id for f in judge(facts, load_catalog(), context.to_dict())}
@@ -348,9 +348,9 @@ def test_plano_photon_cala_sf_env_006():
 2. Vermelho: `python -m pytest tests/test_databricks_photon_plan.py::test_photon_off_contra_plano_photon_diverge -q`
    — `assert 'off' == 'on'`.
 3. Código:
-   - `sparkforge/adapters/_core.py::_runtime_reading`: `if fact.kind == "plan.photon": return ("plan", "photon", "on")`,
+   - `sparkforge_aws/adapters/_core.py::_runtime_reading`: `if fact.kind == "plan.photon": return ("plan", "photon", "on")`,
      com comentário (observação do artefato, não declaração).
-   - `sparkforge/facts/runtime_detect.py`: `_photon` separa observação (toda fonte que
+   - `sparkforge_aws/facts/runtime_detect.py`: `_photon` separa observação (toda fonte que
      não é `cli`) de declaração (`cli`). Observação válida vence; declaração que
      discorda dela gera a divergência `photon: o plano mostra Photon (fonte plan) e a
      declaracao cli diz off; vale o artefato`. `_photon_fact(photon, fonte)` grava
@@ -390,7 +390,7 @@ def test_arrow_eval_python_nao_afirma_pandas():
 2. Vermelho: `python -m pytest tests/test_databricks_photon_plan.py::test_arrow_eval_python_nao_afirma_pandas -q`
    — `assert ['pandas'] == ['arrow']`.
 3. Código:
-   - `sparkforge/facts/spark_plan.py`, `_PYTHON_UDF_OPERATORS`: `"ArrowEvalPython": "arrow"`,
+   - `sparkforge_aws/facts/spark_plan.py`, `_PYTHON_UDF_OPERATORS`: `"ArrowEvalPython": "arrow"`,
      com comentário: o nó é o mesmo para `pandas_udf` e para UDF Python otimizada para
      Arrow, e o plano não diz qual (observado em §4).
    - `rules/catalog/spark-plan.yaml`, SF-PLAN-002: `when` vira
@@ -439,7 +439,7 @@ def test_knowledge_registra_o_extrator_sob_photon():
    observada num ambiente; texto de suporte parcial não visto). NÃO mexa na tabela da
    seção 1.
 4. Registros: sha256 no `knowledge/offline-manifest.json` por
-   `sparkforge.tools.offline._content_sha256`; `python scripts/check_surface_lock.py --update`;
+   `sparkforge_aws.tools.offline._content_sha256`; `python scripts/check_surface_lock.py --update`;
    `python scripts/verify_offline_bundle.py`;
    `python -m pytest tests/test_offline_expansion.py tests/test_surface_lock.py tests/test_runtime_matrix_drift.py -q`.
 5. Verde: o comando do passo 2; `python scripts/check_vnext_claims.py`.

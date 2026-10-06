@@ -30,10 +30,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.case.playbook import build_playbook
-from sparkforge.case.router import next_step
-from sparkforge.case.store import new_case, set_phase
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.case.playbook import build_playbook
+from sparkforge_aws.case.router import next_step
+from sparkforge_aws.case.store import new_case, set_phase
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUTING = ROOT / "rules" / "catalog" / "routing.yaml"
@@ -130,7 +130,7 @@ class TestAgentRoutePropagation:
         caso do teste acima, com achado de SF-GLUE, para deixar explicito que
         as duas rotas (skill e agente) convivem sem se pisar."""
         step = next_step(_case(), ["SF-GLUE-002"])
-        assert step["recommended_skill"] == "sparkforge-diagnose"
+        assert step["recommended_skill"] == "sparkforge-aws-diagnose"
         assert "Nenhuma regra" in step["reason"]
 
     def test_alternatives_never_contain_an_agent_route(self):

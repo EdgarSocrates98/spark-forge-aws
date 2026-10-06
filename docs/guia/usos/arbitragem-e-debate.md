@@ -21,25 +21,25 @@ Rode da raiz do repositório. Os arquivos são fixtures sintéticas.
 2. Julgue a **união** dos facts:
 
    ```bash
-   sparkforge judge --facts $A/facts.json --facts $B/facts.json --out "$DEMO/findings.json"
+   sparkforge-aws judge --facts $A/facts.json --facts $B/facts.json --out "$DEMO/findings.json"
    ```
 
 3. Arbitre sobre os mesmos insumos. Este comando grava no blackboard:
 
    ```bash
-   sparkforge arbitrate --findings "$DEMO/findings.json" --facts $A/facts.json --facts $B/facts.json --repo "$DEMO"
+   sparkforge-aws arbitrate --findings "$DEMO/findings.json" --facts $A/facts.json --facts $B/facts.json --repo "$DEMO"
    ```
 
 4. Veja o resumo do que foi gravado:
 
    ```bash
-   sparkforge blackboard summary --repo "$DEMO"
+   sparkforge-aws blackboard summary --repo "$DEMO"
    ```
 
 5. Leia a contradição:
 
    ```bash
-   sparkforge blackboard list --repo "$DEMO" --type contradictions
+   sparkforge-aws blackboard list --repo "$DEMO" --type contradictions
    ```
 
 ## Para que serve
@@ -83,7 +83,7 @@ Trecho real do `judge` (passo 2 da receita):
     ],
     "unresolved": [{"question": "lakeformation.unresolved: que medida fecha a lacuna do fact f_4d32fe?", ...}],
     "persisted": false,
-    "note": "calculado, nao gravado. O registro auditavel e `sparkforge arbitrate`."
+    "note": "calculado, nao gravado. O registro auditavel e `sparkforge-aws arbitrate`."
   },
   ...
 }
@@ -164,7 +164,7 @@ O **blackboard** é o registro do case, em arquivos `.jsonl` dentro de
 `.sparkforge/blackboard/`.
 
 ```bash
-sparkforge blackboard summary --repo "$DEMO"
+sparkforge-aws blackboard summary --repo "$DEMO"
 ```
 
 ```json
@@ -175,7 +175,7 @@ sparkforge blackboard summary --repo "$DEMO"
 }
 ```
 
-Para ver um tipo: `sparkforge blackboard list --repo "$DEMO" --type <tipo>`. Os tipos
+Para ver um tipo: `sparkforge-aws blackboard list --repo "$DEMO" --type <tipo>`. Os tipos
 são `claims`, `evidence`, `hypotheses`, `objections`, `rebuttals`, `contradictions`,
 `experiments`, `decisions` e `unknowns`. A lacuna real deste exemplo:
 
@@ -190,8 +190,8 @@ são `claims`, `evidence`, `hypotheses`, `objections`, `rebuttals`, `contradicti
 O debate exige um teto declarado no case. Sem ele, nada começa.
 
 ```bash
-sparkforge case open --repo "$DEMO" --case-id demo-conflito --now 2026-09-13T13:00:00Z --glue 5.0
-sparkforge budget show --repo "$DEMO"
+sparkforge-aws case open --repo "$DEMO" --case-id demo-conflito --now 2026-09-13T13:00:00Z --glue 5.0
+sparkforge-aws budget show --repo "$DEMO"
 ```
 
 ```json
@@ -223,7 +223,7 @@ Agora `budget show` responde `"status": "declared"`.
 ### 5. Debate: start, next, submit
 
 ```bash
-sparkforge debate start --rules SF-GRAPH-005,SF-LF-001 --findings "$DEMO/findings.json" \
+sparkforge-aws debate start --rules SF-GRAPH-005,SF-LF-001 --findings "$DEMO/findings.json" \
   --facts $A/facts.json --facts $B/facts.json --repo "$DEMO"
 ```
 
@@ -245,7 +245,7 @@ entrega o **brief**: o que o lado defende, o que ele contesta, os `fact_id` que 
 pode citar e o formato da submissão (`submission_schema`).
 
 ```bash
-sparkforge debate next --repo "$DEMO" --debate dbt_ea104601
+sparkforge-aws debate next --repo "$DEMO" --debate dbt_ea104601
 ```
 
 ```json
@@ -264,7 +264,7 @@ Uma submissão é um arquivo JSON. Exemplo para o lado A, rodada 1 (`sub_a1.json
 ```
 
 ```bash
-sparkforge debate submit --repo "$DEMO" --debate dbt_ea104601 --file sub_a1.json
+sparkforge-aws debate submit --repo "$DEMO" --debate dbt_ea104601 --file sub_a1.json
 ```
 
 Recusas reais, sempre com nome e sem gravar nada:
@@ -299,9 +299,9 @@ Só existe vencedor quando **exatamente um** lado concede (`"concede": true`) e 
 ### 6. Árbitro e decisões
 
 ```bash
-sparkforge debate referee --repo "$DEMO"
-sparkforge decisions list --repo "$DEMO"
-sparkforge decisions explain --repo "$DEMO" --id dec_074f1c3d
+sparkforge-aws debate referee --repo "$DEMO"
+sparkforge-aws decisions list --repo "$DEMO"
+sparkforge-aws decisions explain --repo "$DEMO" --id dec_074f1c3d
 ```
 
 O `referee` recusa quatro coisas: hipótese que sobrevive ao fechamento, claim sem
@@ -312,7 +312,7 @@ nunca uma nota. Trecho real:
 {"upheld": true, "violation_count": 0,
  "protocol": [..., {"stage": "VERIFICATION", "observed_in": "not_modeled", "modeled": false}],
  "refused": [
-   {"what": "generate_debate", "why": "Gerar claim, objecao e replica exige provider, e nada em `sparkforge/` chama provider (regra 23 do CLAUDE.md). ..."},
+   {"what": "generate_debate", "why": "Gerar claim, objecao e replica exige provider, e nada em `sparkforge_aws/` chama provider (regra 23 do CLAUDE.md). ..."},
    {"what": "verification_stage", ...},
    {"what": "confidence_score", ...}
  ],
@@ -324,7 +324,7 @@ nunca uma nota. Trecho real:
 ### 7. Níveis de autonomia
 
 ```bash
-sparkforge autonomy show --level L0
+sparkforge-aws autonomy show --level L0
 ```
 
 ```json
@@ -339,11 +339,11 @@ gravam decisão e **nunca** aplicam mudança.
 
 ## O que o pacote NÃO faz
 
-- **Não gera argumento e não chama modelo nenhum.** O código de `sparkforge/` não
+- **Não gera argumento e não chama modelo nenhum.** O código de `sparkforge_aws/` não
   chama provider de IA (regra 23). Quem escreve as submissões é o host: a skill
   [`run-debate`](../referencia/skills/run-debate.md) numa sessão, ou
   `scripts/run_debate.py`, que roda `claude -p` **fora** do pacote. O placar dessas
-  execuções sai de `python -m sparkforge.evals debate --run <nome>`.
+  execuções sai de `python -m sparkforge_aws.evals debate --run <nome>`.
 - **Não estima ganho** e **não publica score** como confiança medida. Os pesos
   internos da arbitragem são convenção, sem calibração.
 - **Não aplica mudança.** `applied_changes` é sempre `false`. O ADR (registro de

@@ -38,44 +38,44 @@ def _names(wheel: zipfile.ZipFile, prefix: str) -> list[str]:
 
 class TestWheelCarriesTheKnowledgeLayer:
     def test_catalog_yaml_is_inside_the_package(self, wheel):
-        found = _names(wheel, "sparkforge/rules/catalog/")
+        found = _names(wheel, "sparkforge_aws/rules/catalog/")
         assert [n for n in found if n.endswith(".yaml")], sorted(wheel.namelist())[:20]
 
     def test_routing_is_included_too(self, wheel):
         """`next_step` fica inerte sem routing.yaml, e o sintoma seria um
         roteamento vazio em vez de um erro."""
-        assert "sparkforge/rules/catalog/routing.yaml" in wheel.namelist()
+        assert "sparkforge_aws/rules/catalog/routing.yaml" in wheel.namelist()
 
     def test_knowledge_is_inside_the_package(self, wheel):
-        assert _names(wheel, "sparkforge/knowledge/")
+        assert _names(wheel, "sparkforge_aws/knowledge/")
 
     def test_dq_ai_matrix_is_inside_the_package(self, wheel):
-        assert "sparkforge/knowledge/glue/dq-advanced-matrix.yaml" in wheel.namelist()
+        assert "sparkforge_aws/knowledge/glue/dq-advanced-matrix.yaml" in wheel.namelist()
 
     def test_schemas_survived_the_backend_swap(self, wheel):
         """`package-data` do setuptools embarcava os JSON Schemas. Se a troca de
         backend os perder, `validate_output` quebra no pacote instalado -- e a
         secao 5.2 da Fase 0 diz que finding sem schema nao e recusado."""
-        assert _names(wheel, "sparkforge/findings/schemas/")
+        assert _names(wheel, "sparkforge_aws/findings/schemas/")
 
     def test_o_dicionario_de_dominio_entra_no_wheel(self, wheel):
-        """`domain_terms.yaml` e o unico dado nao-Python DENTRO de `sparkforge/`.
+        """`domain_terms.yaml` e o unico dado nao-Python DENTRO de `sparkforge_aws/`.
 
         Ele nao passa por `force-include` como `rules/catalog` e `knowledge` --
-        chega pelo `packages = ["sparkforge"]`, que e outro caminho do hatchling
+        chega pelo `packages = ["sparkforge_aws"]`, que e outro caminho do hatchling
         e pode se comportar de outro jeito num upgrade. Se ele sumir,
         `codeintel.ranking.expandir` levanta no pacote instalado e fica verde na
         arvore de trabalho, que e a forma de falha que a classe inteira existe
         para pegar.
         """
-        assert "sparkforge/codeintel/domain_terms.yaml" in wheel.namelist()
+        assert "sparkforge_aws/codeintel/domain_terms.yaml" in wheel.namelist()
 
     def test_the_counts_are_not_zero(self, wheel):
         """Asserção de contagem: `force-include` sumindo num upgrade do
         hatchling nao quebraria import nenhum -- so devolveria catalogo
         vazio."""
-        assert len(_names(wheel, "sparkforge/rules/catalog/")) >= 8
-        assert len(_names(wheel, "sparkforge/knowledge/")) >= 15
+        assert len(_names(wheel, "sparkforge_aws/rules/catalog/")) >= 8
+        assert len(_names(wheel, "sparkforge_aws/knowledge/")) >= 15
 
 
 # A constante que o hatchling usa como `SOURCE_DATE_EPOCH` quando a variavel

@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters.cli import main
+from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "knowledge_drift"
@@ -28,7 +28,7 @@ LF = "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-consideratio
 
 
 def _rodar(caso: str, monkeypatch, capsys, raiz: Path | None = ROOT) -> dict:
-    from sparkforge import knowledge_drift
+    from sparkforge_aws import knowledge_drift
 
     meta = yaml.safe_load((FIXTURES / caso / "meta.yaml").read_text(encoding="utf-8"))
     # O golden descreve o impacto sobre ESTE repositorio. Sem fixar a raiz, o

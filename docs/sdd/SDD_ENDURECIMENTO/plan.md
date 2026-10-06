@@ -13,15 +13,15 @@ tasks:
     covers: [AC11]
     test: {path: tests/test_sdd_eval_suite.py, name: test_notas_de_hash_e_de_baseline}
   - id: T2
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC5]
     test: {path: tests/test_sdd.py, name: test_moved_de_outra_mudanca}
   - id: T3
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC6]
     test: {path: tests/test_sdd.py, name: test_relatorio_por_symlink_nao_escapa}
   - id: T4
-    files: [sparkforge/sdd/checks.py, sparkforge/sdd/schema/ship.json, tests/test_sdd.py, tests/test_sdd_operator.py]
+    files: [sparkforge_aws/sdd/checks.py, sparkforge_aws/sdd/schema/ship.json, tests/test_sdd.py, tests/test_sdd_operator.py]
     covers: [AC1, AC2, AC3, AC4, AC7, AC8]
     test: {path: tests/test_sdd.py, name: test_ship_done_sem_evidencia_recusa}
   - id: T5
@@ -39,7 +39,7 @@ tasks:
 Regras que mordem toda tarefa: edição só pela ferramenta de edição, LF,
 `.claude/agents/README.md` fica fora da árvore e fora do índice, commit por
 `git commit -F <arquivo>`, um por tarefa. `SF` abaixo é
-`python -c "import sys;from sparkforge.adapters.cli import main;sys.exit(main(sys.argv[1:]))"`.
+`python -c "import sys;from sparkforge_aws.adapters.cli import main;sys.exit(main(sys.argv[1:]))"`.
 
 ## T1 — notas de hash e de baseline
 
@@ -90,7 +90,7 @@ def test_moved_de_outra_mudanca(tmp_path):
 
 2. `python -m pytest tests/test_sdd.py::test_moved_de_outra_mudanca -q`: a
    lista de recusas sai vazia.
-3. Em `sparkforge/sdd/checks.py::_conferir_movido`, antes de ler o relatório:
+3. Em `sparkforge_aws/sdd/checks.py::_conferir_movido`, antes de ler o relatório:
 
 ```python
     ident = movido["change_id"]
@@ -331,7 +331,7 @@ def _codigos_emitidos() -> set[str]:
     codigos: set[str] = set()
     dinamicos: list[str] = []
     for nome in ("checks.py", "stamp.py"):
-        arvore = ast.parse((ROOT / "sparkforge" / "sdd" / nome).read_bytes())
+        arvore = ast.parse((ROOT / "sparkforge_aws" / "sdd" / nome).read_bytes())
         for no in ast.walk(arvore):
             if isinstance(no, ast.Call):
                 funcao = no.func

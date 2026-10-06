@@ -1,4 +1,4 @@
-from sparkforge.dqdl.validator import validate_dqdl_text
+from sparkforge_aws.dqdl.validator import validate_dqdl_text
 
 
 def test_validates_external_dqdl_without_generating_rules():

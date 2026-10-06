@@ -45,7 +45,7 @@ diz por quê.
 
 O operador **não tem Control-M instalado**, não tem artefato de runtime, e pediu
 *"conhecimento para atuar em todas as versões entre `9.0.21.200` e
-`9.0.22.100`"*. O incremento 1 entregou **dado e consulta** — `sparkforge
+`9.0.22.100`"*. O incremento 1 entregou **dado e consulta** — `sparkforge-aws
 controlm describe --version <v>` — e registrou aqui que não havia extrator nem
 regra, porque sem artefato não há corpus e regra sem corpus é o que este
 repositório recusa.
@@ -57,12 +57,12 @@ cliente**, que `ctm build` valida e `ctm deploy` publica. O operador
 plausivelmente a tem mesmo sem ter o Control-M — é a mesma natureza de um
 `main.tf` ou de um `.py` de PySpark, que este motor já lê.
 
-Sobre esse artefato nasceu o extrator `sparkforge/facts/controlm_jobs.py` e a
+Sobre esse artefato nasceu o extrator `sparkforge_aws/facts/controlm_jobs.py` e a
 área de regra `SF-CTM`, com **uma** regra: capacidade usada pelo job que a
 versão declarada não tem. A fronteira de versão **não é repetida na regra** —
 ela mora neste documento e no YAML irmão, e o cruzamento acontece no extrator,
 que emite o kind já decidido. Ver
-`docs/superpowers/specs/2026-09-01-sparkforge-controlm-jobs-as-code-design.md`.
+`docs/superpowers/specs/2026-09-01-sparkforge-aws-controlm-jobs-as-code-design.md`.
 
 Duas coisas continuam **não** existindo, e as duas por falta de fonte, não por
 falta de tempo:
@@ -418,7 +418,7 @@ Duas sondas, e as duas apontam para uma entrada **desta** matriz:
 | `Folders`/`SubFolders` como **lista** | `folders_array_structure` | `introduced_in 9.0.22.000` |
 
 Cinco capacidades foram avaliadas e **recusadas** como sonda, com a razão em
-`sparkforge/facts/controlm_jobs.py`: `mssql_agentjob_rerun_from_step` (a
+`sparkforge_aws/facts/controlm_jobs.py`: `mssql_agentjob_rerun_from_step` (a
 capacidade é o rerun a partir do passo, não o job type, que é anterior),
 `created_by_under_strict_author_security` (a fronteira é sobre configuração do
 Control-M/EM, fora do artefato), `external_vault_cyberark_secrets` (mora em

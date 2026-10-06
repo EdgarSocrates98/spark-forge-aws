@@ -114,7 +114,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 LOCK_PATH = ROOT / "knowledge" / "sources.lock.json"
-USER_AGENT = "sparkforge-refresh-knowledge/1.0 (+https://github.com/EdgarSocrates98/spark-forge-aws)"
+USER_AGENT = "sparkforge-aws-refresh-knowledge/1.0 (+https://github.com/EdgarSocrates98/spark-forge-aws)"
 TIMEOUT_S = 30
 
 # Um segmento de versao no path torna a URL imutavel. Cobre os tres formatos que
@@ -198,14 +198,14 @@ def knowledge_sources() -> dict[str, dict]:
     Derivada, como a origem de regra: pagina nova de knowledge com fonte nova
     passa a ser vigiada sem ninguem registrar a URL em outro lugar.
 
-    O leitor mora em `sparkforge/knowledge_freshness.py::fontes_de_knowledge`,
+    O leitor mora em `sparkforge_aws/knowledge_freshness.py::fontes_de_knowledge`,
     e nao aqui, desde a frente de freshness (2026-09-11): o verbo
     `knowledge_path` precisa dele no pacote instalado, e duas copias do mesmo
     leitor divergiriam na primeira correcao. As regras de leitura (heading
     exatamente `Fontes`, secao ate heading de nivel igual ou maior, URL em crase
     ignorada) e as razoes medidas de cada uma estao no docstring de la.
     """
-    from sparkforge.knowledge_freshness import fontes_de_knowledge
+    from sparkforge_aws.knowledge_freshness import fontes_de_knowledge
 
     por_url, _ = fontes_de_knowledge(ROOT / "knowledge")
     return por_url
@@ -226,7 +226,7 @@ def watchlist() -> dict[str, dict]:
     declara e a que a pagina declara e informacao sobre qual das duas citacoes
     esta velha; resolve-la aqui seria apagar a pergunta.
     """
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     citing: dict[str, list[str]] = defaultdict(list)
     dates: dict[str, set[str]] = defaultdict(set)
@@ -329,7 +329,7 @@ def compare(
         # `changed_at` e a DATA em que o hash mudou pela ultima vez. Sem ela, o
         # `--update` sobrescrevia `sha256` e `checked_at` e a mudanca se perdia:
         # o lock dizia "conferida hoje" e nao "mudou hoje". E ela que deixa
-        # `sparkforge/knowledge_freshness.py` dizer `stale` -- "a fonte mudou
+        # `sparkforge_aws/knowledge_freshness.py` dizer `stale` -- "a fonte mudou
         # depois da data em que a regra a validou". Fonte nova nao ganha
         # `changed_at` (nao ha antes para comparar), e a inalcancavel mantem a
         # entrada anterior inteira, no ramo de cima.
@@ -387,16 +387,16 @@ def sync_metadata(entries: dict[str, dict], lock: dict) -> dict:
 
 
 def impacto(lock: dict, today: str, mudadas: list[str]) -> dict | None:
-    """A secao "Impacto" do PR: o Drift Radar (`sparkforge.knowledge_drift`) sobre
+    """A secao "Impacto" do PR: o Drift Radar (`sparkforge_aws.knowledge_drift`) sobre
     o lock que acabou de ser conferido, restrito as URLs que mudaram. A MESMA
-    funcao do verbo `sparkforge knowledge drift` -- uma conta so, duas portas."""
+    funcao do verbo `sparkforge-aws knowledge drift` -- uma conta so, duas portas."""
     if not mudadas:
         return None
     from datetime import date
 
-    from sparkforge import knowledge_drift as radar
-    from sparkforge.knowledge_freshness import fontes_de_knowledge
-    from sparkforge.rules.loader import catalog_dir, load_catalog
+    from sparkforge_aws import knowledge_drift as radar
+    from sparkforge_aws.knowledge_freshness import fontes_de_knowledge
+    from sparkforge_aws.rules.loader import catalog_dir, load_catalog
 
     fontes = {u: e for u, e in (lock.get("sources") or {}).items() if u in mudadas}
     _, por_doc = fontes_de_knowledge(ROOT / "knowledge")
@@ -475,7 +475,7 @@ def render_report(
         lines.append("")
 
     if impacto is not None:
-        from sparkforge.knowledge_drift import render_markdown
+        from sparkforge_aws.knowledge_drift import render_markdown
 
         lines.append(render_markdown(impacto))
 

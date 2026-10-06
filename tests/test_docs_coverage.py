@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 
-from sparkforge.adapters.tools import TOOLS
+from sparkforge_aws.adapters.tools import TOOLS
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -60,7 +60,7 @@ def _cli_verbs() -> set[str]:
     Mesma disciplina de `test_agents_md_lists_every_coordinator`, que deriva os
     coordenadores do diretório: lista copiada envelhece sem que nada acuse.
     """
-    from sparkforge.adapters.cli import build_parser
+    from sparkforge_aws.adapters.cli import build_parser
 
     verbs: set[str] = set()
     for action in build_parser()._actions:
@@ -73,15 +73,15 @@ def _commands_cited(text: str) -> set[str]:
     """Os verbos que um documento cita como comando.
 
     Duas formas, e só elas: linha de bloco de código que começa com
-    `sparkforge `, e trecho inline entre crases. A prosa "a CLI `sparkforge`
+    `sparkforge-aws `, e trecho inline entre crases. A prosa "a CLI `sparkforge-aws`
     faz tudo" fica de fora de propósito — ali não há verbo citado.
     """
     cited: set[str] = set()
     for line in text.split("\n"):
         stripped = line.strip()
-        if stripped.startswith("sparkforge "):
+        if stripped.startswith("sparkforge-aws "):
             cited.add(stripped.split()[1])
-    cited |= set(re.findall(r"`sparkforge\s+([a-z][a-z0-9-]*)", text))
+    cited |= set(re.findall(r"`sparkforge-aws\s+([a-z][a-z0-9-]*)", text))
     return cited
 
 
@@ -94,7 +94,7 @@ def _section(text: str, heading: str) -> str:
 
 def test_manifest_counts_match_measurements():
     manifest = json.loads(_read("manifest.json"))
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     skills = {
         path.name
@@ -169,7 +169,7 @@ class TestReadme:
         assert "Copilot" in self.README
 
     def test_documents_the_cli(self):
-        assert "sparkforge" in self.README
+        assert "sparkforge-aws" in self.README
         assert "runtime detect" in self.README
         assert "analyze pyspark" in self.README
         assert "judge" in self.README
@@ -195,7 +195,7 @@ class TestReadme:
         assert "knowledge" in lowered
 
     def test_readme_documents_the_playbook(self):
-        assert "sparkforge playbook" in self.README
+        assert "sparkforge-aws playbook" in self.README
 
     def test_readme_documents_the_two_agent_layers(self):
         lowered = self.README.lower()
@@ -211,7 +211,7 @@ class TestGuia:
         cls.GUIA = _read("GUIA_DE_USO.md")
 
     def test_documents_sparkforge_resume(self):
-        assert "sparkforge resume" in self.GUIA
+        assert "sparkforge-aws resume" in self.GUIA
 
     def test_documents_what_is_committed_versus_not(self):
         lowered = self.GUIA.lower()
@@ -231,7 +231,7 @@ class TestGuia:
         a CLI não tem. Renomear ou remover um verbo passa a acusar aqui.
         """
         cited = _commands_cited(self.GUIA)
-        assert cited, "o guia deixou de citar qualquer comando `sparkforge`"
+        assert cited, "o guia deixou de citar qualquer comando `sparkforge-aws`"
         unknown = cited - _cli_verbs()
         assert not unknown, f"o guia ensina verbo que a CLI não tem: {sorted(unknown)}"
 
@@ -245,9 +245,9 @@ class TestGuia:
         impede a regressão.
         """
         criterio = _section(self.GUIA, "## 8. Critério de conclusão")
-        assert "sparkforge benchmark" in criterio
-        assert "sparkforge funcval plan" in criterio
-        assert "sparkforge funcval compare" in criterio
+        assert "sparkforge-aws benchmark" in criterio
+        assert "sparkforge-aws funcval plan" in criterio
+        assert "sparkforge-aws funcval compare" in criterio
 
     def test_documents_the_two_funcval_verbs_where_it_teaches_commands(self):
         """`funcval` é a entrega da Fase 4c, e o guia é o único documento de uso
@@ -319,10 +319,10 @@ class TestManifest:
         """A concordancia entre as quatro fontes vive em
         `tests/test_package_importable.py`. Aqui so se garante que o manifesto
         nao ficou para tras do pacote."""
-        import sparkforge
+        import sparkforge_aws
 
         manifest = json.loads(_read("manifest.json"))
-        assert manifest["version"] == sparkforge.__version__
+        assert manifest["version"] == sparkforge_aws.__version__
 
     def test_tools_list_equals_the_real_tools_keys(self):
         manifest = json.loads(_read("manifest.json"))
@@ -362,7 +362,7 @@ class TestManifest:
         `load_catalog()` exclui `routing.yaml` por construcao, entao o numero
         certo e o de regras de DIAGNOSTICO -- as rotas se contam a parte.
         """
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         manifest = json.loads(_read("manifest.json"))
         assert manifest["knowledge_base"]["rule_count"] == len(load_catalog())

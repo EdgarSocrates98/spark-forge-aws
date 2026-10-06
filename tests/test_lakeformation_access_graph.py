@@ -15,11 +15,11 @@ import pathlib
 
 import pytest
 
-from sparkforge.facts.glue_resource_link import extract_glue_resource_link_tree
-from sparkforge.facts.iam_access import extract_iam_access_tree
-from sparkforge.facts.lakeformation_grants import extract_lakeformation_tree
-from sparkforge.findings.models import Fact
-from sparkforge.lakeformation.graph import (
+from sparkforge_aws.facts.glue_resource_link import extract_glue_resource_link_tree
+from sparkforge_aws.facts.iam_access import extract_iam_access_tree
+from sparkforge_aws.facts.lakeformation_grants import extract_lakeformation_tree
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.lakeformation.graph import (
     STATUS_BLOCKING,
     STATUS_GRANTED,
     STATUS_NOT_APPLICABLE,
@@ -238,7 +238,7 @@ class TestAPernaDeResourceLinkPassouASerMEDIDA:
     def test_objeto_que_nao_e_link_sai_NOT_APPLICABLE(self):
         """Mesma razão de `registered: False`: o acesso não passa por link, e
         marcá-lo `missing` acusaria o arranjo em que ele não participa."""
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.findings.models import Fact
 
         facts = _facts(LF / "grant_de_leitura_em_local_registrado", extract_lakeformation_tree)
         tabela = build_access_graph(facts)["target_table"]

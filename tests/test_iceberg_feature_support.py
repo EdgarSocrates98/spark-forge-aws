@@ -8,9 +8,9 @@ recusar.
 """
 import pytest
 
-import sparkforge.knowledge_ref as kr
-from sparkforge.facts import runtime_matrix
-from sparkforge.storage import feature_support
+import sparkforge_aws.knowledge_ref as kr
+from sparkforge_aws.facts import runtime_matrix
+from sparkforge_aws.storage import feature_support
 
 
 def _limpa_caches():
@@ -28,7 +28,7 @@ def _restaura_a_matriz_real():
 
 
 def _matriz_sintetica(tmp_path, monkeypatch, corpo: str):
-    pacote = tmp_path / "site-packages" / "sparkforge"
+    pacote = tmp_path / "site-packages" / "sparkforge_aws"
     conhecimento = pacote / "knowledge"
     (conhecimento / "storage").mkdir(parents=True)
     (conhecimento / "storage" / "iceberg-feature-support.yaml").write_text(corpo, encoding="utf-8")
@@ -243,7 +243,7 @@ class TestMatrizPublicada:
         ela, `UNKNOWN` vira silencio."""
         import yaml
 
-        from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
+        from sparkforge_aws.knowledge_ref import knowledge_dir, safe_knowledge_file
 
         caminho = safe_knowledge_file(
             knowledge_dir(), "storage/iceberg-feature-support.yaml"
@@ -344,7 +344,7 @@ class TestResolucaoDeCaminhoNoPacoteInstalado:
     """Modulo novo que le dado do disco repete o bug de path da Fase SF-MIG se
     escrever a propria conta de `parents[N]`: `pyproject.toml` empacota
     `knowledge/` DENTRO do pacote, um nivel mais fundo do que a conta do
-    checkout alcanca. Ver a docstring de `sparkforge/facts/runtime_matrix.py`.
+    checkout alcanca. Ver a docstring de `sparkforge_aws/facts/runtime_matrix.py`.
     """
 
     def test_le_a_matriz_do_layout_de_pacote_instalado(self, tmp_path, monkeypatch):

@@ -1,6 +1,6 @@
 import pytest
 
-from sparkforge.rules.expr import ExprError, evaluate
+from sparkforge_aws.rules.expr import ExprError, evaluate
 
 CTX = {
     "measures": {"max_ms": 41000, "p50_ms": 1200, "run_length": 12},

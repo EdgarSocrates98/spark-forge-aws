@@ -1,14 +1,14 @@
-"""`sparkforge doctor`: cada status de cada checagem, o exit e a tool sem rede."""
+"""`sparkforge-aws doctor`: cada status de cada checagem, o exit e a tool sem rede."""
 from __future__ import annotations
 
 import json
 
 import pytest
 
-from sparkforge import __version__
-from sparkforge import doctor as dr
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
+from sparkforge_aws import __version__
+from sparkforge_aws import doctor as dr
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
 
 
 @pytest.fixture(autouse=True)
@@ -78,12 +78,15 @@ def test_indice_de_codigo():
     assert dr.avaliar_indice({"initialized": True, "fresh": False}, None).status == dr.WARN
     assert dr.avaliar_indice({"initialized": True, "fresh": True}, None).status == dr.OK
     sem_conferir = dr.avaliar_indice({"initialized": True, "fresh": None}, None)
-    assert sem_conferir.status == dr.OK and sem_conferir.unlock == "sparkforge code status --root ."
+    assert (
+        sem_conferir.status == dr.OK
+        and sem_conferir.unlock == "sparkforge-aws code status --root ."
+    )
 
 
 def test_doctor_nao_toca_o_indice_de_codigo(tmp_path):
     """Com indice existente, o doctor nao muda o banco (code_status mudaria)."""
-    from sparkforge.adapters.cli import main as cli
+    from sparkforge_aws.adapters.cli import main as cli
 
     (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
     assert cli(["code", "init", "--root", str(tmp_path)]) == 0
@@ -108,7 +111,7 @@ def test_credencial_aws():
     assert dr.avaliar_credencial(True, None, None, None, False).status == dr.WARN
     assert dr.avaliar_credencial(True, "env", None, "ClientError: x", True).status == dr.WARN
     local = dr.avaliar_credencial(True, "shared-credentials-file", None, None, False)
-    assert local.status == dr.OK and local.unlock == "sparkforge doctor --online"
+    assert local.status == dr.OK and local.unlock == "sparkforge-aws doctor --online"
     assert dr.avaliar_credencial(True, "env", "123456789012", None, True).status == dr.OK
 
 
@@ -148,7 +151,7 @@ def test_cli_sai_0_sem_fail(tmp_path, home_isolado, capsys):
 
 
 def test_tool_nunca_recebe_online():
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     tool = TOOLS["sparkforge_doctor"]
     assert "online" not in (tool["inputSchema"].get("properties") or {})
@@ -181,7 +184,7 @@ def test_versao_gravada_diferente_da_instalada_sai_warn():
     devin = por_id["integracao_devin"]
     assert devin.status == dr.WARN
     assert "0.0.1" in devin.detail and "0.5.0" in devin.detail
-    assert devin.unlock == "sparkforge integrate devin --scope user"
+    assert devin.unlock == "sparkforge-aws integrate devin --scope user"
     igual = dr.avaliar_integracoes(manifesto, None, None, installed="0.0.1")
     assert {c.id: c.status for c in igual}["integracao_devin"] == dr.OK
     # O doctor de verdade compara com a versao do pacote que roda.

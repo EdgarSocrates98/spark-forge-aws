@@ -21,12 +21,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.stepfunctions import build_sfn_glue_link, extract_stepfunctions_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.models import sort_facts
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.stepfunctions import build_sfn_glue_link, extract_stepfunctions_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.models import sort_facts
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "stepfunctions"

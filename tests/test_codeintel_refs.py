@@ -14,9 +14,9 @@ import inspect
 
 import pytest
 
-from sparkforge.codeintel import refs
-from sparkforge.codeintel.extract import VisitanteComEscopo
-from sparkforge.codeintel.refs import Referencia, extrair_referencias
+from sparkforge_aws.codeintel import refs
+from sparkforge_aws.codeintel.extract import VisitanteComEscopo
+from sparkforge_aws.codeintel.refs import Referencia, extrair_referencias
 
 
 def test_extrai_chamada_simples():

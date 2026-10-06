@@ -9,11 +9,11 @@ upstream:
   sha256: "dadfea9d6c1bcfbfcba7d916fb42e91a6681d1d604ba4b734500132579815e2b"
 tasks:
   - id: T1
-    files: [tests/test_sf_stubs.py, agents/pyspark-code-reviewer.md, agents/iceberg-performance-engineer.md, agents/data-quality-reviewer.md, sparkforge/findings/schemas/business_rule.schema.json, tests/test_sync_render.py, docs/guia/referencia/agents/README.md, docs/surface.lock.json, docs/claims.lock.json]
+    files: [tests/test_sf_stubs.py, agents/pyspark-code-reviewer.md, agents/iceberg-performance-engineer.md, agents/data-quality-reviewer.md, sparkforge_aws/findings/schemas/business_rule.schema.json, tests/test_sync_render.py, docs/guia/referencia/agents/README.md, docs/surface.lock.json, docs/claims.lock.json]
     covers: [AC4]
     test: {path: tests/test_sf_stubs.py, name: test_conteudo_real_muda_de_dono}
   - id: T2
-    files: [tests/test_sf_stubs.py, rules/catalog/agentic-sf-agents.yaml, rules/catalog/routing.yaml, agents/sf-airflow-specialist.md, agents/sf-analytics-specialist.md, skills/design-airflow-pipelines/SKILL.md, sparkforge/economy/router.py, scripts/sync_skills.py, tests/test_sync_render.py, manifest.json, docs/surface.lock.json, docs/guia/referencia/agents/README.md, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/07-conhecimento-e-catalogo.md, docs/claims.lock.json]
+    files: [tests/test_sf_stubs.py, rules/catalog/agentic-sf-agents.yaml, rules/catalog/routing.yaml, agents/sf-airflow-specialist.md, agents/sf-analytics-specialist.md, skills/design-airflow-pipelines/SKILL.md, sparkforge_aws/economy/router.py, scripts/sync_skills.py, tests/test_sync_render.py, manifest.json, docs/surface.lock.json, docs/guia/referencia/agents/README.md, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/07-conhecimento-e-catalogo.md, docs/claims.lock.json]
     covers: [AC1, AC2, AC3, AC5, AC6, AC7]
     test: {path: tests/test_sf_stubs.py, name: test_todo_sf_declara_area_que_julga}
   - id: T3
@@ -54,7 +54,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
@@ -133,7 +133,7 @@ def test_conteudo_real_muda_de_dono():
      antes da seção `## Não faz`.
    - `agents/data-quality-reviewer.md`: acrescente `  - analyze-functional-rules` ao fim
      da lista `skills:`.
-   - `sparkforge/findings/schemas/business_rule.schema.json`: na `description` da raiz,
+   - `sparkforge_aws/findings/schemas/business_rule.schema.json`: na `description` da raiz,
      troque `sf-functional-rules-specialist` por `data-quality-reviewer`.
    - Espelhos: backup do README, `python scripts/sync_skills.py`, devolva o README.
    - `tests/test_sync_render.py::RELACAO_MEDIDA`: `iceberg-v3-readiness` passa a
@@ -145,7 +145,7 @@ def test_conteudo_real_muda_de_dono():
 4. Verde: o comando do passo 2, e
    `python -m pytest tests/test_sync_render.py tests/test_agent_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_findings_validate.py -q`.
 5. `python scripts/sync_skills.py --check`, `python scripts/check_vnext_claims.py`
-   (`.py` novo: remedie por id), `python -m ruff check sparkforge scripts tests`.
+   (`.py` novo: remedie por id), `python -m ruff check sparkforge_aws scripts tests`.
 6. Commit: `refactor(agents): move the code index, Iceberg upgrade and functional rules to their owners`,
    com os bytes da superfície no corpo.
 
@@ -222,7 +222,7 @@ def test_rota_aponta_para_agente_e_area_que_existem():
    - `git rm -rq` das 10 `skills/<nome>` de `SKILLS_QUE_SAIRAM`.
    - `scripts/sync_skills.py::DISPATCHABLE_SKILLS`: apague as 10 chaves de
      `SKILLS_QUE_SAIRAM`.
-   - `sparkforge/economy/router.py::specialist_keywords`: apague as entradas
+   - `sparkforge_aws/economy/router.py::specialist_keywords`: apague as entradas
      `"athena"`, `"dynamodb"`, `"step functions"` e `"kinesis"`.
    - `manifest.json`: tire as 10 skills da lista `skills`, e `knowledge_base.rule_count`
      passa a `157`.
@@ -252,7 +252,7 @@ def test_rota_aponta_para_agente_e_area_que_existem():
   . Teste com
    lista literal de área ou de agente que cair: tire dela os nomes que saíram e registre no
    relatório como desvio.
-5. `python scripts/sync_skills.py --check`, `python -m ruff check sparkforge scripts tests`.
+5. `python scripts/sync_skills.py --check`, `python -m ruff check sparkforge_aws scripts tests`.
 6. Commit: `refactor(agents): remove the hollow sf-* layer`, com no corpo 35 áreas, 19
    agentes, 54 rotas e 10 skills a menos, 192 para 157 regras, e os bytes da superfície.
 

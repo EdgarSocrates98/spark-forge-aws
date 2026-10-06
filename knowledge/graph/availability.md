@@ -1,7 +1,7 @@
 # GraphFrames × Spark × Glue/EMR — onde a biblioteca existe, e onde ninguém a instala
 
 Esta página responde às perguntas 3 e 4 da §6 do
-[spec da Fase 6a](../../docs/superpowers/specs/2026-08-05-sparkforge-fase6a-graph-design.md):
+[spec da Fase 6a](../../docs/superpowers/specs/2026-08-05-sparkforge-aws-fase6a-graph-design.md):
 **quais releases não têm jar nenhum**, e **se a AWS documenta GraphFrames em
 algum lugar**. É o que sustenta o `runtime_scope` das regras de disponibilidade
 e a regra que cruza `graph.import` com o IaC. A API está em
@@ -82,7 +82,7 @@ por coordenada, e não por índice.
 
 ## 3. A matriz, cruzada com `GLUE_MATRIX` e `EMR_MATRIX`
 
-Fonte das versões de Spark: `sparkforge/facts/runtime_detect.py`, 2026-08-05.
+Fonte das versões de Spark: `sparkforge_aws/facts/runtime_detect.py`, 2026-08-05.
 **34 células** — 4 de Glue, 30 de EMR.
 
 | Spark | Jar disponível | Glue | EMR |
@@ -266,6 +266,6 @@ para a série 0.10–0.12 e **não** foi usada.
 
 **Deste repositório**
 
-- `GLUE_MATRIX` e `EMR_MATRIX` em [`../../sparkforge/facts/runtime_detect.py`](../../sparkforge/facts/runtime_detect.py) — 4 releases de Glue e 30 de EMR, com a versão de Spark de cada.
+- `GLUE_MATRIX` e `EMR_MATRIX` em [`../../sparkforge_aws/facts/runtime_detect.py`](../../sparkforge_aws/facts/runtime_detect.py) — 4 releases de Glue e 30 de EMR, com a versão de Spark de cada.
 - [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md) — a mesma matriz em prosa, e a nota de que a AWS não documenta o Python do PySpark na série 6.x.
 - [`../dq/validation-frameworks.md`](../dq/validation-frameworks.md) — a forma de `V-GE-4`/`V-DQ-2`, em que o piso de Python corta antes do piso de Spark.

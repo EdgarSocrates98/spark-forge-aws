@@ -42,7 +42,7 @@
     ],
     "validation": [
       "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele — é a medida que o histórico não tem.",
-      "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge judge` não produz mais SF-SFNX-003.",
+      "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge-aws judge` não produz mais SF-SFNX-003.",
       "EIXO DE RESULTADO — depois de um abort de teste, o destino tem a contagem por chave de negócio de antes do abort, ou a de uma execução completa: nunca uma terceira, que é o que escrita parcial produz."
     ],
     "rollback": [

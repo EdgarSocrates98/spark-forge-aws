@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.adapters._core import judge_findings
+from sparkforge_aws.adapters._core import judge_findings
 
 # A fixture de event log e a unica do corpus que produz mais de um punhado de
 # findings a partir de um `facts.json` que `judge` consegue ler direto -- seis

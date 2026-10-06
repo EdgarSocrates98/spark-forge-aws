@@ -24,15 +24,15 @@ import json
 
 import pytest
 
-from sparkforge.agentic.memory import (
+from sparkforge_aws.agentic.memory import (
     DecisionMemoryRecord,
     RuntimeCompatibilityPolicy,
     classify_memory_candidate,
     persist_memory_candidate,
     retrieve_memory,
 )
-from sparkforge.agentic.models import Decision
-from sparkforge.agentic.security import (
+from sparkforge_aws.agentic.models import Decision
+from sparkforge_aws.agentic.security import (
     ThreatType,
     detect_prompt_injection,
     validate_agent_identity,
@@ -40,7 +40,7 @@ from sparkforge.agentic.security import (
     validate_output,
     validate_tool_authorization,
 )
-from sparkforge.agentic.trust import (
+from sparkforge_aws.agentic.trust import (
     InstructionAuthority,
     Taint,
     TrustEnvelope,
@@ -269,7 +269,7 @@ class TestForgedEvidenceRef:
         assert cand.reason == "missing_or_unverified_evidence"
 
     def test_decisao_real_com_ref_falsificada_nao_vira_verified(self, tmp_path):
-        from sparkforge.agentic.memory import record_decision
+        from sparkforge_aws.agentic.memory import record_decision
 
         # `record_decision` e o caminho legado: sem registry, a evidencia
         # auto-atesta e o registro entra `accepted` -- mas o trust fica
@@ -388,6 +388,6 @@ class TestWrongRuntime:
 
     def test_familia_de_versao_compativel(self):
         comp = __import__(
-            "sparkforge.agentic.memory", fromlist=["evaluate_runtime"]
+            "sparkforge_aws.agentic.memory", fromlist=["evaluate_runtime"]
         ).evaluate_runtime({"spark": "3.5.2"}, {"spark": "3.5"})
         assert comp["spark"] == "compatible"

@@ -20,7 +20,7 @@ Extrai facts declarados de SLO, FinOps, segurança, serving e lakehouse para wor
 
 ## Na CLI
 
-[`sparkforge analyze streaming-ops`](../cli/analyze.md)
+[`sparkforge-aws analyze streaming-ops`](../cli/analyze.md)
 
 ## Capacidade
 

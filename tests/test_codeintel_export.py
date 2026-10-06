@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.codeintel import export
-from sparkforge.codeintel.export import FONTE_CONFERIDA, exportar, exportar_json
-from sparkforge.codeintel.index import indexar
+from sparkforge_aws.codeintel import export
+from sparkforge_aws.codeintel.export import FONTE_CONFERIDA, exportar, exportar_json
+from sparkforge_aws.codeintel.index import indexar
 
 # Os nomes que `ARCHITECTURE.md` da fonte publica para o formato de EXTRACAO,
 # lidos em 2026-09-02. Este teste e o guarda contra a deriva silenciosa: se
@@ -43,15 +43,15 @@ def test_o_no_traz_os_campos_da_fonte_e_MAIS_NADA_no_nivel_de_cima(tmp_path):
 
     Misturar os campos deste motor com os da fonte produziria um artefato que se
     PARECE com o dela e nao e -- quem o lesse assumiria que todo campo veio de
-    la. Tudo o que este motor sabe e a fonte nao nomeia vive em `sparkforge`.
+    la. Tudo o que este motor sabe e a fonte nao nomeia vive em `sparkforge-aws`.
     """
     dados = exportar(_banco(tmp_path))
     assert dados["nodes"], "o corpus precisa render no"
     for no in dados["nodes"]:
-        do_topo = set(no) - {"sparkforge"}
+        do_topo = set(no) - {"sparkforge-aws"}
         assert do_topo == CAMPOS_DE_NO_DA_FONTE, (
             f"campo fora do que a fonte nomeia: {sorted(do_topo - CAMPOS_DE_NO_DA_FONTE)}. "
-            f"O que este motor sabe e a fonte nao nomeia vai em `sparkforge`."
+            f"O que este motor sabe e a fonte nao nomeia vai em `sparkforge-aws`."
         )
 
 
@@ -87,7 +87,7 @@ def test_a_recusa_de_importar_esta_declarada_com_a_razao(tmp_path):
     extracao, anterior a `build()`. Sem essa razao no artefato, "nao importa"
     se leria como omissao em vez de decisao.
     """
-    meta = exportar(_banco(tmp_path))["sparkforge"]
+    meta = exportar(_banco(tmp_path))["sparkforge-aws"]
     assert "not_implemented" in meta
     assert "importacao" in meta["not_implemented"]
     assert "build()" in meta["not_implemented"]
@@ -100,7 +100,7 @@ def test_a_recusa_de_importar_esta_declarada_com_a_razao(tmp_path):
 
 def test_o_artefato_diz_contra_QUE_VERSAO_a_compatibilidade_foi_medida(tmp_path):
     """Sem isso, uma divergencia futura vira discussao em vez de comparacao."""
-    meta = exportar(_banco(tmp_path))["sparkforge"]
+    meta = exportar(_banco(tmp_path))["sparkforge-aws"]
     assert meta["source_checked"] == FONTE_CONFERIDA
     assert "graphify" in FONTE_CONFERIDA.lower()
     assert "2026-09-02" in FONTE_CONFERIDA
@@ -112,7 +112,7 @@ def test_as_duas_metades_da_compatibilidade_saem_juntas(tmp_path):
     Um artefato que so declarasse a primeira metade convidaria quem o le a
     assumir a segunda.
     """
-    meta = exportar(_banco(tmp_path))["sparkforge"]
+    meta = exportar(_banco(tmp_path))["sparkforge-aws"]
     assert set(meta["compatible_fields"]["nodes"]) == CAMPOS_DE_NO_DA_FONTE
     assert set(meta["compatible_fields"]["edges"]) == CAMPOS_DE_ARESTA_DA_FONTE
     assert meta["not_from_source"]
@@ -155,17 +155,17 @@ def test_a_comunidade_viaja_em_sparkforge_e_nao_no_topo(tmp_path):
     dados = exportar(_banco(tmp_path))
     for no in dados["nodes"]:
         assert "community" not in no
-        assert "community" in no["sparkforge"]
+        assert "community" in no["sparkforge-aws"]
 
 
 def test_sem_comunidades_o_bloco_sai_declarado_e_nao_ausente(tmp_path):
     """`algorithm: null` diz 'nao calculei'; a chave ausente nao diz nada."""
     dados = exportar(_banco(tmp_path), incluir_comunidades=False)
-    meta = dados["sparkforge"]["communities"]
+    meta = dados["sparkforge-aws"]["communities"]
     assert meta["algorithm"] is None
     assert meta["converged"] is None
     for no in dados["nodes"]:
-        assert "community" not in no["sparkforge"]
+        assert "community" not in no["sparkforge-aws"]
 
 
 def test_o_json_e_legivel_para_quem_abrir_o_arquivo(tmp_path):
@@ -188,4 +188,4 @@ def test_banco_sem_no_exporta_estrutura_vazia_e_nao_levanta(tmp_path):
     dados = exportar(banco)
     assert dados["nodes"] == []
     assert dados["edges"] == []
-    assert dados["sparkforge"]["source_checked"] == FONTE_CONFERIDA
+    assert dados["sparkforge-aws"]["source_checked"] == FONTE_CONFERIDA

@@ -1,6 +1,6 @@
 import pytest
 
-from sparkforge.rules.version_scope import in_scope
+from sparkforge_aws.rules.version_scope import in_scope
 
 
 class TestInScope:

@@ -17,7 +17,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_lakehouse_catalog.py::test_lakehouse_catalog_contract_is_deterministic"}
   - id: AC2
     statement: "CLI e MCP retornam a mesma topologia e marcam integração desconhecida como unresolved."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze lakehouse-catalog --path fixtures/platform/catalog.yaml"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze lakehouse-catalog --path fixtures/platform/catalog.yaml"}
 success:
   - id: SC1
     metric: "Fingerprint estável e zero segredo nos registros normalizados"

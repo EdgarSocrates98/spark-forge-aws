@@ -1,7 +1,7 @@
 import json
 
-from sparkforge.adapters import _core
-from sparkforge.facts.glue_dq_advanced import extract_glue_dq_advanced_path
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.facts.glue_dq_advanced import extract_glue_dq_advanced_path
 
 
 def test_assessment_never_calls_provider_or_carries_rows(tmp_path):

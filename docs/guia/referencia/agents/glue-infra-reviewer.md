@@ -117,7 +117,7 @@ conjunto que o job lê no próximo run, e o sintoma é lacuna ou duplicata, não
 alterado em default argument alcança o Spark do job inteiro pelo mesmo caminho. Capacidade
 não move o dado; essas duas movem, e as três chegam como a mesma linha de Terraform.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
 lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
@@ -136,9 +136,9 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 #### Mudança no job pede spec
 
 Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
-`sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
-`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
-nunca pela árvore do operador. `sparkforge sdd check` confere cada fase. As duas
+`sparkforge-aws case open` dá o `case_id`, a skill `sdd-define` escreve o define com
+`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge-aws change sandbox`,
+nunca pela árvore do operador. `sparkforge-aws sdd check` confere cada fase. As duas
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
 despacham subagentes, e subagente não faz nenhum dos dois.
 
@@ -161,5 +161,5 @@ valor é interpolado: o que o `apply` vai fazer com ele não estava no HCL que v
 Você coordena; não executa. Despache os executores na ordem do loop de fase e decida,
 entre um e outro, se o achado justifica seguir ou se falta coleta.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook glue-infra-reviewer` (CLI) ou
+Em plataforma sem despacho de subagente: `sparkforge-aws playbook glue-infra-reviewer` (CLI) ou
 a tool MCP `sparkforge_playbook`.

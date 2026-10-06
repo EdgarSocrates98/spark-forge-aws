@@ -19,8 +19,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.facts.glue_job_run import extract_glue_job_runs_path
+from sparkforge_aws.findings.validate import validate_fact
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "glue_job_run"

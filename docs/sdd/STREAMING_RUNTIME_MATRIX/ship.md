@@ -25,7 +25,7 @@ permanece explícita.
 - `python scripts/refresh_knowledge.py --check --offline` — exit 0.
 - `python scripts/verify_offline_bundle.py --check` — `69 checked`, `failed: []`, exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
-- `sparkforge sdd check --repo . --feature STREAMING_RUNTIME_MATRIX` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_RUNTIME_MATRIX` — `ok: true`.
 
 ## Lições
 

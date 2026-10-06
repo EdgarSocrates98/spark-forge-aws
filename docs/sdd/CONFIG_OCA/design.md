@@ -29,7 +29,7 @@ decisions:
     rejected: ["Deixar `tools: []`: chave vazia e convite a reencher sem criterio, e o gate do AC2 nao distingue vazio de ausente."]
     rollback: "git revert; o bloco volta com os sete nomes."
   - id: D3
-    choice: "Os subagents saem inteiros: `config/subagents.yaml` e o diretorio `subagents/` com os 16 contratos. A medida que sustenta: zero leitores em `sparkforge/`, `scripts/` e `tests/`, corpo identico nos dezesseis, e citacao so em `docs/agentic-expansion.md`."
+    choice: "Os subagents saem inteiros: `config/subagents.yaml` e o diretorio `subagents/` com os 16 contratos. A medida que sustenta: zero leitores em `sparkforge_aws/`, `scripts/` e `tests/`, corpo identico nos dezesseis, e citacao so em `docs/agentic-expansion.md`."
     rejected:
       - "Remover so o registro e manter os 16 contratos: arquivo sem registro e sem leitor e a mesma oca, um nivel abaixo."
       - "Manter tudo e marcar `status: planned`: rotulo sem leitor nao muda nada, e sem demanda medida 'planejado' e indistinguivel de abandonado (abordagem C do explore)."
@@ -79,7 +79,7 @@ afirmação de que ninguém os lê é que não é completa, e está declarada co
 
 Medido nesta árvore em 2026-09-20, com `main` em `e4141869`:
 
-- `sparkforge/registry/loader.py` lê `config/agents.yaml` e `config/teams-expansion.yaml`;
+- `sparkforge_aws/registry/loader.py` lê `config/agents.yaml` e `config/teams-expansion.yaml`;
   `config/agentic-expansion.yaml` não aparece em nenhum módulo de produção.
 - `config/agents.yaml` traz `expansion_registry: config/agentic-expansion.yaml`, que é
   ponteiro declarado e não leitura.

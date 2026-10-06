@@ -11,7 +11,7 @@ Rode da raiz do repositório. Todos os arquivos são fixtures sintéticas.
 1. **Antes de mudar:** veja que achados uma mudança de configuração tira ou cria.
 
    ```bash
-   sparkforge simulate --facts fixtures/infra_code/fgac_com_jar_extra/expected/facts.json \
+   sparkforge-aws simulate --facts fixtures/infra_code/fgac_com_jar_extra/expected/facts.json \
      --set "tf:--enable-lakeformation-fine-grained-access=false"
    ```
 
@@ -20,32 +20,32 @@ Rode da raiz do repositório. Todos os arquivos são fixtures sintéticas.
    ```bash
    DEMO=/tmp/sf-prova && mkdir -p "$DEMO"
    F=fixtures/funcval/count_diverged/input
-   sparkforge analyze pyspark --path $F/job.py --out "$DEMO/fv_pyspark.json"
-   sparkforge analyze catalog-schema --path $F/catalog/dump.json --out "$DEMO/fv_catalog.json"
-   sparkforge funcval plan --facts "$DEMO/fv_pyspark.json" --facts "$DEMO/fv_catalog.json" --out "$DEMO/plano.json"
+   sparkforge-aws analyze pyspark --path $F/job.py --out "$DEMO/fv_pyspark.json"
+   sparkforge-aws analyze catalog-schema --path $F/catalog/dump.json --out "$DEMO/fv_catalog.json"
+   sparkforge-aws funcval plan --facts "$DEMO/fv_pyspark.json" --facts "$DEMO/fv_catalog.json" --out "$DEMO/plano.json"
    ```
 
 3. **Depois:** compare os dois event logs (tempo, volume, spill).
 
    ```bash
    B=fixtures/bench/clean_improvement/input
-   sparkforge analyze event-log --path $B/before.jsonl --out "$DEMO/antes.json"
-   sparkforge analyze event-log --path $B/after.jsonl --out "$DEMO/depois.json"
-   sparkforge benchmark --before "$DEMO/antes.json" --after "$DEMO/depois.json" --out "$DEMO/bench.json"
+   sparkforge-aws analyze event-log --path $B/before.jsonl --out "$DEMO/antes.json"
+   sparkforge-aws analyze event-log --path $B/after.jsonl --out "$DEMO/depois.json"
+   sparkforge-aws benchmark --before "$DEMO/antes.json" --after "$DEMO/depois.json" --out "$DEMO/bench.json"
    ```
 
 4. **Depois:** compare o resultado que você mediu nos dois lados.
 
    ```bash
-   sparkforge funcval compare --plan "$DEMO/plano.json" --before $F/before.json --after $F/after.json --out "$DEMO/fv.json"
-   sparkforge judge --facts "$DEMO/fv.json"
+   sparkforge-aws funcval compare --plan "$DEMO/plano.json" --before $F/before.json --after $F/after.json --out "$DEMO/fv.json"
+   sparkforge-aws judge --facts "$DEMO/fv.json"
    ```
 
 5. **Depois:** veja o que cada obrigação de prova concluiu.
 
    ```bash
-   sparkforge analyze pyspark --path fixtures/proof/resolucao_corrigida/input/after/lib --out "$DEMO/depois_py.json"
-   sparkforge proof --findings fixtures/pyspark/collect_unbounded/expected/findings.json \
+   sparkforge-aws analyze pyspark --path fixtures/proof/resolucao_corrigida/input/after/lib --out "$DEMO/depois_py.json"
+   sparkforge-aws proof --findings fixtures/pyspark/collect_unbounded/expected/findings.json \
      --facts fixtures/pyspark/collect_unbounded/expected/facts.json \
      --after-facts "$DEMO/depois_py.json" --applied SF-PY-002
    ```
@@ -101,11 +101,11 @@ Saída real do passo 1 da receita:
 Recusa real (código 2), com texto numa medida numérica:
 
 ```bash
-sparkforge simulate --facts fixtures/terraform/bookmarks_with_concurrency/expected/facts.json --set "tf:max_concurrent_runs=muitos"
+sparkforge-aws simulate --facts fixtures/terraform/bookmarks_with_concurrency/expected/facts.json --set "tf:max_concurrent_runs=muitos"
 ```
 
 ```text
-max_concurrent_runs: 'muitos' nao e numero, e o fact guarda o valor como medida numerica [valor_nao_numerico_para_medida]. Rode: sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1
+max_concurrent_runs: 'muitos' nao e numero, e o fact guarda o valor como medida numerica [valor_nao_numerico_para_medida]. Rode: sparkforge-aws simulate --facts <facts.json> --set tf:max_concurrent_runs=1
 ```
 
 Outras recusas: `camada_invalida`, `set_malformado`, `sem_set` e
@@ -161,7 +161,7 @@ Trecho real do passo 3, com `--detail-level summary`:
 
 - `total_task_ms` é **tempo de task somado**, ou seja, trabalho. Não é o relógio do job.
 - O volume de entrada é igual nos dois lados, então a comparação vale.
-- `sparkforge judge --facts "$DEMO/bench.json"` devolve `total_count: 0` aqui. É o
+- `sparkforge-aws judge --facts "$DEMO/bench.json"` devolve `total_count: 0` aqui. É o
   esperado: melhora limpa, sem volume diferente, sem stage sem par, sem spill novo.
 - O `id` do `bench.run_delta` (`f_64c631`) é o que uma recomendação cita em
   `benchmark_ref`. Sem ele, ganho com número é rejeitado.
@@ -225,7 +225,7 @@ Nunca "provado". Trecho real do passo 5 (o `collect()` foi removido no depois):
      "reason": "padrao_ausente_com_extrator_rodado", "absent_kinds": ["pyspark.driver_collect"]},
     {"kind": "axis", "axis": "correctness.write_result", "source": "funcval", "outcome": "unproven",
      "reason": "sem_funcval",
-     "unlock": "sparkforge funcval plan ... --out <plano> e sparkforge funcval compare --plan <plano> --before <resultado-antes> --after <resultado-depois>"}
+     "unlock": "sparkforge-aws funcval plan ... --out <plano> e sparkforge-aws funcval compare --plan <plano> --before <resultado-antes> --after <resultado-depois>"}
   ],
   "summary": {"refuted": 0, "not_refuted": 1, "inconclusive": 0, "unproven": 1},
   "refused": [
@@ -238,7 +238,7 @@ Nunca "provado". Trecho real do passo 5 (o `collect()` foi removido no depois):
 Outro exemplo real, com o benchmark na união (`fixtures/proof/melhoria_nao_refutada`):
 
 ```bash
-sparkforge proof --findings fixtures/pyspark/action_in_loop/expected/findings.json \
+sparkforge-aws proof --findings fixtures/pyspark/action_in_loop/expected/findings.json \
   --facts fixtures/pyspark/action_in_loop/expected/facts.json \
   --facts fixtures/bench/clean_improvement/expected/facts.json \
   --after-facts fixtures/pyspark/action_in_loop/expected/facts.json --applied SF-PY-004
@@ -255,7 +255,7 @@ o laço continua no código do depois.
 
 ```bash
 G=fixtures/gain/ganho_por_capacidade
-sparkforge gain $(for f in $G/baseline/*.json; do printf -- '--baseline %s ' "$f"; done) \
+sparkforge-aws gain $(for f in $G/baseline/*.json; do printf -- '--baseline %s ' "$f"; done) \
                 $(for f in $G/candidate/*.json; do printf -- '--candidate %s ' "$f"; done)
 ```
 
@@ -292,10 +292,10 @@ daquele catálogo. Ela **não** prova quem escreveu: não há chave nem segredo.
 
 ```bash
 cp fixtures/receipt/uniao_debate/input/report.md "$DEMO/relatorio.md"
-sparkforge judge --facts fixtures/graph/import_sem_jar_no_iac/expected/facts.json \
+sparkforge-aws judge --facts fixtures/graph/import_sem_jar_no_iac/expected/facts.json \
   --facts fixtures/infra_code/fgac_com_jar_extra/expected/facts.json --out "$DEMO/findings.json"
-sparkforge report sign --report "$DEMO/relatorio.md" --findings "$DEMO/findings.json"
-sparkforge report verify --report "$DEMO/relatorio.md" --findings "$DEMO/findings.json"
+sparkforge-aws report sign --report "$DEMO/relatorio.md" --findings "$DEMO/findings.json"
+sparkforge-aws report verify --report "$DEMO/relatorio.md" --findings "$DEMO/findings.json"
 ```
 
 O `sign` reescreve o arquivo e acrescenta um bloco no fim:
@@ -313,7 +313,7 @@ editado depois da assinatura, a resposta real é (código 1):
 
 ```json
 {"valid": false, "status": "diverged", "diverged": ["body"],
- "reason": "divergiu em: corpo. ... Reassine com: sparkforge report sign --report ... --findings <findings.json>"}
+ "reason": "divergiu em: corpo. ... Reassine com: sparkforge-aws report sign --report ... --findings <findings.json>"}
 ```
 
 As quatro partes conferidas são `version`, `evidence`, `catalog` e `body`.
@@ -326,10 +326,10 @@ facts, os findings, o relatório, o blackboard e os debates. Ele é gravado em
 `.sparkforge/receipts/` e por isso deve rodar numa pasta de case, nunca no repositório.
 
 ```bash
-sparkforge case open --repo "$DEMO" --case-id demo-recibo --now 2026-09-13T14:00:00Z --glue 5.0
+sparkforge-aws case open --repo "$DEMO" --case-id demo-recibo --now 2026-09-13T14:00:00Z --glue 5.0
 cp fixtures/graph/import_sem_jar_no_iac/expected/facts.json "$DEMO/facts_grafo.json"
 cp fixtures/infra_code/fgac_com_jar_extra/expected/facts.json "$DEMO/facts_lf.json"
-sparkforge receipt emit --repo "$DEMO" --facts facts_grafo.json --facts facts_lf.json \
+sparkforge-aws receipt emit --repo "$DEMO" --facts facts_grafo.json --facts facts_lf.json \
   --findings findings.json --report relatorio.md --now 2026-09-13T14:30:00Z
 ```
 
@@ -348,7 +348,7 @@ Trecho real (no exemplo, o `arbitrate` já tinha rodado nesta pasta):
 Caminhos relativos resolvem contra `--repo`. Cada lacuna sai com nome em `unresolved`.
 
 ```bash
-sparkforge receipt verify --repo "$DEMO" --receipt .sparkforge/receipts/<receipt_id>.json
+sparkforge-aws receipt verify --repo "$DEMO" --receipt .sparkforge/receipts/<receipt_id>.json
 ```
 
 Sem mudanças: `"valid": true, "status": "valid"`. Depois de alterar `facts_lf.json`,

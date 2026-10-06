@@ -2,7 +2,7 @@
 #
 # POR QUE ESTE ARQUIVO EXISTE. Ate esta entrega a matriz de EMR on EC2 era a
 # unica das quatro plataformas que morava COMO LITERAL em codigo -- `EMR_MATRIX`,
-# em `sparkforge/facts/runtime_detect.py`, com 30 releases escritas a mao. Versao
+# em `sparkforge_aws/facts/runtime_detect.py`, com 30 releases escritas a mao. Versao
 # de release e fato EXTERNO: muda por decisao da AWS, nao deste repositorio, e
 # fato externo deste repositorio carrega fonte e data. O dict em codigo nao
 # carregava nenhuma das duas.

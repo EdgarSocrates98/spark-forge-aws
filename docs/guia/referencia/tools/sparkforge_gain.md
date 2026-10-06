@@ -17,7 +17,7 @@ Realized Gain Ledger: o ganho OBSERVADO entre runs ja medidos de um job Glue ant
 
 ## Na CLI
 
-[`sparkforge gain`](../cli/gain.md)
+[`sparkforge-aws gain`](../cli/gain.md)
 
 ## Capacidade
 

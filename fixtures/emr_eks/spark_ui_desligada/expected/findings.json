@@ -43,7 +43,7 @@
     ],
     "validation": [
       "DescribeJobRun de uma submissão nova mostrando persistentAppUI com o valor ENABLED.",
-      "O event log daquele job novo localizado e legível por sparkforge analyze_event_log, com stages e métricas — é a capacidade que o achado diz estar perdida, e só o artefato prova que ela voltou.",
+      "O event log daquele job novo localizado e legível por sparkforge-aws analyze_event_log, com stages e métricas — é a capacidade que o achado diz estar perdida, e só o artefato prova que ela voltou.",
       "Contagem total e contagem por chave de negócio do destino de dados iguais às do run anterior comparável: ligar a UI é mudança de observabilidade e não pode mudar o resultado; se mudou, mudou outra coisa junto."
     ],
     "rollback": [

@@ -16,7 +16,7 @@ Normaliza um inventário de Airflow, Dagster, Step Functions e Control-M com sch
 
 ## Na CLI
 
-[`sparkforge analyze orchestration`](../cli/analyze.md)
+[`sparkforge-aws analyze orchestration`](../cli/analyze.md)
 
 ## Capacidade
 
