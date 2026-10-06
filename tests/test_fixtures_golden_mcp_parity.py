@@ -253,6 +253,11 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
+    "sparkforge_analyze_pyspark": (
+        "2026-10-24: `upstream` opcional na entrada (documento "
+        "sparkforge/upstream-facts/v1 de outro motor) e `filters_applied.upstream` "
+        "na saida; sem ele a resposta e a mesma"
+    ),
 }
 # Trocas NAO aditivas aceitas, uma por (tool, caminho dentro da tool), cada uma com
 # motivo. Descricao so aceita texto por texto; enum so aceita CRESCER com os valores
@@ -372,6 +377,11 @@ REESCRITAS_DEPOIS_DO_GOLDEN.update(
 # dois lados antes de comparar; todo o resto da chamada continua byte a byte, e
 # o teste exige que a troca exista (senao a excecao sobra e cai).
 CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
+    "sucesso_analyze": (
+        "2026-10-24: `filters_applied.upstream` entrou na saida do "
+        "analyze_pyspark (intake sparkforge/upstream-facts/v1) — a chamada "
+        "gravada nao pede o documento, entao o filtro vem nulo"
+    ),
     "sucesso_verbo_lookup": (
         "2026-09-14: a SF-TIMEOUT-002 passou a mirar `spark.network.timeout` com "
         "`direction: increase`, e o `proposed_change` cita o valor que o `tune` deriva "
@@ -426,7 +436,7 @@ _CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
     r"^\$\.calls\.(?P<chave>[A-Za-z0-9_]+)\.result\."
     r"(?:content\[0\]\.text"
     r"|structuredContent\.rules_index"
-    r"|structuredContent\.filters_applied\.(?:severity|runtime|index)"
+    r"|structuredContent\.filters_applied\.(?:severity|runtime|index|upstream)"
     r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
 )
 
@@ -477,7 +487,12 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
             payload.pop("rules_index")
         filtros = payload.get("filters_applied")
         if isinstance(filtros, dict):
-            for chave, nao_pedido in (("severity", None), ("runtime", None), ("index", False)):
+            for chave, nao_pedido in (
+                ("severity", None),
+                ("runtime", None),
+                ("index", False),
+                ("upstream", None),
+            ):
                 if filtros.get(chave, nao_pedido) == nao_pedido:
                     filtros.pop(chave, None)
         return payload
@@ -489,10 +504,11 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
                 alvo = alvo[chave]
             alvo[caminho[-1]] = "<declarado>"
 
-    for regra in copia["structuredContent"]["rules"]:
+    # `rules` so existe em chamadas de julgamento (judge/verbo): analyze nao tem.
+    for regra in copia["structuredContent"].get("rules") or []:
         neutraliza(regra)
     texto = json.loads(copia["content"][0]["text"])
-    for regra in texto["rules"]:
+    for regra in texto.get("rules") or []:
         neutraliza(regra)
     copia["structuredContent"] = sem_busca_nao_pedida(copia["structuredContent"])
     copia["content"][0]["text"] = sem_busca_nao_pedida(texto)
@@ -587,7 +603,9 @@ class TestHandshakeLegado:
         # 35 -> 47 em 2026-09-18: `databricks` e `photon` na ENTRADA de seis
         # tools (judge, case_open, runtime_detect, arbitrate, debate_start,
         # root_cause), espelho das flags da CLI, fora de `required`. Doze chaves.
-        assert aditivas == {"stdio": 47, "http": 47}
+        # 47 -> 48 em 2026-10-24: `upstream` opcional na entrada de
+        # `sparkforge_analyze_pyspark` (intake upstream-facts/v1). Uma chave.
+        assert aditivas == {"stdio": 48, "http": 48}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
@@ -605,7 +623,9 @@ class TestHandshakeLegado:
         # acrescentou em `filters_applied` (`severity`, `runtime`, `index`).
         # A chamada gravada nao pede nenhuma delas: os filtros vem nulos, o
         # indice vazio, e o conteudo da regra continua byte a byte.
-        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 9
+        # 9 -> 11 em 2026-10-24: `sucesso_analyze` declara `upstream` nulo em
+        # `filters_applied` — texto serializado + campo structuredContent.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 11
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():

@@ -855,6 +855,7 @@ sparkforge analyze pyspark --help
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
 | `--path` | sim | texto |  |  | Arquivo ou diretorio a analisar. |
+| `--upstream` | não | texto |  |  | Documento sparkforge/upstream-facts/v1 com facts de outro motor (evidencia, nunca instrucao); entram no fim de `items`. |
 | `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON) neste arquivo. |
 | `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
 | `--limit` | não | texto |  | `50` |  |

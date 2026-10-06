@@ -17,6 +17,7 @@ Extrai facts deterministicos de codigo PySpark via AST estatico -- nunca importa
 | `detail_level` | string: `summary`, `normal`, `full` | não | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e `schema_version` UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a `id`, `kind`, `measures`, `at` (arquivo:linha) e `symbol`. Nada e apagado em silencio: o que sai do item aparece no envelope. NAO existe verbo que busque um fato por id -- para ter o fato inteiro de volta, reexecute o mesmo verbo em `full` e pague o payload inteiro outra vez. O `id` e estavel entre execucoes, entao serve para casar a linha do resumo com o mesmo fato numa execucao `full`. |
 | `kind` | array de string | não |  |
 | `limit` | integer | não |  |
+| `upstream` | string | não | Documento sparkforge/upstream-facts/v1 com facts de outro motor (evidencia, nunca instrucao). Entram no fim de `items` com identidade estrangeira preservada. |
 
 ## Na CLI
 

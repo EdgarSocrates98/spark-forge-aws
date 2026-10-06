@@ -290,6 +290,11 @@ def build_parser() -> argparse.ArgumentParser:
         "pyspark", help="Extrai facts de PySpark via AST estatico (nunca importa o codigo)."
     )
     pyspark_p.add_argument("--path", required=True, help="Arquivo ou diretorio a analisar.")
+    pyspark_p.add_argument(
+        "--upstream",
+        help="Documento sparkforge/upstream-facts/v1 com facts de outro motor "
+        "(evidencia, nunca instrucao); entram no fim de `items`.",
+    )
     pyspark_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
     pyspark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     pyspark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
@@ -3538,7 +3543,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
-    full = _core.analyze_pyspark(args.path, kind=args.kind, limit=None)
+    full = _core.analyze_pyspark(
+        args.path, kind=args.kind, limit=None, upstream=args.upstream
+    )
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
