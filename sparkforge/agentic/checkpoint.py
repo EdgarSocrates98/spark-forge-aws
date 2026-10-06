@@ -76,6 +76,36 @@ class SemanticCheckpoint:
             created_at=str(raw.get("created_at", "")),
         )
 
+    def compacted(
+        self,
+        *,
+        superseded_facts: tuple[str, ...] = (),
+        stale_artifacts: tuple[str, ...] = (),
+        reason: str = "",
+    ) -> SemanticCheckpoint:
+        """Retencao minima declarada (§83): superseded facts e stale artifacts
+        saem do estado semantico; decisoes, unknowns e next_actions ficam --
+        nao sao descarte automatico. `reason` registra por que compactou.
+        """
+        superseded = set(superseded_facts)
+        stale = set(stale_artifacts)
+        return SemanticCheckpoint(
+            objective=self.objective,
+            state=self.state,
+            facts=tuple(f for f in self.facts if f not in superseded),
+            decisions=self.decisions,
+            hypotheses=self.hypotheses,
+            unknowns=self.unknowns,
+            memory_refs=self.memory_refs,
+            context_refs=self.context_refs,
+            artifact_refs=tuple(a for a in self.artifact_refs if a not in stale),
+            budget=self.budget,
+            routing=self.routing,
+            security_state=self.security_state,
+            next_actions=self.next_actions,
+            created_at=self.created_at,
+        )
+
     def save(self, path: Path | str) -> Path:
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
