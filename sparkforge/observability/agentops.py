@@ -316,9 +316,14 @@ def run_timeline(db_path: Path | str, run_id: str) -> dict[str, Any]:
 
 
 def critical_path(db_path: Path | str, run_id: str) -> dict[str, Any]:
-    """Caminho critico medido: maiores duracoes, retries por nome repetido e
-    waiting (gaps entre `end_time` consecutivos). Tudo observado de
-    `duration_seconds`/timestamps -- sem latencia inventada.
+    """Caminho critico medido, nao CPM: os spans que mais contribuiram para
+    a duracao observada do run.
+
+    Nao e o critical path do metodo CPM — isso exigiria um grafo de
+    dependencias que o ledger nao guarda. O que sai daqui e o perfil de
+    duracao medido: os `top` spans por `duration_seconds`, retries por nome
+    repetido e `waiting_seconds` (gaps entre `end_time` consecutivos). Tudo
+    observado de `duration_seconds`/timestamps -- sem latencia inventada.
     """
     trace = _load_trace(db_path, run_id)
     if trace is None:

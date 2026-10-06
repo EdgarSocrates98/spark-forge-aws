@@ -27,7 +27,19 @@ A2A_EXPERIMENTAL: dict[str, Any] = {
     "experimental": True,
     # Forge Protocol — A2A-ready (§110). Nunca "implementacao A2A".
     "compatibility": "a2a-ready",
-    "spec_reviewed": False,  # §113: avaliacao da spec vigente pendente
+    # §113: revisao doc-only FEITA em 2026-10-06 contra a spec v1.0.x —
+    # divergencias medidas e registradas em docs/audit/A2A-SPEC-REVIEW.md.
+    # O adapter segue a2a-ready: traduz formas do Forge, nao implementa a spec.
+    "spec_reviewed": True,
+    "spec_version": "1.0.x",
+    "spec_divergences": (
+        "method: adapter modela tasks/send (v0.2); v1.0 usa message/send",
+        "agent_card: spec exige description/protocolVersion+supportedInterfaces "
+        "e capabilities e objeto AgentCapabilities; card usa url+protocol e "
+        "lista de ForgeCapability",
+        "enum: estados lowercase do binding JSON-RPC/REST; ProtoJSON serializa "
+        "TASK_STATE_* SCREAMING_SNAKE",
+    ),
 }
 
 # Estados de task do vocabulario A2A vigente. O mapeamento e declarado
@@ -86,7 +98,10 @@ def agent_card(
 
 
 def submit_task(params: Mapping[str, Any]) -> ForgeTask:
-    """`tasks/send` A2A (message+parts) → `ForgeTask` (§113, §114).
+    """`message/send` A2A (message+parts) → `ForgeTask` (§113, §114).
+
+    Nome no vocabulario v0.2 JSON-RPC: `tasks/send`; na spec v1.0.x o metodo
+    e `message/send` — o payload traduzido e o mesmo (message com parts).
 
     O `objective` sai da parte `text`; partes `data` viram `inputs`.
     `metadata.requested_by`/`risk` passam direto — a autoridade do Forge
