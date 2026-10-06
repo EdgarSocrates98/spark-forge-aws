@@ -386,14 +386,25 @@ REESCRITAS_DEPOIS_DO_GOLDEN.update(
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
 # dois lados antes de comparar; todo o resto da chamada continua byte a byte, e
 # o teste exige que a troca exista (senao a excecao sobra e cai).
+_MOTIVO_TRUST = (
+    "2026-10-05: `call_tool` passou a devolver o bloco aditivo `_trust` "
+    "(TOOL_OUTPUT/data_only + taint) em todo resultado, erro incluido; o bloco "
+    "e neutralizado dos dois lados e o restante segue byte a byte"
+)
 CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
     "sucesso_verbo_lookup": (
         "2026-09-14: a SF-TIMEOUT-002 passou a mirar `spark.network.timeout` com "
         "`direction: increase`, e o `proposed_change` cita o valor que o `tune` deriva "
         "(frente 2b); o resto da regra e da resposta nao mudou. "
         "2026-09-15: `rules_index` entrou na saida, VAZIO sem `index` -- a chamada "
-        "gravada nao pede a forma compacta, entao o conteudo dela continua o mesmo"
+        "gravada nao pede a forma compacta, entao o conteudo dela continua o mesmo. "
+        + _MOTIVO_TRUST
     ),
+    "erro_fronteira": _MOTIVO_TRUST,
+    "sucesso_analyze": _MOTIVO_TRUST,
+    "sucesso_collect_offline": _MOTIVO_TRUST,
+    "sucesso_debate": _MOTIVO_TRUST,
+    "sucesso_verbo_release": _MOTIVO_TRUST,
 }
 _CAMPOS_DA_REGRA_REESCRITOS = (("action", "target"), ("action", "direction"), ("proposed_change",))
 _CAMINHO_DE_TOOL = re.compile(r"^\$\.tools_list\.(stdio|http)\.tools\[(\d+)\]\.")
@@ -440,6 +451,7 @@ def _fora_da_allowlist(
 _CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
     r"^\$\.calls\.(?P<chave>[A-Za-z0-9_]+)\.result\."
     r"(?:content\[0\]\.text"
+    r"|structuredContent\._trust"
     r"|structuredContent\.rules_index"
     r"|structuredContent\.filters_applied\.(?:severity|runtime|index)"
     r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
@@ -504,13 +516,24 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
                 alvo = alvo[chave]
             alvo[caminho[-1]] = "<declarado>"
 
-    for regra in copia["structuredContent"]["rules"]:
-        neutraliza(regra)
+    def sem_trust(payload: dict[str, Any]) -> dict[str, Any]:
+        """`_trust` e aditivo em TODO resultado desde 2026-10-05; tirado dos dois
+        lados para que o resto continue comparado byte a byte."""
+        payload.pop("_trust", None)
+        return payload
+
+    estruturado = copia.get("structuredContent")
+    if isinstance(estruturado, dict) and "rules" in estruturado:
+        for regra in estruturado["rules"]:
+            neutraliza(regra)
     texto = json.loads(copia["content"][0]["text"])
-    for regra in texto["rules"]:
-        neutraliza(regra)
-    copia["structuredContent"] = sem_busca_nao_pedida(copia["structuredContent"])
-    copia["content"][0]["text"] = sem_busca_nao_pedida(texto)
+    if isinstance(texto, dict) and "rules" in texto:
+        for regra in texto["rules"]:
+            neutraliza(regra)
+    if isinstance(estruturado, dict):
+        copia["structuredContent"] = sem_trust(sem_busca_nao_pedida(estruturado))
+    if isinstance(texto, dict):
+        copia["content"][0]["text"] = sem_trust(sem_busca_nao_pedida(texto))
     return copia
 
 
@@ -620,7 +643,11 @@ class TestHandshakeLegado:
         # acrescentou em `filters_applied` (`severity`, `runtime`, `index`).
         # A chamada gravada nao pede nenhuma delas: os filtros vem nulos, o
         # indice vazio, e o conteudo da regra continua byte a byte.
-        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 9
+        # 9 -> 19 em 2026-10-05: `_trust` entrou em todo resultado de `call_tool`
+        # -- `structuredContent._trust` em cinco chamadas declaradas e o texto
+        # serializado em seis (erro_fronteira nao tem structuredContent), cada
+        # uma com o restante conferido byte a byte pelo `_neutro`.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 19
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():

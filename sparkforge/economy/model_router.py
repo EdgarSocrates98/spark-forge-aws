@@ -56,6 +56,28 @@ class ModelRoutingInput:
     latency_budget_ms: float | None = None
 
 
+# Limiar declarado de maturidade de scorecard. Convencao documentada, nao
+# medida: menos de 5 observacoes e evidencia jovem demais para sustentar uma
+# decisao ativa -- mas a maturidade NAO promove nada; quem promove e o
+# Decision Plane com autoridade e promotion evidence.
+SCORECARD_MATURE_MIN_OBSERVATIONS = 5
+
+
+def scorecard_maturity(scorecard: ModelScorecard | None) -> str:
+    """Estado de maturidade do scorecard no recorte (provider, model, task_type).
+
+    `absent` nao e `cold`: a ausencia de scorecard diz "sem evidencia de
+    qualidade", enquanto `cold` diz "scorecard existe mas ainda nao observou".
+    """
+    if scorecard is None:
+        return "absent"
+    if scorecard.observations <= 0:
+        return "cold"
+    if scorecard.observations < SCORECARD_MATURE_MIN_OBSERVATIONS:
+        return "warming"
+    return "mature"
+
+
 @dataclass(frozen=True, slots=True)
 class ModelRouteDecision:
     selected: ModelCandidate | None
@@ -65,6 +87,8 @@ class ModelRouteDecision:
     candidates_considered: int
     promotion_evidence: tuple[str, ...] = ()
     unresolved: tuple[str, ...] = ()
+    scorecard_observations: int | None = None
+    scorecard_maturity: str = "absent"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -88,6 +112,8 @@ class ModelRouteDecision:
             "candidates_considered": self.candidates_considered,
             "promotion_evidence": list(self.promotion_evidence),
             "unresolved": list(self.unresolved),
+            "scorecard_observations": self.scorecard_observations,
+            "scorecard_maturity": self.scorecard_maturity,
         }
 
 
@@ -135,8 +161,10 @@ class AdaptiveModelRouter:
                 len(self.candidates),
                 evidence,
                 tuple(unresolved),
+                scorecard_maturity="absent",
             )
         selected = max(compatible, key=lambda candidate: self._score(candidate, request))
+        selected_scorecard = self._scorecard(selected, request)
         if request.context_tokens is not None and selected.max_context_tokens is None:
             unresolved.append("model_context_limit_unresolved")
         if request.risk > 1 and selected.max_risk is None:
@@ -145,6 +173,11 @@ class AdaptiveModelRouter:
             unresolved.append("model_reasoning_capacity_unresolved")
         if not selected.cost_known:
             unresolved.append("model_cost_unresolved")
+        maturity = scorecard_maturity(selected_scorecard)
+        if selected_scorecard is None:
+            # Sem scorecard no recorte, o ranking inteiro correu sem evidencia
+            # de qualidade -- nomeado, nao disfarcado de nota zero.
+            unresolved.append("scorecard_absent")
         applied = mode == ModelRouteMode.ACTIVE and active_enabled and authority and bool(evidence)
         if mode == ModelRouteMode.ASSISTED and not authority:
             reason = "assisted route proposed without execution authority"
@@ -155,8 +188,90 @@ class AdaptiveModelRouter:
         else:
             reason = f"{mode.value} model route selected by declared capability and scorecard"
         return ModelRouteDecision(
-            selected, mode, applied, reason, len(self.candidates), evidence, tuple(unresolved)
+            selected,
+            mode,
+            applied,
+            reason,
+            len(self.candidates),
+            evidence,
+            tuple(unresolved),
+            scorecard_observations=(
+                selected_scorecard.observations if selected_scorecard else None
+            ),
+            scorecard_maturity=maturity,
         )
+
+    def route_health(self, request: ModelRoutingInput) -> dict[str, Any]:
+        """Estado de saude da rota por eixo, no vocabulario fechado
+        ready/partial/degraded/unresolved -- nunca um placar 0-100.
+
+        So deriva do que foi declarado: `provider_availability` fica
+        `unresolved` sempre porque o core e offline e nao sonda provider.
+        """
+        decision = self.route(request)
+        compatible = [
+            candidate for candidate in self.candidates if self._compatible(candidate, request)
+        ]
+        maturity = decision.scorecard_maturity
+        axes = {
+            "candidate_coverage": "ready" if compatible else "degraded",
+            "scorecard_maturity": {
+                "mature": "ready",
+                "warming": "partial",
+                "cold": "partial",
+                "absent": "unresolved",
+            }[maturity],
+            "evidence_completeness": "ready" if not decision.unresolved else "partial",
+            "budget_health": self._budget_health(request, compatible),
+            "provider_availability": "unresolved",
+            "security_status": self._security_status(request, decision.selected),
+            "context_sufficiency": self._context_health(request),
+            "fallback_availability": "ready" if len(compatible) >= 2 else "degraded",
+        }
+        order = {"ready": 0, "partial": 1, "unresolved": 2, "degraded": 3}
+        status = max(axes.values(), key=lambda estado: order[estado])
+        return {
+            "status": status,
+            "axes": axes,
+            "scorecard_observations": decision.scorecard_observations,
+            "unresolved": list(decision.unresolved),
+        }
+
+    def _budget_health(
+        self, request: ModelRoutingInput, compatible: list[ModelCandidate]
+    ) -> str:
+        if request.budget_usd is None:
+            return "unresolved"
+        if not compatible:
+            return "degraded"
+        # `_compatible` ja eliminou quem estourava o budget; chegar aqui com
+        # candidato vivo significa que ele coube.
+        return "ready"
+
+    def _security_status(
+        self, request: ModelRoutingInput, selected: ModelCandidate | None
+    ) -> str:
+        if request.risk <= 1:
+            return "ready"
+        if selected is None:
+            return "degraded"
+        return "ready" if selected.max_risk is not None else "unresolved"
+
+    def _context_health(self, request: ModelRoutingInput) -> str:
+        if request.context_tokens is None:
+            return "unresolved"
+        declared = [
+            candidate
+            for candidate in self.candidates
+            if candidate.max_context_tokens is not None
+        ]
+        if not declared:
+            return "unresolved"
+        fits = any(
+            candidate.max_context_tokens >= request.context_tokens
+            for candidate in declared
+        )
+        return "ready" if fits else "degraded"
 
     def _compatible(self, candidate: ModelCandidate, request: ModelRoutingInput) -> bool:
         if (
@@ -248,4 +363,6 @@ __all__ = [
     "ModelRouteMode",
     "ModelRoutingInput",
     "ModelScorecard",
+    "SCORECARD_MATURE_MIN_OBSERVATIONS",
+    "scorecard_maturity",
 ]

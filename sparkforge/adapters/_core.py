@@ -9647,6 +9647,10 @@ def agentic_doctor(repo: str = ".") -> dict[str, Any]:
         "context_profiles": (root / "sparkforge" / "context" / "gateway_profiles.yaml").exists(),
         "protocols": (root / "sparkforge" / "protocols" / "forge.py").exists(),
         "offline_core": True,
+        # Scorecards de modelo sao em-memoria hoje (AdaptiveModelRouter os
+        # recebe por construcao); sem fonte persistida o eixo de maturidade
+        # fica unresolved em vez de fingir leitura.
+        "scorecard_maturity": (root / ".sparkforge" / "model-scorecards.json").exists(),
     }
     return {
         "status": "ok" if all(checks.values()) else "unresolved",
