@@ -143,7 +143,7 @@ gate sem produtor é o impasse que o design da Fase 0 recusou.
 
 ### A nota do CONFIG_OCA no `AGENTS.md`
 
-Texto que morava em "Agentic Expansion Inventory" até 2026-10-09, removido na
+Texto que morava em "Agentic Expansion Inventory" até 2026-10-06, removido na
 onda de convergência do runtime porque o teto de bytes do arquivo de instrução
 estourou e a passagem é histórico, não regra:
 

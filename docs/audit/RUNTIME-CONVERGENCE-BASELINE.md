@@ -5,7 +5,7 @@
 **DIRTY_STATE:** clean
 **PYTHON_VERSION:** 3.14.6
 **PACKAGE_VERSION:** 0.5.0
-**Auditado em:** 2026-10-09
+**Auditado em:** 2026-10-06
 **Fonte do pedido:** `prompt_evo_runtime.md` (fora da árvore versionada, `.gitignore:81`)
 
 Este documento é a matriz de convergência exigida antes de qualquer implementação:

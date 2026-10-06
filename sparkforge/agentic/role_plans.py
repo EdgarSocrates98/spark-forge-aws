@@ -15,6 +15,18 @@ ainda nao etiquetam `trust`, e um floor mais alto negaria tudo que chega sem
 rotulo (item sem `trust` resolve `UNKNOWN`, rank 0). O mecanismo e real -- o
 teste prova o floor negando -- mas o aperto espera os produtores etiquetarem.
 Subir floor antes disso nao endurece seguranca: torna o gateway inutil.
+
+Inventario de produtores de `items` (final-hardening, 2026-10-06):
+- itens fornecidos pelo chamador via `context_gateway_start` (CLI/MCP):
+  dicts do host, sem etiqueta -- resolvem UNKNOWN;
+- `_trust` de `call_tool`: etiqueta o RESULTADO da tool, nao itens de
+  contexto -- nao alimenta o floor;
+- `HandoffAdmission.context_items()`: o unico produtor in-repo que etiqueta
+  (`trust` <= MODEL_OUTPUT + `taint` + `provenance`).
+
+Conclusao medida: um so produtor etiqueta, e com teto baixo. Floor acima de
+UNKNOWN permanece DEFERRED; o gatilho e produtor de Fact/Finding emitindo
+`trust` no item que entrega ao gateway — nao heuristica na selecao.
 """
 
 from __future__ import annotations

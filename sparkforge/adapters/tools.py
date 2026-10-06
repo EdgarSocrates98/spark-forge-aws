@@ -11017,8 +11017,9 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_agentops_critical_path": {
         "description": (
-            "Caminho critico medido do run: maiores duracoes, retries e "
-            "waiting entre spans consecutivos."
+            "Caminho critico medido do run (duracao observada, nao o DAG do "
+            "metodo CPM): maiores duracoes, retries e waiting entre spans "
+            "consecutivos."
         ),
         "inputSchema": {
             "type": "object",
