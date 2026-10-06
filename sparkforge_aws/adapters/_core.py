@@ -1008,13 +1008,29 @@ def analyze_pyspark(
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
     detail_level: str = "full",
+    upstream: str | None = None,
 ) -> dict[str, Any]:
+    if upstream is not None:
+        # Evidencia estrangeira (sparkforge/upstream-facts/v1): validada antes
+        # da varredura — um documento malformado nao custa um walk do FS. Os
+        # facts vao ao fim da lista — o mesmo filtro de `kind` vale — e nunca
+        # entram em `unresolved`, que mede ponto cego do extrator local.
+        from sparkforge_aws.adapters import upstream as _upstream
+
+        try:
+            foreign = _upstream.read_upstream_facts(upstream)
+        except _upstream.UpstreamError as exc:
+            raise AdapterError(str(exc), exit_code=2) from exc
+    else:
+        foreign = []
     facts = _extract_facts(path)
     wanted_kinds = set(kind) if kind else None
     filtered = [f for f in facts if wanted_kinds is None or f.kind in wanted_kinds]
 
-    by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
+    items += [f for f in foreign
+              if wanted_kinds is None or f["kind"] in wanted_kinds]
+    by_kind = _count_by(items, lambda f: f["kind"])
     page, next_cursor = paginate_items(items, limit, cursor)
     page, procedencias, versao_do_schema = project_items(page, detail_level)
 
@@ -1035,13 +1051,14 @@ def analyze_pyspark(
     ]
 
     resultado: dict[str, Any] = {
-        "total_count": len(filtered),
+        "total_count": len(items),
         "returned_count": len(page),
         "next_cursor": next_cursor,
         "filters_applied": {
             "kind": list(kind) if kind else None,
             "limit": limit,
             "cursor": cursor,
+            "upstream": upstream,
         },
         "by_kind": by_kind,
         "unresolved": unresolved,
