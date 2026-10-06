@@ -9534,6 +9534,8 @@ def context_gateway_start(
     answer_status: AnswerStatus | None = None,
     answer_reasons: list[str] | None = None,
     triggers: list[str] | None = None,
+    role: str | None = None,
+    role_plan: dict[str, Any] | None = None,
     repo: str = ".",
 ) -> dict[str, Any]:
     """Start Gateway flow over already extracted local inputs."""
@@ -9552,6 +9554,8 @@ def context_gateway_start(
             answer_status=answer_status,
             answer_reasons=tuple(answer_reasons or ()),
             triggers=tuple(triggers or ()),
+            role=role,
+            role_plan=role_plan,
         )
         response = ContextGateway(
             catalog,

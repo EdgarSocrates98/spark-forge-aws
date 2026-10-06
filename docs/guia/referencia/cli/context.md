@@ -67,6 +67,8 @@ sparkforge context start --help
 | `--profile` | não | `economy`, `balanced`, `deep` |  | `balanced` |  |
 | `--max-bytes` | não | texto |  |  | Teto de bytes serializados; omitido usa default do profile. |
 | `--items` | não | texto |  |  | JSON com lista de facts/findings/knowledge/codigo ja extraidos. |
+| `--role` | não | texto |  |  | Role com plano declarado (sf-inventory/sf-extractor/sf-judge/sf-verifier/sf-synthesizer); desconhecida nega contexto. |
+| `--role-plan` | não | texto |  |  | Arquivo JSON com RoleContextPlan serializado (vence --role). |
 | `--repo` | não | texto |  | `.` |  |
 | `--case-id` | não | texto |  |  |  |
 

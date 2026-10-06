@@ -5442,6 +5442,21 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "intent": {"type": "string", "minLength": 1},
                 "profile": {"type": "string", "enum": ["economy", "balanced", "deep"]},
                 "max_bytes": {"type": "integer", "minimum": 1},
+                "role": {
+                    "type": "string",
+                    "description": (
+                        "Role com plano declarado em ROLE_PLANS (sf-inventory, "
+                        "sf-extractor, sf-judge, sf-verifier, sf-synthesizer). "
+                        "Role desconhecida nega contexto (fail-closed)."
+                    ),
+                },
+                "role_plan": {
+                    "type": "object",
+                    "description": (
+                        "RoleContextPlan serializado (to_dict). Vence `role`. "
+                        "Invalido nega contexto com unresolved role_plan_invalid."
+                    ),
+                },
                 "case_id": {"type": "string"},
                 "items": {"type": "array", "items": {"type": "object"}},
                 "answer_status": {
@@ -11362,6 +11377,8 @@ def _h_context_start(args: dict[str, Any]) -> dict[str, Any]:
         answer_status=args.get("answer_status"),
         answer_reasons=args.get("answer_reasons"),
         triggers=args.get("triggers"),
+        role=args.get("role"),
+        role_plan=args.get("role_plan"),
         repo=args.get("repo", "."),
         catalog=TOOLS,
     )

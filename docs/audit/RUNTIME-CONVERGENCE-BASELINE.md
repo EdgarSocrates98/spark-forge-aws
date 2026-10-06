@@ -127,7 +127,7 @@ complexidade), tudo com `unresolved` quando a evidência não existe.
 | Seam | De → para | Fase |
 |---|---|---|
 | Trust no caminho de execução | `trust.py` → `call_tool`/executor | 3 |
-| `RoleContextPlan` na seleção de contexto | `trust.py` → `gateway.py` | 4 |
+| `RoleContextPlan` na seleção de contexto | `trust.py` → `gateway.py` | 4 ✅ |
 | Inputs do router | `model_router.py` interno | 5 |
 | Promotion real do Decision Plane | `decision_plane.py` | 6 |
 | Memória governando recuperação | `memory.py` retrieve | 7 |
@@ -156,7 +156,8 @@ complexidade), tudo com `unresolved` quando a evidência não existe.
 | 0 — auditoria | `639a236` | este documento |
 | 1 — P0 | `a26fcd7` | `tokens_status` no span/trace/store; `models.tokens`/`cost` estruturados em `inspect_run`; `cost_basis` escopado a eventos com custo; `risk`/`required_reasoning`/`complexity` operacionais no router |
 | 2 — economia | `fb19355` | `economy/reconcile.py` (autoridades canônicas, conflitos nomeados); `inspect_run` ganha `reconciliation`; `TokenWasteDetector` sem preço inventado |
-| 3 — trust no despacho | _este_ | `_trust` em todo resultado de `call_tool` (inclui recusa); `taint` no metadata do span; `TRUST_RANK` explícito; `tool_result_envelope()` em `trust.py` |
+| 3 — trust no despacho | `7e23881` | `_trust` em todo resultado de `call_tool` (inclui recusa); `taint` no metadata do span; `TRUST_RANK` explícito; `tool_result_envelope()` em `trust.py` |
+| 4 — `RoleContextPlan` na seleção | _este_ | `GatewayRequest.role`/`role_plan`; `ROLE_PLANS` com os 5 executores; negação por kind/floor/required vira `unresolved` nomeado; `context_share` encolhe o teto; `tool_access` filtra capabilities; role desconhecida é fail-closed (`role_plan_unknown`, deny-all); `_trust` do item via `item["trust"]`; campos declarados em `context_start` (MCP+CLI) |
 
 Nota de ambiente registrada na fase 3: a suíte com `--basetemp` dentro do
 repositório faz `_ancestral_com_case` (`journal/record.py`) escalar até a raiz

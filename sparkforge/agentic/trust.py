@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from typing import Any
@@ -185,6 +185,28 @@ class RoleContextPlan:
             result[key] = list(result[key])
         result["trust_floor"] = self.trust_floor.value
         return result
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> RoleContextPlan:
+        """Reconstroi o plano serializado (fronteira MCP/CLI viaja como dict).
+
+        Valores invalidos levantam `ValueError`/`KeyError` -- quem chama
+        (`ContextGateway`) converte em `role_plan_invalid` nomeado, porque um
+        plano malformado NAO pode ser lido como "sem plano" (fail-open).
+        """
+        if not isinstance(raw, Mapping):
+            raise ValueError("role_plan must be a mapping")
+        return cls(
+            role=str(raw.get("role", "")),
+            allowed_context=tuple(str(k) for k in raw.get("allowed_context", ())),
+            required_context=tuple(str(k) for k in raw.get("required_context", ())),
+            context_share=float(raw.get("context_share", 1.0)),
+            artifact_access=tuple(str(k) for k in raw.get("artifact_access", ())),
+            memory_access=tuple(str(k) for k in raw.get("memory_access", ())),
+            knowledge_access=tuple(str(k) for k in raw.get("knowledge_access", ())),
+            tool_access=tuple(str(k) for k in raw.get("tool_access", ())),
+            trust_floor=TrustLabel(str(raw.get("trust_floor", "UNKNOWN"))),
+        )
 
 
 @dataclass(frozen=True, slots=True)

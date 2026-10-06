@@ -1573,6 +1573,15 @@ def build_parser() -> argparse.ArgumentParser:
     context_start_p.add_argument(
         "--items", help="JSON com lista de facts/findings/knowledge/codigo ja extraidos."
     )
+    context_start_p.add_argument(
+        "--role",
+        help="Role com plano declarado (sf-inventory/sf-extractor/sf-judge/"
+        "sf-verifier/sf-synthesizer); desconhecida nega contexto.",
+    )
+    context_start_p.add_argument(
+        "--role-plan",
+        help="Arquivo JSON com RoleContextPlan serializado (vence --role).",
+    )
     context_start_p.add_argument("--repo", default=".")
     context_start_p.add_argument("--case-id")
     context_expand_p = context_sub.add_parser(
@@ -4651,6 +4660,7 @@ def _gateway_catalog() -> dict[str, dict[str, Any]]:
 
 def _cmd_context_start(args: argparse.Namespace) -> int:
     items = _load_json_list(args.items) if args.items else []
+    role_plan = _load_json_object(args.role_plan) if args.role_plan else None
     _print(
         _core.context_gateway_start(
             intent=args.intent,
@@ -4660,6 +4670,8 @@ def _cmd_context_start(args: argparse.Namespace) -> int:
             case_id=args.case_id,
             repo=args.repo,
             catalog=_gateway_catalog(),
+            role=args.role,
+            role_plan=role_plan,
         )
     )
     return 0
