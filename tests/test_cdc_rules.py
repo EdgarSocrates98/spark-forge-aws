@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from sparkforge.facts.cdc import extract_cdc_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.cdc import extract_cdc_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 RULES = load_catalog()

@@ -17,8 +17,8 @@ files:
   - {path: agents/data-quality-reviewer.md, action: modify, reason: "recebe a skill analyze-functional-rules, produtora do business_rule.schema.json (D6)"}
   - {path: agents/sf-security-reviewer.md, action: modify, reason: "os 11 sf-* que ficam perdem as areas ocas de rule_areas (D2); este e o representante, os outros 10 seguem a mesma tarefa (o representante original, sf-analytics-specialist, saiu depois em CRITERIO_DE_DOMINIO)"}
   - {path: skills/design-airflow-pipelines/SKILL.md, action: delete, reason: "as 10 skills sem artefato e sem dono que fica saem (lista em D7); esta e a representante"}
-  - {path: sparkforge/findings/schemas/business_rule.schema.json, action: modify, reason: "a descricao nomeia sf-functional-rules-specialist como produtor; passa a nomear data-quality-reviewer"}
-  - {path: sparkforge/economy/router.py, action: modify, reason: "specialist_keywords aponta athena, dynamodb e step functions para skills que saem, e kinesis para streaming-reliability, que nunca existiu; as quatro entradas saem (D8)"}
+  - {path: sparkforge_aws/findings/schemas/business_rule.schema.json, action: modify, reason: "a descricao nomeia sf-functional-rules-specialist como produtor; passa a nomear data-quality-reviewer"}
+  - {path: sparkforge_aws/economy/router.py, action: modify, reason: "specialist_keywords aponta athena, dynamodb e step functions para skills que saem, e kinesis para streaming-reliability, que nunca existiu; as quatro entradas saem (D8)"}
   - {path: scripts/sync_skills.py, action: modify, reason: "a tabela de despacho lista as 10 skills que saem"}
   - {path: tests/test_sync_render.py, action: modify, reason: "a tabela literal de skill para coordenador cita os agentes e skills que saem"}
   - {path: manifest.json, action: modify, reason: "lista de skills e rule_count do knowledge_base"}
@@ -65,7 +65,7 @@ decisions:
     rejected: ["sf-storage-specialist: tambem declara SF-ICE, mas e o coordenador generico; o especialista de Iceberg e o dono natural da decisao de format version"]
     rollback: "git revert do commit"
   - id: D6
-    choice: "analyze-functional-rules fica, porque produz o payload que sparkforge/findings/validate.py::validate_business_rule confere; passa a ser declarada por data-quality-reviewer, e a descricao do schema troca o nome do produtor."
+    choice: "analyze-functional-rules fica, porque produz o payload que sparkforge_aws/findings/validate.py::validate_business_rule confere; passa a ser declarada por data-quality-reviewer, e a descricao do schema troca o nome do produtor."
     rejected: ["apagar junto das outras: deixaria o schema business_rule sem skill que o produza", "sf-analytics-specialist: coordenador generico de 39 palavras"]
     rollback: "git revert do commit"
   - id: D7
@@ -73,7 +73,7 @@ decisions:
     rejected: ["realocar optimize-athena-queries e optimize-iceberg-tables: athena-query-optimizer e iceberg-performance-engineer ja declaram optimize-iceberg-table e optimize-parquet-layout, com procedimento sobre tool real"]
     rollback: "git revert do commit, depois python scripts/sync_skills.py"
   - id: D8
-    choice: "sparkforge/economy/router.py perde as entradas athena, dynamodb, step functions e kinesis de specialist_keywords: as tres primeiras apontam para skill que sai, e kinesis aponta para streaming-reliability, que nunca existiu. Com a mudanca, todo valor de specialist_keywords e uma skill que existe."
+    choice: "sparkforge_aws/economy/router.py perde as entradas athena, dynamodb, step functions e kinesis de specialist_keywords: as tres primeiras apontam para skill que sai, e kinesis aponta para streaming-reliability, que nunca existiu. Com a mudanca, todo valor de specialist_keywords e uma skill que existe."
     rejected: ["apontar athena para optimize-parquet-layout: a palavra athena nao diz que o problema e layout"]
     rollback: "git revert do commit"
   - id: D9
@@ -115,7 +115,7 @@ teste novo a confere.
 - `load_catalog()`: 192 regras, 157 executáveis, 35 não executáveis (2026-09-19).
 - `tests/test_agent_coverage.py` sem os 19: órfãs as 9 `sparkforge_code_*` e
   `sparkforge_iceberg_assess_upgrade` (medido no explore).
-- `specialist_keywords` em `sparkforge/economy/router.py`: `streaming-reliability` não
+- `specialist_keywords` em `sparkforge_aws/economy/router.py`: `streaming-reliability` não
   existe em `skills/` hoje.
 - `.claude/agents/README.md` não é rastreado e `scripts/sync_skills.py` o apaga: copiar
   para fora antes do sync e devolver depois.

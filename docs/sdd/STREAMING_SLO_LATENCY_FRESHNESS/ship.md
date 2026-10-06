@@ -52,7 +52,7 @@ aceita quando o artefato fornece `endToEndLatencyMs`.
 - 74 testes focados de facts, SLO, composição, goldens e docs passaram.
 - `gen_reference_docs`, `sync_skills` e `git diff --check` foram executados;
   surface lock e manifest não exigiram alteração de superfície.
-- `sparkforge sdd check --repo . --feature STREAMING_SLO_LATENCY_FRESHNESS`
+- `sparkforge-aws sdd check --repo . --feature STREAMING_SLO_LATENCY_FRESHNESS`
   passou sem recusas ou unresolved.
 
 ## Limites e próximos desbloqueios

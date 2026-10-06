@@ -18,19 +18,19 @@ usam arquivos sintéticos de `fixtures/stepfunctions/` e `fixtures/sfn_history/`
 mkdir -p /tmp/sf
 
 # 1. Extrair os facts da definicao (.asl.json, saida de describe-state-machine, ou diretorio)
-sparkforge analyze step-functions \
+sparkforge-aws analyze step-functions \
   --path fixtures/stepfunctions/glue_sem_sync/input --out /tmp/sf/facts_sfn.json
 
 # 2. Julgar: SF-SFN-001 a 003 leem so o ASL
-sparkforge judge --facts /tmp/sf/facts_sfn.json
+sparkforge-aws judge --facts /tmp/sf/facts_sfn.json
 
 # 3. Com o Terraform do job: extrair os dois lados, fundir e julgar
-sparkforge analyze step-functions \
+sparkforge-aws analyze step-functions \
   --path fixtures/stepfunctions/retry_duas_camadas/input --out /tmp/sf/sfn.json
-sparkforge analyze terraform \
+sparkforge-aws analyze terraform \
   --path fixtures/stepfunctions/retry_duas_camadas/input --out /tmp/sf/tf.json
-sparkforge fuse --facts /tmp/sf/sfn.json --facts /tmp/sf/tf.json --out /tmp/sf/fundidos.json
-sparkforge judge --facts /tmp/sf/fundidos.json
+sparkforge-aws fuse --facts /tmp/sf/sfn.json --facts /tmp/sf/tf.json --out /tmp/sf/fundidos.json
+sparkforge-aws judge --facts /tmp/sf/fundidos.json
 ```
 
 A definição vem do repositório (o `.asl.json` que o IaC publica) ou da conta: a saída de
@@ -62,7 +62,7 @@ sai `undeclared`, nunca `STANDARD` por suposição.
 A `SF-SFN-004` afirma só que as duas camadas existem. **Quantas vezes o job roda numa
 falha não é documentado** — o retry do Glue é outro JobRun, e o `.sync` acompanha o
 primeiro. Medir exige um histórico de execução real com falha e os JobRuns do mesmo
-intervalo (`sparkforge collect glue-job-runs`).
+intervalo (`sparkforge-aws collect glue-job-runs`).
 
 ## A outra metade: o histórico de execução
 
@@ -77,22 +77,22 @@ aws stepfunctions get-execution-history \
   > /tmp/sf/execucao.json
 
 # 2. Extrair os facts do historico
-sparkforge analyze sfn-history \
+sparkforge-aws analyze sfn-history \
   --path fixtures/sfn_history/task_timed_out_sync/input/historico \
   --out /tmp/sf/facts_hist.json
 
 # 3. Julgar: SF-SFNX-002 e 003 leem so o historico
-sparkforge judge --facts /tmp/sf/facts_hist.json
+sparkforge-aws judge --facts /tmp/sf/facts_hist.json
 
 # 4. Com a definicao do MESMO state machine: fundir, e o confronto aparece
-sparkforge analyze sfn-history \
+sparkforge-aws analyze sfn-history \
   --path fixtures/sfn_history/retry_acima_do_declarado/input/historico \
   --out /tmp/sf/hist.json
-sparkforge analyze step-functions \
+sparkforge-aws analyze step-functions \
   --path fixtures/sfn_history/retry_acima_do_declarado/input/definicao \
   --out /tmp/sf/asl.json
-sparkforge fuse --facts /tmp/sf/hist.json --facts /tmp/sf/asl.json --out /tmp/sf/juntos.json
-sparkforge judge --facts /tmp/sf/juntos.json
+sparkforge-aws fuse --facts /tmp/sf/hist.json --facts /tmp/sf/asl.json --out /tmp/sf/juntos.json
+sparkforge-aws judge --facts /tmp/sf/juntos.json
 ```
 
 **`--include-execution-data` não é opcional na prática**: sem ele não há `output` no
@@ -200,7 +200,7 @@ por outro motivo: o extrator não segue as execuções filhas dele.
 **A recusa cala a ordem; o `JobRunId` sobrevive.** O `sfn.job_run` de cada submissão
 daquele nome **continua saindo** — o `JobRunId` está escrito literalmente no `output` do
 `TaskSubmitted`, não depende de ordem nenhuma, e é a única ponte para
-`sparkforge finops`. O que ele perde é a afirmação de ordem: o `subject.symbol` é o nome
+`sparkforge-aws finops`. O que ele perde é a afirmação de ordem: o `subject.symbol` é o nome
 do estado **sem** o `#<n>`, não há `attempt_index` nas medidas, e
 `attrs.attempt_index_refused` nomeia a recusa que calou o número. O discriminador é
 `measures.submitted_event_id`, o `id` do evento que publicou o valor.
@@ -235,7 +235,7 @@ prazo curto demais. Sem a condição, o achado mandaria você rodar
 
 **Nenhuma delas fala em custo.** Atribuir custo a uma tentativa exigiria o `dpu_seconds`
 de um run que ninguém leu. O que o histórico entrega é o `JobRunId` — e é com ele que
-`sparkforge finops` responde custo com medida de verdade.
+`sparkforge-aws finops` responde custo com medida de verdade.
 
 **EXPRESS não passa por aqui**: a API não suporta `get-execution-history` para ela, e o
 histórico dela vai para o CloudWatch Logs.

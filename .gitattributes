@@ -13,8 +13,14 @@ fixtures/change/** -text
 # (`prev`), e um CRLF introduzido pelo checkout quebraria a cadeia inteira.
 fixtures/journal/** -text
 # `fixtures/sdd/`: cada artefato de spec prende o `text_sha256` do upstream
-# (`sparkforge sdd stamp`), que normaliza CRLF para LF -- o CRLF do checkout
+# (`sparkforge-aws sdd stamp`), que normaliza CRLF para LF -- o CRLF do checkout
 # nao poe a cascata em `upstream_stale`. `-text` fica para os bytes da fixture
 # serem os mesmos em toda plataforma: o gerador gravou bytes, e o golden e a
 # suite agentica leem a copia do checkout.
 fixtures/sdd/** -text
+# `CLAUDE.md` e `AGENTS.md` tem teto de bytes medido pelo teste de bootstrap
+# budget sobre os bytes do WORKTREE. Checkout Windows com CRLF infla cada
+# arquivo em ~380+ bytes e reprova o gate sem nenhuma mudanca de conteudo --
+# mesma classe de defeito que `fixtures/` ja tratava com `-text`.
+CLAUDE.md eol=lf
+AGENTS.md eol=lf

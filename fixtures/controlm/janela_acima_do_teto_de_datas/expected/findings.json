@@ -48,7 +48,7 @@
       "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a lista é aceita naquela versão.",
       "EIXO DE RESULTADO — o conjunto de datas ordenadas é o mesmo que se pretendia. `run jobs:status::get` sobre a janela de interesse devolve uma ordenação para cada data pretendida e nenhuma a mais; comparar a lista de datas ordenadas antes e depois, item a item, é o que prova que a troca de mecanismo não perdeu nem acrescentou dia.",
       "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa data que existe nos dois desenhos confere com o do último run bom: contagem total e contagem por chave de negócio iguais.",
-      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-003, e `ctm.schedule` mostra `specific_dates_count` dentro do teto — e `job_count` inalterado, porque regra que cala por o extrator ter parado de ler é verde falso."
+      "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-003, e `ctm.schedule` mostra `specific_dates_count` dentro do teto — e `job_count` inalterado, porque regra que cala por o extrator ter parado de ler é verde falso."
     ],
     "rollback": [
       "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um calendário no Control-M, removê-lo é operação de runtime e exige confirmação de escopo: outros jobs podem tê-lo passado a referenciar."

@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge detach`
+# `sparkforge-aws detach`
 
 Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado.
 
 ```bash
-sparkforge detach --help
+sparkforge-aws detach --help
 ```
 
 ## Opções

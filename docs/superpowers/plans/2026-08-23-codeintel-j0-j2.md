@@ -25,7 +25,7 @@ escrito com compensação nomeada.
 
 O mapa [`docs/harness/CODEINTEL-GAP.md`](../../harness/CODEINTEL-GAP.md) mediu a
 SPEC do SFCI contra o repositório e concluiu que **a extração já existe**: os
-extratores de `sparkforge/facts/` já emitem `pyspark.read`/`pyspark.write` (o
+extratores de `sparkforge_aws/facts/` já emitem `pyspark.read`/`pyspark.write` (o
 grafo de tabela da §35), `pyspark.callgraph_edge` mais os quatro kinds
 `callgraph.*` (§123/§124) e `graph.unresolved`/`sql.unresolved` (§28). O que
 falta é persistência, índice incremental e recuperação.
@@ -89,17 +89,17 @@ aqui, e mexer neles agora arrasta superfície sem necessidade.
 
 | Arquivo | Responsabilidade | Fase |
 |---|---|---|
-| `sparkforge/facts/secrets.py` | **Único** detector de segredo. Ganha detectores por valor e passa a ser o import de todos os extratores | J0 |
+| `sparkforge_aws/facts/secrets.py` | **Único** detector de segredo. Ganha detectores por valor e passa a ser o import de todos os extratores | J0 |
 | `tests/test_facts_secrets.py` | **Novo.** Corpus de segredo: positivos por valor, negativos que não podem virar falso positivo | J0 |
-| `sparkforge/facts/scan.py` | **Novo.** `iter_source_files()` — a varredura única, com denylist e confinamento | J0 |
+| `sparkforge_aws/facts/scan.py` | **Novo.** `iter_source_files()` — a varredura única, com denylist e confinamento | J0 |
 | `tests/test_facts_scan.py` | **Novo.** Denylist, traversal, symlink, arquivo especial | J0 |
-| `sparkforge/facts/terraform.py`, `emr_cluster.py`, `emr_serverless.py` | Perdem a cópia privada de `_looks_like_secret` | J0 |
-| `sparkforge/findings/models.py` | **Não muda.** A projeção opera sobre o dicionário já serializado, em `_core.py` — `Fact` continua com uma forma só | J1 |
-| `sparkforge/adapters/_core.py` | `project_items()` novo; os 7 pontos de envelope passam a chamá-lo | J1 |
-| `sparkforge/adapters/tools.py` | `detail_level` no `inputSchema` das tools que paginam | J1 |
-| `sparkforge/adapters/mcp.py:83` | Separadores compactos | J1 |
+| `sparkforge_aws/facts/terraform.py`, `emr_cluster.py`, `emr_serverless.py` | Perdem a cópia privada de `_looks_like_secret` | J0 |
+| `sparkforge_aws/findings/models.py` | **Não muda.** A projeção opera sobre o dicionário já serializado, em `_core.py` — `Fact` continua com uma forma só | J1 |
+| `sparkforge_aws/adapters/_core.py` | `project_items()` novo; os 7 pontos de envelope passam a chamá-lo | J1 |
+| `sparkforge_aws/adapters/tools.py` | `detail_level` no `inputSchema` das tools que paginam | J1 |
+| `sparkforge_aws/adapters/mcp.py:83` | Separadores compactos | J1 |
 | `tests/test_adapters_detail_level.py` | **Novo.** Os três níveis, e o invariante de que `id` sobrevive a todos | J1 |
-| `sparkforge/agents/autonomy.py` | `authorize()` passa a receber `arguments` — ou não, e o limite fica escrito | J2 |
+| `sparkforge_aws/agents/autonomy.py` | `authorize()` passa a receber `arguments` — ou não, e o limite fica escrito | J2 |
 | `docs/harness/AUTHORIZATION-CHAIN.md` | Registra a decisão de J2 | J2 |
 
 ---
@@ -135,7 +135,7 @@ escrito em docs/harness/UNTRUSTED-CONTENT.md.
 
 import pytest
 
-from sparkforge.facts.secrets import looks_like_secret
+from sparkforge_aws.facts.secrets import looks_like_secret
 
 # (nome_do_caso, chave, valor)
 POSITIVOS = [
@@ -201,7 +201,7 @@ duas fecham num commit só.
 ## Task 2: os detectores por valor, no módulo canônico
 
 **Arquivos:**
-- Modificar: `sparkforge/facts/secrets.py`
+- Modificar: `sparkforge_aws/facts/secrets.py`
 
 - [ ] **Passo 1: acrescentar os padrões por valor**
 
@@ -277,7 +277,7 @@ def detectores(key: str, value: str) -> tuple[str, ...]:
 Acrescente a `tests/test_facts_secrets.py`:
 
 ```python
-from sparkforge.facts.secrets import detectores
+from sparkforge_aws.facts.secrets import detectores
 
 
 def test_detectores_nomeia_sem_nunca_devolver_o_valor():
@@ -308,14 +308,14 @@ antes de mudar: pode ser que ele fixasse a permissividade antiga, e aí o teste
 - [ ] **Passo 6: commit**
 
 ```bash
-git add sparkforge/facts/secrets.py tests/test_facts_secrets.py
+git add sparkforge_aws/facts/secrets.py tests/test_facts_secrets.py
 git commit -m "fix(secrets): PAT, JWT e chave privada passavam quando o nome da chave era inocente"
 ```
 
 ## Task 3: uma implementação só
 
 **Arquivos:**
-- Modificar: `sparkforge/facts/terraform.py:290`, `sparkforge/facts/emr_cluster.py:299`, `sparkforge/facts/emr_serverless.py:400`
+- Modificar: `sparkforge_aws/facts/terraform.py:290`, `sparkforge_aws/facts/emr_cluster.py:299`, `sparkforge_aws/facts/emr_serverless.py:400`
 - Modificar: `tests/test_facts_secrets.py`
 
 - [ ] **Passo 1: teste que trava a unicidade**
@@ -332,7 +332,7 @@ def test_existe_um_unico_detector_de_segredo_no_pacote():
     pior de achar. O gate e estrutural: se alguem escrever a quinta, isto quebra
     antes de a quinta divergir.
     """
-    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge"
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge_aws"
     definidores = []
     for arquivo in sorted(raiz.rglob("*.py")):
         if "__pycache__" in arquivo.parts:
@@ -357,7 +357,7 @@ Em cada um dos três arquivos, apague a função `_looks_like_secret` e acrescen
 ao bloco de imports:
 
 ```python
-from sparkforge.facts.secrets import looks_like_secret as _looks_like_secret
+from sparkforge_aws.facts.secrets import looks_like_secret as _looks_like_secret
 ```
 
 O alias preserva os call sites, então o diff fica pequeno e auditável. **Não
@@ -377,14 +377,14 @@ de contornar.
 - [ ] **Passo 5: commit**
 
 ```bash
-git add sparkforge/facts/terraform.py sparkforge/facts/emr_cluster.py sparkforge/facts/emr_serverless.py tests/test_facts_secrets.py
+git add sparkforge_aws/facts/terraform.py sparkforge_aws/facts/emr_cluster.py sparkforge_aws/facts/emr_serverless.py tests/test_facts_secrets.py
 git commit -m "refactor(secrets): quatro copias viram uma, e um gate impede a quinta"
 ```
 
 ## Task 4: a varredura com denylist e confinamento
 
 **Arquivos:**
-- Criar: `sparkforge/facts/scan.py`
+- Criar: `sparkforge_aws/facts/scan.py`
 - Criar: `tests/test_facts_scan.py`
 
 - [ ] **Passo 1: escrever o teste primeiro**
@@ -402,7 +402,7 @@ import pathlib
 
 import pytest
 
-from sparkforge.facts.scan import ScanError, iter_source_files
+from sparkforge_aws.facts.scan import ScanError, iter_source_files
 
 
 def _criar(raiz: pathlib.Path, caminho: str, conteudo: str = "x = 1\n") -> pathlib.Path:
@@ -482,7 +482,7 @@ def test_apenas_arquivo_regular(tmp_path):
 ```
 python -m pytest tests/test_facts_scan.py -q
 ```
-Esperado: FALHA com `ModuleNotFoundError: No module named 'sparkforge.facts.scan'`.
+Esperado: FALHA com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.scan'`.
 
 - [ ] **Passo 3: escrever o módulo**
 
@@ -598,14 +598,14 @@ privilégio, e isso é aceitável).
 - [ ] **Passo 5: commit**
 
 ```bash
-git add sparkforge/facts/scan.py tests/test_facts_scan.py
+git add sparkforge_aws/facts/scan.py tests/test_facts_scan.py
 git commit -m "feat(scan): a varredura vira unidade, com denylist e confinamento"
 ```
 
 ## Task 5: os doze sítios passam a usar a varredura
 
 **Arquivos:**
-- Modificar: `sparkforge/facts/pyspark_ast.py:1127`, `graph.py:1437`, `migration.py:542,547,553`, `data_quality.py:1742`, `catalog_schema.py:359`, `athena_workgroup.py:265`, `emr_cluster.py:1257`, `emr_serverless.py:1007`, `iceberg_metadata.py:680`, `consumers.py:216`
+- Modificar: `sparkforge_aws/facts/pyspark_ast.py:1127`, `graph.py:1437`, `migration.py:542,547,553`, `data_quality.py:1742`, `catalog_schema.py:359`, `athena_workgroup.py:265`, `emr_cluster.py:1257`, `emr_serverless.py:1007`, `iceberg_metadata.py:680`, `consumers.py:216`
 - Modificar: `tests/test_facts_scan.py`
 
 - [ ] **Passo 1: teste que trava a ausência de `rglob` cru**
@@ -618,7 +618,7 @@ def test_nenhum_extrator_varre_com_rglob_cru():
     `iter_source_files`, que tem teste. Este arquivo (`scan.py`) e a unica
     excecao, porque e ele que implementa a varredura.
     """
-    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge" / "facts"
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge_aws" / "facts"
     infratores = []
     for arquivo in sorted(raiz.glob("*.py")):
         if arquivo.name == "scan.py":
@@ -649,7 +649,7 @@ for py in sorted(root.rglob("*.py")):
         continue
 
 # depois
-from sparkforge.facts.scan import iter_source_files
+from sparkforge_aws.facts.scan import iter_source_files
 ...
 for py in iter_source_files(root, "*.py"):
 ```
@@ -670,14 +670,14 @@ python -m pytest tests/ -q
 Esperado: **6362 passed, 5 skipped** ou mais. Zero falhas.
 
 ```
-ruff check sparkforge tests scripts
+ruff check sparkforge_aws tests scripts
 ```
 Esperado: `Found 241 errors` — a linha de base. Não pode subir.
 
 - [ ] **Passo 5: commit**
 
 ```bash
-git add sparkforge/facts/ tests/test_facts_scan.py
+git add sparkforge_aws/facts/ tests/test_facts_scan.py
 git commit -m "refactor(facts): os doze rglob passam pela varredura com denylist"
 ```
 
@@ -694,7 +694,7 @@ git commit -m "refactor(facts): os doze rglob passam pela varredura com denylist
 - [ ] **Passo 1: medir o custo atual, e guardar o número**
 
 ```
-python -c "import subprocess,sys,json; j=json.loads(subprocess.run([sys.executable,'-m','sparkforge.adapters.cli','analyze','pyspark','--path','fixtures/pyspark/clean_job/input/lib/job.py'],capture_output=True,text=True).stdout); e=json.dumps(j,ensure_ascii=False); p=sum(len(json.dumps(f.get('provenance',{}),ensure_ascii=False)) for f in j['items']); print('envelope',len(e),'provenance',p,'pct',round(p/len(e)*100,1))"
+python -c "import subprocess,sys,json; j=json.loads(subprocess.run([sys.executable,'-m','sparkforge_aws.adapters.cli','analyze','pyspark','--path','fixtures/pyspark/clean_job/input/lib/job.py'],capture_output=True,text=True).stdout); e=json.dumps(j,ensure_ascii=False); p=sum(len(json.dumps(f.get('provenance',{}),ensure_ascii=False)) for f in j['items']); print('envelope',len(e),'provenance',p,'pct',round(p/len(e)*100,1))"
 ```
 
 Anote os três números. Eles são o "antes" e entram no commit.
@@ -719,7 +719,7 @@ FIXTURE = "fixtures/pyspark/clean_job/input/lib/job.py"
 
 def _analisar(*extra: str) -> dict:
     proc = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "analyze", "pyspark",
+        [sys.executable, "-m", "sparkforge_aws.adapters.cli", "analyze", "pyspark",
          "--path", FIXTURE, *extra],
         capture_output=True, text=True, check=True,
     )
@@ -756,10 +756,10 @@ Esta tarefa e a próxima são um par: o teste acima só passa depois que
 ## Task 7: `detail_level` no ponto único
 
 **Arquivos:**
-- Modificar: `sparkforge/adapters/_core.py` (os 7 pontos de envelope)
-- Modificar: `sparkforge/adapters/tools.py` (inputSchema das 22 que paginam)
-- Modificar: `sparkforge/adapters/cli.py` (a flag)
-- Modificar: `sparkforge/adapters/mcp.py:83`
+- Modificar: `sparkforge_aws/adapters/_core.py` (os 7 pontos de envelope)
+- Modificar: `sparkforge_aws/adapters/tools.py` (inputSchema das 22 que paginam)
+- Modificar: `sparkforge_aws/adapters/cli.py` (a flag)
+- Modificar: `sparkforge_aws/adapters/mcp.py:83`
 
 - [ ] **Passo 1: escrever `project_items()` em `_core.py`**
 
@@ -855,7 +855,7 @@ essa escolha na docstring.
 - [ ] **Passo 3: expor na CLI e no MCP**
 
 Na CLI, no parser de `analyze` (importe `NIVEIS_DE_DETALHE` de
-`sparkforge.adapters._core` — a lista de níveis mora onde a projeção mora, e
+`sparkforge_aws.adapters._core` — a lista de níveis mora onde a projeção mora, e
 duplicá-la no parser criaria duas fontes para a mesma verdade):
 
 ```python
@@ -922,7 +922,7 @@ def test_full_nao_mudou_de_forma():
 
 def test_detail_level_invalido_e_recusado():
     proc = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "analyze", "pyspark",
+        [sys.executable, "-m", "sparkforge_aws.adapters.cli", "analyze", "pyspark",
          "--path", FIXTURE, "--detail-level", "nao_existe"],
         capture_output=True, text=True,
     )
@@ -934,7 +934,7 @@ def test_detail_level_invalido_e_recusado():
 ```
 python -m pytest tests/test_adapters_detail_level.py -q
 python -m pytest tests/ -q
-ruff check sparkforge tests scripts
+ruff check sparkforge_aws tests scripts
 ```
 Esperado: todos passam; suíte sem regressão; ruff em 241.
 
@@ -954,7 +954,7 @@ prova nada.
 - [ ] **Passo 7: commit**
 
 ```bash
-git add sparkforge/adapters/ tests/test_adapters_detail_level.py docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
+git add sparkforge_aws/adapters/ tests/test_adapters_detail_level.py docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
 git commit -m "feat(adapters): detail_level e procedencia por referencia"
 ```
 
@@ -1007,7 +1007,7 @@ lido como três verbos inexistentes. A heurística foi trocada por teste de tipo
 ## Task 8: decidir, com medição
 
 **Arquivos:**
-- Modificar: `sparkforge/agents/autonomy.py`
+- Modificar: `sparkforge_aws/agents/autonomy.py`
 - Modificar: `docs/harness/AUTHORIZATION-CHAIN.md`
 - Modificar: `tests/test_harness_authorization.py`
 
@@ -1087,7 +1087,7 @@ verificação **aconteceu** — sem esse campo, uma decisão sem `arguments` ser
 indistinguível de uma decisão que verificou e aprovou.
 
 A verificação reusa o algoritmo que já existe em
-`sparkforge/rules/loader.py:safe_catalog_file`. **Não reimplemente** — extraia o
+`sparkforge_aws/rules/loader.py:safe_catalog_file`. **Não reimplemente** — extraia o
 algoritmo para uma função compartilhada e faça `safe_catalog_file` chamá-la, ou
 importe-a. Duas implementações de confinamento de caminho seriam o mesmo defeito
 que a Task 3 acabou de fechar para segredo.
@@ -1117,7 +1117,7 @@ Atualize a linha correspondente em `docs/harness/CURRENT-HARNESS-GAP.md`.
 - [ ] **Passo 7: commit**
 
 ```bash
-git add sparkforge/agents/autonomy.py sparkforge/rules/loader.py tests/test_harness_authorization.py docs/harness/
+git add sparkforge_aws/agents/autonomy.py sparkforge_aws/rules/loader.py tests/test_harness_authorization.py docs/harness/
 git commit -m "feat(harness): a cadeia de autorizacao passa a ver o argumento"
 ```
 

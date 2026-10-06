@@ -46,11 +46,11 @@ próprias: `DATABRICKS_SPARK` (esta), `CRITERIO_DE_DOMINIO`, `SF_STUBS` e `TOOLS
 
 ## Medidas lidas antes de propor
 
-- Não existe código Databricks nem Delta em `sparkforge/` (busca por `databricks`,
+- Não existe código Databricks nem Delta em `sparkforge_aws/` (busca por `databricks`,
   `_delta_log`, `delta lake`: zero arquivos `.py`).
-- `sparkforge/facts/event_log.py::extract_event_log` lê o formato de listener do
+- `sparkforge_aws/facts/event_log.py::extract_event_log` lê o formato de listener do
   Spark e não depende de Glue.
-- `sparkforge/facts/runtime_detect.py::_PLATFORM_KEYS` conhece `emr` e `glue`;
+- `sparkforge_aws/facts/runtime_detect.py::_PLATFORM_KEYS` conhece `emr` e `glue`;
   `env.platform` conta plataformas observadas.
 - No catálogo, 176 regras declaram `runtime_scope: {}`; 20 estão presas a `glue`
   e 7 a `spark`/`iceberg`.

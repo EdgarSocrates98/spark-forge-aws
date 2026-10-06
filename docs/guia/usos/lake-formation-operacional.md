@@ -1,6 +1,6 @@
 # Revisão operacional de Lake Formation
 
-Use `sparkforge lakeformation architect --input architecture.json` para
+Use `sparkforge-aws lakeformation architect --input architecture.json` para
 produzir uma revisão offline. O JSON declara engine, runtime, formato,
 operação, catálogos e evidence; facts de Terraform/PySpark entram em `facts`.
 O mesmo payload pode ser enviado a `sparkforge_lakeformation_architect`.

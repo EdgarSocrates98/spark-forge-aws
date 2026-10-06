@@ -1,7 +1,7 @@
-from sparkforge.decision.contracts import ContractLoader
-from sparkforge.decision.models import DecisionStatus
-from sparkforge.decision.runtime import BoundedDecisionKernel
-from sparkforge.decision.state import StateCompiler
+from sparkforge_aws.decision.contracts import ContractLoader
+from sparkforge_aws.decision.models import DecisionStatus
+from sparkforge_aws.decision.runtime import BoundedDecisionKernel
+from sparkforge_aws.decision.state import StateCompiler
 
 
 def _contract():

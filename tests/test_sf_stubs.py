@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 # Importadas, nao recopiadas: a feature CONFIG_OCA declara as duas tuplas no teste que
 # guarda a remocao, e uma segunda copia aqui divergiria no primeiro nome que voltasse.
@@ -124,7 +124,7 @@ VIVOS = (
     "skills/aws-serverless/SKILL.md",
     "skills/aws-storage/SKILL.md",
     "skills/provision-s3-tables-table/SKILL.md",
-    "sparkforge/findings/validate.py",
+    "sparkforge_aws/findings/validate.py",
 )
 
 

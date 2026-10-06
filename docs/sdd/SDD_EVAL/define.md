@@ -13,7 +13,7 @@ acceptance:
     statement: "Cada resposta do gabarito da suite sdd e recomputada rodando o gate sobre a fixture citada, e o teste falha se divergir."
     verified_by: {kind: test, ref: "tests/test_sdd_eval_suite.py::test_gabarito_recomputado_pelo_gate"}
   - id: AC2
-    statement: "A suite carrega pelo leitor de sparkforge.evals e exige sdd_check ou sdd_status em toda pergunta."
+    statement: "A suite carrega pelo leitor de sparkforge_aws.evals e exige sdd_check ou sdd_status em toda pergunta."
     verified_by: {kind: test, ref: "tests/test_sdd_eval_suite.py::test_suite_carrega_e_exige_as_tools"}
   - id: AC3
     statement: "As fixtures sdd ficam fora da conversao de quebra de linha do git, para o hash do upstream nao mudar no checkout Windows."

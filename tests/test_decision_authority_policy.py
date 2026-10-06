@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.decision import AuthorityPolicy, PromotionEvidence
+from sparkforge_aws.decision import AuthorityPolicy, PromotionEvidence
 
 
 def _raw(*, active_enabled: bool = False) -> dict:

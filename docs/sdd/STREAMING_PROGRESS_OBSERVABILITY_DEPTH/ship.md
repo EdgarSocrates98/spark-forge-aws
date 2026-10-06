@@ -63,7 +63,7 @@ observações e `env.runtime_signal`.
 - Catálogo/docs/knowledge: 1214 passed.
 - `gen_reference_docs --check`, `sync_skills --check`, surface lock, status
   numbers, refresh knowledge offline e bundle offline: verdes.
-- `sparkforge sdd check --repo . --feature STREAMING_PROGRESS_OBSERVABILITY_DEPTH`:
+- `sparkforge-aws sdd check --repo . --feature STREAMING_PROGRESS_OBSERVABILITY_DEPTH`:
   verde, sem recusas ou unresolved.
 
 ## Limites e próximos desbloqueios

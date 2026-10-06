@@ -1,9 +1,9 @@
 """Tests for Database and Streaming Specialists."""
 
-from sparkforge.databases.dynamodb import DynamoDBSpecialist
-from sparkforge.databases.neptune import NeptuneSpecialist
-from sparkforge.streaming.kafka import KafkaMSKSpecialist
-from sparkforge.streaming.kinesis import KinesisSpecialist
+from sparkforge_aws.databases.dynamodb import DynamoDBSpecialist
+from sparkforge_aws.databases.neptune import NeptuneSpecialist
+from sparkforge_aws.streaming.kafka import KafkaMSKSpecialist
+from sparkforge_aws.streaming.kinesis import KinesisSpecialist
 
 
 def test_dynamodb_hot_partition():

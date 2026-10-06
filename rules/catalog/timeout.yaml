@@ -1,6 +1,6 @@
 # Catálogo de regras — timeout, e a diferença entre os quatro mecanismos que o
 # operador chama pelo mesmo nome. A classificação é fact
-# (`sparkforge/facts/timeout_diagnosis.py`); aqui mora o julgamento, que é
+# (`sparkforge_aws/facts/timeout_diagnosis.py`); aqui mora o julgamento, que é
 # outro assunto: o que fazer, e o que NÃO fazer, diante da categoria.
 #
 # O que estas regras afirmam: que há sintoma medido ao lado do timeout
@@ -120,7 +120,7 @@ rules:
       `spark.timeout.relation` não é emitido, e sai
       `spark.timeout.unresolved.conf_not_observed` no lugar.
     proposed_change:
-      - Restaurar a folga entre as duas subindo `spark.network.timeout` até caber o heartbeat pedido — `sparkforge tune` deriva 12 vezes o heartbeat, a razão entre os defaults (120s e 10s).
+      - Restaurar a folga entre as duas subindo `spark.network.timeout` até caber o heartbeat pedido — `sparkforge-aws tune` deriva 12 vezes o heartbeat, a razão entre os defaults (120s e 10s).
       - Manter o intervalo de heartbeat que alguém pediu; baixá-lo é a alternativa quando ninguém sabe por que ele subiu.
       - Conferir se alguma das duas veio de configuração de cluster ou de `--conf` sem quem a explique — as duas são propriedades que raramente precisam sair do default.
     action:

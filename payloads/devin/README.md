@@ -9,7 +9,7 @@ Este diretorio contem tudo o que voce precisa para usar o projeto **SparkForge A
 | `PROMPT.md` | Prompt mestre otimizado para colar no inicio de uma sessao Devin |
 | `mcp_config.json` | Configuracao MCP por **stdio** — usada no Devin CLI |
 | `mcp_config_desktop.json` | Configuracao MCP por **HTTP** — usada no Devin Desktop (serverUrl) |
-| `config.json` | Permissoes de projeto para os verbos `sparkforge` de leitura |
+| `config.json` | Permissoes de projeto para os verbos `sparkforge-aws` de leitura |
 | `SESSION_CLI.md` | Passo a passo para iniciar no Devin CLI |
 | `SESSION_DESKTOP.md` | Passo a passo para iniciar no Devin Desktop |
 

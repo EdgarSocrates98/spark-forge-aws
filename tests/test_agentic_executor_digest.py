@@ -1,7 +1,7 @@
 """O bloco de plano que o `judge` publica.
 
 Ele e CALCULADO e nao gravado: nenhuma entidade e criada, nenhum arquivo e
-escrito. O registro auditavel continua sendo `sparkforge arbitrate`.
+escrito. O registro auditavel continua sendo `sparkforge-aws arbitrate`.
 """
 
 from __future__ import annotations
@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 import pathlib
 
-from sparkforge.agentic.executor.digest import plan_digest
-from sparkforge.findings.models import Fact
+from sparkforge_aws.agentic.executor.digest import plan_digest
+from sparkforge_aws.findings.models import Fact
 
 _RUNTIME = {"glue": "5.0", "spark": "3.5.4"}
 

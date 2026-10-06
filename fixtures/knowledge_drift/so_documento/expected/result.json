@@ -27,7 +27,8 @@
         ],
         "evals": [],
         "goldens": [],
-        "rules": []
+        "rules": [],
+        "skills": []
       },
       "revalidated": [],
       "url": "https://api.github.com/repos/graphframes/graphframes/releases"
@@ -50,7 +51,8 @@
     "docs": 2,
     "evals": 0,
     "goldens": 0,
-    "rules": 0
+    "rules": 0,
+    "skills": 0
   },
   "unresolved": []
 }

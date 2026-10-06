@@ -1,6 +1,6 @@
 # Data Observability / SRE
 
-Use the offline `sparkforge analyze data-observability --path <artifact.yaml>` over an
+Use the offline `sparkforge-aws analyze data-observability --path <artifact.yaml>` over an
 exported OTel-like measurement bundle. The contract keeps indicator, unit,
 operator, target, objective and window together. It reports sample count,
 compliance, fail count and error-budget consumption only from measurements in

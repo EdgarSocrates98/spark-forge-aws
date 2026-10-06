@@ -21,8 +21,8 @@ import pytest
 pq = pytest.importorskip("pyarrow.parquet")
 pa = pytest.importorskip("pyarrow")
 
-from sparkforge.collect.base import CollectorUnavailable, load_manifest  # noqa: E402
-from sparkforge.collect.parquet_footer import (  # noqa: E402
+from sparkforge_aws.collect.base import CollectorUnavailable, load_manifest  # noqa: E402
+from sparkforge_aws.collect.parquet_footer import (  # noqa: E402
     STATUS_OK,
     STATUS_PREFIXO_INEXISTENTE,
     STATUS_PREFIXO_VAZIO,
@@ -31,7 +31,7 @@ from sparkforge.collect.parquet_footer import (  # noqa: E402
     parquet_footer_path,
     require_pyarrow,
 )
-from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
+from sparkforge_aws.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 
 AGORA = "2026-09-09T12:00:00Z"
 
@@ -230,7 +230,7 @@ class TestRecusaNomeada:
     def test_pyarrow_ausente_vira_status_e_nao_excecao(self, tmp_path, monkeypatch):
         """Sem a dependencia opcional, a coleta grava a RAZAO -- excecao mataria
         o artefato, e sem artefato a recusa vira silencio."""
-        import sparkforge.collect.parquet_footer as modulo
+        import sparkforge_aws.collect.parquet_footer as modulo
 
         def sem_pyarrow():
             raise CollectorUnavailable("pyarrow nao disponivel")
@@ -260,19 +260,19 @@ class TestManifestoEOffline:
         _escreve(dados / "a.parquet", list(range(100)), row_group_size=50)
         entrada = collect_parquet_footer(str(dados), tmp_path, now=AGORA)
         assert entrada.kind == "parquet_footer"
-        assert entrada.collect_command.startswith("sparkforge collect parquet-footer")
+        assert entrada.collect_command.startswith("sparkforge-aws collect parquet-footer")
         registrados = {e["path"] for e in load_manifest(tmp_path)}
         assert parquet_footer_path(str(dados)) in registrados
 
     def test_segunda_coleta_e_no_op_offline(self, tmp_path, monkeypatch):
         """Artefato presente e integro nao toca pyarrow -- mesma politica
-        offline-first do resto de `sparkforge/collect/`."""
+        offline-first do resto de `sparkforge_aws/collect/`."""
         dados = tmp_path / "d"
         dados.mkdir()
         _escreve(dados / "a.parquet", list(range(100)), row_group_size=50)
         collect_parquet_footer(str(dados), tmp_path, now=AGORA)
 
-        import sparkforge.collect.parquet_footer as modulo
+        import sparkforge_aws.collect.parquet_footer as modulo
 
         def explode():
             raise AssertionError("offline hit nao deveria importar pyarrow")

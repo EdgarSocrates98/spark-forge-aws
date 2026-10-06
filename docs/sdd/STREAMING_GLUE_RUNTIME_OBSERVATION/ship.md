@@ -30,7 +30,7 @@ mirrors e documentação de cobertura.
 - `python scripts/verify_offline_bundle.py --check`.
 - `python scripts/check_status_numbers.py --strict`.
 - `python -m pytest tests/test_rule_scope_by_nature.py tests/test_runtime_inferred_from_facts.py tests/test_runtime_glue_versions.py -q` — `793 passed`.
-- `sparkforge sdd check --repo . --feature STREAMING_GLUE_RUNTIME_OBSERVATION`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_GLUE_RUNTIME_OBSERVATION`.
 - Suíte completa não executada; permanece para próxima fase solicitada.
 
 ## Limites

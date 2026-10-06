@@ -20,7 +20,7 @@
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | 12/12 (grupos do manifesto) |
-| **Files Created** | `sparkforge/durable.py`, `sparkforge/journal/{__init__,record,read}.py`, `tests/test_durable.py`, `tests/test_journal.py`, `tests/test_fixtures_golden_journal.py`, 5 casos golden em `fixtures/journal/` |
+| **Files Created** | `sparkforge_aws/durable.py`, `sparkforge_aws/journal/{__init__,record,read}.py`, `tests/test_durable.py`, `tests/test_journal.py`, `tests/test_fixtures_golden_journal.py`, 5 casos golden em `fixtures/journal/` |
 | **Lines of Code** | `durable.py` ~190, `journal/` ~420; ganchos em `tools.py`, `cli.py`, `_core.py`, `case/{store,resume}.py`, `agentic/blackboard.py`, `agentic/executor/{debate_run,debate_evidence}.py` |
 | **Build Time** | 1 sessão |
 | **Tests Passing** | 12940 passed, 13 skipped, 0 failed (9 lotes; goldens-5 rodado de novo depois de regravar dois goldens de scan) |
@@ -32,8 +32,8 @@
 
 | # | Task | Agent | Status | Duration | Notes |
 |---|------|-------|--------|----------|-------|
-| 1 | `sparkforge/durable.py` | (direct) | ✅ Complete | - | `write_atomic`, `append_line`, `read_jsonl` |
-| 2 | `sparkforge/journal/` | (direct) | ✅ Complete | - | Evento, raiz, `outputs`, `recording`, `estado`, `verify` |
+| 1 | `sparkforge_aws/durable.py` | (direct) | ✅ Complete | - | `write_atomic`, `append_line`, `read_jsonl` |
+| 2 | `sparkforge_aws/journal/` | (direct) | ✅ Complete | - | Evento, raiz, `outputs`, `recording`, `estado`, `verify` |
 | 3 | `case/store.py` | (direct) | ✅ Complete | - | `save_case` por `write_atomic` |
 | 4 | Blackboard, `debate_run`, `debate_evidence` | (direct) | ✅ Complete | - | Appenders e leitores pelo `durable` |
 | 5 | `tools.py` | (direct) | ✅ Complete | - | Gancho em `call_tool`; `_RESUME_SCHEMA` aditivo |
@@ -51,10 +51,10 @@
 
 | File | Lines | Agent | Verified | Notes |
 | ---- | ----- | ----- | -------- | ----- |
-| `sparkforge/durable.py` | ~190 | (direct) | ✅ | Trava no Windows num byte além do fim do arquivo |
-| `sparkforge/journal/__init__.py` | ~70 | (direct) | ✅ | `journaled()` derivado de `TOOLS`, import tardio |
-| `sparkforge/journal/record.py` | ~260 | (direct) | ✅ | Regra 27: falha vira `journal: "unrecorded"` |
-| `sparkforge/journal/read.py` | ~130 | (direct) | ✅ | Declara o limite da última linha |
+| `sparkforge_aws/durable.py` | ~190 | (direct) | ✅ | Trava no Windows num byte além do fim do arquivo |
+| `sparkforge_aws/journal/__init__.py` | ~70 | (direct) | ✅ | `journaled()` derivado de `TOOLS`, import tardio |
+| `sparkforge_aws/journal/record.py` | ~260 | (direct) | ✅ | Regra 27: falha vira `journal: "unrecorded"` |
+| `sparkforge_aws/journal/read.py` | ~130 | (direct) | ✅ | Declara o limite da última linha |
 | `tests/test_durable.py` | ~130 | (direct) | ✅ | `os.replace` sabotado em `case.yaml` e `plan.json` |
 | `tests/test_journal.py` | ~260 | (direct) | ✅ | Duas portas, policy, regra 27, sem literal, resume |
 | `tests/test_fixtures_golden_journal.py` | ~120 | (direct) | ✅ | `FIXTURES` literal para `test_fixtures_kind_coverage` |

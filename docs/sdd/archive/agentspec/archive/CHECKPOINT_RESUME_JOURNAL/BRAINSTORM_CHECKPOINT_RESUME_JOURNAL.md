@@ -35,7 +35,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/durable.py` (novo), `sparkforge/journal/` (novo), `case/{store,resume}.py`, `agentic/blackboard.py`, `agentic/executor/debate_run.py`, `adapters/{tools,cli,_core}.py` | Um módulo de escrita durável usado pelos donos de estado; journal com gancho nas duas portas |
+| Likely Location | `sparkforge_aws/durable.py` (novo), `sparkforge_aws/journal/` (novo), `case/{store,resume}.py`, `agentic/blackboard.py`, `agentic/executor/debate_run.py`, `adapters/{tools,cli,_core}.py` | Um módulo de escrita durável usado pelos donos de estado; journal com gancho nas duas portas |
 | Relevant KB Domains | `genai` (`concepts/state-machines`, `patterns/agentic-workflow`) só como contexto; nenhum domínio do agentspec cobre journal ou escrita atômica | Padrões vêm do repositório: `receipt` (content-addressed, sem chave), `debate_run` (estado só em arquivo), policy (classe derivada da anotação) |
 | IaC Patterns | N/A | Nada de infraestrutura |
 
@@ -74,7 +74,7 @@
 
 ### Approach A: gancho nas duas portas, conjunto derivado das anotações ⭐ Recommended
 
-**Description:** `sparkforge/durable.py` concentra `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`), `append_line` (sob trava, com quarentena da cauda cortada) e `read_jsonl` (tolera só a cauda). `sparkforge/journal/` guarda `.sparkforge/journal.jsonl` e um context manager `recording(verbo, porta, args, raiz)` chamado em `tools.call_tool` (MCP) e em `cli._dispatch` (CLI). O conjunto de verbos sai das anotações (`readOnlyHint: false`, menos `code_*`), travado por teste. `resume` lê o journal; verbo `journal verify` confere a cadeia.
+**Description:** `sparkforge_aws/durable.py` concentra `write_atomic` (temporário no mesmo diretório, `fsync`, `os.replace`), `append_line` (sob trava, com quarentena da cauda cortada) e `read_jsonl` (tolera só a cauda). `sparkforge_aws/journal/` guarda `.sparkforge/journal.jsonl` e um context manager `recording(verbo, porta, args, raiz)` chamado em `tools.call_tool` (MCP) e em `cli._dispatch` (CLI). O conjunto de verbos sai das anotações (`readOnlyHint: false`, menos `code_*`), travado por teste. `resume` lê o journal; verbo `journal verify` confere a cadeia.
 
 **Pros:**
 - Dois pontos de gancho em vez de 27.

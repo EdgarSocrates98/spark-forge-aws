@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge knowledge`
+# `sparkforge-aws knowledge`
 
 Localiza os arquivos de conhecimento versionado.
 
@@ -8,15 +8,15 @@ Localiza os arquivos de conhecimento versionado.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge knowledge drift`](#sparkforge-knowledge-drift) | Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), as regras e documentos que a leram antes da mudanca e os goldens, evals e agentes dessas regras. Sem rede. |
-| [`sparkforge knowledge path`](#sparkforge-knowledge-path) | Imprime a raiz de knowledge e, com --file, um arquivo dentro dela. |
+| [`sparkforge-aws knowledge drift`](#sparkforge-aws-knowledge-drift) | Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), as regras e documentos que a leram antes da mudanca e os goldens, evals e agentes dessas regras. Sem rede. |
+| [`sparkforge-aws knowledge path`](#sparkforge-aws-knowledge-path) | Imprime a raiz de knowledge e, com --file, um arquivo dentro dela. |
 
-## `sparkforge knowledge drift`
+## `sparkforge-aws knowledge drift`
 
 Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), as regras e documentos que a leram antes da mudanca e os goldens, evals e agentes dessas regras. Sem rede.
 
 ```bash
-sparkforge knowledge drift --help
+sparkforge-aws knowledge drift --help
 ```
 
 ### Opções
@@ -30,12 +30,12 @@ sparkforge knowledge drift --help
 
 [`sparkforge_knowledge_drift`](../tools/sparkforge_knowledge_drift.md)
 
-## `sparkforge knowledge path`
+## `sparkforge-aws knowledge path`
 
 Imprime a raiz de knowledge e, com --file, um arquivo dentro dela.
 
 ```bash
-sparkforge knowledge path --help
+sparkforge-aws knowledge path --help
 ```
 
 ### Opções

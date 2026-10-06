@@ -27,7 +27,7 @@ Docker nem failure injection.
 ## Gates rodados
 
 - `python -m pytest tests/test_forge_lab.py -q -p no:cacheprovider --basetemp .pytest-tmp-forge-digital-twin-final` — `3 passed`.
-- `python -m sparkforge.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml` — exit 0.
+- `python -m sparkforge_aws.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — `0 divergencia(s)`.
 - `python scripts/verify_offline_bundle.py` — `offline=true`, `70` artefatos, `failed=[]`.

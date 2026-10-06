@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/OPEN_LAKEHOUSE_CATALOG/define.md
   sha256: "5ba90f4f78e4ac5df3b858ec5ea8cb40d10ba35e30d2d43b837f1f253b3b52e9"
 files:
-  - {path: sparkforge/catalog/__init__.py, action: create, reason: "API pública do contrato de catalog topology."}
-  - {path: sparkforge/catalog/contract.py, action: create, reason: "Loader, sanitização, validação e fingerprint."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Analisador compartilhado CLI/MCP."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze lakehouse-catalog."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
+  - {path: sparkforge_aws/catalog/__init__.py, action: create, reason: "API pública do contrato de catalog topology."}
+  - {path: sparkforge_aws/catalog/contract.py, action: create, reason: "Loader, sanitização, validação e fingerprint."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Analisador compartilhado CLI/MCP."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo analyze lakehouse-catalog."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
   - {path: parity.yaml, action: modify, reason: "Declara paridade de catálogo."}
   - {path: docs/surface.lock.json, action: modify, reason: "Registro exigido por nova tool MCP."}
   - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice gerado da referência."}

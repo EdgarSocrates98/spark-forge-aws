@@ -4,8 +4,8 @@ Este guia é para quando o problema está na **consulta**, e não no job: uma co
 lenta no Athena, ou um `spark.sql(...)` dentro do PySpark. Todos os exemplos usam arquivos
 sintéticos da pasta `fixtures/` e foram rodados de verdade.
 
-Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge` é o comando instalado.
-Se ele não for encontrado, troque por `python -m sparkforge.adapters.cli`.
+Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge-aws` é o comando instalado.
+Se ele não for encontrado, troque por `python -m sparkforge_aws.adapters.cli`.
 
 ## Receita rápida
 
@@ -13,14 +13,14 @@ O caso mais comum: você tem a consulta e o schema da tabela no catálogo.
 
 ```bash
 # 1. pasta temporária e a consulta
-SAIDA=/tmp/sparkforge-guia; mkdir -p "$SAIDA"; F=fixtures/fusion/limit_no_filter_with_catalog/input
-sparkforge analyze sql --path $F/query.sql --out "$SAIDA/facts_sql.json"
+SAIDA=/tmp/sparkforge-aws-guia; mkdir -p "$SAIDA"; F=fixtures/fusion/limit_no_filter_with_catalog/input
+sparkforge-aws analyze sql --path $F/query.sql --out "$SAIDA/facts_sql.json"
 # 2. o schema e as partições da tabela
-sparkforge analyze catalog-schema --path $F/catalog.json --out "$SAIDA/facts_catalog.json"
+sparkforge-aws analyze catalog-schema --path $F/catalog.json --out "$SAIDA/facts_catalog.json"
 # 3. cruze a consulta com o catálogo
-sparkforge fuse --facts "$SAIDA/facts_sql.json" --facts "$SAIDA/facts_catalog.json" --out "$SAIDA/facts_fused.json"
+sparkforge-aws fuse --facts "$SAIDA/facts_sql.json" --facts "$SAIDA/facts_catalog.json" --out "$SAIDA/facts_fused.json"
 # 4. julgue
-sparkforge judge --facts "$SAIDA/facts_fused.json"
+sparkforge-aws judge --facts "$SAIDA/facts_fused.json"
 ```
 
 A consulta é `SELECT order_id, amount FROM sales.orders LIMIT 10`. O passo 4 devolve
@@ -72,15 +72,15 @@ Não use para job Glue lento: veja [job-lento.md](job-lento.md). Para layout de 
 |---|---|
 | A consulta | O arquivo `.sql`, ou o `.py` com `spark.sql("...")` |
 | Schema e partições da tabela | Um dump JSON do Glue Data Catalog (formato abaixo) |
-| Configuração do workgroup | `sparkforge collect athena-workgroup` (acessa AWS) |
+| Configuração do workgroup | `sparkforge-aws collect athena-workgroup` (acessa AWS) |
 | Quem consome a tabela | Um inventário `consumers.yaml`, escrito por você |
 
 ```bash
-sparkforge collect athena-workgroup --repo . --workgroup <nome-do-workgroup> --now <ISO8601>
+sparkforge-aws collect athena-workgroup --repo . --workgroup <nome-do-workgroup> --now <ISO8601>
 ```
 
 Esse comando acessa AWS e não foi rodado neste guia. As flags foram conferidas no `--help`.
-Nesta versão não há um `collect` para o dump do catálogo na lista de `sparkforge collect --help`.
+Nesta versão não há um `collect` para o dump do catálogo na lista de `sparkforge-aws collect --help`.
 O formato que o `analyze catalog-schema` lê é este, de `fixtures/fusion/limit_no_filter_with_catalog/input/catalog.json`:
 
 ```json
@@ -115,10 +115,10 @@ A mesma consulta com um `WHERE` real sobre `dt` não dispara a regra. Esse caso 
 
 ```bash
 F=fixtures/fusion/select_star_parquet/input
-sparkforge analyze sql --path $F/query.sql --out "$SAIDA/sel_sql.json"
-sparkforge analyze catalog-schema --path $F/catalog.json --out "$SAIDA/sel_cat.json"
-sparkforge fuse --facts "$SAIDA/sel_sql.json" --facts "$SAIDA/sel_cat.json" --out "$SAIDA/sel_fused.json"
-sparkforge judge --facts "$SAIDA/sel_fused.json"
+sparkforge-aws analyze sql --path $F/query.sql --out "$SAIDA/sel_sql.json"
+sparkforge-aws analyze catalog-schema --path $F/catalog.json --out "$SAIDA/sel_cat.json"
+sparkforge-aws fuse --facts "$SAIDA/sel_sql.json" --facts "$SAIDA/sel_cat.json" --out "$SAIDA/sel_fused.json"
+sparkforge-aws judge --facts "$SAIDA/sel_fused.json"
 ```
 
 A consulta é `SELECT * FROM db.eventos`, e o catálogo diz que `db.eventos` é Parquet.
@@ -132,7 +132,7 @@ apenas `sql.analyzed` e `sql.projection`. O achado precisa do catálogo.
 `--from-pyspark` lê o texto das chamadas `spark.sql("...")` de um arquivo `.py`, em vez de um `.sql`:
 
 ```bash
-sparkforge analyze sql --from-pyspark fixtures/migration/table_format/input/job.py --detail-level summary
+sparkforge-aws analyze sql --from-pyspark fixtures/migration/table_format/input/job.py --detail-level summary
 ```
 
 ```json
@@ -149,8 +149,8 @@ disse onde parou (`unparsed_clause`), em vez de adivinhar.
 ### 4. Tabela com partições demais
 
 ```bash
-sparkforge analyze catalog-schema --path fixtures/catalog/overpartitioned_multi_table/input --out "$SAIDA/cat.json"
-sparkforge judge --facts "$SAIDA/cat.json"
+sparkforge-aws analyze catalog-schema --path fixtures/catalog/overpartitioned_multi_table/input --out "$SAIDA/cat.json"
+sparkforge-aws judge --facts "$SAIDA/cat.json"
 ```
 
 ```json
@@ -166,8 +166,8 @@ tem projection e fica de fora.
 ### 5. Versão do engine do workgroup
 
 ```bash
-sparkforge analyze athena-workgroup --path fixtures/athena/engine_v2_outdated/input/workgroups.json --out "$SAIDA/ath.json"
-sparkforge judge --facts "$SAIDA/ath.json"
+sparkforge-aws analyze athena-workgroup --path fixtures/athena/engine_v2_outdated/input/workgroups.json --out "$SAIDA/ath.json"
+sparkforge-aws judge --facts "$SAIDA/ath.json"
 ```
 
 ```json
@@ -200,13 +200,13 @@ consumers:
 
 ```bash
 F=fixtures/consumers/v3_with_athena_consumer/input
-sparkforge analyze consumers --path $F/consumers.yaml --out "$SAIDA/cons.json"
-sparkforge analyze iceberg --path $F/dump.json --out "$SAIDA/cons_ice.json"
-sparkforge judge --facts "$SAIDA/cons.json" --facts "$SAIDA/cons_ice.json" --glue 5.1
+sparkforge-aws analyze consumers --path $F/consumers.yaml --out "$SAIDA/cons.json"
+sparkforge-aws analyze iceberg --path $F/dump.json --out "$SAIDA/cons_ice.json"
+sparkforge-aws judge --facts "$SAIDA/cons.json" --facts "$SAIDA/cons_ice.json" --glue 5.1
 ```
 
 Resultado: `SF-ENV-002`, "Tabela Iceberg em format V3 com consumo por Athena", de severidade `P0`.
-Antes de subir o format version, rode também `sparkforge iceberg assess-upgrade` (veja
+Antes de subir o format version, rode também `sparkforge-aws iceberg assess-upgrade` (veja
 [iceberg-e-parquet.md](iceberg-e-parquet.md#5-antes-de-subir-o-format-version-iceberg-assess-upgrade)).
 
 ## Como ler o resultado

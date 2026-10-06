@@ -55,7 +55,7 @@ dois casos** e já argumenta contra a forma óbvia:
   `Parallel` ou de um `Map`, o anterior é o do **mesmo ramo**."
 
 O defeito medido hoje, no código: `ordem_por_estado`
-(`sparkforge/facts/sfn_history.py`, laço que resolve cada `TaskScheduled`) é chaveado
+(`sparkforge_aws/facts/sfn_history.py`, laço que resolve cada `TaskScheduled`) é chaveado
 **só pelo nome do estado**. Dois ramos de um `Parallel` com um estado de mesmo nome
 compartilham o contador, e a primeira tentativa do segundo ramo sai com índice 2. Esse
 índice é o `subject.symbol` do `sfn.attempt`, e é por ele que SF-SFNX-002 e SF-SFNX-003

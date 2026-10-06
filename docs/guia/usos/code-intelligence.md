@@ -12,14 +12,14 @@ Da raiz do repositório, crie uma pasta de teste com um pedaço pequeno do códi
 e faça as perguntas mais comuns:
 
 ```bash
-mkdir -p /tmp/sf-guia && cp -r sparkforge/capacity /tmp/sf-guia/capacity
+mkdir -p /tmp/sf-guia && cp -r sparkforge_aws/capacity /tmp/sf-guia/capacity
 cd /tmp/sf-guia
-sparkforge code init --root capacity
-sparkforge code search capacity --root capacity
-sparkforge code symbol node_ab77aa4fcaa97f1006bd6d033aa27855 --root capacity --detail-level normal
+sparkforge-aws code init --root capacity
+sparkforge-aws code search capacity --root capacity
+sparkforge-aws code symbol node_ab77aa4fcaa97f1006bd6d033aa27855 --root capacity --detail-level normal
 ```
 
-1. Copia o pacote `sparkforge/capacity` para uma pasta temporária. Assim o índice
+1. Copia o pacote `sparkforge_aws/capacity` para uma pasta temporária. Assim o índice
    de teste não fica dentro do repositório.
 2. Entra na pasta.
 3. `code init` cria o índice em `capacity/.sparkforge/local/codeintel/graph.sqlite3`.
@@ -30,8 +30,8 @@ sparkforge code symbol node_ab77aa4fcaa97f1006bd6d033aa27855 --root capacity --d
    símbolo. Na mesma cópia ele sai igual, mas o mais seguro é copiá-lo da saída
    do passo 4.
 
-Se o comando `sparkforge` não estiver no PATH, troque por
-`python -m sparkforge.adapters.cli`.
+Se o comando `sparkforge-aws` não estiver no PATH, troque por
+`python -m sparkforge_aws.adapters.cli`.
 
 ## Quando usar e quando não usar
 
@@ -51,18 +51,18 @@ Não use como substituto de `grep` para achar uma linha pelo nome exato. Um
 ## As perguntas, uma por uma
 
 A tabela vem do `CLAUDE.md`. Todos os exemplos abaixo foram rodados sobre a cópia
-de `sparkforge/capacity` da receita.
+de `sparkforge_aws/capacity` da receita.
 
 | Pergunta | CLI | Tool MCP |
 |---|---|---|
-| Onde está X definido | `sparkforge code search` | `sparkforge_code_search` |
-| Quem chama X, e o que quebra se eu mudar | `sparkforge code symbol` | `sparkforge_code_symbol` |
-| **Como** X chega em Y | `sparkforge code path` | `sparkforge_code_path` |
-| Como este código está organizado | `sparkforge code shape` | `sparkforge_code_shape` |
-| O pacote de contexto dentro de um teto | `sparkforge code context` | `sparkforge_code_context` |
-| O trecho de fonte | `sparkforge code read` | `sparkforge_code_read` |
-| O índice está em dia | `sparkforge code status` / `code sync` | `sparkforge_code_status` / `_sync` |
-| O grafo para outra ferramenta | `sparkforge code export` | `sparkforge_code_export` |
+| Onde está X definido | `sparkforge-aws code search` | `sparkforge_code_search` |
+| Quem chama X, e o que quebra se eu mudar | `sparkforge-aws code symbol` | `sparkforge_code_symbol` |
+| **Como** X chega em Y | `sparkforge-aws code path` | `sparkforge_code_path` |
+| Como este código está organizado | `sparkforge-aws code shape` | `sparkforge_code_shape` |
+| O pacote de contexto dentro de um teto | `sparkforge-aws code context` | `sparkforge_code_context` |
+| O trecho de fonte | `sparkforge-aws code read` | `sparkforge_code_read` |
+| O índice está em dia | `sparkforge-aws code status` / `code sync` | `sparkforge_code_status` / `_sync` |
+| O grafo para outra ferramenta | `sparkforge-aws code export` | `sparkforge_code_export` |
 
 Flags exatas de cada subcomando: [`referencia/cli/code.md`](../referencia/cli/code.md).
 Argumentos de cada tool: [índice de tools](../referencia/tools/README.md). Os
@@ -72,7 +72,7 @@ nomes podem mudar entre CLI e tool. Na CLI é `--root` e o termo solto; na tool
 ### 1. Onde está X definido
 
 ```bash
-sparkforge code search capacity --root capacity
+sparkforge-aws code search capacity --root capacity
 ```
 
 A busca casa **parte do nome**. Saída real, encurtada:
@@ -99,7 +99,7 @@ e `--limit`.
 ### 2. Quem chama X, e o que quebra se eu mudar
 
 ```bash
-sparkforge code symbol node_7a073eba8d6d76157a8bce32dd060ae1 --root capacity --detail-level full
+sparkforge-aws code symbol node_7a073eba8d6d76157a8bce32dd060ae1 --root capacity --detail-level full
 ```
 
 O nível muda o que vem: `summary` traz só o metadado; `normal` acrescenta quem
@@ -129,7 +129,7 @@ fica de fora da lista e é contada em `unresolved_refs`.
 ### 3. Como X chega em Y
 
 ```bash
-sparkforge code path node_ab77aa4fcaa97f1006bd6d033aa27855 node_7a073eba8d6d76157a8bce32dd060ae1 --root capacity
+sparkforge-aws code path node_ab77aa4fcaa97f1006bd6d033aa27855 node_7a073eba8d6d76157a8bce32dd060ae1 --root capacity
 ```
 
 Devolve o caminho mais curto de chamadas. Trecho real:
@@ -156,7 +156,7 @@ motivo sai como `depth_exhausted`.
 ### 4. Como este código está organizado
 
 ```bash
-sparkforge code shape --root capacity --top 3 --detail-level summary
+sparkforge-aws code shape --root capacity --top 3 --detail-level summary
 ```
 
 Agrupa os símbolos em **comunidades** (grupos que se chamam muito entre si) e
@@ -175,7 +175,7 @@ lista os de maior **grau** (os mais ligados). Trecho real:
 ### 5. O pacote de contexto de uma tarefa
 
 ```bash
-sparkforge code context "escolher a capacidade mais barata que cumpre o SLA" --root capacity --max-tokens 800
+sparkforge-aws code context "escolher a capacidade mais barata que cumpre o SLA" --root capacity --max-tokens 800
 ```
 
 Monta um **ContextPack**: os pontos de entrada, as relações, os pontos cegos e o
@@ -207,8 +207,8 @@ Use `--include` (repetível) para pedir só algumas seções: `symbols`,
 ### 6. O trecho de fonte
 
 ```bash
-sparkforge code read --root capacity --node-id node_7a073eba8d6d76157a8bce32dd060ae1
-sparkforge code read --root capacity --file plan.py --start-line 41 --end-line 48
+sparkforge-aws code read --root capacity --node-id node_7a073eba8d6d76157a8bce32dd060ae1
+sparkforge-aws code read --root capacity --file plan.py --start-line 41 --end-line 48
 ```
 
 Lê por símbolo ou por faixa de linhas. Os tetos são duros: 250 linhas, 32 KiB e
@@ -238,8 +238,8 @@ Pelo MCP, `sparkforge_code_read` só existe no transporte `stdio`.
 ### 7. O índice está em dia
 
 ```bash
-sparkforge code status --root capacity --detail-level summary
-sparkforge code sync --root capacity
+sparkforge-aws code status --root capacity --detail-level summary
+sparkforge-aws code sync --root capacity
 ```
 
 Depois de editar um arquivo, o `status` real mostrou:
@@ -248,7 +248,7 @@ Depois de editar um arquivo, o `status` real mostrou:
 {
   "fresh": false,
   "stale_reason": "STALE_INDEX",
-  "action": "sparkforge code sync",
+  "action": "sparkforge-aws code sync",
   "changed_files": 1, ...
 }
 ```
@@ -261,7 +261,7 @@ conferiu e sincronizou antes de responder.
 ### 8. Exportar o grafo
 
 ```bash
-sparkforge code export --root capacity --detail-level summary
+sparkforge-aws code export --root capacity --detail-level summary
 ```
 
 Exporta no formato de extração do Graphify (`graphify-extraction-compatible`).
@@ -271,11 +271,11 @@ final do Graphify não é publicado.
 
 ### Manutenção: `doctor` e `purge`
 
-- `sparkforge code doctor --root capacity` confere o índice e sai com código 1
+- `sparkforge-aws code doctor --root capacity` confere o índice e sai com código 1
   se alguma checagem falhar. Na pasta temporária, a checagem `gitignore` falhou,
   porque ali não há `.gitignore`. No repositório, `.sparkforge/local` já está no
   `.gitignore`.
-- `sparkforge code purge --root capacity` apaga **somente**
+- `sparkforge-aws code purge --root capacity` apaga **somente**
   `.sparkforge/local/codeintel/`. Qualquer outro diretório é recusado.
 
 ## Como ler o resultado
@@ -316,8 +316,8 @@ um pacote que omite o símbolo pedido pelo nome é falha, e não economia.
 
 | Sintoma | Causa | Como resolver |
 |---|---|---|
-| `indice inexistente: ...; construa com sparkforge code sync.` (código 2) | Nunca rodou `init` naquela raiz | `sparkforge code init --root <pasta>` |
-| Resultado velho depois de editar | Índice fora de dia | `sparkforge code status`, depois `sparkforge code sync` |
+| `indice inexistente: ...; construa com sparkforge-aws code sync.` (código 2) | Nunca rodou `init` naquela raiz | `sparkforge-aws code init --root <pasta>` |
+| Resultado velho depois de editar | Índice fora de dia | `sparkforge-aws code status`, depois `sparkforge-aws code sync` |
 | `code path` com `no_resolved_path` | A ligação passa por chamada não resolvida | Veja `unresolved_refs` e confira com `code symbol` |
 | `code doctor` sai com 1 na checagem `gitignore` | A pasta não tem `.gitignore` cobrindo `.sparkforge/local` | Normal em pasta de teste. No seu projeto, acrescente a linha ao `.gitignore` |
 | O banco apareceu no `git status` | Você usou `--db` apontando para fora de `.sparkforge/local/` | Volte ao padrão ou apague o arquivo |

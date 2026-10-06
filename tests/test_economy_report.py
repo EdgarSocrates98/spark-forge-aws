@@ -6,14 +6,14 @@ porque byte de payload e token de provider nao sao a mesma unidade.
 """
 from __future__ import annotations
 
-from sparkforge.economy.report import build_context_report
-from sparkforge.observability import context_ledger
+from sparkforge_aws.economy.report import build_context_report
+from sparkforge_aws.observability import context_ledger
 
 ContextLedger = context_ledger.ContextLedger
 
 
 def _ledger_com_chamadas(tmp_path, monkeypatch):
-    from sparkforge.adapters import tools
+    from sparkforge_aws.adapters import tools
 
     ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
     monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
@@ -139,7 +139,7 @@ class TestConsultaDentroDoMesmoProcesso:
     def test_call_tool_e_economy_report_no_mesmo_processo_sem_flush(
         self, tmp_path, monkeypatch
     ):
-        from sparkforge.adapters import _core, tools
+        from sparkforge_aws.adapters import _core, tools
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)

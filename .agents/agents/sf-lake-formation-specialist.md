@@ -16,7 +16,7 @@ Atue dentro de um time cooperativo. Leia e siga `AGENT_PROTOCOL.md`. Use artefat
 
 ## O modelo de acesso é fact, e a permissão não é
 
-`sparkforge/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts,
+`sparkforge_aws/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts,
 sem ler artefato: `lakeformation.access_model` (FGAC declarado ou não),
 `lakeformation.iceberg_catalog` (nome do catálogo e se é o session catalog),
 `lakeformation.filesystem` (resolver de credencial e EMRFS restaurado),
@@ -41,7 +41,7 @@ caso, e a diferença entre "não suportado" e "não lemos a página" está prese
 
 Para uma topologia declarada que cruza release, formato, operação, ownership de
 catálogo e contas, use `lakeformation-architecture` e rode
-`sparkforge lakeformation architect`. O motor preserva `glue.id` separado de
+`sparkforge-aws lakeformation architect`. O motor preserva `glue.id` separado de
 `glue.account-id`, exige evidência independente para RAM/resource link e
 `GetDataAccess`, e não transforma ausência de evidência em permissão concedida.
 

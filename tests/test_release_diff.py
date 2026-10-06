@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.migration import release_descriptor as rd
-from sparkforge.migration import release_diff as rdiff
+from sparkforge_aws.migration import release_descriptor as rd
+from sparkforge_aws.migration import release_diff as rdiff
 
 
 def mudanca(diferenca: rdiff.ReleaseDiff, componente: str) -> rdiff.ComponentChange:

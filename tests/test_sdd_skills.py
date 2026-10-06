@@ -13,18 +13,18 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters.cli import build_parser
-from sparkforge.sdd import PHASES
-from sparkforge.sdd.checks import check
-from sparkforge.sdd.stamp import stamp
+from sparkforge_aws.adapters.cli import build_parser
+from sparkforge_aws.sdd import PHASES
+from sparkforge_aws.sdd.checks import check
+from sparkforge_aws.sdd.stamp import stamp
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_SDD = ("sdd-explore", "sdd-define", "sdd-design", "sdd-plan", "sdd-build", "sdd-ship")
 
 
-# `sparkforge <verbo>` entre crases, com o subcomando quando houver palavra minuscula
+# `sparkforge-aws <verbo>` entre crases, com o subcomando quando houver palavra minuscula
 # logo depois; flag (`--x`) e marcador (`<F>`) encerram a captura.
-_VERBO_CITADO = re.compile(r"`sparkforge ([a-z][a-z-]*(?: [a-z][a-z-]*)?)")
+_VERBO_CITADO = re.compile(r"`sparkforge-aws ([a-z][a-z-]*(?: [a-z][a-z-]*)?)")
 
 
 def _texto_da_skill(nome: str) -> str:
@@ -45,7 +45,7 @@ def _aceito_pelo_parser(parser: argparse.ArgumentParser, verbo: str) -> bool:
 
 
 # o comando inteiro entre crases; `<...>` vira valor ficticio antes de separar
-_COMANDO_CITADO = re.compile(r"`sparkforge ([^`]*)`")
+_COMANDO_CITADO = re.compile(r"`sparkforge-aws ([^`]*)`")
 _MARCADOR = re.compile(r"<[^<>]*>")
 
 
@@ -72,7 +72,7 @@ def test_seis_skills_existem():
         assert texto.startswith("---\nname: " + nome + "\n"), nome
         for secao in ("## Quando NÃO usar", "## Referência rápida", "## Red flags"):
             assert secao in texto, (nome, secao)
-        assert "sparkforge sdd check" in texto, nome
+        assert "sparkforge-aws sdd check" in texto, nome
 
 
 def test_templates_formam_feature_valida(tmp_path):
@@ -101,7 +101,7 @@ def test_templates_nao_viram_feature_no_repositorio():
 
 
 def test_comandos_citados_existem(capsys):
-    """Todo `sparkforge <verbo> [<sub>]` entre crases nas skills sdd-* e aceito pelo parser,
+    """Todo `sparkforge-aws <verbo> [<sub>]` entre crases nas skills sdd-* e aceito pelo parser,
     e toda `--flag` citada existe no subparser daquele verbo."""
     parser = build_parser()
     for nome in SKILLS_SDD:
@@ -121,7 +121,9 @@ def test_comandos_citados_existem(capsys):
 def test_o_detector_recusa_verbo_inventado(capsys):
     """Guarda do teste acima: sem isto, um detector quebrado passaria por vacuidade."""
     parser = build_parser()
-    assert _verbos_citados("rode `sparkforge sdd verify --repo .` e `sparkforge judge`") == [
+    assert _verbos_citados(
+        "rode `sparkforge-aws sdd verify --repo .` e `sparkforge-aws judge`"
+    ) == [
         "judge",
         "sdd verify",
     ]

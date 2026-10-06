@@ -7,16 +7,16 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters import _core, cli, tools
-from sparkforge.adapters._core import build_runtime, runtime_sources_from_facts
-from sparkforge.adapters.mcp_envelope import envelope_da_chamada
-from sparkforge.facts.event_log import extract_event_log_path
-from sparkforge.facts.runtime_detect import detect_runtime
-from sparkforge.facts.spark_plan import extract_plan_path
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
-from sparkforge.tuning.spark_conf import build_conf_advice
+from sparkforge_aws.adapters import _core, cli, tools
+from sparkforge_aws.adapters._core import build_runtime, runtime_sources_from_facts
+from sparkforge_aws.adapters.mcp_envelope import envelope_da_chamada
+from sparkforge_aws.facts.event_log import extract_event_log_path
+from sparkforge_aws.facts.runtime_detect import detect_runtime
+from sparkforge_aws.facts.spark_plan import extract_plan_path
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
+from sparkforge_aws.tuning.spark_conf import build_conf_advice
 
 ROOT = Path(__file__).resolve().parents[1]
 PLANO = ROOT / "fixtures" / "plan" / "cartesian_join" / "input"

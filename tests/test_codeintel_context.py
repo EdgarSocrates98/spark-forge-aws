@@ -38,8 +38,8 @@ ter o que provar.
 
 import pytest
 
-from sparkforge.codeintel import budget
-from sparkforge.codeintel.context import (
+from sparkforge_aws.codeintel import budget
+from sparkforge_aws.codeintel.context import (
     CANDIDATOS_POR_TERMO,
     SCHEMA_VERSION,
     TERMOS_MAXIMOS,
@@ -49,9 +49,9 @@ from sparkforge.codeintel.context import (
     _redutores,
     montar,
 )
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.ranking import expandir
-from sparkforge.codeintel.search import buscar
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.ranking import expandir
+from sparkforge_aws.codeintel.search import buscar
 
 # `zzz_externa` na linha 2 e `aaa_aninhada` na linha 6: nome e linha ordenam ao
 # contrario, no MESMO caminho. E o par que quebra a coincidencia.

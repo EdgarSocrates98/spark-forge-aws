@@ -7,8 +7,8 @@ ela recusa por nome em vez de inventar um numero com aparencia de calculo.
 """
 from __future__ import annotations
 
-from sparkforge.findings.models import Fact
-from sparkforge.tuning import build_conf_advice
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.tuning import build_conf_advice
 
 MIB = 1024 * 1024
 
@@ -411,7 +411,7 @@ class TestPortaDoHeadroom:
     def test_a_negative_headroom_is_an_input_error(self, tmp_path):
         import pytest
 
-        from sparkforge.adapters._core import AdapterError, tune_conf
+        from sparkforge_aws.adapters._core import AdapterError, tune_conf
 
         facts = tmp_path / "facts.json"
         facts.write_text("[]", encoding="utf-8")

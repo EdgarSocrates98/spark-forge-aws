@@ -8,7 +8,7 @@ falhar por parsing, e nao por integridade.
 import argparse
 import json
 
-from sparkforge.tools import OfflineKnowledgeIndex
+from sparkforge_aws.tools import OfflineKnowledgeIndex
 
 
 def main() -> int:

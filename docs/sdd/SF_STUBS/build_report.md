@@ -80,15 +80,15 @@ remedida de novo (751 para 752).
     ancorada em `9c433b98`), VNX-053 (skills 66 para 56), VNX-430 (`routing.yaml` 55 para
     39 KB).
 - **T3:** `VIVOS` foi de 9 para 18 arquivos: `docs/guia/usos/custo-e-capacidade.md`,
-  `config/teams-expansion.yaml` (lido por `sparkforge/registry/loader.py`; os quatro times
+  `config/teams-expansion.yaml` (lido por `sparkforge_aws/registry/loader.py`; os quatro times
   cujo coordenador saiu foram removidos, fica `governance-security`),
   `config/agentic-expansion.yaml`, cinco skills `aws-*` que apontavam para skill removida,
-  e `sparkforge/findings/validate.py`. O design não listava esses arquivos. Alegações:
+  e `sparkforge_aws/findings/validate.py`. O design não listava esses arquivos. Alegações:
   VNX-056 (times 5 para 1), VNX-793/794/795 novas (a nota de desvio em
   `MIGRATIONS-GLUE-GAP.md` cita 35, 19 e 10, com prova `historical` em `9c433b98`).
 - **Revisão final:** `.devin/README.md`, a contagem de rotas no guia 05, o §15 do
   `operations-guide.md` e as seções realocadas nos `.codex/*.toml` foram corrigidos em
-  `0161da5b`, junto de oito itens menores. `sparkforge/finops/report.py::_AREAS_DE_CODIGO`
+  `0161da5b`, junto de oito itens menores. `sparkforge_aws/finops/report.py::_AREAS_DE_CODIGO`
   perdeu `SF-SQL`, área removida. VNX-796 nova.
 
 ## Revisão

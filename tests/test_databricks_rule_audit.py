@@ -1,6 +1,6 @@
 """Regra que um job Databricks alcanca nao remedia so para AWS.
 
-O conjunto e recalculado dos EMITTED_KINDS de TODO extrator de `sparkforge/facts/`,
+O conjunto e recalculado dos EMITTED_KINDS de TODO extrator de `sparkforge_aws/facts/`,
 menos uma lista NOMEADA de extratores que so leem artefato de AWS -- nunca de uma
 lista de inclusao, que envelhece calada quando nasce extrator generico novo, e nunca
 de uma lista de regras escrita a mao.
@@ -14,9 +14,9 @@ import importlib
 import pkgutil
 import re
 
-import sparkforge.facts
-from sparkforge.findings.models import RuntimeContext
-from sparkforge.rules.loader import load_catalog
+import sparkforge_aws.facts
+from sparkforge_aws.findings.models import RuntimeContext
+from sparkforge_aws.rules.loader import load_catalog
 
 # Eixo de `RuntimeContext` que so um runtime AWS preenche. Regra com um deles no
 # `runtime_scope` fica fora de escopo num job Databricks, que nao tem nenhum.
@@ -135,8 +135,8 @@ _DATABRICKS = _padrao("Databricks")
 
 def _extratores() -> list[str]:
     nomes = []
-    for modulo in pkgutil.iter_modules(sparkforge.facts.__path__):
-        if hasattr(importlib.import_module(f"sparkforge.facts.{modulo.name}"), "EMITTED_KINDS"):
+    for modulo in pkgutil.iter_modules(sparkforge_aws.facts.__path__):
+        if hasattr(importlib.import_module(f"sparkforge_aws.facts.{modulo.name}"), "EMITTED_KINDS"):
             nomes.append(modulo.name)
     return sorted(nomes)
 
@@ -146,7 +146,7 @@ def _kinds() -> set[str]:
     for nome in _extratores():
         if nome in SO_AWS:
             continue
-        kinds |= set(importlib.import_module(f"sparkforge.facts.{nome}").EMITTED_KINDS)
+        kinds |= set(importlib.import_module(f"sparkforge_aws.facts.{nome}").EMITTED_KINDS)
     return kinds - set(KINDS_SO_DE_FONTE_AWS)
 
 
@@ -178,7 +178,7 @@ def test_exclusao_so_nomeia_extrator_e_kind_que_existem():
     assert set(SO_AWS) - set(_extratores()) == set()
     assert all(motivo.strip() for motivo in SO_AWS.values())
     emitidos = set().union(
-        *(importlib.import_module(f"sparkforge.facts.{n}").EMITTED_KINDS for n in _extratores())
+        *(importlib.import_module(f"sparkforge_aws.facts.{n}").EMITTED_KINDS for n in _extratores())
     )
     assert set(KINDS_SO_DE_FONTE_AWS) - emitidos == set()
     assert all(motivo.strip() for motivo in KINDS_SO_DE_FONTE_AWS.values())

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-import sparkforge.knowledge_ref as kr
-from sparkforge.facts import runtime_matrix
+import sparkforge_aws.knowledge_ref as kr
+from sparkforge_aws.facts import runtime_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,11 +83,11 @@ class TestResolucaoDeCaminhoNoPacoteInstalado:
     `knowledge/glue/runtime-matrix.yaml`, e essa conta so foi verificada no
     checkout de desenvolvimento -- onde `knowledge/` mora dois niveis acima
     deste arquivo. `pyproject.toml` empacota `knowledge/` DENTRO do pacote
-    (`sparkforge/knowledge`), um nivel mais fundo do que a conta original
-    alcancava; instalado por pip, `import sparkforge.facts.runtime_detect`
+    (`sparkforge_aws/knowledge`), um nivel mais fundo do que a conta original
+    alcancava; instalado por pip, `import sparkforge_aws.facts.runtime_detect`
     quebrava com `FileNotFoundError` -- reproduzido e confirmado instalando o
     wheel de verdade num venv limpo. A correcao trocou a conta propria por
-    `sparkforge.knowledge_ref.knowledge_dir()`, que ja resolve exatamente
+    `sparkforge_aws.knowledge_ref.knowledge_dir()`, que ja resolve exatamente
     este caso desde a Fase 3a e ja tem o teste que este espelha.
 
     Sem este teste, nada aqui pinaria que `runtime_matrix` continua
@@ -100,7 +100,7 @@ class TestResolucaoDeCaminhoNoPacoteInstalado:
     def test_le_a_matriz_do_layout_de_pacote_instalado(self, tmp_path, monkeypatch):
         monkeypatch.delenv("SPARKFORGE_KNOWLEDGE", raising=False)
 
-        fake_package_dir = tmp_path / "site-packages" / "sparkforge"
+        fake_package_dir = tmp_path / "site-packages" / "sparkforge_aws"
         fake_knowledge_dir = fake_package_dir / "knowledge"
         (fake_knowledge_dir / "glue").mkdir(parents=True)
         (fake_knowledge_dir / "glue" / "runtime-matrix.yaml").write_text(
@@ -158,7 +158,7 @@ class TestSemVersaoNoCodigo:
         # versao, que e a forma que `GLUE_MATRIX` tinha.
         alvo = re.compile(r'"[0-9]+\.[0-9]+"\s*:\s*\{\s*"spark"')
         ofensores = []
-        for arquivo in (ROOT / "sparkforge").rglob("*.py"):
+        for arquivo in (ROOT / "sparkforge_aws").rglob("*.py"):
             if arquivo.name == "runtime_matrix.py":
                 continue
             if alvo.search(arquivo.read_text(encoding="utf-8")):
@@ -182,7 +182,7 @@ def _matriz_sintetica(tmp_path, monkeypatch, corpo: str):
     exigiria inventar um conflito no dado publicado -- que e justamente o que o
     carregador recusa.
     """
-    pacote = tmp_path / "site-packages" / "sparkforge"
+    pacote = tmp_path / "site-packages" / "sparkforge_aws"
     conhecimento = pacote / "knowledge"
     (conhecimento / "glue").mkdir(parents=True)
     (conhecimento / "glue" / "runtime-matrix.yaml").write_text(corpo, encoding="utf-8")
@@ -317,7 +317,7 @@ class TestComponenteEmDisputaNaoJulgaRegra:
     e PULADA, nunca julgada contra um numero escolhido a dedo."""
 
     def test_regra_guardada_pelo_componente_em_disputa_e_pulada(self, tmp_path, monkeypatch):
-        from sparkforge.rules.version_scope import in_scope
+        from sparkforge_aws.rules.version_scope import in_scope
 
         _matriz_sintetica(tmp_path, monkeypatch, _matriz(_longa("CONFLICTING", "3.12", "3.13")))
         runtime = dict(runtime_matrix.load()["9.9"])

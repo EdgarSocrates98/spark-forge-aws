@@ -14,15 +14,15 @@ O SparkForge lê código, plano físico, event log, IaC, catálogo, S3 e métric
 Medido em 2026-09-08:
 
 - o único fact de falha em todo o motor é `spark.stage.failure`
-  (`sparkforge/facts/event_log.py:704`), cujo `attrs.reason` é o campo
+  (`sparkforge_aws/facts/event_log.py:704`), cujo `attrs.reason` é o campo
   `Failure Reason` do event log — que num job Spark **é** a exceção com a pilha,
   já redigida por `secrets.redact`;
 - **nada estrutura esse texto.** Busca por
   `Py4JJavaError|NoSuchMethodError|ClassNotFoundException|AnalysisException|Traceback`
-  em `sparkforge/facts/` devolve **uma linha, e é comentário**. O único
+  em `sparkforge_aws/facts/` devolve **uma linha, e é comentário**. O único
   consumidor de `attrs.reason` é `timeout_diagnosis.py`, que casa quatro
   categorias e ignora o resto;
-- existe `sparkforge/errors/matcher.py::DeterministicErrorMatcher`, com CLI
+- existe `sparkforge_aws/errors/matcher.py::DeterministicErrorMatcher`, com CLI
   própria, **fora do motor**: não emite fact kind, não é tool MCP, não alimenta
   `judge`, não entra em `missing_evidence`, e nenhuma regra o consome;
 - ele publica **`confidence=0.98` como constante literal**
@@ -50,7 +50,7 @@ que precisa de um `confidence`: um número que só existe porque ele finge julga
 
 ### 2.1 Extrator de exceção — o fato
 
-`sparkforge/facts/exception.py`, derivação pura no molde de `bridge.py` (que
+`sparkforge_aws/facts/exception.py`, derivação pura no molde de `bridge.py` (que
 também não lê artefato: deriva sobre a união dos facts).
 
 Consome `spark.stage.failure.attrs.reason` e os facts do coletor da §2.4.
@@ -124,8 +124,8 @@ As regras novas ganham bloco `action:` como todas as outras (112 hoje).
 
 ### 2.4 Coletor de CloudWatch Logs
 
-`sparkforge/collect/cloudwatch_logs.py` e tool
-`sparkforge_collect_cloudwatch_logs`. Medido: `sparkforge/facts/cloudwatch.py`
+`sparkforge_aws/collect/cloudwatch_logs.py` e tool
+`sparkforge_collect_cloudwatch_logs`. Medido: `sparkforge_aws/facts/cloudwatch.py`
 lê **só métricas** (`CLOUDWATCH_METRICS`), nunca log group.
 
 Traz o que o event log **não** carrega: falha de driver antes do primeiro stage,

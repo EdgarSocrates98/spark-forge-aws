@@ -20,7 +20,7 @@ Extrai facts de um dump JSON de execucao Amazon EMR on EKS (`describe-virtual-cl
 
 ## Na CLI
 
-[`sparkforge analyze emr-eks`](../cli/analyze.md)
+[`sparkforge-aws analyze emr-eks`](../cli/analyze.md)
 
 ## Capacidade
 

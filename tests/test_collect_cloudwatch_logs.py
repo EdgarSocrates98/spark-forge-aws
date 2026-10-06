@@ -1,4 +1,4 @@
-"""Testes de `sparkforge.collect.cloudwatch_logs` com um cliente `logs` falso.
+"""Testes de `sparkforge_aws.collect.cloudwatch_logs` com um cliente `logs` falso.
 
 Nunca chama AWS. `require_boto3` e monkeypatchado para devolver um objeto cujo
 `.client("logs")` e um stub com exatamente o metodo que o coletor usa.
@@ -36,9 +36,9 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.collect import cloudwatch_logs as cwl
-from sparkforge.collect.aws import CollectionFailed
-from sparkforge.collect.base import CollectorUnavailable, load_manifest, verify_all
+from sparkforge_aws.collect import cloudwatch_logs as cwl
+from sparkforge_aws.collect.aws import CollectionFailed
+from sparkforge_aws.collect.base import CollectorUnavailable, load_manifest, verify_all
 
 JOB = "meu-job"
 RUN = "jr_abc123"
@@ -367,7 +367,7 @@ class TestManifestoEOfflineFirst:
 class TestOColetorNaoRedige:
     """A redacao mora no EXTRATOR, e este teste tranca a fronteira.
 
-    Artefato bruto nunca e committado (`sparkforge/collect/base.py`); `facts.json`
+    Artefato bruto nunca e committado (`sparkforge_aws/collect/base.py`); `facts.json`
     e. Redigir na coleta apagaria do artefato local a evidencia que o operador
     pode precisar ler, e ainda assim nao protegeria nada -- o que vaza e o fact.
     """
@@ -382,7 +382,7 @@ class TestOColetorNaoRedige:
     def test_e_o_extrator_e_quem_redige(self, tmp_path, monkeypatch):
         """O par positivo: a mesma linha, passada pelo extrator, sai redigida.
         Sem este teste, o de cima sozinho poderia estar provando um vazamento."""
-        from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs
+        from sparkforge_aws.facts.cloudwatch_logs import extract_cloudwatch_logs
 
         segredo = "jdbc:postgresql://usuario:senha123@host:5432/db"
         logs = FakeLogsClient(mensagens=[segredo])

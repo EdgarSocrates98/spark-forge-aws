@@ -48,7 +48,7 @@ latência ou tokens.
 - Routing de ownership de catálogo sem aliasar `glue.id` e `glue.account-id`.
 - Decision engine offline para FGAC/FTA, read/write, credential vending e
   cross-account, com checks nomeados, riscos e rollback.
-- Verbo `sparkforge lakeformation architect` e tool MCP
+- Verbo `sparkforge-aws lakeformation architect` e tool MCP
   `sparkforge_lakeformation_architect` com paridade de payload.
 - Knowledge, skill, coordenadores, espelhos, referências geradas, manifesto,
   locks de surface/sources/claims, guia e VNX atualizados.

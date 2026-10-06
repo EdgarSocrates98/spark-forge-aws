@@ -101,7 +101,7 @@ class TestOFakeDoAthenaNaoInventaTabela:
         `ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA` em `collect/aws.py`, que
         nomeia cada uma e diz o que custaria destravar.
         """
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         indisponiveis = set(aws.ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA)
         pedidas = set(aws.ICEBERG_METADATA_SECTIONS)
@@ -113,7 +113,7 @@ class TestOFakeDoAthenaNaoInventaTabela:
         )
 
     def test_toda_secao_indisponivel_diz_o_que_custaria(self):
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         for secao, razao in aws.ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA.items():
             assert razao.strip(), f"{secao} sem razao escrita"
@@ -121,7 +121,7 @@ class TestOFakeDoAthenaNaoInventaTabela:
     def test_delete_files_esta_entre_as_indisponiveis_com_a_alternativa(self):
         """A recusa precisa dizer ONDE os deletes estao, nao so que a secao
         falta: eles vem de `$files` pela coluna `content`."""
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         razao = aws.ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA["delete_files"]
         assert "content" in razao

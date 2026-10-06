@@ -21,7 +21,7 @@ Extrai facts deterministicos de codigo PySpark via AST estatico -- nunca importa
 
 ## Na CLI
 
-[`sparkforge analyze pyspark`](../cli/analyze.md)
+[`sparkforge-aws analyze pyspark`](../cli/analyze.md)
 
 ## Capacidade
 

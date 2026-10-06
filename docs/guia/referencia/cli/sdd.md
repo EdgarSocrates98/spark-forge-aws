@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge sdd`
+# `sparkforge-aws sdd`
 
 Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o que nao fecha, sem julgar a prosa.
 
@@ -8,16 +8,16 @@ Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o 
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge sdd check`](#sparkforge-sdd-check) | Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0. |
-| [`sparkforge sdd stamp`](#sparkforge-sdd-stamp) | Grava upstream.sha256 do artefato. Escreve so a linha do hash. |
-| [`sparkforge sdd status`](#sparkforge-sdd-status) | Fase atual de cada feature e o que a impede de avancar. |
+| [`sparkforge-aws sdd check`](#sparkforge-aws-sdd-check) | Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0. |
+| [`sparkforge-aws sdd stamp`](#sparkforge-aws-sdd-stamp) | Grava upstream.sha256 do artefato. Escreve so a linha do hash. |
+| [`sparkforge-aws sdd status`](#sparkforge-aws-sdd-status) | Fase atual de cada feature e o que a impede de avancar. |
 
-## `sparkforge sdd check`
+## `sparkforge-aws sdd check`
 
 Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0.
 
 ```bash
-sparkforge sdd check --help
+sparkforge-aws sdd check --help
 ```
 
 ### Opções
@@ -32,12 +32,12 @@ sparkforge sdd check --help
 
 [`sparkforge_sdd_check`](../tools/sparkforge_sdd_check.md), [`sparkforge_sdd_status`](../tools/sparkforge_sdd_status.md)
 
-## `sparkforge sdd stamp`
+## `sparkforge-aws sdd stamp`
 
 Grava upstream.sha256 do artefato. Escreve so a linha do hash.
 
 ```bash
-sparkforge sdd stamp --help
+sparkforge-aws sdd stamp --help
 ```
 
 ### Opções
@@ -52,12 +52,12 @@ sparkforge sdd stamp --help
 
 [`sparkforge_sdd_stamp`](../tools/sparkforge_sdd_stamp.md)
 
-## `sparkforge sdd status`
+## `sparkforge-aws sdd status`
 
 Fase atual de cada feature e o que a impede de avancar.
 
 ```bash
-sparkforge sdd status --help
+sparkforge-aws sdd status --help
 ```
 
 ### Opções

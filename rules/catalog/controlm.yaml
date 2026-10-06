@@ -1,11 +1,11 @@
 # Catálogo de regras — definição `Jobs-as-Code` do Control-M (BMC)
 #
-# Depende do extrator `sparkforge/facts/controlm_jobs.py`, que lê o JSON de
+# Depende do extrator `sparkforge_aws/facts/controlm_jobs.py`, que lê o JSON de
 # definição de job versionado no repositório do cliente — o mesmo que `ctm build`
 # valida e `ctm deploy` publica. A pesquisa de fontes que decidiu o que entra e o
 # que fica de fora está em `knowledge/controlm/automation-api-matrix.md`, e o
 # desenho está em
-# `docs/superpowers/specs/2026-09-01-sparkforge-controlm-jobs-as-code-design.md`.
+# `docs/superpowers/specs/2026-09-01-sparkforge-aws-controlm-jobs-as-code-design.md`.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # A REGRA NÃO REPETE A FRONTEIRA DE VERSÃO. ELA PERGUNTA À MATRIZ.
@@ -68,7 +68,7 @@
 # A tentação é declarar algo aqui, já que a regra é inteiramente sobre versão. É
 # errado por mecanismo: `runtime_scope` guarda a versão do **RuntimeContext** —
 # Glue, Spark, Python, Iceberg —, e nada alimenta `RuntimeContext` com a versão
-# do Control-M. `sparkforge/facts/runtime_detect.py` deriva de `GLUE_MATRIX`, de
+# do Control-M. `sparkforge_aws/facts/runtime_detect.py` deriva de `GLUE_MATRIX`, de
 # `EMR_MATRIX` e de `spark.runtime_version`; nenhuma das três conhece
 # `9.0.2x.yyy`. O guarda falha FECHADO, então declarar qualquer chave faria a
 # regra ser pulada em toda execução real — golden verde por SKIP, que é pior que
@@ -256,7 +256,7 @@ rules:
       - "Confirmar a versão real do Automation API do ambiente alvo antes de qualquer edição: `ctm --version` no cliente, ou a versão que o endpoint publica. A versão deste achado foi DECLARADA, não medida, e um achado sobre uma declaração errada é ruído caro."
       - "Se a versão declarada está certa, trocar a capacidade pela alternativa que a versão alvo tem. Para `Job:DetachedEmbeddedScript` abaixo da fronteira, a alternativa é `Job:EmbeddedScript` (que a página Job Types publica e a matriz não datava dentro da faixa) mais o desacoplamento explícito no próprio script — o comportamento em background passa a ser do script, não do job type."
       - "Se a alternativa não existe, atualizar o Control-M do ambiente alvo até a versão que a fronteira nomeia — e tratar isso como mudança de plataforma, com janela e plano próprios, nunca como parte do merge do job."
-      - "Consultar `sparkforge controlm describe --version <alvo>` para ver o que a versão alvo sustenta nos DOIS eixos antes de escolher: capacidade com fronteira, e exigência de componente (Java, Python, pip). Trocar o job type e esbarrar na exigência de Java seria descobrir a segunda barreira depois de já ter pago a primeira."
+      - "Consultar `sparkforge-aws controlm describe --version <alvo>` para ver o que a versão alvo sustenta nos DOIS eixos antes de escolher: capacidade com fronteira, e exigência de componente (Java, Python, pip). Trocar o job type e esbarrar na exigência de Java seria descobrir a segunda barreira depois de já ter pago a primeira."
       - "Se o achado for falso — a capacidade existe no ambiente e a matriz não sabe —, a correção é a MATRIZ: leia a página What's New da versão e acrescente ou corrija a entrada em knowledge/controlm/automation-api-matrix.yaml. Não silencie a regra."
     # O bullet 1 -- confirmar a versao real do Automation API -- e PRE-CONDICAO,
     # e a propria regra o escreve assim: "antes de qualquer edicao". A acao
@@ -301,7 +301,7 @@ rules:
       - "EIXO DE RESULTADO — o workflow produz o mesmo conjunto de jobs. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Trocar o job type não pode acrescentar, remover nem renomear job."
       - "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e a lista de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item. É o que prova que a troca foi de mecanismo de execução e não de topologia do fluxo."
       - "EIXO DE RESULTADO — o efeito do job é o mesmo. Uma ordenação (`run order`) no ambiente alvo termina em OK e o artefato que o job produz — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job type novo que roda sem erro e escreve outra coisa é a falha que este eixo existe para pegar."
-      - "`sparkforge analyze controlm-jobs --path <arquivo> --version <a mesma>` não produz mais SF-CTM-001, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
+      - "`sparkforge-aws analyze controlm-jobs --path <arquivo> --version <a mesma>` não produz mais SF-CTM-001, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
     rollback:
       - >
         Reverter o commit da definição e reimplantar a versão anterior com `ctm
@@ -402,7 +402,7 @@ rules:
       de regras reprova caminho ausente por construção — é assim que ele diz "não
       sei" —, então nenhuma condição deste catálogo consegue perguntar "esta
       chave não foi escrita". Quem enxerga as três opções de uma vez é
-      sparkforge/facts/controlm_jobs.py::_specific_dates, e ele emite o veredito
+      sparkforge_aws/facts/controlm_jobs.py::_specific_dates, e ele emite o veredito
       pronto. Severidade e recomendação continuam aqui.
       O QUE ESTE ACHADO NÃO AFIRMA: em que dias o job vai efetivamente rodar. A
       fonte declara a combinação inválida e declara o default; ela não publica o
@@ -450,7 +450,7 @@ rules:
       - "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a combinação é aceita."
       - "EIXO DE RESULTADO — o conjunto de datas em que o job é ordenado. `run jobs:status::get` sobre uma janela que cubra as `SpecificDates` declaradas devolve exatamente uma ordenação por data listada, e nenhuma fora delas. É o que prova que a correção fixou o agendamento no que o autor escreveu, em vez de somar o default `ALL`."
       - "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa das datas declaradas — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Mexer em `When` é mudança de QUANDO, e não pode mover o QUE."
-      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-002, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
+      - "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-002, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
     rollback:
       - "Reverter o commit da definição e reimplantar com `ctm deploy`. A definição é código versionado e o rollback é barato, mas ele NÃO desfaz ordenações já submetidas: o job que entrou no Active continua com a definição com que entrou."
     sources:
@@ -543,7 +543,7 @@ rules:
       - "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a lista é aceita naquela versão."
       - "EIXO DE RESULTADO — o conjunto de datas ordenadas é o mesmo que se pretendia. `run jobs:status::get` sobre a janela de interesse devolve uma ordenação para cada data pretendida e nenhuma a mais; comparar a lista de datas ordenadas antes e depois, item a item, é o que prova que a troca de mecanismo não perdeu nem acrescentou dia."
       - "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa data que existe nos dois desenhos confere com o do último run bom: contagem total e contagem por chave de negócio iguais."
-      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-003, e `ctm.schedule` mostra `specific_dates_count` dentro do teto — e `job_count` inalterado, porque regra que cala por o extrator ter parado de ler é verde falso."
+      - "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-003, e `ctm.schedule` mostra `specific_dates_count` dentro do teto — e `job_count` inalterado, porque regra que cala por o extrator ter parado de ler é verde falso."
     rollback:
       - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um calendário no Control-M, removê-lo é operação de runtime e exige confirmação de escopo: outros jobs podem tê-lo passado a referenciar."
     sources:
@@ -657,7 +657,7 @@ rules:
       - "`ctm build` sobre o JSON, executado contra o endpoint do ambiente alvo, retorna sucesso — é a validação oficial da BMC e é a que enxerga o setting do servidor."
       - "EIXO DE RESULTADO — o conjunto de jobs publicado é o mesmo. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Converter forma de declaração não pode acrescentar, remover nem renomear job, e é exatamente aqui que a conversão com nomes duplicados falharia."
       - "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e as listas de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item."
-      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
+      - "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
     rollback:
       - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção foi no ambiente e não no arquivo — religar o setting —, o rollback é de configuração de plataforma e afeta todas as definições em array, não só esta."
     sources:
@@ -768,7 +768,7 @@ rules:
       - "EIXO DE RESULTADO — o job espera pelo mesmo conjunto de eventos. A lista de `WaitForEvents` do job, antes e depois, tem os mesmos nomes de evento e as mesmas datas, item a item: achatar parênteses é mudança de AGRUPAMENTO, e não pode acrescentar nem remover evento esperado."
       - "EIXO DE RESULTADO — a ordem efetiva de execução não mudou. Uma ordenação (`run order`) do fluxo no ambiente alvo termina em OK e a sequência de horários de início dos jobs é a mesma da última execução boa — é isso que prova que a condição de espera continua sendo satisfeita nos mesmos pontos."
       - "EIXO DE RESULTADO — o efeito do job é o mesmo. O artefato que ele produz confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job que passa a rodar antes da hora roda sobre dado incompleto e termina em OK — é essa falha que este eixo existe para pegar."
-      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-005, e `ctm.event_logic` mostra `max_paren_depth` igual a 1 — com `dependency_count` inalterado na sentinela, porque regra que cala por o extrator ter parado de ler os eventos é verde falso."
+      - "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-005, e `ctm.event_logic` mostra `max_paren_depth` igual a 1 — com `dependency_count` inalterado na sentinela, porque regra que cala por o extrator ter parado de ler os eventos é verde falso."
     rollback:
       - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um evento intermediário, o rollback precisa também remover o job que o adiciona — deixá-lo publicado faz o Control-M acumular um evento que ninguém mais consome."
     sources:
@@ -891,7 +891,7 @@ rules:
       - "EIXO DE RESULTADO — o conjunto de jobs efetivamente publicado é o mesmo. `deploy jobs::get` sobre o folder pai, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. É o eixo crítico aqui, porque mover um job para o template MULTIPLICA-O por instância — e essa contagem é onde a multiplicação aparece."
       - "EIXO DE RESULTADO — as outras instâncias do mesmo template não mudaram. `deploy jobs::get` sobre cada sub-folder que referencia o mesmo `ReferencePath` devolve a mesma contagem de antes: sub-folder que ganhou um job sem ter pedido é a falha que este eixo existe para pegar."
       - "EIXO DE RESULTADO — o efeito é o mesmo. Uma ordenação (`run order`) termina em OK e o artefato produzido — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais."
-      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-006, e `ctm.folder` mostra `explicit_job_count` zero no sub-folder — com o `job_count` do artefato inteiro conferido à parte, porque um job que sumiu da contagem foi apagado, não movido."
+      - "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-006, e `ctm.folder` mostra `explicit_job_count` zero no sub-folder — com o `job_count` do artefato inteiro conferido à parte, porque um job que sumiu da contagem foi apagado, não movido."
     rollback:
       - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção moveu um job para o folder referenciado, o rollback precisa alcançar todas as instâncias que passaram a herdá-lo — republicar só este sub-folder deixaria as outras com o job a mais."
     sources:

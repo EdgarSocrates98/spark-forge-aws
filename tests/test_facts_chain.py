@@ -1,4 +1,4 @@
-from sparkforge.facts.pyspark_ast import extract_source
+from sparkforge_aws.facts.pyspark_ast import extract_source
 
 
 def only(kind, facts):

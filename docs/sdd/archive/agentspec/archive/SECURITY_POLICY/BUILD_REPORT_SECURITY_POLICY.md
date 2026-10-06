@@ -20,7 +20,7 @@
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | 14/14 entradas do manifesto |
-| **Files Created** | 7 modulos (`sparkforge/policy/`), 3 de teste, 10 casos de fixture, `.sparkforge/policy.yaml`, 1 manual, 2 paginas de referencia, este relatorio |
+| **Files Created** | 7 modulos (`sparkforge_aws/policy/`), 3 de teste, 10 casos de fixture, `.sparkforge/policy.yaml`, 1 manual, 2 paginas de referencia, este relatorio |
 | **Lines of Code** | `policy/` ~480; `_core` +~140, `tools.py` +~50, `cli.py` +~60, `mcp.py` +~45, `autonomy.py` +3 |
 | **Tests Passing** | ver Verification Results |
 | **Agents Used** | 0 (build direto) |
@@ -33,7 +33,7 @@
 |---|------|-------|--------|-------|
 | 1 | `schema.py`, `load.py` | (direct) | ✅ Complete | Validacao manual (jsonschema custa 0,139 s de import); teste de concordancia com o JSON Schema formal |
 | 2 | `decide.py` | (direct) | ✅ Complete | `dividir_comando` (composto, `$( )`, crase, subshell, `bash -c`, `sudo`/`env`/`timeout`/atribuicoes), casamento na sintaxe do Claude Code |
-| 3 | `hook.py` | (direct) | ✅ Complete | ~125 ms por chamada; nao importa `sparkforge.adapters` (teste) |
+| 3 | `hook.py` | (direct) | ✅ Complete | ~125 ms por chamada; nao importa `sparkforge_aws.adapters` (teste) |
 | 4 | `settings.py` | (direct) | ✅ Complete | 22 regras `permissions.ask` geradas; `--check` no teste |
 | 5 | `policy/mcp.py` | (direct) | ✅ Complete | `CallPolicy` com catalogo inteiro, aprovacoes da policy, raizes |
 | 6 | `autonomy.py` | (direct) | ✅ Complete | `root` aceita sequencia; teste de nao-regressao com uma raiz |
@@ -52,7 +52,7 @@
 ### Lint Check
 
 ```text
-ruff check sparkforge tests scripts  ->  All checks passed!
+ruff check sparkforge_aws tests scripts  ->  All checks passed!
 ```
 
 ### Type Check

@@ -1,5 +1,5 @@
-from sparkforge.decision.cache import DecisionCache
-from sparkforge.decision.models import DecisionResult, DecisionStatus
+from sparkforge_aws.decision.cache import DecisionCache
+from sparkforge_aws.decision.models import DecisionResult, DecisionStatus
 
 
 def _result(value):

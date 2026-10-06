@@ -20,7 +20,7 @@
       {
         "count": 1,
         "path": ".sparkforge/blackboard/contradictions.jsonl",
-        "sha256": "12911eaa77be1cab8b481750fb195280cfb4e0ad69d2a49d62ccc0a7219832ff"
+        "sha256": "565c6705eb902081c24069fb66db7ead31975735dac352dd07dc8a3fd82c9e57"
       },
       {
         "count": 11,
@@ -30,7 +30,7 @@
       {
         "count": 2,
         "path": ".sparkforge/blackboard/traces.jsonl",
-        "sha256": "e32be95e25640cd4ac2d537584f8b8d6f68361bfc7496aee8f74363e1a2bd92e"
+        "sha256": "e26d93f0431cb074062d0225d5dfb008245c852c3e2f82d7003b472215497690"
       },
       {
         "count": 1,
@@ -79,7 +79,7 @@
     },
     "report": {
       "path": "report.md",
-      "sha256": "99078049050b185ae82d3b7b177b6fc318d24d7009a8397d1e52d970a3299b3c",
+      "sha256": "4d55c512383a00a519009bf0067af584a0ac2daa363ce0b2f9e74da700368ffa",
       "signature": "sig_047d2f7a93b5596107113943ce9f88741a7fb9d7ead259bc616b258911825c04"
     },
     "rule_ids": [
@@ -94,7 +94,7 @@
     "tests": []
   },
   "proves": "correspondencia entre este recibo e estes artefatos -- nunca autoria",
-  "receipt_id": "rcpt_57327441a47b5e6061856f02f950b98334c983164437d78bbf5ac5a06b4e6366",
+  "receipt_id": "rcpt_21b295e1cba7cc9deb5509e19b9295059d65ab1796ae43479df3bb50ce37ae90",
   "receipt_version": 1,
   "refused": [
     {

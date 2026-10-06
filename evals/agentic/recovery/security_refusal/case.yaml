@@ -1,0 +1,8 @@
+schema_version: 1
+case_id: recovery-security-refusal
+failure: security_refusal
+attempt: 0
+strategy_fingerprint: sec-001
+history: []
+profile: economy
+risk: low

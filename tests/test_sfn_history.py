@@ -7,7 +7,7 @@ Glue e a lacuna U1, e por isso o extrator le tres formas e nomeia o que nao reco
 """
 import json
 
-from sparkforge.facts.sfn_history import (
+from sparkforge_aws.facts.sfn_history import (
     extract_sfn_history,
     extract_sfn_history_path,
     extract_sfn_history_tree,
@@ -367,7 +367,7 @@ def test_recusas_do_mesmo_arquivo_nao_colidem_de_id():
     errado e pior do que nao contar: a regra 20 pede a lacuna NOMEADA, e tres eventos
     que a API nao publica nao sao um.
     """
-    from sparkforge.facts.fusion import fuse
+    from sparkforge_aws.facts.fusion import fuse
 
     tres_desconhecidos = {
         "events": [
@@ -402,8 +402,8 @@ def test_recusas_do_mesmo_arquivo_nao_colidem_de_id():
 
 
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     entrada = tmp_path / "entrada"
     entrada.mkdir()
@@ -426,7 +426,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["unresolved"] == 0
 
     erro = call_tool("sparkforge_analyze_sfn_history", {"path": str(tmp_path / "nao-existe")})
-    assert "sparkforge analyze sfn-history" in erro["error"]
+    assert "sparkforge-aws analyze sfn-history" in erro["error"]
 
 
 ASL_COM_RETRY_DE_UMA = {
@@ -500,8 +500,8 @@ def test_duas_execucoes_nao_somam_tentativas_uma_da_outra():
     estado no mesmo pool sao duas execucoes, nao uma com o dobro das tentativas.
     Somar os dois faria a `SF-SFNX-001` acusar dois runs que CABEM no retry declarado.
     """
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     primeira = extract_sfn_history(
         _historico_de_duas_tentativas("jr_1a", "jr_1b"), "execucao-a.json"
@@ -543,8 +543,8 @@ def test_o_padrao_declarado_pode_divergir_do_medido():
     ter `.sync` enquanto a execucao lida rodou sem ele (ou o contrario). Lendo
     `attrs.pattern` sem marca, quem julga o fact derivado acharia estar lendo a medida.
     """
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     sem_sync = {
         "events": [
@@ -584,9 +584,9 @@ def test_o_grupo_e_ordenado_pelo_indice_da_tentativa_e_nao_pelo_hash():
     a derivacao direto, que e onde o contrato mora: o que este teste trava e a ORDEM,
     para que o proximo campo lido de `grupo[-1]` ou de `grupo[0]` nao herde um hash.
     """
-    from sparkforge.facts.sfn_history import build_sfn_retry_observado
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
-    from sparkforge.findings.models import Fact
+    from sparkforge_aws.facts.sfn_history import build_sfn_retry_observado
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.findings.models import Fact
 
     def _tentativa(indice: int, desfecho: str) -> Fact:
         return Fact(
@@ -644,8 +644,8 @@ def test_tentativa_que_nao_e_glue_sai_em_recusa_nomeada():
     regra 20, que pede a lacuna NOMEADA. "Nao sei julgar esta integracao" e diferente
     de "esta tudo bem".
     """
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     pelo_sdk = {
         "events": [
@@ -701,7 +701,7 @@ def test_recusa_de_glue_ausente_e_por_artefato_e_nao_pelo_pool():
     arquivo A cheio de `glue:startJobRun` e o arquivo B so de `aws-sdk:glue`, condicionar
     a recusa ao POOL deixaria a lacuna de B silenciosa -- e a regra 20 pede o contrario.
     """
-    from sparkforge.facts.fusion import fuse
+    from sparkforge_aws.facts.fusion import fuse
 
     pelo_sdk = {
         "events": [
@@ -736,8 +736,8 @@ def test_recusa_de_glue_ausente_e_por_artefato_e_nao_pelo_pool():
 
 
 def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     historico = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
     definicao = extract_stepfunctions(ASL_COM_RETRY_DE_UMA, "carga.asl.json")
@@ -891,7 +891,7 @@ def test_redrive_sai_com_razao_propria_e_os_outros_dois_tipos_entram_calados():
     o Task foi agendado" significa -- o redrive reagenda o Task dentro da MESMA
     execucao, e nada no arquivo separa as tentativas de antes das de depois.
     """
-    from sparkforge.facts.sfn_history import _TIPOS_CONHECIDOS
+    from sparkforge_aws.facts.sfn_history import _TIPOS_CONHECIDOS
 
     assert {"EvaluationFailed", "ExecutionRedriven", "MapRunRedriven"} <= _TIPOS_CONHECIDOS
     assert len(_TIPOS_CONHECIDOS) == 62
@@ -938,8 +938,8 @@ def test_redrive_recusa_o_confronto_em_vez_de_comparar():
     `build_sfn_retry_observado` emite `sfn.unresolved: redrive_in_execution` no lugar
     do `sfn.retry_observado`, e a `SF-SFNX-001` fica sem ancora naquele artefato.
     """
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     historico = extract_sfn_history(HISTORICO_COM_REDRIVE, "redrive.json")
     definicao = extract_stepfunctions(ASL_COM_RETRY_DE_DUAS, "carga.asl.json")
@@ -1279,7 +1279,7 @@ def test_map_inline_cala_a_numeracao_e_preserva_o_job_run():
     ela caia tambem o `sfn.job_run`, que nao depende de ordem nenhuma.
 
     O `JobRunId` e um VALOR, nao uma ordem: ele esta escrito literalmente no `output`
-    do `TaskSubmitted`, e e a unica ponte para `sparkforge finops`. Apaga-lo seria
+    do `TaskSubmitted`, e e a unica ponte para `sparkforge-aws finops`. Apaga-lo seria
     jogar fora medida que o arquivo sustenta por causa de um indice que ele nao
     sustenta. O `subject.symbol` sai SEM o `#<n>`, porque o numero e justamente o que
     foi recusado.
@@ -1331,7 +1331,7 @@ def test_truncado_e_terminal_ausente_nao_colidem_no_mesmo_id():
     `read_events` e MEDIDA, e e por isso que a correcao e move-la para `measures` em
     vez de inventar um desempate: quantos eventos o extrator leu da pagina que sobrou.
     """
-    from sparkforge.facts.fusion import fuse
+    from sparkforge_aws.facts.fusion import fuse
 
     truncado = {
         "nextToken": "AAAAKgAAAAIAAAAAAAAAAw==",

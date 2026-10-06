@@ -34,13 +34,13 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | `sparkforge change plan --facts <f>... --repo <r> (--from-tune \| --set chave=valor ...)` devolve `diff` unificado, `rollback_diff`, `changes[]` (chave, arquivo, linha, de, para, procedência, evidência) e `refused[]`. Não escreve nada, e o campo `stage` sai `produce_change` |
+| **MUST** | `sparkforge-aws change plan --facts <f>... --repo <r> (--from-tune \| --set chave=valor ...)` devolve `diff` unificado, `rollback_diff`, `changes[]` (chave, arquivo, linha, de, para, procedência, evidência) e `refused[]`. Não escreve nada, e o campo `stage` sai `produce_change` |
 | **MUST** | O L1 localiza a mudança pela procedência: `tf.spark_conf` troca o par `chave=valor` dentro da string `--conf` da linha apontada, sem mexer nas outras chaves da mesma linha; `pyspark.conf_set` troca o literal do valor na chamada. Antes de trocar, confere que o valor atual do fact está naquela linha |
 | **MUST** | Recusas nomeadas do L1, cada uma com a medida que a destravaria: `sem_procedencia_em_arquivo` (runtime, unset ou default), `linha_nao_confere` (o repo mudou desde a extração), `procedencia_ambigua` (a chave é pedida em mais de um lugar), `valor_nao_literal` e `valor_redigido` (fact com `redacted`) |
-| **MUST** | `sparkforge change sandbox --repo <r> --diff <arquivo>` copia a árvore para `.sparkforge/sandbox/<id>/` com a varredura de `facts/scan.py`, roda `scan` na cópia pristina, aplica o diff com um aplicador estrito, roda `scan` de novo e devolve os achados `new`, `resolved` e `kept` por (`rule_id`, subject). O campo `stage` sai `sandbox_execute` |
+| **MUST** | `sparkforge-aws change sandbox --repo <r> --diff <arquivo>` copia a árvore para `.sparkforge/sandbox/<id>/` com a varredura de `facts/scan.py`, roda `scan` na cópia pristina, aplica o diff com um aplicador estrito, roda `scan` de novo e devolve os achados `new`, `resolved` e `kept` por (`rule_id`, subject). O campo `stage` sai `sandbox_execute` |
 | **MUST** | O relatório do sandbox traz as obrigações de prova (`validation` e `rollback` do catálogo) das regras em `new` e `resolved`, mais `next_steps` nomeados: o teste do operador, `benchmark` com dois runs e `funcval`. Não afirma ganho |
 | **MUST** | O aplicador é estrito e confinado. Contexto que não bate vira `diff_nao_aplica`, com o hunk. `..`, caminho absoluto e symlink viram `caminho_fora_da_raiz`. Binário ou criação/remoção de arquivo vira `diff_nao_suportado`. Acima de 2 MB, `diff_grande_demais`. Arquivo que a cópia pulou (sensível, podado ou grande demais) vira `arquivo_fora_da_copia`. Em nenhum desses casos há aplicação parcial |
-| **MUST** | Nenhum byte fora de `.sparkforge/sandbox/` muda. `sparkforge/change/` não usa `subprocess` nem git e não importa provider (regra 23) |
+| **MUST** | Nenhum byte fora de `.sparkforge/sandbox/` muda. `sparkforge_aws/change/` não usa `subprocess` nem git e não importa provider (regra 23) |
 | **MUST** | Domínio golden `fixtures/change/` com repos sintéticos, `expected.json` e `.gitattributes` `-text` |
 | **MUST** | Tools `sparkforge_change_plan` (READ_ONLY) e `sparkforge_change_sandbox` (LOCAL_MUTATION), com todos os registros de tool nova, surface lock, claims e a referência gerada em dia |
 | **SHOULD** | `change plan --out <arquivo>` grava o `.patch` só quando pedido (só CLI) |
@@ -60,7 +60,7 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 - [ ] SC6: as 5 recusas do aplicador saem por nome sem nenhum arquivo modificado na cópia; o teste compara os hashes da cópia antes e depois da tentativa.
 - [ ] SC7: no caso "diff que resolve um achado", o `rule_id` aparece em `resolved`, as obrigações de prova da regra aparecem e `next_steps` não fica vazio.
 - [ ] SC8: duas execuções de `change sandbox` com a mesma entrada devolvem o mesmo `<id>` e o mesmo relatório, byte a byte.
-- [ ] SC9: `sparkforge/change/` sem `subprocess`, sem `git` e sem import de provider, conferido por teste.
+- [ ] SC9: `sparkforge_aws/change/` sem `subprocess`, sem `git` e sem import de provider, conferido por teste.
 - [ ] SC10: 100 tools (98 + 2), registros de tool nova, surface lock e claims em dia; suíte nos 9 lotes com 0 falhas.
 
 ---
@@ -95,7 +95,7 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 - Mudança de código gerada pelo pacote (regra 23). O diff de código escrito pelo host passa pelo L2 normalmente.
 - Comando arbitrário do operador no sandbox (pytest, spark-submit).
 - Diff que cria, remove ou renomeia arquivo, ou que toca binário.
-- Redefinir o enum `AutonomyLevel` ou os perfis de `sparkforge/agentic/autonomy.py`.
+- Redefinir o enum `AutonomyLevel` ou os perfis de `sparkforge_aws/agentic/autonomy.py`.
 - Chaves além das que têm procedência em arquivo (`tf.spark_conf`, `pyspark.conf_set`). O `tune` deriva hoje só `spark.sql.shuffle.partitions`.
 
 ---
@@ -109,8 +109,8 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 | Technical | Regra 20: recusa tem nome | Toda recusa com `reason` e `detail` que diga a medida que destrava |
 | Technical | Regra 26: tool nova move o surface lock | Crescimento declarado no commit |
 | Technical | INV-007/INV-009 | Nenhum parâmetro de tool chamado command/cmd/shell/exec/script/argv nem com `url` no nome (o diff entra como `diff_path`) |
-| Technical | Tool FAILABLE: a mensagem de erro contém "sparkforge" | Recusas de entrada inválida seguem o padrão |
-| Technical | Glob cru proibido em `sparkforge/`; confinamento por `resolve_within` | A cópia usa `varrer_source_files`; a limpeza usa `resolve_within` |
+| Technical | Tool FAILABLE: a mensagem de erro contém "sparkforge-aws" | Recusas de entrada inválida seguem o padrão |
+| Technical | Glob cru proibido em `sparkforge_aws/`; confinamento por `resolve_within` | A cópia usa `varrer_source_files`; a limpeza usa `resolve_within` |
 | Technical | Domínio novo exige a linha literal `FIXTURES = ROOT / "fixtures" / "change"` | Golden em `tests/test_fixtures_golden_change.py` |
 | Technical | CI Windows com `core.autocrlf=true` | `.gitattributes` com `fixtures/change/** -text`; aplicador e diff com LF fixo |
 | Legal | Repo público | Fixtures sintéticas, sem nada de empresa |
@@ -121,8 +121,8 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/change/` (novo: `plan`, `apply`, `sandbox`); `sparkforge/adapters/{_core,cli,tools}.py`; `fixtures/change/`; `tests/test_change_*.py`, `tests/test_fixtures_golden_change.py`; `docs/guia/usos/change.md` | O módulo não importa `adapters`; `_core` compõe `tune_conf` e `scan` |
-| **KB Domains** | Nenhum domínio do KB do agentspec. Fontes internas: regras 11/13/18/19/20/23 do CLAUDE.md, `sparkforge/tuning/spark_conf.py` (procedência), `sparkforge/facts/scan.py` (varredura), `rules/catalog/*` (`validation`/`rollback`) | O design consulta estas |
+| **Deployment Location** | `sparkforge_aws/change/` (novo: `plan`, `apply`, `sandbox`); `sparkforge_aws/adapters/{_core,cli,tools}.py`; `fixtures/change/`; `tests/test_change_*.py`, `tests/test_fixtures_golden_change.py`; `docs/guia/usos/change.md` | O módulo não importa `adapters`; `_core` compõe `tune_conf` e `scan` |
+| **KB Domains** | Nenhum domínio do KB do agentspec. Fontes internas: regras 11/13/18/19/20/23 do CLAUDE.md, `sparkforge_aws/tuning/spark_conf.py` (procedência), `sparkforge_aws/facts/scan.py` (varredura), `rules/catalog/*` (`validation`/`rollback`) | O design consulta estas |
 | **IaC Impact** | None | O diff edita `.tf` como texto; nada é provisionado nem roda `terraform` |
 
 ---
@@ -133,7 +133,7 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 |----|------------|------------------|------------|
 | A-001 | `tf.spark_conf.subject.line` é a linha do atributo `--conf`, e várias chaves dividem a mesma linha | O L1 trocaria a linha errada ou a linha inteira | [x] medido: `fixtures/terraform/spark_conf_in_arguments` tem 4 `tf.spark_conf` na linha 21 |
 | A-002 | `pyspark.conf_set.subject.line` é a linha onde está o literal do valor | Num builder encadeado em várias linhas, a linha pode ser o início da cadeia, e o L1 sairia `linha_nao_confere` | [ ] conferir `_subject(node)` no design; a recusa protege caso a suposição caia |
-| A-003 | `.sparkforge` está em `DIRETORIOS_IGNORADOS`, e o `scan` do repo principal não desce nas cópias | Os facts das cópias se duplicariam no scan principal | [x] medido: `sparkforge/facts/scan.py:184` |
+| A-003 | `.sparkforge` está em `DIRETORIOS_IGNORADOS`, e o `scan` do repo principal não desce nas cópias | Os facts das cópias se duplicariam no scan principal | [x] medido: `sparkforge_aws/facts/scan.py:184` |
 | A-004 | A cópia por `varrer_source_files` pula `vendor/`, `build/`, `dist/`, `target/`, diretórios e nomes sensíveis e `.py` acima de 1 MiB, e entrega a lista `pulos` | Diff sobre esses arquivos não teria o que aplicar | [x] medido: listas em `facts/scan.py`; vira a recusa `arquivo_fora_da_copia` |
 | A-005 | `_core.scan` roda duas vezes em processo, sobre raízes diferentes, sem estado global que vaze de uma para a outra | Os achados de "antes" contaminariam os de "depois" | [ ] conferir no design (ledger, cache de catálogo, codeintel) |
 | A-006 | O `tune` deriva hoje só `spark.sql.shuffle.partitions` | `--from-tune` gera no máximo 1 mudança | [x] medido: `build_conf_advice` só acrescenta uma propriedade |

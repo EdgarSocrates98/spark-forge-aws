@@ -32,7 +32,7 @@
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
 | 1 | Passo 0: `fuse()` chama `extract_timeout_diagnosis` + `tests/test_fusion_timeout.py` | (direct) | ✅ Complete | Guardado por `timeout_diagnosis.SOURCE_KINDS` (ver Deviations); assercao de namespace sobre `EMITTED_KINDS` |
-| 2 | `sparkforge/simulate/{__init__,layers,patch,diff}.py` | (direct) | ✅ Complete | `SimulateError.reason` nomeia cada recusa |
+| 2 | `sparkforge_aws/simulate/{__init__,layers,patch,diff}.py` | (direct) | ✅ Complete | `SimulateError.reason` nomeia cada recusa |
 | 3 | `tests/test_simulate_patch.py`, `tests/test_simulate_diff.py` | (direct) | ✅ Complete | 22 testes |
 | 4 | `_core.simulate_change` | (direct) | ✅ Complete | `_simulate_lado` de modulo (def aninhado quebra o codeintel) |
 | 5 | `cli.py` e `tools.py` | (direct) | ✅ Complete | `simulate --facts --set`; `sparkforge_simulate` `_READ_ONLY`, schema proprio |

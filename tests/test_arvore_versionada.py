@@ -1,14 +1,14 @@
 """Todo modulo importado do pacote esta versionado no git.
 
-POR QUE ESTE ARQUIVO EXISTE: `sparkforge/paths.py` ficou DEZ commits sem entrar
-no git. O commit `4240035` acrescentou `from sparkforge.paths import
+POR QUE ESTE ARQUIVO EXISTE: `sparkforge_aws/paths.py` ficou DEZ commits sem entrar
+no git. O commit `4240035` acrescentou `from sparkforge_aws.paths import
 resolve_within` a `rules/loader.py`, `agents/autonomy.py` e `knowledge_ref.py`,
 e nunca fez `git add` do arquivo. Um clone limpo de qualquer commit entre
 `4240035` e `263917a` falha ao importar os tres.
 
 E passou por TUDO: dez execucoes da suite completa, ruff, o gate de lastro, uma
 revisao de conformidade e uma de qualidade. A razao e que o pacote esta
-instalado em modo editavel, entao `sparkforge.paths` resolve para a arvore de
+instalado em modo editavel, entao `sparkforge_aws.paths` resolve para a arvore de
 trabalho -- onde o arquivo existe. Nenhum gate deste repositorio olhava para o
 que o GIT tem, so para o que o disco tem.
 
@@ -22,7 +22,7 @@ falhas diferentes e o segundo e mais barato de rodar.
 
 SEGUNDA RODADA -- O MESMO DEFEITO FORA DO `.py`
 -----------------------------------------------
-A cobertura acima so olha `sparkforge/**/*.py`, e duas vezes seguidas a mesma
+A cobertura acima so olha `sparkforge_aws/**/*.py`, e duas vezes seguidas a mesma
 familia de falha apareceu em arquivo GERADO, que o teste de `.py` nao ve:
 
   1. `agents/sf-context-engineer.md` ganhou o bloco "Indice de codigo" e foi
@@ -89,7 +89,7 @@ RAIZ = pathlib.Path(__file__).resolve().parent.parent
 
 def _versionados() -> set[str]:
     saida = subprocess.run(
-        ["git", "ls-files", "sparkforge"],
+        ["git", "ls-files", "sparkforge_aws"],
         cwd=RAIZ, capture_output=True, text=True, check=True,
     ).stdout
     return {linha.strip() for linha in saida.splitlines() if linha.strip().endswith(".py")}
@@ -97,7 +97,7 @@ def _versionados() -> set[str]:
 
 def _no_disco() -> set[str]:
     achados = set()
-    for caminho in (RAIZ / "sparkforge").rglob("*.py"):
+    for caminho in (RAIZ / "sparkforge_aws").rglob("*.py"):
         if "__pycache__" in caminho.parts:
             continue
         achados.add(caminho.relative_to(RAIZ).as_posix())
@@ -246,12 +246,12 @@ def _visao_do_commit(repo: pathlib.Path, destino: pathlib.Path) -> None:
     mudanca no tradutor sem regenerar os espelhos tambem cai aqui.
 
     Desde INTEGRACAO_USUARIO (D1) o tradutor mora em
-    `sparkforge/integrate/render.py`, e `sync_skills.py` o carrega pelo caminho a
+    `sparkforge_aws/integrate/render.py`, e `sync_skills.py` o carrega pelo caminho a
     partir da propria raiz -- por isso ele vem do commit junto.
     """
     alvos = [
         "scripts/sync_skills.py",
-        "sparkforge/integrate/render.py",
+        "sparkforge_aws/integrate/render.py",
         *_raizes_governadas(),
     ]
     proc = subprocess.run(

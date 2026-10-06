@@ -28,10 +28,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.data_quality import extract_data_quality_tree
-from sparkforge.facts.pyspark_ast import extract_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.data_quality import extract_data_quality_tree
+from sparkforge_aws.facts.pyspark_ast import extract_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 # O job da investigacao. A linha do `ruins = ...` e o ponto em que as duas areas
 # se encontram: para o extrator de `pyspark_ast` ela e uma cadeia com join antes

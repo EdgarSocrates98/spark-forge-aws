@@ -22,7 +22,7 @@ versão da **biblioteca**: `mig.table_format` existe justamente para separar as 
 
 Prosa não é consultável e não tem gate. A mesma separação vive como dado em
 [`../../../../knowledge/storage/iceberg-feature-support.yaml`](../../../../knowledge/storage/iceberg-feature-support.yaml),
-carregado por `sparkforge/storage/feature_support.py`: uma matriz de **feature contra
+carregado por `sparkforge_aws/storage/feature_support.py`: uma matriz de **feature contra
 engine**, uma célula por par, e cada célula carrega a própria evidência.
 
 A regra está em código, não em prosa: **toda célula afirmativa precisa de `source`,
@@ -82,7 +82,7 @@ inverso. Ver [`known-unknowns.md`](known-unknowns.md) para o que isso deixa fora
 
 ## O que o diagnóstico de tabela entrega hoje
 
-`sparkforge/iceberg/doctor.py:IcebergTableDoctor` devolve o `format_version` no relatório de
-saúde, e `sparkforge/facts/iceberg_metadata.py` extrai metadados de dump. Prontidão para v3,
+`sparkforge_aws/iceberg/doctor.py:IcebergTableDoctor` devolve o `format_version` no relatório de
+saúde, e `sparkforge_aws/facts/iceberg_metadata.py` extrai metadados de dump. Prontidão para v3,
 uso de VARIANT e suporte por consumidor **não** fazem parte do relatório — ver
 [`known-unknowns.md`](known-unknowns.md).

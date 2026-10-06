@@ -18,12 +18,12 @@
 **Raw Input:** §11 de `prompt_new_evo.md`, "Debate ROI Gate": antes de abrir um debate, avaliar `complexity`, `uncertainty`, `contradiction_count`, `severity`, `reversibility`, `evidence_gap` e `expected_information_gain`, para não pôr agentes discutindo o que um `if` resolve. Primeira das duas frentes que o operador escolheu para fechar o documento.
 
 **Context Gathered:**
-- Plano de debate só existe quando o `arbitrate` não fecha: `_arbitra_pares` (`sparkforge/agentic/executor/run.py`) devolve decisão OU plano, nunca os dois, e é o caminho único de `run_executor` e de `open_debate_plans`. Não fecha com `escalate`, `experiment` ou sem claim vencedora.
+- Plano de debate só existe quando o `arbitrate` não fecha: `_arbitra_pares` (`sparkforge_aws/agentic/executor/run.py`) devolve decisão OU plano, nunca os dois, e é o caminho único de `run_executor` e de `open_debate_plans`. Não fecha com `escalate`, `experiment` ou sem claim vencedora.
 - `debate_run.start` congela o plano do par vindo de `open_debate_plans` e já recusa por nome (`budget_undeclared`, `no_open_debate_for_rules`, `invalid_rules`, ...). Recusa não grava nada.
 - O catálogo produz UM par de contradição direta: `SF-GRAPH-005` × `SF-LF-001`, só na união de `fixtures/graph/import_sem_jar_no_iac` e `fixtures/infra_code/fgac_com_jar_extra`. Os 13 goldens de `fixtures/debate/` rodam sobre ele.
 - Medido nessa união: `SF-LF-001` é P0 (`dependency.remove_library`, `remove`), `SF-GRAPH-005` é P1 (`dependency.declare_in_iac`, `add`); a arbitragem pede `experiment`; o case tem 1 `Unknown` e nenhum cita o par (`_fala_de`).
 - `rules/catalog/action_kinds.yaml` tem 70 `kind` e 6 direções; nenhuma menção a reversibilidade no catálogo (0 ocorrências de `reversib`, `irreversible`, `blast`, `destructive`).
-- O finding traz `severity`, `rollback`, `validation` e `action` (`sparkforge/findings/models.py`).
+- O finding traz `severity`, `rollback`, `validation` e `action` (`sparkforge_aws/findings/models.py`).
 - O trace `arbitration` tem id content-addressed sobre o corpo: acrescentar campo nele move o id de todo trace já gravado.
 - Precedente de política declarada no catálogo: `rules/catalog/proof_axes.yaml` (§20).
 
@@ -31,7 +31,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/agentic/executor/gate.py` (novo), `run.py` (`_arbitra_pares`, trace), `debate_run.py` (`start`), `rules/catalog/{action_kinds,debate_gate}.yaml` | Estende o executor determinístico e o de debate |
+| Likely Location | `sparkforge_aws/agentic/executor/gate.py` (novo), `run.py` (`_arbitra_pares`, trace), `debate_run.py` (`start`), `rules/catalog/{action_kinds,debate_gate}.yaml` | Estende o executor determinístico e o de debate |
 | Relevant KB Domains | Nenhum domínio do agentspec cobre arbitragem; `genai` (multi-agente) só como contexto | Padrões vêm do próprio repositório (plan, digest, proof_axes, recusas nomeadas) |
 | IaC Patterns | N/A | Nada de infraestrutura |
 

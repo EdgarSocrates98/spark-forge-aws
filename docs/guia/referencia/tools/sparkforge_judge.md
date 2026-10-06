@@ -31,7 +31,7 @@ Aplica o catalogo de regras versionado sobre facts ja extraidos, filtrado pelo r
 
 ## Na CLI
 
-[`sparkforge judge`](../cli/judge.md)
+[`sparkforge-aws judge`](../cli/judge.md)
 
 ## Capacidade
 

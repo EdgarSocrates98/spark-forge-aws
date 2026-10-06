@@ -1,10 +1,10 @@
 """Tests for SparkForge Platform Compilers and Exporters (Phase 6)."""
 import pytest
 
-from sparkforge.adapters.platforms import (
+from sparkforge_aws.adapters.platforms import (
     PlatformCompiler,
 )
-from sparkforge.registry.loader import get_default_registry
+from sparkforge_aws.registry.loader import get_default_registry
 
 
 def test_platform_compiler_all_targets(tmp_path):

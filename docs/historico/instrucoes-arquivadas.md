@@ -54,7 +54,7 @@ nada acusava. Hoje `test_suite_batches.py` trava as três invariantes.
 
 ### O executor agêntico, em números de 2026-09-08 a 2026-09-11
 
-`sparkforge/agentic/executor/` acrescenta **10 módulos** (remedido em
+`sparkforge_aws/agentic/executor/` acrescenta **10 módulos** (remedido em
 2026-09-11: 4185 linhas com o `__init__.py`, 168 889 bytes. Em 2026-09-08 eram
 8, com 2727 linhas e 176 testes, e o executor de debate acrescentou
 `debate_run` e `debate_evidence`, com 112 testes: 24 de unidade, 41 de
@@ -68,14 +68,14 @@ Medido em 2026-09-08 sobre `fixtures/graph/import_sem_jar_no_iac` unida a
 `fixtures/infra_code/fgac_com_jar_extra` (3 findings, 60 facts): antes,
 zero em tudo; depois, **3 claims, 11 evidências, 1 contradição e 1
 contradição não resolvida**. Desde 2026-09-11 o plano de debate tem executor
-(`sparkforge debate start|next|submit`). O Debate ROI Gate entrou em 2026-09-14.
-O placar do debate é `python -m sparkforge.evals debate --run <nome>`. **Alcance
+(`sparkforge-aws debate start|next|submit`). O Debate ROI Gate entrou em 2026-09-14.
+O placar do debate é `python -m sparkforge_aws.evals debate --run <nome>`. **Alcance
 medido: um par.** Das 156 regras com `action`, `direct_conflicts` produz só
 `SF-GRAPH-005` × `SF-LF-001`, e só na união de dois jobs. Status por componente em
 `docs/agentic-evolution-report.md`.
 
 **A metade da VERIFICAÇÃO do debate passou a existir em 2026-09-10, e a da
-GERAÇÃO não.** `sparkforge debate referee` arbitra o protocolo e recusa quatro coisas.
+GERAÇÃO não.** `sparkforge-aws debate referee` arbitra o protocolo e recusa quatro coisas.
 `upheld` é binário, porque a garantia pedida é uma recusa e recusa graduada não
 recusa. O sétimo estágio do protocolo (`VERIFICATION`) sai `modeled: false`:
 consenso é acordo, não verificação, e `Debate.verdict` é texto livre que nada liga
@@ -140,3 +140,18 @@ produtor pode ser fail-closed: `baseline_captured` (`bench.run_delta`),
 `flows_mapped` (`callgraph.reachable_spark_work`) e `functional_validation_defined`
 (`funcval.plan`). `dominant_bottleneck_identified` fica advisory, porque endurecer um
 gate sem produtor é o impasse que o design da Fase 0 recusou.
+
+### A nota do CONFIG_OCA no `AGENTS.md`
+
+Texto que morava em "Agentic Expansion Inventory" até 2026-10-06, removido na
+onda de convergência do runtime porque o teto de bytes do arquivo de instrução
+estourou e a passagem é histórico, não regra:
+
+> The sixteen ephemeral contracts and the seven declared tool names left in
+> `docs/sdd/CONFIG_OCA/` (2026-09-20): the contracts had no reader in
+> `sparkforge_aws/`, `scripts/` or `tests/`, and none of the seven names existed in
+> `sparkforge_aws.adapters.tools.TOOLS`. The six modules under `sparkforge_aws/tools/`
+> behind them are code and still exist.
+
+A regra vigente que ficou no lugar: "Tools declared in this registry: none";
+os módulos `sparkforge_aws/tools/` continuam existindo como código.

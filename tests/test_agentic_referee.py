@@ -28,10 +28,10 @@ import json
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.agentic.debate import Debate, DebateRound, DebateStatus, DebateTrigger
-from sparkforge.agentic.models import Claim, ClaimType, Objection, Rebuttal
-from sparkforge.agentic.referee import (
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.agentic.debate import Debate, DebateRound, DebateStatus, DebateTrigger
+from sparkforge_aws.agentic.models import Claim, ClaimType, Objection, Rebuttal
+from sparkforge_aws.agentic.referee import (
     ESTAGIOS,
     VIOLACAO_HIPOTESE_FINAL,
     VIOLACAO_OBJECAO_VIVA,
@@ -313,7 +313,7 @@ class TestSobreOBlackboard:
     def test_o_nucleo_e_o_mesmo_para_as_duas_entradas(self):
         """Duas cópias do mesmo julgamento é o defeito que `ORDEM_DE_SEVERIDADE`
         teve por um dia. `_arbitrar` é a única implementação."""
-        from sparkforge.agentic import referee
+        from sparkforge_aws.agentic import referee
 
         fonte = referee.__file__
         with open(fonte, encoding="utf-8") as arquivo:

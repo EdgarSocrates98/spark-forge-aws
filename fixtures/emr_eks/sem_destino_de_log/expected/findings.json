@@ -46,7 +46,7 @@
     "validation": [
       "DescribeJobRun de uma submissão nova mostrando s3MonitoringConfiguration.logUri ou cloudWatchMonitoringConfiguration.logGroupName preenchido.",
       "Objetos efetivamente gravados no destino escolhido para esse job novo — configuração declarada e objeto escrito são duas afirmações diferentes, e é a segunda que fecha.",
-      "O event log localizado e legível por sparkforge analyze_event_log, que é a capacidade que o achado diz estar perdida.",
+      "O event log localizado e legível por sparkforge-aws analyze_event_log, que é a capacidade que o achado diz estar perdida.",
       "Contagem total e contagem por chave de negócio do destino de dados iguais às do último run comparável: acrescentar destino de log não pode mudar o resultado do job, e se mudou, a mudança foi outra."
     ],
     "rollback": [

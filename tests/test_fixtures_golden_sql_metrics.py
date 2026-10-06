@@ -14,10 +14,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.sql_metrics import extract_sql_metrics_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sql_metrics"
@@ -103,7 +103,7 @@ class TestOQueOCorpusInteiroGarante:
         quebraria aqui -- e e disto que depende a confiabilidade do fingerprint
         que vem depois.
         """
-        from sparkforge.facts.sql_metric_names import measure_for
+        from sparkforge_aws.facts.sql_metric_names import measure_for
 
         for directory in fixture_dirs():
             publicadas: dict[int, set[str]] = {}

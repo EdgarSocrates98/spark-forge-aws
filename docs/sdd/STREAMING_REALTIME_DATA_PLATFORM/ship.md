@@ -36,7 +36,7 @@ transporte, CDC, Flink ou lakehouse listadas no explore.
   batch/source/sink/event-time/state e série somente quando há observações
   suficientes;
 - regras `SF-STREAM-001` a `SF-STREAM-003`, runtime guard e rota `AGENT-090`;
-- `sparkforge analyze streaming` e `sparkforge_analyze_streaming`, com envelope
+- `sparkforge-aws analyze streaming` e `sparkforge_analyze_streaming`, com envelope
   compartilhado;
 - fixtures, goldens, conhecimento oficial offline, locks e referências geradas;
 - capability/parity para os cinco caminhos de execução documentados.
@@ -53,7 +53,7 @@ transporte, CDC, Flink ou lakehouse listadas no explore.
 | referências | `python scripts/gen_reference_docs.py` e `python scripts/check_surface_lock.py` | 0 páginas pendentes; exit 0 |
 | números | `python scripts/check_status_numbers.py --strict` | exit 0 |
 | suíte sequencial | nove lotes oficiais | 5509 pass, 6 skipped; `test_integrate.py` completo: 115 pass, 1 skipped com basetemp curto |
-| SDD | `sparkforge sdd check --repo . --feature STREAMING_REALTIME_DATA_PLATFORM` | esperado exit 0 após stamp |
+| SDD | `sparkforge-aws sdd check --repo . --feature STREAMING_REALTIME_DATA_PLATFORM` | esperado exit 0 após stamp |
 
 ## Rollback
 

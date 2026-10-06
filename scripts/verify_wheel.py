@@ -64,7 +64,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # da Fase G6 (`fixtures/scenarios/`) e exercitado por
 # `tests/test_fixtures_scenarios.py`, que nao tem "golden" no nome porque o
 # golden dele nao e `facts`+`findings` -- e o `to_dict()` de um
-# `MigrationAssessment`, produzido por `sparkforge.migration.assessment.assess`.
+# `MigrationAssessment`, produzido por `sparkforge_aws.migration.assessment.assess`.
 # Esse e justamente um contrato que vale checar contra o PACOTE INSTALADO, e o
 # padrao antigo o deixaria de fora em silencio. O alargamento tambem traz
 # `test_fixtures_kind_coverage.py`, que passa a comparar o catalogo instalado
@@ -227,7 +227,7 @@ def pytest_command(python: Path, root: Path) -> list[str]:
     return [str(python), "-m", "pytest", "-q", "-o", "pythonpath=", *modules]
 
 
-# O caminho PADRAO de `sparkforge.integrate.sources` (sem `bundle=` injetado),
+# O caminho PADRAO de `sparkforge_aws.integrate.sources` (sem `bundle=` injetado),
 # sob o Python do venv: a raiz que `content_root()` devolve tem que estar dentro
 # do site-packages e trazer ao menos uma skill e um agent. Rodado a partir do
 # repositorio, `content_root()` devolve a raiz do repo e a checagem reprova --
@@ -235,7 +235,7 @@ def pytest_command(python: Path, root: Path) -> list[str]:
 BUNDLE_CHECK = """
 import sys, sysconfig
 from pathlib import Path
-from sparkforge.integrate import sources
+from sparkforge_aws.integrate import sources
 raiz = sources.content_root().resolve()
 site = Path(sysconfig.get_paths()["purelib"]).resolve()
 if site not in raiz.parents:
@@ -383,7 +383,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    workdir = Path(tempfile.mkdtemp(prefix="sparkforge-gate-"))
+    workdir = Path(tempfile.mkdtemp(prefix="sparkforge-aws-gate-"))
     dist = workdir / "dist"
     rebuild = workdir / "rebuild"
     venv = workdir / "venv"

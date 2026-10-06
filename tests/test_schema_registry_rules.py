@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.facts.schema_registry import extract_schema_registry_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.schema_registry import extract_schema_registry_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 

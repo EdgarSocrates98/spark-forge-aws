@@ -17,7 +17,7 @@ deviations:
 
 > Template da skill `sdd-ship`. Troque `feature: EXEMPLO` pelo nome da
 > feature e ponha `status: draft` ao copiar. `registries` sai de
-> `change_kinds` do define, pelo mapa de `sparkforge/sdd/change_kinds.yaml`:
+> `change_kinds` do define, pelo mapa de `sparkforge_aws/sdd/change_kinds.yaml`:
 > aqui `agent_or_skill` exige `sync_skills` e `agents_parity`, e cada um foi
 > rodado pela seção de `docs/gates-por-mudanca.md`. `hypothesis_outcome` fecha
 > a hipótese do define sem reescrevê-la (regra 21): `confirmed` só com a

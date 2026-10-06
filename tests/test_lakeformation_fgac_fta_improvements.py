@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.lakeformation.architecture import analyze_architecture
-from sparkforge.lakeformation.capabilities import capability, load_matrix
-from sparkforge.lakeformation.catalog_routing import route_catalogs
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.lakeformation.architecture import analyze_architecture
+from sparkforge_aws.lakeformation.capabilities import capability, load_matrix
+from sparkforge_aws.lakeformation.catalog_routing import route_catalogs
 
 
 def _payload(**overrides):
@@ -283,7 +283,11 @@ def test_improvement_contract_is_documented_and_parity_is_preserved(tmp_path, ca
     input_path.write_text(json.dumps(payload), encoding="utf-8")
     assert main(["lakeformation", "architect", "--input", str(input_path)]) == 0
     cli_result = json.loads(capsys.readouterr().out)
-    assert cli_result == call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+    mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+    # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+    # tests/test_runtime_convergence_trust.py
+    mcp_result.pop("_trust", None)
+    assert cli_result == mcp_result
     assert {"source_decision", "target_decision"} <= set(cli_result["decision"])
     for path in (
         "knowledge/lakeformation/fgac-fta-improvements.md",

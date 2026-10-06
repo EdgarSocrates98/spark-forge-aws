@@ -13,19 +13,19 @@ AWS.
 
 ```bash
 # 1. O que muda de componente (Spark, Python, Iceberg...) entre as duas versões
-sparkforge release diff --left-platform glue --left-release 4.0 \
+sparkforge-aws release diff --left-platform glue --left-release 4.0 \
                         --right-platform glue --right-release 5.1
 
 # 2. Julgar a migração do seu job, degrau a degrau
 mkdir -p /tmp/sf
-sparkforge migrate glue fixtures/migration/emrfs_config/input --from 4.0 --to 5.0 \
+sparkforge-aws migrate glue fixtures/migration/emrfs_config/input --from 4.0 --to 5.0 \
   --out /tmp/sf/migracao.json
 
 # 3. Conferir dependências Python e JARs contra o runtime alvo
-sparkforge glue dependency-audit fixtures/migration/jar_binary/input --glue 6.0
+sparkforge-aws glue dependency-audit fixtures/migration/jar_binary/input --glue 6.0
 
 # 4. Confirmar o que a versão alvo publica (e o que ela não publica)
-sparkforge release describe --platform glue --release 5.1
+sparkforge-aws release describe --platform glue --release 5.1
 ```
 
 Troque o caminho da fixture pelo diretório do seu job: código, `requirements*.txt`,
@@ -81,7 +81,7 @@ ganho de uma versão nova só se prova com benchmark
 ### 1. O que muda de componente: `release diff` e `release describe`
 
 ```bash
-sparkforge release diff --left-platform glue --left-release 4.0 \
+sparkforge-aws release diff --left-platform glue --left-release 4.0 \
                         --right-platform glue --right-release 5.1
 ```
 
@@ -112,7 +112,7 @@ Comparar **plataformas diferentes** também funciona, e o resultado avisa que
 não dá para dizer qual das duas diferenças causou cada mudança:
 
 ```bash
-sparkforge release diff --left-platform glue --left-release 5.0 \
+sparkforge-aws release diff --left-platform glue --left-release 5.0 \
                         --right-platform emr_ec2 --right-release 7.7.0
 ```
 
@@ -131,14 +131,14 @@ sparkforge release diff --left-platform glue --left-release 5.0 \
 recusada com a lista das conhecidas:
 
 ```bash
-sparkforge release describe --platform glue --release 9.9
+sparkforge-aws release describe --platform glue --release 9.9
 ```
 
 ```text
 release '9.9' (chave '9.9') fora da matriz de glue; conhecidas: 6.0, 5.1, 5.0, 4.0, 3.0
   Cada plataforma tem a sua matriz, e as fronteiras nao coincidem:
   uma release conhecida por uma pode nao existir na outra.
-    sparkforge release describe --platform glue --release 6.0
+    sparkforge-aws release describe --platform glue --release 6.0
 ```
 
 As plataformas aceitas em `--platform` são `glue`, `emr_ec2`, `emr_serverless` e
@@ -147,7 +147,7 @@ As plataformas aceitas em `--platform` são `glue`, `emr_ec2`, `emr_serverless` 
 ### 2. Julgar a migração: `migrate glue` e `migrate emr`
 
 ```bash
-sparkforge migrate glue fixtures/migration/emrfs_config/input --from 4.0 --to 5.0
+sparkforge-aws migrate glue fixtures/migration/emrfs_config/input --from 4.0 --to 5.0
 ```
 
 A saída é um JSON grande. As partes que importam (trecho real):
@@ -197,7 +197,7 @@ Como ler:
 Para EMR, o verbo é o mesmo, com a plataforma escolhida:
 
 ```bash
-sparkforge migrate emr fixtures/migration/emrfs_config/input \
+sparkforge-aws migrate emr fixtures/migration/emrfs_config/input \
   --platform emr_ec2 --from 6.15.0 --to 7.7.0
 ```
 
@@ -210,7 +210,7 @@ verbo é `migrate controlm` (veja [Control-M](control-m.md)).
 ### 3. Dependências: `glue dependency-audit`
 
 ```bash
-sparkforge glue dependency-audit fixtures/migration/jar_binary/input --glue 6.0
+sparkforge-aws glue dependency-audit fixtures/migration/jar_binary/input --glue 6.0
 ```
 
 Trecho real:
@@ -247,7 +247,7 @@ Para testar, copie o inventário de uma fixture para uma pasta temporária:
 ```bash
 mkdir -p /tmp/sf/job_iceberg/.sparkforge
 cp fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml /tmp/sf/job_iceberg/.sparkforge/
-sparkforge iceberg assess-upgrade /tmp/sf/job_iceberg --from 2 --to 3
+sparkforge-aws iceberg assess-upgrade /tmp/sf/job_iceberg --from 2 --to 3
 ```
 
 Trecho real:
@@ -271,7 +271,7 @@ publicou a resposta, e o projeto não preenche por dedução.
 ### 5. A versão do runtime: `runtime detect`
 
 ```bash
-sparkforge runtime detect --glue 3.0
+sparkforge-aws runtime detect --glue 3.0
 ```
 
 ```json
@@ -289,7 +289,7 @@ Se duas fontes discordam, o verbo não escolhe em silêncio. Ele registra a
 divergência:
 
 ```bash
-sparkforge runtime detect --glue 5.0 --spark 3.3.0
+sparkforge-aws runtime detect --glue 5.0 --spark 3.3.0
 ```
 
 ```json
@@ -314,9 +314,9 @@ Cada forma de EMR tem o seu dump e o seu verbo:
 | EMR on EKS | `describe-virtual-cluster` + `describe-job-run` no mesmo arquivo | `analyze emr-eks` |
 
 ```bash
-sparkforge analyze emr-cluster --path fixtures/emr/auto_termination_idle_week/input \
+sparkforge-aws analyze emr-cluster --path fixtures/emr/auto_termination_idle_week/input \
   --out /tmp/sf/facts_emr.json
-sparkforge judge --facts /tmp/sf/facts_emr.json
+sparkforge-aws judge --facts /tmp/sf/facts_emr.json
 ```
 
 O `judge` tira a release do próprio dump (`"emr": "7.5.0"`,
@@ -330,10 +330,10 @@ SF-EMR-009 P1 Janela de ociosidade da auto-terminação larga demais para termin
 Os outros dois, com `--detail-level summary` (contagem real por kind):
 
 ```bash
-sparkforge analyze emr-serverless --path fixtures/emr_serverless/preinit_sem_autostop/input --detail-level summary
+sparkforge-aws analyze emr-serverless --path fixtures/emr_serverless/preinit_sem_autostop/input --detail-level summary
 # by_kind: emrs.analyzed 1, emrs.application 1, emrs.initial_capacity 2, emrs.monitoring 1
 
-sparkforge analyze emr-eks --path fixtures/emr_eks/pod_template_declarado/input --detail-level summary
+sparkforge-aws analyze emr-eks --path fixtures/emr_eks/pod_template_declarado/input --detail-level summary
 # by_kind: emrc.analyzed 1, emrc.configuration 3, emrc.job_run 1, emrc.monitoring 1,
 #          emrc.pod_template.unresolved 2, emrc.spark_submit_parameters 1, emrc.virtual_cluster 1
 ```

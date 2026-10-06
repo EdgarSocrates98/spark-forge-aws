@@ -29,7 +29,7 @@
 | `docs/superpowers/STATUS.md` | modificar na Task 10 — seção da fase vNext. |
 | `.github/workflows/ci.yml` | modificar na Task 11 — passo do gate. |
 
-Um arquivo de script só. Ele tem ~250 linhas ao fim e uma responsabilidade: dizer se `docs/vnext/` afirma algo que o repositório não sustenta. Quebrar em módulo `sparkforge/` seria mover código de gate para dentro do pacote distribuído, que não é onde os outros gates moram.
+Um arquivo de script só. Ele tem ~250 linhas ao fim e uma responsabilidade: dizer se `docs/vnext/` afirma algo que o repositório não sustenta. Quebrar em módulo `sparkforge_aws/` seria mover código de gate para dentro do pacote distribuído, que não é onde os outros gates moram.
 
 ---
 
@@ -1028,8 +1028,8 @@ Para cada alegação de contagem, use o derivador correspondente. Valores medido
 | coordenadores | `python -c "import pathlib;print(len(list(pathlib.Path('agents').glob('*.md'))), 'coordenadores')"` | `{"kind":"number","pattern":"(\\d+) coordenadores","value":38}` | 38 | `fast` |
 | executores | `python -c "import pathlib;print(len(list(pathlib.Path('agents/executors').glob('*.md'))), 'executores')"` | `{"kind":"number","pattern":"(\\d+) executores","value":5}` | 5 | `fast` |
 | skills | `python -c "import pathlib;print(len(list(pathlib.Path('skills').glob('*/SKILL.md'))), 'skills')"` | `{"kind":"number","pattern":"(\\d+) skills","value":40}` | 40 | `fast` |
-| tools MCP | `python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS), 'tools')"` | `{"kind":"number","pattern":"(\\d+) tools","value":41}` | 41 | `fast` |
-| regras | `python -c "from sparkforge.rules.loader import load_catalog; print(len(load_catalog()), 'regras')"` | `{"kind":"number","pattern":"(\\d+) regras","value":116}` | 116 | `fast` |
+| tools MCP | `python -c "from sparkforge_aws.adapters.tools import TOOLS; print(len(TOOLS), 'tools')"` | `{"kind":"number","pattern":"(\\d+) tools","value":41}` | 41 | `fast` |
+| regras | `python -c "from sparkforge_aws.rules.loader import load_catalog; print(len(load_catalog()), 'regras')"` | `{"kind":"number","pattern":"(\\d+) regras","value":116}` | 116 | `fast` |
 
 Atenção ao primeiro: `--collect-only` conta teste **coletado**, não teste **passando**. Se o documento afirma "testes passando", ou o texto do documento muda para "coletados", ou a prova vira `python -m pytest -q` com `tier: slow`. Não existe terceira saída — a suíte completa passou de 600 s nesta sessão, e prova de 600 s não roda no gate padrão.
 
@@ -1048,7 +1048,7 @@ Cada entrada `type: capability` recebe `proof artifact` com `path` do módulo qu
   "state": "PROVADA",
   "proof": {
     "kind": "artifact",
-    "path": "sparkforge/adapters/platforms/compiler.py",
+    "path": "sparkforge_aws/adapters/platforms/compiler.py",
     "symbol": "compile",
     "test": "tests/test_platform_compilers.py"
   }
@@ -1116,7 +1116,7 @@ Acrescente ao `STATUS.md`, na lista de fases, uma seção no formato das existen
 ```markdown
 ### Fase vNext — Agent Factory: registro canônico, economia e compilador — **PARCIAL** (2026-08-21)
 
-Commit `a5b9e96` acrescentou `sparkforge/{registry,economy,context,workflows,evals,observability,providers}`
+Commit `a5b9e96` acrescentou `sparkforge_aws/{registry,economy,context,workflows,evals,observability,providers}`
 e os módulos de domínio `migration`, `lakeformation`, `iceberg`, `errors`,
 `databases`, `streaming`, `terraform`, `reliability`. Os sete primeiros têm teste
 que os exercita; os oito de domínio somam menos de 1200 linhas e cobrem uma
@@ -1136,7 +1136,7 @@ Números desta data, cada um derivado por comando declarado no manifesto:
 | Coordenadores | (valor da prova) | glob em `agents/*.md` |
 | Executores | (valor da prova) | glob em `agents/executors/*.md` |
 | Skills | (valor da prova) | glob em `skills/*/SKILL.md` |
-| Tools MCP | (valor da prova) | `len(sparkforge.adapters.tools.TOOLS)` |
+| Tools MCP | (valor da prova) | `len(sparkforge_aws.adapters.tools.TOOLS)` |
 | Regras | (valor da prova) | `len(load_catalog())` |
 ```
 
@@ -1211,7 +1211,7 @@ Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores
 
 - [ ] **Step 5: Rodar tudo**
 
-Run: `python -m ruff check sparkforge scripts tests`
+Run: `python -m ruff check sparkforge_aws scripts tests`
 Expected: sem violação
 
 Run: `python scripts/check_vnext_claims.py`

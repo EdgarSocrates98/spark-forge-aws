@@ -33,9 +33,8 @@ Ao trabalhar em código PySpark destinado ao AWS Glue:
 Use o agente `spark-performance-architect` para investigações abrangentes e as Skills específicas para tarefas focadas.
 
 Este arquivo é carregado em toda sessão, então ele guarda **regra e ponteiro**, não
-histórico. O texto datado que morava aqui (medidas antigas, narrativa de cada frente)
-está em `docs/historico/instrucoes-arquivadas.md`, e `tests/test_bootstrap_budget.py`
-trava o teto de tamanho.
+histórico. O texto datado está em `docs/historico/instrucoes-arquivadas.md`;
+`tests/test_bootstrap_budget.py` trava o teto.
 
 ## Os verbos que compõem, e quando usar cada um
 
@@ -54,7 +53,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
 | A spec desta mudança está bem posta? | `sdd check` / `sdd status` / `sdd stamp` | o frontmatter de `docs/sdd/<FEATURE>/<fase>.md`; julga contrato, cascata por hash, cobertura e TDD declarado, nunca a prosa |
 | O que estava rodando quando a sessão caiu? | `resume` (bloco `journal`) / `journal verify` | o `.sparkforge/journal.jsonl`, que `call_tool` e a CLI gravam — um `started` e um `finished` por verbo que muda estado, encadeados por hash. `started` sem `finished` é "caiu **ou** ainda roda", nunca só "caiu"; e a cadeia não detecta edição da **última** linha (quem a protege é o commit) |
-| O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge.evals grade` / `compare` (fora da CLI `sparkforge`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
+| O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge_aws.evals grade` / `compare` (fora da CLI `sparkforge-aws`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
 | Como o revisor vê os findings no PR? | `report github` | findings de `judge` e a união dos facts; grava SARIF e resumo em `.sparkforge/report/`, com recusa nomeada para o que não tem linha no repositório |
 | Como vejo as tools e a sessão no meu backend de tracing? | `telemetry export` | os spans que `call_tool` gravou no ledger e, com `--host-transcript`, o transcript do host; grava OTLP/JSON (`gen_ai.*`, `mcp.*`) em `.sparkforge/telemetry/` para o receiver `otlp_json_file` do Collector, com o provider declarado e recusa nomeada para span sem horário |
 | Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
@@ -117,10 +116,9 @@ Regras que valem para todos eles:
     payload é o que o SparkForge produziu; token de provider é o que o host
     gastou. Aparecem lado a lado no relatório, nunca num total comum — somar os
     dois dá um número que não mede nada.
-23. **O projeto não chama provider nenhum.** Medido: `sparkforge/` não importa
+23. **O projeto não chama provider nenhum.** Medido: `sparkforge_aws/` não importa
     `anthropic`, `openai`, `bedrock` nem `litellm`. Quem gasta token é o host
-    que executa os agents. Antes de propor "instrumentar a chamada de modelo",
-    lembre que não existe chamada de modelo aqui para instrumentar.
+    que executa os agents — não existe chamada de modelo aqui para instrumentar.
 24. **Token só com fonte.** `payload_bytes` é medido e sempre existe. Token de
     provider só aparece quando há transcript do host. Sem fonte sai
     `tokens_unresolved` — nunca um `len(conteúdo) // 4` vestido de token.
@@ -134,14 +132,13 @@ Regras que valem para todos eles:
 27. **Medição nunca derruba a chamada.** Ledger indisponível, disco cheio, span
     que falha ao ser montado: a tool devolve o resultado do mesmo jeito.
     Instrumentação que quebra o produto é defeito, não observabilidade.
-28. **Antes de afirmar que `detail_level` reduz, leia o número.** Essa frase
-    esteve publicada por muito tempo sem medição. Hoje `economy report` traz
-    `detail_level_effect` com os bytes de cada nível pedido — ele mostra os dois
-    e não conclui por você.
+28. **Antes de afirmar que `detail_level` reduz, leia o número.** `economy
+    report` traz `detail_level_effect` com os bytes de cada nível pedido — ele
+    mostra os dois e não conclui por você.
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**136 tools, 52 com `detail_level`** (recontado em 2026-10-03). Os niveis sao `summary`,
+**143 tools, 52 com `detail_level`** (recontado em 2026-10-04). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
@@ -186,7 +183,7 @@ bytes), `balanced` (16/6/16, 16.000) e `deep` (32/12/32, 30.000). Seleção e
 redução são determinísticas; evidência crítica, refs, riscos e `unresolved`
 geram recusa nomeada quando não cabem.
 
-MCP é **full por padrão (136 tools)**; `compact` é opt-in (7 operações publicadas). Ambos usam
+MCP é **full por padrão (143 tools)**; `compact` é opt-in (7 operações publicadas). Ambos usam
 o mesmo envelope. Crescimento exige `docs/surface.lock.json` e
 `python scripts/check_surface_lock.py`.
 
@@ -203,7 +200,7 @@ triggers; relações e claims ausentes ficam `unresolved`. Archive:
 ### Plane
 
 Contrato legado: `config/decisions/routing.data_domain.yaml`; `decision shadow` é
-shadow-only e router é autoridade. Kernel em `sparkforge/decision/`: seis primitivas,
+shadow-only e router é autoridade. Kernel em `sparkforge_aws/decision/`: seis primitivas,
 cache/fingerprint/receipt. Tokens: transcript; custo: `cost_basis`. v1:
 `docs/agentic-evolution-report.md`.
 
@@ -211,7 +208,7 @@ cache/fingerprint/receipt. Tokens: transcript; custo: `cost_basis`. v1:
 
 Mudança não trivial neste repositório passa pelas skills `sdd-explore`, `sdd-define`,
 `sdd-design`, `sdd-plan`, `sdd-build` e `sdd-ship`, com os artefatos em
-`docs/sdd/<FEATURE>/` e cada fase conferida por `sparkforge sdd check --repo . --feature <F>`
+`docs/sdd/<FEATURE>/` e cada fase conferida por `sparkforge-aws sdd check --repo . --feature <F>`
 (`sdd status`, `sdd stamp`). Elas substituem, aqui, o ciclo de spec, plano e TDD do
 superpowers e o plugin AgentSpec (desligado em `.claude/settings.json`); debugging,
 verificação e revisão do superpowers continuam valendo. `docs/superpowers/specs/` e
@@ -268,27 +265,27 @@ PySpark usa as skills SparkForge determinísticas (`analyze-*`, `benchmark`, `tu
 
 ## Agentic Engineering Runtime
 
-`sparkforge/agentic/` tem entidades de primeira classe (`Claim`, `Evidence`,
+`sparkforge_aws/agentic/` tem entidades de primeira classe (`Claim`, `Evidence`,
 `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`, `Objection`,
 `Rebuttal`), o blackboard JSONL do case, debate, arbitragem, experimento, decisão com ADR,
 memória, budget, segurança, autonomia L0–L5 e o grafo de execução.
-`sparkforge/agentic/executor/` é o **produtor** determinístico: `authority`, `claims`,
+`sparkforge_aws/agentic/executor/` é o **produtor** determinístico: `authority`, `claims`,
 `conflict`, `ordering`, `unknowns`, `plan`, `gate`, `digest`, `run`, `debate_run` e
 `debate_evidence`. Status por componente em `docs/agentic-evolution-report.md`.
 
 29. **A camada agêntica tem executor determinístico e executor de debate, e o
-    debate não gera argumento dentro do pacote.** `sparkforge arbitrate` roda
+    debate não gera argumento dentro do pacote.** `sparkforge-aws arbitrate` roda
     depois de `judge` e grava `Claim`/`Evidence`/`Contradiction`/`Unknown`/`Decision`
     no blackboard do case. Quando a arbitragem não fecha, emite um `DebatePlan`
     com `debate_gate` (§11): só o veredito `debater` abre debate — severidade em
     `rules/catalog/debate_gate.yaml`, ação com `reversible: false` em
     `action_kinds.yaml`, ou arbitragem sem lastro; lacuna mensurável citando o par
     recusa `gate_experimentar_antes`, par barato e reversível `gate_nao_debater`,
-    sinal ausente `gate_unresolved`. `sparkforge debate start|next|submit` (tools
+    sinal ausente `gate_unresolved`. `sparkforge-aws debate start|next|submit` (tools
     `LOCAL_MUTATION`) é máquina de estados L0 sobre `.sparkforge/debate/<debate_id>/`:
     diz de quem é a vez, recusa por nome a submissão que fere o protocolo, só aceita
     evidência nova **reextraída** por extrator da allowlist, exige `budget:` declarado
-    no case (`budget_undeclared`) e fecha **sempre** pelo `referee`. `sparkforge debate
+    no case (`budget_undeclared`) e fecha **sempre** pelo `referee`. `sparkforge-aws debate
     referee` só lê, e recusa hipótese que sobrevive ao fechamento, claim sem
     `evidence_refs`, objeção sem réplica e referência pendurada. Quem escreve o
     argumento é o host (skill `run-debate`, `scripts/run_debate.py`); nenhum
@@ -321,30 +318,30 @@ memória, budget, segurança, autonomia L0–L5 e o grafo de execução.
     sinal de que a variável está em catálogo, filesystem, credencial ou
     permissão, nunca na API.
 33. **Predicado que o `where` não alcança vira FACT, nunca um `expr` mais
-    permissivo.** `sparkforge/rules/expr.py::_CMP_OPS` tem seis comparadores e
+    permissivo.** `sparkforge_aws/rules/expr.py::_CMP_OPS` tem seis comparadores e
     nenhuma função — sem `startswith`, sem `in`, e `ast.Call` levanta `ExprError`
     por desenho de segurança. Quando a regra precisa de mais do que igualdade
     (por exemplo "o nome do catálogo dentro de `spark.sql.catalog.<nome>` é o
     session catalog?"), derive o predicado num extrator. Precedente medido:
-    `sparkforge/facts/lakeformation.py`, 2026-09-09.
+    `sparkforge_aws/facts/lakeformation.py`, 2026-09-09.
 
 ### CLI commands agênticos
 
 ```bash
-sparkforge agents list           # lista agentes
-sparkforge agents inspect <id>   # inspeciona agente
-sparkforge blackboard summary    # resumo do blackboard
-sparkforge blackboard list --type <tipo>  # lista entidades
-sparkforge decisions list        # lista decisoes
-sparkforge decisions explain <id>  # explica decisao
-sparkforge budget show           # budget DECLARADO do case
-sparkforge budget show --template  # defaults do codigo, rotulados
-sparkforge autonomy show --level L3  # perfil de autonomia
-sparkforge arbitrate --findings <path> --facts <path> --repo .  # ESCREVE
-sparkforge debate start --rules A,B --findings <path> --facts <path> --repo .  # ESCREVE
-sparkforge debate next --debate <id> --repo .    # ESCREVE (a Decision, no fechamento)
-sparkforge debate submit --debate <id> --file <json> --repo .  # ESCREVE
-sparkforge debate referee --repo .               # so le
+sparkforge-aws agents list           # lista agentes
+sparkforge-aws agents inspect <id>   # inspeciona agente
+sparkforge-aws blackboard summary    # resumo do blackboard
+sparkforge-aws blackboard list --type <tipo>  # lista entidades
+sparkforge-aws decisions list        # lista decisoes
+sparkforge-aws decisions explain <id>  # explica decisao
+sparkforge-aws budget show           # budget DECLARADO do case
+sparkforge-aws budget show --template  # defaults do codigo, rotulados
+sparkforge-aws autonomy show --level L3  # perfil de autonomia
+sparkforge-aws arbitrate --findings <path> --facts <path> --repo .  # ESCREVE
+sparkforge-aws debate start --rules A,B --findings <path> --facts <path> --repo .  # ESCREVE
+sparkforge-aws debate next --debate <id> --repo .    # ESCREVE (a Decision, no fechamento)
+sparkforge-aws debate submit --debate <id> --file <json> --repo .  # ESCREVE
+sparkforge-aws debate referee --repo .               # so le
 ```
 
 `--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO dos facts
@@ -378,4 +375,4 @@ Eles ordenam claims dentro de uma mesma arbitragem; o valor absoluto não é con
 medida e não deve ser publicado como tal. Uma claim avaliada sozinha não é arbitragem:
 sai com `disputed=False`.
 
-Spec: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
+Spec: `docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md`

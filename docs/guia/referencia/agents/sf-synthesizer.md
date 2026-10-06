@@ -27,7 +27,7 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    quantificado sem `benchmark_ref` é rejeitado pelo schema — não contorne.
    **`benchmark_ref` não é texto livre desde a Fase 4a**: ele cita o `fact_id` de
    um `bench.run_delta` — `f_` + 6 dígitos hex minúsculos, ex. `f_a1b2c3` —,
-   produzido por `sparkforge benchmark --before <facts-antes> --after
+   produzido por `sparkforge-aws benchmark --before <facts-antes> --after
    <facts-depois>` sobre dois conjuntos de facts de `analyze event-log --out`.
    Caminho de arquivo, data ou prosa é **rejeitado**, e você é quem bate nessa
    rejeição: passe `facts_path` para `sparkforge_validate_output` e o `fact_id`
@@ -43,14 +43,14 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    enquanto entrega dado errado. **O eixo do dado é exigência da mesma dureza
    que o `benchmark_ref` do item anterior, e pela mesma razão**: até a Fase 4c
    "preserve correção funcional" era frase sem verbo, exatamente como o
-   `benchmark_ref` era texto livre até a 4a. O produtor é `sparkforge funcval
+   `benchmark_ref` era texto livre até a 4a. O produtor é `sparkforge-aws funcval
    plan --facts <facts.json> --out <plano.json>` — `--facts` é repetível e
    precisa ser, porque o alvo vem do `pyspark.write` e o schema e os agregados
    vêm do `catalog.table_schema`, que nenhum verbo produz no mesmo arquivo. O
    `funcval.plan` que ele grava é a evidência do gate
    `functional_validation_defined`, que guarda a fase `report` sob
    `--strict-gates`; *defined*, não *executed* — o que destrava é o plano. A
-   comparação é `sparkforge funcval compare --plan <plano.json> --before
+   comparação é `sparkforge-aws funcval compare --plan <plano.json> --before
    <antes.json> --after <depois.json>`, e **nenhum dos dois executa consulta,
    roda Spark ou chama AWS**: quem mede os dois lados é o operador, e o lado
    `--before` só existe se alguém o mediu **antes** de a mudança tocar o alvo —

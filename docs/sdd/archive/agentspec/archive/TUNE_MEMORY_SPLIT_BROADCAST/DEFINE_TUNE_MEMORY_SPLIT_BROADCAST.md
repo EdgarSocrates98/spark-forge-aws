@@ -106,7 +106,7 @@ A terceira recusa, a do broadcast, é real: o número que o Spark compara com o 
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/tuning/spark_conf.py`, `sparkforge/facts/spark_plan.py`, `sparkforge/facts/sql_metrics.py`, `adapters/{_core,cli,tools}.py` (`--headroom`), `fixtures/{tuning,plan,sql_metrics}/` | Nenhum módulo novo |
+| **Deployment Location** | `sparkforge_aws/tuning/spark_conf.py`, `sparkforge_aws/facts/spark_plan.py`, `sparkforge_aws/facts/sql_metrics.py`, `adapters/{_core,cli,tools}.py` (`--headroom`), `fixtures/{tuning,plan,sql_metrics}/` | Nenhum módulo novo |
 | **KB Domains** | `knowledge/spark/{memory-and-oom,config-reference,plan-reading}.md`, `knowledge/storage/parquet-layout.md` | |
 | **IaC Impact** | None | |
 

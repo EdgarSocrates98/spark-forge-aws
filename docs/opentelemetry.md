@@ -1,6 +1,6 @@
 # SparkForge no OpenTelemetry: tools e sessao do host em OTLP
 
-`sparkforge telemetry export` pega o que ja foi medido e grava em OTLP/JSON, o
+`sparkforge-aws telemetry export` pega o que ja foi medido e grava em OTLP/JSON, o
 formato que um OTLP Collector le (receiver `otlp_json_file`). De la, o Collector envia para CloudWatch,
 Grafana, Datadog, Langfuse, Jaeger ou o backend que o time ja usa. Duas fontes
 entram no arquivo:
@@ -20,10 +20,10 @@ quem envia e o Collector.
 ```bash
 # o processo que chama as tools grava com um run_id conhecido
 export SPARKFORGE_RUN_ID=run_sessao_42
-python -m sparkforge.adapters.mcp --transport stdio   # ou qualquer chamada a call_tool
+python -m sparkforge_aws.adapters.mcp --transport stdio   # ou qualquer chamada a call_tool
 
 # depois, no mesmo diretorio
-sparkforge telemetry export --run-id run_sessao_42 \
+sparkforge-aws telemetry export --run-id run_sessao_42 \
     --host-transcript ~/.claude/projects/<projeto>/<sessao>.jsonl \
     --provider anthropic --repo .
 ```
@@ -81,13 +81,13 @@ Detalhes de cada atributo:
 - **Canal:** so a chamada que entrou pelo servidor MCP recebe
   `mcp.method.name`. O canal e gravado no span no momento da chamada
   (`adapters/mcp.py`); nada e deduzido depois.
-- **Bytes:** a resposta de tool sai em `sparkforge.payload_bytes`, com a
-  formula em `sparkforge.payload_basis`, e **nunca** como token (regra 22).
+- **Bytes:** a resposta de tool sai em `sparkforge_aws.payload_bytes`, com a
+  formula em `sparkforge_aws.payload_basis`, e **nunca** como token (regra 22).
 - **Erro:** desfecho `error` ou `unauthorized` sai com status ERROR,
-  `error.type=tool_error` e o desfecho em `sparkforge.outcome`.
+  `error.type=tool_error` e o desfecho em `sparkforge_aws.outcome`.
 - **Duracao:** a de um span do SparkForge cobre `call_tool`, e nao a
   validacao e a serializacao do envelope MCP. O escopo diz isso em
-  `sparkforge.duration_scope=call_tool`.
+  `sparkforge_aws.duration_scope=call_tool`.
 
 Metricas, cada uma so onde ha semconv e medida:
 
@@ -138,7 +138,7 @@ como obrigatorio, e a lacuna fica nomeada em vez de preenchida por palpite.
 | Receiver `otlp_json_file` (antes `otlpjsonfile`) do Collector contrib | 0.160.0 | alpha para traces |
 
 Uma semconv em Development muda nome de atributo. O commit seguido sai no
-escopo de cada arquivo (`sparkforge.semconv_genai_commit`) e no stdout do verbo.
+escopo de cada arquivo (`sparkforge_aws.semconv_genai_commit`) e no stdout do verbo.
 
 ## Prova
 

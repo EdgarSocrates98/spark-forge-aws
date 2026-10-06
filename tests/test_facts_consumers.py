@@ -20,7 +20,7 @@ nunca foi lido.
 """
 import pytest
 
-from sparkforge.facts.consumers import (
+from sparkforge_aws.facts.consumers import (
     EMITTED_KINDS,
     KNOWN_SERVICES,
     extract_consumers,
@@ -290,6 +290,6 @@ class TestReleaseDeclarada:
         """Tirar `emr` da lista converteria todo inventario ja escrito em
         `known_service: false`, o que e um alarme sobre GRAFIA para um problema
         que e de AMBIGUIDADE. Quem o resolve e
-        `sparkforge/storage/upgrade.py`, com `UNKNOWN` NOMEADO."""
+        `sparkforge_aws/storage/upgrade.py`, com `UNKNOWN` NOMEADO."""
         facts = _extract(_inventory({"table": "db.t", "service": "emr"}))
         assert _consumers(facts)[0].attrs["known_service"] is True

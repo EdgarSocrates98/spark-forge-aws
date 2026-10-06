@@ -29,16 +29,16 @@ deviations:
    `python scripts/sync_skills.py --check` OK e a bateria de testes de skill,
    espelho, cobertura, referência, árvore versionada, orçamento de bootstrap e
    núcleo SDD com 1179 testes verdes. A própria feature `SDD_SKILLS` fecha com
-   `sparkforge sdd check --repo . --feature SDD_SKILLS` sem recusa e sem lacuna.
+   `sparkforge-aws sdd check --repo . --feature SDD_SKILLS` sem recusa e sem lacuna.
 2. *As features `SDD_OPERATOR`, `SDD_MIGRATION` e `SDD_EVAL`, escritas com essas
-   skills, fecham com `sparkforge sdd check` sem recusa* — **pendente**. As três
+   skills, fecham com `sparkforge-aws sdd check` sem recusa* — **pendente**. As três
    ainda serão escritas (subprojetos C, D e E). A verificação mora no ship de
    cada uma e, consolidada, em `SDD_EVAL`, que também é onde a métrica `SC1`
    (recusas do `sdd check` sobre `docs/sdd` depois de B, C, D e E) é lida. Se
    alguma delas fechar com recusa que as skills deveriam ter evitado, o desfecho
    desta hipótese é revisto lá, por acréscimo.
 
-`SC1` depois de B: `sparkforge sdd check --repo .` devolve zero recusa e zero
+`SC1` depois de B: `sparkforge-aws sdd check --repo .` devolve zero recusa e zero
 lacuna sobre `docs/sdd` (uma feature, `SDD_SKILLS`).
 
 ## Registros

@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/STREAMING_TEMPORAL_EVIDENCE/define.md
   sha256: "005fc7b3c6439dea3a3d73058ec4c9814c69d5f8a8aad3909ace6824b8848897"
 files:
-  - {path: sparkforge/facts/streaming_temporal.py, action: create, reason: "compositor puro de pares temporais sobre facts já extraídos"}
-  - {path: sparkforge/facts/streaming_composition.py, action: modify, reason: "despachar o modo temporal sem duplicar envelope"}
-  - {path: sparkforge/facts/transport.py, action: modify, reason: "preservar timestamp/observed_at já presente em offsets e shards"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "expor max_skew_seconds à composição comum"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "aceitar modo temporal e tolerância declarada"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "manter paridade CLI/MCP e declarar schema read-only"}
+  - {path: sparkforge_aws/facts/streaming_temporal.py, action: create, reason: "compositor puro de pares temporais sobre facts já extraídos"}
+  - {path: sparkforge_aws/facts/streaming_composition.py, action: modify, reason: "despachar o modo temporal sem duplicar envelope"}
+  - {path: sparkforge_aws/facts/transport.py, action: modify, reason: "preservar timestamp/observed_at já presente em offsets e shards"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "expor max_skew_seconds à composição comum"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "aceitar modo temporal e tolerância declarada"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "manter paridade CLI/MCP e declarar schema read-only"}
   - {path: tests/test_facts_streaming_temporal.py, action: create, reason: "provar pareamento, procedência e unresolved"}
   - {path: tests/test_facts_transport.py, action: modify, reason: "provar preservação de timestamp observado"}
   - {path: tests/test_streaming_rules.py, action: modify, reason: "provar finding temporal somente com dois pares"}

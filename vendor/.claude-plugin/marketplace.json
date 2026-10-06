@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "sparkforge-caveman",
+  "name": "sparkforge-aws-caveman",
   "description": "Ecossistema caveman vendorizado dentro do SparkForge AWS: economia de token ligada por padrao para quem clonar o repositorio, sem instalar nada.",
   "owner": {
     "name": "SparkForge AWS",

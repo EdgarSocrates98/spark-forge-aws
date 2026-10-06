@@ -4,10 +4,10 @@ import json
 from functools import partial
 from pathlib import Path
 
-from sparkforge.adapters.mcp import tools_do_transporte
-from sparkforge.adapters.mcp_compact import CompactRouter
-from sparkforge.adapters.tools import call_tool
-from sparkforge.economy.cache import ArtifactCache
+from sparkforge_aws.adapters.mcp import tools_do_transporte
+from sparkforge_aws.adapters.mcp_compact import CompactRouter
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.economy.cache import ArtifactCache
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures" / "mcp_parity" / "compact_calls.json"

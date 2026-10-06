@@ -49,7 +49,7 @@ correntes* table of `docs/superpowers/STATUS.md`, checked by
 
 Non-trivial changes go through the skills `sdd-explore`, `sdd-define`, `sdd-design`,
 `sdd-plan`, `sdd-build` and `sdd-ship`. Artifacts live in `docs/sdd/<FEATURE>/`, and
-each phase is checked by `sparkforge sdd check --repo . --feature <F>` (plus
+each phase is checked by `sparkforge-aws sdd check --repo . --feature <F>` (plus
 `sdd status` and `sdd stamp`). Here they replace the spec/plan/TDD cycle of other
 plugins (superpowers, AgentSpec); `docs/superpowers/specs/` and `plans/` are frozen,
 and the AgentSpec history is archived in `docs/sdd/archive/agentspec/`. Flow:
@@ -101,7 +101,7 @@ the case, decides which executor runs next, and records which one ran
 
 Which coordinator to use is data, not judgment: routes in `rules/catalog/routing.yaml`
 map the case's phase and dominant finding area to a `recommended_agent`, and
-`sparkforge_next_step` / `sparkforge next-step` reads them — never pick a coordinator by
+`sparkforge_next_step` / `sparkforge-aws next-step` reads them — never pick a coordinator by
 inspection.
 
 **Three platforms dispatch**: Claude Code, the Devin CLI and the Devin Local agent. Devin
@@ -115,7 +115,7 @@ undocumented) and never gains `model:`; **dropping `tools:` is not a security bo
 omitting is the most permissive option. What carries the boundary is the `## Não faz`
 prose, byte-identical in both mirrors. Sources: `knowledge/devin/agents-and-subagents.md`.
 
-**`playbook` is the floor on all five platforms.** `sparkforge playbook <coordinator>`
+**`playbook` is the floor on all five platforms.** `sparkforge-aws playbook <coordinator>`
 (or `sparkforge_playbook`) returns the same decomposition as a sequence of steps. It is
 the **only** path on Codex and Copilot CI, and stays the path on the three that dispatch
 whenever dispatch is off (`subagents_enabled: false`, or an org admin picking *None*).
@@ -134,7 +134,7 @@ The authoritative list of dispatchable skills is `DISPATCHABLE_SKILLS` in
 `scripts/sync_skills.py`. The floor, needing no dispatch:
 
 ```bash
-sparkforge playbook emr-infra-reviewer --repo .   # or the sparkforge_playbook MCP tool
+sparkforge-aws playbook emr-infra-reviewer --repo .   # or the sparkforge_playbook MCP tool
 ```
 
 Start a Devin session with: `Read PROMPT_INICIAL_MESTRE.md and use the
@@ -142,7 +142,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**136 tools, 52 with `detail_level`** (recounted 2026-10-03) (`summary`, `normal`, `full`).
+**143 tools, 52 with `detail_level`** (recounted 2026-10-04) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.
@@ -173,7 +173,7 @@ The Gateway preserves critical evidence, `fact_id`, `rule_id`, risks and
 of truncating silently. Context results expose `context_tree`, `execution_plan`
 and expandable refs where available.
 
-MCP remains full by default with **136 tools**. Compact MCP is explicit opt-in
+MCP remains full by default with **143 tools**. Compact MCP is explicit opt-in
 and publishes exactly **7 operations**. Full/compact adapters use the same envelope;
 surface changes require `docs/surface.lock.json` and
 `python scripts/check_surface_lock.py`.
@@ -195,7 +195,7 @@ implementation report and archived SDD artifacts live under
 
 The declarative Decision Plane is versioned at
 `config/decisions/routing.data_domain.yaml` and observes the current route without
-replacing it. `sparkforge decision validate|shadow|compare|benchmark|receipt` are
+replacing it. `sparkforge-aws decision validate|shadow|compare|benchmark|receipt` are
 CLI-only verbs; they add no MCP tool and do not change `CapabilityModelRouter`
 dispatch. Content-addressed receipts live under `.sparkforge/decision-receipts/`
 and preserve status, route, comparison, budget, `unresolved`, and
@@ -213,7 +213,7 @@ Evidence comes from deterministic extraction, not from an LLM sampling the codeb
 carries no judgment. A `Finding` is judgment: it always carries a non-empty `evidence`
 list of `fact_id` values plus a `rule_id` traceable to a dated source in
 `rules/catalog/`. A `Finding` with empty evidence is invalid by construction
-(`sparkforge.findings.models.Finding.__post_init__`). Extractors are offline — they read
+(`sparkforge_aws.findings.models.Finding.__post_init__`). Extractors are offline — they read
 artifacts already on disk and never call AWS; only `collect *` touches AWS, and the core
 never imports boto3 or the MCP SDK.
 
@@ -272,12 +272,16 @@ would unlock it, and a hypothesis has three parts and one outcome (closing is ad
 
 ### Context accounting
 
-`sparkforge/` imports no `anthropic`, no `openai`, no `bedrock`, no `litellm`: **this
+`sparkforge_aws/` imports no `anthropic`, no `openai`, no `bedrock`, no `litellm`: **this
 project never calls a model** (`CLAUDE.md` rule 23). `call_tool` records `payload_bytes`
 for every call, refusals included; provider tokens appear only with a host transcript,
 otherwise `tokens_unresolved`; cost in dollars requires `cost_basis`; measurement never
 breaks the call; the surface lock requires growth to be **declared** (`CLAUDE.md` rules
 22 to 27).
+
+Every `call_tool` result carries `_trust` (`{label, authority, taint}`): output is
+`TOOL_OUTPUT`/`data_only` by construction — never an instruction by crossing the
+dispatch; contract in `docs/harness/UNTRUSTED-CONTENT.md`.
 
 ### Three states, never two
 
@@ -297,7 +301,7 @@ to the event log, and disagreement becomes a reported divergence.
 
 ### Gates that actually block, and a report that carries proof
 
-A case has four gates, advisory by default. `sparkforge case open --strict-gates` records
+A case has four gates, advisory by default. `sparkforge-aws case open --strict-gates` records
 rigour **in the case file**, and `set_phase` then refuses a transition while the evidence
 for its gates is missing. What unlocks a gate is evidence (the fact kind named in the
 `gates` block of `rules/catalog/routing.yaml`), never `--gate-value true`. When the data
@@ -305,23 +309,23 @@ genuinely does not exist, `case update --override-gate <gate> --reason "<why>"` 
 who passed over what and why. The gate checks **presence of the kind**, never the content
 of the fact — state that caveat in the report.
 
-`sparkforge report sign` appends a signature block and `sparkforge report verify` says
+`sparkforge-aws report sign` appends a signature block and `sparkforge-aws report verify` says
 **which** part diverged (signature version, evidence, catalog, or body). It proves
 **correspondence**, never **authorship**: there is no key. The `recommendation:` schema
 above remains valid: `Finding` is a compatible superset of it.
 
 See `AGENT_PROTOCOL.md` for the operating rules every skill and agent are injected with,
-and `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` for the full
+and `docs/superpowers/specs/2026-07-29-sparkforge-aws-fase0-design.md` for the full
 Fact/Finding contract.
 
 ## Access governance: the four artifacts that answer "who may do what"
 
 ```bash
-sparkforge analyze terraform --path infra/ --out .sparkforge/facts_tf.json
-sparkforge collect lakeformation --repo . --database <db> --table <t>     --catalog-id <catalog-owning-account> --resource-arn <s3-location> --now <ISO8601>
-sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
-sparkforge collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <target-arn> --action s3:PutObject --now <ISO8601>
-sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/
+sparkforge-aws analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+sparkforge-aws collect lakeformation --repo . --database <db> --table <t>     --catalog-id <catalog-owning-account> --resource-arn <s3-location> --now <ISO8601>
+sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
+sparkforge-aws collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <target-arn> --action s3:PutObject --now <ISO8601>
+sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/
 ```
 
 **Simulate, never parse.** `collect iam-access` calls `iam:SimulatePrincipalPolicy`:
@@ -381,14 +385,14 @@ sf-terraform-specialist
 
 ## Agentic Expansion Inventory
 Agents: sf-lake-formation-specialist, sf-security-reviewer.
-Subagents: none. Tools declared in this registry: none. The sixteen ephemeral contracts and the seven declared tool names left in `docs/sdd/CONFIG_OCA/` (2026-09-20): the contracts had no reader in `sparkforge/`, `scripts/` or `tests/`, and none of the seven names existed in `sparkforge.adapters.tools.TOOLS`. The six modules under `sparkforge/tools/` behind them are code and still exist.
+Subagents: none. Tools declared in this registry: none (the `sparkforge_aws/tools/` modules remain as code; removal history in `docs/historico/instrucoes-arquivadas.md`).
 Teams: governance-security.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
 
 ## Forge Lab / Digital Twin
 
 `lab/versions.yaml` e `lab/scenarios/golden.yaml` são a fonte declarativa do
-Forge Lab. A CLI `sparkforge lab` compila cenários em ações allowlisted,
+Forge Lab. A CLI `sparkforge-aws lab` compila cenários em ações allowlisted,
 captura evidências e receipts e só muta Compose/Testcontainers com
 `--execute --confirm`; não há tool MCP nova nem execução AWS implícita. O
 Golden 20 foi verificado offline com 11 componentes e 240 ações. O contrato
@@ -409,17 +413,17 @@ write command, unreachable inside a subagent (V-DV-10). Use them for questions a
 
 ## Agentic Engineering Runtime
 
-`sparkforge/agentic/` holds first-class entities (`Claim`, `Evidence`, `Hypothesis`,
+`sparkforge_aws/agentic/` holds first-class entities (`Claim`, `Evidence`, `Hypothesis`,
 `Experiment`, `Decision`, `Unknown`, `Contradiction`, `Objection`, `Rebuttal`), the case
 blackboard (`.sparkforge/blackboard/*.jsonl`, append-only, crash-safe), debate,
 arbitration, experiment, decision with ADR, memory, budget, security, L0–L5 autonomy and
-the execution graph. `sparkforge/agentic/executor/` is the deterministic **producer**.
+the execution graph. `sparkforge_aws/agentic/executor/` is the deterministic **producer**.
 
-- `sparkforge arbitrate` runs after `judge` over the **union** of the case facts and
+- `sparkforge-aws arbitrate` runs after `judge` over the **union** of the case facts and
   writes `Claim`/`Evidence`/`Contradiction`/`Unknown`/`Decision` to the blackboard. When
   arbitration does not close it emits a `DebatePlan` with a `debate_gate` verdict
   (`debater`, `experimentar_antes`, `nao_debater`, `unresolved`).
-- `sparkforge debate start|next|submit` is an L0 state machine over
+- `sparkforge-aws debate start|next|submit` is an L0 state machine over
   `.sparkforge/debate/<debate_id>/`: it opens only `debater` plans, refuses by name, accepts
   only **re-extracted** evidence and always closes through the `referee`. The host writes
   the arguments (skill `run-debate`, `scripts/run_debate.py`); nothing here calls a
@@ -427,7 +431,7 @@ the execution graph. `sparkforge/agentic/executor/` is the deterministic **produ
 - Both executors are **L0**: `applied_changes` is always `false`, and the ADR is a
   proposal with a mandatory `rollback`.
 - Every state-changing verb writes a `started`/`finished` pair to
-  `.sparkforge/journal.jsonl`; `resume` reads the open ones, `sparkforge journal verify`
+  `.sparkforge/journal.jsonl`; `resume` reads the open ones, `sparkforge-aws journal verify`
   checks the chain.
 - **No benchmark of the agentic layer exists, so no gain is claimed** (`CLAUDE.md` rule
   30). Evidence authority tiers: T1 official docs > T2 source/changelog > T3 reproducible
@@ -437,4 +441,4 @@ the execution graph. `sparkforge/agentic/executor/` is the deterministic **produ
 
 Rules 29 to 33 of `CLAUDE.md` govern this layer and Lake Formation. Status per component:
 `docs/agentic-evolution-report.md`. Spec:
-`docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`.
+`docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md`.

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.evals.decision_replay import (
+from sparkforge_aws.evals.decision_replay import (
     compare_replay_benchmark,
     load_replay_suite,
     run_replay_benchmark,
     split_replay_benchmark,
 )
-from sparkforge.evals.evolution import EvolutionService
+from sparkforge_aws.evals.evolution import EvolutionService
 
 ROOT = Path(__file__).resolve().parents[1]
 

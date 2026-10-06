@@ -15,7 +15,7 @@ import json
 
 import pytest
 
-from sparkforge.facts.emr_serverless import (
+from sparkforge_aws.facts.emr_serverless import (
     EMITTED_KINDS,
     extract_emr_serverless,
     extract_emr_serverless_path,

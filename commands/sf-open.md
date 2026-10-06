@@ -10,7 +10,7 @@ Você vai abrir um novo case de investigação SparkForge no repositório atual.
 Rode primeiro:
 
 ```
-sparkforge runtime detect --glue <versao-glue> [--spark <v>] [--python <v>] [--iceberg <v>] [--athena <v>]
+sparkforge-aws runtime detect --glue <versao-glue> [--spark <v>] [--python <v>] [--iceberg <v>] [--athena <v>]
 ```
 
 Preencha `--glue` (e as demais flags que você conseguir confirmar) a partir do que
@@ -28,7 +28,7 @@ fonte é confiável antes de prosseguir.
 Só depois do runtime confirmado (sem divergência):
 
 ```
-sparkforge case open --repo <raiz-do-repo> --case-id <id> --now <timestamp-ISO-8601> --glue <versao-glue> [--spark <v>] [--iceberg <v>]
+sparkforge-aws case open --repo <raiz-do-repo> --case-id <id> --now <timestamp-ISO-8601> --glue <versao-glue> [--spark <v>] [--iceberg <v>]
 ```
 
 `--now` é obrigatório e precisa ser um timestamp real (a CLI nunca lê o relógio

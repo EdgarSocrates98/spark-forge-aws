@@ -15,10 +15,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.athena_workgroup import extract_athena_workgroup_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "athena"

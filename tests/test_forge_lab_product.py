@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.lab.contract import load_version_registry
-from sparkforge.lab.scenario import load_scenario_suite
+from sparkforge_aws.lab.contract import load_version_registry
+from sparkforge_aws.lab.scenario import load_scenario_suite
 
 ROOT = Path(__file__).parents[1]
 
@@ -38,7 +38,7 @@ def test_golden_scenarios_compile_to_reusable_actions() -> None:
 
 
 def test_runtime_backends_share_plan_and_mutations_are_guarded() -> None:
-    from sparkforge.lab.runtime import build_runtime_plan
+    from sparkforge_aws.lab.runtime import build_runtime_plan
 
     scenario = load_scenario_suite(ROOT / "lab" / "scenarios" / "golden.yaml").by_id("LAB-004")
     compose = build_runtime_plan(scenario, backend="compose")
@@ -49,8 +49,8 @@ def test_runtime_backends_share_plan_and_mutations_are_guarded() -> None:
 
 
 def test_receipt_oracle_and_equivalence_are_independent(tmp_path: Path) -> None:
-    from sparkforge.lab.evidence import compare_oracle, create_run, finalize_receipt
-    from sparkforge.lab.oracle import ExpectedOracle
+    from sparkforge_aws.lab.evidence import compare_oracle, create_run, finalize_receipt
+    from sparkforge_aws.lab.oracle import ExpectedOracle
 
     scenario = load_scenario_suite(ROOT / "lab" / "scenarios" / "golden.yaml").by_id("LAB-004")
     run = create_run(tmp_path, scenario, seed=42)
@@ -68,7 +68,7 @@ def test_receipt_oracle_and_equivalence_are_independent(tmp_path: Path) -> None:
 
 
 def test_cli_exposes_lab_product_commands() -> None:
-    from sparkforge.adapters.cli import build_parser
+    from sparkforge_aws.adapters.cli import build_parser
 
     parser = build_parser()
     args = parser.parse_args(["lab", "doctor", "--repo", "."])

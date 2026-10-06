@@ -1,8 +1,8 @@
 # Cobertura auditada de `prompt_evo_streaming.md`
 
 Data da auditoria: 2026-10-03. Esta matriz foi escrita depois de executar
-`sparkforge sdd status`, `sparkforge sdd check` nas features de streaming e
-`sparkforge code sync`; ela mede artefatos existentes, não menções em Markdown.
+`sparkforge-aws sdd status`, `sparkforge-aws sdd check` nas features de streaming e
+`sparkforge-aws code sync`; ela mede artefatos existentes, não menções em Markdown.
 
 O mapa transversal das três evoluções do repositório está em
 [`docs/EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). Esta página permanece
@@ -15,7 +15,7 @@ O inventário de commits, features e provas compartilhadas está em
 
 | Capability | Nível medido | Evidência atual | Lacuna para P0/P1 |
 |---|---|---|---|
-| Structured Streaming | `diagnosable` | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | progress series agora resume span, duração, memória do state e watermark com `SF-STREAM-013`/`SF-STREAM-014`; execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`, e cross-artifact permanece unresolved quando artefato não existe |
+| Structured Streaming | `diagnosable` | `sparkforge_aws/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge_aws/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | progress series agora resume span, duração, memória do state e watermark com `SF-STREAM-013`/`SF-STREAM-014`; execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`, e cross-artifact permanece unresolved quando artefato não existe |
 | Spark Real-Time | `version-aware` parcial | `knowledge/streaming/runtime-matrix.md` revalidada; separação upstream/runtime gerenciado e limite de `Trigger.RealTime` | capability no runtime observado, guard executável e prova de latência continuam `N/A + motivo` sem workload/runtime |
 | Kafka | `fact-aware` parcial | `facts/transport.py` preserva `lag_observations`, compõe `kafka.lag.series` e mantém `kafka.unresolved`; `SF-STREAMOBS-002/003/004`, goldens ISR/lag, analyzer, knowledge, skill e coordenador | Connect REST, série temporal live de broker/grupo e segurança completa |
 | Amazon MSK | `version-aware` parcial | `msk.cluster` e transporte observado em `facts/transport.py`, `collect streaming-integrations`, `SF-STREAMOBS-003/004`, `knowledge/transport-diagnostics.md`, `knowledge/streaming/runtime-matrix.md` | snapshot regional/broker-type, configuração/rede/segurança e collector temporal live |
@@ -38,7 +38,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Streaming FinOps | `diagnosable` parcial | `streaming.finops`, `SF-STREAM-005`, CLI/MCP, fixtures e `knowledge/streaming-operations.md` | CUR/CloudWatch temporal e atribuição por transport/process/runtime/sink |
 | Streaming security | `diagnosable` parcial | `streaming.security`, redaction, `SF-STREAM-006`, CLI/MCP e fixtures | IAM/KMS/VPC/resource-policy collectors e eficácia runtime |
 | Real-time analytics/serving | `knowledge-aware` parcial | `streaming.serving`, `knowledge/streaming-format-serving-matrix.md`, matriz Redshift/ClickHouse/Pinot/Druid/Trino | collectors/evals por sistema e benchmark de latência/throughput |
-| Architecture decision support | `diagnosable` parcial | `sparkforge architecture streaming`, matriz de candidatos, fixtures, skill, ADR e contrato operacional | integrar facts observados de runtime/serving, custo/SLO/security e validação experimental |
+| Architecture decision support | `diagnosable` parcial | `sparkforge-aws architecture streaming`, matriz de candidatos, fixtures, skill, ADR e contrato operacional | integrar facts observados de runtime/serving, custo/SLO/security e validação experimental |
 
 ## O que já foi realmente entregue
 

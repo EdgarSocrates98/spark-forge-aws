@@ -2,37 +2,37 @@
 
 # Skill `benchmark-pyspark-job`
 
-Use quando precisar comprovar — não estimar — o efeito de uma mudança de performance num job Glue, com comparação antes/depois de duração de stage, spill, GC e executor perdido, isolando uma variável por vez. Use também quando for escrever \"X% mais rápido\", \"reduziu o shuffle pela metade\", \"resolveu o OOM\" ou qualquer alegação quantificada de ganho. Se você está prestes a escrever um percentual de ganho sem rodar `sparkforge validate --findings`, pare — o schema rejeita `expected_effect` quantificado (%, x, vezes) sem `benchmark_ref`, e ganho previsto sem benchmark é invenção, não resultado.
+Use quando precisar comprovar — não estimar — o efeito de uma mudança de performance num job Glue, com comparação antes/depois de duração de stage, spill, GC e executor perdido, isolando uma variável por vez. Use também quando for escrever \"X% mais rápido\", \"reduziu o shuffle pela metade\", \"resolveu o OOM\" ou qualquer alegação quantificada de ganho. Se você está prestes a escrever um percentual de ganho sem rodar `sparkforge-aws validate --findings`, pare — o schema rejeita `expected_effect` quantificado (%, x, vezes) sem `benchmark_ref`, e ganho previsto sem benchmark é invenção, não resultado.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/benchmark-pyspark-job/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge validate', 'sparkforge benchmark', 'sparkforge collect event-log']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws validate', 'sparkforge-aws benchmark', 'sparkforge-aws collect event-log']} |
 
 ## Procedimento (texto integral)
 
 ## Benchmark PySpark Job
 
-`sparkforge validate --findings` rejeita qualquer `expected_effect` que quantifique ganho (`"40% mais rápido"`, `"3x"`, `"2 vezes"`) sem um `benchmark_ref` que o sustente. É essa rejeição que dá sentido a esta skill: um benchmark é exatamente o que transforma uma alegação em algo defensável, e o par de medições antes/depois é o que vira `benchmark_ref`.
+`sparkforge-aws validate --findings` rejeita qualquer `expected_effect` que quantifique ganho (`"40% mais rápido"`, `"3x"`, `"2 vezes"`) sem um `benchmark_ref` que o sustente. É essa rejeição que dá sentido a esta skill: um benchmark é exatamente o que transforma uma alegação em algo defensável, e o par de medições antes/depois é o que vira `benchmark_ref`.
 
-O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `benchmark_ref` cita o `fact_id` de um `bench.run_delta`, o fato que `sparkforge benchmark` emite ao comparar os facts de event log dos dois runs. Preencher o campo com prosa passou a ser rejeitado — satisfazer o gate digitando qualquer coisa era exatamente o que o campo permitia enquanto ninguém produzia a medição.
+O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `benchmark_ref` cita o `fact_id` de um `bench.run_delta`, o fato que `sparkforge-aws benchmark` emite ao comparar os facts de event log dos dois runs. Preencher o campo com prosa passou a ser rejeitado — satisfazer o gate digitando qualquer coisa era exatamente o que o campo permitia enquanto ninguém produzia a medição.
 
 ### Procedimento
 
-1. **Antes da mudança:** `sparkforge collect event-log --repo . --job-run <id_antes> --bucket <bucket> --prefix <prefix> --now <ISO8601>`, depois `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id_antes>.jsonl --out .sparkforge/baseline_facts.json`.
+1. **Antes da mudança:** `sparkforge-aws collect event-log --repo . --job-run <id_antes> --bucket <bucket> --prefix <prefix> --now <ISO8601>`, depois `sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id_antes>.jsonl --out .sparkforge/baseline_facts.json`.
 2. Aplique a mudança — uma variável principal por comparação. Duas mudanças juntas tornam a causa indistinguível.
 3. **Depois da mudança:** repita coleta e extração para o novo run, gerando `.sparkforge/after_facts.json`.
 4. **Confirme runtime idêntico entre os dois runs** antes de comparar — Glue/Spark/Python/Iceberg diferentes invalidam a comparação. Isto deixou de ser conferência no olho: `runtime detect` aceita `--facts` (repetível) e cada event log declara a própria versão do Spark na primeira linha, extraída como `spark.runtime_version`.
 
    ```bash
-   sparkforge runtime detect --facts .sparkforge/baseline_facts.json --facts .sparkforge/after_facts.json
+   sparkforge-aws runtime detect --facts .sparkforge/baseline_facts.json --facts .sparkforge/after_facts.json
    ```
 
    Leia `divergences`: **vazio é a condição de aceite** desta etapa. Se os dois runs rodaram em versões diferentes, aparece uma linha nomeando o componente e o valor de cada artefato (`spark: valores divergentes entre fontes (event_log:<a>=..., event_log:<b>=...)`), e a comparação está invalidada na origem — nenhum percentual medido depois disso vale como `benchmark_ref`. `detected_from` diz de quais fontes a detecção saiu; passe `--glue 5.1` apenas se souber a versão de fonte confiável e quiser preencher o eixo que o event log não preenche — o log declara `spark`, não `glue`, porque a matriz de compatibilidade deriva do Glue para o Spark e não o inverso.
-5. **Compare os dois lados com o comparador, não no olho.** `sparkforge benchmark` (tool MCP `sparkforge_benchmark`) recebe os dois arquivos de facts e emite os cinco kinds `bench.*`:
+5. **Compare os dois lados com o comparador, não no olho.** `sparkforge-aws benchmark` (tool MCP `sparkforge_benchmark`) recebe os dois arquivos de facts e emite os cinco kinds `bench.*`:
 
    ```bash
-   sparkforge benchmark \
+   sparkforge-aws benchmark \
      --before .sparkforge/baseline_facts.json \
      --after .sparkforge/after_facts.json \
      --out .sparkforge/bench_facts.json
@@ -53,7 +53,7 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
 6. **Julgue os facts `bench.*` contra o catálogo.** A área `SF-BENCH` tem quatro regras, e duas delas afirmam sobre a **validade da medição**, não sobre o job: `SF-BENCH-001` (volumes de entrada divergentes, P0) e `SF-BENCH-004` (parte grande dos stages sem par). Elas não calam as outras — leia as duas coisas juntas.
 
    ```bash
-   sparkforge judge \
+   sparkforge-aws judge \
      --facts .sparkforge/bench_facts.json \
      --facts .sparkforge/baseline_facts.json \
      --facts .sparkforge/after_facts.json \
@@ -64,7 +64,7 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
 
 7. Se houver variabilidade relevante entre execuções, repita a coleta (n ≥ 3) e reporte mediana e dispersão — uma única execução vira "ganho" por ruído.
 8. Registre o achado com `expected_effect` (ex.: "38% menos tempo de task somado") e `benchmark_ref` **citando o `fact_id` do `bench.run_delta`** — a forma é `f_` seguido de 6 dígitos hexadecimais, o `id` do fato que saiu do passo 5.
-9. `sparkforge validate --findings .sparkforge/findings.json --facts .sparkforge/bench_facts.json` — sem `--facts`, o `benchmark_ref` é cobrado só na **forma**; com ele, o `fact_id` citado precisa **existir** naquele conjunto, e achado que cita medição ausente da evidência é rejeitado. Não contorne; é o gate do item 5 do `AGENT_PROTOCOL.md`.
+9. `sparkforge-aws validate --findings .sparkforge/findings.json --facts .sparkforge/bench_facts.json` — sem `--facts`, o `benchmark_ref` é cobrado só na **forma**; com ele, o `fact_id` citado precisa **existir** naquele conjunto, e achado que cita medição ausente da evidência é rejeitado. Não contorne; é o gate do item 5 do `AGENT_PROTOCOL.md`.
 
 ### Referência rápida
 
@@ -89,7 +89,7 @@ O comparador já faz essa correlação e entrega o resultado em `bench.run_delta
 
 E `bench.analyzed` carrega `matched_stage_count` / `unmatched_stage_count`, que é o que `SF-BENCH-004` lê para dizer se os totais estão somando o mesmo trabalho.
 
-Se qualquer `SF-UI-*` disparar em um dos dois runs, use `sparkforge rules lookup --id <ID>` para saber se a diferença cruza um limiar versionado — não decida "melhorou" por opinião.
+Se qualquer `SF-UI-*` disparar em um dos dois runs, use `sparkforge-aws rules lookup --id <ID>` para saber se a diferença cruza um limiar versionado — não decida "melhorou" por opinião.
 
 ### Validação funcional: o outro lado da mesma comparação
 
@@ -100,7 +100,7 @@ O par antes/depois é o **mesmo** dos passos 1 a 3: uma execução de cada lado 
 #### 1. Derive o plano — o que medir, e por que aquilo
 
 ```bash
-sparkforge funcval plan \
+sparkforge-aws funcval plan \
   --facts .sparkforge/facts.json \
   --facts .sparkforge/facts_catalog.json \
   --key pedido_id,dt \
@@ -136,7 +136,7 @@ O lado `before` só existe se você o mediu **antes** de a mudança tocar o alvo
 #### 3. Compare contra o plano
 
 ```bash
-sparkforge funcval compare \
+sparkforge-aws funcval compare \
   --plan .sparkforge/facts_funcval_plan.json \
   --before .sparkforge/funcval_before.json \
   --after .sparkforge/funcval_after.json \
@@ -154,7 +154,7 @@ Emite `funcval.check_delta` (um por check, com `attrs.axis` em `count`/`schema`/
 #### 4. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_funcval.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_funcval.json --show-skipped
 ```
 
 | Regra | Severidade | O que acusa |
@@ -176,7 +176,7 @@ Fora do alcance dos quatro proxies, e portanto seu: hashes lógicos por partiç�
 `functional_validation_defined` é satisfeito por `funcval.plan`, e guarda a fase `report` quando o case foi aberto com `--strict-gates`. *Defined*, não *executed*: o que destrava é o plano, porque definir o que validar tem de acontecer **depois** de medir e escolher a mudança, e **antes** de fechar o relatório. `ROUTE-015` é a rota que manda defini-lo, e ela opera em `[validation, report]`.
 
 ```bash
-sparkforge case update --repo . --phase report \
+sparkforge-aws case update --repo . --phase report \
   --facts .sparkforge/bench_facts.json \
   --facts .sparkforge/facts_callgraph.json \
   --facts .sparkforge/facts_funcval_plan.json
@@ -215,7 +215,7 @@ Esta skill trata **comparação medida entre runs PySpark antes/depois**. Contra
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge validate`, `sparkforge benchmark`, `sparkforge collect event-log`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws validate`, `sparkforge-aws benchmark`, `sparkforge-aws collect event-log`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

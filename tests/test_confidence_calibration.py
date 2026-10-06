@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.decision.calibration import (
+from sparkforge_aws.decision.calibration import (
     CalibrationError,
     HistoricalCalibrator,
     load_cases,

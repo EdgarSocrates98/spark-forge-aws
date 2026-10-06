@@ -13,8 +13,8 @@ plataforma.
 """
 import pytest
 
-from sparkforge.facts import runtime_matrix
-from sparkforge.storage import feature_support, readiness
+from sparkforge_aws.facts import runtime_matrix
+from sparkforge_aws.storage import feature_support, readiness
 
 
 class TestContrafactualDaGranularidade:
@@ -179,7 +179,7 @@ class TestVocabularioFechado:
 
 class TestNuncaExecuta:
     def test_o_modulo_nao_tem_superficie_de_escrita(self):
-        """Mesma garantia estrutural de `sparkforge/storage/upgrade.py`, medida
+        """Mesma garantia estrutural de `sparkforge_aws/storage/upgrade.py`, medida
         pelos IMPORTS e nao por substring na fonte: prosa que menciona
         "subprocesso" numa explicacao nao e uma chamada."""
         import ast

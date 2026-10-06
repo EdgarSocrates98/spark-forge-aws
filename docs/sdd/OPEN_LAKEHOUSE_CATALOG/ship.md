@@ -36,13 +36,13 @@ unresolved sem presumir compatibilidade ou executar protocolo live.
 ## Gates rodados
 
 - `python -m pytest tests/test_lakehouse_catalog.py -q --basetemp .sparkforge/local/pytest-open-lakehouse` — `3 passed`, exit 0.
-- `python -m sparkforge.adapters.cli analyze lakehouse-catalog --path fixtures/platform/catalog.yaml` — exit 0.
+- `python -m sparkforge_aws.adapters.cli analyze lakehouse-catalog --path fixtures/platform/catalog.yaml` — exit 0.
 - `python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge/local/pytest-open-lakehouse-gates` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0.
-- `sparkforge sdd check --repo . --feature OPEN_LAKEHOUSE_CATALOG` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature OPEN_LAKEHOUSE_CATALOG` — `ok: true`.
 
 ## Limites e rollback
 

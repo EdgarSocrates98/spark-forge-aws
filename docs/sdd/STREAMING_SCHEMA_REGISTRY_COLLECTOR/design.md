@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_SCHEMA_REGISTRY_COLLECTOR/define.md
   sha256: "49145bfd4a15d5d777a115ae5ea61b56faadb91ffe9e0cc4831e5f41ab9a2fef"
 files:
-  - {path: sparkforge/collect/schema_registry.py, action: create, reason: "Cliente read-only, paginação, redaction, limite e artifact registrado."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Adapter compartilhado CLI/MCP para coleta."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo collect schema-registry."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP agrupada por objetivo de aquisição."}
+  - {path: sparkforge_aws/collect/schema_registry.py, action: create, reason: "Cliente read-only, paginação, redaction, limite e artifact registrado."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Adapter compartilhado CLI/MCP para coleta."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo collect schema-registry."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP agrupada por objetivo de aquisição."}
   - {path: parity.yaml, action: modify, reason: "Paridade declarada do collector."}
   - {path: tests/test_collect_schema_registry.py, action: create, reason: "Clientes falsos, cache, manifesto, CLI/MCP."}
   - {path: knowledge/schema-registry-data-contracts.md, action: modify, reason: "Procedimento de coleta, APIs e limites."}

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.decision.contracts import ContractLoader, ContractValidationError
+from sparkforge_aws.decision.contracts import ContractLoader, ContractValidationError
 
 
 def _contract(**changes):

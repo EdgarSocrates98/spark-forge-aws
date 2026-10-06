@@ -8,8 +8,8 @@ upstream:
   path: docs/sdd/STREAMING_GLUE_CROSS_ARTIFACT/define.md
   sha256: "b8dccade56fc7b8290a394926ed60ae0ca8edbb25cbc92336d2d84f532c719f0"
 files:
-  - {path: sparkforge/facts/streaming_glue_cross.py, action: create, reason: "correlacionar fatos Glue efetivos e Terraform sem reler artefatos"}
-  - {path: sparkforge/facts/fusion.py, action: modify, reason: "invocar derivação somente quando os kinds fonte existirem"}
+  - {path: sparkforge_aws/facts/streaming_glue_cross.py, action: create, reason: "correlacionar fatos Glue efetivos e Terraform sem reler artefatos"}
+  - {path: sparkforge_aws/facts/fusion.py, action: modify, reason: "invocar derivação somente quando os kinds fonte existirem"}
   - {path: rules/catalog/glue-streaming.yaml, action: modify, reason: "julgar drift e blind spot cross-artifact"}
   - {path: fixtures/streaming_glue_cross_artifact, action: create, reason: "goldens de match, drift e identidade/valor unresolved"}
   - {path: scripts/regen_streaming_glue_cross_artifact.py, action: create, reason: "regenerar goldens deterministicamente a partir dos inputs"}

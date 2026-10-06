@@ -48,33 +48,33 @@ retornou:
 Os sete cenários de `labs/forge-lab/lab.yaml` (`broker_kill`, `skew`,
 `consumer_lag`, `checkpoint_failure`, `small_files`, `schema_evolution` e
 `cdc_restart`) continuam sendo o mapa topológico de alto nível. O Golden 20 é o
-corpus executável e versionado usado por `sparkforge lab scenarios` e `verify`.
+corpus executável e versionado usado por `sparkforge-aws lab scenarios` e `verify`.
 
 ## Fluxo recomendado
 
 ```bash
 # validar contrato sem iniciar serviços
-sparkforge lab doctor
-sparkforge lab verify --repo .
-sparkforge lab profiles --repo .
-sparkforge lab scenarios --json --repo .
+sparkforge-aws lab doctor
+sparkforge-aws lab verify --repo .
+sparkforge-aws lab profiles --repo .
+sparkforge-aws lab scenarios --json --repo .
 
 # estudar e compilar cenário; ainda sem mutação
-sparkforge lab describe iceberg-small-files --repo .
-sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+sparkforge-aws lab describe iceberg-small-files --repo .
+sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42 --repo .
 
 # executar somente com autorização explícita do operador
-sparkforge lab run iceberg-small-files --backend compose --seed 42 \
+sparkforge-aws lab run iceberg-small-files --backend compose --seed 42 \
   --execute --confirm --repo .
 
 # inspecionar, analisar, comparar e reproduzir evidência
-sparkforge lab inspect .sparkforge/lab/runs/<run-id> --repo .
-sparkforge lab analyze .sparkforge/lab/runs/<run-id> --repo .
-sparkforge lab compare <run-a> <run-b> --repo .
-sparkforge lab reproduce .sparkforge/lab/runs/<run-id>/receipt.json --repo .
+sparkforge-aws lab inspect .sparkforge/lab/runs/<run-id> --repo .
+sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id> --repo .
+sparkforge-aws lab compare <run-a> <run-b> --repo .
+sparkforge-aws lab reproduce .sparkforge/lab/runs/<run-id>/receipt.json --repo .
 
 # promover somente depois de revisão humana
-sparkforge lab promote-fixture <run-id> fixtures/lab/<id> \
+sparkforge-aws lab promote-fixture <run-id> fixtures/lab/<id> \
   --reviewed --repo .
 ```
 

@@ -31,10 +31,10 @@
 
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
-| 1 | `sparkforge/finops/realized.py` | (direct) | ✅ Complete | `realized_gain`, `GainError`; reusa `_volume_de` e `_TOLERANCIA_PADRAO` do `capacity` |
+| 1 | `sparkforge_aws/finops/realized.py` | (direct) | ✅ Complete | `realized_gain`, `GainError`; reusa `_volume_de` e `_TOLERANCIA_PADRAO` do `capacity` |
 | 2 | `tests/test_finops_realized.py` | (direct) | ✅ Complete | 13 testes: cada marca, descarte, erros, custo por `job_run_id`, moedas, tolerancia declarada, recusas |
 | 3 | `_core.gain` | (direct) | ✅ Complete | Um conjunto por arquivo; lado sem arquivo ou `GainError` saem com codigo 2 |
-| 4 | CLI e tool | (direct) | ✅ Complete | `sparkforge gain --baseline ... --candidate ...`; `sparkforge_gain` READ_ONLY com `baseline_paths`/`candidate_paths` |
+| 4 | CLI e tool | (direct) | ✅ Complete | `sparkforge-aws gain --baseline ... --candidate ...`; `sparkforge_gain` READ_ONLY com `baseline_paths`/`candidate_paths` |
 | 5 | `fixtures/gain/` + golden | (direct) | ✅ Complete | 4 casos recortados de `capacity/cheapest_that_fits`, `capacity/volume_filter_changes_the_answer` e `finops/cheap_but_misses_sla` |
 | 6 | Registros | (direct) | ✅ Complete | Lista, amostra real, FAILABLE, contagem com caminho 86 -> 87, `NOVAS_DEPOIS_DO_GOLDEN`, manifest, parity, `sf-verifier` (checagem 9) + espelhos |
 | 7 | Doc, STATUS, contagens, surface, claims | (direct) | ✅ Complete | `docs/realized-gain.md`; tools 95; fixtures 441 em 51 dominios; +5 425 bytes; 21 claims por id |
@@ -47,7 +47,7 @@
 ### Lint Check
 
 ```text
-ruff check sparkforge tests scripts  ->  All checks passed!
+ruff check sparkforge_aws tests scripts  ->  All checks passed!
 ```
 
 **Status:** ✅ Pass

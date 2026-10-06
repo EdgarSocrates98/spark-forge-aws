@@ -21,12 +21,12 @@ claims:
     evidence_ref: "tests/test_config_declarado_existe.py::test_toda_tool_declarada_existe"
   - text: "Todo nome declarado nos registros de config/ resolve: agente para arquivo em agents/, documento de knowledge para caminho, tool para entrada em TOOLS. A falha nomeia registro, chave e nome."
     evidence_ref: "tests/test_config_declarado_existe.py::test_todo_nome_declarado_resolve"
-  - text: "config/subagents.yaml e o diretorio subagents/ sairam, e nenhum modulo de sparkforge/, scripts/ ou tests/ passou a cita-los."
+  - text: "config/subagents.yaml e o diretorio subagents/ sairam, e nenhum modulo de sparkforge_aws/, scripts/ ou tests/ passou a cita-los."
     evidence_ref: "tests/test_config_declarado_existe.py::test_o_registro_de_subagents_saiu_e_ninguem_o_le"
   - text: "Nenhum documento vivo cita nome que saiu: o mecanismo que o SF_STUBS criou percorre agora tambem as tools e os subagents removidos."
     evidence_ref: "tests/test_sf_stubs.py::test_documento_vivo_nao_cita_o_que_saiu"
   - text: "O registro canonico continua carregando com o time governance-security sem handoffs: medido carregando CanonicalRegistry e lendo o time, nao por leitura do codigo."
-    evidence_ref: "sparkforge/registry/loader.py"
+    evidence_ref: "sparkforge_aws/registry/loader.py"
   - text: "Os registros que a remocao move estao em dia: o gate de lastro fecha em 0 divergencias com a arvore no estado final."
     evidence_ref: "docs/claims.lock.json"
 ---
@@ -72,7 +72,7 @@ o time — `handoffs: []`, carregando normalmente. `loader.py` faz
 ## A descoberta que muda a leitura da feature
 
 Os sete nomes de tool não eram fantasia completa. **Seis módulos existem em
-`sparkforge/tools/`** e correspondem a eles: `context`, `cost`, `evaluation`, `lineage`,
+`sparkforge_aws/tools/`** e correspondem a eles: `context`, `cost`, `evaluation`, `lineage`,
 `offline`, `schema`. O que nunca existiu foi a **declaração de tool MCP** — o código está
 lá.
 
@@ -89,12 +89,12 @@ três que têm leitor de teste):
 
 Três ressalvas que a medida exige:
 
-- as duas ocorrências de `pack_context` em `sparkforge/codeintel/context.py` (linhas 13 e
+- as duas ocorrências de `pack_context` em `sparkforge_aws/codeintel/context.py` (linhas 13 e
   259) e a de `tests/test_codeintel_context.py:178` são **prosa de docstring**, não import.
   Citar não é ler;
-- `sparkforge/tools/cli.py` importa `cost` e `lineage`, mas é o CLI do próprio pacote —
+- `sparkforge_aws/tools/cli.py` importa `cost` e `lineage`, mas é o CLI do próprio pacote —
   fica fora por ser dentro, que é o critério desta tabela;
-- `estimate_tokens` aparece em `sparkforge/agents/budget.py`, e é **outra função** com o
+- `estimate_tokens` aparece em `sparkforge_aws/agents/budget.py`, e é **outra função** com o
   mesmo nome. `budget_report`, a exportada por `tools/cost.py`, não tem nenhuma ocorrência
   no repositório fora da própria definição e do `__all__`.
 

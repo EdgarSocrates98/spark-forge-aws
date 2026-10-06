@@ -20,7 +20,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_platform_graph.py::test_platform_graph_impact_preserves_paths_and_unresolved"}
   - id: AC3
     statement: "A CLI e a ferramenta MCP usam o mesmo núcleo e expõem o contrato estruturado de grafo e impacto."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze platform-graph --path fixtures/platform/graph.yaml --changed-node postgres.orders --direction downstream"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze platform-graph --path fixtures/platform/graph.yaml --changed-node postgres.orders --direction downstream"}
 success:
   - id: SC1
     metric: "Fingerprint e ordenação idênticos para o mesmo manifesto carregado em JSON e YAML equivalente"

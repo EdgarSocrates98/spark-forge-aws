@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.case.playbook import build_playbook
+from sparkforge_aws.case.playbook import build_playbook
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"

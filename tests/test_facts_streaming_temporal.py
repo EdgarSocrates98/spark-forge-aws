@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sparkforge.facts.streaming_temporal import build_streaming_temporal_diagnostics
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.streaming_temporal import build_streaming_temporal_diagnostics
+from sparkforge_aws.findings.models import Fact
 
 
 def _fact(kind: str, *, attrs=None, measures=None, symbol: str = "") -> Fact:

@@ -8,11 +8,11 @@ que o transcript declara — e deixa qualquer um conferir depois se algum deles
 mudou.
 
 ```bash
-sparkforge receipt emit --repo . --facts facts/pyspark.json --facts facts/tf.json \
+sparkforge-aws receipt emit --repo . --facts facts/pyspark.json --facts facts/tf.json \
   --findings findings.json --report report.md --now 2026-09-12T00:00:00Z \
   --run-id "$SPARKFORGE_RUN_ID" --host-transcript ~/.claude/projects/<p>/<sessao>.jsonl \
   --provider anthropic
-sparkforge receipt verify --repo . --receipt .sparkforge/receipts/<receipt_id>.json
+sparkforge-aws receipt verify --repo . --receipt .sparkforge/receipts/<receipt_id>.json
 ```
 
 As tools MCP são `sparkforge_receipt_emit` (`LOCAL_MUTATION`) e

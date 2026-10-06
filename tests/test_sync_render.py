@@ -2,7 +2,7 @@
 
 Fundamento medido: `knowledge/devin/agents-and-subagents.md` (retrieved
 2026-08-04), vetos `V-DV-2`, `V-DV-3` e `V-DV-8`. Spec: D-1, D-2 e D-3 de
-`docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md`.
+`docs/superpowers/specs/2026-08-04-sparkforge-aws-devin-subagentes-design.md`.
 """
 from pathlib import Path
 
@@ -313,7 +313,7 @@ RELACAO_MEDIDA = {
         "pyspark-code-reviewer",
         "spark-performance-architect",
     ),
-    "sparkforge-diagnose": (
+    "sparkforge-aws-diagnose": (
         "glue-incremental-performance-architect",
         "spark-performance-architect",
     ),
@@ -345,7 +345,7 @@ def _frontmatter(text: str) -> dict:
     **Medido, e e por isso que este leitor nao usa `yaml.safe_load`:** o
     frontmatter das skills reais nao e YAML estrito. Cinco das vinte
     descricoes citam comando com dois-pontos dentro de escalar simples
-    (``rode `sparkforge analyze plan`: ele emite``), e `safe_load` levanta
+    (``rode `sparkforge-aws analyze plan`: ele emite``), e `safe_load` levanta
     `ScannerError` nelas. E o mesmo motivo pelo qual `test_skill_content` tem o
     proprio `parse_frontmatter` de linha.
 
@@ -553,13 +553,13 @@ class TestRelacaoDerivada:
 
     def test_o_conjunto_de_orquestradores_e_derivado_e_tem_um_elemento(self):
         """Derivado de `NON_DISPATCHABLE_SKILLS` cruzado com os perfis em disco --
-        nao e lista mantida a mao. `sparkforge-diagnose` tambem nao despacha e
+        nao e lista mantida a mao. `sparkforge-aws-diagnose` tambem nao despacha e
         NAO entra: nao existe perfil homonimo a ela."""
         assert sync_skills.orchestrator_profiles() == {
             "glue-incremental-performance-architect"
         }
-        assert "sparkforge-diagnose" in sync_skills.NON_DISPATCHABLE_SKILLS
-        assert not (AGENTS / "sparkforge-diagnose.md").exists()
+        assert "sparkforge-aws-diagnose" in sync_skills.NON_DISPATCHABLE_SKILLS
+        assert not (AGENTS / "sparkforge-aws-diagnose.md").exists()
 
     def test_a_ordem_alfabetica_seria_o_perfil_errado(self):
         """O contraexemplo que matou a alternativa "declara o primeiro em ordem
@@ -594,13 +594,13 @@ class TestQuemDespacha:
         para um contexto que NAO VOLTA -- o subagente nao herda o historico do
         pai, e a saida dele e texto livre que o pai resume (pesquisa, secao 6). E
         o case e justamente o que faz a investigacao atravessar sessoes."""
-        assert "sparkforge-diagnose" not in sync_skills.DISPATCHABLE_SKILLS
-        assert "case" in sync_skills.NON_DISPATCHABLE_SKILLS["sparkforge-diagnose"]
-        texto = (SKILLS / "sparkforge-diagnose" / "SKILL.md").read_text(
+        assert "sparkforge-aws-diagnose" not in sync_skills.DISPATCHABLE_SKILLS
+        assert "case" in sync_skills.NON_DISPATCHABLE_SKILLS["sparkforge-aws-diagnose"]
+        texto = (SKILLS / "sparkforge-aws-diagnose" / "SKILL.md").read_text(
             encoding="utf-8"
         )
         front = _frontmatter(
-            sync_skills.render_skill(texto, "devin", name="sparkforge-diagnose")
+            sync_skills.render_skill(texto, "devin", name="sparkforge-aws-diagnose")
         )
         assert "subagent" not in front
         assert "agent" not in front
@@ -855,13 +855,13 @@ class TestBordasDeSkill:
 
     def test_campo_posto_a_mao_e_removido_de_quem_nao_despacha(self):
         """A renderizacao REMOVE antes de inserir. Sem isso, `subagent: true`
-        escrito a mao no espelho de `sparkforge-diagnose` sobreviveria a toda
+        escrito a mao no espelho de `sparkforge-aws-diagnose` sobreviveria a toda
         regeneracao, e o gate nunca acusaria."""
         adulterada = SKILL_SINTETICA.replace(
             "description: Use quando.\n",
             "description: Use quando.\nsubagent: true\nagent: perfil-inventado\n",
         )
-        out = sync_skills.render_skill(adulterada, "devin", name="sparkforge-diagnose")
+        out = sync_skills.render_skill(adulterada, "devin", name="sparkforge-aws-diagnose")
         assert "subagent" not in _yaml_estrito(out)
         assert "agent" not in _yaml_estrito(out)
         assert "Corpo da skill." in out

@@ -23,7 +23,7 @@ e que ninguém havia escrito.
 | `fgac` | idem, mais as 11 regras `SF-LF` em `rules/catalog/lakeformation.yaml` (a `SF-LF-011`, de 2026-09-25, nomeia a permissão que falta atrás de `ERR-LF-001`, pela tabela operação → permissão de [`lakeformation-permissions.yaml`](lakeformation-permissions.yaml) — **legível por máquina**, com `source` e `quote` por linha) |
 | `fta` | §5 de [`lakeformation-fgac.md`](lakeformation-fgac.md), e os eixos `fta_*` de [`lakeformation-matrix.yaml`](lakeformation-matrix.yaml) |
 | `cross-account` | `rules/catalog/glue-cross-account.yaml` (`SF-XACC`), `SF-LF-007`, e `ERR-LF-002` |
-| `resource-links` | §1 de [`lakeformation-fgac.md`](lakeformation-fgac.md) — *"cross-account só por resource link, com nome idêntico"*, e desde 2026-09-10 com **fact medido**: `sparkforge collect glue-resource-link` produz `glue.resource_link` e `glue.resource_link.target`, `SF-XACC-002` e `SF-XACC-003` julgam sobre eles, e a perna do grafo de acesso deixou de sair `unresolved` |
+| `resource-links` | §1 de [`lakeformation-fgac.md`](lakeformation-fgac.md) — *"cross-account só por resource link, com nome idêntico"*, e desde 2026-09-10 com **fact medido**: `sparkforge-aws collect glue-resource-link` produz `glue.resource_link` e `glue.resource_link.target`, `SF-XACC-002` e `SF-XACC-003` julgam sobre eles, e a perna do grafo de acesso deixou de sair `unresolved` |
 | `credential-vending` | `ERR-LF-002..005`, e o eixo `fta_*` da matriz |
 | `iam` | `rules/catalog/iam.yaml` (`SF-IAM-001..003`) — e a decisão é **simulada**, nunca parse de policy |
 | `s3` | `SF-LF-004` (o conector default), `lakeformation.registered_location`, e `SF-PQ` para layout |
@@ -97,7 +97,7 @@ migração para o 6.0 existe e é vigiada por
 [`runtime-matrix.yaml`](runtime-matrix.yaml) — é de lá que saem Spark 4.1.1 e
 Iceberg 1.11.0 —, mas **ela não foi lida para o eixo de Lake Formation**.
 
-`sparkforge lakeformation matrix --runtime 6.0` devolve
+`sparkforge-aws lakeformation matrix --runtime 6.0` devolve
 `reason: runtime_fora_da_matriz` com o que destravaria. Preencher uma coluna
 "6.0" por analogia com o 5.1 seria inventar capacidade — e é exatamente o erro
 que a §0 de [`lakeformation-fgac.md`](lakeformation-fgac.md) diz que mais engana
@@ -113,12 +113,12 @@ O que **é** sabido sobre o 6.0 e vale citar: três regras o guardam
 
 **Duas pernas do caminho de acesso não têm coletor**, e o índice não as esconde:
 RAM share e key policy do KMS. O grafo de acesso
-(`sparkforge lakeformation access-graph`) as devolve `unresolved` com o que
+(`sparkforge-aws lakeformation access-graph`) as devolve `unresolved` com o que
 destravaria cada uma — `ram:GetResourceShares` e `kms:GetKeyPolicy`.
 
 **Eram três até 2026-09-10.** A terceira era resource link, e o que a destravava
 estava escrito na própria recusa: *"`glue:GetTable` sobre o link, comparando o
-nome com o do recurso de origem"*. `sparkforge/collect/glue_resource_link.py` é
+nome com o do recurso de origem"*. `sparkforge_aws/collect/glue_resource_link.py` é
 exatamente essa chamada, e com ela a perna passou a ter quatro saídas medidas —
 `granted` (nome idêntico e origem respondendo), `blocking` (nome divergente),
 `not_applicable` (o objeto não é link) e `unresolved` (a origem respondeu

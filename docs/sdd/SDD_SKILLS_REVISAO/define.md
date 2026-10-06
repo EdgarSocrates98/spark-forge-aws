@@ -10,7 +10,7 @@ hypothesis:
   experiment: "Escrever os testes antes do texto, rodar tests/test_sdd_skills.py e python scripts/check_surface_lock.py --update, e ler o total de skills."
 acceptance:
   - id: AC1
-    statement: "O teste de comandos citados confere, alem de verbo e subverbo, cada flag de cada comando sparkforge entre crases das skills sdd-*, com valor ficticio no lugar de marcador <...>, e recusa flag inventada."
+    statement: "O teste de comandos citados confere, alem de verbo e subverbo, cada flag de cada comando sparkforge-aws entre crases das skills sdd-*, com valor ficticio no lugar de marcador <...>, e recusa flag inventada."
     verified_by: {kind: test, ref: "tests/test_sdd_skills.py::test_o_detector_recusa_flag_inventada"}
   - id: AC2
     statement: "A description de cada skill sdd-* comeca com 'Use quando', traz so as condicoes de disparo e tem no maximo 320 caracteres."
@@ -41,7 +41,7 @@ success:
     metric: "Bytes de cada skills/sdd-*/SKILL.md antes e depois"
     source: "wc -c skills/sdd-*/SKILL.md"
 out_of_scope:
-  - "Mudar o nucleo sparkforge/sdd/: e texto, template e teste."
+  - "Mudar o nucleo sparkforge_aws/sdd/: e texto, template e teste."
   - "Reescrever SDD_SKILLS/ship.md: o desfecho e fechado por acrescimo aqui e verificado por SDD_EVAL."
   - "O perfil operator, ja revisto em SDD_OPERATOR_DURAVEL."
 unknowns: []

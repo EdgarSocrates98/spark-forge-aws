@@ -12,7 +12,7 @@ registries: [rules_catalog_gates, manifest_rule_count, fixture_kind_coverage, ro
 deviations:
   - "Os goldens de assessment de fixtures/scenarios (tres) e evals/holdout (dois) foram regenerados, porque carregam a contagem do catalogo (D10). O diff so move catalog_rules, unguarded_rules, reachable_rules e a frase statement; findings e recusas ficaram identicos. A previsao dizia que os goldens de cenario passavam sem regeneracao; o que ela falsificava era achado mudar, e nenhum mudou."
   - "D1 do design afirmava que scripts/sync_skills.py cuida de .codex; nao cuida. Os 19 .codex/agents/*.toml sairam por git rm na T2, e as secoes realocadas foram portadas a mao para dois .toml na revisao final (0161da5b)."
-  - "Arquivos fora do manifesto do design: config/teams-expansion.yaml e config/agentic-expansion.yaml (quatro times removidos, fica governance-security), as skills aws-database, aws-messaging-and-streaming, aws-serverless, aws-storage e provision-s3-tables-table, docs/guia/usos/custo-e-capacidade.md, docs/guia/12-espelhos-e-dependencias.md, docs/vnext/CURRENT-STATE.md, docs/harness/CODEINTEL-GAP.md, docs/harness/CURRENT-HARNESS-GAP.md, .devin/README.md, sparkforge/findings/validate.py, sparkforge/finops/report.py (SF-SQL em _AREAS_DE_CODIGO), scripts/check_status_numbers.py (comentario), tests/test_rules_loader.py, tests/test_findings_validate.py e os .codex/agents/*.toml."
+  - "Arquivos fora do manifesto do design: config/teams-expansion.yaml e config/agentic-expansion.yaml (quatro times removidos, fica governance-security), as skills aws-database, aws-messaging-and-streaming, aws-serverless, aws-storage e provision-s3-tables-table, docs/guia/usos/custo-e-capacidade.md, docs/guia/12-espelhos-e-dependencias.md, docs/vnext/CURRENT-STATE.md, docs/harness/CODEINTEL-GAP.md, docs/harness/CURRENT-HARNESS-GAP.md, .devin/README.md, sparkforge_aws/findings/validate.py, sparkforge_aws/finops/report.py (SF-SQL em _AREAS_DE_CODIGO), scripts/check_status_numbers.py (comentario), tests/test_rules_loader.py, tests/test_findings_validate.py e os .codex/agents/*.toml."
   - "Testes existentes ajustados: test_sync_render::test_agent_so_aparece_onde_ha_um_coordenador_so (tres skills sairam, tres ganharam coordenador unico) e test_rules_loader::test_every_committed_coordination_area_is_inert (saiu so a precondicao de existir area)."
   - "Alegacoes do gate de lastro remedidas por id: VNX-640 (752), VNX-726, VNX-503/508/510/511 (proof historical em 9c433b98), VNX-053, VNX-056, VNX-430; novas: VNX-793, 794, 795 e 796."
   - "Revisao em dois estagios por tarefa nao rodou; a revisao final do diff inteiro achou 0 critico, 4 importantes e 11 menores, todos corrigidos em 0161da5b menos um fora de escopo (Pendencias)."
@@ -56,7 +56,7 @@ deviations:
 | superfície | `python scripts/check_surface_lock.py` | 0 divergências |
 | lastro | `python scripts/check_vnext_claims.py` | 0 divergências |
 | goldens | `python -m pytest tests/test_fixtures_golden*.py -q` | 3217 passed, 4 skipped |
-| estilo | `python -m ruff check sparkforge scripts tests` | limpo |
+| estilo | `python -m ruff check sparkforge_aws scripts tests` | limpo |
 
 Comandos de `kind: command` do define:
 

@@ -79,14 +79,14 @@ class TestEveryCapabilityHasAPathEverywhere:
 
 class TestManifestMatchesReality:
     def test_every_declared_tool_exists_in_the_tool_surface(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         for capability in manifest()["capabilities"]:
             for tool in capability.get("tools") or []:
                 assert tool in TOOLS, tool
 
     def test_every_declared_cli_verb_is_reachable(self):
-        from sparkforge.adapters.cli import build_parser
+        from sparkforge_aws.adapters.cli import build_parser
 
         parser = build_parser()
         subparsers = next(
@@ -104,7 +104,7 @@ class TestManifestMatchesReality:
 
     def test_every_phase_zero_tool_appears_in_some_capability(self):
         """Tool que nao aparece no manifesto e capacidade nao declarada."""
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         declared = {t for c in manifest()["capabilities"] for t in (c.get("tools") or [])}
         assert set(TOOLS) - declared == set()
@@ -295,7 +295,7 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         )
 
     def _leaf_cli_verbs(self):
-        from sparkforge.adapters.cli import build_parser
+        from sparkforge_aws.adapters.cli import build_parser
 
         parser = build_parser()
         sub = self._subcomandos(parser)
@@ -310,7 +310,7 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         return leaves
 
     def test_every_cli_verb_has_an_mcp_tool_or_a_declared_reason(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         declared_cli_to_tools: dict[str, set[str]] = {}
         for capability in manifest()["capabilities"]:
@@ -550,14 +550,14 @@ class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
     }
 
     def _runtime_axes(self):
-        from sparkforge.findings.models import RuntimeContext
+        from sparkforge_aws.findings.models import RuntimeContext
 
         # `detected_from` e `divergences` sao SAIDA -- o que a deteccao concluiu
         # sobre si mesma --, nunca entrada declaravel.
         return set(RuntimeContext().to_dict()) - {"detected_from", "divergences"}
 
     def _subparser(self, path):
-        from sparkforge.adapters.cli import build_parser
+        from sparkforge_aws.adapters.cli import build_parser
 
         parser = build_parser()
         for name in path:
@@ -578,7 +578,7 @@ class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
             assert axes <= flags, (" ".join(path), sorted(axes - flags))
 
     def test_every_runtime_axis_is_declarable_over_mcp(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         axes = self._runtime_axes()
         for tool in self.VERBS.values():
@@ -588,7 +588,7 @@ class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
     def test_the_cli_and_the_tool_expose_the_same_axes(self):
         """Nao basta os dois cobrirem o contexto: eles precisam cobrir o MESMO
         conjunto. Um eixo so na CLI e a assimetria de novo, virada do avesso."""
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         axes = self._runtime_axes()
         for path, tool in self.VERBS.items():
@@ -619,7 +619,7 @@ class TestOsControlesDeGateChegamAosTresAdaptadores:
     }
 
     def _flags(self, path):
-        from sparkforge.adapters.cli import build_parser
+        from sparkforge_aws.adapters.cli import build_parser
 
         parser = build_parser()
         for name in path:
@@ -634,7 +634,7 @@ class TestOsControlesDeGateChegamAosTresAdaptadores:
         }
 
     def _properties(self, tool):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         return set(TOOLS[tool]["inputSchema"]["properties"])
 
@@ -657,7 +657,7 @@ class TestOsControlesDeGateChegamAosTresAdaptadores:
         sumir de la, os dois quebram juntos, e este teste falha primeiro."""
         import inspect
 
-        from sparkforge.adapters import _core
+        from sparkforge_aws.adapters import _core
 
         assert "strict_gates" in inspect.signature(_core.case_open).parameters
         update = inspect.signature(_core.case_update).parameters
@@ -734,7 +734,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
     AXES_DECLARED_ONLY: dict[str, str] = {}
 
     def _axes(self):
-        from sparkforge.findings.models import RuntimeContext
+        from sparkforge_aws.findings.models import RuntimeContext
 
         return set(RuntimeContext().to_dict()) - {"detected_from", "divergences"}
 
@@ -749,7 +749,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         `runtime_detect._photon`, e ela sai do AST dessa funcao (as chaves
         literais de `data.get(...)`), nunca de uma lista mantida aqui.
         """
-        from sparkforge.facts.runtime_detect import _DIRECT_KEYS, _PLATFORM_KEYS
+        from sparkforge_aws.facts.runtime_detect import _DIRECT_KEYS, _PLATFORM_KEYS
 
         merged = {**_PLATFORM_KEYS, **_DIRECT_KEYS, "photon": self._photon_raw_keys()}
         return {axis: set(merged.get(axis, ())) for axis in self._axes()}
@@ -761,7 +761,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         import inspect
         import textwrap
 
-        from sparkforge.facts import runtime_detect
+        from sparkforge_aws.facts import runtime_detect
 
         tree = ast.parse(textwrap.dedent(inspect.getsource(runtime_detect._photon)))  # noqa: SLF001
         return {
@@ -790,7 +790,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         import inspect
         import textwrap
 
-        from sparkforge.adapters import _core
+        from sparkforge_aws.adapters import _core
 
         tree = ast.parse(textwrap.dedent(inspect.getsource(_core._runtime_reading)))  # noqa: SLF001
         function = tree.body[0]
@@ -822,7 +822,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         """Os dois lados TEM que fechar no mesmo conjunto. Produtor sem flag e a
         assimetria original (`--emr`, commit `b9c2c87`); flag sem produtor e
         esta. Sao a mesma falha em espelho, e nenhuma sobrevive a este par."""
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         axes = self._axes()
         named = self._named_in_the_reader()
@@ -873,7 +873,7 @@ class TestNoPrecedenceSourceIsAnUndeclaredProducerGap:
     runtime-matrix.md` secao 5 lista `requirements.txt`/`pyproject.toml` como a
     fonte de MENOR confiabilidade ("indica intencao, nao runtime"), a
     precedencia foi desenhada com ela no fim por isso, e nenhum modulo de
-    `sparkforge/facts/` le manifesto de dependencia. Saiu da tupla em vez de
+    `sparkforge_aws/facts/` le manifesto de dependencia. Saiu da tupla em vez de
     ganhar extrator -- ver o comentario de `_PRECEDENCE`, que declara a decisao
     e o que teria que ser verdade para ela voltar.
 
@@ -889,7 +889,7 @@ class TestNoPrecedenceSourceIsAnUndeclaredProducerGap:
         import inspect
         import textwrap
 
-        from sparkforge.adapters import _core
+        from sparkforge_aws.adapters import _core
 
         named: set[str] = set()
         for function in (_core._runtime_reading, _core.build_runtime):  # noqa: SLF001
@@ -905,7 +905,7 @@ class TestNoPrecedenceSourceIsAnUndeclaredProducerGap:
         return named
 
     def test_every_declared_source_has_someone_that_emits_it(self):
-        from sparkforge.facts.runtime_detect import _PRECEDENCE
+        from sparkforge_aws.facts.runtime_detect import _PRECEDENCE
 
         named = self._emitted_sources()
         gaps = sorted(source for source in _PRECEDENCE if source not in named)
@@ -947,14 +947,14 @@ class TestEmrEksAlcancaAsQuatroSuperficies:
         return TestNoCliVerbIsAnUndeclaredMcpGap()._leaf_cli_verbs()  # noqa: SLF001
 
     def test_as_duas_tools_mcp_existem(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         assert set(self.TOOLS_ESPERADAS) <= set(TOOLS)
 
     def test_as_duas_tools_mcp_despacham(self):
         """Declarar no dicionario sem entrada no mapa de despacho e uma tool que
         aparece no `tools/list` e explode no `tools/call`."""
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert set(self.TOOLS_ESPERADAS) <= set(tools._HANDLERS)  # noqa: SLF001
 
@@ -976,7 +976,7 @@ class TestEmrEksAlcancaAsQuatroSuperficies:
     def test_o_analyze_le_arquivo_e_diretorio_pelo_core(self):
         """A terceira ponta: `_core` e o que as duas superficies chamam. Sem ele
         a paridade seria duas copias da mesma logica, e nao uma capacidade."""
-        from sparkforge.adapters import _core
+        from sparkforge_aws.adapters import _core
 
         assert callable(_core.analyze_emr_eks)
         assert callable(_core.collect_emr_eks)

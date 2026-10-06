@@ -36,9 +36,9 @@ def _pairs() -> list[tuple[str, str]]:
 def _run_fixture(name: str) -> tuple[list[Any], list[Any]]:
     import yaml
 
-    from sparkforge.facts.pyspark_ast import extract_tree
-    from sparkforge.rules.engine import judge
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.facts.pyspark_ast import extract_tree
+    from sparkforge_aws.rules.engine import judge
+    from sparkforge_aws.rules.loader import load_catalog
 
     directory = FIXTURES / name
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
@@ -77,7 +77,7 @@ def _compute_clean_job() -> str:
 
 
 def _compute_sf_py_007() -> str:
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     rules = load_catalog()
     rule = next(r for r in rules if r["id"] == "SF-PY-007")
@@ -96,7 +96,7 @@ def _compute_glue_51_rule() -> frozenset[str]:
     pontuado errado. Devolver o conjunto e o que deixa `verify_all` cobrar a
     unicidade.
     """
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     return frozenset(
         f"{r['id']}:{r['severity_default']}"
@@ -117,7 +117,7 @@ def _also_accepted_declarado(indice: int) -> frozenset[str]:
 
 
 def _compute_glue_matrix() -> str:
-    from sparkforge.facts.runtime_detect import GLUE_MATRIX
+    from sparkforge_aws.facts.runtime_detect import GLUE_MATRIX
 
     entry = GLUE_MATRIX["5.0"]
     return f"{entry['spark']}:{entry['iceberg']}"
@@ -141,7 +141,7 @@ def _compute_rule_counts() -> str:
     `load_catalog()` exclui routing.yaml por construcao -- quem nao souber disso
     responde 16 -- e `athena` exige filtrar por categoria.
     """
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     rules = load_catalog()
     routing = sum(1 for r in rules if r.get("category") == "routing")

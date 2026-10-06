@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge scan`
+# `sparkforge-aws scan`
 
 Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge/scan/. Sem rede.
 
 ```bash
-sparkforge scan --help
+sparkforge-aws scan --help
 ```
 
 ## Opções

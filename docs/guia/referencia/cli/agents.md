@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge agents`
+# `sparkforge-aws agents`
 
 Lista e inspeciona agentes do runtime agêntico.
 
@@ -8,15 +8,15 @@ Lista e inspeciona agentes do runtime agêntico.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge agents inspect`](#sparkforge-agents-inspect) | Inspeciona um agente. |
-| [`sparkforge agents list`](#sparkforge-agents-list) | Lista agentes disponíveis. |
+| [`sparkforge-aws agents inspect`](#sparkforge-aws-agents-inspect) | Inspeciona um agente. |
+| [`sparkforge-aws agents list`](#sparkforge-aws-agents-list) | Lista agentes disponíveis. |
 
-## `sparkforge agents inspect`
+## `sparkforge-aws agents inspect`
 
 Inspeciona um agente.
 
 ```bash
-sparkforge agents inspect --help
+sparkforge-aws agents inspect --help
 ```
 
 ### Opções
@@ -30,12 +30,12 @@ sparkforge agents inspect --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge agents list`
+## `sparkforge-aws agents list`
 
 Lista agentes disponíveis.
 
 ```bash
-sparkforge agents list --help
+sparkforge-aws agents list --help
 ```
 
 ### Opções

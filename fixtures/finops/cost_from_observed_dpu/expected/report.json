@@ -24,7 +24,7 @@
       "detail": ""
     },
     "capacity": {
-      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, que compara as capacidades observadas contra o SLA declarado."
+      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge-aws capacity`, que compara as capacidades observadas contra o SLA declarado."
     },
     "none_found": true
   },

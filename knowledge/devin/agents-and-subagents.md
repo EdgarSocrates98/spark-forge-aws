@@ -470,7 +470,7 @@ Uma capacidade adicional que a fonte confirma, relevante para o `parity.yaml`:
 
 > https://docs.devin.ai/cli/changelog/stable.md (retrieved 2026-08-04)
 
-Um subagente Devin pode chamar as tools MCP do `sparkforge`. O mecanismo `mcp`
+Um subagente Devin pode chamar as tools MCP do `sparkforge-aws`. O mecanismo `mcp`
 declarado hoje em `parity.yaml` não é perdido dentro de um subagente.
 
 ---

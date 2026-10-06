@@ -1,4 +1,4 @@
-"""Testes de sparkforge.collect.aws com um cliente boto3 falso injetado.
+"""Testes de sparkforge_aws.collect.aws com um cliente boto3 falso injetado.
 
 Nunca chama AWS de verdade. `require_boto3` e monkeypatchado para devolver
 um objeto `FakeBoto3` cujo `.client(name)` devolve um stub com exatamente os
@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.collect import aws
-from sparkforge.collect.base import CollectorUnavailable, load_manifest, verify_all
+from sparkforge_aws.collect import aws
+from sparkforge_aws.collect.base import CollectorUnavailable, load_manifest, verify_all
 
 
 class FakeS3Client:
@@ -254,7 +254,7 @@ class TestCollectEventLog:
             raise CollectorUnavailable(
                 "boto3 nao disponivel. Instale com `pip install 'sparkforge-aws[aws]'` "
                 "para usar coletores AWS, ou colete o artefato manualmente (AWS CLI ou "
-                "console) e registre-o com `sparkforge.collect.register_artifact`."
+                "console) e registre-o com `sparkforge_aws.collect.register_artifact`."
             )
 
         monkeypatch.setattr(aws, "require_boto3", boom)
@@ -736,7 +736,7 @@ class TestCollectEmrCluster:
         """O contrato entre coletor e extrator, provado ponta a ponta: o
         arquivo que este coletor grava tem que produzir facts, nao
         `emr.unresolved`."""
-        from sparkforge.facts.emr_cluster import extract_emr_cluster_path
+        from sparkforge_aws.facts.emr_cluster import extract_emr_cluster_path
 
         _, entry, _ = self._collect(tmp_path, monkeypatch)
         facts = extract_emr_cluster_path(tmp_path / entry.path, repo_root=tmp_path)
@@ -838,7 +838,7 @@ class TestCollectEmrServerless:
 
     def test_the_written_artifact_is_readable_by_the_extractor(self, tmp_path, monkeypatch):
         """O contrato entre coletor e extrator, provado ponta a ponta."""
-        from sparkforge.facts.emr_serverless import extract_emr_serverless_path
+        from sparkforge_aws.facts.emr_serverless import extract_emr_serverless_path
 
         _, entry, _ = self._collect(tmp_path, monkeypatch)
         facts = extract_emr_serverless_path(tmp_path / entry.path, repo_root=tmp_path)
@@ -861,7 +861,7 @@ class TestCollectEmrServerless:
         falta o artefato e nao sabe como obte-lo."""
         _, entry, _ = self._collect(tmp_path, monkeypatch)
         assert entry.collect_command == (
-            "sparkforge collect emr-serverless --application-id 00fEXAMPLE"
+            "sparkforge-aws collect emr-serverless --application-id 00fEXAMPLE"
         )
 
 
@@ -925,7 +925,7 @@ class TestCollectEmrEks:
     def test_the_written_artifact_is_readable_by_the_extractor(self, tmp_path, monkeypatch):
         """O contrato entre coletor e extrator, provado ponta a ponta: se o
         shape divergir, este teste fica vermelho."""
-        from sparkforge.facts.emr_eks import extract_emr_eks_path
+        from sparkforge_aws.facts.emr_eks import extract_emr_eks_path
 
         _, entry, _ = self._collect(tmp_path, monkeypatch)
         facts = extract_emr_eks_path(tmp_path / entry.path, repo_root=tmp_path)
@@ -946,7 +946,7 @@ class TestCollectEmrEks:
 
 class TestCollectVerifyIntegration:
     def test_verify_reports_missing_artifact_with_its_recollect_command(self, tmp_path):
-        from sparkforge.collect.base import ArtifactEntry, register_artifact
+        from sparkforge_aws.collect.base import ArtifactEntry, register_artifact
 
         entry = ArtifactEntry(
             kind="event_log",
@@ -954,7 +954,8 @@ class TestCollectVerifyIntegration:
             sha256="a" * 64,
             source="s3://bucket/prefix/jr_missing/",
             collect_command=(
-                "sparkforge collect event-log --job-run jr_missing --bucket bucket --prefix prefix"
+                "sparkforge-aws collect event-log --job-run jr_missing"
+                " --bucket bucket --prefix prefix"
             ),
             collected_at="2026-07-29T00:00:00Z",
         )
@@ -993,7 +994,7 @@ class TestCloudwatchStatPerMetric:
     nao produzir."""
 
     def test_counter_metrics_use_sum(self):
-        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+        from sparkforge_aws.collect.aws import CLOUDWATCH_METRICS
 
         stats = dict(CLOUDWATCH_METRICS)
         assert stats["glue.error.ALL"] == "Sum"
@@ -1001,25 +1002,25 @@ class TestCloudwatchStatPerMetric:
 
     def test_percentage_metrics_use_maximum_not_average(self):
         """Pico de heap e o que importa para diagnosticar OOM; a media esconde o pico."""
-        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+        from sparkforge_aws.collect.aws import CLOUDWATCH_METRICS
 
         stats = dict(CLOUDWATCH_METRICS)
         assert stats["glue.driver.memory.heap.used.percentage"] == "Maximum"
         assert stats["glue.ALL.memory.heap.used.percentage"] == "Maximum"
 
     def test_skewness_uses_maximum(self):
-        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+        from sparkforge_aws.collect.aws import CLOUDWATCH_METRICS
 
         assert dict(CLOUDWATCH_METRICS)["glue.driver.skewness.job"] == "Maximum"
 
     def test_aws_three_t_spelling_is_preserved(self):
-        from sparkforge.collect.aws import CLOUDWATCH_METRIC_NAMES
+        from sparkforge_aws.collect.aws import CLOUDWATCH_METRIC_NAMES
 
         assert "glue.driver.bytesWrittten" in CLOUDWATCH_METRIC_NAMES
         assert "glue.driver.bytesWritten" not in CLOUDWATCH_METRIC_NAMES
 
     def test_every_metric_declares_a_known_stat(self):
-        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+        from sparkforge_aws.collect.aws import CLOUDWATCH_METRICS
 
         valid = {"Average", "Sum", "Maximum", "Minimum", "SampleCount"}
         for name, stat in CLOUDWATCH_METRICS:
@@ -1053,7 +1054,7 @@ class TestEventLogListingIsRobust:
         return _S3()
 
     def test_pagination_is_followed_so_a_long_log_is_not_truncated(self, monkeypatch, tmp_path):
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         pages = [
             {"Contents": [{"Key": "p/jr/1"}], "IsTruncated": True, "NextContinuationToken": "t"},
@@ -1069,7 +1070,7 @@ class TestEventLogListingIsRobust:
     def test_falls_back_to_parent_prefix_when_layout_differs(self, monkeypatch, tmp_path):
         """Layout diferente do esperado degrada para 'achei por outro caminho',
         nao para 'nenhum objeto' com o log existindo."""
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         pages = [
             {"Contents": [], "IsTruncated": False},
@@ -1082,7 +1083,7 @@ class TestEventLogListingIsRobust:
         assert '{"Event":"C"}' in (tmp_path / aws.event_log_path("jr")).read_text(encoding="utf-8")
 
     def test_error_names_the_manual_alternative(self, monkeypatch, tmp_path):
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         client = self._client([], {})
         fake = type("B", (), {"client": lambda *_: client})()
@@ -1101,14 +1102,14 @@ class TestLakeFormationTrapIsNamed:
     def test_iceberg_sections_are_documented_in_the_module(self):
         import inspect
 
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         source = inspect.getsource(aws)
         assert "Lake Formation" in source
         assert "AccessDeniedException" in source
 
     def test_access_denied_error_points_at_lake_formation(self, monkeypatch, tmp_path):
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         class _Athena:
             def start_query_execution(self, **_):

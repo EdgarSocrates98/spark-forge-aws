@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 import yaml
 
-from sparkforge.facts import cloudwatch_retention as cwr
+from sparkforge_aws.facts import cloudwatch_retention as cwr
 
 
 class TestTable:

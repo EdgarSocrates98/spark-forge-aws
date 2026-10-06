@@ -8,7 +8,7 @@ upstream:
   path: docs/sdd/STREAMING_PROGRESS_OBSERVABILITY_DEPTH/define.md
   sha256: "3809b9f099e0c644969bde481f0c1a16f239f6e208dacdadb67ae334b4ce4d1d"
 files:
-  - {path: sparkforge/facts/streaming.py, action: modify, reason: "agregar span temporal, duração, memória do state e watermark com unresolved explícito"}
+  - {path: sparkforge_aws/facts/streaming.py, action: modify, reason: "agregar span temporal, duração, memória do state e watermark com unresolved explícito"}
   - {path: rules/catalog/streaming.yaml, action: modify, reason: "adicionar findings para watermark parado e crescimento de memória observado"}
   - {path: tests/test_facts_streaming.py, action: modify, reason: "provar resumo e lacunas temporais antes do código"}
   - {path: tests/test_streaming_rules.py, action: modify, reason: "provar runtime/evidence gates das regras novas"}
@@ -44,11 +44,11 @@ covers:
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category streaming`: regras atuais SF-STREAM-001 a
+- `sparkforge-aws rules lookup --category streaming`: regras atuais SF-STREAM-001 a
   SF-STREAM-003 exigem runtime e série observada; elas não autorizam causa.
 - `knowledge/streaming-reliability.md`: separa progress, transporte, state,
   watermark e sink, e declara que uma amostra não sustenta tendência.
-- `sparkforge/facts/streaming.py`: já emite fatos públicos de batch, event time
+- `sparkforge_aws/facts/streaming.py`: já emite fatos públicos de batch, event time
   e state operator; o novo resumo não lê checkpoint interno nem chama provider.
 - `prompt_evo_streaming.md`, seções 7, 8, 19, 24, 40, 44 e 50: exige facts
   temporais compactos, unresolved, regras evidence-first e economia de contexto.

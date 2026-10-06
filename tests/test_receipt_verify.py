@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.receipt import verify
+from sparkforge_aws.receipt import verify
 from tests.test_receipt_build import FACTS, emitir, montar_case
 
 SPANS = [

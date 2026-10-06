@@ -18,8 +18,8 @@
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/facts/exception.py` | deriva `spark.exception` e `spark.exception.frame` |
-| `sparkforge/collect/cloudwatch_logs.py` | coletor de log group |
+| `sparkforge_aws/facts/exception.py` | deriva `spark.exception` e `spark.exception.frame` |
+| `sparkforge_aws/collect/cloudwatch_logs.py` | coletor de log group |
 | `rules/catalog/errors.yaml` | regras `SF-ERR-*` |
 | `tests/test_facts_exception.py` | testes do extrator |
 | `tests/test_errors_signature_fact.py` | testes do matcher-como-extrator |
@@ -29,9 +29,9 @@
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/errors/matcher.py` | consome fact, emite fact, perde `confidence`/`fixes` |
-| `sparkforge/adapters/tools.py` | tool do coletor (69 → 70) |
-| `sparkforge/adapters/_core.py` | verbo de coleta |
+| `sparkforge_aws/errors/matcher.py` | consome fact, emite fact, perde `confidence`/`fixes` |
+| `sparkforge_aws/adapters/tools.py` | tool do coletor (69 → 70) |
+| `sparkforge_aws/adapters/_core.py` | verbo de coleta |
 | `rules/catalog/routing.yaml` | rota da área `SF-ERR` |
 | `agents/*.md` | coordenador que declara a área |
 
@@ -40,7 +40,7 @@
 ## Task 1: `spark.exception` — estruturar o texto que já existe — ENTREGUE (2026-09-08, `deb08f2`)
 
 **Files:**
-- Create: `sparkforge/facts/exception.py`
+- Create: `sparkforge_aws/facts/exception.py`
 - Test: `tests/test_facts_exception.py`
 
 - [x] **Step 1: Medir o artefato real antes de escrever**
@@ -71,8 +71,8 @@ O artefato nao falta: `attrs.reason` E a excecao com a pilha, ja redigida por
 
 from __future__ import annotations
 
-from sparkforge.facts.exception import build_exceptions
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.exception import build_exceptions
+from sparkforge_aws.findings.models import Fact
 
 _PILHA = (
     "org.apache.spark.SparkException: Job aborted due to stage failure\n"
@@ -143,7 +143,7 @@ Expected: FAIL com `ModuleNotFoundError`
 
 - [x] **Step 4: Escrever o extrator**
 
-`sparkforge/facts/exception.py`, no molde de `bridge.py` — **derivação pura
+`sparkforge_aws/facts/exception.py`, no molde de `bridge.py` — **derivação pura
 sobre facts, sem ler artefato**:
 
 ```python
@@ -164,7 +164,7 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EMITTED_KINDS = frozenset(
     {"spark.exception", "spark.exception.frame", "spark.exception.unresolved"}
@@ -259,7 +259,7 @@ TOKENSAVE_DISABLE_GREP_HOOK=1 grep -rln "bridge" tests/test_facts_*.py tests/tes
 - [x] **Step 7: Commit**
 
 ```bash
-git add sparkforge/facts/exception.py tests/test_facts_exception.py
+git add sparkforge_aws/facts/exception.py tests/test_facts_exception.py
 git commit -F <arquivo>
 ```
 
@@ -268,7 +268,7 @@ git commit -F <arquivo>
 ## Task 2: o matcher vira extrator — ENTREGUE (2026-09-08, `d07a161`)
 
 **Files:**
-- Modify: `sparkforge/errors/matcher.py`
+- Modify: `sparkforge_aws/errors/matcher.py`
 - Test: `tests/test_errors_signature_fact.py`
 
 - [x] **Step 1: Escrever o teste que falha**
@@ -283,8 +283,8 @@ regra do catalogo, nao dele -- e por isso `confidence`, `fixes` e
 
 from __future__ import annotations
 
-from sparkforge.errors.matcher import build_signature_matches
-from sparkforge.findings.models import Fact
+from sparkforge_aws.errors.matcher import build_signature_matches
+from sparkforge_aws.findings.models import Fact
 
 
 def _exc(classe: str) -> Fact:
@@ -339,7 +339,7 @@ e `build_signature_matches(facts) -> list[Fact]`, que:
 - **não** carrega `likely_causes`, `fixes`, `diagnostic_steps` nem `confidence`.
 
 **`match_log` e `ErrorMatchResult` continuam existindo** — a CLI
-`sparkforge forge errors match` os usa e não é escopo desta tarefa. Mas
+`sparkforge-aws forge errors match` os usa e não é escopo desta tarefa. Mas
 acrescente comentário sobre `confidence=0.98` dizendo que ele é constante
 literal, que a regra 28 o fecha, e que o caminho de fact não o carrega.
 
@@ -471,12 +471,12 @@ python -m pytest tests/test_fixtures_kind_coverage.py tests/test_fixtures_golden
 ## Task 5: coletor de CloudWatch Logs — ENTREGUE (2026-09-09, `d35d5d4` e `2407005`)
 
 **Files:**
-- Create: `sparkforge/collect/cloudwatch_logs.py`
-- Modify: `sparkforge/adapters/_core.py`, `sparkforge/adapters/tools.py`
+- Create: `sparkforge_aws/collect/cloudwatch_logs.py`
+- Modify: `sparkforge_aws/adapters/_core.py`, `sparkforge_aws/adapters/tools.py`
 
 - [x] **Step 1: Ler o coletor de métricas como molde**
 
-`sparkforge/facts/cloudwatch.py` e `_core.collect_cloudwatch` (linha ~4370).
+`sparkforge_aws/facts/cloudwatch.py` e `_core.collect_cloudwatch` (linha ~4370).
 **Medido: ele lê só métricas (`CLOUDWATCH_METRICS`), nunca log group.**
 
 - [x] **Step 2: Escrever o coletor**
@@ -495,7 +495,7 @@ Recusa nomeada: log group inexistente, sem permissão ou vazio →
 ```bash
 python scripts/check_surface_lock.py          # antes, anote os bytes
 python scripts/check_surface_lock.py --update # depois
-python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))"  # 70
+python -c "from sparkforge_aws.adapters.tools import TOOLS; print(len(TOOLS))"  # 70
 ```
 
 - [x] **Step 4: Commit** declarando o crescimento em bytes.
@@ -510,7 +510,7 @@ python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))"  # 70
 python scripts/check_vnext_claims.py
 python scripts/check_status_numbers.py --strict
 python scripts/check_surface_lock.py
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 python -m pytest tests/test_suite_batches.py -q
 ```
 

@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_engine import DeterministicDecisionEngine, candidate_routes
-from sparkforge.economy.decision_models import DecisionInput, DecisionStatus
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_engine import DeterministicDecisionEngine, candidate_routes
+from sparkforge_aws.economy.decision_models import DecisionInput, DecisionStatus
 
 ROOT = Path(__file__).resolve().parents[1]
 

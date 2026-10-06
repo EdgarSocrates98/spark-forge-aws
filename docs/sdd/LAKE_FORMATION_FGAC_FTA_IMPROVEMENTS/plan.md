@@ -9,11 +9,11 @@ upstream:
   sha256: "9403467aad378839d560f0abddaf07b7bb341d6409b7d9c27708c45efea7fc10"
 tasks:
   - id: T1
-    files: [tests/test_lakeformation_fgac_fta_improvements.py, sparkforge/lakeformation/architecture.py]
+    files: [tests/test_lakeformation_fgac_fta_improvements.py, sparkforge_aws/lakeformation/architecture.py]
     covers: [AC1, AC2, AC3, AC4, AC5]
     test: {path: tests/test_lakeformation_fgac_fta_improvements.py, name: test_capability_statuses_are_enforced}
   - id: T2
-    files: [tests/test_lakeformation_fgac_fta_improvements.py, sparkforge/lakeformation/catalog_routing.py]
+    files: [tests/test_lakeformation_fgac_fta_improvements.py, sparkforge_aws/lakeformation/catalog_routing.py]
     covers: [AC2, AC3, AC7]
     test: {path: tests/test_lakeformation_fgac_fta_improvements.py, name: test_catalog_ids_have_semantic_comparisons}
   - id: T3

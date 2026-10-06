@@ -4,6 +4,16 @@
 
 Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a tool só lê, grava em disco local ou acessa a AWS.
 
+## agentops
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_agentops_baseline`](sparkforge_agentops_baseline.md) | grava local | Salva ou compara baseline AgentOps em arquivo local content-addressed por run declarado. |
+| [`sparkforge_agentops_compare`](sparkforge_agentops_compare.md) | só leitura | Compara dois runs AgentOps locais sem atribuir causa ou converter bytes em tokens. |
+| [`sparkforge_agentops_critical_path`](sparkforge_agentops_critical_path.md) | só leitura | Caminho critico medido do run (duracao observada, nao o DAG do metodo CPM): maiores duracoes, retries e waiting entre spans consecutivos. |
+| [`sparkforge_agentops_inspect`](sparkforge_agentops_inspect.md) | só leitura | Inspeciona um run AgentOps local, com evidencia e desperdicio observado. |
+| [`sparkforge_agentops_timeline`](sparkforge_agentops_timeline.md) | só leitura | Linha do tempo de um run local: eventos por lane (task/context/routing/agent/model/tool/review/debate/checkpoint). |
+
 ## analyze
 
 | Tool | Efeito | O que faz |
@@ -91,7 +101,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 |---|---|---|
 | [`sparkforge_change_plan`](sparkforge_change_plan.md) | só leitura | Autonomia L1 (§15, produce change): o diff unificado e o diff de rollback de um VALOR de configuracao Spark, achado pela procedencia dos facts -- `tf.spark_conf` (so o par `chav... |
 | [`sparkforge_change_propose`](sparkforge_change_propose.md) | grava local | Autonomia L3 (§15, propose change): monta o pacote de um PR em `.sparkforge/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id que `sparkforge_change_sandbox`... |
-| [`sparkforge_change_sandbox`](sparkforge_change_sandbox.md) | grava local | Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do `sparkforge change plan --out` ou de `git diff`) numa COPIA do repositorio em `.sparkforge/sandbox... |
+| [`sparkforge_change_sandbox`](sparkforge_change_sandbox.md) | grava local | Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do `sparkforge-aws change plan --out` ou de `git diff`) numa COPIA do repositorio em `.sparkforge/san... |
 
 ## code
 
@@ -135,6 +145,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_context_expand`](sparkforge_context_expand.md) | só leitura | Resolve uma ref ctx://v1 no cache local, valida integridade SHA-256 e escopo autorizado antes de devolver o payload sob max_bytes. |
+| [`sparkforge_context_inspect`](sparkforge_context_inspect.md) | só leitura | Inspeciona qualidade de contexto fornecido pelo chamador. |
 | [`sparkforge_context_start`](sparkforge_context_start.md) | só leitura | Context Gateway deterministico: descobre capabilities relevantes, seleciona contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. |
 
 ## controlm
@@ -163,6 +174,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_doctor`](sparkforge_doctor.md) | só leitura | Confere se o ambiente esta pronto, em treze checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codig... |
+| [`sparkforge_doctor_agentic`](sparkforge_doctor_agentic.md) | só leitura | Confere readiness local do plano agêntico sem rede ou provider. |
 
 ## dq
 
@@ -244,7 +256,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 
 | Tool | Efeito | O que faz |
 |---|---|---|
-| [`sparkforge_next_step`](sparkforge_next_step.md) | só leitura | Decide o proximo passo (skill recomendada) a partir de routing.yaml -- o mesmo motor declarativo de sparkforge.rules.engine, mas sobre o estado do case e os achados atuais, nunc... |
+| [`sparkforge_next_step`](sparkforge_next_step.md) | só leitura | Decide o proximo passo (skill recomendada) a partir de routing.yaml -- o mesmo motor declarativo de sparkforge_aws.rules.engine, mas sobre o estado do case e os achados atuais,... |
 
 ## pack
 

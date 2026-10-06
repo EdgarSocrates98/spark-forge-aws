@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.mcp_compact import CompactRouter
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.mcp_compact import CompactRouter
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 
 def test_cli_full_mcp_and_compact_read_share_canonical_result(tmp_path, capsys):

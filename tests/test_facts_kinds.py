@@ -1,6 +1,6 @@
 import textwrap
 
-from sparkforge.facts.pyspark_ast import extract_source
+from sparkforge_aws.facts.pyspark_ast import extract_source
 
 EXPECTED_KINDS = {
     "pyspark.read",
@@ -55,7 +55,7 @@ def test_kind_namespace_is_complete_and_documented():
     o grafo de chamadas so conhecia funcoes que aparecem em alguma aresta, e
     uma funcao definida e nunca chamada era invisivel.
     """
-    from sparkforge.facts.pyspark_ast import EMITTED_KINDS
+    from sparkforge_aws.facts.pyspark_ast import EMITTED_KINDS
 
     assert EMITTED_KINDS == EXPECTED_KINDS
     assert len(EMITTED_KINDS) == 32

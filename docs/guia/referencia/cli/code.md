@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge code`
+# `sparkforge-aws code`
 
 Indice local de codigo: prepara, sincroniza, busca simbolo, monta contexto e diagnostica.
 
@@ -8,26 +8,26 @@ Indice local de codigo: prepara, sincroniza, busca simbolo, monta contexto e dia
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge code context`](#sparkforge-code-context) | Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento. |
-| [`sparkforge code doctor`](#sparkforge-code-doctor) | Diagnostico local do indice e da superficie. Sai 1 quando alguma checagem falha. Nao testa conectividade de internet. |
-| [`sparkforge code export`](#sparkforge-code-export) | Exporta o grafo no formato de extracao que a fonte publica. |
-| [`sparkforge code index`](#sparkforge-code-index) |  |
-| [`sparkforge code init`](#sparkforge-code-init) | Prepara o indice sob --root: preflight de seguranca, diretorio, conferencia do .gitignore, banco, indexacao e integridade. `index` e o nome antigo do mesmo comando. |
-| [`sparkforge code path`](#sparkforge-code-path) | O caminho mais curto de chamadas entre dois simbolos. Nunca o corpo. |
-| [`sparkforge code purge`](#sparkforge-code-purge) | Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro diretorio e recusado. |
-| [`sparkforge code read`](#sparkforge-code-read) | Le um trecho do repositorio, por --node-id OU por --file com faixa. Tetos duros: 250 linhas, 32 KiB, 4096 tokens. |
-| [`sparkforge code search`](#sparkforge-code-search) | Busca simbolo por parte do nome. |
-| [`sparkforge code shape`](#sparkforge-code-shape) | Comunidades e nos de maior grau. Nao e julgamento, e forma. |
-| [`sparkforge code status`](#sparkforge-code-status) | Estado do indice: frescor, contagens, seguranca e o que mudou na arvore. |
-| [`sparkforge code symbol`](#sparkforge-code-symbol) | Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo. |
-| [`sparkforge code sync`](#sparkforge-code-sync) | Poe o indice em dia com a arvore. Unica escrita do verbo. |
+| [`sparkforge-aws code context`](#sparkforge-aws-code-context) | Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento. |
+| [`sparkforge-aws code doctor`](#sparkforge-aws-code-doctor) | Diagnostico local do indice e da superficie. Sai 1 quando alguma checagem falha. Nao testa conectividade de internet. |
+| [`sparkforge-aws code export`](#sparkforge-aws-code-export) | Exporta o grafo no formato de extracao que a fonte publica. |
+| [`sparkforge-aws code index`](#sparkforge-aws-code-index) |  |
+| [`sparkforge-aws code init`](#sparkforge-aws-code-init) | Prepara o indice sob --root: preflight de seguranca, diretorio, conferencia do .gitignore, banco, indexacao e integridade. `index` e o nome antigo do mesmo comando. |
+| [`sparkforge-aws code path`](#sparkforge-aws-code-path) | O caminho mais curto de chamadas entre dois simbolos. Nunca o corpo. |
+| [`sparkforge-aws code purge`](#sparkforge-aws-code-purge) | Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro diretorio e recusado. |
+| [`sparkforge-aws code read`](#sparkforge-aws-code-read) | Le um trecho do repositorio, por --node-id OU por --file com faixa. Tetos duros: 250 linhas, 32 KiB, 4096 tokens. |
+| [`sparkforge-aws code search`](#sparkforge-aws-code-search) | Busca simbolo por parte do nome. |
+| [`sparkforge-aws code shape`](#sparkforge-aws-code-shape) | Comunidades e nos de maior grau. Nao e julgamento, e forma. |
+| [`sparkforge-aws code status`](#sparkforge-aws-code-status) | Estado do indice: frescor, contagens, seguranca e o que mudou na arvore. |
+| [`sparkforge-aws code symbol`](#sparkforge-aws-code-symbol) | Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo. |
+| [`sparkforge-aws code sync`](#sparkforge-aws-code-sync) | Poe o indice em dia com a arvore. Unica escrita do verbo. |
 
-## `sparkforge code context`
+## `sparkforge-aws code context`
 
 Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento.
 
 ```bash
-sparkforge code context --help
+sparkforge-aws code context --help
 ```
 
 ### Opções
@@ -44,12 +44,12 @@ sparkforge code context --help
 
 [`sparkforge_code_context`](../tools/sparkforge_code_context.md)
 
-## `sparkforge code doctor`
+## `sparkforge-aws code doctor`
 
 Diagnostico local do indice e da superficie. Sai 1 quando alguma checagem falha. Nao testa conectividade de internet.
 
 ```bash
-sparkforge code doctor --help
+sparkforge-aws code doctor --help
 ```
 
 ### Opções
@@ -63,12 +63,12 @@ sparkforge code doctor --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge code export`
+## `sparkforge-aws code export`
 
 Exporta o grafo no formato de extracao que a fonte publica.
 
 ```bash
-sparkforge code export --help
+sparkforge-aws code export --help
 ```
 
 ### Opções
@@ -84,10 +84,10 @@ sparkforge code export --help
 
 [`sparkforge_code_export`](../tools/sparkforge_code_export.md)
 
-## `sparkforge code index`
+## `sparkforge-aws code index`
 
 ```bash
-sparkforge code index --help
+sparkforge-aws code index --help
 ```
 
 ### Opções
@@ -101,12 +101,12 @@ sparkforge code index --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge code init`
+## `sparkforge-aws code init`
 
 Prepara o indice sob --root: preflight de seguranca, diretorio, conferencia do .gitignore, banco, indexacao e integridade. `index` e o nome antigo do mesmo comando.
 
 ```bash
-sparkforge code init --help
+sparkforge-aws code init --help
 ```
 
 ### Opções
@@ -120,12 +120,12 @@ sparkforge code init --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge code path`
+## `sparkforge-aws code path`
 
 O caminho mais curto de chamadas entre dois simbolos. Nunca o corpo.
 
 ```bash
-sparkforge code path --help
+sparkforge-aws code path --help
 ```
 
 ### Opções
@@ -143,12 +143,12 @@ sparkforge code path --help
 
 [`sparkforge_code_path`](../tools/sparkforge_code_path.md)
 
-## `sparkforge code purge`
+## `sparkforge-aws code purge`
 
 Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro diretorio e recusado.
 
 ```bash
-sparkforge code purge --help
+sparkforge-aws code purge --help
 ```
 
 ### Opções
@@ -162,12 +162,12 @@ sparkforge code purge --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge code read`
+## `sparkforge-aws code read`
 
 Le um trecho do repositorio, por --node-id OU por --file com faixa. Tetos duros: 250 linhas, 32 KiB, 4096 tokens.
 
 ```bash
-sparkforge code read --help
+sparkforge-aws code read --help
 ```
 
 ### Opções
@@ -187,12 +187,12 @@ sparkforge code read --help
 
 [`sparkforge_code_read`](../tools/sparkforge_code_read.md), [`sparkforge_code_symbol`](../tools/sparkforge_code_symbol.md)
 
-## `sparkforge code search`
+## `sparkforge-aws code search`
 
 Busca simbolo por parte do nome.
 
 ```bash
-sparkforge code search --help
+sparkforge-aws code search --help
 ```
 
 ### Opções
@@ -210,12 +210,12 @@ sparkforge code search --help
 
 [`sparkforge_code_search`](../tools/sparkforge_code_search.md)
 
-## `sparkforge code shape`
+## `sparkforge-aws code shape`
 
 Comunidades e nos de maior grau. Nao e julgamento, e forma.
 
 ```bash
-sparkforge code shape --help
+sparkforge-aws code shape --help
 ```
 
 ### Opções
@@ -231,12 +231,12 @@ sparkforge code shape --help
 
 [`sparkforge_code_shape`](../tools/sparkforge_code_shape.md)
 
-## `sparkforge code status`
+## `sparkforge-aws code status`
 
 Estado do indice: frescor, contagens, seguranca e o que mudou na arvore.
 
 ```bash
-sparkforge code status --help
+sparkforge-aws code status --help
 ```
 
 ### Opções
@@ -251,12 +251,12 @@ sparkforge code status --help
 
 [`sparkforge_code_status`](../tools/sparkforge_code_status.md), [`sparkforge_code_sync`](../tools/sparkforge_code_sync.md)
 
-## `sparkforge code symbol`
+## `sparkforge-aws code symbol`
 
 Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo.
 
 ```bash
-sparkforge code symbol --help
+sparkforge-aws code symbol --help
 ```
 
 ### Opções
@@ -273,12 +273,12 @@ sparkforge code symbol --help
 
 [`sparkforge_code_read`](../tools/sparkforge_code_read.md), [`sparkforge_code_symbol`](../tools/sparkforge_code_symbol.md)
 
-## `sparkforge code sync`
+## `sparkforge-aws code sync`
 
 Poe o indice em dia com a arvore. Unica escrita do verbo.
 
 ```bash
-sparkforge code sync --help
+sparkforge-aws code sync --help
 ```
 
 ### Opções

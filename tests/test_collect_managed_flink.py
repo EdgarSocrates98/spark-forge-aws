@@ -4,9 +4,9 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_flink
-from sparkforge.collect import managed_flink
-from sparkforge.collect.base import load_manifest
+from sparkforge_aws.adapters._core import analyze_flink
+from sparkforge_aws.collect import managed_flink
+from sparkforge_aws.collect.base import load_manifest
 
 
 class FakeManagedFlink:
@@ -176,7 +176,7 @@ def test_collector_cache_is_offline_and_manifested(monkeypatch, tmp_path):
     assert second == first
     manifest = load_manifest(tmp_path)
     assert manifest[0]["kind"] == "managed_flink_application"
-    assert manifest[0]["collect_command"].startswith("sparkforge collect managed-flink")
+    assert manifest[0]["collect_command"].startswith("sparkforge-aws collect managed-flink")
 
 
 def test_managed_flink_temporal_metrics_are_collected_and_normalized(monkeypatch, tmp_path):
@@ -265,8 +265,8 @@ def test_managed_flink_temporal_cache_is_offline(monkeypatch, tmp_path):
 
 
 def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     first_client = FakeManagedFlink()
     monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(first_client))
@@ -305,12 +305,15 @@ def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsy
         payload.pop("path")
         payload.pop("journal", None)
         payload.pop("journal_reason", None)
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        payload.pop("_trust", None)
     assert cli == mcp
 
 
 def test_cli_and_mcp_managed_flink_temporal_collection_match(monkeypatch, tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     common = {
         "application_name": "orders",
@@ -358,6 +361,9 @@ def test_cli_and_mcp_managed_flink_temporal_collection_match(monkeypatch, tmp_pa
         payload.pop("path")
         payload.pop("journal", None)
         payload.pop("journal_reason", None)
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        payload.pop("_trust", None)
     assert cli == mcp
 
 

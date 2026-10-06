@@ -7,8 +7,8 @@ viajam neste caminho.
 
 from __future__ import annotations
 
-from sparkforge.errors.matcher import build_signature_matches
-from sparkforge.findings.models import Fact
+from sparkforge_aws.errors.matcher import build_signature_matches
+from sparkforge_aws.findings.models import Fact
 
 
 def _exc(classe: str, caused_by: list[str] | None = None) -> Fact:
@@ -72,7 +72,7 @@ class TestMatcherEmiteFato:
 # `Path(__file__).parent.parent.parent / "knowledge" / "errors"`. No
 # repositorio isso da `<raiz>/knowledge/errors` e funciona; instalado por pip,
 # da `site-packages/knowledge/errors`, que NAO EXISTE -- o `force-include` do
-# `pyproject.toml` poe o diretorio em `sparkforge/knowledge`.
+# `pyproject.toml` poe o diretorio em `sparkforge_aws/knowledge`.
 #
 # O modo de falha era SILENCIOSO: `_load_signatures` devolve cedo quando o
 # diretorio nao existe, `signatures` fica vazia, e `build_signature_matches`
@@ -80,7 +80,7 @@ class TestMatcherEmiteFato:
 # pacote instalado veria "nenhuma assinatura conhecida cobre isto" sobre um
 # `NoSuchMethodError` que o catalogo conhece ha meses.
 #
-# A correcao e usar `sparkforge/knowledge_ref.py::knowledge_dir()`, que ja
+# A correcao e usar `sparkforge_aws/knowledge_ref.py::knowledge_dir()`, que ja
 # existia e ja resolvia as tres origens na ordem certa. Estes testes o prendem.
 # ---------------------------------------------------------------------------
 
@@ -90,8 +90,8 @@ class TestProcedenciaDoCatalogoDeAssinaturas:
         """Amarra o CAMINHO, e nao so o resultado: no repositorio os dois
         caminhos coincidem, entao um teste que so contasse assinaturas passaria
         com o bug de volta."""
-        from sparkforge.errors.matcher import DeterministicErrorMatcher
-        from sparkforge.knowledge_ref import knowledge_dir
+        from sparkforge_aws.errors.matcher import DeterministicErrorMatcher
+        from sparkforge_aws.knowledge_ref import knowledge_dir
 
         assert DeterministicErrorMatcher().errors_dir == knowledge_dir() / "errors"
 
@@ -99,8 +99,8 @@ class TestProcedenciaDoCatalogoDeAssinaturas:
         """Guarda contra a regressao pelo lado do efeito: catalogo vazio faz
         TODA excecao cair em `nenhuma_assinatura_casou`, e o relatorio fica
         limpo justamente onde deveria acusar."""
-        from sparkforge.errors.matcher import DeterministicErrorMatcher
-        from sparkforge.knowledge_ref import knowledge_dir
+        from sparkforge_aws.errors.matcher import DeterministicErrorMatcher
+        from sparkforge_aws.knowledge_ref import knowledge_dir
 
         # Contagem DERIVADA do disco, e nao fixada: acrescentar assinatura nao
         # pode quebrar este teste, cujo assunto e a PROCEDENCIA do diretorio.
@@ -114,7 +114,7 @@ class TestProcedenciaDoCatalogoDeAssinaturas:
         """A consequencia de usar `knowledge_dir()`: o override de ambiente
         passa a valer tambem para as assinaturas, como ja valia para o resto de
         `knowledge/`."""
-        from sparkforge.errors.matcher import DeterministicErrorMatcher
+        from sparkforge_aws.errors.matcher import DeterministicErrorMatcher
 
         vazio = tmp_path / "knowledge"
         (vazio / "errors").mkdir(parents=True)

@@ -44,14 +44,14 @@ apresentada como medição.
 ### 1.2 O achado do repositório que este documento consome
 
 **O event log carrega métrica por nó do plano, e o extrator não a lê.**
-`sparkforge/facts/event_log.py` trata `SparkListenerTaskEnd`, `StageCompleted`,
+`sparkforge_aws/facts/event_log.py` trata `SparkListenerTaskEnd`, `StageCompleted`,
 `StageExecutorMetrics`, `ExecutorAdded/Removed`, `EnvironmentUpdate`, `LogStart`,
 `ApplicationStart`. Não trata nenhum evento do namespace
 `org.apache.spark.sql.execution.ui`. Os facts que ele emite são por **stage**
 (`spark.stage.task_input` traz `total_bytes`, `p50_bytes`, `p95_bytes`, `max_bytes`), e
 stage agrega todas as leituras que caem nele.
 
-Do outro lado, `sparkforge/facts/spark_plan.py` emite `plan.file_scan` por nó de leitura,
+Do outro lado, `sparkforge_aws/facts/spark_plan.py` emite `plan.file_scan` por nó de leitura,
 com `relation`, `format`, `scan_api`, `pushed_filter_count`, `partition_filter_count` e
 contagem de colunas — **e nenhum byte**, porque o artefato dele é texto de
 `explain("formatted")`, que não carrega volume.
@@ -74,7 +74,7 @@ que §7 cria domínio de fixture próprio em vez de estender o existente.
 
 **Entra:**
 
-- Extrator novo, `sparkforge/facts/sql_metrics.py`, que lê o **mesmo artefato de event
+- Extrator novo, `sparkforge_aws/facts/sql_metrics.py`, que lê o **mesmo artefato de event
   log** com a ótica de "quanto cada fonte custou".
 - Facts `spark.sql.scan`, `spark.sql.execution`, `spark.sql.unresolved`,
   `spark.sql.analyzed`.
@@ -105,7 +105,7 @@ que §7 cria domínio de fixture próprio em vez de estender o existente.
 
 ### 3.1 Módulo novo, não crescimento do extrator de event log
 
-`sparkforge/facts/event_log.py` tem 34 KB. Acrescentar o tratamento de eventos SQL nele
+`sparkforge_aws/facts/event_log.py` tem 34 KB. Acrescentar o tratamento de eventos SQL nele
 somaria um segundo vocabulário a um módulo que já tem o seu.
 
 O precedente do repositório é o oposto de fundir: `data_quality` e `graph` leem o **mesmo
@@ -171,7 +171,7 @@ ao tratar `Final Plan` / `Initial Plan`:
 ### 3.6 Duas recusas de vazamento
 
 `description` de execução SQL pode carregar literal de query, com nome de tabela ou valor
-de dado. Passa por `sparkforge/facts/secrets.py::redact`, e `redacted: true` entra no
+de dado. Passa por `sparkforge_aws/facts/secrets.py::redact`, e `redacted: true` entra no
 fact quando houve redação — a existência da redação é ela própria um dado.
 
 `Location` do metadata do scan carrega caminho S3 completo, e **não entra no fact**. O que
@@ -257,7 +257,7 @@ usam: `line: 0` marca "isto fala do arquivo, não de um ponto dentro dele".
 ### 5.1 CLI
 
 ```
-sparkforge analyze sql-metrics --path <eventlog.jsonl> [--out F] [--kind K] [--limit N] [--cursor C]
+sparkforge-aws analyze sql-metrics --path <eventlog.jsonl> [--out F] [--kind K] [--limit N] [--cursor C]
 ```
 
 Mesma forma de `analyze event-log`: página de facts, `--out` grava a lista completa.
@@ -270,7 +270,7 @@ que as outras tools de análise usam.
 **Nenhum schema novo, e nenhuma exceção.** A entrega anterior criou
 `_ANALYZE_GLUE_FACTS_SCHEMA` com subject genérico porque os facts de `glue.job_run.*` não
 declaravam `subject.type`. Medido em 2026-08-28: aquilo não era uma limitação do enum, era
-defeito — `sparkforge/findings/schemas/fact.schema.json` **exige** `subject.type` de todo
+defeito — `sparkforge_aws/findings/schemas/fact.schema.json` **exige** `subject.type` de todo
 fact, e os oito kinds daquela entrega reprovavam em `validate_fact`. O módulo golden novo
 não chamava `validate_fact`, e por isso o gate não mordeu. Consertado em separado.
 
@@ -334,7 +334,7 @@ um cenário: cenário novo entra e a garantia continua cobrada.
 ## 8. Documentação
 
 - `knowledge/spark/sql-metrics.md` mais o YAML legível por máquina com o mapa canônico, no
-  molde de `knowledge/glue/observability.yaml` + `sparkforge/facts/cloudwatch_retention.py`
+  molde de `knowledge/glue/observability.yaml` + `sparkforge_aws/facts/cloudwatch_retention.py`
   que a entrega anterior estabeleceu. Fonte em `knowledge/sources.lock.json` com URL,
   `retrieved` e sha256, e o `.md` apontando para o YAML em vez de repetir a tabela.
 - `README.md`: a linha do verbo novo na tabela de extração, e os números de extratores e

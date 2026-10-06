@@ -8,8 +8,8 @@ upstream:
   path: docs/sdd/SDD_ENDURECIMENTO/define.md
   sha256: "fbeea62763d25acb4c019524e08513be84b2cb9a3aebc8c1d8bb00ada49c4b05"
 files:
-  - {path: sparkforge/sdd/checks.py, action: modify, reason: "historia so com a evidencia sumida, gate da evidence do ship, moved_change_mismatch, relatorio confinado"}
-  - {path: sparkforge/sdd/schema/ship.json, action: modify, reason: "campo opcional evidence: [{change_id, report_sha256}]"}
+  - {path: sparkforge_aws/sdd/checks.py, action: modify, reason: "historia so com a evidencia sumida, gate da evidence do ship, moved_change_mismatch, relatorio confinado"}
+  - {path: sparkforge_aws/sdd/schema/ship.json, action: modify, reason: "campo opcional evidence: [{change_id, report_sha256}]"}
   - {path: tests/test_sdd.py, action: modify, reason: "AC1 a AC6 e AC9; feature_limpa operator passa a gravar evidence"}
   - {path: tests/test_sdd_operator.py, action: modify, reason: "AC8 e AC10"}
   - {path: tests/test_sdd_eval_suite.py, action: modify, reason: "AC11"}
@@ -28,7 +28,7 @@ decisions:
     rejected: ["manter o desligamento total depois do ship done, que aceita change_id fabricado", "conferir sempre, que recusa todo sandbox limpo depois da entrega"]
     rollback: "git revert do commit da tarefa T3."
   - id: D2
-    choice: "ship.evidence e obrigatorio no operator: uma entrada {change_id, report_sha256} para cada change_id que a feature cita (o do build, o de moved e o de finding explicito). Sem entrada, ship_evidence_missing; relatorio presente com text_sha256 diferente, ship_evidence_mismatch. Todo relatorio presente precisa casar: sandbox/report.json e proposal/evidence/sandbox_report.json sao a mesma serializacao (sparkforge/change/sandbox.py e sparkforge/change/proposal.py::_json)."
+    choice: "ship.evidence e obrigatorio no operator: uma entrada {change_id, report_sha256} para cada change_id que a feature cita (o do build, o de moved e o de finding explicito). Sem entrada, ship_evidence_missing; relatorio presente com text_sha256 diferente, ship_evidence_mismatch. Todo relatorio presente precisa casar: sandbox/report.json e proposal/evidence/sandbox_report.json sao a mesma serializacao (sparkforge_aws/change/sandbox.py e sparkforge_aws/change/proposal.py::_json)."
     rejected: ["guardar o relatorio inteiro no ship, que duplica o artefato e nao prova mais que o hash", "aceitar se qualquer um dos relatorios casar, que deixa um relatorio forjado ao lado do legitimo"]
     rollback: "git revert do commit da tarefa T3; o campo e opcional no schema, entao ships antigos continuam validos no dev."
   - id: D3

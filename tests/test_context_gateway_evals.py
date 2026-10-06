@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.context.gateway_models import GatewayProfile, GatewayRequest
 
 
 def test_fixture_like_case_reports_bytes_separately_from_host_tokens() -> None:

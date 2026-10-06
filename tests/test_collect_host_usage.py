@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.collect.host_usage import read_host_usage
+from sparkforge_aws.collect.host_usage import read_host_usage
 
 
 def _transcript(tmp_path, linhas):

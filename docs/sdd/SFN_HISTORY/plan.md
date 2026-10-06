@@ -9,15 +9,15 @@ upstream:
   sha256: "8db52096b630ed396b87a19016cb3b7fbe88e6fe0c800a3001c48aeb8f439485"
 tasks:
   - id: T1
-    files: [sparkforge/facts/sfn_history.py, tests/test_sfn_history.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [sparkforge_aws/facts/sfn_history.py, tests/test_sfn_history.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_sfn_history.py, name: test_historico_vira_execucao_e_tentativas}
   - id: T2
-    files: [tests/test_sfn_history.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_adapters_tools.py, tests/test_harness_authorization.py, tests/test_fixtures_golden_mcp_parity.py, parity.yaml, manifest.json, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, docs/surface.lock.json, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_sfn_history.md, docs/guia/referencia/cli/analyze.md, docs/guia/referencia/agents/glue-infra-reviewer.md, docs/guia/06-extrair-julgar-compor.md, docs/superpowers/STATUS.md, README.md, CLAUDE.md, AGENTS.md, GUIA_DE_USO.md, .devin/README.md, docs/harness/AUTHORIZATION-CHAIN.md, docs/harness/CURRENT-HARNESS-GAP.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_sfn_history.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_adapters_tools.py, tests/test_harness_authorization.py, tests/test_fixtures_golden_mcp_parity.py, parity.yaml, manifest.json, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, docs/surface.lock.json, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_sfn_history.md, docs/guia/referencia/cli/analyze.md, docs/guia/referencia/agents/glue-infra-reviewer.md, docs/guia/06-extrair-julgar-compor.md, docs/superpowers/STATUS.md, README.md, CLAUDE.md, AGENTS.md, GUIA_DE_USO.md, .devin/README.md, docs/harness/AUTHORIZATION-CHAIN.md, docs/harness/CURRENT-HARNESS-GAP.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC7]
     test: {path: tests/test_sfn_history.py, name: test_cli_e_tool_devolvem_os_mesmos_facts}
   - id: T3
-    files: [tests/test_sfn_history.py, sparkforge/facts/sfn_history.py, sparkforge/facts/fusion.py, rules/catalog/sfn-history.yaml, rules/catalog/routing.yaml, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, fixtures/sfn_history, tests/test_fixtures_golden_sfn_history.py, scripts/regen_fixtures.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py, tests/test_databricks_rule_audit.py, sparkforge/agentic/executor/debate_evidence.py, docs/agentic-evolution-report.md, fixtures/debate/retomada/expected/brief.json, manifest.json, knowledge/sources.lock.json, docs/guia/referencia/agents/glue-infra-reviewer.md, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json, fixtures/scenarios/glue_60_fgac_com_jar/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, evals/holdout/lote_misto_iceberg_parquet/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/guia/07-conhecimento-e-catalogo.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_sfn_history.py, sparkforge_aws/facts/sfn_history.py, sparkforge_aws/facts/fusion.py, rules/catalog/sfn-history.yaml, rules/catalog/routing.yaml, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, fixtures/sfn_history, tests/test_fixtures_golden_sfn_history.py, scripts/regen_fixtures.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py, tests/test_databricks_rule_audit.py, sparkforge_aws/agentic/executor/debate_evidence.py, docs/agentic-evolution-report.md, fixtures/debate/retomada/expected/brief.json, manifest.json, knowledge/sources.lock.json, docs/guia/referencia/agents/glue-infra-reviewer.md, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json, fixtures/scenarios/glue_60_fgac_com_jar/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, evals/holdout/lote_misto_iceberg_parquet/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/guia/07-conhecimento-e-catalogo.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC4, AC5, AC6, AC8]
     test: {path: tests/test_fixtures_golden_sfn_history.py, name: test_golden}
   - id: T4
@@ -47,7 +47,7 @@ tasks:
 - Edição por ferramenta (Edit/Write), fim de linha LF. `rules/catalog/routing.yaml` tem
   BOM: edite com Edit, nunca reescreva o arquivo inteiro.
 - Arquivo `.py` novo do pacote entra no índice (`git add <arquivo>`) **antes** de
-  qualquer teste: `tests/test_arvore_versionada.py` reprova `.py` de `sparkforge/**`
+  qualquer teste: `tests/test_arvore_versionada.py` reprova `.py` de `sparkforge_aws/**`
   fora do git.
 - **`python scripts/sync_skills.py` e `tests/test_agents_parity.py` apagam o
   `.claude/agents/README.md` não rastreado.** Antes de cada um:
@@ -199,7 +199,7 @@ Glue e a lacuna U1, e por isso o extrator le tres formas e nomeia o que nao reco
 """
 import json
 
-from sparkforge.facts.sfn_history import (
+from sparkforge_aws.facts.sfn_history import (
     extract_sfn_history,
     extract_sfn_history_path,
     extract_sfn_history_tree,
@@ -461,12 +461,12 @@ git add tests/test_sfn_history.py
 python -m pytest tests/test_sfn_history.py -q
 ```
 
-Falha esperada: `ModuleNotFoundError: No module named 'sparkforge.facts.sfn_history'` na
+Falha esperada: `ModuleNotFoundError: No module named 'sparkforge_aws.facts.sfn_history'` na
 coleta — o módulo ausente é a unidade sob teste.
 
 ### 3. Código mínimo
 
-`sparkforge/facts/sfn_history.py` (arquivo novo, inteiro):
+`sparkforge_aws/facts/sfn_history.py` (arquivo novo, inteiro):
 
 ```python
 """Extrator de Facts a partir do HISTORICO de execucao do AWS Step Functions.
@@ -524,7 +524,7 @@ Cadeia que chega a raiz sem achar, evento referenciado ausente do arquivo, ou ci
 
 ## Tres atributos DERIVADOS aqui (regra 33)
 
-`sparkforge/rules/expr.py` tem seis comparadores e nenhuma funcao, e `where` so compara
+`sparkforge_aws/rules/expr.py` tem seis comparadores e nenhuma funcao, e `where` so compara
 por igualdade. Os tres predicados que as regras precisam sao derivados no extrator:
 
 - `execution_outcome_class`: `stopped` para `ExecutionAborted` e `ExecutionTimedOut`,
@@ -552,9 +552,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from sparkforge.facts import scan
-from sparkforge.facts.scan import iter_source_files
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.facts import scan
+from sparkforge_aws.facts.scan import iter_source_files
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "sfn_history@0.1.0"
 
@@ -1202,7 +1202,7 @@ razões que o código emite, a lista do docstring é que se corrige, nunca o con
 ### 4. Rodar e ver passar
 
 ```bash
-git add sparkforge/facts/sfn_history.py
+git add sparkforge_aws/facts/sfn_history.py
 python -m pytest tests/test_sfn_history.py -q
 ```
 
@@ -1215,7 +1215,7 @@ o módulo ainda **NÃO** entra nas duas listas manuais: entra em T3, no mesmo co
 golden.
 
 ```bash
-python -m ruff check sparkforge/facts/sfn_history.py tests/test_sfn_history.py
+python -m ruff check sparkforge_aws/facts/sfn_history.py tests/test_sfn_history.py
 python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q
 python -m pytest tests/test_facts_scan.py tests/test_harness_untrusted.py tests/test_databricks_rule_audit.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py -q
@@ -1263,7 +1263,7 @@ novo até `exit 0`.
 
 `feat(facts): read AWS Step Functions execution history into sfn.* facts`
 
-Arquivos: `sparkforge/facts/sfn_history.py`, `tests/test_sfn_history.py`,
+Arquivos: `sparkforge_aws/facts/sfn_history.py`, `tests/test_sfn_history.py`,
 `docs/superpowers/STATUS.md`, `README.md`, `docs/guia/06-extrair-julgar-compor.md`,
 `docs/harness/CODEINTEL-GAP.md`, `docs/claims.lock.json`.
 
@@ -1275,8 +1275,8 @@ Acrescente ao fim de `tests/test_sfn_history.py`:
 
 ```python
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     entrada = tmp_path / "entrada"
     entrada.mkdir()
@@ -1299,7 +1299,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["unresolved"] == 0
 
     erro = call_tool("sparkforge_analyze_sfn_history", {"path": str(tmp_path / "nao-existe")})
-    assert "sparkforge analyze sfn-history" in erro["error"]
+    assert "sparkforge-aws analyze sfn-history" in erro["error"]
 ```
 
 ### 2. Rodar e ver falhar
@@ -1312,22 +1312,22 @@ Falha esperada: `SystemExit: 2` do argparse (`invalid choice: 'sfn-history'`).
 
 ### 3. Código mínimo
 
-**`sparkforge/adapters/_core.py`** — import. Troque
+**`sparkforge_aws/adapters/_core.py`** — import. Troque
 
 ```python
-from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
-from sparkforge.facts.spark_plan import extract_plan_path
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
+from sparkforge_aws.facts.spark_plan import extract_plan_path
 ```
 
 por
 
 ```python
-from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
-from sparkforge.facts.sfn_history import (
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
+from sparkforge_aws.facts.sfn_history import (
     extract_sfn_history_path,
     extract_sfn_history_tree,
 )
-from sparkforge.facts.spark_plan import extract_plan_path
+from sparkforge_aws.facts.spark_plan import extract_plan_path
 ```
 
 E a função pública, logo depois da de Step Functions. Troque
@@ -1364,7 +1364,7 @@ def _extract_sfn_history_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o JSON salvo de `aws stepfunctions get-execution-history`,\n"
             f"  ou para o diretorio com eles:\n"
-            f"    sparkforge analyze sfn-history --path historicos/ "
+            f"    sparkforge-aws analyze sfn-history --path historicos/ "
             f"--out .sparkforge/facts_sfn_history.json",
             exit_code=2,
         )
@@ -1384,7 +1384,7 @@ def analyze_sfn_history(
     return _facts_page(facts, "sfn.unresolved", kind, limit, cursor, detail_level)
 ```
 
-**`sparkforge/adapters/cli.py`** — subcomando. Troque
+**`sparkforge_aws/adapters/cli.py`** — subcomando. Troque
 
 ```python
     _add_detail_level(sfn_analyze_p)
@@ -1455,7 +1455,7 @@ por
     ("analyze", "sfn-history"): _cmd_analyze_sfn_history,
 ```
 
-**`sparkforge/adapters/tools.py`** — declaração. O bloco novo entra **imediatamente
+**`sparkforge_aws/adapters/tools.py`** — declaração. O bloco novo entra **imediatamente
 antes** da linha `    "sparkforge_analyze_step_functions": {` do dicionário `TOOLS` (é a
 única ocorrência dela ali). Troque
 
@@ -1804,7 +1804,7 @@ python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/tes
 python -m pytest tests/test_router_agents.py -q
 python -m pytest tests/test_harness_authorization.py tests/test_capability_parity.py tests/test_adapters_code_surface.py tests/test_mcp_modern_era.py -q
 python -m pytest tests/test_fixtures_golden_mcp_parity.py -q
-python -m ruff check sparkforge/adapters tests/test_sfn_history.py tests/test_adapters_tools.py tests/test_harness_authorization.py
+python -m ruff check sparkforge_aws/adapters tests/test_sfn_history.py tests/test_adapters_tools.py tests/test_harness_authorization.py
 ```
 
 (backup e devolução do `.claude/agents/README.md` em volta do sync e de
@@ -1874,8 +1874,8 @@ ASL_COM_RETRY_DE_UMA = {
 
 
 def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     historico = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
     definicao = extract_stepfunctions(ASL_COM_RETRY_DE_UMA, "carga.asl.json")
@@ -2001,16 +2001,16 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.sfn_history import (
+from sparkforge_aws.facts.sfn_history import (
     EXTRACTOR_ID,
     build_sfn_retry_observado,
     extract_sfn_history_tree,
 )
-from sparkforge.facts.stepfunctions import extract_stepfunctions_tree
-from sparkforge.findings.models import sort_facts
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.stepfunctions import extract_stepfunctions_tree
+from sparkforge_aws.findings.models import sort_facts
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sfn_history"
@@ -2616,7 +2616,7 @@ unpack` em `[confronto] = ...` no teste do `fuse`.
 
 ### 3. Código mínimo
 
-**3a. A derivação, em `sparkforge/facts/sfn_history.py`** (D5).
+**3a. A derivação, em `sparkforge_aws/facts/sfn_history.py`** (D5).
 
 No docstring do módulo, troque
 
@@ -2829,25 +2829,25 @@ __all__ = [
     "extract_sfn_history",
 ```
 
-**3b. `sparkforge/facts/fusion.py`** — a chamada. Troque
+**3b. `sparkforge_aws/facts/fusion.py`** — a chamada. Troque
 
 ```python
-from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
-from sparkforge.facts.stepfunctions import build_sfn_glue_link
+from sparkforge_aws.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
+from sparkforge_aws.facts.stepfunctions import build_sfn_glue_link
 ```
 
 por
 
 ```python
-from sparkforge.facts.sfn_history import EMITTED_KINDS as SFN_HISTORY_EMITTED_KINDS
-from sparkforge.facts.sfn_history import SOURCE_KINDS as SFN_HISTORY_SOURCE_KINDS
-from sparkforge.facts.sfn_history import build_sfn_retry_observado
-from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
-from sparkforge.facts.stepfunctions import build_sfn_glue_link
+from sparkforge_aws.facts.sfn_history import EMITTED_KINDS as SFN_HISTORY_EMITTED_KINDS
+from sparkforge_aws.facts.sfn_history import SOURCE_KINDS as SFN_HISTORY_SOURCE_KINDS
+from sparkforge_aws.facts.sfn_history import build_sfn_retry_observado
+from sparkforge_aws.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
+from sparkforge_aws.facts.stepfunctions import build_sfn_glue_link
 ```
 
 (Se o `ruff`/isort quiser o bloco de `sfn_history` noutra posição da lista de imports de
-`sparkforge.facts.*`, aceite o que ele escrever — `sfn_history` < `spark_plan` <
+`sparkforge_aws.facts.*`, aceite o que ele escrever — `sfn_history` < `spark_plan` <
 `stepfunctions` na ordem alfabética.)
 
 E o bloco de derivação, no fim de `fuse`. Troque
@@ -2889,7 +2889,7 @@ por
 ```yaml
 # Catálogo de regras — o que ACONTECEU numa execução do AWS Step Functions
 #
-# Depende de `sparkforge/facts/sfn_history.py`, que lê a saída salva de
+# Depende de `sparkforge_aws/facts/sfn_history.py`, que lê a saída salva de
 # `aws stepfunctions get-execution-history` e, em `fuse`, confronta as tentativas
 # observadas com o retry que o ASL declara (`sfn.retry_observado`). As frases citadas
 # estão em `knowledge/stepfunctions/execution-history.md`; o desenho, em
@@ -2931,7 +2931,7 @@ por
 # A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado por
 # tentativa (`<estado>#<ordem>`) nas duas últimas, e um por estado na primeira.
 #
-# TRÊS PREDICADOS DERIVADOS no extrator (regra 33), porque `sparkforge/rules/expr.py`
+# TRÊS PREDICADOS DERIVADOS no extrator (regra 33), porque `sparkforge_aws/rules/expr.py`
 # tem seis comparadores e nenhuma função: `execution_outcome_class` (que junta
 # `ExecutionAborted` e `ExecutionTimedOut` num valor só, porque `in` não existe),
 # `terminal_present` e `job_run_outcome_observed`.
@@ -2976,7 +2976,7 @@ rules:
       documentada (`SF-SFN-004`, e a lacuna 1 de
       knowledge/stepfunctions/glue-integration.md). E não afirma custo nenhum: o
       `JobRunId` de cada tentativa está em `sfn.job_run`, e é por ele que
-      `sparkforge finops` responde custo com `dpu_seconds` medido.
+      `sparkforge-aws finops` responde custo com `dpu_seconds` medido.
     proposed_change:
       - "Conferir qual versão da definição estava publicada no instante da execução (`aws stepfunctions describe-state-machine --state-machine-arn <arn>` traz a definição corrente; o histórico de versões, se houver, traz a da época) antes de mudar qualquer coisa: o achado compara um ASL do repositório com uma execução que pode ter rodado outro."
       - "Se a definição confere, procurar o segundo caminho de reagendamento: um `Choice` que volta ao mesmo estado, ou um retrier anterior na ordem declarada cujo `ErrorEquals` também casa a falha do job."
@@ -3003,9 +3003,9 @@ rules:
     tradeoffs:
       - "Retry sobre o job inteiro compra resiliência ao custo de um JobRun completo por tentativa. Descobrir que o observado passa do declarado não diz qual dos dois está errado — diz que eles não batem."
     validation:
-      - "`sparkforge analyze sfn-history` sobre um histórico novo, depois da correção, mostra `tentativas_observadas` menor ou igual a `teto_declarado`, e `sparkforge judge` não produz mais SF-SFNX-001 para o estado."
+      - "`sparkforge-aws analyze sfn-history` sobre um histórico novo, depois da correção, mostra `tentativas_observadas` menor ou igual a `teto_declarado`, e `sparkforge-aws judge` não produz mais SF-SFNX-001 para o estado."
       - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: as tentativas extras não duplicaram nem perderam linha."
-      - "Os `JobRunId` de `sfn.job_run` do intervalo, conferidos em `sparkforge collect glue-job-runs`, são exatamente os que a camada de retry escolhida declara — nem mais, nem menos."
+      - "Os `JobRunId` de `sfn.job_run` do intervalo, conferidos em `sparkforge-aws collect glue-job-runs`, são exatamente os que a camada de retry escolhida declara — nem mais, nem menos."
     rollback:
       - "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`)."
     sources:
@@ -3049,7 +3049,7 @@ rules:
       executor perdido ao lado trocam uma falha rápida por uma falha cara.
     proposed_change:
       - "Ler o desfecho real daquele JobRun antes de tocar em qualquer limite: `aws glue get-job-run --job-name <nome> --run-id <JobRunId>` sobre o `JobRunId` que está em `sfn.job_run` diz se ele terminou, falhou, ou continuou depois do Task expirar."
-      - "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge analyze event-log`), e aumentar o limite só adia a mesma falha."
+      - "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge-aws analyze event-log`), e aumentar o limite só adia a mesma falha."
       - "Declarar o que acontece com o JobRun quando o Task expira: um estado de limpeza no `Catch` do timeout chamando `glue:batchStopJobRun` torna a resposta determinística, em vez de depender de comportamento não documentado."
     # `timeout.investigate_symptom_first` com `direction: investigate` e `moves: []` e a
     # regra 15 escrita em vocabulario fechado: ler a causa antes de mexer no limite. A
@@ -3069,7 +3069,7 @@ rules:
       - "Prazo curto falha rápido e deixa dúvida sobre o job; prazo longo resolve a dúvida e segura a execução da state machine pelo tempo inteiro do job."
     validation:
       - "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele: é a medida que falta, e ela existe."
-      - "Depois da correção, `sparkforge analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge judge` não produz mais SF-SFNX-002."
+      - "Depois da correção, `sparkforge-aws analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge-aws judge` não produz mais SF-SFNX-002."
       - "EIXO DE RESULTADO — o destino tem a mesma contagem total e por chave de negócio que uma execução de referência: um JobRun órfão que terminou sozinho pode ter escrito depois do Task expirar, e essa contagem é a única prova de que não houve duplicação."
     rollback:
       - "Reverter o commit da definição (o `TimeoutSeconds` anterior, ou o estado de limpeza acrescentado) e republicar a state machine."
@@ -3132,7 +3132,7 @@ rules:
       - "Parar o job junto com a execução torna o abort determinístico ao custo de perder trabalho que talvez terminasse sozinho; deixar o job seguir preserva o trabalho ao custo de ninguém saber que ele existe."
     validation:
       - "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele — é a medida que o histórico não tem."
-      - "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge judge` não produz mais SF-SFNX-003."
+      - "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge-aws judge` não produz mais SF-SFNX-003."
       - "EIXO DE RESULTADO — depois de um abort de teste, o destino tem a contagem por chave de negócio de antes do abort, ou a de uma execução completa: nunca uma terceira, que é o que escrita parcial produz."
     rollback:
       - "Reverter o commit da definição (o `Catch` ou o passo de encerramento acrescentado) e republicar a state machine."
@@ -3147,7 +3147,7 @@ Edit, nunca reescreva. Troque
 
 ```yaml
 fallback:
-  recommended_skill: sparkforge-diagnose
+  recommended_skill: sparkforge-aws-diagnose
 ```
 
 por
@@ -3180,7 +3180,7 @@ por
       artefatos de infraestrutura que este coordenador ja le --, e nao no codigo do job.
 
 fallback:
-  recommended_skill: sparkforge-diagnose
+  recommended_skill: sparkforge-aws-diagnose
 ```
 
 **3e. `agents/glue-infra-reviewer.md`** — `rule_areas`. Troque
@@ -3258,7 +3258,7 @@ por
     spark_plan,
 ```
 
-(Se o import de `sfn_history` ainda não estiver no bloco `from sparkforge.facts import
+(Se o import de `sfn_history` ainda não estiver no bloco `from sparkforge_aws.facts import
 (...)` do arquivo, acrescente-o na mesma posição alfabética.)
 
 **3h. `tests/test_databricks_rule_audit.py`**, em `SO_AWS`: troque
@@ -3286,7 +3286,7 @@ por
     ),
 ```
 
-**3i. `sparkforge/agentic/executor/debate_evidence.py`**, em `EVIDENCE_EXTRACTORS`:
+**3i. `sparkforge_aws/agentic/executor/debate_evidence.py`**, em `EVIDENCE_EXTRACTORS`:
 troque
 
 ```python
@@ -3317,7 +3317,7 @@ lista a allowlist de extratores no bloco `evidence_extractors`, e ela acabou de 
 **Regenere pelo caminho do próprio teste**, nunca editando o JSON à mão:
 
 ```bash
-python -c "import json, sys, tempfile; sys.path.insert(0, '.'); sys.path.insert(0, 'tests'); from pathlib import Path; from test_fixtures_golden_debate import FIXTURES, run_fixture; from sparkforge.agentic.executor.debate_run import next_step; raiz = Path(tempfile.mkdtemp()) / 'case'; resultado = run_fixture(FIXTURES / 'retomada', raiz); alvo = FIXTURES / 'retomada' / 'expected' / 'brief.json'; alvo.write_bytes((json.dumps(next_step(raiz, resultado['debate_id']), sort_keys=True, indent=2) + '\n').encode('utf-8'))"
+python -c "import json, sys, tempfile; sys.path.insert(0, '.'); sys.path.insert(0, 'tests'); from pathlib import Path; from test_fixtures_golden_debate import FIXTURES, run_fixture; from sparkforge_aws.agentic.executor.debate_run import next_step; raiz = Path(tempfile.mkdtemp()) / 'case'; resultado = run_fixture(FIXTURES / 'retomada', raiz); alvo = FIXTURES / 'retomada' / 'expected' / 'brief.json'; alvo.write_bytes((json.dumps(next_step(raiz, resultado['debate_id']), sort_keys=True, indent=2) + '\n').encode('utf-8'))"
 python -m pytest tests/test_fixtures_golden_debate.py -q
 ```
 
@@ -3331,19 +3331,19 @@ AIRFLOW_DAG, onde a T3 não a regenerou e a rodada de goldens acusou depois.)
 Imports: troque
 
 ```python
-from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
-from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path  # noqa: E402
+from sparkforge_aws.facts.spark_plan import extract_plan_path  # noqa: E402
 ```
 
 por
 
 ```python
-from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
-from sparkforge.facts.sfn_history import (  # noqa: E402
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path  # noqa: E402
+from sparkforge_aws.facts.sfn_history import (  # noqa: E402
     build_sfn_retry_observado,
     extract_sfn_history_tree,
 )
-from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
+from sparkforge_aws.facts.spark_plan import extract_plan_path  # noqa: E402
 ```
 
 Constante: troque
@@ -3435,7 +3435,7 @@ por
 **3m. Regenerar e LER o golden.**
 
 ```bash
-git add sparkforge/facts/sfn_history.py tests/test_fixtures_golden_sfn_history.py
+git add sparkforge_aws/facts/sfn_history.py tests/test_fixtures_golden_sfn_history.py
 python scripts/regen_fixtures.py retry_acima_do_declarado retry_dentro_do_declarado task_timed_out_sync execucao_abortada_com_task_em_voo execucao_limpa sem_execution_data historico_truncado evento_desconhecido json_invalido historico_sem_asl
 ```
 
@@ -3566,7 +3566,7 @@ python -m pytest tests/test_fixtures_scenarios.py tests/test_evals_holdout.py -q
 python scripts/sync_skills.py --check
 python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/test_reference_docs.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py tests/test_facts_scan.py -q
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 python scripts/check_status_numbers.py --strict
 python scripts/check_vnext_claims.py
 ```
@@ -3612,7 +3612,7 @@ Escreva `knowledge/stepfunctions/execution-history.md` (arquivo novo, inteiro):
 > **Lido em 2026-09-19.** A página de referência da API `GetExecutionHistory`, mais as
 > três páginas do guia já citadas em
 > [`glue-integration.md`](glue-integration.md). Quem consome: o extrator
-> `sparkforge/facts/sfn_history.py` e as três regras de
+> `sparkforge_aws/facts/sfn_history.py` e as três regras de
 > `rules/catalog/sfn-history.yaml`. Frase entre aspas é citação literal; o resto é
 > leitura nossa, e diz de qual frase veio.
 
@@ -3678,7 +3678,7 @@ lacuna 1 abaixo.
 **Nenhuma das três atribui custo, e a recusa é de desenho.** Dizer "você pagou por um
 JobRun órfão" exige o `dpu_seconds` de um run que ninguém leu, e é o que a regra 13 do
 `CLAUDE.md` proíbe; dizer o valor em dólar exige `cost_basis` (regra 25). O que o
-histórico entrega é o `JobRunId` — e é por ele que `sparkforge finops` responde custo
+histórico entrega é o `JobRunId` — e é por ele que `sparkforge-aws finops` responde custo
 com `dpu_seconds` medido.
 
 ## 5. Lacunas nomeadas
@@ -3699,7 +3699,7 @@ com `dpu_seconds` medido.
    `MaxRetries` do próprio job é outra camada. Ver a lacuna 1 de
    [`glue-integration.md`](glue-integration.md). O que destrava: o par entre um
    histórico real com falha e os JobRuns do mesmo intervalo
-   (`sparkforge collect glue-job-runs`) — e o `sfn.job_run` desta feature é metade dele.
+   (`sparkforge-aws collect glue-job-runs`) — e o `sfn.job_run` desta feature é metade dele.
 4. **Histórico real não observado.** O corpus `fixtures/sfn_history/` é sintético,
    montado a partir da forma de evento publicada. Ele prova o **mecanismo**, não a
    resposta (U2 de `docs/sdd/SFN_HISTORY/define.md`).
@@ -3709,7 +3709,7 @@ com `dpu_seconds` medido.
    tipos conhecidos e não produzem fact: o extrator não segue as execuções filhas de um
    Distributed Map, e o que roda dentro delas fica fora do histórico da mãe.
 7. **`sfn.*` do histórico sai com `line: 0`.** O extrator lê JSON sem posição de linha, e
-   o `subject.symbol` é `<estado>#<ordem>`. `sparkforge report github` não ancora esses
+   o `subject.symbol` é `<estado>#<ordem>`. `sparkforge-aws report github` não ancora esses
    achados numa linha do arquivo.
 
 ## Fontes
@@ -3805,7 +3805,7 @@ Dois documentos mudam: o novo, e o `glue-integration.md`, porque a lacuna 1 e a 
 foram editadas.
 
 ```bash
-python -c "import json; from pathlib import Path; from sparkforge.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); alvos = {'knowledge/stepfunctions/execution-history.md': 'execution-history', 'knowledge/stepfunctions/glue-integration.md': 'glue-integration'}; m['documents'] = [d for d in m['documents'] if d['path'] not in alvos] + [{'path': k, 'title': v, 'sha256': _content_sha256(Path(k))} for k, v in alvos.items()]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
+python -c "import json; from pathlib import Path; from sparkforge_aws.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); alvos = {'knowledge/stepfunctions/execution-history.md': 'execution-history', 'knowledge/stepfunctions/glue-integration.md': 'glue-integration'}; m['documents'] = [d for d in m['documents'] if d['path'] not in alvos] + [{'path': k, 'title': v, 'sha256': _content_sha256(Path(k))} for k, v in alvos.items()]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
 ```
 
 (O manifesto está ordenado por `path` e gravado como `json.dumps(indent=2)` mais `\n` —
@@ -3862,22 +3862,22 @@ aws stepfunctions get-execution-history \
   > /tmp/sf/execucao.json
 
 # 2. Extrair os facts do historico
-sparkforge analyze sfn-history \
+sparkforge-aws analyze sfn-history \
   --path fixtures/sfn_history/task_timed_out_sync/input/historico \
   --out /tmp/sf/facts_hist.json
 
 # 3. Julgar: SF-SFNX-002 e 003 leem so o historico
-sparkforge judge --facts /tmp/sf/facts_hist.json
+sparkforge-aws judge --facts /tmp/sf/facts_hist.json
 
 # 4. Com a definicao do MESMO state machine: fundir, e o confronto aparece
-sparkforge analyze sfn-history \
+sparkforge-aws analyze sfn-history \
   --path fixtures/sfn_history/retry_acima_do_declarado/input/historico \
   --out /tmp/sf/hist.json
-sparkforge analyze step-functions \
+sparkforge-aws analyze step-functions \
   --path fixtures/sfn_history/retry_acima_do_declarado/input/definicao \
   --out /tmp/sf/asl.json
-sparkforge fuse --facts /tmp/sf/hist.json --facts /tmp/sf/asl.json --out /tmp/sf/juntos.json
-sparkforge judge --facts /tmp/sf/juntos.json
+sparkforge-aws fuse --facts /tmp/sf/hist.json --facts /tmp/sf/asl.json --out /tmp/sf/juntos.json
+sparkforge-aws judge --facts /tmp/sf/juntos.json
 ```
 
 **`--include-execution-data` não é opcional na prática**: sem ele não há `output` no
@@ -3907,7 +3907,7 @@ sucesso por suposição.
 
 **Nenhuma delas fala em custo.** Atribuir custo a uma tentativa exigiria o `dpu_seconds`
 de um run que ninguém leu. O que o histórico entrega é o `JobRunId` — e é com ele que
-`sparkforge finops` responde custo com medida de verdade.
+`sparkforge-aws finops` responde custo com medida de verdade.
 
 **EXPRESS não passa por aqui**: a API não suporta `get-execution-history` para ela, e o
 histórico dela vai para o CloudWatch Logs.
@@ -4013,8 +4013,8 @@ com o crescimento da superfície em bytes no corpo.
 ## Antes de fechar a feature
 
 ```bash
-sparkforge sdd stamp --repo . docs/sdd/SFN_HISTORY/plan.md
-sparkforge sdd check --repo . --feature SFN_HISTORY
+sparkforge-aws sdd stamp --repo . docs/sdd/SFN_HISTORY/plan.md
+sparkforge-aws sdd check --repo . --feature SFN_HISTORY
 ```
 
 (A sintaxe do `stamp` é `sdd stamp --repo . <artefato>` — o `--feature`/`--phase` que o

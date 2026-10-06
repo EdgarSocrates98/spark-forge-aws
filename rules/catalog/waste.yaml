@@ -43,7 +43,7 @@ rules:
       As quatro medidas apontam na mesma direção: o worker fica ocioso metade do
       tempo ou mais, memória e disco não passam da metade, e não há skew que
       explique a ociosidade. A capacidade tem folga — e a pergunta de quanto
-      reduzir tem resposta com evidência em `sparkforge capacity`, que compara
+      reduzir tem resposta com evidência em `sparkforge-aws capacity`, que compara
       as capacidades que o job JÁ rodou contra o SLA declarado.
 
 
@@ -56,7 +56,7 @@ rules:
       apareceram juntas num job saudável com pico de memória alto, e a quarta —
       a ausência de skew — é a que separa esta regra da `SF-WASTE-002`.
     proposed_change:
-      - Rodar `sparkforge capacity` com o SLA declarado, e ler a capacidade mais barata que o cumpre entre as observadas.
+      - Rodar `sparkforge-aws capacity` com o SLA declarado, e ler a capacidade mais barata que o cumpre entre as observadas.
       - Conferir se o job já rodou em capacidade menor; se nunca rodou, a redução é experimento e não escolha — o `capacity` recusa extrapolar de propósito.
       - Reavaliar depois de qualquer mudança de layout ou de código, porque folga medida hoje é sobre o trabalho de hoje.
     action:

@@ -24,8 +24,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.facts import lakeformation_matrix as matriz
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.facts import lakeformation_matrix as matriz
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "knowledge" / "glue" / "lakeformation-fgac.md"

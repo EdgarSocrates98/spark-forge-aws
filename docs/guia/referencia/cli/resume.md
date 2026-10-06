@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge resume`
+# `sparkforge-aws resume`
 
 Payload de rehidratacao do case.
 
 ```bash
-sparkforge resume --help
+sparkforge-aws resume --help
 ```
 
 ## Opções

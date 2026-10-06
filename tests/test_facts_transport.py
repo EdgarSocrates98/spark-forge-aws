@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.facts.transport import extract_transport_text
+from sparkforge_aws.facts.transport import extract_transport_text
 
 
 def _kinds(facts):

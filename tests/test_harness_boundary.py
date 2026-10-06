@@ -15,15 +15,15 @@ import ast
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
-RUNTIME = RAIZ / "sparkforge"
+RUNTIME = RAIZ / "sparkforge_aws"
 AVALIACAO = RUNTIME / "evals"
-PACOTE_AVALIACAO = "sparkforge.evals"
+PACOTE_AVALIACAO = "sparkforge_aws.evals"
 
 
 def _e_avaliacao(modulo: str) -> bool:
     """Prefixo COM fronteira, e nao `startswith` cru.
 
-    `startswith("sparkforge.evals")` casaria um futuro `sparkforge.evalsuite`,
+    `startswith("sparkforge_aws.evals")` casaria um futuro `sparkforge_aws.evalsuite`,
     que nao tem relacao nenhuma com a avaliacao. Vermelho falso custa a mesma
     confianca que verde falso: quem investiga um gate que acusa errado uma vez
     passa a nao acreditar nele.
@@ -37,7 +37,7 @@ def _ancora_relativa(arquivo: Path, nivel: int, raiz: Path) -> str | None:
     Sem isto o gate tinha um buraco por onde passava exatamente o cruzamento
     que esta fase existe para proibir: `from ..evals.runner import X` guarda
     "evals.runner" em `no.module` e o 2 em `no.level`, e o texto
-    "sparkforge.evals" nao aparece em lugar nenhum da AST. Pior, o pacote usa
+    "sparkforge_aws.evals" nao aparece em lugar nenhum da AST. Pior, o pacote usa
     import relativo em varios modulos, entao o "import distraido" que a
     docstring do modulo preve tem chance real de nascer relativo -- fazer o
     caso permissivo por default no vetor que o proprio pacote mais usa seria o
@@ -62,7 +62,7 @@ def _ancora_relativa(arquivo: Path, nivel: int, raiz: Path) -> str | None:
 def _modulos_importados(arquivo: Path, raiz: Path = RAIZ) -> set[str]:
     """Os modulos que este arquivo importa, por AST e nao por substring.
 
-    Substring casaria a mencao de `sparkforge.evals` num comentario ou numa
+    Substring casaria a mencao de `sparkforge_aws.evals` num comentario ou numa
     docstring, e comentario nao cria dependencia. O que cria e o `import`.
 
     `filename` vai para o `ast.parse` porque um erro de sintaxe em qualquer
@@ -142,7 +142,7 @@ class TestORuntimeNaoDependeDaAvaliacao:
                 continue
             do_pacote |= _modulos_importados(arquivo)
         assert any(
-            m.startswith("sparkforge.") and not _e_avaliacao(m) for m in do_pacote
+            m.startswith("sparkforge_aws.") and not _e_avaliacao(m) for m in do_pacote
         ), "a avaliacao precisa medir ALGUM modulo de runtime"
 
 
@@ -160,23 +160,23 @@ class TestADeteccaoEnxergaImportRelativo:
     def test_from_pontos_modulo_vira_nome_absoluto(self, tmp_path):
         nomes = self._resolver(
             tmp_path,
-            "sparkforge/migration/assessment.py",
+            "sparkforge_aws/migration/assessment.py",
             "from ..evals.runner import EvaluationRunner\n",
         )
-        assert "sparkforge.evals.runner" in nomes
+        assert "sparkforge_aws.evals.runner" in nomes
 
     def test_from_ponto_import_nome_vira_nome_absoluto(self, tmp_path):
         """`no.module` e None nesta forma, e o guard antigo a descartava."""
         nomes = self._resolver(
-            tmp_path, "sparkforge/__init__.py", "from . import evals\n"
+            tmp_path, "sparkforge_aws/__init__.py", "from . import evals\n"
         )
-        assert "sparkforge.evals" in nomes
+        assert "sparkforge_aws.evals" in nomes
 
     def test_nivel_acima_da_raiz_nao_inventa_modulo(self, tmp_path):
         """Import quebrado nao e cruzamento de fronteira, e nao pode virar um
         nome resolvido por acidente."""
         nomes = self._resolver(
-            tmp_path, "sparkforge/mod.py", "from ....evals import runner\n"
+            tmp_path, "sparkforge_aws/mod.py", "from ....evals import runner\n"
         )
         assert nomes == set()
 
@@ -192,7 +192,7 @@ class TestADeteccaoEnxergaImportRelativo:
         """
         nomes = self._resolver(
             tmp_path,
-            "sparkforge/migration/assessment.py",
+            "sparkforge_aws/migration/assessment.py",
             "from ...evals import runner\n",
         )
         assert nomes == set()
@@ -202,15 +202,15 @@ class TestADeteccaoEnxergaImportRelativo:
         legitimo imediatamente abaixo dela."""
         nomes = self._resolver(
             tmp_path,
-            "sparkforge/migration/assessment.py",
+            "sparkforge_aws/migration/assessment.py",
             "from ..evals import runner\n",
         )
-        assert nomes == {"sparkforge.evals"}
+        assert nomes == {"sparkforge_aws.evals"}
 
     def test_prefixo_parecido_nao_conta_como_avaliacao(self):
-        assert _e_avaliacao("sparkforge.evals")
-        assert _e_avaliacao("sparkforge.evals.runner")
-        assert not _e_avaliacao("sparkforge.evalsuite")
+        assert _e_avaliacao("sparkforge_aws.evals")
+        assert _e_avaliacao("sparkforge_aws.evals.runner")
+        assert not _e_avaliacao("sparkforge_aws.evalsuite")
 
     def test_violacao_relativa_injetada_num_modulo_real_fica_vermelha(self, tmp_path):
         """O par de ponta a ponta. Sem ele os testes acima provariam so que a
@@ -221,7 +221,7 @@ class TestADeteccaoEnxergaImportRelativo:
         se alguem lembrar de repetir.
         """
         raiz = tmp_path / "repo"
-        runtime = raiz / "sparkforge"
+        runtime = raiz / "sparkforge_aws"
         alvo = runtime / "migration" / "assessment.py"
         alvo.parent.mkdir(parents=True)
         nome = str(alvo.relative_to(raiz))

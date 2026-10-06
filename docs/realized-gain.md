@@ -1,6 +1,6 @@
 # Realized Gain Ledger
 
-`sparkforge gain` responde uma pergunta só: **entre os runs medidos antes e
+`sparkforge-aws gain` responde uma pergunta só: **entre os runs medidos antes e
 depois de uma mudança, quanto o tempo, os DPU-segundos e o custo mudaram?**
 
 O SparkForge recusa estimar ganho (regra 13 do `CLAUDE.md`): "você economizaria
@@ -11,13 +11,13 @@ não sustenta a palavra "ganho".
 ## Uso
 
 ```bash
-sparkforge gain \
+sparkforge-aws gain \
   --baseline runs/antes/run_01.json --baseline runs/antes/run_02.json ... \
   --candidate runs/depois/run_01.json --candidate runs/depois/run_02.json ...
 ```
 
 Cada arquivo é um conjunto de facts de run, na forma que
-`sparkforge analyze glue-job-runs --out <arquivo>` produz — o mesmo histórico
+`sparkforge-aws analyze glue-job-runs --out <arquivo>` produz — o mesmo histórico
 que `capacity` e `workload` leem. A tool MCP é `sparkforge_gain`
 (`READ_ONLY`), com `baseline_paths` e `candidate_paths`.
 

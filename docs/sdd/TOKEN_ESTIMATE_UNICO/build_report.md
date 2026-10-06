@@ -13,7 +13,7 @@ tasks:
     red: {command: "python -m pytest tests/test_token_estimate_unico.py::test_uma_definicao_e_os_sitios_a_usam tests/test_token_estimate_unico.py::test_funnel_com_teto_escolhe_prefixo_da_escolha_com_piso tests/test_token_estimate_unico.py::test_mock_nunca_afirma_zero_token -q", exit: 1}
     green: {command: "python -m pytest tests/test_token_estimate_unico.py::test_uma_definicao_e_os_sitios_a_usam tests/test_token_estimate_unico.py::test_funnel_com_teto_escolhe_prefixo_da_escolha_com_piso tests/test_token_estimate_unico.py::test_mock_nunca_afirma_zero_token -q", exit: 0}
 claims:
-  - text: "tools/cost e o pacote sparkforge.tools apontam para a mesma funcao de agents/budget, conferido por identidade."
+  - text: "tools/cost e o pacote sparkforge_aws.tools apontam para a mesma funcao de agents/budget, conferido por identidade."
     evidence_ref: "tests/test_token_estimate_unico.py::test_uma_definicao_e_os_sitios_a_usam"
   - text: "Com o teto, o funnel escolhe sempre um prefixo do que escolhia com o piso: 0 falhas em 59.040 casos exaustivos da revisao."
     evidence_ref: "tests/test_token_estimate_unico.py::test_funnel_com_teto_escolhe_prefixo_da_escolha_com_piso"
@@ -48,7 +48,7 @@ e a propriedade de prefixo valeu nos 59.040.
 
 ## Revisao final
 
-Nenhum critico. **Importante:** o alias fazia a API publica `sparkforge.tools.estimate_tokens`
+Nenhum critico. **Importante:** o alias fazia a API publica `sparkforge_aws.tools.estimate_tokens`
 levantar `TypeError` para set, bytes, Path, objeto e dict de chaves mistas, onde antes
 devolvia numero. Nenhum chamador de hoje era afetado. Corrigido no dono, com vermelho
 visto (exit 1) antes do codigo.

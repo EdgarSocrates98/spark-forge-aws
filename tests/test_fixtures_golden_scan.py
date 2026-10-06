@@ -1,4 +1,4 @@
-"""Golden do `sparkforge scan` (§22), de ponta a ponta pela CLI.
+"""Golden do `sparkforge-aws scan` (§22), de ponta a ponta pela CLI.
 
 Cada caso de `fixtures/scan/` tem um `repo/` sintetico (codigo e, quando cabe,
 `.sparkforge/artifacts/` com manifesto e sha256 reais). O scan roda sobre uma
@@ -17,8 +17,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "scan"
@@ -65,7 +65,7 @@ def test_scan_igual_ao_fluxo_a_mao(tmp_path, capsys):
     plano = _core.scan(str(repo), dry_run=True)["plan"]
     uniao = []
     for entrada in sorted(plano["entries"], key=lambda e: (e["analyze"], e["path"])):
-        from sparkforge.scan import Entrada
+        from sparkforge_aws.scan import Entrada
 
         uniao += _core._scan_extrair(
             Entrada(entrada["analyze"], entrada["path"], entrada["origin"],

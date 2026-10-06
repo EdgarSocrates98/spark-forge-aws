@@ -9,11 +9,11 @@ upstream:
   sha256: "9c78e34d0c6e8ef02363feedbbac62910d4ab3710955b036b3945fc682a1ee86"
 tasks:
   - id: T1
-    files: [sparkforge/orchestration/__init__.py, sparkforge/orchestration/topology.py, fixtures/orchestration/control-plane.yaml, tests/test_orchestration.py]
+    files: [sparkforge_aws/orchestration/__init__.py, sparkforge_aws/orchestration/topology.py, fixtures/orchestration/control-plane.yaml, tests/test_orchestration.py]
     covers: [AC1, AC2]
     test: {path: tests/test_orchestration.py, name: test_orchestration_normalizes_reliability_controls}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml]
     covers: [AC3]
     test: {path: tests/test_orchestration.py, name: test_orchestration_surfaces_share_contract}
   - id: T3

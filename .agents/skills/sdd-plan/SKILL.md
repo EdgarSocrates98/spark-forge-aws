@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge sdd check
-  - sparkforge code search
-  - sparkforge sdd stamp
+  - sparkforge-aws sdd check
+  - sparkforge-aws code search
+  - sparkforge-aws sdd stamp
 ---
 
 # SDD Plan
@@ -24,12 +24,12 @@ metadata:
 Fase 3a do SDD próprio. Escreve o plano para quem vai executá-lo **sem contexto
 nenhum** do repositório: um subagente novo, outra sessão, outra pessoa. Tudo o
 que ele precisa está na tarefa — arquivos exatos, teste, comando, código. O
-`sparkforge sdd check` confere que toda tarefa nomeia seu teste e que todo
+`sparkforge-aws sdd check` confere que toda tarefa nomeia seu teste e que todo
 critério do define tem tarefa.
 
 ## Antes de começar
 
-1. `sparkforge sdd check --repo . --feature <F>` com o design em `ready`.
+1. `sparkforge-aws sdd check --repo . --feature <F>` com o design em `ready`.
 2. Leia o manifesto e as decisões do design: o plano não inventa arquivo que o
    design não listou. Se precisar de um, volte ao design (e à cascata).
 3. Copie `docs/sdd/templates/plan.md` para `docs/sdd/<FEATURE>/plan.md`, com
@@ -75,8 +75,8 @@ Nada disto entra no plano:
 - "Escrever os testes" sem o teste.
 - "Igual a T2" — repita o código; quem executa pode ler as tarefas fora de ordem.
 - Função, tipo ou flag que nenhuma tarefa define e o repositório não tem.
-- Comando que ninguém rodou: confirme com `sparkforge <verbo> --help` ou
-  `sparkforge code search`.
+- Comando que ninguém rodou: confirme com `sparkforge-aws <verbo> --help` ou
+  `sparkforge-aws code search`.
 
 ## Cobertura
 
@@ -90,7 +90,7 @@ Antes de pedir revisão ao operador, releia o plano contra o define e o design:
 1. **Cobertura** — cada critério e cada item do manifesto têm tarefa?
 2. **Placeholder** — alguma frase da lista acima escapou?
 3. **Consistência de nomes** — a função chamada em T4 é a que T2 definiu?
-4. **Comandos reais** — todo `sparkforge <verbo>` citado aceita os argumentos
+4. **Comandos reais** — todo `sparkforge-aws <verbo>` citado aceita os argumentos
    escritos?
 
 Corrija no lugar. Isso é checagem sua, não nota.
@@ -98,8 +98,8 @@ Corrija no lugar. Isso é checagem sua, não nota.
 ## O laço
 
 O de `docs/sdd/README.md#o-laço-de-cada-fase`, com a autorrevisão antes do
-stamp: `sparkforge sdd stamp --repo . docs/sdd/<F>/plan.md` e
-`sparkforge sdd check --repo . --feature <F>`. Aqui `test_not_written` para
+stamp: `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/plan.md` e
+`sparkforge-aws sdd check --repo . --feature <F>`. Aqui `test_not_written` para
 cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo:
 `sdd-build`.
 
@@ -108,7 +108,7 @@ cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo
 - As tarefas seguem `docs/sdd/README.md#caminho-da-mudança-do-operador`;
   nenhuma tarefa edita a árvore do operador direto. O plano mora em
   `.sparkforge/sdd/<F>/plan.md`:
-  `sparkforge sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/plan.md`.
+  `sparkforge-aws sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/plan.md`.
 - Toda tarefa prova alguma coisa. Com pytest sobre as funções puras do job, é
   `test`. Sem ele, a tarefa declara `proof` no lugar:
 
@@ -133,10 +133,10 @@ cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o design | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| confirmar um nome | `sparkforge code search <nome>` | `sparkforge_code_search` |
-| carimbar | `sparkforge sdd stamp --repo . docs/sdd/<F>/plan.md` | `sparkforge_sdd_stamp` |
-| cascata | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
+| conferir o design | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| confirmar um nome | `sparkforge-aws code search <nome>` | `sparkforge_code_search` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/plan.md` | `sparkforge_sdd_stamp` |
+| cascata | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
 
 Recusas desta fase: `phase_out_of_order`, `task_without_test`,
 `acceptance_uncovered`, `upstream_stale`, `moved_not_observed` (operator).
@@ -158,7 +158,7 @@ Esta skill trata **plano executável com testes e cobertura SDD**. Contrato comu
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge sdd check`, `sparkforge code search`, `sparkforge sdd stamp`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws code search`, `sparkforge-aws sdd stamp`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

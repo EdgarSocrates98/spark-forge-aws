@@ -1,4 +1,4 @@
-"""Plano do `sparkforge scan`: manifesto, extensao, recusas nomeadas."""
+"""Plano do `sparkforge-aws scan`: manifesto, extensao, recusas nomeadas."""
 from __future__ import annotations
 
 import hashlib
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.scan import KIND_PARA_ANALYZE, RECUSAS, ScanError, plan
+from sparkforge_aws.scan import KIND_PARA_ANALYZE, RECUSAS, ScanError, plan
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ".sparkforge/artifacts"
@@ -129,14 +129,14 @@ def test_varredura_pula_sparkforge_e_relata(tmp_path):
 def test_todo_kind_emitido_pelos_coletores_esta_no_mapa():
     """Coletor novo sem entrada no mapa faria o scan recusar tudo que ele grava."""
     emitidos = set()
-    for fonte in sorted((ROOT / "sparkforge" / "collect").glob("*.py")):
+    for fonte in sorted((ROOT / "sparkforge_aws" / "collect").glob("*.py")):
         emitidos |= set(re.findall(r'kind="([a-z_]+)"', fonte.read_text(encoding="utf-8")))
     assert emitidos, "nenhum kind= encontrado nos coletores"
     assert emitidos <= set(KIND_PARA_ANALYZE), emitidos - set(KIND_PARA_ANALYZE)
 
 
 def test_recusas_declaradas_na_tool_sao_as_do_modulo():
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     esquema = TOOLS["sparkforge_scan"]["outputSchema"]
     texto = json.dumps(esquema)

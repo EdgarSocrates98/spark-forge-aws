@@ -43,9 +43,9 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/knowledge_drift.py::build_index` | Le goldens, evals e agentes da raiz do repositorio pela porta da casa | `iter_source_files`, PyYAML |
-| `sparkforge/knowledge_drift.py::drift` | Funcao pura: citacoes com estado e impacto por URL mudada | `knowledge_freshness.estado` |
-| `sparkforge/knowledge_drift.py::render_markdown` | A secao "Impacto" do relatorio do refresh | texto |
+| `sparkforge_aws/knowledge_drift.py::build_index` | Le goldens, evals e agentes da raiz do repositorio pela porta da casa | `iter_source_files`, PyYAML |
+| `sparkforge_aws/knowledge_drift.py::drift` | Funcao pura: citacoes com estado e impacto por URL mudada | `knowledge_freshness.estado` |
+| `sparkforge_aws/knowledge_drift.py::render_markdown` | A secao "Impacto" do relatorio do refresh | texto |
 | `_core.knowledge_drift` + CLI + tool | Carrega lock, catalogo, fontes e raiz; chama `drift` | adapters existentes |
 | `scripts/refresh_knowledge.py` | Acrescenta a secao ao relatorio do PR | a mesma funcao |
 
@@ -96,12 +96,12 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-13 |
 
-**Choice:** `build_index(root)` le, por `iter_source_files` (glob cru e proibido em `sparkforge/`):
+**Choice:** `build_index(root)` le, por `iter_source_files` (glob cru e proibido em `sparkforge_aws/`):
 - goldens: `fixtures/**/findings.json` cujo pai e `expected`; o golden e `dominio/caso`;
 - evals: todo arquivo de texto em `evals/` que cita um `rule_id` (regex `\b[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3}\b`, o mesmo formato do schema);
 - agentes: `agents/**/*.md`, com `rule_areas` do frontmatter e os `rule_id` citados no corpo.
 
-A area de uma regra e o prefixo ate o ultimo hifen (A-001, o mesmo de `root_cause`). A raiz e `Path(__file__).parents[1]` quando ali existem `fixtures/`, `evals/` e `agents/`; senao `None` e os tres saltos saem `unresolved` com `sem_repositorio` (o wheel so leva `sparkforge`, `rules/catalog` e `knowledge`).
+A area de uma regra e o prefixo ate o ultimo hifen (A-001, o mesmo de `root_cause`). A raiz e `Path(__file__).parents[1]` quando ali existem `fixtures/`, `evals/` e `agents/`; senao `None` e os tres saltos saem `unresolved` com `sem_repositorio` (o wheel so leva `sparkforge-aws`, `rules/catalog` e `knowledge`).
 
 **Rationale:** medido: a varredura dos tres diretorios custa 287 ms, perto dos ~810 ms do `load_catalog`; sem cache.
 
@@ -116,7 +116,7 @@ A area de uma regra e o prefixo ate o ultimo hifen (A-001, o mesmo de `root_caus
 | **Status** | Accepted |
 | **Date** | 2026-09-13 |
 
-**Choice:** CLI `sparkforge knowledge drift [--url U] [--as-of AAAA-MM-DD]` (grupo `knowledge` existente, despacho `("knowledge", "drift")`). Tool `sparkforge_knowledge_drift`, `_READ_ONLY`, entradas `url` e `as_of`, nenhuma de caminho: entra em `SEM_CAMINHO`. Tools 93 -> 94; READ_ONLY 61 -> 62; as que declaram caminho continuam 86. Dono: `agents/executors/sf-verifier.md` (a checagem 6 ja pede o estado das fontes). `--url` que o lock nao vigia: erro com codigo 2.
+**Choice:** CLI `sparkforge-aws knowledge drift [--url U] [--as-of AAAA-MM-DD]` (grupo `knowledge` existente, despacho `("knowledge", "drift")`). Tool `sparkforge_knowledge_drift`, `_READ_ONLY`, entradas `url` e `as_of`, nenhuma de caminho: entra em `SEM_CAMINHO`. Tools 93 -> 94; READ_ONLY 61 -> 62; as que declaram caminho continuam 86. Dono: `agents/executors/sf-verifier.md` (a checagem 6 ja pede o estado das fontes). `--url` que o lock nao vigia: erro com codigo 2.
 
 **Rationale:** o lock e conhecimento versionado que viaja no pacote, como a matriz de Lake Formation; nao ha caminho que o chamador escolha.
 
@@ -141,10 +141,10 @@ A area de uma regra e o prefixo ate o ultimo hifen (A-001, o mesmo de `root_caus
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/knowledge_drift.py` | Create | `RepoIndex`, `build_index`, `drift`, `render_markdown` | (general) | None |
+| 1 | `sparkforge_aws/knowledge_drift.py` | Create | `RepoIndex`, `build_index`, `drift`, `render_markdown` | (general) | None |
 | 2 | `tests/test_knowledge_drift.py` | Create | Estados, saltos, `sem_repositorio`, pinned, documento, recusa | (general) | 1 |
-| 3 | `sparkforge/adapters/_core.py` | Modify | `knowledge_drift(url, as_of)` | (general) | 1 |
-| 4 | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py` | Modify | `knowledge drift`; tool com schema proprio | (general) | 3 |
+| 3 | `sparkforge_aws/adapters/_core.py` | Modify | `knowledge_drift(url, as_of)` | (general) | 1 |
+| 4 | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py` | Modify | `knowledge drift`; tool com schema proprio | (general) | 3 |
 | 5 | `scripts/refresh_knowledge.py` | Modify | `render_report(..., impacto)` e o calculo no `main` | (general) | 1 |
 | 6 | `fixtures/knowledge_drift/` + `tests/test_fixtures_golden_knowledge_drift.py` | Create | Locks sinteticos e golden pela CLI | (general) | 4 |
 | 7 | Registros (lista, amostra, `SEM_CAMINHO`, `NOVAS_DEPOIS_DO_GOLDEN`, manifest, parity, `sf-verifier` + sync) | Modify | Tool nova | (general) | 4 |
@@ -170,7 +170,7 @@ A area de uma regra e o prefixo ate o ultimo hifen (A-001, o mesmo de `root_caus
 ### Pattern 1: Citacoes de uma fonte mudada
 
 ```python
-from sparkforge.knowledge_freshness import estado
+from sparkforge_aws.knowledge_freshness import estado
 
 
 def citacoes(url, rules, doc_citations, lock, as_of):

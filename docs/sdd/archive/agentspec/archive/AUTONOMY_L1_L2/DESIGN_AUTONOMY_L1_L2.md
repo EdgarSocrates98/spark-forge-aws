@@ -24,7 +24,7 @@
                    +--> [--set k=v]   parse
                               |
                               v
-        sparkforge/change/plan.py  (puro: facts + repo + {chave: valor})
+        sparkforge_aws/change/plan.py  (puro: facts + repo + {chave: valor})
           localizar(): tf.spark_conf / pyspark.conf_set da chave
              0 lugares  -> sem_procedencia_em_arquivo
              >1 lugares -> procedencia_ambigua
@@ -69,15 +69,15 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/change/__init__.py` | API publica: `plan_change`, `parse_unified_diff`, `apply_patches`, `ChangeError`, `REFUSALS` | stdlib |
-| `sparkforge/change/plan.py` | L1 puro: localizar a chave pela procedencia, conferir, trocar, gerar diff e rollback | `ast`, `re`, `difflib` |
-| `sparkforge/change/apply.py` | Parser de diff unificado e aplicador estrito em memoria, com as recusas do aplicador | stdlib |
-| `sparkforge/change/sandbox.py` | Copia confinada, `id`, montagem de `before/`/`after/`, limpeza; relatorio a partir dos findings | `facts.scan`, `paths.resolve_within`, `hashlib`, `shutil` |
-| `sparkforge/adapters/_core.py` | `change_plan(...)` e `change_sandbox(...)`: compoem `tune_conf`, `scan`, `simulate.diff` e `proof.load_policy` | padrao dos verbos de topo |
-| `sparkforge/adapters/cli.py` | `sparkforge change plan|sandbox` (`change_action` na cadeia de `getattr`) | argparse |
-| `sparkforge/adapters/tools.py` | `sparkforge_change_plan` (`_READ_ONLY`) e `sparkforge_change_sandbox` (`_WRITE_IDEMPOTENT`) | schemas `_may_fail` |
+| `sparkforge_aws/change/__init__.py` | API publica: `plan_change`, `parse_unified_diff`, `apply_patches`, `ChangeError`, `REFUSALS` | stdlib |
+| `sparkforge_aws/change/plan.py` | L1 puro: localizar a chave pela procedencia, conferir, trocar, gerar diff e rollback | `ast`, `re`, `difflib` |
+| `sparkforge_aws/change/apply.py` | Parser de diff unificado e aplicador estrito em memoria, com as recusas do aplicador | stdlib |
+| `sparkforge_aws/change/sandbox.py` | Copia confinada, `id`, montagem de `before/`/`after/`, limpeza; relatorio a partir dos findings | `facts.scan`, `paths.resolve_within`, `hashlib`, `shutil` |
+| `sparkforge_aws/adapters/_core.py` | `change_plan(...)` e `change_sandbox(...)`: compoem `tune_conf`, `scan`, `simulate.diff` e `proof.load_policy` | padrao dos verbos de topo |
+| `sparkforge_aws/adapters/cli.py` | `sparkforge-aws change plan|sandbox` (`change_action` na cadeia de `getattr`) | argparse |
+| `sparkforge_aws/adapters/tools.py` | `sparkforge_change_plan` (`_READ_ONLY`) e `sparkforge_change_sandbox` (`_WRITE_IDEMPOTENT`) | schemas `_may_fail` |
 
-`sparkforge/change/` nao importa `adapters` (a composicao mora em `_core`), nem `subprocess`, nem provider.
+`sparkforge_aws/change/` nao importa `adapters` (a composicao mora em `_core`), nem `subprocess`, nem provider.
 
 ---
 
@@ -154,7 +154,7 @@ As recusas saem **antes de tocar disco**:
 
 **Context:** A-005. `_core.scan(repo)` grava em `<repo>/.sparkforge/scan/` (`_scan_gravar` apaga os `.json` antigos) e devolve o resumo; os findings ficam em `findings.json`. O catalogo carregado e so leitura.
 
-**Choice:** O sandbox monta `.sparkforge/sandbox/<id>/before/` (copia pristina) e `after/` (copia com os patches). Roda `_core.scan(str(before))` e `_core.scan(str(after))` e le `findings.json` de cada raiz. Como sao duas raizes sem arquivo compartilhado, nao ha estado de um lado para vazar no outro. A comparacao reusa `sparkforge.simulate.diff.diff(antes, depois, [], [], load_policy()["stable_keys"])` (A-008: a chave estavel de `proof/keys.py` ignora `line`, `col` e `snippet`, que o proprio diff desloca). Os campos do resultado sao renomeados: `appeared` vira `new`, `disappeared` vira `resolved` e `persisted_count` vira `kept_count`.
+**Choice:** O sandbox monta `.sparkforge/sandbox/<id>/before/` (copia pristina) e `after/` (copia com os patches). Roda `_core.scan(str(before))` e `_core.scan(str(after))` e le `findings.json` de cada raiz. Como sao duas raizes sem arquivo compartilhado, nao ha estado de um lado para vazar no outro. A comparacao reusa `sparkforge_aws.simulate.diff.diff(antes, depois, [], [], load_policy()["stable_keys"])` (A-008: a chave estavel de `proof/keys.py` ignora `line`, `col` e `snippet`, que o proprio diff desloca). Os campos do resultado sao renomeados: `appeared` vira `new`, `disappeared` vira `resolved` e `persisted_count` vira `kept_count`.
 
 **Rationale:** o `scan` tem golden e cobre o plano por manifesto, a fusao e o julgamento. Reusa-lo sem refatorar evita tocar o §22. Duas copias tambem deixam o operador comparar `before/` e `after/` com a ferramenta que quiser.
 
@@ -203,8 +203,8 @@ As recusas saem **antes de tocar disco**:
 Nenhum parametro se chama `command`, `url` ou similar (INV-007/009); o diff entra por `diff_path`. As duas tools declaram caminho: `test_harness_authorization` passa de 90 para 92 e `len(TOOLS)` de 98 para 100. As saidas trazem `stage` (`produce_change` / `sandbox_execute`) e o sandbox traz `main_tree_touched: false`. `applied_changes` nao aparece nas saidas novas, e os schemas que ja o travam em `false` nao mudam. `AutonomyLevel` fica intocado.
 
 Na CLI:
-- `sparkforge change plan --facts F [--facts F2] --repo R (--from-tune | --set k=v ...) [--out arquivo.patch]`
-- `sparkforge change sandbox --repo R (--diff arquivo | --clean)`
+- `sparkforge-aws change plan --facts F [--facts F2] --repo R (--from-tune | --set k=v ...) [--out arquivo.patch]`
+- `sparkforge-aws change sandbox --repo R (--diff arquivo | --clean)`
 
 **Rationale:** as classes seguem o que as tools fazem. `_WRITE_IDEMPOTENT` segue o precedente do `sparkforge_scan`, que grava com nome fixo e recria. A policy padrao do §16 ja pre-aprova LOCAL_MUTATION.
 
@@ -214,12 +214,12 @@ Na CLI:
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/change/__init__.py`, `plan.py` | Create | L1 puro | @python-developer | None |
-| 2 | `sparkforge/change/apply.py` | Create | Parser e aplicador estrito | @python-developer | None |
-| 3 | `sparkforge/change/sandbox.py` | Create | Copia, `id`, `before/`/`after/`, limpeza, montagem do relatorio | @python-developer | 2 |
-| 4 | `sparkforge/adapters/_core.py` | Modify | `change_plan`, `change_sandbox` | @python-developer | 1, 3 |
-| 5 | `sparkforge/adapters/cli.py` | Modify | `change plan|sandbox`, `change_action` | @python-developer | 4 |
-| 6 | `sparkforge/adapters/tools.py` | Modify | 2 tools, schemas, handlers | @python-developer | 4 |
+| 1 | `sparkforge_aws/change/__init__.py`, `plan.py` | Create | L1 puro | @python-developer | None |
+| 2 | `sparkforge_aws/change/apply.py` | Create | Parser e aplicador estrito | @python-developer | None |
+| 3 | `sparkforge_aws/change/sandbox.py` | Create | Copia, `id`, `before/`/`after/`, limpeza, montagem do relatorio | @python-developer | 2 |
+| 4 | `sparkforge_aws/adapters/_core.py` | Modify | `change_plan`, `change_sandbox` | @python-developer | 1, 3 |
+| 5 | `sparkforge_aws/adapters/cli.py` | Modify | `change plan|sandbox`, `change_action` | @python-developer | 4 |
+| 6 | `sparkforge_aws/adapters/tools.py` | Modify | 2 tools, schemas, handlers | @python-developer | 4 |
 | 7 | `fixtures/change/<caso>/{input/repo/,input/facts.json,input/request.json,expected.json}` + `.gitattributes` (`fixtures/change/** -text`) | Create | Golden sinteticos | @test-generator | 1-3 |
 | 8 | `tests/test_change_plan.py`, `tests/test_change_apply.py`, `tests/test_change_sandbox.py`, `tests/test_fixtures_golden_change.py` | Create | Unidade, ida-e-volta, confinamento, golden (`FIXTURES = ROOT / "fixtures" / "change"`) | @test-generator | 1-7 |
 | 9 | `.gitignore` | Modify | `.sparkforge/sandbox/` | (general) | None |
@@ -302,13 +302,13 @@ class Recusa:
     reason: str
     key: str
     detail: str
-    unlock: str  # a medida ou acao que destrava: "sparkforge analyze terraform --out ..."
+    unlock: str  # a medida ou acao que destrava: "sparkforge-aws analyze terraform --out ..."
 ```
 
 ### Pattern 4: copia confinada
 
 ```python
-from sparkforge.facts.scan import varrer_source_files
+from sparkforge_aws.facts.scan import varrer_source_files
 
 
 def copiar(repo: Path, destino: Path) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
@@ -340,7 +340,7 @@ L2: diff_path -> parse (recusas pre-disco) -> copia(repo) -> id
     -> before/ ; after/ = before + apply_patches (tudo ou nada; arquivo_fora_da_copia se o rel nao esta no manifesto)
     -> scan(before), scan(after) -> findings -> simulate.diff por chave estavel
     -> proof_obligations: validation + rollback dos findings em new e resolved
-    -> next_steps: ["rode seus testes em after/", "sparkforge benchmark com dois runs", "sparkforge funcval plan"]
+    -> next_steps: ["rode seus testes em after/", "sparkforge-aws benchmark com dois runs", "sparkforge-aws funcval plan"]
     -> report.json + retorno
 ```
 
@@ -362,7 +362,7 @@ L2: diff_path -> parse (recusas pre-disco) -> copia(repo) -> id
 | Unit | Parser e aplicador: hunk, CRLF, prefixos a/b, as 6 recusas, tudo ou nada, ida-e-volta | `tests/test_change_apply.py` | pytest | AT-010, AT-011, SC2, SC6 |
 | Integracao | Sandbox: arvore principal intacta por hash, `id` estavel, `--clean` confinado, `arquivo_fora_da_copia` | `tests/test_change_sandbox.py` | pytest + `tmp_path` | AT-008, AT-012 a AT-015, SC5, SC8 |
 | Golden | `fixtures/change/`: plano (`tf_linha_compartilhada`, `codigo_conf_set`, `codigo_builder_multilinha`, `do_tune`, `sem_procedencia`, `linha_nao_confere`, `procedencia_ambigua`, `valor_nao_literal`) e sandbox (`resolve_achado`, `diff_nao_aplica`, `escapa_da_raiz`, `plano_pelo_sandbox`) | `tests/test_fixtures_golden_change.py` | pytest | AT-001 a AT-004, AT-009, SC1, SC3, SC7 |
-| Estrutural | Sem `subprocess`, `git` nem provider em `sparkforge/change/` (AST dos imports e chamadas) | `tests/test_change_plan.py` | pytest | SC9 |
+| Estrutural | Sem `subprocess`, `git` nem provider em `sparkforge_aws/change/` (AST dos imports e chamadas) | `tests/test_change_plan.py` | pytest | SC9 |
 | Registros | Tool nova, surface, claims, referencia | suites existentes | pytest + gates | SC10 |
 
 O caso `resolve_achado` reusa o padrao de `fixtures/pyspark/conf_set_conflict`: `SF-PY-012` dispara em `spark.conf.set`, o diff do host tira a chamada e a regra sai em `resolved`, com `validation` e `rollback` dela.
@@ -373,7 +373,7 @@ O caso `resolve_achado` reusa o padrao de `fixtures/pyspark/conf_set_conflict`: 
 
 | Error Type | Handling Strategy | Retry? |
 |------------|-------------------|--------|
-| Entrada invalida (sem `--facts`, `--set` malformado, `--from-tune` e `--set` juntos, repo inexistente, diff ilegivel) | `AdapterError` exit 2, mensagem com o comando `sparkforge change ...` que resolve (tool FAILABLE contem "sparkforge") | No |
+| Entrada invalida (sem `--facts`, `--set` malformado, `--from-tune` e `--set` juntos, repo inexistente, diff ilegivel) | `AdapterError` exit 2, mensagem com o comando `sparkforge-aws change ...` que resolve (tool FAILABLE contem "sparkforge-aws") | No |
 | Chave sem base | `refused[]` com `reason`, `detail` e `unlock`; o verbo nao falha | No |
 | Diff recusado pelo aplicador | Resultado com `refused` e `applied: false`; `after/` nao e gravado; exit 1 na CLI | No |
 | `scan` com `analyze_falhou` num lado | Vai ao relatorio (`scan_failures.before/after`); a comparacao segue com o que foi julgado | No |

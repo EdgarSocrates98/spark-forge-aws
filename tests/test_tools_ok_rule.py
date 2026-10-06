@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters.tools import TOOLS
+from sparkforge_aws.adapters.tools import TOOLS
 
 ROOT = Path(__file__).resolve().parents[1]
 MARCA_PT = "## Antes de responder sobre artefato, rode o verbo"

@@ -123,10 +123,10 @@
     "extracted_facts": [],
     "max_rounds": 3,
     "open_objections_against_you": [
-      "obj_f290c653"
+      "obj_c65e13c8"
     ],
     "opponent_claims": [
-      "claim_839dad02"
+      "claim_89c37a9f"
     ],
     "opposes": {
       "action": {
@@ -155,7 +155,7 @@
           {
             "assumptions": [],
             "claim_type": "inference",
-            "claimant": "dbt_651b068b/A/SF-GRAPH-005",
+            "claimant": "dbt_53121527/A/SF-GRAPH-005",
             "confidence": "high",
             "created_at": "",
             "evidence_refs": [
@@ -163,7 +163,7 @@
               "f_d9303b"
             ],
             "falsifiable": true,
-            "id": "claim_13b260b7",
+            "id": "claim_dd56fbde",
             "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
             "supersedes": null
           }
@@ -182,7 +182,7 @@
           {
             "assumptions": [],
             "claim_type": "inference",
-            "claimant": "dbt_651b068b/B/SF-LF-001",
+            "claimant": "dbt_53121527/B/SF-LF-001",
             "confidence": "medium",
             "created_at": "",
             "evidence_refs": [
@@ -190,7 +190,7 @@
               "f_6ab9b2"
             ],
             "falsifiable": true,
-            "id": "claim_839dad02",
+            "id": "claim_89c37a9f",
             "statement": "o job declara FGAC e JAR adicional no mesmo aws_glue_job",
             "supersedes": null
           }
@@ -203,10 +203,10 @@
             "evidence_refs": [
               "f_55f5ac"
             ],
-            "id": "obj_f290c653",
-            "objector": "dbt_651b068b/B/SF-LF-001",
+            "id": "obj_c65e13c8",
+            "objector": "dbt_53121527/B/SF-LF-001",
             "statement": "sob FGAC a AWS bloqueia JAR adicional; declarar o GraphFrames reabre o bloqueio",
-            "target_claim": "claim_13b260b7"
+            "target_claim": "claim_dd56fbde"
           }
         ],
         "rebuttals": [],
@@ -237,9 +237,9 @@
       "side": "'A' ou 'B' -- o lado da vez (obrigatorio)"
     },
     "your_claims": [
-      "claim_13b260b7"
+      "claim_dd56fbde"
     ]
   },
-  "debate_id": "dbt_651b068b",
+  "debate_id": "dbt_53121527",
   "status": "brief"
 }

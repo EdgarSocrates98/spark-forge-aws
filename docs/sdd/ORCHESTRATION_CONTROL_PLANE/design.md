@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/ORCHESTRATION_CONTROL_PLANE/define.md
   sha256: "477ee8ce807a5404359cabc5870128e712ad3fc2aeba61ae56982a56828dcba3"
 files:
-  - {path: sparkforge/orchestration/__init__.py, action: create, reason: "API normalizada de orchestration control plane."}
-  - {path: sparkforge/orchestration/topology.py, action: create, reason: "Loader, normalização e unresolved."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Analisador compartilhado."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze orchestration."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
+  - {path: sparkforge_aws/orchestration/__init__.py, action: create, reason: "API normalizada de orchestration control plane."}
+  - {path: sparkforge_aws/orchestration/topology.py, action: create, reason: "Loader, normalização e unresolved."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Analisador compartilhado."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo analyze orchestration."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
   - {path: parity.yaml, action: modify, reason: "Paridade do orchestration map."}
   - {path: docs/surface.lock.json, action: modify, reason: "Registro exigido por nova tool MCP."}
   - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice gerado da referência."}

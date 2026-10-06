@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from sparkforge.context.gateway_capabilities import discover_capabilities, load_profiles
-from sparkforge.context.gateway_models import GatewayProfile
+from sparkforge_aws.context.gateway_capabilities import discover_capabilities, load_profiles
+from sparkforge_aws.context.gateway_models import GatewayProfile
 
 
 def test_profile_applies_independent_skill_and_knowledge_limits() -> None:

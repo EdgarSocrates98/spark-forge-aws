@@ -20,7 +20,7 @@ Extrai facts de PROCESSAMENTO DE GRAFO com GraphFrames do proprio codigo PySpark
 
 ## Na CLI
 
-[`sparkforge analyze graph`](../cli/analyze.md)
+[`sparkforge-aws analyze graph`](../cli/analyze.md)
 
 ## Capacidade
 

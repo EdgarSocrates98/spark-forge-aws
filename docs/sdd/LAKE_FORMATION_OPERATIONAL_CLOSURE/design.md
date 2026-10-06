@@ -9,21 +9,21 @@ upstream:
   sha256: "3216abd562258e18e7e53d7722efe005bebb85f79671d08436dfee43dda1d6ab"
 files:
   - {path: tests/test_lakeformation_operational_closure.py, action: create, reason: "Provas acceptance do delta operacional, escritas antes do código."}
-  - {path: sparkforge/lakeformation/architecture.py, action: modify, reason: "Compor revisão operacional evidence-first sobre o decision engine existente, mantendo CLI/MCP no mesmo núcleo."}
+  - {path: sparkforge_aws/lakeformation/architecture.py, action: modify, reason: "Compor revisão operacional evidence-first sobre o decision engine existente, mantendo CLI/MCP no mesmo núcleo."}
   - {path: knowledge/lakeformation/capability-matrix.yaml, action: modify, reason: "Registrar células Glue 5.1/6.0 e formatos somente quando a fonte oficial fecha a capacidade; divergências permanecem unknown/version_dependent."}
   - {path: knowledge/lakeformation/operational-closure.md, action: create, reason: "Fonte interna de progressive disclosure, explain-access, root-cause, migração e runbooks com URLs oficiais."}
   - {path: docs/guia/usos/lake-formation-operacional.md, action: create, reason: "Guia operacional para entrada declarativa, saída, troubleshooting e rollback."}
   - {path: skills/lakeformation-architecture/SKILL.md, action: modify, reason: "Ensinar o contrato de revisão, preflight, migração e limites sem duplicar a matriz."}
   - {path: agents/sf-lake-formation-specialist.md, action: modify, reason: "Adicionar explain/root-cause/preflight e cross-review ao coordenador existente."}
   - {path: agents/sf-terraform-specialist.md, action: modify, reason: "Declarar revisão de Terraform como evidência de configuração, não como mutação."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Atualizar descrição/schema da tool existente para o payload operacional composto, sem criar tool paralela."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Atualizar descrição/schema da tool existente para o payload operacional composto, sem criar tool paralela."}
   - {path: docs/vnext/ARCHITECTURE.md, action: modify, reason: "Registrar camada operacional e decision graph."}
   - {path: docs/vnext/CAPABILITY-MATRIX.md, action: modify, reason: "Registrar formatos/operações e fronteira unknown/version-dependent."}
   - {path: docs/vnext/KNOWLEDGE-MAP.md, action: modify, reason: "Registrar carregamento progressive-disclosure e runbooks."}
 
 decisions:
   - id: D1
-    choice: "Estender `sparkforge lakeformation architect` com uma seção `review` determinística, em vez de criar verbos/tools paralelos para cada capítulo do prompt."
+    choice: "Estender `sparkforge-aws lakeformation architect` com uma seção `review` determinística, em vez de criar verbos/tools paralelos para cada capítulo do prompt."
     rejected: ["Criar `doctor`, `explain-access`, `migration` e `root-cause` novos, que duplicariam adapters e aumentariam a superfície sem outro produtor de facts.", "Colocar toda lógica no skill, que deixaria a capacidade sem prova executável e dependente do host."]
     rollback: "git revert do commit da composição; a tool volta a retornar somente routing/checks/decision do architecture engine."
   - id: D2
@@ -52,9 +52,9 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| review evidence-first | `sparkforge/lakeformation/architecture.py`, testes | AC1, AC2, AC4 |
+| review evidence-first | `sparkforge_aws/lakeformation/architecture.py`, testes | AC1, AC2, AC4 |
 | migration/capability | `knowledge/lakeformation/capability-matrix.yaml`, testes | AC3, AC6 |
-| parity/schema | `sparkforge/adapters/tools.py`, testes | AC7 |
+| parity/schema | `sparkforge_aws/adapters/tools.py`, testes | AC7 |
 | knowledge/runbooks | `knowledge/lakeformation/operational-closure.md`, `docs/guia/usos/lake-formation-operacional.md` | AC2, AC3, AC4, AC5, AC8 |
 | skill/agents/VNX | skill, agentes, `docs/vnext/` | AC5, AC8 |
 
@@ -81,9 +81,9 @@ entradas declaradas; o output nunca transforma `unknown` em `false`.
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category lakeformation-fgac` e `--category cross-account`;
-- `sparkforge knowledge path --file knowledge/glue/lakeformation-fgac.md`;
-- `sparkforge knowledge path --file knowledge/lakeformation/capability-matrix.yaml`;
+- `sparkforge-aws rules lookup --category lakeformation-fgac` e `--category cross-account`;
+- `sparkforge-aws knowledge path --file knowledge/glue/lakeformation-fgac.md`;
+- `sparkforge-aws knowledge path --file knowledge/lakeformation/capability-matrix.yaml`;
 - fontes AWS Glue/Lake Formation/EMR registradas em `knowledge/sources.lock.json`,
   incluindo `migrating-version-51.html`, `migrating-version-60.html`,
   `security-lf-enable.html`, `security-access-control-fta.html` e

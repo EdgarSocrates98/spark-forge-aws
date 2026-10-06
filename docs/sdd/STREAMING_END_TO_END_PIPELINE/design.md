@@ -9,11 +9,11 @@ upstream:
   sha256: "4a3a14eebfa500642e41e935dc4612bb2884c1ecf6fbfff208dfb61ad2232d3b"
 files:
   - {path: tests/test_streaming_pipeline.py, action: create, reason: "contrato, seleção, paridade e regra do modo pipeline"}
-  - {path: sparkforge/facts/streaming_pipeline.py, action: create, reason: "composição pura de contrato declarativo sobre Facts existentes"}
-  - {path: sparkforge/facts/streaming_composition.py, action: modify, reason: "registrar modo pipeline sem duplicar compositor"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "ler pipeline_path explicitamente e encaminhar ao compositor"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "expor pipeline como modalidade do verbo existente"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "declarar pipeline_path e enum no contrato MCP existente"}
+  - {path: sparkforge_aws/facts/streaming_pipeline.py, action: create, reason: "composição pura de contrato declarativo sobre Facts existentes"}
+  - {path: sparkforge_aws/facts/streaming_composition.py, action: modify, reason: "registrar modo pipeline sem duplicar compositor"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "ler pipeline_path explicitamente e encaminhar ao compositor"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "expor pipeline como modalidade do verbo existente"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "declarar pipeline_path e enum no contrato MCP existente"}
   - {path: rules/catalog/streaming.yaml, action: modify, reason: "julgar blind spot observado de aresta pipeline"}
   - {path: tests/test_fixtures_golden_streaming_pipeline.py, action: create, reason: "runner determinístico do novo corpus"}
   - {path: fixtures/streaming_pipeline/pipeline_complete/input/facts.json, action: create, reason: "evidência positiva"}
@@ -71,13 +71,13 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| contrato/selectors | `sparkforge/facts/streaming_pipeline.py`, `sparkforge/facts/streaming_composition.py`, `tests/test_streaming_pipeline.py` | AC1, AC2 |
+| contrato/selectors | `sparkforge_aws/facts/streaming_pipeline.py`, `sparkforge_aws/facts/streaming_composition.py`, `tests/test_streaming_pipeline.py` | AC1, AC2 |
 | regra/goldens | `rules/catalog/streaming.yaml`, `fixtures/streaming_pipeline/`, `tests/test_fixtures_golden_streaming_pipeline.py` | AC3, AC5 |
 | superfície/documentação | adapters, knowledge, skill, agent, guias/locks/status | AC4, AC6 |
 
 ## Conhecimento consultado
 
-O contrato existente foi lido por código e `sparkforge sdd status`; a regra de
+O contrato existente foi lido por código e `sparkforge-aws sdd status`; a regra de
 composição foi comparada com `STREAMING_INTEGRATIONS_AND_CHECKPOINTS` e
 `STREAMING_ARCHITECTURE_DECISION`. A documentação oficial do pipeline deve ser
 tratada como formato de integração declarado, não como prova de capacidade: o

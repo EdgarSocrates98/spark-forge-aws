@@ -22,7 +22,7 @@ A primeira varredura procurou **o nome da camada** no repositório e concluiu qu
 não tinham mecanismo. Estava errada, e o erro é instrutivo: `deletion vectors`, `Puffin` e
 `query planning` **estavam lá**, sob outros nomes —
 `knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13
-features**, e `sparkforge/storage/` tem `feature_support.py`, `readiness.py` e
+features**, e `sparkforge_aws/storage/` tem `feature_support.py`, `readiness.py` e
 `upgrade.py`.
 
 **Procure pelo que a camada FAZ, não pelo nome dela.** A segunda varredura usou padrões de

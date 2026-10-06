@@ -6,7 +6,7 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "Extrator novo de ASL (sparkforge/facts/stepfunctions.py) que le o .asl.json do repositorio ou a saida de describe-state-machine e emite um fact por Task (servico, API, padrao de integracao request-response/.sync/.waitForTaskToken, JobName literal ou dinamico, Retry efetivo com os defaults da documentacao, Catch, TimeoutSeconds) e sfn.unresolved nomeado para o que nao le; verbo sparkforge analyze step-functions e tool MCP; area SF-SFN com regras que julgam so o ASL; coordenador existente (glue-infra-reviewer) declara a area e ganha rota por findings_area."
+    summary: "Extrator novo de ASL (sparkforge_aws/facts/stepfunctions.py) que le o .asl.json do repositorio ou a saida de describe-state-machine e emite um fact por Task (servico, API, padrao de integracao request-response/.sync/.waitForTaskToken, JobName literal ou dinamico, Retry efetivo com os defaults da documentacao, Catch, TimeoutSeconds) e sfn.unresolved nomeado para o que nao le; verbo sparkforge-aws analyze step-functions e tool MCP; area SF-SFN com regras que julgam so o ASL; coordenador existente (glue-infra-reviewer) declara a area e ganha rota por findings_area."
     tradeoffs:
       - "passa pelas tres portas do criterio de dominio: extrator, regra que julga, coordenador com rota real"
       - "regras so com o ASL: Glue sem .sync seguido de estado dependente; retry implicito (MaxAttempts default 3) sobre job batch inteiro; .sync sob workflow EXPRESS quando o tipo e conhecido"
@@ -39,8 +39,8 @@ incremento, a definição ASL.
 
 ## O que o repositório tem hoje
 
-Nada de Step Functions em `sparkforge/`: as cinco ocorrências de `StartJobRun` são do EMR
-Serverless. O precedente de forma é o Control-M: `sparkforge/facts/controlm_jobs.py` lê o
+Nada de Step Functions em `sparkforge_aws/`: as cinco ocorrências de `StartJobRun` são do EMR
+Serverless. O precedente de forma é o Control-M: `sparkforge_aws/facts/controlm_jobs.py` lê o
 `Jobs-as-Code`, JSON versionado, como código-fonte.
 
 ## Fontes lidas (2026-09-19)
@@ -87,7 +87,7 @@ tamanho. C não julga nada.
   retry do Glue é outro `JobRun`. A composição é lacuna nomeada, não suposição.
 - O lado do Glue já vira fact: `tf.attribute` com `key: max_retries`, lido pela
   `SF-GLUE-004`. O cruzamento pelo `JobName` é predicado entre dois artefatos, e pela
-  regra 33 vira fact derivado, no molde de `sparkforge/facts/bridge.py`.
+  regra 33 vira fact derivado, no molde de `sparkforge_aws/facts/bridge.py`.
 
 ## Escolha
 

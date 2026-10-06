@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.change.refusals import ARQUIVO_FORA_DA_COPIA, DIFF_NAO_APLICA
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.change.refusals import ARQUIVO_FORA_DA_COPIA, DIFF_NAO_APLICA
 
 JOB = 'def configurar(spark):\n    spark.conf.set("spark.sql.shuffle.partitions", "800")\n'
 PATCH = (
@@ -103,7 +103,7 @@ def test_limpeza_confinada(tmp_path):
 def test_erro_de_entrada_diz_o_comando(chamada, tmp_path):
     with pytest.raises(_core.AdapterError) as exc:
         chamada(tmp_path)
-    assert "sparkforge" in str(exc.value) and exc.value.exit_code == 2
+    assert "sparkforge-aws" in str(exc.value) and exc.value.exit_code == 2
 
 
 def test_set_malformado(tmp_path):

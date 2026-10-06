@@ -1,6 +1,6 @@
 ---
 name: analyze-spark-ui
-description: "Use quando houver um Spark event log, um job run id ou um Spark UI aberto de um job AWS Glue e for preciso achar stage dominante, skew de task, spill, GC, executor perdido ou subparalelismo. Use também quando a pergunta for \\\"por que este stage demora\\\", \\\"por que uma task não termina\\\", \\\"o executor sumiu\\\" ou \\\"está com spill\\\", mesmo que ninguém fale em event log. Se você está prestes a ler métrica de execução de Spark no olho, rode `sparkforge collect event-log` e `sparkforge analyze event-log` em vez disso — o extrator calcula p50/p95/max, spill e GC por stage, e o catálogo aplica os limiares versionados."
+description: "Use quando houver um Spark event log, um job run id ou um Spark UI aberto de um job AWS Glue e for preciso achar stage dominante, skew de task, spill, GC, executor perdido ou subparalelismo. Use também quando a pergunta for \\\"por que este stage demora\\\", \\\"por que uma task não termina\\\", \\\"o executor sumiu\\\" ou \\\"está com spill\\\", mesmo que ninguém fale em event log. Se você está prestes a ler métrica de execução de Spark no olho, rode `sparkforge-aws collect event-log` e `sparkforge-aws analyze event-log` em vez disso — o extrator calcula p50/p95/max, spill e GC por stage, e o catálogo aplica os limiares versionados."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge collect event-log
-  - sparkforge analyze event-log
-  - sparkforge judge
+  - sparkforge-aws collect event-log
+  - sparkforge-aws analyze event-log
+  - sparkforge-aws judge
 ---
 
 # Analyze Spark UI
@@ -30,17 +30,17 @@ Seu trabalho não é calcular. É **coletar, rodar, e interpretar o que voltou**
 ### 1. Garanta o event log
 
 ```bash
-sparkforge collect event-log --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>
+sparkforge-aws collect event-log --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>
 ```
 
-Sem credencial AWS, baixe o log manualmente para `.sparkforge/artifacts/eventlog/<id>.jsonl` e registre com `sparkforge.collect.register_artifact` — o manifesto é o que permite retomar em outra máquina.
+Sem credencial AWS, baixe o log manualmente para `.sparkforge/artifacts/eventlog/<id>.jsonl` e registre com `sparkforge_aws.collect.register_artifact` — o manifesto é o que permite retomar em outra máquina.
 
 Se o job não tem `--enable-spark-ui` e `--spark-event-logs-path`, não há log e não vai haver. Esse é o achado: `SF-GLUE-002`, observabilidade ausente. Reporte e pare — nenhuma métrica de execução existe para analisar.
 
 ### 2. Extraia os facts
 
 ```bash
-sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json
+sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json
 ```
 
 Leia `unresolved` na saída. Linha malformada ou log truncado vira `spark.unresolved`, e isso é ponto cego, não ausência de problema. Reporte a contagem sempre.
@@ -48,7 +48,7 @@ Leia `unresolved` na saída. Linha malformada ou log truncado vira `spark.unreso
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
 ```
 
 `--show-skipped` não é opcional. Ele diz quais regras **não** foram avaliadas e por quê — sem isso você não distingue "nenhum problema" de "não coletei o dado que provaria o problema".
@@ -58,8 +58,8 @@ A flag de versão também não é: o event log declara o runtime na própria pri
 **Mas o event log preenche `spark`, não `glue`.** A derivação é de mão única — sabendo a versão do Glue sai a do Spark pela matriz de compatibilidade, e não o contrário, porque uma mesma versão de Spark aparece em mais de uma versão de Glue. Consequência prática: as seis regras `SF-GLUE-*` continuam puladas com `reason: runtime_scope` mesmo com o log inteiro em mãos. Nenhuma regra `SF-UI-*` guarda versão, então a análise desta skill não perde nada — mas se `--show-skipped` mostrar `SF-GLUE-002` (observabilidade) e você quiser cobrir esse eixo, junte os facts do Terraform na mesma chamada (`--facts` é repetível) em vez de digitar a versão:
 
 ```bash
-sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
-sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json --show-skipped
+sparkforge-aws analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
+sparkforge-aws judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json --show-skipped
 ```
 
 Se o log e o `.tf` discordarem sobre a versão do Spark, `runtime.divergences` mostra os dois valores — e essa é a leitura mais valiosa desta saída, porque um job rodando em runtime diferente do declarado invalida todo limiar versionado aplicado depois.
@@ -86,11 +86,11 @@ Quando `SF-UI-001` (skew de duração) dispara, olhe imediatamente se `SF-UI-002
 - **Os dois juntos** → skew de dados. Tratável na chave: nulls, hot key, valor sentinela.
 - **Só o de duração** → skew de computação. UDF caro em certas linhas, `explode` desigual. Repartition não muda nada, e tentar isso é o erro mais caro dessa análise.
 
-`ROUTE-006` e `ROUTE-007` em `rules/catalog/routing.yaml` já codificam essa bifurcação. `sparkforge next-step` a aplica sozinho.
+`ROUTE-006` e `ROUTE-007` em `rules/catalog/routing.yaml` já codificam essa bifurcação. `sparkforge-aws next-step` a aplica sozinho.
 
 ## Referência rápida
 
-Regras desta área, e o fact que cada uma consome. Os limiares **não** estão aqui de propósito: eles mudam quando aparece evidência nova, e um número decorado vira mentira silenciosa quando o catálogo é atualizado. Consulte com `sparkforge rules lookup --id <ID>`, que devolve limiar, guarda de versão, risco, validação, rollback e fonte com data.
+Regras desta área, e o fact que cada uma consome. Os limiares **não** estão aqui de propósito: eles mudam quando aparece evidência nova, e um número decorado vira mentira silenciosa quando o catálogo é atualizado. Consulte com `sparkforge-aws rules lookup --id <ID>`, que devolve limiar, guarda de versão, risco, validação, rollback e fonte com data.
 
 | Regra | Fact que consome | O que acusa |
 |---|---|---|
@@ -139,7 +139,7 @@ Esta skill trata **event log Spark, stages, skew, spill, GC e subparalelismo**. 
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge collect event-log`, `sparkforge analyze event-log`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

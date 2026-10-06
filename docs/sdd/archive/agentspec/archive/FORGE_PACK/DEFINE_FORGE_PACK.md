@@ -34,13 +34,13 @@ Uma equipe de plataforma que quer regras e knowledge proprios sobre os mesmos ar
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: modulo puro `sparkforge/packs/`: `SPARKFORGE_PACKS` com diretorios separados por `os.pathsep`, cada um resolvido para caminho absoluto e exigido existente; `pack.yaml` com `id`, `version`, `prefix`, `core` (faixa de versao do SparkForge) e o conteudo (`rules/`, `knowledge/`, `fixtures/`); nenhum `import` de arquivo do pack |
+| **MUST** | G1: modulo puro `sparkforge_aws/packs/`: `SPARKFORGE_PACKS` com diretorios separados por `os.pathsep`, cada um resolvido para caminho absoluto e exigido existente; `pack.yaml` com `id`, `version`, `prefix`, `core` (faixa de versao do SparkForge) e o conteudo (`rules/`, `knowledge/`, `fixtures/`); nenhum `import` de arquivo do pack |
 | **MUST** | G2: recusas nomeadas, e pack recusado sai INTEIRO: `manifesto_invalido`, `prefixo_reservado` (`SF`), `id_fora_do_prefixo`, `id_duplicado` (contra o core ou outro pack), `core_incompativel`, `pack_duplicado`, `regra_invalida` (a regra nao passa pelo mesmo schema do core) |
 | **MUST** | G3: `load_catalog()` devolve core + regras dos packs ativos; sem `SPARKFORGE_PACKS`, a lista e byte a byte a de hoje |
 | **MUST** | G4: finding de regra de pack sai de `judge` e dos verbos de topo que julgam (`root_cause`, `proof`, `simulate`) sem campo novo no `Finding`; a origem sai do prefixo do `rule_id` |
-| **MUST** | G5: CLI `sparkforge pack list` (ativos, recusados com motivo, mapa prefixo -> pack) e `sparkforge pack check <dir>` (valida o manifesto e roda cada fixture do pack pelo `judge`, falhando quando uma regra do pack nao dispara no fixture que a declara); superficie MCP READ_ONLY equivalente |
+| **MUST** | G5: CLI `sparkforge-aws pack list` (ativos, recusados com motivo, mapa prefixo -> pack) e `sparkforge-aws pack check <dir>` (valida o manifesto e roda cada fixture do pack pelo `judge`, falhando quando uma regra do pack nao dispara no fixture que a declara); superficie MCP READ_ONLY equivalente |
 | **MUST** | G6: `fixtures/packs/` com o pack sintetico `acme-platform` (2 ou 3 regras sobre kinds que o core ja emite, 1 documento de knowledge, 1 fixture por regra) e um pack quebrado por recusa; golden de ponta a ponta |
-| **SHOULD** | G7: `knowledge_path` lista o knowledge dos packs ativos numa chave PROPRIA (nao em `available`), confinado ao diretorio do pack por `sparkforge.paths.resolve_within` |
+| **SHOULD** | G7: `knowledge_path` lista o knowledge dos packs ativos numa chave PROPRIA (nao em `available`), confinado ao diretorio do pack por `sparkforge_aws.paths.resolve_within` |
 | **SHOULD** | G8: freshness de fonte de regra de pack le o `knowledge/sources.lock.json` do proprio pack; sem ele, a fonte sai `unresolved` com `pack_sem_lock` |
 | **COULD** | G9: `docs/forge-pack.md` com a spec do `pack.yaml`, as recusas e o que o pack nao faz |
 
@@ -72,7 +72,7 @@ Uma equipe de plataforma que quer regras e knowledge proprios sobre os mesmos ar
 | AT-008 | Core incompativel | `core: ">=9.0"` | `pack list` | recusado `core_incompativel` com a versao instalada |
 | AT-009 | Manifesto invalido | `pack.yaml` sem `prefix` | `pack list` | recusado `manifesto_invalido` com o campo |
 | AT-010 | Regra invalida | regra de pack sem `sources` | `pack list` | recusado `regra_invalida` com a mensagem do loader |
-| AT-011 | Pack check verde | `acme-platform` | `sparkforge pack check fixtures/packs/acme-platform` | exit 0, cada regra com o fixture que a disparou |
+| AT-011 | Pack check verde | `acme-platform` | `sparkforge-aws pack check fixtures/packs/acme-platform` | exit 0, cada regra com o fixture que a disparou |
 | AT-012 | Pack check vermelho | pack com regra morta | `pack check` | exit 1, a regra nomeada |
 | AT-013 | Knowledge confinado | pack ativo | `knowledge_path` pedindo `../../fora.md` do pack | recusado; `available` do core com os mesmos 89 arquivos |
 | AT-014 | Freshness sem lock | pack sem `sources.lock.json` | `rules lookup --id ACME-... --source-freshness` | fonte `unresolved` com `pack_sem_lock` |
@@ -97,7 +97,7 @@ Uma equipe de plataforma que quer regras e knowledge proprios sobre os mesmos ar
 | Type | Constraint | Impact |
 |------|------------|--------|
 | Technical | Nenhum `import` de arquivo do pack: so leitura de YAML, Markdown e JSON | O pack nao pode trazer extrator; as regras dele so consomem kinds do core |
-| Technical | Contencao por `sparkforge.paths.resolve_within`, como `safe_catalog_file` e `safe_knowledge_file` | Todo caminho vindo do pack e confinado ao diretorio dele |
+| Technical | Contencao por `sparkforge_aws.paths.resolve_within`, como `safe_catalog_file` e `safe_knowledge_file` | Todo caminho vindo do pack e confinado ao diretorio dele |
 | Technical | `load_catalog()` tem 54 chamadas em 12 arquivos (30 em `regen_fixtures`, 6 em `check_evals`) | O comportamento sem a variavel nao pode mudar; gates e CI rodam sem ela |
 | Technical | Regra de pack passa pelo MESMO schema do core (`_REQUIRED` inclui `sources`; `status` exigido de regra executavel) | Regra de pack precisa citar fonte |
 | Technical | `knowledge_path.available` tem 89 arquivos e o teste de paginacao trava em `< 100` | Knowledge de pack nao entra em `available` |
@@ -112,7 +112,7 @@ Uma equipe de plataforma que quer regras e knowledge proprios sobre os mesmos ar
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/packs/` (novo), `sparkforge/rules/loader.py`, `sparkforge/knowledge_ref.py`, `sparkforge/knowledge_freshness.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `fixtures/packs/`, `docs/forge-pack.md` | Carga em varias raizes nos loaders que ja existem; verbo de topo novo |
+| **Deployment Location** | `sparkforge_aws/packs/` (novo), `sparkforge_aws/rules/loader.py`, `sparkforge_aws/knowledge_ref.py`, `sparkforge_aws/knowledge_freshness.py`, `sparkforge_aws/adapters/{_core,cli,tools}.py`, `fixtures/packs/`, `docs/forge-pack.md` | Carga em varias raizes nos loaders que ja existem; verbo de topo novo |
 | **KB Domains** | Nenhum dominio do KB do agentspec cobre empacotamento (o indice tem dbt, spark, airflow...) | Padroes vem do codigo: `catalog_dir()`, `safe_catalog_file`, `resolve_within`, `carregar_lock`, `citacoes_de` |
 | **IaC Impact** | None | Nada de infraestrutura |
 

@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from sparkforge.facts.glue_streaming import extract_glue_streaming_path
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.glue_streaming import extract_glue_streaming_path
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).parents[1]
 RULES = [r for r in load_catalog() if r["id"].startswith("SF-GLUESTREAM-")]

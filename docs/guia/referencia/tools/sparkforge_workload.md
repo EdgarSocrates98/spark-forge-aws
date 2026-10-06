@@ -19,7 +19,7 @@ Perfil de workload por eixos independentes -- scan, shuffle, memoria, skew, arqu
 
 ## Na CLI
 
-[`sparkforge workload`](../cli/workload.md)
+[`sparkforge-aws workload`](../cli/workload.md)
 
 ## Capacidade
 

@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from sparkforge.adapters import _core
+from sparkforge_aws.adapters import _core
 
 FIXTURE = "fixtures/pyspark/clean_job/input/lib/job.py"
 CATALOGO = "fixtures/catalog/glue_table_schema/input/dump.json"
@@ -25,7 +25,7 @@ CATALOGO_MULTI = "fixtures/catalog/overpartitioned_multi_table/input/dump.json"
 
 def _analisar(*extra: str) -> dict:
     proc = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "analyze", "pyspark",
+        [sys.executable, "-m", "sparkforge_aws.adapters.cli", "analyze", "pyspark",
          "--path", FIXTURE, *extra],
         capture_output=True, text=True, check=True,
     )
@@ -98,7 +98,7 @@ def test_o_default_e_full():
 
 def test_detail_level_invalido_e_recusado():
     proc = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "analyze", "pyspark",
+        [sys.executable, "-m", "sparkforge_aws.adapters.cli", "analyze", "pyspark",
          "--path", FIXTURE, "--detail-level", "nao_existe"],
         capture_output=True, text=True,
     )
@@ -297,7 +297,7 @@ class TestSuperficieMCP:
     validar contra o `outputSchema` que a propria tool declara."""
 
     def test_as_tools_de_fact_declaram_detail_level(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         com_paginacao = {
             nome
@@ -333,8 +333,8 @@ class TestSuperficieMCP:
         superficies oferecendo uma afordancia que NAO EXISTE. Nenhuma das 44
         tools aceita id de fact -- o unico `id` do catalogo e o de REGRA, em
         `sparkforge_rules_lookup`."""
-        from sparkforge.adapters.cli import _DETAIL_LEVEL_HELP
-        from sparkforge.adapters.tools import _DETAIL_LEVEL_DESC, TOOLS
+        from sparkforge_aws.adapters.cli import _DETAIL_LEVEL_HELP
+        from sparkforge_aws.adapters.tools import _DETAIL_LEVEL_DESC, TOOLS
 
         por_id = {
             nome
@@ -351,7 +351,7 @@ class TestSuperficieMCP:
     def test_saida_projetada_valida_contra_o_proprio_schema(self, nivel):
         import jsonschema
 
-        from sparkforge.adapters.tools import TOOLS, call_tool
+        from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
         resultado = call_tool(
             "sparkforge_analyze_pyspark", {"path": FIXTURE, "detail_level": nivel}
@@ -365,7 +365,7 @@ class TestSuperficieMCP:
         devolvem esse contrato sem mentir sobre `normal` e `summary`."""
         import jsonschema
 
-        from sparkforge.adapters.tools import TOOLS, call_tool
+        from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
         schema = TOOLS["sparkforge_analyze_pyspark"]["outputSchema"]
         resultado = call_tool("sparkforge_analyze_pyspark", {"path": FIXTURE})
@@ -386,7 +386,7 @@ class TestSuperficieMCP:
             jsonschema.validate(misturado, schema)
 
     def test_detail_level_invalido_vira_erro_estruturado_e_nao_excecao(self):
-        from sparkforge.adapters.tools import call_tool
+        from sparkforge_aws.adapters.tools import call_tool
 
         resultado = call_tool(
             "sparkforge_analyze_pyspark", {"path": FIXTURE, "detail_level": "nao_existe"}
@@ -530,7 +530,7 @@ class TestControlmDescribeDetailLevel:
 
     def test_detail_level_invalido_e_recusado_na_cli(self):
         proc = subprocess.run(
-            [sys.executable, "-m", "sparkforge.adapters.cli", "controlm", "describe",
+            [sys.executable, "-m", "sparkforge_aws.adapters.cli", "controlm", "describe",
              "--version", self.VERSAO, "--detail-level", "normal"],
             capture_output=True, text=True,
         )
@@ -538,10 +538,10 @@ class TestControlmDescribeDetailLevel:
 
     @pytest.mark.parametrize("nivel", ["minimal", "compact", "full"])
     def test_cli_e_mcp_concordam_em_todos_os_niveis(self, nivel):
-        from sparkforge.adapters.tools import call_tool
+        from sparkforge_aws.adapters.tools import call_tool
 
         proc = subprocess.run(
-            [sys.executable, "-m", "sparkforge.adapters.cli", "controlm", "describe",
+            [sys.executable, "-m", "sparkforge_aws.adapters.cli", "controlm", "describe",
              "--version", self.VERSAO, "--detail-level", nivel],
             capture_output=True, text=True, check=True,
         )
@@ -549,13 +549,16 @@ class TestControlmDescribeDetailLevel:
         mcp_payload = call_tool(
             "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
     @pytest.mark.parametrize("nivel", ["minimal", "compact", "full"])
     def test_saida_projetada_valida_contra_o_proprio_schema(self, nivel):
         import jsonschema
 
-        from sparkforge.adapters.tools import TOOLS, call_tool
+        from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
         resultado = call_tool(
             "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
@@ -563,13 +566,13 @@ class TestControlmDescribeDetailLevel:
         jsonschema.validate(resultado, TOOLS["sparkforge_controlm_describe"]["outputSchema"])
 
     def test_a_tool_declara_detail_level_com_os_tres_niveis_proprios(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         propriedade = TOOLS["sparkforge_controlm_describe"]["inputSchema"]["properties"]
         assert propriedade["detail_level"]["enum"] == ["minimal", "compact", "full"]
 
     def test_detail_level_invalido_vira_erro_estruturado_e_nao_excecao_no_mcp(self):
-        from sparkforge.adapters.tools import call_tool
+        from sparkforge_aws.adapters.tools import call_tool
 
         resultado = call_tool(
             "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": "normal"}

@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.lakeformation.architecture import analyze_architecture
-from sparkforge.lakeformation.capabilities import capability, load_matrix
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.lakeformation.architecture import analyze_architecture
+from sparkforge_aws.lakeformation.capabilities import capability, load_matrix
 
 
 def _payload(**overrides):
@@ -231,6 +231,9 @@ def test_cli_and_mcp_operational_review_parity(tmp_path, capsys):
     assert main(["lakeformation", "architect", "--input", str(payload_path)]) == 0
     cli_result = json.loads(capsys.readouterr().out)
     mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+    # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+    # tests/test_runtime_convergence_trust.py
+    mcp_result.pop("_trust", None)
     assert cli_result == mcp_result
     assert "review" in cli_result
 

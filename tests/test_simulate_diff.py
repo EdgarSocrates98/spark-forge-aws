@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.findings.models import Fact
-from sparkforge.proof import load_policy
-from sparkforge.simulate import DERIVED_KINDS, diff, strip_derived
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.proof import load_policy
+from sparkforge_aws.simulate import DERIVED_KINDS, diff, strip_derived
 
 
 @pytest.fixture(scope="module")

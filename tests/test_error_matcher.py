@@ -1,7 +1,7 @@
 """Tests for Deterministic Error Matcher and Reliability RCA."""
 
-from sparkforge.errors.matcher import DeterministicErrorMatcher
-from sparkforge.reliability.rca import ReliabilityAnalyzer
+from sparkforge_aws.errors.matcher import DeterministicErrorMatcher
+from sparkforge_aws.reliability.rca import ReliabilityAnalyzer
 
 
 def test_error_matcher_oom():

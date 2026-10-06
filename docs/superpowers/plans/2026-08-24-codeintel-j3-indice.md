@@ -9,7 +9,7 @@
 e responder "onde está X" sem ler arquivo — começando pelo próprio
 `spark-forge-aws`, que é o repositório com consumidor imediato.
 
-**Arquitetura:** um pacote novo, `sparkforge/codeintel/`, com banco SQLite +
+**Arquitetura:** um pacote novo, `sparkforge_aws/codeintel/`, com banco SQLite +
 FTS5 da biblioteca padrão. Ele **consome** a varredura de `facts/scan.py` e o
 `ast` que os extratores já usam — não reimplementa nem um nem outro. Nenhuma
 tool MCP nova nesta fase.
@@ -93,13 +93,13 @@ em `unresolved_refs` com razão, nunca aresta inventada. É o princípio que
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/codeintel/__init__.py` | Superfície pública do pacote |
-| `sparkforge/codeintel/db.py` | Schema, conexão, pragmas, migração de versão |
-| `sparkforge/codeintel/ids.py` | Id determinístico e assinatura normalizada |
-| `sparkforge/codeintel/extract.py` | AST → nós e referências, sobre `iter_source_files` |
-| `sparkforge/codeintel/index.py` | Orquestra varredura → extração → banco |
-| `sparkforge/codeintel/search.py` | Consulta por nome e por nome qualificado |
-| `sparkforge/adapters/cli.py` | Verbo `code` com `index`, `search`, `status` |
+| `sparkforge_aws/codeintel/__init__.py` | Superfície pública do pacote |
+| `sparkforge_aws/codeintel/db.py` | Schema, conexão, pragmas, migração de versão |
+| `sparkforge_aws/codeintel/ids.py` | Id determinístico e assinatura normalizada |
+| `sparkforge_aws/codeintel/extract.py` | AST → nós e referências, sobre `iter_source_files` |
+| `sparkforge_aws/codeintel/index.py` | Orquestra varredura → extração → banco |
+| `sparkforge_aws/codeintel/search.py` | Consulta por nome e por nome qualificado |
+| `sparkforge_aws/adapters/cli.py` | Verbo `code` com `index`, `search`, `status` |
 | `tests/test_codeintel_db.py` | Schema, pragmas, versão, reconstrutibilidade |
 | `tests/test_codeintel_ids.py` | Determinismo, colisão, sanitização de assinatura |
 | `tests/test_codeintel_extract.py` | Nós, posições, `unresolved`, ausência de corpo |
@@ -264,7 +264,7 @@ git commit -F <arquivo com a mensagem>
 ## Task 2: id determinístico e assinatura sem literal
 
 **Arquivos:**
-- Criar: `sparkforge/codeintel/__init__.py`, `sparkforge/codeintel/ids.py`
+- Criar: `sparkforge_aws/codeintel/__init__.py`, `sparkforge_aws/codeintel/ids.py`
 - Criar: `tests/test_codeintel_ids.py`
 
 - [ ] **Passo 1: escrever o teste**
@@ -282,7 +282,7 @@ segredo entrar no banco: `def connect(password="hunter2")` levaria a senha para
 o indice, que persiste em disco. Valor literal e substituido por marcador.
 """
 
-from sparkforge.codeintel.ids import node_id, normalizar_assinatura
+from sparkforge_aws.codeintel.ids import node_id, normalizar_assinatura
 
 
 def test_mesmo_simbolo_no_mesmo_lugar_da_o_mesmo_id():
@@ -333,7 +333,7 @@ def test_assinatura_sem_default_nao_muda():
 ```
 python -m pytest tests/test_codeintel_ids.py -q
 ```
-Esperado: `ModuleNotFoundError: No module named 'sparkforge.codeintel'`.
+Esperado: `ModuleNotFoundError: No module named 'sparkforge_aws.codeintel'`.
 
 - [ ] **Passo 3: escrever `ids.py`**
 
@@ -396,7 +396,7 @@ O banco e DESCARTAVEL. Nada no motor determinístico depende dele para
 responder; se sumir, a analise continua igual e o indice se reconstroi.
 """
 
-from sparkforge.codeintel.ids import node_id, normalizar_assinatura
+from sparkforge_aws.codeintel.ids import node_id, normalizar_assinatura
 
 __all__ = ["node_id", "normalizar_assinatura"]
 ```
@@ -419,7 +419,7 @@ marcador de literal desligado. **Todas têm que ser pegas.** Diga quantas foram.
 ## Task 3: schema e conexão
 
 **Arquivos:**
-- Criar: `sparkforge/codeintel/db.py`
+- Criar: `sparkforge_aws/codeintel/db.py`
 - Modificar: `tests/test_codeintel_db.py`
 
 - [ ] **Passo 1: acrescentar o teste do schema**
@@ -427,7 +427,7 @@ marcador de literal desligado. **Todas têm que ser pegas.** Diga quantas foram.
 ```python
 import pathlib
 
-from sparkforge.codeintel.db import SCHEMA_VERSION, abrir, criar_schema
+from sparkforge_aws.codeintel.db import SCHEMA_VERSION, abrir, criar_schema
 
 
 def test_schema_cria_as_tabelas_declaradas(tmp_path):
@@ -511,7 +511,7 @@ tabela fora do schema. Diga quantas foram pegas.
 ## Task 4: AST → nós, sem corpo
 
 **Arquivos:**
-- Criar: `sparkforge/codeintel/extract.py`
+- Criar: `sparkforge_aws/codeintel/extract.py`
 - Criar: `tests/test_codeintel_extract.py`
 
 - [ ] **Passo 1: escrever o teste**
@@ -526,7 +526,7 @@ do repositorio, com o custo de disco e o risco de vazamento que vem junto.
 
 import textwrap
 
-from sparkforge.codeintel.extract import extrair_nos
+from sparkforge_aws.codeintel.extract import extrair_nos
 
 
 def _nos(fonte: str, caminho: str = "jobs/etl.py"):
@@ -622,7 +622,7 @@ simples); `normalizar_assinatura` não chamada; `end_line` igual a `start_line`;
 ## Task 5: indexar, e indexar o próprio repositório
 
 **Arquivos:**
-- Criar: `sparkforge/codeintel/index.py`
+- Criar: `sparkforge_aws/codeintel/index.py`
 - Criar: `tests/test_codeintel_index.py`
 
 - [ ] **Passo 1: escrever o teste**
@@ -638,7 +638,7 @@ aguenta.
 
 import pathlib
 
-from sparkforge.codeintel.index import indexar
+from sparkforge_aws.codeintel.index import indexar
 
 
 def test_indexa_arvore_pequena(tmp_path):
@@ -730,9 +730,9 @@ de `ast` entre versões, e isso é achado, não ruído.
 ## Task 6: buscar, e provar que economiza
 
 **Arquivos:**
-- Criar: `sparkforge/codeintel/search.py`
+- Criar: `sparkforge_aws/codeintel/search.py`
 - Criar: `tests/test_codeintel_search.py`
-- Modificar: `sparkforge/adapters/cli.py`
+- Modificar: `sparkforge_aws/adapters/cli.py`
 
 - [ ] **Passo 1: escrever o teste**
 
@@ -749,8 +749,8 @@ import pathlib
 
 import pytest
 
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.search import buscar
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.search import buscar
 
 
 @pytest.fixture
@@ -843,7 +843,7 @@ tem 638 entradas de vários documentos.
 
 1. O teste da tarefa
 2. `python -m pytest tests/ -q` — linha de base **6598 passed, 5 skipped**
-3. `ruff check sparkforge tests scripts` — **241**, não pode subir; `noqa` não é conserto
+3. `ruff check sparkforge_aws tests scripts` — **241**, não pode subir; `noqa` não é conserto
 4. `python scripts/check_vnext_claims.py` — **0 divergências**
 5. Commit com `git commit -F <arquivo>`. **Sem heredoc** — ele travou cinco agentes na fase anterior.
 

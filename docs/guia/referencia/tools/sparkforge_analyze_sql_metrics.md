@@ -20,7 +20,7 @@ Extrai metrica por NO DO PLANO de um Spark event log ja coletado: quantos bytes 
 
 ## Na CLI
 
-[`sparkforge analyze cloudwatch`](../cli/analyze.md), [`sparkforge analyze event-log`](../cli/analyze.md), [`sparkforge analyze glue-job-runs`](../cli/analyze.md), [`sparkforge analyze sql-metrics`](../cli/analyze.md)
+[`sparkforge-aws analyze cloudwatch`](../cli/analyze.md), [`sparkforge-aws analyze event-log`](../cli/analyze.md), [`sparkforge-aws analyze glue-job-runs`](../cli/analyze.md), [`sparkforge-aws analyze sql-metrics`](../cli/analyze.md)
 
 ## Capacidade
 

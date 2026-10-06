@@ -31,9 +31,9 @@
 
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
-| 1 | `sparkforge/receipt/__init__.py`, `_hash.py` | (direct) | ✅ Complete | `text_sha256` com CRLF normalizado; `receipt_id` sobre `findings.models._canonical` |
-| 2 | `sparkforge/receipt/build.py` | (direct) | ✅ Complete | Partes case, evidence, judgment, decision, proof, tools, host, actions |
-| 3 | `sparkforge/receipt/verify.py` | (direct) | ✅ Complete | Ordem fixa; caminho do recibo confinado ao repo (`outside_repo`) |
+| 1 | `sparkforge_aws/receipt/__init__.py`, `_hash.py` | (direct) | ✅ Complete | `text_sha256` com CRLF normalizado; `receipt_id` sobre `findings.models._canonical` |
+| 2 | `sparkforge_aws/receipt/build.py` | (direct) | ✅ Complete | Partes case, evidence, judgment, decision, proof, tools, host, actions |
+| 3 | `sparkforge_aws/receipt/verify.py` | (direct) | ✅ Complete | Ordem fixa; caminho do recibo confinado ao repo (`outside_repo`) |
 | 4 | `tests/test_receipt_build.py`, `tests/test_receipt_verify.py` | (direct) | ✅ Complete | 37 testes |
 | 5 | `adapters/_core.py` | (direct) | ✅ Complete | `receipt_emit`, `receipt_write`, `receipt_emit_and_write`, `receipt_verify` |
 | 6 | `adapters/cli.py` | (direct) | ✅ Complete | Grupo `receipt`, `dest="subcommand"` (sem mexer na cadeia de despacho) |

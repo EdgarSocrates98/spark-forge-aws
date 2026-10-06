@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sparkforge.adapters.mcp_envelope import (
+from sparkforge_aws.adapters.mcp_envelope import (
     ERRO_SEM_ESTRUTURA,
     Envelope,
     envelope_da_chamada,
@@ -23,7 +23,7 @@ from sparkforge.adapters.mcp_envelope import (
     validar_saida,
 )
 
-MODULO = Path(__file__).resolve().parents[1] / "sparkforge" / "adapters" / "mcp_envelope.py"
+MODULO = Path(__file__).resolve().parents[1] / "sparkforge_aws" / "adapters" / "mcp_envelope.py"
 
 CATALOGO: dict[str, dict[str, Any]] = {
     "t_ok": {

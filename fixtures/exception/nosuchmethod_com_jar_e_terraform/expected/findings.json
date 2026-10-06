@@ -28,7 +28,7 @@
       "Recompilar todo JAR Scala/Java customizado contra Scala 2.13.17 e republicar o artefato, apontando `--extra-jars` para a versão nova.",
       "Conferir o sufixo de artefato de cada JAR E das dependências transitivas dele (`_2.12` contra `_2.13`) -- um único remanescente de 2.12 derruba o job igual, e ele não aparece no nome do que você declarou.",
       "Trocar `JavaConversions` por `CollectionConverters` e `MutableList` por `ListBuffer`; coleções paralelas passaram a exigir import próprio em 2.13.",
-      "Rodar `sparkforge glue dependency-audit <dir> --glue 6.0` sobre o diretório do job para ler `mig.jar_binary.scala_minor` de todos os JARs de uma vez, em vez de conferir o acusado sozinho."
+      "Rodar `sparkforge-aws glue dependency-audit <dir> --glue 6.0` sobre o diretório do job para ler `mig.jar_binary.scala_minor` de todos os JARs de uma vez, em vez de conferir o acusado sozinho."
     ],
     "expected_effect": "",
     "benchmark_ref": "",

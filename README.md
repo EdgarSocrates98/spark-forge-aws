@@ -1,8 +1,8 @@
-# SparkForge AWS
-
 <p align="center">
-  <img src="docs/assets/spark-forge-logo.jpg" alt="Logo do SparkForge" width="420">
+  <img src="docs/assets/spark-forge-logo.jpg" alt="SparkForge AWS" width="420">
 </p>
+
+# SparkForge AWS
 
 O SparkForge julga jobs Spark por artefato. Ele lê o que o job deixou — código PySpark,
 plano físico, event log, rodapé Parquet, metadata Iceberg, definição do job ou do
@@ -13,7 +13,7 @@ Databricks declarado, com Photon reconhecido no plano.
 
 O que ele **não** é:
 
-- **Não chama provider de modelo.** `sparkforge/` não importa `anthropic`, `openai`,
+- **Não chama provider de modelo.** `sparkforge_aws/` não importa `anthropic`, `openai`,
   `bedrock` nem `litellm`. Quem gasta token é o host que executa os agents.
 - **Não estima ganho sem medida.** "Vai ficar 30% mais rápido" exige o run que ainda não
   aconteceu. `expected_gain` é recusado pelo schema, e um ganho só entra citando o
@@ -28,6 +28,10 @@ agent e skill gerada do código.
 Para ver o que foi entregue nas waves de control plane, streaming, CDC, economia
 observada e Forge Lab, consulte o [mapa de evolução atual](docs/EVOLUTION-CURRENT.md)
 e o [ledger completo de entrega](docs/DELIVERY-LEDGER.md).
+
+Superfície operacional atual: **14 coordenadores**, **5 executores** e **60 skills**;
+o catálogo mantém rastreabilidade por artefato e as novas inspeções do Agentic OS v2
+continuam locais, determinísticas e sem provider no core.
 
 ## Como ele pensa: extrair, julgar, compor
 
@@ -86,25 +90,25 @@ está em [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md).
 
 ```bash
 pip install sparkforge-aws            # ou, no clone: pip install -e .
-sparkforge runtime detect --glue 5.0
-sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
-sparkforge next-step --repo . --findings .sparkforge/findings.json
+sparkforge-aws runtime detect --glue 5.0
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
+sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge/findings.json
 ```
 
 `--facts` é repetível: `judge` correlaciona código e infraestrutura numa chamada só. No
 EMR on EC2 a release vem do dump, sem flag de versão:
 
 ```bash
-sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
-sparkforge judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
+sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
+sparkforge-aws judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
   --out .sparkforge/findings.json
 ```
 
 No Databricks, a versão e o Photon são declarados:
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --databricks 15.4 --photon on \
+sparkforge-aws judge --facts .sparkforge/facts.json --databricks 15.4 --photon on \
   --out .sparkforge/findings.json
 ```
 
@@ -122,10 +126,10 @@ Testcontainers consomem a mesma DSL; a AWS é um tier separado e nunca é tocada
 pelo core offline.
 
 ```bash
-sparkforge lab doctor
-sparkforge lab verify --repo .
-sparkforge lab scenarios --json --repo .
-sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+sparkforge-aws lab doctor
+sparkforge-aws lab verify --repo .
+sparkforge-aws lab scenarios --json --repo .
+sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42 --repo .
 ```
 
 O produto entregue possui registry com 11 componentes, Golden 20 com 240 ações
@@ -145,19 +149,19 @@ batch, saída de sink, lag Kafka e iterator age Kinesis:
 
 ```bash
 # progress Structured Streaming
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
 
 # saída observada do sink, ligada ao batch por batch_id/query_name
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name output-rows --query-name orders-query \
   --sink-name orders-sink --out sink-slo.facts.json
 
 # lag Kafka ou iterator age Kinesis
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out transport-slo.facts.json
@@ -182,7 +186,7 @@ Para correlacionar CDC, transporte, processador e sink, use um contrato JSON
 versionado com selectors exatos por `kind` e atributos escalares:
 
 ```bash
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
   --facts iceberg-facts.json --mode pipeline \
   --pipeline-path orders-pipeline.json --out pipeline-facts.json
@@ -225,12 +229,12 @@ Managed Flink preserva cinco métricas application-level no namespace
 `AWS/KinesisAnalytics` como `managed_flink.metric`:
 
 ```bash
-sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+sparkforge-aws collect streaming-integrations --repo . --kinesis-stream orders \
   --metrics-start 2026-10-02T00:00:00Z \
   --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
   --now 2026-10-02T00:10:00Z
 
-sparkforge collect managed-flink --repo . --application-name orders \
+sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 \
   --metrics-start 2026-10-03T00:00:00Z \
   --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
@@ -249,10 +253,10 @@ Quando o caso inclui a definição efetiva do job e o Terraform do mesmo ambient
 extraia os dois artefatos e componha os facts antes de julgar:
 
 ```bash
-sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
-sparkforge analyze terraform --path infra/ --out terraform.facts.json
-sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
-sparkforge judge --facts fused.facts.json --show-skipped
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge-aws analyze terraform --path infra/ --out terraform.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge-aws judge --facts fused.facts.json --show-skipped
 ```
 
 `fuse` só liga `aws_glue_job` por `name` literal único. O fact
@@ -266,9 +270,9 @@ Com histórico terminal sanitizado, componha também a definição com
 `glue.job_run`:
 
 ```bash
-sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
-sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
-sparkforge judge --facts runtime.facts.json --show-skipped
+sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
 
 `glue.streaming.runtime_link` compara `glue_version`, `worker_type` e
@@ -292,7 +296,7 @@ e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
 ### Glue Schema Registry: coleta read-only
 
-O coletor `sparkforge collect schema-registry` consulta somente
+O coletor `sparkforge-aws collect schema-registry` consulta somente
 `get_registry`, `list_schemas`, `get_schema` e `get_schema_version`, preserva a
 latest schema version observada e grava artefato com manifesto SHA-256. É
 offline-first, pagina e limita quantidade/bytes; definição ausente, inválida ou
@@ -300,8 +304,8 @@ acima do limite fica `unresolved`. Não cria, atualiza ou exclui registry,
 schema ou version.
 
 ```bash
-sparkforge collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
-sparkforge analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+sparkforge-aws collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
+sparkforge-aws analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
 ```
 
 Detalhes em [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md),
@@ -311,18 +315,18 @@ Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para
 integre uma vez por host:
 
 ```bash
-sparkforge integrate all --scope user --dry-run   # lista o que seria escrito
-sparkforge integrate all --scope user             # Claude Code, Devin, Codex e Copilot CLI
-sparkforge detach all                             # desfaz, removendo só o que foi escrito
+sparkforge-aws integrate all --scope user --dry-run   # lista o que seria escrito
+sparkforge-aws integrate all --scope user             # Claude Code, Devin, Codex e Copilot CLI
+sparkforge-aws detach all                             # desfaz, removendo só o que foi escrito
 ```
 
 Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão em
-[Instalação](docs/guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate).
+[Instalação](docs/guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **136 tools MCP**.
+(`sparkforge_aws/adapters/_core.py`), e o servidor publica **143 tools MCP** no catálogo atual.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|
@@ -330,15 +334,15 @@ O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mes
 | Devin (CLI e Desktop) | `.agents/skills`, `.agents/agents` (e importa `.claude/agents`), MCP por `.devin/mcp_config.json` (stdio) ou HTTP | [MCP](docs/guia/04-mcp.md#devin-cli-stdio) |
 | GitHub Copilot | `.github/copilot-instructions.md`, `.github/instructions`, `.github/prompts`, `.github/agents`; usa a CLI | [Agents e skills](docs/guia/05-agents-e-skills.md#github-copilot) |
 | Agent Skills | `skills/`, para qualquer agente compatível com o padrão | [Referência de skills](docs/guia/referencia/skills/README.md) |
-| `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
+| `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge-aws` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
 
-**Duas camadas de agente.** O **coordenador** (**14 coordenadores** em `agents/*.md`) lê o
-case, decide qual executor roda e registra o resultado. O **executor** (**5 executores**
+**Duas camadas de agente.** O **coordenador** (perfis em `agents/*.md`) lê o
+case, decide qual executor roda e registra o resultado. O **executor** (perfis em
 em `agents/executors/`) faz uma função só — inventário, extração, julgamento, verificação,
 síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
 as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
-desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
-traz **60 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+desligado, `sparkforge-aws playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
+ traz skills versionadas; as de diagnóstico e as onze de procedimento AWS estão em
 [Agents e skills](docs/guia/05-agents-e-skills.md).
 
 ## SDD próprio
@@ -346,11 +350,11 @@ traz **60 skills**; as de diagnóstico e as onze de procedimento AWS estão em
 Mudança não trivial passa por spec antes de código, com gate determinístico: o agente
 escreve os artefatos, e o pacote confere o que dá para conferir e recusa o resto por
 nome. As skills `sdd-explore`, `sdd-define`, `sdd-design`, `sdd-plan`, `sdd-build` e
-`sdd-ship` produzem `docs/sdd/<FEATURE>/<fase>.md`; `sparkforge sdd check --repo .
+`sdd-ship` produzem `docs/sdd/<FEATURE>/<fase>.md`; `sparkforge-aws sdd check --repo .
 --feature <F>` confere schema, cascata por hash, cobertura e TDD declarado, e
 `sdd status` e `sdd stamp` mostram a fase e gravam o hash do upstream. Dois perfis:
 **dev** (este repositório) e **operator** (o job do operador, com a mudança sempre por
-`sparkforge change sandbox`). Fluxo completo em [`docs/sdd/README.md`](docs/sdd/README.md).
+`sparkforge-aws change sandbox`). Fluxo completo em [`docs/sdd/README.md`](docs/sdd/README.md).
 
 ## Investigação, prova e handoff
 
@@ -360,7 +364,7 @@ plano de validação funcional —, nunca com a flag. `report sign` e `report ve
 **correspondência** entre relatório e findings, não autoria. `report github` projeta os
 findings em SARIF para o Code Scanning.
 
-Ao pausar, `sparkforge handoff --repo .` escreve `.sparkforge/handoff.md`, e cinco
+Ao pausar, `sparkforge-aws handoff --repo .` escreve `.sparkforge/handoff.md`, e cinco
 arquivos pequenos viram o barramento entre sessões:
 
 ```bash
@@ -373,9 +377,9 @@ o comando exato de recoleta. Detalhe em [Rigor, assinatura e handoff](docs/guia/
 
 ## Camada agêntica e economia
 
-`sparkforge arbitrate` roda depois de `judge` e grava `Claim`, `Evidence`,
+`sparkforge-aws arbitrate` roda depois de `judge` e grava `Claim`, `Evidence`,
 `Contradiction`, `Unknown` e `Decision` no blackboard do case. Quando a arbitragem não
-fecha, `sparkforge debate start|next|submit` conduz o debate como máquina de estados; o
+fecha, `sparkforge-aws debate start|next|submit` conduz o debate como máquina de estados; o
 argumento é escrito pelo host, nunca dentro do pacote. Os dois executores são **L0**:
 `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback` obrigatório.
 
@@ -384,7 +388,7 @@ alcança um único par de regras, que só existe na união dos facts de dois job
 de modelo não foi rodado. Detalhe em [Camada agêntica](docs/guia/09-camada-agentica.md) e
 [`evals/README.md`](evals/README.md).
 
-Economia se mede, não se afirma. `sparkforge economy report` lê os spans que cada chamada
+Economia se mede, não se afirma. `sparkforge-aws economy report` lê os spans que cada chamada
 grava e separa **byte de payload**, que o SparkForge produz e sempre existe, de **token de
 provider**, que só aparece com o transcript do host — sem ele sai `tokens_unresolved`, e
 os dois nunca se somam. `detail_level` (`summary`, `normal`, `full`) muda o tamanho da
@@ -395,6 +399,29 @@ denominador de cada uma, estão nos documentos auditados por
 [Economia de contexto](docs/guia/usos/economia-de-contexto.md). A compressão de output
 (caveman, ligada por padrão e vendorizada sem `npm`) está em
 [Ecossistema caveman](docs/guia/10-caveman.md).
+
+### Agentic OS v2: contratos locais e inspeção econômica
+
+O incremento `AGENTIC_ENGINEERING_OS_V2` adiciona contratos puros para memória
+institucional com quarantine e invalidação, envelopes de trust/taint, contexto mínimo,
+checkpoints semânticos e interoperabilidade Forge/A2A. Eles não elevam dados externos a
+instrução e não chamam providers.
+
+Use as superfícies novas quando houver artefato local:
+
+```bash
+sparkforge-aws context inspect --input context.json
+sparkforge-aws agentops inspect <run_id> --repo .
+sparkforge-aws agentops compare <run_a> <run_b> --repo .
+sparkforge-aws agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
+sparkforge-aws doctor agentic --repo .
+```
+
+`context inspect` mede bytes, relevância, duplicação, frescor e evidência. Tokens só
+entram com valor observado do transcript do host (`--observed-provider-tokens`); custo
+exige `cost_basis`. `agentops baseline save` é a única mutação nova: grava arquivo local
+idempotente; as demais leituras são read-only. O router de modelo novo permanece shadow
+por padrão e não executa provider.
 
 ## Segurança e operações destrutivas
 

@@ -16,8 +16,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
@@ -216,7 +216,7 @@ class TestOTerceiroDegrauAlcancaAAssinatura:
         nada -- a mesma armadilha do invariante derivado por AST."""
         corpus = self._skills_corpus()
 
-        assert "sparkforge-diagnose" in corpus, len(corpus)
+        assert "sparkforge-aws-diagnose" in corpus, len(corpus)
         assert len(list((ROOT / "skills").glob("*/SKILL.md"))) >= 20
 
 

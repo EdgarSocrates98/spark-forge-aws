@@ -9,10 +9,10 @@ upstream:
   sha256: "637fa1bfb9d62e6e5beb074a272d68362dd03d2b966258976a74d765958ed71a"
 files:
   - {path: tests/test_lakeformation_missing_grant.py, action: create, reason: "testes de AC1 a AC11 e AC13, escritos antes do codigo"}
-  - {path: sparkforge/facts/lakeformation_missing_grant.py, action: create, reason: "extrator derivado: EMITTED_KINDS lakeformation.missing_grant e .unresolved, SOURCE_KINDS, build_missing_grant(facts) e o carregador da tabela operacao->permissao"}
+  - {path: sparkforge_aws/facts/lakeformation_missing_grant.py, action: create, reason: "extrator derivado: EMITTED_KINDS lakeformation.missing_grant e .unresolved, SOURCE_KINDS, build_missing_grant(facts) e o carregador da tabela operacao->permissao"}
   - {path: knowledge/glue/lakeformation-permissions.yaml, action: create, reason: "tabela operacao->permissao como dado, uma linha por operacao, cada linha com source e quote literal da fonte T1"}
-  - {path: sparkforge/facts/fusion.py, action: modify, reason: "fuse() chama build_missing_grant depois de build_lakeformation (o access_model precisa existir antes), guardado por SOURCE_KINDS como o timeout_diagnosis"}
-  - {path: sparkforge/lakeformation/graph.py, action: modify, reason: "build_access_graph le lakeformation.missing_grant quando existe; sem ele, caminho atual intocado"}
+  - {path: sparkforge_aws/facts/fusion.py, action: modify, reason: "fuse() chama build_missing_grant depois de build_lakeformation (o access_model precisa existir antes), guardado por SOURCE_KINDS como o timeout_diagnosis"}
+  - {path: sparkforge_aws/lakeformation/graph.py, action: modify, reason: "build_access_graph le lakeformation.missing_grant quando existe; sem ele, caminho atual intocado"}
   - {path: tests/test_lakeformation_access_graph.py, action: modify, reason: "AC14 e a guarda AC15"}
   - {path: rules/catalog/lakeformation.yaml, action: modify, reason: "regra SF-LF-011, requires_facts [lakeformation.missing_grant], runtime_scope {} com a razao escrita"}
   - {path: tests/test_lakeformation_rules.py, action: modify, reason: "AC12"}
@@ -22,7 +22,7 @@ files:
   - {path: tests/test_fixtures_golden_cloudwatch_logs.py, action: modify, reason: "D11: runner extrai input/lf/ com extract_lakeformation_tree e deriva build_missing_grant depois do matcher; REQUIRED_FIXTURES ganha as duas"}
   - {path: scripts/regen_fixtures.py, action: modify, reason: "D11: regen_cloudwatch_logs identico ao runner (par)"}
   - {path: tests/test_harness_untrusted.py, action: modify, reason: "registro snippet_measure: _derivados_de_facts ganha a chamada de build_missing_grant, senao a guarda fail-closed derruba test_a_enumeracao_do_documento_bate_com_a_medida"}
-  - {path: sparkforge/simulate/diff.py, action: modify, reason: "D12: DERIVED_KINDS inclui lakeformation_missing_grant.EMITTED_KINDS, senao o simulate rederiva de um lado so"}
+  - {path: sparkforge_aws/simulate/diff.py, action: modify, reason: "D12: DERIVED_KINDS inclui lakeformation_missing_grant.EMITTED_KINDS, senao o simulate rederiva de um lado so"}
   - {path: tests/test_rules_catalog_reachability.py, action: modify, reason: "registro reachability_lists: o extrator novo entra nas duas listas EXTRACTORS"}
   - {path: tests/test_fixtures_kind_coverage.py, action: modify, reason: "registro fixture_kind_coverage: o extrator novo e o golden de SF-LF-011"}
   - {path: knowledge/sources.lock.json, action: modify, reason: "registro sources_lock: lf-permissions-reference.html entra (security-access-control-fta.html ja esta), via refresh_knowledge --update --offline"}
@@ -34,11 +34,11 @@ decisions:
     choice: "Extrator derivado em arquivo proprio, chamado por fuse() logo depois de build_lakeformation, guardado por SOURCE_KINDS = {error.signature_match}. Sem ERR-LF-* no pool, o fuse fica identico (AC9)."
     rejected:
       - "verbo de composicao sem fact (abordagem B do explore): judge ficaria cego"
-      - "derivar dentro de sparkforge/errors/matcher.py (abordagem C): o matcher recebe log, nao a uniao dos facts"
-      - "estender sparkforge/facts/lakeformation.py: ele deriva de configuracao, e este de falha mais permissao; juntar misturaria dois SOURCE_KINDS num modulo de 400 linhas"
+      - "derivar dentro de sparkforge_aws/errors/matcher.py (abordagem C): o matcher recebe log, nao a uniao dos facts"
+      - "estender sparkforge_aws/facts/lakeformation.py: ele deriva de configuracao, e este de falha mais permissao; juntar misturaria dois SOURCE_KINDS num modulo de 400 linhas"
     rollback: "git revert do commit do extrator e da chamada em fusion.py; o fuse volta a nao emitir lakeformation.missing_grant, e SF-LF-011 fica sem fact (requires_facts pula)."
   - id: D2
-    choice: "Tabela operacao->permissao em knowledge/glue/lakeformation-permissions.yaml, lida via sparkforge/knowledge_ref.py (nunca Path(__file__).parents). Cada linha tem operation, model, permission, resource_level, source (URL) e quote literal. Quatro linhas: read->SELECT; write/delete sob FTA->ALL; create->CREATE_TABLE no database e DATA_LOCATION_ACCESS condicional; alter->ALTER."
+    choice: "Tabela operacao->permissao em knowledge/glue/lakeformation-permissions.yaml, lida via sparkforge_aws/knowledge_ref.py (nunca Path(__file__).parents). Cada linha tem operation, model, permission, resource_level, source (URL) e quote literal. Quatro linhas: read->SELECT; write/delete sob FTA->ALL; create->CREATE_TABLE no database e DATA_LOCATION_ACCESS condicional; alter->ALTER."
     rejected:
       - "tabela em codigo Python: nenhum gate conferiria a citacao, o mesmo defeito que lakeformation_matrix.py corrigiu em 2026-09-09"
       - "linha nova dentro de lakeformation-matrix.yaml: aquela guarda capacidade por runtime, e esta permissao por operacao; perguntas diferentes"
@@ -78,7 +78,7 @@ decisions:
       - "remover o SELECT fixo: quebra saidas e goldens atuais (rejeitada no explore)"
     rollback: "git revert do commit do grafo; a guarda AC15 continua passando."
   - id: D9
-    choice: "Modelo de acesso: algum lakeformation.access_model com model=both -> unresolved modelo_both; com model=fgac -> FGAC; senao, lakeformation.filesystem com lf_credentials_resolver_declared=true ou lakeformation.iceberg_catalog com lakeformation_enabled=true -> FTA; nada disso -> unresolved modelo_ausente. Motivo medido: sparkforge/facts/lakeformation.py nao emite access_model para job so de FTA (docstring de _access_models), e a superficie de FTA e o filesystem e o catalogo."
+    choice: "Modelo de acesso: algum lakeformation.access_model com model=both -> unresolved modelo_both; com model=fgac -> FGAC; senao, lakeformation.filesystem com lf_credentials_resolver_declared=true ou lakeformation.iceberg_catalog com lakeformation_enabled=true -> FTA; nada disso -> unresolved modelo_ausente. Motivo medido: sparkforge_aws/facts/lakeformation.py nao emite access_model para job so de FTA (docstring de _access_models), e a superficie de FTA e o filesystem e o catalogo."
     rejected:
       - "ler so lakeformation.access_model (como o explore dizia): todo job FTA sairia modelo_ausente"
       - "chamar _marcadores_de_fta: funcao privada de outro modulo; os dois fatos derivados ja carregam o mesmo sinal"
@@ -95,7 +95,7 @@ decisions:
       - "uma fixture de golden por AC: nove diretorios para cenarios que o teste unitario ja fixa, e cada um move REQUIRED_FIXTURES e o golden"
     rollback: "git revert do commit das fixtures; python scripts/regen_fixtures.py regenera os goldens das duas lf_negado_* ao estado anterior junto com o revert do runner."
   - id: D12
-    choice: "sparkforge/simulate/diff.py DERIVED_KINDS passa a incluir lakeformation_missing_grant.EMITTED_KINDS."
+    choice: "sparkforge_aws/simulate/diff.py DERIVED_KINDS passa a incluir lakeformation_missing_grant.EMITTED_KINDS."
     rejected:
       - "deixar fora: strip_derived nao tiraria o fact, o fuse do lado simulado o derivaria de novo, e o diff mostraria duplicata que o --set nao causou"
     rollback: "git revert do commit."
@@ -114,11 +114,11 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| extrator derivado | `sparkforge/facts/lakeformation_missing_grant.py`, `tests/test_lakeformation_missing_grant.py` | AC1–AC9, AC13, AC17 |
+| extrator derivado | `sparkforge_aws/facts/lakeformation_missing_grant.py`, `tests/test_lakeformation_missing_grant.py` | AC1–AC9, AC13, AC17 |
 | tabela operação→permissão | `knowledge/glue/lakeformation-permissions.yaml` | AC10 |
-| chamada em `fuse()` | `sparkforge/facts/fusion.py` | AC11 |
+| chamada em `fuse()` | `sparkforge_aws/facts/fusion.py` | AC11 |
 | regra e fixtures | `rules/catalog/lakeformation.yaml`, `fixtures/cloudwatch_logs/` (D11), runner e regen do golden | AC12 |
-| grafo | `sparkforge/lakeformation/graph.py` | AC14, AC15 |
+| grafo | `sparkforge_aws/lakeformation/graph.py` | AC14, AC15 |
 | registros | listas `EXTRACTORS`, `simulate/diff.py` (D12), `manifest.json`, `STATUS.md`, `sources.lock.json`, `claims.lock.json` | AC16 |
 
 ## Fluxo do extrator
@@ -157,9 +157,9 @@ Tudo lido em 2026-09-21:
 - §6 de `knowledge/glue/lakeformation-fgac.md`, opção 1: a escrita do runtime role usa
   `s3:PutObject`, `s3:DeleteObject` e KMS. O conflito das frases C e D fica declarado.
 - Eixo `fgac_spark_native_write` em `knowledge/glue/lakeformation-matrix.yaml`.
-- `sparkforge/errors/matcher.py`: `matched_line` com no máximo 200 caracteres no caminho de
+- `sparkforge_aws/errors/matcher.py`: `matched_line` com no máximo 200 caracteres no caminho de
   log.
-- `sparkforge/facts/runtime_detect.py`: `env.runtime_signal`, com `component` e
+- `sparkforge_aws/facts/runtime_detect.py`: `env.runtime_signal`, com `component` e
   `resolved`.
 
 ## Revisão de 2026-09-21, antes do plan
@@ -173,11 +173,11 @@ elas entram como D9 a D12, com o manifesto ajustado:
   ação IAM e já têm regra própria.
 - **D11.** O golden vai para `fixtures/cloudwatch_logs`, porque o runner de
   `fixtures/lakeformation` lê todo `*.json` como artefato de permissão.
-- **D12.** `sparkforge/simulate/diff.py` guarda uma terceira lista de kinds derivados, e o
+- **D12.** `sparkforge_aws/simulate/diff.py` guarda uma terceira lista de kinds derivados, e o
   kind novo precisa entrar nela.
 
 Saíram do manifesto, por medida:
-- `docs/surface.lock.json`: `sparkforge/observability/surface.py` mede só `*.md` de
+- `docs/surface.lock.json`: `sparkforge_aws/observability/surface.py` mede só `*.md` de
   `knowledge/`, e o YAML novo não move a superfície.
 - `tests/test_rule_scope_by_nature.py`: a área `SF-LF` já tem regra com
   `runtime_scope: {}` (`SF-LF-008`), então acrescentar mais uma não muda o agregado.

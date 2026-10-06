@@ -40,7 +40,7 @@ identidade declarada. O suporte é opcional: ausência de OpenLineage permanece
 
 ## Coleta read-only e fronteira de segurança
 
-`sparkforge collect streaming-integrations` grava um artefato composto em
+`sparkforge-aws collect streaming-integrations` grava um artefato composto em
 `.sparkforge/artifacts/streaming_integrations/` e registra SHA-256 no manifesto.
 As fontes suportadas são:
 

@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-import sparkforge.knowledge_ref as kr
-from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
+import sparkforge_aws.knowledge_ref as kr
+from sparkforge_aws.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -47,14 +47,14 @@ class TestResolution:
         ou uma troca na ordem das checagens quebraria exatamente o cenario que
         e a razao do modulo existir, e nenhum teste apitaria.
 
-        Simula o layout instalado em `tmp_path`: um `sparkforge/knowledge_ref.py`
-        falso (via injecao de `__file__`) com `sparkforge/knowledge/` presente e
+        Simula o layout instalado em `tmp_path`: um `sparkforge_aws/knowledge_ref.py`
+        falso (via injecao de `__file__`) com `sparkforge_aws/knowledge/` presente e
         sem `knowledge/` na raiz simulada (o equivalente a `parents[1]` cair fora
         do repositorio real).
         """
         monkeypatch.delenv("SPARKFORGE_KNOWLEDGE", raising=False)
 
-        fake_package_dir = tmp_path / "site-packages" / "sparkforge"
+        fake_package_dir = tmp_path / "site-packages" / "sparkforge_aws"
         fake_knowledge_dir = fake_package_dir / "knowledge"
         fake_knowledge_dir.mkdir(parents=True)
         fake_module_file = fake_package_dir / "knowledge_ref.py"

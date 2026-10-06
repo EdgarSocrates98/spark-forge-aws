@@ -11,7 +11,7 @@ operacional; este documento explica o que cada camada mede.
 kind emitido**. O que ele prova: o extrator observa o que diz observar, e observa a mesma
 coisa amanhã.
 
-`sparkforge/facts/migration.py` declara os kinds que emite em `EMITTED_KINDS`, e
+`sparkforge_aws/facts/migration.py` declara os kinds que emite em `EMITTED_KINDS`, e
 `tests/test_fixtures_kind_coverage.py` cobra a correspondência. Kind declarado e nunca
 emitido torna **inalcançável** qualquer regra que dependa dele — por isso a checagem é
 estrutural e não uma revisão de código.

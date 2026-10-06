@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge workload`
+# `sparkforge-aws workload`
 
 Perfil de workload por eixos, a partir de facts ja extraidos.
 
 ```bash
-sparkforge workload --help
+sparkforge-aws workload --help
 ```
 
 ## Opções

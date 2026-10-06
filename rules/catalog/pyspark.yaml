@@ -10,17 +10,17 @@
 # O CRITÉRIO. `runtime_scope` só pode ser não-vazio quando o GATILHO da regra
 # genuinamente varia com a versão E essa versão vem do runtime detectado, não de
 # um fact que a própria regra já lê. Nenhuma destas doze é assim: o `when` de
-# todas casa contra um fact `pyspark.*` que `sparkforge/facts/pyspark_ast.py`
+# todas casa contra um fact `pyspark.*` que `sparkforge_aws/facts/pyspark_ast.py`
 # produz do texto do módulo. `coalesce(1)` é P0 em Spark 3.0 e em 3.5; `udf()` é
 # Python UDF nas duas; `collect()` traz tudo para o heap do driver nas duas.
 #
 # O QUE O GUARDA FAZIA NA PRÁTICA. `RuntimeContext.spark` só é preenchido por
-# três caminhos (`sparkforge/facts/runtime_detect.py`): event log com
+# três caminhos (`sparkforge_aws/facts/runtime_detect.py`): event log com
 # `spark.version`, derivação de `GLUE_MATRIX` a partir de `glue_version`, ou a
 # flag `--spark` da CLI. Análise estática de código-fonte não tem nenhum dos
-# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge
+# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge-aws
 # judge` -- o contexto sai `{'glue':'','spark':'','python':'','iceberg':'',
-# 'athena':''}`, `in_scope` falha fechada (`sparkforge/rules/version_scope.py`)
+# 'athena':''}`, `in_scope` falha fechada (`sparkforge_aws/rules/version_scope.py`)
 # e a ÁREA SF-PY INTEIRA sumia: 12 puladas, 0 avaliadas. Analisar um `.py` não
 # precisa de Spark detectado para valer.
 #

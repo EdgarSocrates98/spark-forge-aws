@@ -9,7 +9,7 @@ upstream:
   sha256: "065e2adbff9a76605036f9574551891d523a7925e88d6f041f33f81121d423da"
 tasks:
   - id: T1
-    files: [tests/test_facts_flink.py, sparkforge/facts/flink.py]
+    files: [tests/test_facts_flink.py, sparkforge_aws/facts/flink.py]
     covers: [AC1, AC2, AC3, AC4]
     test: {path: tests/test_facts_flink.py, name: test_flink_dump_emits_explicit_source_and_sink}
   - id: T2

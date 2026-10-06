@@ -65,9 +65,9 @@ métrica de shuffle que estão dentro dele. Medido em 2026-08-28: zero ocorrênc
 
 - Métrica de shuffle por stage em `facts/event_log.py`: um `kind` novo, `spark.stage.shuffle`.
 - Extrator do inventário declarado, `facts/workload.py`, lendo `workload.yaml`.
-- `sparkforge/workload/`: o objeto `WorkloadFingerprint` e o `Axis`, com valor, confiança,
+- `sparkforge_aws/workload/`: o objeto `WorkloadFingerprint` e o `Axis`, com valor, confiança,
   base e evidência por eixo.
-- Superfície: `sparkforge workload` — verbo de topo, ver §5 — e a tool MCP correspondente.
+- Superfície: `sparkforge-aws workload` — verbo de topo, ver §5 — e a tool MCP correspondente.
 - Domínio de fixture próprio, com módulo golden.
 
 **Não entra, e a razão de cada um:**
@@ -93,7 +93,7 @@ métrica de shuffle que estão dentro dele. Medido em 2026-08-28: zero ocorrênc
 
 ### 3.1 Mecanismo próprio, não mais um extrator
 
-`WorkloadFingerprint` mora em `sparkforge/workload/`, não em `sparkforge/facts/`.
+`WorkloadFingerprint` mora em `sparkforge_aws/workload/`, não em `sparkforge_aws/facts/`.
 
 A razão é a regra que o projeto já aplica: **fact nunca aplica limiar e nunca atribui
 severidade**. Dizer que `scan` é `extreme` é exatamente aplicar limiar. O precedente para
@@ -255,7 +255,7 @@ campo.
 ## 5. Superfície
 
 ```
-sparkforge workload --facts <facts.json> --job-name <job> --job-run <id> [--history <dir>] [--out F]
+sparkforge-aws workload --facts <facts.json> --job-name <job> --job-run <id> [--history <dir>] [--out F]
 ```
 
 **Verbo de topo, e não `analyze workload`.** A razão está escrita no código, em
@@ -284,7 +284,7 @@ histórico, e `job_run` já está no enum fechado de `subject.type`.
 | `--history` com menos de 3 runs | eixo `unknown`, razão `history_too_short`, com o `n` observado. Anunciar p99 sobre dois pontos é teatro de precisão |
 | `workload.yaml` ausente | não é erro; os dois eixos declarados saem `unknown` |
 | `workload.yaml` malformado | `workload.unresolved` por entrada, com a razão; as entradas válidas seguem |
-| Nenhum `spark.sql.scan` nos facts | `scan_intensity` e `file_pressure` `unknown`, `collect_command` = `sparkforge analyze sql-metrics …` |
+| Nenhum `spark.sql.scan` nos facts | `scan_intensity` e `file_pressure` `unknown`, `collect_command` = `sparkforge-aws analyze sql-metrics …` |
 | `primary_source` declarado que nenhum scan casa | eixo `unknown`, razão `declared_source_not_observed` — declaração que não bate com o medido é lacuna, não silêncio |
 
 ---

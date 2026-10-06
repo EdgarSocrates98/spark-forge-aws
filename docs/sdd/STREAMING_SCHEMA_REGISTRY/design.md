@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/STREAMING_SCHEMA_REGISTRY/define.md
   sha256: "96b86fe4ec27371154ffb33d2999a41a0ac5f07c20a4d1ac6eb9af09172afe76"
 files:
-  - {path: sparkforge/facts/schema_registry.py, action: create, reason: "extrator offline de contratos e diffs"}
+  - {path: sparkforge_aws/facts/schema_registry.py, action: create, reason: "extrator offline de contratos e diffs"}
   - {path: rules/catalog/schema_registry.yaml, action: create, reason: "regras de compatibilidade e governança"}
   - {path: fixtures/schema_registry, action: create, reason: "goldens positivos, incompatíveis e unresolved"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "envelope comum para analyze schema-registry"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze schema-registry"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "envelope comum para analyze schema-registry"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze schema-registry"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
   - {path: skills/review-cdc-replication/SKILL.md, action: modify, reason: "workflow de contrato e compatibilidade"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "rotear SF-SCHEMA para especialista"}
 decisions:

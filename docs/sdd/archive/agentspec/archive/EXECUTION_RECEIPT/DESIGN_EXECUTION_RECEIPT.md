@@ -17,7 +17,7 @@
 ## Architecture Overview
 
 ```text
- CLI  sparkforge receipt emit|verify           MCP  sparkforge_receipt_emit (LOCAL_MUTATION)
+ CLI  sparkforge-aws receipt emit|verify           MCP  sparkforge_receipt_emit (LOCAL_MUTATION)
             │                                        sparkforge_receipt_verify (READ_ONLY)
             └──────────────┬─────────────────────────────┘
                            v
@@ -29,7 +29,7 @@
    - host      -> extract_host_transcript_path(path)      (ja existe, telemetry export)
                            │  entradas ja lidas + caminhos relativos + now
                            v
- sparkforge/receipt/  (modulo novo, nao importa adapters nem provider)
+ sparkforge_aws/receipt/  (modulo novo, nao importa adapters nem provider)
    _hash.py    text_sha256(path)  CRLF->LF ; receipt_digest(doc) via findings.models._canonical
    build.py    build(...) -> dict      partes: case, evidence, judgment, decision, proof,
                                                tools, host, actions, unresolved, refused
@@ -46,10 +46,10 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/receipt/__init__.py` | Reexporta `build`, `verify`, `RECEIPT_VERSION`, `RECEIPT_PREFIX` | stdlib |
-| `sparkforge/receipt/_hash.py` | `text_sha256(path)` (bytes com `\r\n` trocado por `\n`), `digest_of(obj)` (sha256 do JSON canonico), `receipt_id_of(doc)` | `hashlib`; `findings.models._canonical` |
-| `sparkforge/receipt/build.py` | Monta as partes a partir de caminhos relativos ja confinados, dos findings ja lidos, dos spans e dos facts `host.*` ja extraidos | stdlib |
-| `sparkforge/receipt/verify.py` | Recalcula cada parte, devolve `{valid, status, diverged, checks, not_rechecked, not_evaluable}` | stdlib |
+| `sparkforge_aws/receipt/__init__.py` | Reexporta `build`, `verify`, `RECEIPT_VERSION`, `RECEIPT_PREFIX` | stdlib |
+| `sparkforge_aws/receipt/_hash.py` | `text_sha256(path)` (bytes com `\r\n` trocado por `\n`), `digest_of(obj)` (sha256 do JSON canonico), `receipt_id_of(doc)` | `hashlib`; `findings.models._canonical` |
+| `sparkforge_aws/receipt/build.py` | Monta as partes a partir de caminhos relativos ja confinados, dos findings ja lidos, dos spans e dos facts `host.*` ja extraidos | stdlib |
+| `sparkforge_aws/receipt/verify.py` | Recalcula cada parte, devolve `{valid, status, diverged, checks, not_rechecked, not_evaluable}` | stdlib |
 | `adapters/_core.py` | `receipt_emit`, `receipt_verify`, `receipt_write`: confinamento, leitura de findings/report/spans/host pelas funcoes que ja existem, escrita em temp + `replace` | — |
 | `adapters/cli.py` | Grupo `receipt` com `emit` e `verify` | argparse |
 | `adapters/tools.py` | `sparkforge_receipt_emit` (`_WRITE_IDEMPOTENT`) e `sparkforge_receipt_verify` (`_READ_ONLY`), schemas e handlers | — |
@@ -69,7 +69,7 @@
 
 **Context:** DEFINE A-005. `_signature_parts`, `_split_report` e os regex do bloco de assinatura moram so em `adapters/_core.py:4246-4436`. O `shared_ledger()` mora em `observability/`, e o leitor do transcript em `facts/host_transcript.py`.
 
-**Choice:** `sparkforge/receipt/` recebe dados ja lidos: `findings_parts` (o retorno de `_signature_parts`), `report_signature` (o `sig_...` do bloco, ou `None`), `spans` (lista de dicts) e `host_facts` (os facts `host.*`). O modulo so abre arquivo para hashear, por caminho relativo que o adapter ja confinou.
+**Choice:** `sparkforge_aws/receipt/` recebe dados ja lidos: `findings_parts` (o retorno de `_signature_parts`), `report_signature` (o `sig_...` do bloco, ou `None`), `spans` (lista de dicts) e `host_facts` (os facts `host.*`). O modulo so abre arquivo para hashear, por caminho relativo que o adapter ja confinou.
 
 **Rationale:** mantem o modulo testavel com entrada sintetica (spans com `span_id` fixo dao golden estavel) e reusa as funcoes que ja carregam as mensagens de erro do `report sign`, sem mover codigo testado.
 
@@ -190,7 +190,7 @@ Tres consequencias:
 | **Date** | 2026-09-12 |
 
 **Context:**
-- `test_facts_scan` varre `sparkforge/` por AST e recusa `Path.glob`/`rglob`.
+- `test_facts_scan` varre `sparkforge_aws/` por AST e recusa `Path.glob`/`rglob`.
 - O ADR mora em `.sparkforge/blackboard/adr/ADR-<decision_id>.md` (`agentic/executor/run.py:136` e `:982`), e nao em `.sparkforge/adr/` como o DEFINE 1.0 dizia.
 - O blackboard tem nomes fixos em `agentic/blackboard.py:49-58`.
 
@@ -269,13 +269,13 @@ Tres consequencias:
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/receipt/__init__.py`, `_hash.py` | Create | API publica, `text_sha256`, `digest_of`, `receipt_id_of` | @agentspec:python:python-developer | None |
-| 2 | `sparkforge/receipt/build.py` | Create | Montagem das partes (Decisions 2, 3, 5, 6) | @agentspec:python:python-developer | 1 |
-| 3 | `sparkforge/receipt/verify.py` | Create | Diagnostico por parte, `not_rechecked`, `not_evaluable` | @agentspec:python:python-developer | 1, 2 |
+| 1 | `sparkforge_aws/receipt/__init__.py`, `_hash.py` | Create | API publica, `text_sha256`, `digest_of`, `receipt_id_of` | @agentspec:python:python-developer | None |
+| 2 | `sparkforge_aws/receipt/build.py` | Create | Montagem das partes (Decisions 2, 3, 5, 6) | @agentspec:python:python-developer | 1 |
+| 3 | `sparkforge_aws/receipt/verify.py` | Create | Diagnostico por parte, `not_rechecked`, `not_evaluable` | @agentspec:python:python-developer | 1, 2 |
 | 4 | `tests/test_receipt_build.py`, `tests/test_receipt_verify.py` | Create | Unidade com entrada sintetica: determinismo, CRLF, V2, adulteracao por parte, spans por `span_id` | @agentspec:test:test-generator | 2, 3 |
-| 5 | `sparkforge/adapters/_core.py` | Modify | `receipt_emit`, `receipt_verify`, `receipt_write`, confinamento | (general) | 2, 3 |
-| 6 | `sparkforge/adapters/cli.py` | Modify | Grupo `receipt` (`emit`, `verify`), exit 0/1/2 | (general) | 5 |
-| 7 | `sparkforge/adapters/tools.py` | Modify | Duas tools, schemas, handlers, registro no mapa | (general) | 5 |
+| 5 | `sparkforge_aws/adapters/_core.py` | Modify | `receipt_emit`, `receipt_verify`, `receipt_write`, confinamento | (general) | 2, 3 |
+| 6 | `sparkforge_aws/adapters/cli.py` | Modify | Grupo `receipt` (`emit`, `verify`), exit 0/1/2 | (general) | 5 |
+| 7 | `sparkforge_aws/adapters/tools.py` | Modify | Duas tools, schemas, handlers, registro no mapa | (general) | 5 |
 | 8 | `fixtures/receipt/` (`input/` com `.sparkforge/case.yaml`, `blackboard/*.jsonl`, `blackboard/adr/ADR-*.md`, facts e findings da uniao, report assinado; `expected/receipt.json`) + `tests/test_fixtures_golden_receipt.py` | Create | Golden byte a byte (SC1) e os ATs de ponta a ponta pela CLI | @agentspec:test:test-generator | 5, 6 |
 | 9 | `tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `tests/test_fixtures_golden_mcp_parity.py` | Modify | Lista, amostra real, contagem, `NOVAS_DEPOIS_DO_GOLDEN` | (general) | 7 |
 | 10 | `parity.yaml`, `manifest.json`, `agents/executors/sf-synthesizer.md` + espelhos (`scripts/sync_skills.py`) | Modify | Capacidade, chave `tools`, passo novo | (general) | 7 |
@@ -311,7 +311,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
-from sparkforge.findings.models import _canonical
+from sparkforge_aws.findings.models import _canonical
 
 RECEIPT_VERSION = 1
 RECEIPT_PREFIX = "rcpt_"
@@ -451,7 +451,7 @@ def conferir_tools(declarado: dict[str, Any], do_run: list[dict[str, Any]]) -> d
 | Report com bloco malformado | Exit 2 com o problema de `_split_report` | No |
 | `traces.db` indisponivel ou run sem span no emit | `tools` em `unresolved` (`traces_db_indisponivel`, `run_sem_spans`); o emit segue (regra 27) | No |
 | Transcript ilegivel | `host` em `unresolved` (`transcript_ilegivel`); o emit segue | No |
-| Recibo ilegivel, JSON invalido ou sem `receipt_version` | Exit 2 com a dica `sparkforge receipt verify --receipt ... --repo .` | No |
+| Recibo ilegivel, JSON invalido ou sem `receipt_version` | Exit 2 com a dica `sparkforge-aws receipt verify --receipt ... --repo .` | No |
 | `receipt_version` maior que o da build | Partes de normalizacao `not_evaluable`, `status: version_mismatch` | No |
 
 ---

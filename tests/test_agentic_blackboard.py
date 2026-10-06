@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.agentic.blackboard import (
+from sparkforge_aws.agentic.blackboard import (
     append_claim,
     append_contradiction,
     append_decision,
@@ -27,7 +27,7 @@ from sparkforge.agentic.blackboard import (
     read_unknowns,
     summarize,
 )
-from sparkforge.agentic.models import (
+from sparkforge_aws.agentic.models import (
     Claim,
     ClaimType,
     Contradiction,
@@ -243,7 +243,7 @@ class TestRevisaoDeClaim:
     """
 
     def _claim(self, root: Path, **kw):
-        from sparkforge.agentic.models import Claim, ClaimType
+        from sparkforge_aws.agentic.models import Claim, ClaimType
 
         return Claim(
             claimant="sf-spark-specialist",
@@ -288,7 +288,7 @@ class TestRevisaoDeClaim:
             append_claim(orfa, tmp_path)
 
     def test_supersedes_vazio_e_recusado_na_entidade(self):
-        from sparkforge.agentic.models import Claim, ClaimType
+        from sparkforge_aws.agentic.models import Claim, ClaimType
 
         with pytest.raises(ValueError, match="supersedes"):
             Claim(

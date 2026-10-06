@@ -8,7 +8,7 @@
 #
 # `required_tools` segue o vocabulario de `evals/agentic/fase0/suite.yaml`: o
 # nome da tool MCP sem o prefixo `sparkforge_`, ou o verbo da CLI com espaco
-# virando `_` (`sparkforge sdd check` -> `sdd_check`).
+# virando `_` (`sparkforge-aws sdd check` -> `sdd_check`).
 schema_version: 1
 id: sdd
 answer_protocol: >-

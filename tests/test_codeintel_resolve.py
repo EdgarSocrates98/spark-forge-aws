@@ -20,10 +20,10 @@ import dataclasses
 
 import pytest
 
-from sparkforge.codeintel.db import abrir
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.refs import extrair_referencias
-from sparkforge.codeintel.resolve import catalogo_do_banco, resolver
+from sparkforge_aws.codeintel.db import abrir
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.refs import extrair_referencias
+from sparkforge_aws.codeintel.resolve import catalogo_do_banco, resolver
 
 
 def _preparar(tmp_path, arquivos):

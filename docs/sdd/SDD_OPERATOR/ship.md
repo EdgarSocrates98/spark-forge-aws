@@ -41,7 +41,7 @@ A previsão tem duas partes, e as duas se confirmaram:
 As ressalvas, ditas em vez de caladas:
 
 1. A comparação do teste é **sintética**, na forma de
-   `sparkforge/facts/funcval.py::_check_delta`. `sparkforge funcval compare` não
+   `sparkforge_aws/facts/funcval.py::_check_delta`. `sparkforge-aws funcval compare` não
    roda no teste, embora a previsão o cite entre parênteses. O experimento do
    define só nomeia `case_open` e `change_sandbox`.
 2. Comparação **ausente** continua sendo lacuna (`funcval_not_run`), não
@@ -101,7 +101,7 @@ desenhar a próxima feature que ligue agent a skill deve ler
 
 - `SDD_MIGRATION` (D): desativar os plugins e apontar `CLAUDE.md`/`AGENTS.md`
   para as skills.
-- `SDD_EVAL` (E): um caso operator real, com `sparkforge funcval compare` de
+- `SDD_EVAL` (E): um caso operator real, com `sparkforge-aws funcval compare` de
   verdade, e a pergunta se o ciclo próprio rende melhor. Nenhuma afirmação de
   ganho é feita aqui.
 - Comparação ausente como recusa: hoje é lacuna por desenho do núcleo

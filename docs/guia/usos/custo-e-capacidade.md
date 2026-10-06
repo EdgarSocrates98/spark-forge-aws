@@ -4,24 +4,24 @@ Este guia responde três perguntas: quanto o job custou, qual a capacidade mais 
 cumpre o prazo, e se uma mudança melhorou de fato. Todos os exemplos usam arquivos sintéticos
 da pasta `fixtures/` e foram rodados de verdade.
 
-Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge` é o comando instalado.
-Se ele não for encontrado, troque por `python -m sparkforge.adapters.cli`.
+Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge-aws` é o comando instalado.
+Se ele não for encontrado, troque por `python -m sparkforge_aws.adapters.cli`.
 
 ## Receita rápida
 
 ```bash
 # 1. pasta temporária e histórico de runs
-SAIDA=/tmp/sparkforge-guia; mkdir -p "$SAIDA"
-sparkforge analyze glue-job-runs --path fixtures/glue_job_run/correlated/runs \
+SAIDA=/tmp/sparkforge-aws-guia; mkdir -p "$SAIDA"
+sparkforge-aws analyze glue-job-runs --path fixtures/glue_job_run/correlated/runs \
   --cloudwatch fixtures/glue_job_run/correlated/cloudwatch --job-name synthetic-job --out "$SAIDA/facts_runs.json"
 # 2. capacidade mais barata que cumpre o SLA
-sparkforge capacity --facts fixtures/capacity/cheapest_that_fits/input/facts.json \
+sparkforge-aws capacity --facts fixtures/capacity/cheapest_that_fits/input/facts.json \
   --history fixtures/capacity/cheapest_that_fits/input/history --job-name etl_pedidos_diario --job-run jr_hoje_001
 # 3. quanto custou e onde está a alavanca
-sparkforge finops --facts fixtures/finops/cost_from_observed_dpu/input/facts.json --job-name etl_pedidos_diario
+sparkforge-aws finops --facts fixtures/finops/cost_from_observed_dpu/input/facts.json --job-name etl_pedidos_diario
 # 4. o que mudou entre os runs de antes e os de depois
 G=fixtures/gain/ganho_por_capacidade
-sparkforge gain $(for f in $G/baseline/*.json; do printf -- '--baseline %s ' "$f"; done) \
+sparkforge-aws gain $(for f in $G/baseline/*.json; do printf -- '--baseline %s ' "$f"; done) \
   $(for f in $G/candidate/*.json; do printf -- '--candidate %s ' "$f"; done)
 ```
 
@@ -67,9 +67,9 @@ foram conferidas no `--help`:
 
 ```bash
 # histórico de execuções (um artefato por run terminado)
-sparkforge collect glue-job-runs --repo . --job-name <job> --now <ISO8601>
+sparkforge-aws collect glue-job-runs --repo . --job-name <job> --now <ISO8601>
 # métricas do CloudWatch de um run
-sparkforge collect cloudwatch --repo . --job-name <job> --job-run <id-do-run> --start <ISO8601> --end <ISO8601> --now <ISO8601>
+sparkforge-aws collect cloudwatch --repo . --job-name <job> --job-run <id-do-run> --start <ISO8601> --end <ISO8601> --now <ISO8601>
 ```
 
 `--now` é a data e hora atual, por exemplo `2026-09-13T10:00:00Z`. `collect glue-job-runs`
@@ -82,7 +82,7 @@ Você também precisa **declarar o SLA** (veja a seção sobre o `workload.yaml`
 ### 1. Leia o histórico de runs
 
 ```bash
-sparkforge analyze glue-job-runs --path fixtures/glue_job_run/correlated/runs \
+sparkforge-aws analyze glue-job-runs --path fixtures/glue_job_run/correlated/runs \
   --cloudwatch fixtures/glue_job_run/correlated/cloudwatch --job-name synthetic-job --detail-level summary
 ```
 
@@ -139,7 +139,7 @@ Transforme o arquivo em facts com `analyze workload` e passe o resultado junto d
 `--facts` de `capacity`, `finops` e `workload`:
 
 ```bash
-sparkforge analyze workload --path workload.yaml --out facts_workload.json
+sparkforge-aws analyze workload --path workload.yaml --out facts_workload.json
 ```
 
 O `scan` faz isso sozinho quando o `workload.yaml` está na **raiz** do repositório. Em subpasta
@@ -162,7 +162,7 @@ sai com `"reason": "sla_not_declared"`.
 ### 3. Veja o perfil do workload
 
 ```bash
-sparkforge workload --facts fixtures/workload/shuffle_heavy_small_scan/input/facts.json \
+sparkforge-aws workload --facts fixtures/workload/shuffle_heavy_small_scan/input/facts.json \
   --history fixtures/workload/shuffle_heavy_small_scan/input/history --job-name etl_pedidos_diario --job-run jr_006
 ```
 
@@ -174,7 +174,7 @@ sparkforge workload --facts fixtures/workload/shuffle_heavy_small_scan/input/fac
     "skew_risk": {
       "value": "unknown", "confidence": "unknown",
       "missing": "spark.stage.task_duration",
-      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+      "collect_command": "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>"
     },
     ...
     "sla_class": {
@@ -192,7 +192,7 @@ produz). `--history` é o diretório com um arquivo de facts por run anterior.
 ### 4. Escolha a capacidade
 
 ```bash
-sparkforge capacity --facts fixtures/capacity/cheapest_that_fits/input/facts.json \
+sparkforge-aws capacity --facts fixtures/capacity/cheapest_that_fits/input/facts.json \
   --history fixtures/capacity/cheapest_that_fits/input/history --job-name etl_pedidos_diario --job-run jr_hoje_001
 ```
 
@@ -238,7 +238,7 @@ Outros fixtures para ver recusas: `none_fits`, `single_capacity_observed`,
 ### 5. Veja o custo e a alavanca
 
 ```bash
-sparkforge finops --facts fixtures/finops/cost_from_observed_dpu/input/facts.json --job-name etl_pedidos_diario
+sparkforge-aws finops --facts fixtures/finops/cost_from_observed_dpu/input/facts.json --job-name etl_pedidos_diario
 ```
 
 ```json
@@ -255,7 +255,7 @@ sparkforge finops --facts fixtures/finops/cost_from_observed_dpu/input/facts.jso
   "symptoms": {},
   "levers": {
     "code": { "findings": [], "detail": "" },
-    "capacity": { "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, ..." },
+    "capacity": { "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge-aws capacity`, ..." },
     "none_found": true
   },
   "refused": [
@@ -277,7 +277,7 @@ sparkforge finops --facts fixtures/finops/cost_from_observed_dpu/input/facts.jso
 workers é teto, e não uso. Veja:
 
 ```bash
-sparkforge finops --facts fixtures/finops/no_dpu_no_cost/input/facts.json --job-name etl_pedidos_diario
+sparkforge-aws finops --facts fixtures/finops/no_dpu_no_cost/input/facts.json --job-name etl_pedidos_diario
 ```
 
 ```json
@@ -299,7 +299,7 @@ cada `--candidate` é um arquivo de facts de run, e as duas flags podem ser repe
 
 ```bash
 G=fixtures/gain/ganho_por_capacidade
-sparkforge gain $(for f in $G/baseline/*.json; do printf -- '--baseline %s ' "$f"; done) \
+sparkforge-aws gain $(for f in $G/baseline/*.json; do printf -- '--baseline %s ' "$f"; done) \
   $(for f in $G/candidate/*.json; do printf -- '--candidate %s ' "$f"; done)
 ```
 
@@ -348,7 +348,7 @@ Detalhes em [docs/realized-gain.md](../../realized-gain.md).
 ## Para ir além
 
 - Agent de infraestrutura do job: [glue-infra-reviewer](../referencia/agents/glue-infra-reviewer.md).
-- Custo: verbo `sparkforge finops`.
+- Custo: verbo `sparkforge-aws finops`.
 - Skills: [tune-glue-job](../referencia/skills/tune-glue-job.md),
   [optimize-variable-volume-job](../referencia/skills/optimize-variable-volume-job.md),
   [aws-billing-and-cost-management](../referencia/skills/aws-billing-and-cost-management.md).

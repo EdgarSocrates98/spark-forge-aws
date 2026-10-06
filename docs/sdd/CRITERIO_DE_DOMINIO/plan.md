@@ -45,7 +45,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
@@ -164,7 +164,7 @@ def test_o_que_so_o_nome_alcancava_saiu():
 
 3. Código.
    - `agents/spark-performance-architect.md`, seção `## Mudança no job pede spec`: troque
-     "`sparkforge sdd check` confere cada fase." por "`sparkforge sdd check`
+     "`sparkforge-aws sdd check` confere cada fase." por "`sparkforge-aws sdd check`
      (`sparkforge_sdd_check`) confere cada fase, `sparkforge_sdd_status` diz onde cada
      feature está, e `sparkforge_sdd_stamp` recarimba a fase cujo upstream mudou."
    - `git rm -q` dos sete `agents/<nome>.md` de `SAIRAM_AGENTES` e dos sete
@@ -201,7 +201,7 @@ def test_o_que_so_o_nome_alcancava_saiu():
    com lista literal que cair por nome removido: tire só o nome e relate como desvio.
 5. `python scripts/check_vnext_claims.py` (arquivo `.py` novo; remedie por id), backup do
    README e `python scripts/sync_skills.py --check` e devolva,
-   `python -m ruff check sparkforge scripts tests`.
+   `python -m ruff check sparkforge_aws scripts tests`.
 6. Commit: `refactor(agents): gate domains on artifacts; drop coordinators only a name reached`,
    com 7 agentes, 5 skills e 7 rotas a menos, e os bytes da superfície.
 
@@ -296,5 +296,5 @@ coordenadores entraram sem julgar nada, e saíram em 2026-09-19 (`docs/sdd/SF_ST
 4. Verde: o comando do passo 2, e
    `python -m pytest tests/test_criterio_de_dominio.py tests/test_bootstrap_budget.py tests/test_reference_docs.py tests/test_offline_expansion.py tests/test_docs_coverage.py tests/test_status_numbers_gate.py -q`.
 5. `python scripts/check_status_numbers.py --strict`, `python scripts/check_vnext_claims.py`
-   (remedie por id), `python -m ruff check sparkforge scripts tests`.
+   (remedie por id), `python -m ruff check sparkforge_aws scripts tests`.
 6. Commit: `docs: write the domain criterion and point to it`.

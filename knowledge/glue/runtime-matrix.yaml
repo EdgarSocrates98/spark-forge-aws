@@ -1,7 +1,7 @@
 # Matriz de runtime do AWS Glue. Dado, nunca constante em Python.
 #
 # POR QUE ESTE ARQUIVO EXISTE: o fato de versao morava em dois lugares --
-# `GLUE_MATRIX` compilado em `sparkforge/facts/runtime_detect.py` e a prosa de
+# `GLUE_MATRIX` compilado em `sparkforge_aws/facts/runtime_detect.py` e a prosa de
 # `knowledge/glue/runtime-matrix.md` -- sem nada que forcasse os dois a
 # concordarem. Versao e fato EXTERNO: muda por decisao da AWS, nao deste
 # repositorio, entao precisa carregar fonte e data como qualquer outro fato
@@ -25,7 +25,7 @@
 # FORMA LONGA DE COMPONENTE (evidencia por fonte). Um componente pode ser
 # escrito como escalar -- `spark: "4.1.1"`, uma afirmacao sem disputa -- ou
 # como registro com `status` e `claims`, uma afirmacao COM a evidencia que a
-# sustenta, fonte a fonte. `sparkforge/facts/runtime_matrix.py` resolve a
+# sustenta, fonte a fonte. `sparkforge_aws/facts/runtime_matrix.py` resolve a
 # forma longa para o valor unico quando `status: VERIFIED`, e RETEM o valor
 # quando o status e CONFLICTING ou UNRESOLVED -- sem valor, `in_scope` reprova
 # a regra guardada por aquele componente e o motor a reporta como pulada, com

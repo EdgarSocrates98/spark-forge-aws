@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters.cli import main
-from sparkforge.agentic.blackboard import append_decision, init_blackboard
-from sparkforge.agentic.models import Decision
-from sparkforge.case.store import new_case, save_case
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.agentic.blackboard import append_decision, init_blackboard
+from sparkforge_aws.agentic.models import Decision
+from sparkforge_aws.case.store import new_case, save_case
 
 
 class TestAgentsList:
@@ -300,7 +300,7 @@ def _par_que_fecha(tmp_path: Path) -> tuple[Path, Path]:
 
 
 class TestArbitrate:
-    """`sparkforge arbitrate` -- a superficie do executor agentico.
+    """`sparkforge-aws arbitrate` -- a superficie do executor agentico.
 
     Ate esta entrega a camada agentica era biblioteca inerte: `blackboard
     summary` devolvia zero em tudo num repositorio de trabalho porque nenhum
@@ -451,7 +451,7 @@ class TestArbitrate:
         gate de lastro a reprovaria por ausencia de medida -- uma lacuna que a
         execucao real nao tem.
         """
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.findings.models import Fact
 
         findings, facts = _par_real(tmp_path)
         crus = [{k: v for k, v in f.items() if k != "id"} for f in _json(facts[0])]
@@ -483,7 +483,7 @@ class TestArbitrate:
 
         O QUE ESTE TESTE MEDE MUDOU, e a mudanca e correta. Ele afirmava
         `not completo["unknowns"]` -- zero lacuna na uniao --, e isso deixou de
-        valer quando `sparkforge/facts/lakeformation.py` passou a emitir
+        valer quando `sparkforge_aws/facts/lakeformation.py` passou a emitir
         `lakeformation.unresolved` com `reason: permissoes_nao_coletadas` sobre a
         fixture de FGAC. Aquele fact e uma RECUSA NOMEADA que regra nenhuma cita,
         entao ele legitimamente vira `Unknown`: grant do Lake Formation nao entra
@@ -568,7 +568,7 @@ class TestArbitrate:
         )
         assert codigo == 2
         erro = capsys.readouterr().err
-        assert "sparkforge judge" in erro
+        assert "sparkforge-aws judge" in erro
 
     def test_facts_ausente_falha_com_o_comando_que_resolve(self, tmp_path: Path, capsys):
         findings, _ = _par_real(tmp_path)
@@ -588,7 +588,7 @@ class TestArbitrate:
             ]
         )
         assert codigo == 2
-        assert "sparkforge analyze pyspark" in capsys.readouterr().err
+        assert "sparkforge-aws analyze pyspark" in capsys.readouterr().err
 
     def test_o_budget_do_plano_vem_do_case_e_nunca_do_default_do_codigo(
         self, tmp_path: Path, capsys

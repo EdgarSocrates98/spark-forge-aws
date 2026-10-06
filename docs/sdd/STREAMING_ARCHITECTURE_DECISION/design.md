@@ -8,9 +8,9 @@ upstream:
   path: docs/sdd/STREAMING_ARCHITECTURE_DECISION/define.md
   sha256: "7aeaae1c2373c03a7c8320b70999d9e1dbdf9cae9828d3dbf6da29ca030c96a0"
 files:
-  - {path: sparkforge/architecture/streaming.py, action: create, reason: "matriz e eliminação offline"}
-  - {path: sparkforge/architecture/__init__.py, action: create, reason: "publicar helper do domínio"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar architecture streaming CLI-only"}
+  - {path: sparkforge_aws/architecture/streaming.py, action: create, reason: "matriz e eliminação offline"}
+  - {path: sparkforge_aws/architecture/__init__.py, action: create, reason: "publicar helper do domínio"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar architecture streaming CLI-only"}
   - {path: tests/test_streaming_architecture.py, action: create, reason: "fixtures, recusa de empate e smoke CLI"}
   - {path: fixtures/realtime_architecture, action: create, reason: "casos ambiguous, unique e insufficient"}
   - {path: knowledge/streaming-realtime-candidate-matrix.md, action: create, reason: "matriz e fontes primárias"}

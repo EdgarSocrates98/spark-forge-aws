@@ -9,8 +9,8 @@ upstream:
   sha256: "f3a92f665b304fe104ee664309166751b8ea1b039ddfbfdbe406c5fa17c236b6"
 files:
   - {path: tests/test_lakeformation_fgac_fta_improvements.py, action: create, reason: "Provas dos sete gaps e dos contratos de integração."}
-  - {path: sparkforge/lakeformation/architecture.py, action: modify, reason: "Enforce capabilities por perna, resolução cross-account, Hybrid Access e migração explícita."}
-  - {path: sparkforge/lakeformation/catalog_routing.py, action: modify, reason: "Comparar ownership, glue.id e glue.account-id contra contextos declarados sem alias."}
+  - {path: sparkforge_aws/lakeformation/architecture.py, action: modify, reason: "Enforce capabilities por perna, resolução cross-account, Hybrid Access e migração explícita."}
+  - {path: sparkforge_aws/lakeformation/catalog_routing.py, action: modify, reason: "Comparar ownership, glue.id e glue.account-id contra contextos declarados sem alias."}
   - {path: knowledge/lakeformation/capability-matrix.yaml, action: modify, reason: "Expandir células version-aware com fonte e limitação por operação."}
   - {path: knowledge/lakeformation/fgac-fta-improvements.md, action: create, reason: "Registrar decisões, limites e exemplos operacionais do novo contrato."}
   - {path: skills/lakeformation-architecture/SKILL.md, action: modify, reason: "Orientar source/target, capability enforcement, routes e Hybrid Access."}
@@ -67,6 +67,6 @@ commit é reversível por `git revert`; não há AWS write.
 
 ## Conhecimento consultado
 
-`sparkforge rules lookup --category lakeformation-fgac` confirmou as restrições
+`sparkforge-aws rules lookup --category lakeformation-fgac` confirmou as restrições
 FGAC/FTA e escrita. Documentação AWS version-aware acima confirmou CatalogId sem
 resource link em Glue ETL e Hybrid Access com IAMAllowedPrincipals opt-in.

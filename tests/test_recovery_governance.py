@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from sparkforge.agentic.budget import CaseBudget
-from sparkforge.agentic.control import RecoveryGovernor
-from sparkforge.agentic.recovery import FailureClass
+from sparkforge_aws.agentic.budget import CaseBudget
+from sparkforge_aws.agentic.control import RecoveryGovernor
+from sparkforge_aws.agentic.recovery import FailureClass
 
 
 def test_recovery_consumes_case_budget_and_records_governor():

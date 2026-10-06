@@ -4,7 +4,7 @@
 
 Este guia descreve como instalar, configurar, executar, validar e manter a plataforma agêntica do SparkForge AWS em Linux, macOS e Windows PowerShell. O projeto combina análise determinística de workloads AWS Glue, EMR, PySpark, Parquet, Iceberg e Athena com um runtime cooperativo de agents especializados. A metáfora de sala de conversa representa um protocolo: mensagens tipadas, contexto selecionado, handoffs verificáveis, revisão cruzada e critérios de parada. Não é uma interface de chat e não autoriza retransmitir o histórico inteiro.
 
-A fonte declarativa de agents é `config/agents.yaml`; o runtime fica em `sparkforge/agents/`; a fonte de skills e agents está em `skills/` e `agents/`; os espelhos `.claude/`, `.agents/` e `.github/` são gerados por `scripts/sync_skills.py`. O protocolo compartilhado está em `AGENT_PROTOCOL.md`. O estado durável de um caso vive em `.sparkforge/case.yaml`, com findings, handoff e manifestos derivados em `.sparkforge/`.
+A fonte declarativa de agents é `config/agents.yaml`; o runtime fica em `sparkforge_aws/agents/`; a fonte de skills e agents está em `skills/` e `agents/`; os espelhos `.claude/`, `.agents/` e `.github/` são gerados por `scripts/sync_skills.py`. O protocolo compartilhado está em `AGENT_PROTOCOL.md`. O estado durável de um caso vive em `.sparkforge/case.yaml`, com findings, handoff e manifestos derivados em `.sparkforge/`.
 
 > **Regra operacional:** fatos, evidências, hipóteses, decisões e recomendações permanecem separados. Um finding só é conclusivo quando tem evidência suficiente, escopo de runtime e validação proporcional ao risco.
 
@@ -37,13 +37,13 @@ Se `py` não existir, use `python` depois de instalar o Python oficial com PATH 
 ### Verificação em todas as plataformas
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli --versionpython -c "import sparkforge; print(sparkforge.__file__)"```
+```bashpython -m sparkforge_aws.adapters.cli --versionpython -c "import sparkforge_aws; print(sparkforge_aws.__file__)"```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli --versionpython3 -c "import sparkforge; print(sparkforge.__file__)"```
+```bashpython3 -m sparkforge_aws.adapters.cli --versionpython3 -c "import sparkforge_aws; print(sparkforge_aws.__file__)"```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli --versionpython -c "import sparkforge; print(sparkforge.__file__)"```
+```powershellpython -m sparkforge_aws.adapters.cli --versionpython -c "import sparkforge_aws; print(sparkforge_aws.__file__)"```
 
 ## 3. Configuração declarativa
 
@@ -86,13 +86,13 @@ O coordenador começa pelo objetivo, detecta domínios, seleciona o menor contex
 | Engenharia de agents | `spark-performance-architect` | Contratos, handoffs, loops e validação |
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli playbook iceberg-performance-engineer --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook spark-performance-architect --repo .```
+```bashpython -m sparkforge_aws.adapters.cli playbook iceberg-performance-engineer --repo .python -m sparkforge_aws.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge_aws.adapters.cli playbook spark-performance-architect --repo .```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli playbook iceberg-performance-engineer --repo .python3 -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python3 -m sparkforge.adapters.cli playbook spark-performance-architect --repo .```
+```bashpython3 -m sparkforge_aws.adapters.cli playbook iceberg-performance-engineer --repo .python3 -m sparkforge_aws.adapters.cli playbook sf-runtime-specialist --repo .python3 -m sparkforge_aws.adapters.cli playbook spark-performance-architect --repo .```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli playbook iceberg-performance-engineer --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook spark-performance-architect --repo .```
+```powershellpython -m sparkforge_aws.adapters.cli playbook iceberg-performance-engineer --repo .python -m sparkforge_aws.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge_aws.adapters.cli playbook spark-performance-architect --repo .```
 
 ## 5. Ciclo de vida de casos
 
@@ -101,52 +101,52 @@ Um caso exige `case-id` estável, timestamp ISO-8601 explícito e runtime conhec
 ### Abrir caso
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli case open \  --repo . \  --case-id lakehouse-review-001 \  --now 2026-08-18T12:00:00Z \  --glue 5.0 --emr emr-7.12.0 --spark 3.5.4 --python 3.11 \  --iceberg 1.7.1 --athena 3 --strict-gates```
+```bashpython -m sparkforge_aws.adapters.cli case open \  --repo . \  --case-id lakehouse-review-001 \  --now 2026-08-18T12:00:00Z \  --glue 5.0 --emr emr-7.12.0 --spark 3.5.4 --python 3.11 \  --iceberg 1.7.1 --athena 3 --strict-gates```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli case open \  --repo . \  --case-id lakehouse-review-001 \  --now 2026-08-18T12:00:00Z \  --glue 5.0 --emr emr-7.12.0 --spark 3.5.4 --python 3.11 \  --iceberg 1.7.1 --athena 3 --strict-gates```
+```bashpython3 -m sparkforge_aws.adapters.cli case open \  --repo . \  --case-id lakehouse-review-001 \  --now 2026-08-18T12:00:00Z \  --glue 5.0 --emr emr-7.12.0 --spark 3.5.4 --python 3.11 \  --iceberg 1.7.1 --athena 3 --strict-gates```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli case open `  --repo . `  --case-id lakehouse-review-001 `  --now 2026-08-18T12:00:00Z `  --glue 5.0 --emr emr-7.12.0 --spark 3.5.4 --python 3.11 `  --iceberg 1.7.1 --athena 3 --strict-gates```
+```powershellpython -m sparkforge_aws.adapters.cli case open `  --repo . `  --case-id lakehouse-review-001 `  --now 2026-08-18T12:00:00Z `  --glue 5.0 --emr emr-7.12.0 --spark 3.5.4 --python 3.11 `  --iceberg 1.7.1 --athena 3 --strict-gates```
 
 ### Analisar e coletar
 
 A análise não executa jobs. Ela extrai facts de código, planos, logs e metadados. Se um artefato não puder ser resolvido, registre `*.unresolved`; ausência de evidência não é evidência de ausência.
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli analyze --helppython -m sparkforge.adapters.cli collect --helppython -m sparkforge.adapters.cli knowledge pathpython -m sparkforge.adapters.cli rules --help```
+```bashpython -m sparkforge_aws.adapters.cli analyze --helppython -m sparkforge_aws.adapters.cli collect --helppython -m sparkforge_aws.adapters.cli knowledge pathpython -m sparkforge_aws.adapters.cli rules --help```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli analyze --helppython3 -m sparkforge.adapters.cli collect --helppython3 -m sparkforge.adapters.cli knowledge pathpython3 -m sparkforge.adapters.cli rules --help```
+```bashpython3 -m sparkforge_aws.adapters.cli analyze --helppython3 -m sparkforge_aws.adapters.cli collect --helppython3 -m sparkforge_aws.adapters.cli knowledge pathpython3 -m sparkforge_aws.adapters.cli rules --help```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli analyze --helppython -m sparkforge.adapters.cli collect --helppython -m sparkforge.adapters.cli knowledge pathpython -m sparkforge.adapters.cli rules --help```
+```powershellpython -m sparkforge_aws.adapters.cli analyze --helppython -m sparkforge_aws.adapters.cli collect --helppython -m sparkforge_aws.adapters.cli knowledge pathpython -m sparkforge_aws.adapters.cli rules --help```
 
 ### Handoff e retomada
 
 Use `.sparkforge/handoff.md`, `.sparkforge/findings.json` e `.sparkforge/artifacts/manifest.json` como barramento pequeno e verificável entre sessões. Não apague findings anteriores para esconder falhas.
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython -m sparkforge.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython -m sparkforge.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
+```bashpython -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython3 -m sparkforge.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython3 -m sparkforge.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
+```bashpython3 -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython3 -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython3 -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython -m sparkforge.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython -m sparkforge.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
+```powershellpython -m sparkforge_aws.adapters.cli next-step --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli resume --repo . --findings .sparkforge/findings.jsonpython -m sparkforge_aws.adapters.cli handoff --repo . --findings .sparkforge/findings.json --in-flight "validar benchmark" --unresolved 0```
 
 ### Validação e relatório
 
 Benchmark compara facts e não executa jobs nem mede relógio. Validação funcional define o que comparar antes e depois. O relatório só deve ser entregue depois de assinado e verificado.
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli benchmark --helppython -m sparkforge.adapters.cli funcval --helppython -m sparkforge.adapters.cli report sign --helppython -m sparkforge.adapters.cli report verify --helppython -m sparkforge.adapters.cli validate --help```
+```bashpython -m sparkforge_aws.adapters.cli benchmark --helppython -m sparkforge_aws.adapters.cli funcval --helppython -m sparkforge_aws.adapters.cli report sign --helppython -m sparkforge_aws.adapters.cli report verify --helppython -m sparkforge_aws.adapters.cli validate --help```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli benchmark --helppython3 -m sparkforge.adapters.cli funcval --helppython3 -m sparkforge.adapters.cli report sign --helppython3 -m sparkforge.adapters.cli report verify --helppython3 -m sparkforge.adapters.cli validate --help```
+```bashpython3 -m sparkforge_aws.adapters.cli benchmark --helppython3 -m sparkforge_aws.adapters.cli funcval --helppython3 -m sparkforge_aws.adapters.cli report sign --helppython3 -m sparkforge_aws.adapters.cli report verify --helppython3 -m sparkforge_aws.adapters.cli validate --help```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli benchmark --helppython -m sparkforge.adapters.cli funcval --helppython -m sparkforge.adapters.cli report sign --helppython -m sparkforge.adapters.cli report verify --helppython -m sparkforge.adapters.cli validate --help```
+```powershellpython -m sparkforge_aws.adapters.cli benchmark --helppython -m sparkforge_aws.adapters.cli funcval --helppython -m sparkforge_aws.adapters.cli report sign --helppython -m sparkforge_aws.adapters.cli report verify --helppython -m sparkforge_aws.adapters.cli validate --help```
 
 ## 6. Loops e critérios de parada
 
@@ -177,13 +177,13 @@ Nunca hardcode a lista de modelos. O coordenador consulta o inventário da conta
 O padrão é trace desligado e conteúdo oculto. `record_usage_when_available` grava uso real quando fornecido; `estimate_when_unavailable` marca estimativas; `token_notice` avisa sobre custo. Para depuração autorizada, faça backup, habilite temporariamente, execute e restaure.
 
 Linux — Bash:
-```bashcp config/agents.yaml config/agents.yaml.baksed -i 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i 's/show_content: false/show_content: true/' config/agents.yamlpython -m sparkforge.adapters.cli playbook spark-performance-architect --repo .mv config/agents.yaml.bak config/agents.yaml```
+```bashcp config/agents.yaml config/agents.yaml.baksed -i 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i 's/show_content: false/show_content: true/' config/agents.yamlpython -m sparkforge_aws.adapters.cli playbook spark-performance-architect --repo .mv config/agents.yaml.bak config/agents.yaml```
 
 macOS — Terminal:
-```bashcp config/agents.yaml config/agents.yaml.baksed -i '' 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i '' 's/show_content: false/show_content: true/' config/agents.yamlpython3 -m sparkforge.adapters.cli playbook spark-performance-architect --repo .mv config/agents.yaml.bak config/agents.yaml```
+```bashcp config/agents.yaml config/agents.yaml.baksed -i '' 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i '' 's/show_content: false/show_content: true/' config/agents.yamlpython3 -m sparkforge_aws.adapters.cli playbook spark-performance-architect --repo .mv config/agents.yaml.bak config/agents.yaml```
 
 Windows — PowerShell:
-```powershellCopy-Item .\config\agents.yaml .\config\agents.yaml.bak(Get-Content .\config\agents.yaml) -replace 'trace_view: false','trace_view: true' | Set-Content .\config\agents.yaml -Encoding utf8(Get-Content .\config\agents.yaml) -replace 'show_content: false','show_content: true' | Set-Content .\config\agents.yaml -Encoding utf8python -m sparkforge.adapters.cli playbook spark-performance-architect --repo .Move-Item -Force .\config\agents.yaml.bak .\config\agents.yaml```
+```powershellCopy-Item .\config\agents.yaml .\config\agents.yaml.bak(Get-Content .\config\agents.yaml) -replace 'trace_view: false','trace_view: true' | Set-Content .\config\agents.yaml -Encoding utf8(Get-Content .\config\agents.yaml) -replace 'show_content: false','show_content: true' | Set-Content .\config\agents.yaml -Encoding utf8python -m sparkforge_aws.adapters.cli playbook spark-performance-architect --repo .Move-Item -Force .\config\agents.yaml.bak .\config\agents.yaml```
 
 ## 9. Sincronização de skills e agents
 
@@ -205,13 +205,13 @@ Windows — PowerShell:
 O MCP é opcional e usa stdio. Não coloque tokens ou chaves AWS em `.mcp.json`.
 
 Linux — Bash:
-```bashpython -m pip install -e ".[mcp]"python -m sparkforge.adapters.mcp --transport stdio --repo .```
+```bashpython -m pip install -e ".[mcp]"python -m sparkforge_aws.adapters.mcp --transport stdio --repo .```
 
 macOS — Terminal:
-```bashpython3 -m pip install -e ".[mcp]"python3 -m sparkforge.adapters.mcp --transport stdio --repo .```
+```bashpython3 -m pip install -e ".[mcp]"python3 -m sparkforge_aws.adapters.mcp --transport stdio --repo .```
 
 Windows — PowerShell:
-```powershellpython -m pip install -e ".[mcp]"python -m sparkforge.adapters.mcp --transport stdio --repo .```
+```powershellpython -m pip install -e ".[mcp]"python -m sparkforge_aws.adapters.mcp --transport stdio --repo .```
 
 ## 11. Domínios e saídas mínimas
 
@@ -241,13 +241,13 @@ A suíte final desta entrega registrou `5444 passed, 5 skipped` em `738.90s`, se
 Módulo ausente: confirme ambiente e reinstale editável. MCP sem inicializar: execute foreground, valide stdio e não misture diagnóstico no stdout. Sincronização falha: corrija a fonte e rode `--check`, nunca o espelho. Finding ausente: procure facts faltantes, runtime fora de escopo ou regra estrutural.
 
 Linux — Bash:
-```bashwhich pythonpython -m pip show sparkforge-awspython -m sparkforge.adapters.cli --helppython -m sparkforge.adapters.mcp --help```
+```bashwhich pythonpython -m pip show sparkforge-awspython -m sparkforge_aws.adapters.cli --helppython -m sparkforge_aws.adapters.mcp --help```
 
 macOS — Terminal:
-```bashwhich python3python3 -m pip show sparkforge-awspython3 -m sparkforge.adapters.cli --helppython3 -m sparkforge.adapters.mcp --help```
+```bashwhich python3python3 -m pip show sparkforge-awspython3 -m sparkforge_aws.adapters.cli --helppython3 -m sparkforge_aws.adapters.mcp --help```
 
 Windows — PowerShell:
-```powershellGet-Command pythonpython -m pip show sparkforge-awspython -m sparkforge.adapters.cli --helppython -m sparkforge.adapters.mcp --help```
+```powershellGet-Command pythonpython -m pip show sparkforge-awspython -m sparkforge_aws.adapters.cli --helppython -m sparkforge_aws.adapters.mcp --help```
 
 ## 14. Segurança e manutenção
 
@@ -271,7 +271,7 @@ Nenhum agent pode apagar dados, sobrescrever estado ou publicar mudança irrever
 *Autor: Manus AI. Documento operacional mantido junto com o contrato do repositório.*
 ## 15. Expansao agentic v2 e operacao offline-first
 
-A segunda onda acrescenta 2 agents coordenadores, 3 skills dispatchable, 1 time cooperativo e um bloco `knowledge` de 8 entradas — que nao sao 8 bases: sao **7 documentos `.md` mais o manifesto de checksums** `knowledge/offline-manifest.json`, e contar o indice junto com o acervo e o que produzia o numero 8 (recontado em 2026-09-20) —, alem da politica offline (numeros de agents e times recontados em 2026-09-19: a feature `docs/sdd/SF_STUBS/` removeu os 19 agentes `sf-*` ocos e as 35 areas `agentic-sf-*`, deixando so `sf-security-reviewer` e `sf-lake-formation-specialist` em `config/agentic-expansion.yaml`, e 1 time em `config/teams-expansion.yaml`; subagents e tools recontados em 2026-09-20 pela feature `docs/sdd/CONFIG_OCA/`: **0** e **0**, porque os 16 contratos de `subagents/` nao tinham leitor e nenhuma das 7 tools declaradas existia em `sparkforge.adapters.tools.TOOLS` — os 6 modulos de `sparkforge/tools/` por tras delas continuam existindo, como codigo). Os registros declarativos estao em `config/agentic-expansion.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
+A segunda onda acrescenta 2 agents coordenadores, 3 skills dispatchable, 1 time cooperativo e um bloco `knowledge` de 8 entradas — que nao sao 8 bases: sao **7 documentos `.md` mais o manifesto de checksums** `knowledge/offline-manifest.json`, e contar o indice junto com o acervo e o que produzia o numero 8 (recontado em 2026-09-20) —, alem da politica offline (numeros de agents e times recontados em 2026-09-19: a feature `docs/sdd/SF_STUBS/` removeu os 19 agentes `sf-*` ocos e as 35 areas `agentic-sf-*`, deixando so `sf-security-reviewer` e `sf-lake-formation-specialist` em `config/agentic-expansion.yaml`, e 1 time em `config/teams-expansion.yaml`; subagents e tools recontados em 2026-09-20 pela feature `docs/sdd/CONFIG_OCA/`: **0** e **0**, porque os 16 contratos de `subagents/` nao tinham leitor e nenhuma das 7 tools declaradas existia em `sparkforge_aws.adapters.tools.TOOLS` — os 6 modulos de `sparkforge_aws/tools/` por tras delas continuam existindo, como codigo). Os registros declarativos estao em `config/agentic-expansion.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
 
 | Entregavel | Garantia |
 | --- | --- |
@@ -284,30 +284,30 @@ O modo offline-first nunca faz fallback silencioso para a internet. Quando uma f
 **Linux — Bash**
 
 ```bash
-python -m sparkforge.tools.cli offline verify --repo .
-python -m sparkforge.tools.cli offline search "data contracts" --repo . --limit 5
-python -m sparkforge.tools.cli cost "revisar risco de migracao"
-python -m sparkforge.tools.cli lineage path/to/pipeline.py
+python -m sparkforge_aws.tools.cli offline verify --repo .
+python -m sparkforge_aws.tools.cli offline search "data contracts" --repo . --limit 5
+python -m sparkforge_aws.tools.cli cost "revisar risco de migracao"
+python -m sparkforge_aws.tools.cli lineage path/to/pipeline.py
 python -m pytest tests/test_offline_expansion.py -q
 ```
 
 **macOS — Terminal**
 
 ```bash
-python3 -m sparkforge.tools.cli offline verify --repo .
-python3 -m sparkforge.tools.cli offline search "data contracts" --repo . --limit 5
-python3 -m sparkforge.tools.cli cost "revisar risco de migracao"
-python3 -m sparkforge.tools.cli lineage path/to/pipeline.py
+python3 -m sparkforge_aws.tools.cli offline verify --repo .
+python3 -m sparkforge_aws.tools.cli offline search "data contracts" --repo . --limit 5
+python3 -m sparkforge_aws.tools.cli cost "revisar risco de migracao"
+python3 -m sparkforge_aws.tools.cli lineage path/to/pipeline.py
 python3 -m pytest tests/test_offline_expansion.py -q
 ```
 
 **Windows — PowerShell**
 
 ```powershell
-python -m sparkforge.tools.cli offline verify --repo .
-python -m sparkforge.tools.cli offline search "data contracts" --repo . --limit 5
-python -m sparkforge.tools.cli cost "revisar risco de migracao"
-python -m sparkforge.tools.cli lineage .\path\to\pipeline.py
+python -m sparkforge_aws.tools.cli offline verify --repo .
+python -m sparkforge_aws.tools.cli offline search "data contracts" --repo . --limit 5
+python -m sparkforge_aws.tools.cli cost "revisar risco de migracao"
+python -m sparkforge_aws.tools.cli lineage .\path\to\pipeline.py
 python -m pytest tests\test_offline_expansion.py -q
 ```
 

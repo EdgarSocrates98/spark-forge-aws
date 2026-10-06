@@ -2,12 +2,12 @@
 
 # Skill `review-glue-terraform`
 
-Use quando revisar o Terraform/IaC de jobs Glue (worker type, max_capacity junto com worker_type/number_of_workers, execution class, timeout, max_concurrent_runs com bookmarks, max_retries com escrita não idempotente, default arguments, Spark UI/event logs, segredo em argumento) em busca de configuração contraditória, observabilidade ausente ou incompatível com o runtime. Use também quando a pergunta for \"esse .tf tá certo\", \"por que a config que eu mudei no Terraform não fez efeito\" ou \"tem credencial exposta nesse job\", mesmo que ninguém fale em regra. Se você está prestes a ler o .tf linha por linha comparando contra a doc do Glue, rode `sparkforge analyze terraform` e `sparkforge judge` em vez disso — o extrator lê os blocos aws_glue_job deterministicamente e o catálogo aplica as regras SF-GLUE por recurso.
+Use quando revisar o Terraform/IaC de jobs Glue (worker type, max_capacity junto com worker_type/number_of_workers, execution class, timeout, max_concurrent_runs com bookmarks, max_retries com escrita não idempotente, default arguments, Spark UI/event logs, segredo em argumento) em busca de configuração contraditória, observabilidade ausente ou incompatível com o runtime. Use também quando a pergunta for \"esse .tf tá certo\", \"por que a config que eu mudei no Terraform não fez efeito\" ou \"tem credencial exposta nesse job\", mesmo que ninguém fale em regra. Se você está prestes a ler o .tf linha por linha comparando contra a doc do Glue, rode `sparkforge-aws analyze terraform` e `sparkforge-aws judge` em vez disso — o extrator lê os blocos aws_glue_job deterministicamente e o catálogo aplica as regras SF-GLUE por recurso.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-glue-terraform/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/terraform-data-platform.md', '../../knowledge/domain-tool-matrix.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze terraform', 'sparkforge judge', 'sparkforge analyze pyspark']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/terraform-data-platform.md', '../../knowledge/domain-tool-matrix.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze terraform', 'sparkforge-aws judge', 'sparkforge-aws analyze pyspark']} |
 
 ## Procedimento (texto integral)
 
@@ -22,7 +22,7 @@ Seu trabalho é **coletar, rodar, e interpretar por recurso** — nunca por arqu
 #### 1. Extraia os facts
 
 ```bash
-sparkforge analyze terraform --path <diretório ou arquivo.tf> --out .sparkforge/facts.json
+sparkforge-aws analyze terraform --path <diretório ou arquivo.tf> --out .sparkforge/facts.json
 ```
 
 Leia `unresolved`: interpolação `${...}`, heredoc, `dynamic`, `for_each` e qualquer expressão HCL fora do que este parser de linha entende viram `tf.unresolved` com um motivo — nunca um valor adivinhado. Um `for_each` no corpo de um `resource` faz o recurso inteiro virar um único `tf.unresolved`: o parser nunca finge ler atributo "literal" de um recurso que na prática o Terraform gera N vezes, um por item, com valores que só existem em runtime.
@@ -30,7 +30,7 @@ Leia `unresolved`: interpolação `${...}`, heredoc, `dynamic`, `for_each` e qua
 #### 2. Se for avaliar SF-GLUE-004, extraia também o código
 
 ```bash
-sparkforge analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
+sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
 ```
 
 `SF-GLUE-004` (retry maior que zero com escrita não idempotente) precisa de `tf.attribute` (`max_retries`) e `pyspark.write` (`mode: append`) **na mesma chamada de `judge`**. `--facts` é repetível: passe os dois arquivos na mesma chamada e `judge` une e deduplica as listas antes de julgar — não mescle JSON na mão. Julgar os dois arquivos separados nunca faz `SF-GLUE-004` disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência.
@@ -38,26 +38,26 @@ sparkforge analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
 Quando a revisão é de um **PR** — e não de um estado parado —, o que mudou é evidência própria, e `analyze terraform` sozinho não a produz: ele lê um estado. Use `terraform-diff`, que compara os dois e marca `tf.attribute` com `changed: true`:
 
 ```bash
-sparkforge analyze terraform-diff \
+sparkforge-aws analyze terraform-diff \
   --before <dir-do-estado-anterior> --after <dir-do-estado-proposto> \
   --out .sparkforge/tf_diff.json
 ```
 
-É o que `SF-GLUE-005` consome para acusar `worker_type` aumentado no PR. Ela precisa também de `spark.job.spill_summary` e `spark.executor.memory_usage` de um event log real do run que motivou a mudança (`sparkforge analyze event-log`): sem essas duas, "sem evidência de limitação de memória" seria indistinguível de "ninguém mediu", e a regra se recusa a fazer essa confusão — sai em `skipped` com `reason: requires_facts`.
+É o que `SF-GLUE-005` consome para acusar `worker_type` aumentado no PR. Ela precisa também de `spark.job.spill_summary` e `spark.executor.memory_usage` de um event log real do run que motivou a mudança (`sparkforge-aws analyze event-log`): sem essas duas, "sem evidência de limitação de memória" seria indistinguível de "ninguém mediu", e a regra se recusa a fazer essa confusão — sai em `skipped` com `reason: requires_facts`.
 
 #### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped
 
 # com o código junto, para SF-GLUE-004:
-sparkforge judge \
+sparkforge-aws judge \
   --facts .sparkforge/facts.json \
   --facts .sparkforge/facts_pyspark.json \
   --show-skipped
 
 # revisão de PR, para SF-GLUE-005:
-sparkforge judge \
+sparkforge-aws judge \
   --facts .sparkforge/tf_diff.json \
   --facts .sparkforge/facts_eventlog.json \
   --show-skipped
@@ -88,7 +88,7 @@ Uma regra `same_subject` emite **um finding por recurso** que casa, cada um com 
 
 ### Referência rápida
 
-Regras desta área, e o fact que cada uma consome. Os limiares e severidades **não** estão aqui de propósito — consulte com `sparkforge rules lookup --id <ID>`.
+Regras desta área, e o fact que cada uma consome. Os limiares e severidades **não** estão aqui de propósito — consulte com `sparkforge-aws rules lookup --id <ID>`.
 
 | Regra | Fact que consome | O que acusa |
 |---|---|---|
@@ -102,7 +102,7 @@ Regras desta área, e o fact que cada uma consome. Os limiares e severidades **n
 ### Quando NÃO usar
 
 - Você quer decidir tamanho/perfil de worker a partir de métricas de execução: use `tune-glue-job`.
-- O problema está no código ou nos dados, não na configuração: comece pelo diagnóstico com `sparkforge-diagnose`.
+- O problema está no código ou nos dados, não na configuração: comece pelo diagnóstico com `sparkforge-aws-diagnose`.
 - Revisão de código de aplicação PySpark, não de infraestrutura: use `review-pyspark-pr`.
 
 ### Red flags
@@ -120,9 +120,9 @@ que decide o que o próximo run lê — e cujo sintoma é lacuna ou duplicata, n
 `--conf` em default argument, que alcança o Spark do job inteiro. As três chegam no mesmo diff
 de Terraform.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -160,7 +160,7 @@ Esta skill trata **revisão de Terraform para jobs Glue**. Contrato comum, sem s
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze terraform`, `sparkforge judge`, `sparkforge analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze terraform`, `sparkforge-aws judge`, `sparkforge-aws analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

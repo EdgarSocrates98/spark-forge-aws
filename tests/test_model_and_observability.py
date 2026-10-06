@@ -1,4 +1,4 @@
-from sparkforge.agents import (
+from sparkforge_aws.agents import (
     TraceEvent,
     TraceView,
     Usage,

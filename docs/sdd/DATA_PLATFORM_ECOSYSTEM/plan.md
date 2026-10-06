@@ -9,11 +9,11 @@ upstream:
   sha256: "495de29d55ab3cd16df6b0ab2b5a7aeb5519e6afef13202217cb58bb6f7f53bb"
 tasks:
   - id: T1
-    files: [sparkforge/platform/ecosystem.py, sparkforge/platform/__init__.py, fixtures/platform/ecosystem.yaml, tests/test_platform_ecosystem.py]
+    files: [sparkforge_aws/platform/ecosystem.py, sparkforge_aws/platform/__init__.py, fixtures/platform/ecosystem.yaml, tests/test_platform_ecosystem.py]
     covers: [AC1, AC2]
     test: {path: tests/test_platform_ecosystem.py, name: test_ecosystem_normalizes_domains_and_reliability}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml]
     covers: [AC3]
     test: {path: tests/test_platform_ecosystem.py, name: test_ecosystem_surfaces_share_contract}
   - id: T3

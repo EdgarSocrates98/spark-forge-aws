@@ -14,10 +14,10 @@ import pytest
 import yaml
 
 from scripts import sync_skills
-from sparkforge.adapters.cli import build_parser
-from sparkforge.findings.models import RuntimeContext
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters.cli import build_parser
+from sparkforge_aws.findings.models import RuntimeContext
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ROOT / "skills"
@@ -162,10 +162,10 @@ def _runtime_scope_reason() -> str:
 RUNTIME_SCOPE_REASON = _runtime_scope_reason()
 
 # Escopo: a skill INSTRUI a rodar `judge`. Deliberadamente mais largo que uma
-# regex de linha de comando -- uma skill que so cita `sparkforge judge` na
+# regex de linha de comando -- uma skill que so cita `sparkforge-aws judge` na
 # description ja esta mandando o agente rodar, e tem a mesma obrigacao de dizer
 # como o runtime chega.
-JUDGE_MENTION = "sparkforge judge"
+JUDGE_MENTION = "sparkforge-aws judge"
 
 JUDGE_SKILLS = [
     p for p in SKILL_DIRS if JUDGE_MENTION in (p / "SKILL.md").read_text(encoding="utf-8")
@@ -291,7 +291,7 @@ def _cli_subcommands() -> dict[str, frozenset[str]]:
     """`{verbo_de_topo: {subcomandos}}`, por introspecao do parser real.
 
     Perguntar ao argparse em vez de escrever a lista e o que amarra este arquivo
-    ao motor: `sparkforge analyze plan` passou a existir sem ninguem tocar aqui.
+    ao motor: `sparkforge-aws analyze plan` passou a existir sem ninguem tocar aqui.
     """
 
     def choices(parser: argparse.ArgumentParser) -> dict[str, argparse.ArgumentParser]:
@@ -307,7 +307,7 @@ def _cli_subcommands() -> dict[str, frozenset[str]]:
 CLI_SUBCOMMANDS = _cli_subcommands()
 
 # Todo par `<topo> <sub>` que o motor aceita hoje, na forma como a documentacao o
-# escreve. So os verbos que TEM subcomando: `sparkforge judge` sozinho nao admite
+# escreve. So os verbos que TEM subcomando: `sparkforge-aws judge` sozinho nao admite
 # negacao de existencia interessante.
 EXISTING_COMMANDS = tuple(
     sorted(f"{top} {sub}" for top, subs in CLI_SUBCOMMANDS.items() for sub in subs)
@@ -342,11 +342,11 @@ NEGATION_MARKERS = (
 _SENTENCE_SPLIT = re.compile(r"(?<=[.;:!?])\s+|\n")
 
 # Um marcador em qualquer lugar da sentenca nao prova que ele nega O COMANDO --
-# "`sparkforge analyze terraform` (...) quando voce nao tem o `.tf` a mao" nega o
+# "`sparkforge-aws analyze terraform` (...) quando voce nao tem o `.tf` a mao" nega o
 # arquivo, nao o verbo. Exige-se entao que a negacao venha ANTES do comando, perto
 # dele, e sem ponto final no meio: e a forma que o defeito real tinha ("nao ha
-# `sparkforge analyze plan`", "Nao existe `sparkforge analyze s3` nem
-# `sparkforge analyze plan`"). Menos abrangente e mais confiavel -- um teste que
+# `sparkforge-aws analyze plan`", "Nao existe `sparkforge-aws analyze s3` nem
+# `sparkforge-aws analyze plan`"). Menos abrangente e mais confiavel -- um teste que
 # grita em prosa correta e desligado no primeiro incomodo, e ai nao guarda nada.
 NEGATION_WINDOW = 60
 
@@ -411,12 +411,12 @@ def test_doc_nao_nega_comando_que_existe(doc: Path) -> None:
             marker = _negation_of(sentence, command)
             assert marker is None, (
                 f"{rel}:{lineno} nega um comando que EXISTE.\n"
-                f"  comando: `sparkforge {command}` (esta em `build_parser()` agora)\n"
+                f"  comando: `sparkforge-aws {command}` (esta em `build_parser()` agora)\n"
                 f"  negacao: {marker!r}\n"
                 f"  sentenca: {sentence.strip()!r}\n"
                 f"  Uma skill que declara inexistente uma capacidade que o motor tem "
                 f"instrui o agente a NAO usar a ferramenta certa. Rode "
-                f"`sparkforge {command} --help`, confirme o que o verbo faz, e "
+                f"`sparkforge-aws {command} --help`, confirme o que o verbo faz, e "
                 f"reescreva com o limite VERDADEIRO, que costuma ser de coleta (o "
                 f"artefato que ninguem coletou ainda), nao com a negacao da existencia."
             )
@@ -432,11 +432,11 @@ def test_description_nao_nega_o_proprio_toolkit(skill_dir: Path) -> None:
     toolkit" faz ele descartar a ferramenta certa sem nunca abrir o arquivo.
     Nessa forma a negacao nem precisou nomear o verbo, e por isso o teste acima
     (que casa `<topo> <sub>`) nao a pegaria: aqui a ancora e a propria palavra
-    `sparkforge`. Escopo estreito -- 1 linha por skill -- para que a exigencia
+    `sparkforge-aws`. Escopo estreito -- 1 linha por skill -- para que a exigencia
     seja severa sem virar ruido.
     """
     fm = parse_frontmatter((skill_dir / "SKILL.md").read_text(encoding="utf-8"))
-    marker = _negation_of(fm.get("description", ""), "sparkforge")
+    marker = _negation_of(fm.get("description", ""), "sparkforge-aws")
     assert marker is None, (
         f"{skill_dir.name}: a `description` nega o proprio toolkit ({marker!r}).\n"
         f"  {fm.get('description', '')}\n"
@@ -480,15 +480,15 @@ def test_doc_nao_anuncia_comando_que_nao_existe(doc: Path) -> None:
     """O inverso: prometer um verbo que o CLI nao tem.
 
     Puramente derivado -- nao ha vocabulario nenhum aqui. Todo
-    `sparkforge <topo> <sub>` escrito na documentacao e conferido contra os
+    `sparkforge-aws <topo> <sub>` escrito na documentacao e conferido contra os
     subparsers reais.
     """
     rel = str(doc.relative_to(ROOT)).replace("\\", "/")
     pattern = re.compile(
-        r"sparkforge\s+(" + "|".join(sorted(CLI_SUBCOMMANDS)) + r")\s+([a-z][a-z0-9-]*)"
+        r"sparkforge-aws\s+(" + "|".join(sorted(CLI_SUBCOMMANDS)) + r")\s+([a-z][a-z0-9-]*)"
     )
     # Um token so e cobrado quando parece subcomando de ALGUM verbo; senao a
-    # proxima palavra da frase depois de `sparkforge judge` viraria falso positivo.
+    # proxima palavra da frase depois de `sparkforge-aws judge` viraria falso positivo.
     known_anywhere = {sub for subs in CLI_SUBCOMMANDS.values() for sub in subs}
     for lineno, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), start=1):
         for top, sub in pattern.findall(line):
@@ -502,7 +502,7 @@ def test_doc_nao_anuncia_comando_que_nao_existe(doc: Path) -> None:
             if _negation_of(line, f"{top} {sub}") is not None:
                 continue
             assert sub in CLI_SUBCOMMANDS[top], (
-                f"{rel}:{lineno} anuncia `sparkforge {top} {sub}`, que o parser NAO "
+                f"{rel}:{lineno} anuncia `sparkforge-aws {top} {sub}`, que o parser NAO "
                 f"aceita.\n"
                 f"  subcomandos validos de `{top}`: {sorted(CLI_SUBCOMMANDS[top])}\n"
                 f"  Um comando inventado falha de forma confusa na mao do agente, em vez "

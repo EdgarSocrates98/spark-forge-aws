@@ -18,8 +18,8 @@
 **Raw Input:** Frente 2b do tune: `spark.network.timeout`, `spark.sql.broadcastTimeout` e `spark.speculation` derivados da medida, com extração de executor por task no event log e reescrita das regras 15/16 do CLAUDE.md (o operador escolheu ir contra elas).
 
 **Context Gathered:**
-- A frente 2a (PR #67, `749d44b9`) deixou as três propriedades em `_SEM_BASE_MEDIDA` de `sparkforge/tuning/spark_conf.py`, com recusa `no_measured_basis`. As recusas citam as regras 15/16 e a `SF-TIMEOUT-001` como razão para não propor número.
-- `sparkforge/facts/timeout_diagnosis.py` já emite `spark.timeout.diagnosis` (categoria `heartbeat`/`network`/`broadcast`/`wall_clock`, `also_seen` e os sintomas medidos: skew, spill, GC, executores perdidos) e `spark.timeout.relation` (`heartbeat_s`, `network_timeout_s`), e roda no `fuse` quando o pool tem kind de origem.
+- A frente 2a (PR #67, `749d44b9`) deixou as três propriedades em `_SEM_BASE_MEDIDA` de `sparkforge_aws/tuning/spark_conf.py`, com recusa `no_measured_basis`. As recusas citam as regras 15/16 e a `SF-TIMEOUT-001` como razão para não propor número.
+- `sparkforge_aws/facts/timeout_diagnosis.py` já emite `spark.timeout.diagnosis` (categoria `heartbeat`/`network`/`broadcast`/`wall_clock`, `also_seen` e os sintomas medidos: skew, spill, GC, executores perdidos) e `spark.timeout.relation` (`heartbeat_s`, `network_timeout_s`), e roda no `fuse` quando o pool tem kind de origem.
 - `spark.sql.broadcast_exchange` (entrou na 2a) traz `collect_ms`, `build_ms` e `broadcast_ms` medidos por `BroadcastExchange`.
 - O `SparkListenerTaskEnd` do extrator de event log só alimenta percentis por stage (`_StageAccumulator`): executor e host da task são descartados, e nenhuma fonte separa a lentidão do NÓ da lentidão da PARTIÇÃO, que é exatamente o que a recusa atual da speculation diz faltar.
 - `SF-TIMEOUT-002` tem hoje `action.target: spark.executor.heartbeatInterval`, `direction: decrease`; `SF-TIMEOUT-001` guarda os limiares de sintoma (skew 3.0, spill 0.1, GC 0.1, um executor perdido).
@@ -29,7 +29,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/facts/event_log.py`, `sparkforge/tuning/spark_conf.py`, `rules/catalog/{spark-ui,timeout}.yaml`, `CLAUDE.md`/`AGENTS.md` | Estender o que existe, sem módulo novo |
+| Likely Location | `sparkforge_aws/facts/event_log.py`, `sparkforge_aws/tuning/spark_conf.py`, `rules/catalog/{spark-ui,timeout}.yaml`, `CLAUDE.md`/`AGENTS.md` | Estender o que existe, sem módulo novo |
 | Relevant KB Domains | spark (agentspec), `knowledge/spark/`, `knowledge/glue/workers-and-capacity.md` | Defaults de speculation e de timeout conferidos na fonte do Spark |
 | IaC Patterns | Terraform como procedência (`tf.spark_conf`) | `change plan --from-tune` passa a levar as três chaves |
 
@@ -54,7 +54,7 @@
 | Input files | `fixtures/sql_metrics/broadcast_exchange` | 1 | Tempos medidos do `BroadcastExchange` |
 | Output examples | `fixtures/tuning/*/expected/report.json` | 14 | Forma de `properties` e `refused` do `tune` |
 | Ground truth | fonte do Spark (speculation, heartbeat, network timeout, broadcast timeout) | - | Defaults conferidos por tag no design |
-| Related code | `sparkforge/tuning/spark_conf.py` (`_overhead`, `_broadcast`), `timeout_diagnosis.py` | 2 | Moldes de piso medido, headroom e recusa nomeada |
+| Related code | `sparkforge_aws/tuning/spark_conf.py` (`_overhead`, `_broadcast`), `timeout_diagnosis.py` | 2 | Moldes de piso medido, headroom e recusa nomeada |
 
 **How samples will be used:**
 

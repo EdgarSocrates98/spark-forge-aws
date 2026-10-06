@@ -1,6 +1,6 @@
 """Tests for Iceberg Table Doctor and Maintenance Planner."""
-from sparkforge.iceberg.doctor import IcebergTableDoctor
-from sparkforge.iceberg.maintenance import IcebergMaintenancePlanner
+from sparkforge_aws.iceberg.doctor import IcebergTableDoctor
+from sparkforge_aws.iceberg.maintenance import IcebergMaintenancePlanner
 
 
 def test_iceberg_table_doctor_degraded():

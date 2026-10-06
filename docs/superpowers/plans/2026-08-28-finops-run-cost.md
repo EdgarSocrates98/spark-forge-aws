@@ -4,7 +4,7 @@
 
 **Goal:** Reunir tudo o que é financeiro num lugar só — quanto custou, se mais recurso por menos tempo sai mais barato, quanto custa por desfecho que serve, e onde a alavanca está: capacidade ou código.
 
-**Architecture:** Um fact novo (`glue.run_cost`, no precedente do DPU derivado que B estabeleceu) e um verbo de topo `sparkforge finops` que compõe: a fronteira custo-versus-tempo entre capacidades observadas, o custo por desfecho de SLA, os sintomas ao lado, e a separação das alavancas. Nada aqui atribui custo a causa.
+**Architecture:** Um fact novo (`glue.run_cost`, no precedente do DPU derivado que B estabeleceu) e um verbo de topo `sparkforge-aws finops` que compõe: a fronteira custo-versus-tempo entre capacidades observadas, o custo por desfecho de SLA, os sintomas ao lado, e a separação das alavancas. Nada aqui atribui custo a causa.
 
 **Tech Stack:** Python 3, `pytest`. Spec: [`../specs/2026-08-28-finops-run-cost-design.md`](../specs/2026-08-28-finops-run-cost-design.md).
 
@@ -19,7 +19,7 @@
 **APIs reais que este plano consome** (medidas em 2026-08-28):
 
 ```
-sparkforge.facts.pricing.prices(runtime_version=None) -> list[dict]
+sparkforge_aws.facts.pricing.prices(runtime_version=None) -> list[dict]
   cada entrada: {value: "0.44" (STRING), currency, region, runtime_version,
                  source, source_type, retrieved, note}
   `region` e `runtime_version` valem "UNQUALIFIED" hoje.
@@ -34,8 +34,8 @@ Finding        campos: rule_id, title, severity, confidence, status, subject,
                        tradeoffs, validation, rollback, sources, catalog_version,
                        schema_version
 
-sparkforge.capacity.plan.resolution_supports(resolution, target) -> bool
-sparkforge.adapters._core._load_facts_file / _load_facts_dir
+sparkforge_aws.capacity.plan.resolution_supports(resolution, target) -> bool
+sparkforge_aws.adapters._core._load_facts_file / _load_facts_dir
 ```
 
 ---
@@ -46,9 +46,9 @@ sparkforge.adapters._core._load_facts_file / _load_facts_dir
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/facts/run_cost.py` | O fact `glue.run_cost` e o `glue.run_cost.unresolved` |
-| `sparkforge/finops/__init__.py` | Export de `build_finops_report` |
-| `sparkforge/finops/report.py` | Fronteira, custo por desfecho, sintomas e alavancas |
+| `sparkforge_aws/facts/run_cost.py` | O fact `glue.run_cost` e o `glue.run_cost.unresolved` |
+| `sparkforge_aws/finops/__init__.py` | Export de `build_finops_report` |
+| `sparkforge_aws/finops/report.py` | Fronteira, custo por desfecho, sintomas e alavancas |
 | `tests/test_facts_run_cost.py` | Testes do fact |
 | `tests/test_finops_report.py` | Testes do relatório |
 | `tests/test_fixtures_golden_finops.py` | Módulo golden do domínio novo |
@@ -58,7 +58,7 @@ sparkforge.adapters._core._load_facts_file / _load_facts_dir
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/adapters/_core.py`, `cli.py`, `tools.py` | Verbo de topo `finops` e a tool |
+| `sparkforge_aws/adapters/_core.py`, `cli.py`, `tools.py` | Verbo de topo `finops` e a tool |
 | `manifest.json`, `parity.yaml`, `agents/` | A tool nova |
 | `tests/test_fixtures_kind_coverage.py`, `tests/test_rules_catalog_reachability.py` | Registrar `run_cost` nas DUAS listas |
 | `README.md`, `docs/superpowers/STATUS.md` | O verbo, a fase, e os números medidos |
@@ -68,7 +68,7 @@ sparkforge.adapters._core._load_facts_file / _load_facts_dir
 ## Task 1: O fact de custo
 
 **Files:**
-- Create: `sparkforge/facts/run_cost.py`
+- Create: `sparkforge_aws/facts/run_cost.py`
 - Test: `tests/test_facts_run_cost.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -81,8 +81,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.run_cost import extract_run_cost
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.run_cost import extract_run_cost
+from sparkforge_aws.findings.models import Fact
 
 
 def _run(run_id="jr_1", dpu=3600.0, dpu_source="derived"):
@@ -167,10 +167,10 @@ class TestRecusas:
         assert lacunas[0].attrs["reason"] == "dpu_seconds_unavailable"
 
     def test_a_price_table_that_does_not_load_is_a_gap(self, monkeypatch):
-        from sparkforge.facts import run_cost
+        from sparkforge_aws.facts import run_cost
 
         def boom(*_args, **_kwargs):
-            from sparkforge.facts.pricing import PricingError
+            from sparkforge_aws.facts.pricing import PricingError
 
             raise PricingError("tabela ausente")
 
@@ -180,7 +180,7 @@ class TestRecusas:
         assert [f.attrs["reason"] for f in facts] == ["price_unavailable"]
 
     def test_two_prices_without_an_axis_is_ambiguous_not_a_guess(self, monkeypatch):
-        from sparkforge.facts import run_cost
+        from sparkforge_aws.facts import run_cost
 
         entrada = {
             "value": "0.44",
@@ -204,7 +204,7 @@ class TestRecusas:
 
 class TestSchema:
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         facts = extract_run_cost([_run(), _run("jr_2", dpu=None)], "facts.json")
 
@@ -219,11 +219,11 @@ class TestSchema:
 rtk pytest tests/test_facts_run_cost.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.run_cost'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.run_cost'`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/facts/run_cost.py`:
+`sparkforge_aws/facts/run_cost.py`:
 
 ```python
 """Custo em moeda por run, a partir do DPU medido e do preco publicado.
@@ -254,8 +254,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from sparkforge.facts.pricing import PricingError, prices
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.facts.pricing import PricingError, prices
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "run_cost@0.1.0"
 
@@ -371,7 +371,7 @@ Esperado: PASS, 9 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/run_cost.py tests/test_facts_run_cost.py
+rtk git add sparkforge_aws/facts/run_cost.py tests/test_facts_run_cost.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -382,7 +382,7 @@ Mensagem: `feat(facts): custo por run, com as duas ressalvas da fonte dentro do 
 ## Task 2: A fronteira custo-versus-tempo
 
 **Files:**
-- Create: `sparkforge/finops/__init__.py`, `sparkforge/finops/report.py`
+- Create: `sparkforge_aws/finops/__init__.py`, `sparkforge_aws/finops/report.py`
 - Test: `tests/test_finops_report.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -393,8 +393,8 @@ Mensagem: `feat(facts): custo por run, com as duas ressalvas da fonte dentro do 
 """Testes do relatorio financeiro."""
 from __future__ import annotations
 
-from sparkforge.finops import build_finops_report
-from sparkforge.findings.models import Fact
+from sparkforge_aws.finops import build_finops_report
+from sparkforge_aws.findings.models import Fact
 
 
 def _run(run_id, segundos, workers, dpu, worker="G.2X", state="SUCCEEDED"):
@@ -495,17 +495,17 @@ class TestFronteira:
 rtk pytest tests/test_finops_report.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.finops'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.finops'`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/finops/report.py`, primeira parte — a fronteira:
+`sparkforge_aws/finops/report.py`, primeira parte — a fronteira:
 
 ```python
 """O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta.
 
 NAO e extrator, e nada aqui vira Fact. O fact de custo e
-`sparkforge/facts/run_cost.py`; este modulo COMPOE -- e composicao e leitura,
+`sparkforge_aws/facts/run_cost.py`; este modulo COMPOE -- e composicao e leitura,
 nao medicao.
 
 A FRONTEIRA E O NUCLEO. DPU-segundos nao e invariante na troca entre mais
@@ -528,8 +528,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from sparkforge.facts.run_cost import extract_run_cost
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.run_cost import extract_run_cost
+from sparkforge_aws.findings.models import Fact
 
 
 def _nearest_rank(ordenados: list[float], pct: int) -> float:
@@ -643,16 +643,16 @@ def build_finops_report(
     }
 ```
 
-`sparkforge/finops/__init__.py`:
+`sparkforge_aws/finops/__init__.py`:
 
 ```python
 """Leitura financeira: custo, a troca recurso-tempo, e onde a alavanca esta.
 
-Pacote proprio, e nao `sparkforge/economy/`: aquele e sobre economia de
+Pacote proprio, e nao `sparkforge_aws/economy/`: aquele e sobre economia de
 chamadas e tokens de LLM, com perfis ECO/QUALITY/STRICT, e o nome colidiria
 com o assunto errado. A separacao esta na seccao 22 do documento de origem.
 """
-from sparkforge.finops.report import build_finops_report
+from sparkforge_aws.finops.report import build_finops_report
 
 __all__ = ["build_finops_report"]
 ```
@@ -668,7 +668,7 @@ Esperado: PASS. Reporte a contagem real.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/finops tests/test_finops_report.py
+rtk git add sparkforge_aws/finops tests/test_finops_report.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -679,7 +679,7 @@ Mensagem: `feat(finops): a fronteira custo-versus-tempo entre capacidades observ
 ## Task 3: Custo por desfecho de SLA, e os sintomas
 
 **Files:**
-- Modify: `sparkforge/finops/report.py`
+- Modify: `sparkforge_aws/finops/report.py`
 - Test: `tests/test_finops_report.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -782,7 +782,7 @@ rtk pytest tests/test_finops_report.py::TestCustoPorDesfecho tests/test_finops_r
 Acrescente a `report.py` o import de `resolution_supports` e a composição:
 
 ```python
-from sparkforge.capacity.plan import resolution_supports
+from sparkforge_aws.capacity.plan import resolution_supports
 ```
 
 ```python
@@ -946,7 +946,7 @@ rtk pytest tests/test_finops_report.py -v
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/finops tests/test_finops_report.py
+rtk git add sparkforge_aws/finops tests/test_finops_report.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -957,7 +957,7 @@ Mensagem: `feat(finops): custo por desfecho de SLA, e os sintomas ao lado`
 ## Task 4: A alavanca — capacidade ou código
 
 **Files:**
-- Modify: `sparkforge/finops/report.py`
+- Modify: `sparkforge_aws/finops/report.py`
 - Test: `tests/test_finops_report.py`
 
 Esta é a tarefa que separa E de um relatório de custo.
@@ -967,7 +967,7 @@ Esta é a tarefa que separa E de um relatório de custo.
 ```python
 class TestAlavanca:
     def _finding(self, rule_id):
-        from sparkforge.findings.models import Finding
+        from sparkforge_aws.findings.models import Finding
 
         return Finding(
             rule_id=rule_id,
@@ -1087,7 +1087,7 @@ def _levers(findings: Sequence[Any]) -> dict[str, Any]:
         "capacity": {
             "detail": (
                 "A pergunta de capacidade tem resposta com evidencia em "
-                "`sparkforge capacity`, que compara as capacidades observadas contra o "
+                "`sparkforge-aws capacity`, que compara as capacidades observadas contra o "
                 "SLA declarado."
             )
         },
@@ -1108,7 +1108,7 @@ rtk pytest tests/test_finops_report.py tests/test_facts_run_cost.py -v
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/finops tests/test_finops_report.py
+rtk git add sparkforge_aws/finops tests/test_finops_report.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1119,7 +1119,7 @@ Mensagem: `feat(finops): a alavanca do custo, capacidade ou codigo, sem atribuir
 ## Task 5: Superfície
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py`, `cli.py`, `tools.py`, `manifest.json`, `parity.yaml`, `agents/`
+- Modify: `sparkforge_aws/adapters/_core.py`, `cli.py`, `tools.py`, `manifest.json`, `parity.yaml`, `agents/`
 - Test: `tests/test_adapters_cli.py`, `tests/test_adapters_tools.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1131,7 +1131,7 @@ Em `tests/test_adapters_tools.py`:
 ```python
 class TestFinopsTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_finops" in tools.TOOLS
         assert "sparkforge_finops" in tools._HANDLERS
@@ -1186,7 +1186,7 @@ A contagem fixa de tools com caminho sobe em um. Atualize e relate.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/adapters manifest.json parity.yaml tests agents .claude .agents .github
+rtk git add sparkforge_aws/adapters manifest.json parity.yaml tests agents .claude .agents .github
 rtk git commit -F <arquivo com a mensagem>
 ```
 

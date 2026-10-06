@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Driver headless do executor de debate: uma sessao `claude -p` por vez de lado.
 
-FORA do pacote de proposito (regra 23): `sparkforge/` conduz o debate mas nao
+FORA do pacote de proposito (regra 23): `sparkforge_aws/` conduz o debate mas nao
 gera uma palavra dele. Quem escreve claim, objecao e replica e o host, e este
 script e o host headless -- o unico lugar do repositorio, junto de
 `run_agentic_eval.py`, que gasta token, e so quando o operador o roda.
@@ -23,7 +23,7 @@ Para cada caso da suite `evals/agentic/debate/`:
   4. copia o transcript de cada chamada para
      `~/.sparkforge/debate-evals/<run>/<caso>/<n>-<lado>.jsonl`, grava
      `result.json` e, no fim, o placar `grade.json`
-     (`python -m sparkforge.evals debate --run <run>` refaz o placar).
+     (`python -m sparkforge_aws.evals debate --run <run>` refaz o placar).
 
 NENHUM VALOR DO ARGV CHEGA A UM CAMINHO, E NENHUM VALOR LIVRE CHEGA A
 `subprocess`. A suite e constante, os casos sao iterados da tupla constante
@@ -58,15 +58,15 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from sparkforge.adapters import _core  # noqa: E402
-from sparkforge.adapters._core import AdapterError  # noqa: E402
-from sparkforge.agentic.executor.debate_evidence import read_evidence_facts  # noqa: E402
-from sparkforge.agentic.executor.debate_run import (  # noqa: E402
+from sparkforge_aws.adapters import _core  # noqa: E402
+from sparkforge_aws.adapters._core import AdapterError  # noqa: E402
+from sparkforge_aws.agentic.executor.debate_evidence import read_evidence_facts  # noqa: E402
+from sparkforge_aws.agentic.executor.debate_run import (  # noqa: E402
     DEBATE_DIR,
     SUBMISSIONS_FILE,
 )
-from sparkforge.case.store import CASE_DIR, CASE_FILE  # noqa: E402
-from sparkforge.evals.debate_grade import (  # noqa: E402
+from sparkforge_aws.case.store import CASE_DIR, CASE_FILE  # noqa: E402
+from sparkforge_aws.evals.debate_grade import (  # noqa: E402
     DEBATE_FACTS_FILE,
     GRADE_FILE,
     RESULT_FILE,

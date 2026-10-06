@@ -10,7 +10,7 @@ Para cada pergunta, duas coisas, lado a lado e sem nota composta:
 
 - **acerto**: a linha `ANSWER:` bate com o gabarito;
 - **uso das tools exigidas**: o agente chamou `sdd_check` ou `sdd_status`
-  (tool MCP ou `sparkforge sdd ...` na CLI), em vez de ler o YAML no olho.
+  (tool MCP ou `sparkforge-aws sdd ...` na CLI), em vez de ler o YAML no olho.
 
 | id | repositório | pergunta | tool exigida |
 |---|---|---|---|
@@ -30,7 +30,7 @@ sobre cada fixture e reprova a suite se a resposta divergir.
 
 ```bash
 python scripts/run_agentic_eval.py --suite sdd --model haiku --repeat 1
-python -m sparkforge.evals grade --suite sdd --run <run_id>
+python -m sparkforge_aws.evals grade --suite sdd --run <run_id>
 ```
 
 O runner copia `fixtures/` para o workspace de prova (sem `expected/`), gasta
@@ -71,12 +71,12 @@ por isso o `run_id` de `r2` também termina em `r1` — com
 | `sdd-06` | 2/2 | 2/2 |
 
 Nenhuma pergunta usou a tool MCP; o gate foi alcançado pela CLI
-`sparkforge sdd ...`. Em `r2`, `sdd-03` tentou `python -m sparkforge.cli sdd
+`sparkforge-aws sdd ...`. Em `r2`, `sdd-03` tentou `python -m sparkforge_aws.cli sdd
 check`, que não é o ponto de entrada da CLI, e respondeu certo **lendo o YAML**
 com `Read` — exatamente o comportamento que a suite existe para distinguir.
 O grader só reconhece a CLI chamada por `Bash` (`PowerShell` conta como
-`other`). O `sparkforge` do PATH da máquina era instalação editável deste
-repositório, não a cópia do workspace; o código de `sparkforge/` era o mesmo
+`other`). O `sparkforge-aws` do PATH da máquina era instalação editável deste
+repositório, não a cópia do workspace; o código de `sparkforge_aws/` era o mesmo
 nos dois. Duas amostras não são taxa: repetir com `--repeat 3` antes de citar
-estabilidade, e comparar com `python -m sparkforge.evals compare`, que lista
+estabilidade, e comparar com `python -m sparkforge_aws.evals compare`, que lista
 transições e não conclui.

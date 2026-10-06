@@ -9,11 +9,11 @@ upstream:
   sha256: "393ca4bc25010058f3bfa044fdbbdbbc20f6e41aa5a34532642b9666a8b26e69"
 tasks:
   - id: T1
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC2]
     test: {path: tests/test_sdd.py, name: test_funcval_not_comparison}
   - id: T2
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC3]
     test: {path: tests/test_sdd.py, name: test_funcval_blind_spot}
   - id: T3
@@ -71,7 +71,7 @@ Commit, com os dois codigos acrescentados ao paragrafo 5.0 do spec do nucleo.
 
 `tests/test_sdd_operator.py` com o fluxo do design. Antes de escrever, ler os
 `inputSchema` de `sparkforge_case_open` e `sparkforge_change_sandbox` em
-`sparkforge/adapters/tools.py` e como os testes existentes leem o retorno de
+`sparkforge_aws/adapters/tools.py` e como os testes existentes leem o retorno de
 `call_tool`. Commit.
 
 ## T4 — coordenadores
@@ -90,8 +90,8 @@ def test_coordenadores_apontam_o_sdd():
         frente, corpo = texto.split("\n---\n", 1)
         assert "sdd-" not in frente, nome
         assert "`sdd-define`" in corpo and "`sdd-build`" in corpo, nome
-        assert "sparkforge sdd check" in corpo, nome
-        assert "sparkforge case open" in corpo, nome
+        assert "sparkforge-aws sdd check" in corpo, nome
+        assert "sparkforge-aws case open" in corpo, nome
 ```
 
 Revisto no build (D2): as `sdd-*` sao nao-despachaveis e ficam fora do

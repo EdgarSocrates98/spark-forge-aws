@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge architecture`
+# `sparkforge-aws architecture`
 
 Avalia arquitetura declarada sem escolher por preferência ou custo inventado.
 
@@ -8,14 +8,14 @@ Avalia arquitetura declarada sem escolher por preferência ou custo inventado.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge architecture streaming`](#sparkforge-architecture-streaming) | Compara candidatos streaming por constraints factuais declaradas. |
+| [`sparkforge-aws architecture streaming`](#sparkforge-aws-architecture-streaming) | Compara candidatos streaming por constraints factuais declaradas. |
 
-## `sparkforge architecture streaming`
+## `sparkforge-aws architecture streaming`
 
 Compara candidatos streaming por constraints factuais declaradas.
 
 ```bash
-sparkforge architecture streaming --help
+sparkforge-aws architecture streaming --help
 ```
 
 ### Opções

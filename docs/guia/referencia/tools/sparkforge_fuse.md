@@ -20,7 +20,7 @@ Correlaciona facts de fontes diferentes (texto SQL de `sparkforge_analyze_sql` c
 
 ## Na CLI
 
-[`sparkforge fuse`](../cli/fuse.md)
+[`sparkforge-aws fuse`](../cli/fuse.md)
 
 ## Capacidade
 

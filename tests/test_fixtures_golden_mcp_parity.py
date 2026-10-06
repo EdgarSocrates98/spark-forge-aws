@@ -29,7 +29,7 @@ import pytest
 
 pytest.importorskip("mcp", reason="SDK do MCP e extra opcional")
 
-from sparkforge.adapters.mcp import _TTL_TOOLS_LIST_MS, _versao_do_pacote  # noqa: E402
+from sparkforge_aws.adapters.mcp import _TTL_TOOLS_LIST_MS, _versao_do_pacote  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "mcp_parity"
@@ -40,7 +40,7 @@ def _carregar_script() -> Any:
 
     Este modulo tambem roda no gate de wheel (`verify_wheel.py` coleta todo
     `test_fixtures_*.py`), onde a raiz do repositorio no `sys.path` faria o
-    `sparkforge` do repositorio vencer o instalado. La o extra `mcp` nao e
+    `sparkforge-aws` do repositorio vencer o instalado. La o extra `mcp` nao e
     instalado e o `importorskip` acima pula antes de chegar aqui.
     """
     spec = importlib.util.spec_from_file_location("mcp_parity", ROOT / "scripts" / "mcp_parity.py")
@@ -77,6 +77,12 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_dq_ai_assess": (
         "2026-09-20: composicao de assessment AI/DQ sobre fatos extraidos"
+    ),
+    "sparkforge_agentops_timeline": (
+        "2026-10-05: linha do tempo do run por lane de componente (FASE 10)"
+    ),
+    "sparkforge_agentops_critical_path": (
+        "2026-10-05: maiores duracoes, retries e waiting medidos do run (FASE 10)"
     ),
     "sparkforge_context_start": (
         "2026-09-26: descoberta seletiva de contexto sob limite deterministico"
@@ -171,6 +177,21 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_collect_managed_flink": (
         "2026-10-03: coleta read-only de DescribeApplication do Managed Flink com unresolved"
+    ),
+    "sparkforge_context_inspect": (
+        "2026-10-04: inspeção bounded de qualidade e referências do Context Gateway"
+    ),
+    "sparkforge_agentops_inspect": (
+        "2026-10-04: inspeção local read-only de traces e métricas AgentOps"
+    ),
+    "sparkforge_agentops_compare": (
+        "2026-10-04: comparação determinística de janelas locais AgentOps"
+    ),
+    "sparkforge_agentops_baseline": (
+        "2026-10-04: baseline local explícito para observabilidade AgentOps"
+    ),
+    "sparkforge_doctor_agentic": (
+        "2026-10-04: diagnóstico local dos contratos do Agentic OS v2"
     ),
 }
 
@@ -376,19 +397,30 @@ REESCRITAS_DEPOIS_DO_GOLDEN.update(
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
 # dois lados antes de comparar; todo o resto da chamada continua byte a byte, e
 # o teste exige que a troca exista (senao a excecao sobra e cai).
+_MOTIVO_TRUST = (
+    "2026-10-05: `call_tool` passou a devolver o bloco aditivo `_trust` "
+    "(TOOL_OUTPUT/data_only + taint) em todo resultado, erro incluido; o bloco "
+    "e neutralizado dos dois lados e o restante segue byte a byte"
+)
 CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
     "sucesso_analyze": (
         "2026-10-24: `filters_applied.upstream` entrou na saida do "
         "analyze_pyspark (intake sparkforge/upstream-facts/v1) — a chamada "
-        "gravada nao pede o documento, entao o filtro vem nulo"
+        "gravada nao pede o documento, entao o filtro vem nulo. "
+        + _MOTIVO_TRUST
     ),
     "sucesso_verbo_lookup": (
         "2026-09-14: a SF-TIMEOUT-002 passou a mirar `spark.network.timeout` com "
         "`direction: increase`, e o `proposed_change` cita o valor que o `tune` deriva "
         "(frente 2b); o resto da regra e da resposta nao mudou. "
         "2026-09-15: `rules_index` entrou na saida, VAZIO sem `index` -- a chamada "
-        "gravada nao pede a forma compacta, entao o conteudo dela continua o mesmo"
+        "gravada nao pede a forma compacta, entao o conteudo dela continua o mesmo. "
+        + _MOTIVO_TRUST
     ),
+    "erro_fronteira": _MOTIVO_TRUST,
+    "sucesso_collect_offline": _MOTIVO_TRUST,
+    "sucesso_debate": _MOTIVO_TRUST,
+    "sucesso_verbo_release": _MOTIVO_TRUST,
 }
 _CAMPOS_DA_REGRA_REESCRITOS = (("action", "target"), ("action", "direction"), ("proposed_change",))
 _CAMINHO_DE_TOOL = re.compile(r"^\$\.tools_list\.(stdio|http)\.tools\[(\d+)\]\.")
@@ -435,6 +467,7 @@ def _fora_da_allowlist(
 _CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
     r"^\$\.calls\.(?P<chave>[A-Za-z0-9_]+)\.result\."
     r"(?:content\[0\]\.text"
+    r"|structuredContent\._trust"
     r"|structuredContent\.rules_index"
     r"|structuredContent\.filters_applied\.(?:severity|runtime|index|upstream)"
     r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
@@ -504,14 +537,24 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
                 alvo = alvo[chave]
             alvo[caminho[-1]] = "<declarado>"
 
-    # `rules` so existe em chamadas de julgamento (judge/verbo): analyze nao tem.
-    for regra in copia["structuredContent"].get("rules") or []:
-        neutraliza(regra)
+    def sem_trust(payload: dict[str, Any]) -> dict[str, Any]:
+        """`_trust` e aditivo em TODO resultado desde 2026-10-05; tirado dos dois
+        lados para que o resto continue comparado byte a byte."""
+        payload.pop("_trust", None)
+        return payload
+
+    estruturado = copia.get("structuredContent")
+    if isinstance(estruturado, dict) and "rules" in estruturado:
+        for regra in estruturado["rules"]:
+            neutraliza(regra)
     texto = json.loads(copia["content"][0]["text"])
-    for regra in texto.get("rules") or []:
-        neutraliza(regra)
-    copia["structuredContent"] = sem_busca_nao_pedida(copia["structuredContent"])
-    copia["content"][0]["text"] = sem_busca_nao_pedida(texto)
+    if isinstance(texto, dict) and "rules" in texto:
+        for regra in texto["rules"]:
+            neutraliza(regra)
+    if isinstance(estruturado, dict):
+        copia["structuredContent"] = sem_trust(sem_busca_nao_pedida(estruturado))
+    if isinstance(texto, dict):
+        copia["content"][0]["text"] = sem_trust(sem_busca_nao_pedida(texto))
     return copia
 
 
@@ -623,9 +666,14 @@ class TestHandshakeLegado:
         # acrescentou em `filters_applied` (`severity`, `runtime`, `index`).
         # A chamada gravada nao pede nenhuma delas: os filtros vem nulos, o
         # indice vazio, e o conteudo da regra continua byte a byte.
-        # 9 -> 11 em 2026-10-24: `sucesso_analyze` declara `upstream` nulo em
-        # `filters_applied` — texto serializado + campo structuredContent.
-        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 11
+        # 9 -> 19 em 2026-10-05: `_trust` entrou em todo resultado de `call_tool`
+        # -- `structuredContent._trust` em cinco chamadas declaradas e o texto
+        # serializado em seis (erro_fronteira nao tem structuredContent), cada
+        # uma com o restante conferido byte a byte pelo `_neutro`.
+        # 19 -> 20 em 2026-10-24: `sucesso_analyze` declara `upstream` nulo em
+        # `structuredContent.filters_applied` — o texto serializado ja divergia
+        # por `_trust`, entao a entrada nova soma um unico caminho.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 20
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
@@ -655,7 +703,7 @@ class TestEra2026:
             assert _sem_envelope(moderno["calls"][chave]["result"]) == chamada["result"], chave
 
     def test_carimbo_so_com_nome_e_versao(self, moderno):
-        esperado = {"name": "sparkforge", "version": _versao_do_pacote()}
+        esperado = {"name": "sparkforge-aws", "version": _versao_do_pacote()}
         for chamada in moderno["calls"].values():
             carimbo = chamada["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]
             assert carimbo == esperado

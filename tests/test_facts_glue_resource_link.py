@@ -16,11 +16,11 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.glue_resource_link import (
+from sparkforge_aws.facts.glue_resource_link import (
     EMITTED_KINDS,
     extract_glue_resource_link_path,
 )
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.validate import validate_fact
 
 
 def _escrever(tmp_path: Path, payload: dict) -> Path:

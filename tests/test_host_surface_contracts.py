@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from sparkforge.adapters.mcp import tools_do_transporte
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters.mcp import tools_do_transporte
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 
 def test_full_and_compact_surfaces_have_declared_sizes() -> None:
-    assert len(tools_do_transporte("stdio", "full")) == 136
+    # 141 -> 143 em 2026-10-05: `agentops_timeline` e `agentops_critical_path`
+    # (FASE 10 do prompt_evo_runtime) -- aditivo, compact continua 7.
+    assert len(tools_do_transporte("stdio", "full")) == 143
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
 

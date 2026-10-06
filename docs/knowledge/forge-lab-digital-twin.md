@@ -10,7 +10,7 @@ Components are declared in `labs/forge-lab/lab.yaml`; the Compose blueprint is
 `labs/forge-lab/compose.yaml`. The analyzer is offline:
 
 ```bash
-sparkforge analyze forge-lab --path labs/forge-lab/lab.yaml
+sparkforge-aws analyze forge-lab --path labs/forge-lab/lab.yaml
 ```
 
 The contract includes PostgreSQL, Debezium, Kafka, Flink, Spark, Iceberg REST,
@@ -25,7 +25,7 @@ Spark Forge analyzer never executes these actions.
 
 The executable product corpus is the Golden 20 in `lab/scenarios/golden.yaml`.
 It compiles into allowlisted actions shared by Compose and the optional
-Testcontainers backend. `sparkforge lab verify` checks the 11 registry
+Testcontainers backend. `sparkforge-aws lab verify` checks the 11 registry
 components, 20 scenarios and 240 action plans offline. The lifecycle CLI
 captures artifacts, facts, findings and content-addressed receipts; promotion
 to curated fixtures requires review and a valid receipt.

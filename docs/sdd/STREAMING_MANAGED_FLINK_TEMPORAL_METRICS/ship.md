@@ -34,7 +34,7 @@ throughput ou validação funcional.
 - `python scripts/check_status_numbers.py --strict` — exit 0, 0 divergências.
 - `python scripts/refresh_knowledge.py --check --offline` — exit 0, 340 fontes.
 - `python scripts/verify_offline_bundle.py --check` — exit 0, 69/69.
-- `sparkforge sdd check --repo . --feature STREAMING_MANAGED_FLINK_TEMPORAL_METRICS` — exit 0.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_MANAGED_FLINK_TEMPORAL_METRICS` — exit 0.
 - `git diff --check` — exit 0.
 
 ## Limites

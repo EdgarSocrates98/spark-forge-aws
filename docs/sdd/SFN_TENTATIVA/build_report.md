@@ -73,7 +73,7 @@ cobre o caso que ela constrói, e nada além.**
 ## A revisão final, e o que ela mudou
 
 Um revisor novo leu o diff inteiro contra o define e o design, medindo em memória com
-`sparkforge.facts.*`. Achou **um crítico, três importantes e dois menores**, corrigidos em
+`sparkforge_aws.facts.*`. Achou **um crítico, três importantes e dois menores**, corrigidos em
 sete commits (`088e7d4b..b65714c7`).
 
 ### O crítico

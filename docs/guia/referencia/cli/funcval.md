@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge funcval`
+# `sparkforge-aws funcval`
 
 Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. Nao executa nada.
 
@@ -8,15 +8,15 @@ Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara 
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge funcval compare`](#sparkforge-funcval-compare) | Compara os dois resultados que VOCE mediu contra o plano. Antes contra depois, nunca observado contra catalogo. |
-| [`sparkforge funcval plan`](#sparkforge-funcval-plan) | Deriva o plano de validacao (contagem, schema, agregados) dos facts ja extraidos, e grava o artefato que `funcval compare` rele. |
+| [`sparkforge-aws funcval compare`](#sparkforge-aws-funcval-compare) | Compara os dois resultados que VOCE mediu contra o plano. Antes contra depois, nunca observado contra catalogo. |
+| [`sparkforge-aws funcval plan`](#sparkforge-aws-funcval-plan) | Deriva o plano de validacao (contagem, schema, agregados) dos facts ja extraidos, e grava o artefato que `funcval compare` rele. |
 
-## `sparkforge funcval compare`
+## `sparkforge-aws funcval compare`
 
 Compara os dois resultados que VOCE mediu contra o plano. Antes contra depois, nunca observado contra catalogo.
 
 ```bash
-sparkforge funcval compare --help
+sparkforge-aws funcval compare --help
 ```
 
 ### Opções
@@ -36,12 +36,12 @@ sparkforge funcval compare --help
 
 [`sparkforge_funcval_compare`](../tools/sparkforge_funcval_compare.md)
 
-## `sparkforge funcval plan`
+## `sparkforge-aws funcval plan`
 
 Deriva o plano de validacao (contagem, schema, agregados) dos facts ja extraidos, e grava o artefato que `funcval compare` rele.
 
 ```bash
-sparkforge funcval plan --help
+sparkforge-aws funcval plan --help
 ```
 
 ### Opções

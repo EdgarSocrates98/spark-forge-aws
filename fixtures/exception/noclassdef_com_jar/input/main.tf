@@ -9,16 +9,16 @@ resource "aws_glue_job" "etl_conector" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl_conector.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl_conector.py"
     python_version  = "3"
   }
 
   default_arguments = {
-    "--extra-jars"            = "s3://sparkforge-demo/jars/conector_2.12-1.4.0.jar"
+    "--extra-jars"            = "s3://sparkforge-aws-demo/jars/conector_2.12-1.4.0.jar"
     "--enable-spark-ui"       = "true"
-    "--spark-event-logs-path" = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path" = "s3://sparkforge-aws-demo/spark-logs/"
     "--job-bookmark-option"   = "job-bookmark-disable"
-    "--TempDir"               = "s3://sparkforge-demo/temp/"
+    "--TempDir"               = "s3://sparkforge-aws-demo/temp/"
   }
 
   execution_property {

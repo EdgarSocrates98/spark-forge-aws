@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.proof import load_policy, prove, select_applied
-from sparkforge.proof.axis import bench_outcome, funcval_outcome, none_outcome
-from sparkforge.proof.resolution import resolve
+from sparkforge_aws.proof import load_policy, prove, select_applied
+from sparkforge_aws.proof.axis import bench_outcome, funcval_outcome, none_outcome
+from sparkforge_aws.proof.resolution import resolve
 
 
 @pytest.fixture(scope="module")

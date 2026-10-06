@@ -17,13 +17,13 @@ do repositório clonado, com o SparkForge instalado
 export TMP=/tmp/sparkforge_guia && mkdir -p "$TMP"
 
 # 2. Extrair fatos de um código PySpark de exemplo
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
 
 # 3. Julgar esses fatos contra o catálogo de regras
-sparkforge judge --facts "$TMP/facts.json" --glue 5.0
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0
 
 # 4. Ler a regra que disparou
-sparkforge rules lookup --id SF-PY-001
+sparkforge-aws rules lookup --id SF-PY-001
 ```
 
 O que você deve ver:
@@ -64,7 +64,7 @@ Ele tem duas metades:
    entrada produz sempre a mesma saída. Não há sorteio, não há modelo de
    linguagem, não há palpite. Você aponta um arquivo, o SparkForge lê esse
    arquivo e devolve um JSON. Rodou duas vezes, recebeu o mesmo JSON duas
-   vezes. Essa metade é a CLI `sparkforge` e as tools MCP.
+   vezes. Essa metade é a CLI `sparkforge-aws` e as tools MCP.
 2. **Agents e skills.** São instruções escritas em Markdown para assistentes
    de IA (Claude Code, Devin, GitHub Copilot, Codex). Elas dizem ao assistente
    em que ordem chamar os analisadores e como apresentar o resultado. O
@@ -100,11 +100,11 @@ entre outras, esta recusa:
 {
   "reason": "no_shuffle_measured",
   "property": "spark.sql.shuffle.partitions",
-  "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge analyze event-log` produz a medida."
+  "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge-aws analyze event-log` produz a medida."
 }
 ```
 
-O texto já diz o próximo passo: rodar `sparkforge analyze event-log`.
+O texto já diz o próximo passo: rodar `sparkforge-aws analyze event-log`.
 
 ## Como as peças se encaixam
 
@@ -282,7 +282,7 @@ Terraform, um dump JSON do Glue Data Catalog, um dump de metadata de tabela
 Iceberg, o dump de `describe-cluster` de um cluster EMR on EC2 ou o de
 `get-application` de uma application EMR Serverless.
 
-Exemplo: em `sparkforge analyze pyspark --path lib/`, o artefato é a pasta
+Exemplo: em `sparkforge-aws analyze pyspark --path lib/`, o artefato é a pasta
 `lib/` com o código.
 
 O SparkForge **nunca** importa nem executa o código analisado. Ele lê o texto
@@ -296,7 +296,7 @@ gates (condições que precisam estar cumpridas para avançar), as hipóteses e 
 skills já usadas. Serve para retomar a investigação em outra sessão ou em
 outra ferramenta sem perder o fio.
 
-Exemplo: `sparkforge case open --repo . --case-id meu-caso --now 2026-09-13T10:00:00Z --glue 5.0`
+Exemplo: `sparkforge-aws case open --repo . --case-id meu-caso --now 2026-09-13T10:00:00Z --glue 5.0`
 cria o arquivo com `phase: intake`. O guia [CLI](03-cli.md) mostra a saída.
 
 ### Catálogo de regras e regra
@@ -309,7 +309,7 @@ de que precisa (`requires_facts`), a condição (`when`), a severidade padrão,
 a explicação, a mudança proposta, riscos, validação, rollback e as fontes
 oficiais.
 
-Exemplo: `sparkforge rules lookup --id SF-PY-001` mostra que a regra exige o
+Exemplo: `sparkforge-aws rules lookup --id SF-PY-001` mostra que a regra exige o
 fact `pyspark.udf` com `attrs.udf_type` igual a `python`.
 
 A contagem de regras muda com o tempo. Não confie em número escrito em
@@ -327,7 +327,7 @@ São os dois papéis de agent.
   `sf-verifier` e `sf-synthesizer`. Cada um tem uma seção `## Não faz` que
   diz o que está fora do papel dele.
 
-Exemplo: `sparkforge playbook spark-performance-architect` devolve a sequência
+Exemplo: `sparkforge-aws playbook spark-performance-architect` devolve a sequência
 de passos que o coordenador executaria, útil em ferramentas que não despacham
 subagentes.
 
@@ -342,7 +342,7 @@ subagentes.
 - `summary`: cada item fica reduzido a id, kind, medidas, `arquivo:linha` e
   símbolo.
 
-Exemplo: `sparkforge analyze pyspark --path lib/ --detail-level summary`.
+Exemplo: `sparkforge-aws analyze pyspark --path lib/ --detail-level summary`.
 
 Não existe comando que busque um fact pelo id depois. Se você precisar do fact
 inteiro, rode de novo em `full`. E antes de afirmar que `summary` "economiza",
@@ -352,11 +352,11 @@ nível sem concluir por você.
 ### Extrator e `analyze`
 
 Um **extrator** é o código que lê um tipo de artefato e produz facts. O comando
-`sparkforge analyze <alvo>` chama o extrator daquele alvo. Cada alvo é um tipo
+`sparkforge-aws analyze <alvo>` chama o extrator daquele alvo. Cada alvo é um tipo
 de artefato: `pyspark`, `event-log`, `plan`, `terraform`, `iceberg`, `sql` e
 vários outros.
 
-Exemplo: `sparkforge analyze event-log --path run.jsonl --out facts.json` lê um
+Exemplo: `sparkforge-aws analyze event-log --path run.jsonl --out facts.json` lê um
 event log do Spark já baixado.
 
 O nome do extrator e a versão dele aparecem em `provenance.extractor` de cada
@@ -369,7 +369,7 @@ Lista de alvos: [referência do `analyze`](referencia/cli/analyze.md).
 Um fact (fato) é uma observação crua, ancorada num lugar do artefato, **sem
 juízo nem limiar**. Ele diz "isto existe e mede tanto", nunca "isto é ruim".
 
-Campos (conferidos em `sparkforge/findings/models.py`):
+Campos (conferidos em `sparkforge_aws/findings/models.py`):
 
 | Campo | O que é |
 |---|---|
@@ -389,7 +389,7 @@ Um finding (achado) é um juízo: "este fact, pela regra X, é um problema de
 tal severidade". Todo finding aponta para pelo menos um fact em `evidence`.
 
 Campos obrigatórios (conferidos em
-`sparkforge/findings/schemas/finding.schema.json`): `rule_id`,
+`sparkforge_aws/findings/schemas/finding.schema.json`): `rule_id`,
 `schema_version`, `title`, `severity`, `confidence`, `status`, `subject`,
 `evidence`.
 
@@ -435,7 +435,7 @@ regras próprias sem copiar o projeto. O pack declara um prefixo próprio (por
 exemplo `ACME`), e o prefixo `SF` é reservado ao catálogo principal.
 
 Exemplo: com a variável de ambiente `SPARKFORGE_PACKS` apontando para o
-diretório do pack, `sparkforge pack list` mostra os packs ativos e os
+diretório do pack, `sparkforge-aws pack list` mostra os packs ativos e os
 recusados, com o motivo. Detalhes em `docs/forge-pack.md` e na
 [referência do `pack`](referencia/cli/pack.md).
 
@@ -469,7 +469,7 @@ para combinar com o resultado.
 Exemplo:
 
 ```bash
-sparkforge case update --repo . --now 2026-09-13T11:00:00Z \
+sparkforge-aws case update --repo . --now 2026-09-13T11:00:00Z \
   --hypothesis "O shuffle do join domina o tempo do stage 3" \
   --prediction "Com broadcast do lado pequeno, o shuffle write do stage 3 cai" \
   --experiment "Comparar spark.stage.shuffle antes e depois com benchmark"
@@ -496,7 +496,7 @@ Para fechar: `--close-hypothesis h1 --hypothesis-outcome confirmed`, com
 produz findings. Ele não lê artefato: recebe um ou mais arquivos de facts em
 `--facts`.
 
-Exemplo: `sparkforge judge --facts facts.json --glue 5.0`.
+Exemplo: `sparkforge-aws judge --facts facts.json --glue 5.0`.
 
 Com `--show-skipped`, ele também lista as regras que **não** foram avaliadas e
 por quê: `requires_facts` (faltou o tipo de fact que a regra exige, e a saída
@@ -520,11 +520,11 @@ tem versão no caminho, quando foi conferida por hash e quando o hash mudou pela
 
 Exemplos:
 
-- `sparkforge knowledge path` imprime a raiz de `knowledge/` e a lista de
+- `sparkforge-aws knowledge path` imprime a raiz de `knowledge/` e a lista de
   arquivos.
-- `sparkforge judge --facts facts.json --source-freshness` acrescenta à saída o
+- `sparkforge-aws judge --facts facts.json --source-freshness` acrescenta à saída o
   estado das fontes citadas.
-- `sparkforge knowledge drift` lista, para cada fonte que mudou, as regras e
+- `sparkforge-aws knowledge drift` lista, para cada fonte que mudou, as regras e
   documentos que a leram antes da mudança. Não usa rede.
 
 Detalhes em `docs/knowledge-freshness.md`.
@@ -533,7 +533,7 @@ Detalhes em `docs/knowledge-freshness.md`.
 
 MCP (Model Context Protocol) é um protocolo aberto que permite a um assistente
 de IA chamar funções de um programa externo. O SparkForge tem um servidor MCP
-(`python -m sparkforge.adapters.mcp`) que expõe as mesmas operações da CLI
+(`python -m sparkforge_aws.adapters.mcp`) que expõe as mesmas operações da CLI
 como tools. O servidor precisa do extra `mcp` (veja
 [Instalação](02-instalacao.md)).
 
@@ -549,8 +549,8 @@ a resposta vai só para a tela (stdout), e a tela é paginada (veja
 [CLI](03-cli.md)). Com ela, o arquivo recebe a lista inteira, sem paginação, e
 é esse arquivo que você passa ao próximo comando.
 
-Exemplo: `sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json`
-e, em seguida, `sparkforge judge --facts .sparkforge/facts.json`.
+Exemplo: `sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json`
+e, em seguida, `sparkforge-aws judge --facts .sparkforge/facts.json`.
 
 ### Recusa nomeada
 
@@ -594,7 +594,7 @@ significar coisas diferentes em versões diferentes. Por exemplo, no Glue 3.0
 o AQE (Adaptive Query Execution, o recurso do Spark que reajusta o plano
 durante a execução) não é o padrão, e no Glue 4.0 e 5.x é.
 
-Exemplo real: `sparkforge runtime detect --glue 5.0` devolve
+Exemplo real: `sparkforge-aws runtime detect --glue 5.0` devolve
 
 ```json
 {
@@ -611,7 +611,7 @@ Exemplo real: `sparkforge runtime detect --glue 5.0` devolve
 }
 ```
 
-Com `sparkforge runtime detect --databricks 15.4 --photon on`, a saída real traz
+Com `sparkforge-aws runtime detect --databricks 15.4 --photon on`, a saída real traz
 `"databricks": "15.4"`, `"spark": "3.5.0"` (derivado da matriz em
 `knowledge/databricks/runtime-matrix.yaml`) e `"photon": "on"`; `python` e
 `iceberg` saem vazios, porque a matriz Databricks só tem a coluna `spark`.
@@ -665,7 +665,7 @@ comando já extraiu. Nenhum deles lê artefato. Os principais:
 | Qual foi o ganho observado entre runs medidos? | `gain` |
 | Dois achados se contradizem? | `arbitrate` |
 
-Exemplo: `sparkforge tune --facts facts.json` propõe valores de configuração
+Exemplo: `sparkforge-aws tune --facts facts.json` propõe valores de configuração
 só onde há medida, e recusa com nome todo o resto.
 
 Regras que valem para todos eles e que explicam boa parte das recusas:

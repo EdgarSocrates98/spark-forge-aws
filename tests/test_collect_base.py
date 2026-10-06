@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from sparkforge.collect.base import (
+from sparkforge_aws.collect.base import (
     ARTIFACT_KINDS,
     ArtifactEntry,
     CollectorUnavailable,
@@ -26,7 +26,7 @@ def make_entry(**overrides) -> ArtifactEntry:
         "path": "artifacts/eventlog/jr_abc.json",
         "sha256": GOOD_SHA,
         "source": "s3://bucket/spark-event-logs/jr_abc",
-        "collect_command": "sparkforge collect eventlog --job-run jr_abc",
+        "collect_command": "sparkforge-aws collect eventlog --job-run jr_abc",
         "collected_at": "2026-07-29T14:02:11Z",
     }
     kwargs.update(overrides)
@@ -71,7 +71,7 @@ class TestArtifactEntryValidation:
             "path": "artifacts/eventlog/jr_abc.json",
             "sha256": GOOD_SHA,
             "source": "s3://bucket/spark-event-logs/jr_abc",
-            "collect_command": "sparkforge collect eventlog --job-run jr_abc",
+            "collect_command": "sparkforge-aws collect eventlog --job-run jr_abc",
             "collected_at": "2026-07-29T14:02:11Z",
         }
 
@@ -156,7 +156,7 @@ class TestVerifyArtifact:
             "path": "missing.json",
             "present": False,
             "hash_matches": False,
-            "collect_command": "sparkforge collect eventlog --job-run jr_abc",
+            "collect_command": "sparkforge-aws collect eventlog --job-run jr_abc",
             "source": "s3://bucket/spark-event-logs/jr_abc",
         }
 
@@ -195,20 +195,20 @@ class TestVerifyAll:
 
 class TestGlueJobRunKind:
     def test_glue_job_run_is_an_accepted_kind(self):
-        from sparkforge.collect.base import ArtifactEntry
+        from sparkforge_aws.collect.base import ArtifactEntry
 
         entry = ArtifactEntry(
             kind="glue_job_run",
             path=".sparkforge/artifacts/glue_job_run/job_jr_1.json",
             sha256="a" * 64,
             source="glue:get_job_runs:job",
-            collect_command="sparkforge collect glue-job-runs --job-name job",
+            collect_command="sparkforge-aws collect glue-job-runs --job-name job",
             collected_at="2026-08-26T00:00:00Z",
         )
         assert entry.kind == "glue_job_run"
 
     def test_path_helper_separates_job_from_run(self):
-        from sparkforge.collect import aws
+        from sparkforge_aws.collect import aws
 
         assert (
             aws.glue_job_run_path("my-job", "jr_abc")
@@ -227,7 +227,7 @@ class TestRequireBoto3WithoutBoto3Installed:
         # o isinstance em pytest.raises do teste seguinte.
         script = (
             "import sys; sys.modules['boto3'] = None; "
-            "import sparkforge.collect.base as m; "
+            "import sparkforge_aws.collect.base as m; "
             "assert hasattr(m, 'require_boto3')"
         )
         result = subprocess.run(

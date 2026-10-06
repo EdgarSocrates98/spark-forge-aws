@@ -137,7 +137,7 @@ certa — o documento diz isso por escrito, e a regra respeita.
 
 ### 4.0 `spark.stage.failure`, a fonte que faltava
 
-Emitido por `sparkforge/facts/event_log.py` quando `Stage Info` traz
+Emitido por `sparkforge_aws/facts/event_log.py` quando `Stage Info` traz
 `Failure Reason` não vazia. `subject` é o stage, `attrs.reason` é a frase
 literal — passando pelo mesmo `redact` que `spark.conf_effective` usa, porque
 razão de falha carrega URL de JDBC com senha dentro com a mesma facilidade que
@@ -169,8 +169,8 @@ stage falhada entra no barramento.
 
 ## 5. Superfície
 
-Nenhum verbo novo. A categoria sai por `sparkforge analyze event-log` junto dos
-outros facts do event log, e as duas regras saem por `sparkforge judge` como
+Nenhum verbo novo. A categoria sai por `sparkforge-aws analyze event-log` junto dos
+outros facts do event log, e as duas regras saem por `sparkforge-aws judge` como
 qualquer outra. O documento pede uma skill `diagnose-spark-timeout`; ela entra
 como skill que compõe os dois verbos que já existem, e não como quarto caminho
 de código.

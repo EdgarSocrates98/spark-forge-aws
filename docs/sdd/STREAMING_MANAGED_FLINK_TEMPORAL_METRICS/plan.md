@@ -9,15 +9,15 @@ upstream:
   sha256: "5806d69764f4d9e8ad9a43093d7dd5d8dba5182610f4cff0bf8128b9eed760f6"
 tasks:
   - id: T1
-    files: [tests/test_collect_managed_flink.py, sparkforge/collect/managed_flink.py]
+    files: [tests/test_collect_managed_flink.py, sparkforge_aws/collect/managed_flink.py]
     covers: [AC1, AC2]
     test: {path: tests/test_collect_managed_flink.py, name: test_managed_flink_temporal_metrics_are_collected_and_normalized}
   - id: T2
-    files: [tests/test_collect_managed_flink.py, sparkforge/facts/flink.py]
+    files: [tests/test_collect_managed_flink.py, sparkforge_aws/facts/flink.py]
     covers: [AC3]
     test: {path: tests/test_collect_managed_flink.py, name: test_managed_flink_temporal_metrics_feed_analyzer}
   - id: T3
-    files: [tests/test_collect_managed_flink.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml, manifest.json]
+    files: [tests/test_collect_managed_flink.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml, manifest.json]
     covers: [AC4]
     test: {path: tests/test_collect_managed_flink.py, name: test_cli_and_mcp_managed_flink_temporal_collection_match}
   - id: T4

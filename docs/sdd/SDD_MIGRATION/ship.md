@@ -29,7 +29,7 @@ deviations:
 2. `.claude/settings.json` desliga `agentspec@agentspec`
    (`test_agentspec_desligado_no_projeto`).
 3. `CLAUDE.md`, `AGENTS.md` e `CONTRIBUTING.md` citam `sdd-define` e
-   `sparkforge sdd check` (`test_documentos_de_entrada_apontam_o_sdd`).
+   `sparkforge-aws sdd check` (`test_documentos_de_entrada_apontam_o_sdd`).
 
 O experimento pedia também o `sdd check` sobre `docs/sdd` depois da migração:
 ele descobre as mesmas seis features, sem tomar `docs/sdd/archive/` por

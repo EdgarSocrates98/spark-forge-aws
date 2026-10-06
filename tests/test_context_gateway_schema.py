@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import jsonschema
 
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.context.schemas import load_gateway_schema
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.context.schemas import load_gateway_schema
 
 
 def test_gateway_schema_accepts_cli_core_envelope() -> None:

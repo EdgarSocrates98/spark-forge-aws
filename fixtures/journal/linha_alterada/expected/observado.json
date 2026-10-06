@@ -7,7 +7,7 @@
     "torn_tail": false
   },
   "handoff_em_voo": [
-    "- journal: cadeia quebrada no seq 3 — confira com `sparkforge journal verify`"
+    "- journal: cadeia quebrada no seq 3 — confira com `sparkforge-aws journal verify`"
   ],
   "resume": {
     "in_flight": "",

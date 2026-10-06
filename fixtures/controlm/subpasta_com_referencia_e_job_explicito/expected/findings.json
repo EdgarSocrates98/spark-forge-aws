@@ -44,7 +44,7 @@
       "EIXO DE RESULTADO — o conjunto de jobs efetivamente publicado é o mesmo. `deploy jobs::get` sobre o folder pai, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. É o eixo crítico aqui, porque mover um job para o template MULTIPLICA-O por instância — e essa contagem é onde a multiplicação aparece.",
       "EIXO DE RESULTADO — as outras instâncias do mesmo template não mudaram. `deploy jobs::get` sobre cada sub-folder que referencia o mesmo `ReferencePath` devolve a mesma contagem de antes: sub-folder que ganhou um job sem ter pedido é a falha que este eixo existe para pegar.",
       "EIXO DE RESULTADO — o efeito é o mesmo. Uma ordenação (`run order`) termina em OK e o artefato produzido — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais.",
-      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-006, e `ctm.folder` mostra `explicit_job_count` zero no sub-folder — com o `job_count` do artefato inteiro conferido à parte, porque um job que sumiu da contagem foi apagado, não movido."
+      "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-006, e `ctm.folder` mostra `explicit_job_count` zero no sub-folder — com o `job_count` do artefato inteiro conferido à parte, porque um job que sumiu da contagem foi apagado, não movido."
     ],
     "rollback": [
       "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção moveu um job para o folder referenciado, o rollback precisa alcançar todas as instâncias que passaram a herdá-lo — republicar só este sub-folder deixaria as outras com o job a mais."

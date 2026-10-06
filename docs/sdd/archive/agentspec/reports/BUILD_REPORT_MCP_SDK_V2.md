@@ -22,8 +22,8 @@ Branch `feat/mcp-sdk-v2`, empilhado sobre `feat/debate-executor` (PR #48). Empil
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | B1–B6; B7 pendente; B8 é este relatório |
-| **Files Created** | `sparkforge/adapters/mcp_envelope.py`, `scripts/mcp_parity.py`, `fixtures/mcp_parity/` (4 JSON), `tests/test_adapters_mcp_envelope.py`, `tests/test_fixtures_golden_mcp_parity.py`, `tests/test_mcp_modern_era.py` |
-| **Files Modified** | `sparkforge/adapters/mcp.py`, `sparkforge/adapters/tools.py`, `tests/test_adapters_mcp.py`, `pyproject.toml`, `requirements.txt`, `locks/py3.10.txt`, `locks/py3.11.txt`, `README.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` e três documentos de `docs/harness/` |
+| **Files Created** | `sparkforge_aws/adapters/mcp_envelope.py`, `scripts/mcp_parity.py`, `fixtures/mcp_parity/` (4 JSON), `tests/test_adapters_mcp_envelope.py`, `tests/test_fixtures_golden_mcp_parity.py`, `tests/test_mcp_modern_era.py` |
+| **Files Modified** | `sparkforge_aws/adapters/mcp.py`, `sparkforge_aws/adapters/tools.py`, `tests/test_adapters_mcp.py`, `pyproject.toml`, `requirements.txt`, `locks/py3.10.txt`, `locks/py3.11.txt`, `README.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` e três documentos de `docs/harness/` |
 | **Tests Passing** | Suíte completa, um processo por arquivo: 260 arquivos, 11 993 passed, 0 failed, 9 skipped |
 | **Agents Used** | Nenhum delegado. Todo o build foi direto, porque cada passo dependia do resultado medido do anterior |
 
@@ -55,7 +55,7 @@ Branch `feat/mcp-sdk-v2`, empilhado sobre `feat/debate-executor` (PR #48). Empil
 
 | File | Verified | Notes |
 |------|----------|-------|
-| `sparkforge/adapters/mcp_envelope.py` | ✅ | 139 linhas; um teste AST cobra que o módulo não importa `mcp` |
+| `sparkforge_aws/adapters/mcp_envelope.py` | ✅ | 139 linhas; um teste AST cobra que o módulo não importa `mcp` |
 | `scripts/mcp_parity.py` | ✅ | `snapshot` (recusa sob 2.x) e `diff --modo legacy\|auto`; lê o fio cru no legado |
 | `fixtures/mcp_parity/` | ✅ | `meta.json` registra `mcp` 1.29.0, `jsonschema` 4.23.0 e Python 3.14.6 |
 | `tests/test_fixtures_golden_mcp_parity.py` | ✅ | Nome exigido por `test_fixtures_kind_coverage.py`; carrega o script pelo caminho, sem mexer no `sys.path` |
@@ -68,7 +68,7 @@ Branch `feat/mcp-sdk-v2`, empilhado sobre `feat/debate-executor` (PR #48). Empil
 ### Lint Check
 
 ```text
-ruff check sparkforge scripts tests -> All checks passed!
+ruff check sparkforge_aws scripts tests -> All checks passed!
 ```
 
 **Status:** ✅ Pass
@@ -87,7 +87,7 @@ N/A — o repositório não configura mypy
 Suíte completa (um processo por arquivo, 260 arquivos): 11993 passed, 0 failed, 9 skipped
 check_vnext_claims 0 | check_status_numbers --strict 0 | check_surface_lock 0 | check_evals 10/10
 gen_lock.py --check: 2 locks, 108 entradas com hash
-Snyk Code (sparkforge/adapters, scripts): 0
+Snyk Code (sparkforge_aws/adapters, scripts): 0
 Cliente mcp 1.29 real (venv separada) via stdio -> servidor 2.x: 2025-11-25, 86 tools, validação com o texto do 1.x
 ```
 

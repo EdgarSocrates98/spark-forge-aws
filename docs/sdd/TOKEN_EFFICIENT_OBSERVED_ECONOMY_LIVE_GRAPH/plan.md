@@ -9,19 +9,19 @@ upstream:
   sha256: "2233c78a80f89eca500a955f14c7d9ee47a3e53348da0d7f2cecaff41a176edb"
 tasks:
   - id: T1
-    files: [evals/token_efficient/suite.yaml, evals/token_efficient/fixtures/quality_cases.yaml, sparkforge/evals/runner.py, sparkforge/evals/token_benchmark.py, scripts/run_token_efficient_bench.py, tests/test_token_efficient_benchmark.py]
+    files: [evals/token_efficient/suite.yaml, evals/token_efficient/fixtures/quality_cases.yaml, sparkforge_aws/evals/runner.py, sparkforge_aws/evals/token_benchmark.py, scripts/run_token_efficient_bench.py, tests/test_token_efficient_benchmark.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_token_efficient_benchmark.py, name: test_suite_ampla_tem_eixos_e_casos_unicos}
   - id: T2
-    files: [sparkforge/economy/provider_cost.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, tests/test_provider_economy.py]
+    files: [sparkforge_aws/economy/provider_cost.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, tests/test_provider_economy.py]
     covers: [AC4]
     test: {path: tests/test_provider_economy.py, name: test_provider_cost_requires_cost_basis_and_keeps_token_units}
   - id: T3
-    files: [sparkforge/workspace/manifest.py, sparkforge/collect/live_graph.py, sparkforge/collect/__init__.py, tests/test_workspace_semantic_graph.py, tests/test_collect_live_graph.py]
+    files: [sparkforge_aws/workspace/manifest.py, sparkforge_aws/collect/live_graph.py, sparkforge_aws/collect/__init__.py, tests/test_workspace_semantic_graph.py, tests/test_collect_live_graph.py]
     covers: [AC5, AC6, AC7, AC8]
     test: {path: tests/test_collect_live_graph.py, name: test_collect_live_graph_compose_glue_lakeformation_s3}
   - id: T4
-    files: [sparkforge/adapters/cli.py, sparkforge/adapters/_core.py, docs/guia/usos/economia-de-contexto.md, tests/test_adapters_cli.py]
+    files: [sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/_core.py, docs/guia/usos/economia-de-contexto.md, tests/test_adapters_cli.py]
     covers: [AC9]
     test: {path: tests/test_adapters_cli.py, name: test_cli_exposes_observed_economy_and_live_graph_commands}
 ---
@@ -59,7 +59,7 @@ python -m pytest tests/test_token_efficient_benchmark.py::test_suite_ampla_tem_e
 ```
 
 Código mínimo: implementar `load_benchmark_suite`, `run_benchmark_matrix` e
-`compare_benchmark_matrix` em `sparkforge/evals/token_benchmark.py`, usar
+`compare_benchmark_matrix` em `sparkforge_aws/evals/token_benchmark.py`, usar
 `EvaluationRunner.run_context_benchmark` e retornar somente medidas separadas.
 Adicionar `scripts/run_token_efficient_bench.py` como wrapper da função. Rodar
 depois os três testes AC1-AC3 e `python scripts/check_token_efficient_bench.py`.
@@ -67,11 +67,11 @@ Commit: `feat: expand token-efficient quality benchmark`.
 
 ## T2 — usage do provider e custo observado
 
-Criar `sparkforge/economy/provider_cost.py` com schema fechado para pricing:
+Criar `sparkforge_aws/economy/provider_cost.py` com schema fechado para pricing:
 `schema_version`, `currency`, `cost_basis`, `source` e taxas por unidade. Ler
 transcript via `read_host_usage`, manter cada unidade de token separada e
 recusar custo se usage, taxa ou `cost_basis` faltar. Ligar o comando
-`sparkforge economy provider-cost --host-transcript <jsonl> --pricing <json>` ao
+`sparkforge-aws economy provider-cost --host-transcript <jsonl> --pricing <json>` ao
 core/CLI; não alterar o cálculo de payload bytes.
 
 Teste primeiro:
@@ -99,7 +99,7 @@ implementar o módulo, as recusas nomeadas e o adapter; rodar AC4 e
 
 Adicionar `cloud_resources` ao `WorkspaceManifest`, validando ids unicos,
 services permitidos, nomes e campos sem `..` ou descoberta implícita. Criar
-`sparkforge/collect/live_graph.py` sem importar boto3 no topo. O coletor deve
+`sparkforge_aws/collect/live_graph.py` sem importar boto3 no topo. O coletor deve
 observar a conta via STS, exigir `role_arn` quando `account_id` divergir,
 assumir role somente nesse caso, chamar apenas Glue/Lake Formation/S3
 declarados, limitar paginas/objetos, e escrever status/unresolved verbatim.
@@ -131,7 +131,7 @@ adapter existente e documentar transcript, pricing e manifesto live em
 
 ```bash
 python -m pytest tests/test_adapters_cli.py::test_cli_exposes_observed_economy_and_live_graph_commands -q
-ruff check sparkforge scripts tests
+ruff check sparkforge_aws scripts tests
 python scripts/check_surface_lock.py
 python scripts/check_token_efficient_bench.py
 git diff --check

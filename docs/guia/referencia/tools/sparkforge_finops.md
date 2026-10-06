@@ -17,7 +17,7 @@ O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- 
 
 ## Na CLI
 
-[`sparkforge capacity`](../cli/capacity.md), [`sparkforge finops`](../cli/finops.md)
+[`sparkforge-aws capacity`](../cli/capacity.md), [`sparkforge-aws finops`](../cli/finops.md)
 
 ## Capacidade
 

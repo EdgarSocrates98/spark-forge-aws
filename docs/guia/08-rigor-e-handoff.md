@@ -18,7 +18,7 @@ partir daí `set_phase` recusa a transição enquanto faltar a evidência dos ga
 que guardam a fase pedida:
 
 ```bash
-sparkforge case open --repo . --case-id perf-2026-08 \
+sparkforge-aws case open --repo . --case-id perf-2026-08 \
   --now 2026-08-04T09:00:00Z --strict-gates
 
 # `report` é guardada pelos TRÊS gates com produtor, então a transição precisa
@@ -26,12 +26,12 @@ sparkforge case open --repo . --case-id perf-2026-08 \
 # destrava `flows_mapped` e o plano de validação destrava
 # `functional_validation_defined`. Faltando uma, bloqueia — com a mensagem
 # nomeando qual fact falta e o comando que o produz.
-sparkforge analyze call-graph --facts .sparkforge/facts.json \
+sparkforge-aws analyze call-graph --facts .sparkforge/facts.json \
                               --out .sparkforge/facts_callgraph.json
-sparkforge funcval plan --facts .sparkforge/facts.json \
+sparkforge-aws funcval plan --facts .sparkforge/facts.json \
                         --facts .sparkforge/facts-catalog.json \
                         --out .sparkforge/facts_funcval_plan.json
-sparkforge case update --repo . --phase report \
+sparkforge-aws case update --repo . --phase report \
   --facts .sparkforge/bench.json \
   --facts .sparkforge/facts_callgraph.json \
   --facts .sparkforge/facts_funcval_plan.json
@@ -54,7 +54,7 @@ passar por cima custa uma frase, e a frase fica gravada no case e aparece no
 `resume`:
 
 ```bash
-sparkforge case update --repo . --override-gate baseline_captured \
+sparkforge-aws case update --repo . --override-gate baseline_captured \
   --reason "job descontinuado; nao ha ambiente para rodar o depois" \
   --now 2026-08-04T11:30:00Z
 ```
@@ -62,7 +62,7 @@ sparkforge case update --repo . --override-gate baseline_captured \
 Abrir um case por cima de outro é **recusado**: sobrescrever apagaria a fase, o
 rigor e os overrides gravados, e uma invocação sem `--strict-gates` desligaria em
 silêncio o rigor que alguém ligou. Recomeçar do zero continua possível, com nome:
-`sparkforge case open --reopen`. Ele herda o `strict_gates` do case atual — o
+`sparkforge-aws case open --reopen`. Ele herda o `strict_gates` do case atual — o
 rigor sobe com `--strict-gates` e nunca desce por omissão de flag.
 
 O gate confere a **presença do kind**, não o conteúdo do fact: ele prova que a
@@ -79,8 +79,8 @@ versão da assinatura, evidência, catálogo ou corpo — em vez de devolver só
 `sparkforge_report_verify`):
 
 ```bash
-sparkforge report sign   --report relatorio.md --findings .sparkforge/findings.json
-sparkforge report verify --report relatorio.md --findings .sparkforge/findings.json
+sparkforge-aws report sign   --report relatorio.md --findings .sparkforge/findings.json
+sparkforge-aws report verify --report relatorio.md --findings .sparkforge/findings.json
 ```
 
 O arquivo é o de **findings**, e não o de facts: `rule_id`, `catalog_version` e
@@ -105,19 +105,19 @@ autoridade mente por omissão.
 
 ## No GitHub: Code Scanning e resumo de PR
 
-`sparkforge report github` projeta os findings de `judge` em SARIF 2.1.0 para o
+`sparkforge-aws report github` projeta os findings de `judge` em SARIF 2.1.0 para o
 Code Scanning (aba Security e diff do PR), num resumo Markdown para o
 `$GITHUB_STEP_SUMMARY` e em anotações `::error` no diff. Só entra no SARIF o
 finding com linha num arquivo do repositório; o de execução (event log, job run)
 sai no resumo com o motivo, e nenhum some. `--fail-on P0` deixa o check
 vermelho. Não chama rede: quem sobe o SARIF é a action `upload-sarif`. Guia e
 workflow de exemplo em [`docs/github-code-scanning.md`](../github-code-scanning.md)
-e [`examples/github/sparkforge.yml`](../../examples/github/sparkforge.yml).
+e [`examples/github/sparkforge-aws.yml`](../../examples/github/sparkforge-aws.yml).
 
 ## Fluxo de handoff
 
-`sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
-do mesmo payload que `sparkforge resume` produz — os dois nunca divergem
+`sparkforge-aws handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
+do mesmo payload que `sparkforge-aws resume` produz — os dois nunca divergem
 porque vêm da mesma função. Ao encerrar ou pausar uma investigação, commite:
 
 ```bash

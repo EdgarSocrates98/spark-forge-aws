@@ -1,9 +1,9 @@
 # Arquitetura Agentica do SparkForge
 
 > **Dois pacotes com nome parecido, e eles não são a mesma coisa.** Este
-> documento descreve `sparkforge/agents/` — `ConversationRoom`,
+> documento descreve `sparkforge_aws/agents/` — `ConversationRoom`,
 > `AutonomyController`, `Supervisor`, `budget`, `model_policy` —, a camada de
-> orquestração que existe desde a expansão agêntica. `sparkforge/agentic/`
+> orquestração que existe desde a expansão agêntica. `sparkforge_aws/agentic/`
 > (2026-09-03) é OUTRO pacote: entidades de primeira classe (`Claim`,
 > `Evidence`, `Decision`), protocolo de debate, arbitragem e blackboard JSONL,
 > e ele é **biblioteca sem produtor** — nada no produto escreve nessas

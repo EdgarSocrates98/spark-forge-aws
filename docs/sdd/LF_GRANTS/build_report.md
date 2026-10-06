@@ -103,7 +103,7 @@ change_id: null
 
   Os menores: texto de `operacao_com_alvo_nao_resolvido`, `catalog_id` vazio ao lado de um
   preenchido, comparação sem caixa. O coletor sempre qualifica o symbol
-  (`sparkforge/facts/lakeformation_grants.py:78`), então tabela sem ponto no pool não
+  (`sparkforge_aws/facts/lakeformation_grants.py:78`), então tabela sem ponto no pool não
   precisou de tratamento.
 - **T2, regex quadrática (`b00c0c8d`).** A busca da cláusula `on` introduzida em
   `cc276a9c` (`permission\(s\).*?\bon\b`) recomeçava em cada "permission(s)" do texto do
@@ -114,7 +114,7 @@ change_id: null
 - **T2, terceira revisão de qualidade (sobre `cc276a9c`): um crítico, dois importantes.**
   Corrigidos em `23edef40`, com teste vermelho antes (8 falharam, depois 43 passaram):
   1. crítico: o matcher guarda só 200 caracteres da mensagem
-     (`sparkforge/errors/matcher.py:307`, `sparkforge/facts/exception.py:124`); quando o
+     (`sparkforge_aws/errors/matcher.py:307`, `sparkforge_aws/facts/exception.py:124`); quando o
      corte comia a cláusula ou o nome, o candidato único acusava a tabela errada. Agora sai
      `trecho_truncado`, com o teto medido por porta e um teste de guarda pelo caminho real;
   2. recusa de modelo calada pela de alvo sem resolução: agora as duas saem;
@@ -150,7 +150,7 @@ change_id: null
 - **T3, decisões do operador (2026-09-25), fora do plano.** Duas lacunas que a T3
   expôs foram levadas ao operador:
   1. *Overwrite presumido como write:* o operador escolheu ampliar
-     `sparkforge/facts/pyspark_ast.py` (fora do manifesto do design) para gravar modo não
+     `sparkforge_aws/facts/pyspark_ast.py` (fora do manifesto do design) para gravar modo não
      literal como desconhecido e `insertInto(overwrite=True)` como overwrite. Entra como
      tarefa extra depois da correção da T3;
   2. *Registro não coletado sob FGAC:* sem `lakeformation.registered_location`, o fact
@@ -194,7 +194,7 @@ change_id: null
   último caso é limite aceito: sem a localização da própria tabela
   (`StorageDescriptor.Location`), o fact não distingue.
 - **Tarefa extra (decisão do operador): o modo de escrita no `pyspark_ast`, `21966c09`.**
-  `sparkforge/facts/pyspark_ast.py` passou a gravar `mode` a partir de `mode=` no terminal
+  `sparkforge_aws/facts/pyspark_ast.py` passou a gravar `mode` a partir de `mode=` no terminal
   (e da posição dele) e de `insertInto(t, overwrite=<literal>)`, e marca
   `mode_unresolved: true` quando o modo não é literal. `lakeformation_missing_grant` recusa
   essa escrita como `modo_de_escrita_nao_lido`, em vez de presumir `write` e calar o
@@ -283,7 +283,7 @@ change_id: null
   - **do script de lotes do controlador**: `test_fixtures_golden_change.py` (4) e
     `test_fixtures_golden_receipt.py` (7) falharam com `FileNotFound` porque o
     `--basetemp` tinha `/` no nome; rodados sozinhos, 33 passaram e 4 foram pulados.
-- **Limitação que passa para a T3.** Resolvida pela tarefa extra acima: `sparkforge/facts/pyspark_ast.py` não grava `mode`
+- **Limitação que passa para a T3.** Resolvida pela tarefa extra acima: `sparkforge_aws/facts/pyspark_ast.py` não grava `mode`
   em `.mode(variavel)` nem em `insertInto(t, overwrite=True)`, e o fact presume `write`.
   Sob FTA não muda nada (write e overwrite exigem ALL); sob FGAC, overwrite exige
   `s3:DeleteObject` a mais. Mexer no extrator de AST está fora do manifesto desta feature.
@@ -332,7 +332,7 @@ Depois da revisão final: as docs pt-br que a feature toca foram atualizadas em
 `f9cef23c` (guia `usos/lake-formation-e-acesso.md` com o caminho de ponta a ponta até
 `SF-LF-011`, capítulos 06 e 07, entrada no `STATUS.md`); o espelho en-us fica para a
 feature `DOCS_EN`, por decisão do operador. A atualização das docs achou um último texto
-falso, corrigido em `121ef24a`: `runtime_ausente` mandava rodar `sparkforge runtime
+falso, corrigido em `121ef24a`: `runtime_ausente` mandava rodar `sparkforge-aws runtime
 detect`, que nunca emite `env.runtime_signal` para Glue; o texto agora aponta o
 `glue_version` literal do Terraform.
 

@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-import sparkforge.knowledge_ref as kr
-from sparkforge.facts import runtime_matrix
+import sparkforge_aws.knowledge_ref as kr
+from sparkforge_aws.facts import runtime_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGINA = "https://docs.databricks.com/aws/en/release-notes/runtime/"
@@ -40,7 +40,7 @@ def test_componente_fora_do_vocabulario_estoura(tmp_path, monkeypatch):
     (senao os testes seguintes do modulo herdariam a matriz invalida deste
     `tmp_path`, que ja nem existe mais em disco) -- por isso o `finally`.
     """
-    pacote = tmp_path / "site-packages" / "sparkforge"
+    pacote = tmp_path / "site-packages" / "sparkforge_aws"
     conhecimento = pacote / "knowledge"
     (conhecimento / "databricks").mkdir(parents=True)
     (conhecimento / "databricks" / "runtime-matrix.yaml").write_text(

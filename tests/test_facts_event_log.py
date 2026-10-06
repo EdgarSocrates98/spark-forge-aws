@@ -3,7 +3,7 @@ import tracemalloc
 
 import pytest
 
-from sparkforge.facts.event_log import (
+from sparkforge_aws.facts.event_log import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     _is_heap_oom,
@@ -11,7 +11,7 @@ from sparkforge.facts.event_log import (
     extract_event_log,
     extract_event_log_path,
 )
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.validate import validate_fact
 
 
 def facts_of(kind, facts):

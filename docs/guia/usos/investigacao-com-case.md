@@ -13,36 +13,36 @@ Rode da raiz do repositório. Use uma pasta temporária para testar.
 
    ```bash
    DEMO=/tmp/sf-case && mkdir -p "$DEMO"
-   sparkforge case open --repo "$DEMO" --case-id demo-lento --now 2026-09-13T10:00:00Z --glue 5.0
+   sparkforge-aws case open --repo "$DEMO" --case-id demo-lento --now 2026-09-13T10:00:00Z --glue 5.0
    ```
 
 2. Pergunte o próximo passo:
 
    ```bash
-   sparkforge next-step --repo "$DEMO"
+   sparkforge-aws next-step --repo "$DEMO"
    ```
 
 3. Registre a skill que você usou:
 
    ```bash
-   sparkforge case update --repo "$DEMO" --skill analyze-library-call-graph \
+   sparkforge-aws case update --repo "$DEMO" --skill analyze-library-call-graph \
      --outcome "facts extraidos: laco com write" --now 2026-09-13T10:15:00Z
    ```
 
 4. Registre uma hipótese com as três partes:
 
    ```bash
-   sparkforge case update --repo "$DEMO" \
+   sparkforge-aws case update --repo "$DEMO" \
      --hypothesis "O write dentro do laco refaz a leitura a cada volta" \
      --prediction "Tirar o write do laco reduz o tempo de task somado do stage de leitura" \
-     --experiment "sparkforge benchmark --before antes.json --after depois.json" \
+     --experiment "sparkforge-aws benchmark --before antes.json --after depois.json" \
      --now 2026-09-13T10:25:00Z
    ```
 
 5. Antes de parar, grave o resumo para quem continuar:
 
    ```bash
-   sparkforge handoff --repo "$DEMO"
+   sparkforge-aws handoff --repo "$DEMO"
    ```
 
 ## Para que serve
@@ -55,7 +55,7 @@ Rode da raiz do repositório. Use uma pasta temporária para testar.
 de uma pessoa ou ferramenta.
 
 **Quando não usar:** uma pergunta rápida e isolada, como consultar uma regra
-(`sparkforge rules lookup`). Aí não há o que lembrar.
+(`sparkforge-aws rules lookup`). Aí não há o que lembrar.
 
 ## Pré-requisitos
 
@@ -68,7 +68,7 @@ de uma pessoa ou ferramenta.
 ### 1. Abrir o case
 
 ```bash
-sparkforge case open --repo "$DEMO" --case-id demo-lento --now 2026-09-13T10:00:00Z --glue 5.0
+sparkforge-aws case open --repo "$DEMO" --case-id demo-lento --now 2026-09-13T10:00:00Z --glue 5.0
 ```
 
 ```json
@@ -89,14 +89,14 @@ Abrir de novo por cima é recusado, com código de saída 2:
 
 ```text
 ja existe um case em .../.sparkforge/case.yaml, e abrir por cima dele apagaria: fase `intake`.
-  Para continuar a investigacao: `sparkforge case get --repo <raiz>` e `sparkforge case update ...`.
+  Para continuar a investigacao: `sparkforge-aws case get --repo <raiz>` e `sparkforge-aws case update ...`.
   Para recomecar do zero mesmo assim: acrescente `--reopen` ...
 ```
 
 ### 2. Ler o case
 
 ```bash
-sparkforge case get --repo "$DEMO"
+sparkforge-aws case get --repo "$DEMO"
 ```
 
 Devolve o mesmo conteúdo do `case.yaml`, em JSON.
@@ -104,7 +104,7 @@ Devolve o mesmo conteúdo do `case.yaml`, em JSON.
 ### 3. Perguntar o próximo passo
 
 ```bash
-sparkforge next-step --repo "$DEMO"
+sparkforge-aws next-step --repo "$DEMO"
 ```
 
 ```json
@@ -112,7 +112,7 @@ sparkforge next-step --repo "$DEMO"
   "phase": "intake",
   "recommended_skill": "analyze-library-call-graph",
   "reason": "ROUTE-002: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.",
-  "collect_commands": ["sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json"],
+  "collect_commands": ["sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json"],
   "recommended_agent": null
 }
 ```
@@ -121,13 +121,13 @@ sparkforge next-step --repo "$DEMO"
 job de exemplo (fixture sintética):
 
 ```bash
-sparkforge analyze pyspark --path fixtures/pyspark/action_in_loop/input/lib --out "$DEMO/.sparkforge/facts.json"
-sparkforge judge --facts "$DEMO/.sparkforge/facts.json" --glue 5.0 --out "$DEMO/.sparkforge/findings.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/action_in_loop/input/lib --out "$DEMO/.sparkforge/facts.json"
+sparkforge-aws judge --facts "$DEMO/.sparkforge/facts.json" --glue 5.0 --out "$DEMO/.sparkforge/findings.json"
 ```
 
 O `judge` achou 1 finding: `SF-PY-004`, "Action ou write dentro de loop", P0.
 Depois de ter findings, passe o arquivo ao `next-step` para ele casar as rotas:
-`sparkforge next-step --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"`.
+`sparkforge-aws next-step --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"`.
 
 ### 4. Mudar de fase e registrar o que foi feito
 
@@ -139,8 +139,8 @@ fase desconhecida: 'triage' (esperado uma de: intake, inventory, facts, diagnosi
 ```
 
 ```bash
-sparkforge case update --repo "$DEMO" --phase facts --now 2026-09-13T10:20:00Z
-sparkforge case update --repo "$DEMO" --skill analyze-library-call-graph \
+sparkforge-aws case update --repo "$DEMO" --phase facts --now 2026-09-13T10:20:00Z
+sparkforge-aws case update --repo "$DEMO" --skill analyze-library-call-graph \
   --outcome "facts extraidos: laco com write" --now 2026-09-13T10:15:00Z
 ```
 
@@ -174,7 +174,7 @@ Com as três (comando do passo 4 da receita), o case ganha:
 ```json
 [{"id": "h1", "statement": "O write dentro do laco refaz a leitura a cada volta",
   "prediction": "Tirar o write do laco reduz o tempo de task somado do stage de leitura",
-  "experiment": "sparkforge benchmark --before antes.json --after depois.json",
+  "experiment": "sparkforge-aws benchmark --before antes.json --after depois.json",
   "status": "open"}]
 ```
 
@@ -184,7 +184,7 @@ Feche com o desfecho e com onde ler a prova. Os desfechos são `confirmed`, `ref
 e `abandoned` (o experimento nunca rodou).
 
 ```bash
-sparkforge case update --repo "$DEMO" --close-hypothesis h1 --hypothesis-outcome confirmed \
+sparkforge-aws case update --repo "$DEMO" --close-hypothesis h1 --hypothesis-outcome confirmed \
   --evidence "bench.run_delta f_64c631" --now 2026-09-13T11:00:00Z
 ```
 
@@ -203,8 +203,8 @@ ela combinar com o resultado. O `f_64c631` do exemplo veio de um `benchmark` rea
 - `resume` devolve o resumo para quem vai continuar.
 
 ```bash
-sparkforge handoff --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"
-sparkforge resume --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"
+sparkforge-aws handoff --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"
+sparkforge-aws resume --repo "$DEMO" --findings "$DEMO/.sparkforge/findings.json"
 ```
 
 Início real do `handoff.md`:
@@ -252,7 +252,7 @@ Quando a sessão cai no meio de um verbo, sobra um `started` sem `finished`. O
 Para conferir que ninguém apagou nem editou evento, rode:
 
 ```bash
-sparkforge journal verify --repo "$DEMO"
+sparkforge-aws journal verify --repo "$DEMO"
 ```
 
 A saída é `intact`, `torn_tail` (a última linha foi cortada por uma queda),
@@ -286,21 +286,21 @@ gravado no case para quem retomar.
 
 ```bash
 DEMO2=/tmp/sf-estrito && mkdir -p "$DEMO2"
-sparkforge case open --repo "$DEMO2" --case-id demo-estrito --now 2026-09-13T12:00:00Z --glue 5.0 --strict-gates
-sparkforge case update --repo "$DEMO2" --phase hypothesis --now 2026-09-13T12:01:00Z
+sparkforge-aws case open --repo "$DEMO2" --case-id demo-estrito --now 2026-09-13T12:00:00Z --glue 5.0 --strict-gates
+sparkforge-aws case update --repo "$DEMO2" --phase hypothesis --now 2026-09-13T12:01:00Z
 ```
 
 Saída real (código 2), depois de passar por `inventory`, `facts` e `diagnosis`:
 
 ```text
 transição para `hypothesis` bloqueada: este case foi aberto com rigor de gates (`strict_gates`), e 1 gate(s) sem a evidência que os satisfaz:
-    ou, se o dado genuinamente não existe (job descontinuado, ambiente que sumiu): sparkforge case update --override-gate flows_mapped --reason '<por que não existe>'
+    ou, se o dado genuinamente não existe (job descontinuado, ambiente que sumiu): sparkforge-aws case update --override-gate flows_mapped --reason '<por que não existe>'
 O gate checa a PRESENÇA do kind, não o conteúdo do fact: ...
 ```
 
 - **O que destrava:** passar em `case update --facts <arquivo>` o fact que prova o
   gate. Quem produz cada um está no bloco `gates` de `rules/catalog/routing.yaml`
-  (por exemplo, `flows_mapped` vem de `sparkforge analyze call-graph`).
+  (por exemplo, `flows_mapped` vem de `sparkforge-aws analyze call-graph`).
 - **Marcar `--gate <nome> --gate-value true` não destrava** num case estrito.
 - **Passar por cima** exige motivo. Sem `--reason`, é recusado:
 
@@ -311,7 +311,7 @@ O gate checa a PRESENÇA do kind, não o conteúdo do fact: ...
   Com motivo, fica gravado:
 
   ```bash
-  sparkforge case update --repo "$DEMO2" --override-gate baseline_captured \
+  sparkforge-aws case update --repo "$DEMO2" --override-gate baseline_captured \
     --reason "job de demonstracao sem event log" --now 2026-09-13T12:05:00Z
   ```
 

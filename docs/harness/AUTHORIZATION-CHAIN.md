@@ -8,7 +8,7 @@ allowed_tools, mutating, approval)` — uma checagem de um nível, com um boolea
 
 ## A classe é derivada, não mantida
 
-`sparkforge/adapters/tools.py` já declara três dimensões por tool:
+`sparkforge_aws/adapters/tools.py` já declara três dimensões por tool:
 `readOnlyHint`, `openWorldHint`, `destructiveHint`. Elas definem a classe:
 
 | classe | derivação |
@@ -26,7 +26,7 @@ anotação da mesma tool sintética nas quatro combinações e cobra que a class
 acompanhe, que é o único jeito de distinguir uma derivação de uma tabela paralela
 que por acaso concorda.
 
-`ToolClass` **não** se mapeia para `sparkforge/registry/models.py:RiskLevel`, e a
+`ToolClass` **não** se mapeia para `sparkforge_aws/registry/models.py:RiskLevel`, e a
 incompatibilidade é de **eixo**, não de granularidade: `RiskLevel`
 (`read_only/reversible/sensitive/destructive`) grada o quanto uma mutação dói e
 não tem dimensão de rede nenhuma; `ToolClass` cruza "muta?" com "sai da
@@ -46,7 +46,7 @@ Os sete coletores AWS declaravam `readOnlyHint: True`, com a razão escrita
 chamam `get_object`, `get_job`, `get_metric_data`, `SELECT`/`get_work_group`. Mas
 `readOnlyHint` **não tem lado**: ele afirma que a tool não modifica o ambiente
 dela, e os sete modificam o ambiente **local**. Todos terminam em
-`sparkforge.collect.aws._write_and_register`, que grava o artefato e depois grava
+`sparkforge_aws.collect.aws._write_and_register`, que grava o artefato e depois grava
 o manifesto `path` + `sha256` que `sparkforge_collect_verify` confere — e cuja
 entrada de mesmo `path` é substituída a cada coleta. Medido executando
 `_write_and_register` num diretório vazio: **zero arquivos antes, dois depois**.
@@ -77,12 +77,12 @@ confirmação, não menos —, e nenhuma capacidade foi removida.
 ## Duas classes ficam sem membro, e não são as esperadas
 
 Distribuição depois da correção, derivada executando `tool_class()` sobre as
-136 tools:
+143 tools:
 
 | classe | tools |
 |---|---|
-| `READ_ONLY` | 96 |
-| `LOCAL_MUTATION` | 23 |
+| `READ_ONLY` | 102 |
+| `LOCAL_MUTATION` | 24 |
 | `CLOUD_MUTATION` | 17 |
 | `CLOUD_READ` | 0 |
 | `DESTRUCTIVE` | 0 |
@@ -144,7 +144,7 @@ repositório é `ExecutionProfile`, e o valor dele é **minúsculo**
 (`OFFLINE = "offline"`). Por ser `str, Enum`, o valor canônico atravessava a
 anotação `profile: str` sem erro de tipo e comparava `False` — o teto sumia, e a
 decisão saía gravada como `reason="autorizado"`, **indistinguível de aprovação
-legítima**. O caminho não era hipotético: `sparkforge/economy/router.py` já
+legítima**. O caminho não era hipotético: `sparkforge_aws/economy/router.py` já
 compara `profile == ExecutionProfile.OFFLINE` e `RoutingDecision.profile` é
 tipado `ExecutionProfile`, então o wiring óbvio desligava o teto.
 
@@ -169,11 +169,11 @@ sistema de arquivos, com a classe derivada por `tool_class()`:
 
 | classe | declaram caminho | não declaram |
 |---|---|---|
-| `READ_ONLY` | 87 | 9 |
-| `LOCAL_MUTATION` | 23 | 0 |
+| `READ_ONLY` | 92 | 10 |
+| `LOCAL_MUTATION` | 24 | 0 |
 | `CLOUD_MUTATION` | 17 | 0 |
 
-Medido: **85** das tools `READ_ONLY` declaram algum argumento de caminho
+Medido: **90** das tools `READ_ONLY` declaram algum argumento de caminho
 (`path`, `repo`, `facts_path`, `before`/`after`, `file`, `report_path`,
 `findings_path`), e as **dez** exceções são `sparkforge_rules_lookup`, que só
 aceita `category`, `id`, `limit` e `cursor`; `sparkforge_economy_report`, que lê
@@ -200,7 +200,7 @@ recebe nada que aponte para fora**: `runtime` e `axis` filtram o que ela já
 carrega, e o que ela carrega é conhecimento versionado que viaja no próprio
 pacote (`knowledge/glue/lakeformation-matrix.yaml`, por `safe_knowledge_file`).
 Não há caminho a autorizar porque não há caminho que o chamador escolha. Estendendo às outras classes, o total é
-**127** de 136 — as vinte e três `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram
+**133** de 143 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram
 caminho sem exceção. Receber caminho é a forma normal da chamada neste
 catálogo, não um caso de borda. As onze tools que a SPEC do `SFCI` propõe
 recebem todas caminho, e é o caminho que decide se a chamada é legítima.
@@ -238,7 +238,7 @@ Quatro decisões de projeto, com a razão:
 - **`~` é recusado antes do confinamento.** O confinamento não expande `~` no
   alvo, então `raiz / "~/.aws/credentials"` cairia dentro da raiz e passaria.
   Nenhum adapter deste repositório expande `~` num argumento de tool hoje
-  (busca por `expanduser` em `sparkforge/`: três ocorrências, as três sobre
+  (busca por `expanduser` em `sparkforge_aws/`: três ocorrências, as três sobre
   raiz de configuração), então a leitura falharia de todo jeito — mas a recusa
   não depende de isso continuar verdade.
 
@@ -255,7 +255,7 @@ problema: espelho é mantido à mão.
 
 Copiar de novo para a cadeia de autorização seria a quarta cópia, e é a mesma
 família de defeito que a fase J0 fechou para o detector de segredo. O algoritmo
-mora em `sparkforge/paths.py:resolve_within`, e `safe_catalog_file` e
+mora em `sparkforge_aws/paths.py:resolve_within`, e `safe_catalog_file` e
 `safe_knowledge_file` só traduzem o `None` dele na exceção do domínio delas —
 comportamento e testes de traversal preservados. `TestConfinamentoEhUmSoAlgoritmo`
 cobra que a cadeia e o catálogo recusem e aceitem exatamente os mesmos
@@ -272,8 +272,8 @@ conceitual e está declarada; a fusão seria regressão de desempenho.
 #### O que esta fase NÃO fecha
 
 Ver o argumento não **impõe** nada. Nenhum dos quatro caminhos de execução —
-`sparkforge/adapters/mcp.py`, `sparkforge/adapters/tools.py`,
-`sparkforge/adapters/cli.py`, `sparkforge/agents/supervisor.py` — chama
+`sparkforge_aws/adapters/mcp.py`, `sparkforge_aws/adapters/tools.py`,
+`sparkforge_aws/adapters/cli.py`, `sparkforge_aws/agents/supervisor.py` — chama
 `authorize()`. A cadeia continua sendo uma função pura que ninguém consulta
 antes de executar, então uma tool continua recebendo o caminho que quiserem
 passar para ela, e o segredo de fora do repositório continua legível por quem
@@ -281,8 +281,8 @@ chamar a tool direto.
 
 > **Superado em `5cc065d`.** O parágrafo acima registra o que a fase J2 não
 > fechou e fica como está — é o registro dela. O que mudou depois:
-> `sparkforge/adapters/tools.py:call_tool` passou a chamar a cadeia via
-> `CallPolicy.decide`, e o despacho é único para as 136 tools, então fechar ali
+> `sparkforge_aws/adapters/tools.py:call_tool` passou a chamar a cadeia via
+> `CallPolicy.decide`, e o despacho é único para as 143 tools, então fechar ali
 > cobre `adapters/mcp.py` junto. Ver *A imposição no despacho* abaixo.
 
 Isso é o gap do hook `PreToolUse` do §41, e ele **não** fecha aqui. O que
@@ -318,7 +318,7 @@ transformaria uma adição de segurança numa migração.
 `tests/test_harness_authorization.py::TestCompatibilidade` tranca isso.
 
 A razão de manter é ser **superfície pública** — `authorize_tool` é método de
-`AutonomyController`, que `sparkforge.agents.__all__` exporta. O que a razão
+`AutonomyController`, que `sparkforge_aws.agents.__all__` exporta. O que a razão
 **não** é: consumidor interno. Este documento afirmava "e há chamador hoje", e
 isso era falso. Busca exaustiva: os únicos chamadores são
 `tests/test_agent_autonomy.py` e o próprio teste de compatibilidade — **zero em
@@ -327,12 +327,12 @@ pública; a afirmação de fato que a acompanhava não era verdade e foi corrigi
 
 ## A imposição no despacho
 
-`sparkforge/adapters/tools.py:call_tool(name, arguments, *, policy=None)` chama
-a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 136
+`sparkforge_aws/adapters/tools.py:call_tool(name, arguments, *, policy=None)` chama
+a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 143
 tools passam por ele, e `adapters/mcp.py` o usa, então fechar ali cobre os dois
 de uma vez em vez de uma checagem por porta.
 
-A fonte da política é `sparkforge/agents/autonomy.py:CallPolicy`, e
+A fonte da política é `sparkforge_aws/agents/autonomy.py:CallPolicy`, e
 `CallPolicy.from_manifest` tira allowlist e denylist de `AgentManifest`, que já
 as declara e valida por schema — nenhuma fonte nova, um carregador para a que
 existe.
@@ -355,10 +355,10 @@ handler **não rodou**. Recusa que devolve erro depois de executar não é recus
 O hook `PreToolUse` do §41 **passou a existir em 2026-09-13** (§16), com uma
 fonte declarada em vez de uma lista de comandos no script:
 `.sparkforge/policy.yaml`. Três portas leem a mesma decisão
-(`sparkforge/policy/decide.py`): o hook (`python -m sparkforge.policy.hook`,
+(`sparkforge_aws/policy/decide.py`): o hook (`python -m sparkforge_aws.policy.hook`,
 matcher `Bash|Edit|Write|MultiEdit|NotebookEdit`) bloqueia as regras `deny` pelo
 código de saída que o Claude Code trata como bloqueio; as regras `ask` viram `permissions.ask` do `.claude/settings.json`,
-geradas por `sparkforge policy sync-settings` (o `PreToolUse` só decide
+geradas por `sparkforge-aws policy sync-settings` (o `PreToolUse` só decide
 `allow`/`deny`); e o servidor MCP carrega a policy ao subir e a passa ao
 `call_tool` como `CallPolicy`, com as classes pré-aprovadas e as raízes
 (repositório mais `extra_roots`). Sem arquivo, as três portas se comportam como

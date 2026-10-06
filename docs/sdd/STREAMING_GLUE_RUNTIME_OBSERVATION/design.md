@@ -8,9 +8,9 @@ upstream:
   path: docs/sdd/STREAMING_GLUE_RUNTIME_OBSERVATION/define.md
   sha256: "f1fd1e551588903382d94d41328c01da633b12915b78be3c5d0fbb188b0648ec"
 files:
-  - {path: sparkforge/facts/glue_streaming.py, action: modify, reason: "Preservar worker_type e normalizar os campos de capacidade efetiva disponíveis no dump."}
-  - {path: sparkforge/facts/streaming_glue_runtime.py, action: create, reason: "Compor definição Glue Streaming e runs terminais em runtime_link/unresolved."}
-  - {path: sparkforge/facts/fusion.py, action: modify, reason: "Invocar a composição somente quando os fatos fonte existirem."}
+  - {path: sparkforge_aws/facts/glue_streaming.py, action: modify, reason: "Preservar worker_type e normalizar os campos de capacidade efetiva disponíveis no dump."}
+  - {path: sparkforge_aws/facts/streaming_glue_runtime.py, action: create, reason: "Compor definição Glue Streaming e runs terminais em runtime_link/unresolved."}
+  - {path: sparkforge_aws/facts/fusion.py, action: modify, reason: "Invocar a composição somente quando os fatos fonte existirem."}
   - {path: rules/catalog/glue-streaming.yaml, action: modify, reason: "Julgar drift observado e lacuna de runtime com evidence-first."}
   - {path: fixtures/streaming_glue_runtime_observation, action: create, reason: "Golden corpus consistente, drift e unresolved."}
   - {path: scripts/regen_streaming_glue_runtime_observation.py, action: create, reason: "Regenerar facts/findings deterministicamente a partir dos inputs."}
@@ -64,11 +64,11 @@ saúde de streaming.
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category glue_streaming`, executado sobre o
+- `sparkforge-aws rules lookup --category glue_streaming`, executado sobre o
   catálogo atual: `SF-GLUESTREAM-001..005` e seus limites.
 - `knowledge/glue-streaming-rtm.md`, que ancora Glue 6.0/RTM e exige unresolved
   para capacidade ausente.
-- `sparkforge/facts/glue_job_run.py`, que preserva `GlueVersion`, `WorkerType`,
+- `sparkforge_aws/facts/glue_job_run.py`, que preserva `GlueVersion`, `WorkerType`,
   `NumberOfWorkers`, `JobRunState` e `job_run_id` do artefato terminal.
 
 ## Segurança e economia

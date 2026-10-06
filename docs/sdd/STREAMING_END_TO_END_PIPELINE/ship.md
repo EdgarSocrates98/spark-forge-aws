@@ -31,7 +31,7 @@ coexistência de artefatos.
 - `build_streaming_pipeline` produz `streaming.pipeline.node`,
   `streaming.pipeline.link`, `streaming.pipeline` e
   `streaming.pipeline.unresolved`, preservando provenance e `source_fact_ids`.
-- `mode=pipeline` reutiliza `sparkforge analyze streaming-composition` no core,
+- `mode=pipeline` reutiliza `sparkforge-aws analyze streaming-composition` no core,
   CLI e MCP, com `--pipeline-path`/`pipeline_path`, paginação e detail level.
 - `SF-STREAM-015` julga somente blind spot observado.
 - Goldens cobrem completo, selector ausente, selector ambíguo e contrato inválido;
@@ -44,7 +44,7 @@ coexistência de artefatos.
 - `python -m pytest tests/test_streaming_pipeline.py tests/test_fixtures_golden_streaming_pipeline.py tests/test_fixtures_kind_coverage.py tests/test_rules_catalog_reachability.py -q -p no:cacheprovider --basetemp .pytest-tmp-pipeline-registry` — **967 passed**.
 - `python -m pytest tests/test_docs_coverage.py::test_manifest_counts_match_measurements tests/test_docs_coverage.py::test_streaming_coverage_mentions_slo_evaluation tests/test_docs_coverage.py::test_streaming_transport_slo_coverage_mentions_transport_key -q -p no:cacheprovider --basetemp .pytest-tmp-pipeline-t5-green` — **3 passed**.
 - `python scripts/check_status_numbers.py --strict` — exit 0; zero divergências.
-- `sparkforge sdd check --repo . --feature STREAMING_END_TO_END_PIPELINE` — exit 0.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_END_TO_END_PIPELINE` — exit 0.
 - `python scripts/sync_skills.py` — mirrors regenerados.
 - `python scripts/gen_reference_docs.py` — referências regeneradas.
 - `python -m pytest tests/test_harness_untrusted.py -q -p no:cacheprovider --basetemp .pytest-tmp-pipeline-snippet3` — **4 passed** em 155,57s.

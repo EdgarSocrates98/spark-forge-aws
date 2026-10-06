@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.economy.decision_activation import ActivationEvidence, guard_activation
+from sparkforge_aws.economy.decision_activation import ActivationEvidence, guard_activation
 
 
 def test_shadow_mode_is_always_allowed() -> None:

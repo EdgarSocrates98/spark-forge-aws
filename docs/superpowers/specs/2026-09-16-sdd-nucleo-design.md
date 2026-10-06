@@ -57,7 +57,7 @@ Decisões do operador (2026-09-16):
 
 | # | subprojeto | depende de |
 |---|---|---|
-| **A** | núcleo: contrato dos artefatos + `sparkforge sdd check\|status\|stamp` | — |
+| **A** | núcleo: contrato dos artefatos + `sparkforge-aws sdd check\|status\|stamp` | — |
 | B | skills `sdd-explore`, `sdd-define`, `sdd-design`, `sdd-plan`, `sdd-build` (TDD), `sdd-ship`, canônicas em `skills/`, espelhadas por `scripts/sync_skills.py`; templates em `docs/sdd/templates/` | A |
 | C | perfil operador: ligação com `case`, `change plan/sandbox/propose`, `funcval` | A, B |
 | D | migração: desativar AgentSpec e o ciclo do superpowers, apontar `CLAUDE.md`/`AGENTS.md`, arquivar `.claude/sdd/` e `docs/superpowers/` como histórico (sem reescrever) | B |
@@ -68,7 +68,7 @@ Decisões do operador (2026-09-16):
 ## 3. Estrutura
 
 ```
-sparkforge/sdd/
+sparkforge_aws/sdd/
   __init__.py
   schema/            # um JSON Schema por fase
     common.json
@@ -139,7 +139,7 @@ change_kinds: [tool_or_verb] # chaves de change_kinds.yaml
 
 ```yaml
 files:
-  - {path: sparkforge/sdd/checks.py, action: create, reason: "…"}   # create|modify|delete
+  - {path: sparkforge_aws/sdd/checks.py, action: create, reason: "…"}   # create|modify|delete
 decisions:
   - {id: D1, choice: "…", rejected: ["…"], rollback: "…"}
 covers:
@@ -151,7 +151,7 @@ covers:
 ```yaml
 tasks:
   - id: T1
-    files: [sparkforge/sdd/checks.py]
+    files: [sparkforge_aws/sdd/checks.py]
     covers: [AC1]
     test: {path: tests/test_sdd_checks.py, name: test_upstream_stale}
 ```
@@ -199,7 +199,7 @@ Reexecutar `green` fica fora de A (executar código é outra classe de efeito); 
 | `schema_invalid` | frontmatter ausente, YAML quebrado (com linha) ou fora do schema | todas |
 | `phase_out_of_order` | fase existe sem a anterior em `status: ready` ou `done` | todas |
 | `upstream_missing` | `upstream.path` não existe | todas menos explore |
-| `upstream_stale` | `upstream.sha256` ≠ sha256 **de texto** do upstream (`\r\n` normalizado para `\n`, o `text_sha256` de `sparkforge/receipt/_hash.py`) | todas menos explore |
+| `upstream_stale` | `upstream.sha256` ≠ sha256 **de texto** do upstream (`\r\n` normalizado para `\n`, o `text_sha256` de `sparkforge_aws/receipt/_hash.py`) | todas menos explore |
 | `acceptance_uncovered` | acceptance id do define ausente de todos os `covers` **da fase conferida** (conferido separadamente no design e no plan) | design, plan |
 | `task_without_test` | task do plan sem `test` | plan |
 | `verified_by_dangling` | `kind: test` aponta arquivo inexistente ou função ausente (conferido por `ast`, sem importar) **depois do build** — antes disso é `unresolved: test_not_written` | define, plan (quando existe `build_report.md` válido com `status: ready` ou `done`) |
@@ -231,7 +231,7 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
 - **Feature é só pasta no padrão do schema** (`^[A-Z0-9_]+$`). `templates/`,
   `archive/` e afins sob a raiz não viram feature, mesmo com `define.md` dentro.
 - **`unresolved: path_skipped`.** A descoberta usa `varrer_source_files`
-  (`sparkforge/facts/scan.py`), que poda nomes da lista de pulos (`build`,
+  (`sparkforge_aws/facts/scan.py`), que poda nomes da lista de pulos (`build`,
   `dist`, `vendor`, `secrets`, `credentials`… comparados em minúsculas). Vira
   lacuna com nome só o pulo que esconde algo que a descoberta leria: pasta de
   primeiro nível com nome de feature (`BUILD/`), pasta de segundo nível dentro
@@ -274,7 +274,7 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
   `{"items": [...]}`):
   - `refused: funcval_not_comparison` — nenhum `funcval.check_delta` (inclui
     JSON quebrado ou que não é lista de facts); `unlock` manda rodar
-    `sparkforge funcval compare --out <ref>`;
+    `sparkforge-aws funcval compare --out <ref>`;
   - `unresolved: funcval_blind_spot` — um por `funcval.unresolved`, com o
     `subject.symbol` (ou o subject cru) e o `attrs.reason` no `unlock`.
   Se a divergência passa do limiar continua com as `SF-FVAL-*` no `judge`
@@ -331,14 +331,14 @@ Um teste trava a deriva: todo título `## ` de `docs/gates-por-mudanca.md`
 
 | verbo | tool MCP | classe |
 |---|---|---|
-| `sparkforge sdd check [--feature X] [--root docs/sdd]` | `sparkforge_sdd_check` | `READ_ONLY` |
-| `sparkforge sdd status [--root docs/sdd]` | `sparkforge_sdd_status` | `READ_ONLY` |
-| `sparkforge sdd stamp <arquivo>` | `sparkforge_sdd_stamp` | `LOCAL_MUTATION` |
+| `sparkforge-aws sdd check [--feature X] [--root docs/sdd]` | `sparkforge_sdd_check` | `READ_ONLY` |
+| `sparkforge-aws sdd status [--root docs/sdd]` | `sparkforge_sdd_status` | `READ_ONLY` |
+| `sparkforge-aws sdd stamp <arquivo>` | `sparkforge_sdd_stamp` | `LOCAL_MUTATION` |
 
 - `stamp` existe porque sha256 calculado à mão por agente erra, e cada erro vira
   `upstream_stale` falso. Grava `started`/`finished` no journal.
 - **Sem `detail_level`.** No código, a flag só existe em verbo que devolve
-  facts (`_add_detail_level` em `sparkforge/adapters/cli.py`), e a projeção
+  facts (`_add_detail_level` em `sparkforge_aws/adapters/cli.py`), e a projeção
   `summary` trabalha sobre `provenance`, que recusa de SDD não tem. Mesmo
   tratamento de `judge`, `rules lookup` e `debate referee`.
 - `status` diz, por feature, a fase atual, o `status` e as recusas que impedem
@@ -350,7 +350,7 @@ Um teste trava a deriva: todo título `## ` de `docs/gates-por-mudanca.md`
 - Raiz inexistente → `unresolved: root_missing`.
 - Falha no journal não derruba `stamp` (regra 27).
 - Saída: `0` ok, `1` com recusa; erro de uso segue a convenção dos verbos
-  existentes em `sparkforge/cli/forge.py`.
+  existentes em `sparkforge_aws/cli/forge.py`.
 
 ## 8. O que a entrega move
 
@@ -381,7 +381,7 @@ Um teste trava a deriva: todo título `## ` de `docs/gates-por-mudanca.md`
 - **Paridade:** CLI e MCP devolvem o mesmo payload.
 - **Autonomia:** `stamp` recusado em nível sem `LOCAL_MUTATION`.
 - **Deriva:** `change_kinds.yaml` × títulos de `docs/gates-por-mudanca.md`.
-- **Regra 23:** `sparkforge/sdd/` não importa provider.
+- **Regra 23:** `sparkforge_aws/sdd/` não importa provider.
 
 Todas as fixtures são sintéticas (repo público).
 

@@ -47,7 +47,7 @@ CLAUDE.md / AGENTS.md: regras 15 e 16 reescritas
 | Critério de task lenta | `duração > max(multiplier × mediana, tempo mínimo)` com o `quantile` satisfeito, por versão | Python puro no extrator |
 | `spark.stage.slow_tasks` | Contagem de lentas, limiar, mediana de duração e de input, e por executor as lentas e o maior input delas | Fact por stage |
 | `spark.executor.slow_node` | Executor lento em dois ou mais stages sem partição maior | Fact derivado no fim da extração (regra 33) |
-| Derivações do `tune` | Três propriedades novas, recusas nomeadas, `--headroom` também no `broadcastTimeout` | `sparkforge/tuning/spark_conf.py` |
+| Derivações do `tune` | Três propriedades novas, recusas nomeadas, `--headroom` também no `broadcastTimeout` | `sparkforge_aws/tuning/spark_conf.py` |
 | `SF-UI-007` | Achado de nó lento (P2) | Catálogo YAML |
 | Paridade MCP | Exceção declarada para a chamada gravada que devolve a `SF-TIMEOUT-002` | `tests/test_fixtures_golden_mcp_parity.py` |
 
@@ -196,9 +196,9 @@ CLAUDE.md / AGENTS.md: regras 15 e 16 reescritas
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/facts/event_log.py` | Modify | Critério por versão, `slow_tasks`, `slow_node`, lacuna | @python-developer | None |
-| 2 | `sparkforge/tuning/spark_conf.py` | Modify | Três derivações, limiares do catálogo, recusas | @python-developer | 1 |
-| 3 | `sparkforge/adapters/{tools,cli}.py` | Modify | Enum de recusa, descrição, `--headroom` também no broadcast | @python-developer | 2 |
+| 1 | `sparkforge_aws/facts/event_log.py` | Modify | Critério por versão, `slow_tasks`, `slow_node`, lacuna | @python-developer | None |
+| 2 | `sparkforge_aws/tuning/spark_conf.py` | Modify | Três derivações, limiares do catálogo, recusas | @python-developer | 1 |
+| 3 | `sparkforge_aws/adapters/{tools,cli}.py` | Modify | Enum de recusa, descrição, `--headroom` também no broadcast | @python-developer | 2 |
 | 4 | `rules/catalog/{spark-ui,timeout,action_kinds}.yaml` | Modify | `SF-UI-007`, ação da `SF-TIMEOUT-002`, `kind` novo | (general) | 1 |
 | 5 | `fixtures/eventlog/{no_lento_em_dois_stages,lentidao_da_particao,lentidao_espalhada,criterio_spark4}/` | Create | Goldens do extrator e da `SF-UI-007` | @test-generator | 1, 4 |
 | 6 | `fixtures/tuning/{speculation_*,network_*,broadcast_timeout_*}/` | Create | Goldens das propostas e recusas | @test-generator | 2 |

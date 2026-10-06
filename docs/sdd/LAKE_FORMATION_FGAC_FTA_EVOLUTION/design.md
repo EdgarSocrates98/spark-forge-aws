@@ -9,18 +9,18 @@ upstream:
   sha256: "668ab254232f705655e49def53a701793726f0bc8c5eab78862100155e561e18"
 files:
   - {path: tests/test_lakeformation_architecture.py, action: create, reason: "Testes red/green do contrato, routing, decision engine, preflight, golden/negative scenarios, CLI/MCP parity e docs."}
-  - {path: sparkforge/lakeformation/capabilities.py, action: create, reason: "Loader validado da matriz arquitetural cross-engine; reusa knowledge_ref e estados fechados."}
-  - {path: sparkforge/lakeformation/catalog_routing.py, action: create, reason: "Resolve ownership e roteamento de catálogo sem aliasar glue.id, glue.account-id ou account IDs."}
-  - {path: sparkforge/lakeformation/architecture.py, action: create, reason: "Decision engine puro que compõe matriz, routing, modelo, operação, cross-account e credential vending."}
+  - {path: sparkforge_aws/lakeformation/capabilities.py, action: create, reason: "Loader validado da matriz arquitetural cross-engine; reusa knowledge_ref e estados fechados."}
+  - {path: sparkforge_aws/lakeformation/catalog_routing.py, action: create, reason: "Resolve ownership e roteamento de catálogo sem aliasar glue.id, glue.account-id ou account IDs."}
+  - {path: sparkforge_aws/lakeformation/architecture.py, action: create, reason: "Decision engine puro que compõe matriz, routing, modelo, operação, cross-account e credential vending."}
   - {path: knowledge/lakeformation/capability-matrix.yaml, action: create, reason: "Fonte version-aware para Glue, EMR EC2 e EMR Serverless com source, last_verified e limitations por célula."}
   - {path: knowledge/lakeformation/architecture.md, action: create, reason: "Contrato humano de observed/inferred/required verification e limites do analyzer."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Expor composição lakeformation_architect sem leitura de artefato nem chamada AWS."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Adicionar `sparkforge lakeformation architect --input` ao surface existente."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Registrar schema e handler MCP com o mesmo payload da CLI."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Expor composição lakeformation_architect sem leitura de artefato nem chamada AWS."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Adicionar `sparkforge-aws lakeformation architect --input` ao surface existente."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Registrar schema e handler MCP com o mesmo payload da CLI."}
   - {path: agents/sf-lake-formation-specialist.md, action: modify, reason: "Fazer o coordenador usar o skill de arquitetura e declarar o novo procedimento."}
   - {path: agents/sf-runtime-specialist.md, action: modify, reason: "Adicionar o skill ao eixo de compatibilidade Glue/EMR sem criar agente paralelo."}
   - {path: skills/lakeformation-architecture/SKILL.md, action: create, reason: "Procedimento progressive-disclosure para routing, decision e preflight; fonte para espelhos gerados."}
-  - {path: sparkforge/integrate/render.py, action: modify, reason: "Registrar a decisão de despacho da nova skill no renderizador canônico."}
+  - {path: sparkforge_aws/integrate/render.py, action: modify, reason: "Registrar a decisão de despacho da nova skill no renderizador canônico."}
   - {path: tests/test_sync_render.py, action: modify, reason: "Fixar relação medida entre nova skill e coordenadores."}
   - {path: tests/test_adapters_mcp_compact.py, action: modify, reason: "Atualizar contadores de superfície full após declarar a nova tool."}
   - {path: tests/test_host_surface_contracts.py, action: modify, reason: "Atualizar contrato de tamanho da superfície MCP após declarar a nova tool."}
@@ -38,11 +38,11 @@ decisions:
   - id: D1
     choice: "Compor a matriz arquitetural com a matriz Glue existente, mantendo fontes detalhadas por domínio e sem duplicar facts/rules."
     rejected: ["Substituir `knowledge/glue/lakeformation-matrix.yaml` por uma matriz única cross-engine, que quebraria consumidores e perderia o eixo detalhado Glue."]
-    rollback: "git revert do commit da matriz e do loader; o diagnostico volta a usar somente `sparkforge/facts/lakeformation_matrix.py`."
+    rollback: "git revert do commit da matriz e do loader; o diagnostico volta a usar somente `sparkforge_aws/facts/lakeformation_matrix.py`."
   - id: D2
     choice: "Representar decisões como observed/inferred/required_verification com estados `supported`, `limited`, `read_only`, `version_dependent`, `not_supported` e `unknown`."
     rejected: ["Retornar apenas boolean supported, que confundiria ausência de fonte com incompatibilidade.", "Emitir Finding para toda decisão, que misturaria composição arquitetural com julgamento de regra."]
-    rollback: "git revert do módulo `sparkforge/lakeformation/architecture.py`; facts/rules anteriores continuam intactos."
+    rollback: "git revert do módulo `sparkforge_aws/lakeformation/architecture.py`; facts/rules anteriores continuam intactos."
   - id: D3
     choice: "Usar input JSON declarativo para CLI/MCP, validado antes da decisão, sem coletar AWS nem ler arquivos arbitrários."
     rejected: ["Inferir contas a partir do ARN do job ou credencial corrente.", "Adicionar chamadas boto3 ao analyzer offline."]
@@ -69,10 +69,10 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| capability matrix | `knowledge/lakeformation/capability-matrix.yaml`, `sparkforge/lakeformation/capabilities.py`, tests | AC3, AC4, AC5, AC12 |
-| catalog routing | `sparkforge/lakeformation/catalog_routing.py`, tests | AC1, AC2, AC8, AC9 |
-| architecture decision | `sparkforge/lakeformation/architecture.py`, tests | AC3–AC10 |
-| surface integration | `sparkforge/adapters/_core.py`, `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py`, tests | AC11 |
+| capability matrix | `knowledge/lakeformation/capability-matrix.yaml`, `sparkforge_aws/lakeformation/capabilities.py`, tests | AC3, AC4, AC5, AC12 |
+| catalog routing | `sparkforge_aws/lakeformation/catalog_routing.py`, tests | AC1, AC2, AC8, AC9 |
+| architecture decision | `sparkforge_aws/lakeformation/architecture.py`, tests | AC3–AC10 |
+| surface integration | `sparkforge_aws/adapters/_core.py`, `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py`, tests | AC11 |
 | knowledge and human contract | `knowledge/lakeformation/architecture.md`, skill, agents, docs and VNX | AC12 |
 
 ## Contrato de entrada
@@ -124,9 +124,9 @@ O engine não concede, revoga, testa AWS ou propõe `Action: "*"`. Para `blocked
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category lakeformation-fgac` e `--category cross-account`: regras existentes `SF-LF`/`SF-XACC`, inclusive estados unresolved e runtime scope.
-- `sparkforge knowledge path --file knowledge/glue/lakeformation-fgac.md`: contrato Glue FGAC/FTA e limites já versionados no repositório.
-- `sparkforge knowledge path --file knowledge/glue/lakeformation-matrix.yaml`: matriz Glue detalhada existente, composta e não substituída.
+- `sparkforge-aws rules lookup --category lakeformation-fgac` e `--category cross-account`: regras existentes `SF-LF`/`SF-XACC`, inclusive estados unresolved e runtime scope.
+- `sparkforge-aws knowledge path --file knowledge/glue/lakeformation-fgac.md`: contrato Glue FGAC/FTA e limites já versionados no repositório.
+- `sparkforge-aws knowledge path --file knowledge/glue/lakeformation-matrix.yaml`: matriz Glue detalhada existente, composta e não substituída.
 - AWS Glue FTA: `https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html`, verificado em 2026-09-30.
 - AWS EMR FGAC/FTA: `https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-lf-enable.html` e `https://docs.aws.amazon.com/emr/latest/ManagementGuide/lake-formation-unfiltered-ec2-access.html`, verificados em 2026-09-30.
 - AWS EMR Serverless Lake Formation: `https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/lake-formation-section.html`, verificado em 2026-09-30.

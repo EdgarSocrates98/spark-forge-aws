@@ -1,10 +1,10 @@
 # Contrato do SDD
 
 O contrato **vivo** dos artefatos de `docs/sdd/` e dos três verbos
-`sparkforge sdd check|status|stamp`: os campos de cada fase e todo código que o
+`sparkforge-aws sdd check|status|stamp`: os campos de cada fase e todo código que o
 gate emite, com quando dispara e em que fase. Ele descreve o código de hoje —
-`sparkforge/sdd/checks.py`, `sparkforge/sdd/stamp.py`, `sparkforge/sdd/schema/*.json`
-e `sparkforge/sdd/change_kinds.yaml`.
+`sparkforge_aws/sdd/checks.py`, `sparkforge_aws/sdd/stamp.py`, `sparkforge_aws/sdd/schema/*.json`
+e `sparkforge_aws/sdd/change_kinds.yaml`.
 
 `tests/test_sdd.py::test_contrato_lista_todo_codigo` lê por `ast` todo código
 literal passado a `recusa`, `lacuna` e `StampError` (e todo `"code"` literal
@@ -28,14 +28,14 @@ e não acompanha o código.
 - `refused` é o que está errado no artefato; `field` é o caminho do campo
   (`tasks/0/moved/change_id`) ou `null`. `unresolved` é o que o gate ainda não
   consegue decidir. Todo item traz `unlock`: o que fazer.
-- `sparkforge sdd check` sai com **1** quando há recusa e **0** caso contrário
+- `sparkforge-aws sdd check` sai com **1** quando há recusa e **0** caso contrário
   (só lacuna sai 0 com `ok: false`). `--feature` que a varredura não achou sai
   com **2** e aponta `sdd status`, salvo quando uma lacuna já explica a
   ausência (`root_missing`, ou `path_skipped` com o nome da feature).
-- `sparkforge sdd status` lê a mesma passada do `check` (`evaluate`): por
+- `sparkforge-aws sdd status` lê a mesma passada do `check` (`evaluate`): por
   feature, `phase`, `status`, `profile`, `next_phase`, e os códigos de
   `refused` e `unresolved`; lacuna sem feature descoberta sobe para o topo.
-- `sparkforge sdd stamp` é a única escrita: grava `upstream.sha256` e devolve
+- `sparkforge-aws sdd stamp` é a única escrita: grava `upstream.sha256` e devolve
   `{path, upstream, sha256, previous, changed}`. Recusa sai com **2** e o
   código no começo da mensagem.
 - Repositório (`--repo`) inexistente é erro de uso, com **2**, nos três.
@@ -75,7 +75,7 @@ Campo fora do schema da fase é `schema_invalid`.
 | `success` | `{id: SC<n>, metric, source?}` |
 | `out_of_scope` | lista de texto |
 | `unknowns` | opcional: `{id: U<n>, blocks?, unlock}` |
-| `change_kinds` | chaves de `sparkforge/sdd/change_kinds.yaml` |
+| `change_kinds` | chaves de `sparkforge_aws/sdd/change_kinds.yaml` |
 | `case_id` | texto ou `null`; exigido no operator |
 
 `verified_by.kind`:
@@ -84,7 +84,7 @@ Campo fora do schema da fase é `schema_invalid`.
 |---|---|---|
 | `test` | node id do pytest (`tests/a.py::test_x`, `::TestA::test_x`; `[...]` descartado) | confere por `ast`, sem importar, só o que o pytest coleta por padrão |
 | `command` | o comando | registra; quem roda é o ship |
-| `funcval` | arquivo de `sparkforge funcval compare --out` | confere a forma, nunca o veredito |
+| `funcval` | arquivo de `sparkforge-aws funcval compare --out` | confere a forma, nunca o veredito |
 | `fact` | `arquivo.json#<id>` ou `arquivo.json#kind:<kind>` | lista crua ou `{"items": [...]}`; item sem `id` não casa; `kind:` vazio não casa |
 
 **`design`** — `files` (`{path, action: create|modify|delete, reason}`),

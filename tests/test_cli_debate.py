@@ -1,4 +1,4 @@
-"""`sparkforge debate start|next|submit` e as tres tools MCP, ponta a ponta.
+"""`sparkforge-aws debate start|next|submit` e as tres tools MCP, ponta a ponta.
 
 A maquina de estados ja tem unidade (`test_agentic_debate_run.py`) e goldens
 (`test_fixtures_golden_debate.py`). O que fica aqui e a CASCA: que a CLI e o MCP
@@ -19,11 +19,11 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import _DEBATE_REFUSAL_REASONS, TOOLS, call_tool
-from sparkforge.agentic.blackboard import read_decisions
-from sparkforge.agentic.executor import debate_evidence, debate_run
-from sparkforge.case.store import SCHEMA_VERSION, save_case
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import _DEBATE_REFUSAL_REASONS, TOOLS, call_tool
+from sparkforge_aws.agentic.blackboard import read_decisions
+from sparkforge_aws.agentic.executor import debate_evidence, debate_run
+from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
 
 RAIZ = Path(__file__).resolve().parents[1]
 UNIAO = (
@@ -246,7 +246,7 @@ class TestRecusaEFronteira:
         argv = ["debate", "submit", "--repo", str(caso["repo"])]
         argv += ["--debate", started["debate_id"], "--file", str(caso["tmp"] / "nada.json")]
         assert main(argv) == 2
-        assert "sparkforge debate next" in capsys.readouterr().err
+        assert "sparkforge-aws debate next" in capsys.readouterr().err
 
     def test_json_invalido_e_erro_de_fronteira(self, caso, capsys):
         _, started = _run(_start_argv(caso), capsys)
@@ -297,6 +297,9 @@ class TestMcpEACli:
         brief_mcp = call_tool(
             "sparkforge_debate_next", {"repo": str(caso["repo"]), "debate_id": debate_id}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        brief_mcp.pop("_trust", None)
         assert brief_mcp == brief_cli
 
     def test_submit_inline_pelo_mcp_passa_a_recusa_sem_traducao(self, caso, capsys):
@@ -313,7 +316,7 @@ class TestMcpEACli:
         assert recusa["reason"] == debate_run.CLAIM_WITHOUT_EVIDENCE
 
     def test_as_tres_tools_sao_local_mutation(self):
-        from sparkforge.agents.autonomy import ToolClass, tool_class
+        from sparkforge_aws.agents.autonomy import ToolClass, tool_class
 
         for nome in TRES:
             assert tool_class(nome) is ToolClass.LOCAL_MUTATION, nome

@@ -1,18 +1,18 @@
 """Golden test do corpus workload: seis cenarios sinteticos do WorkloadFingerprint.
 
-Task 6 do plano `2026-08-28-workload-fingerprint.md`. `sparkforge workload`
+Task 6 do plano `2026-08-28-workload-fingerprint.md`. `sparkforge-aws workload`
 NAO extrai de artefato -- classifica facts JA extraidos -- entao cada fixture
 tem `input/facts.json` no MOLDE do que `--facts` consome (o formato que
-`sparkforge analyze sql-metrics --out` produz), `input/workload.yaml` quando o
+`sparkforge-aws analyze sql-metrics --out` produz), `input/workload.yaml` quando o
 cenario declara inventario, e `input/history/*.json` quando o cenario tem
 historico: um arquivo de facts por RUN ANTERIOR, a mesma separacao que
-`--history` exige (`sparkforge/adapters/_core.py::workload_fingerprint`).
+`--history` exige (`sparkforge_aws/adapters/_core.py::workload_fingerprint`).
 
 `input/workload.yaml`, quando existe, e passado pelo EXTRATOR de verdade
-(`extract_workload_path`, `sparkforge/facts/workload.py`) -- e essa e a unica
+(`extract_workload_path`, `sparkforge_aws/facts/workload.py`) -- e essa e a unica
 extracao real deste modulo golden. `input/facts.json` ja chega em forma de
 Fact (kind/subject/measures/attrs), e reconstituido direto, sem extrator: e
-exatamente o contrato de `sparkforge workload --facts`, que consome facts que
+exatamente o contrato de `sparkforge-aws workload --facts`, que consome facts que
 ALGUEM JA extraiu.
 
 Seis cenarios, cada um provando uma fronteira do fingerprint:
@@ -36,10 +36,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.workload import extract_workload_path
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.findings.validate import validate_fact
-from sparkforge.workload.fingerprint import build_fingerprint
+from sparkforge_aws.facts.workload import extract_workload_path
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.validate import validate_fact
+from sparkforge_aws.workload.fingerprint import build_fingerprint
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "workload"
@@ -65,7 +65,7 @@ def _meta(directory: Path) -> dict:
 def _facts_from_json(path: Path) -> list[Fact]:
     """Reconstitui Facts de um arquivo no formato que `--facts`/`--history` consomem.
 
-    Sem passar por extrator: o proprio contrato de `sparkforge workload` e
+    Sem passar por extrator: o proprio contrato de `sparkforge-aws workload` e
     receber facts que outro verbo JA extraiu (`_core._facts_from_dicts`), e
     `id`/`schema_version` no arquivo -- quando presentes -- sao ignorados, os
     mesmos campos que `Fact` deriva.

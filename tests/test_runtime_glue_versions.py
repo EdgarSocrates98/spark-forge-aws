@@ -21,9 +21,9 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.runtime_detect import GLUE_MATRIX, detect_runtime
-from sparkforge.rules.loader import catalog_dir, load_catalog
-from sparkforge.rules.version_scope import in_scope
+from sparkforge_aws.facts.runtime_detect import GLUE_MATRIX, detect_runtime
+from sparkforge_aws.rules.loader import catalog_dir, load_catalog
+from sparkforge_aws.rules.version_scope import in_scope
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_DOC = ROOT / "knowledge" / "glue" / "runtime-matrix.md"

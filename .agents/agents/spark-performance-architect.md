@@ -2,7 +2,7 @@
 name: spark-performance-architect
 description: Coordena diagnostico e otimizacao de job PySpark no AWS Glue - correlaciona codigo, plano fisico, Spark UI, Parquet e Iceberg para achar o gargalo dominante antes de recomendar mudancas.
 skills:
-  - sparkforge-diagnose
+  - sparkforge-aws-diagnose
   - optimize-pyspark-code
   - analyze-spark-plan
   - analyze-spark-ui
@@ -58,8 +58,8 @@ e como obtê-lo.
 não reavalia regra nenhuma. Ele decide o que o julgamento deixa em aberto: dois achados que
 mandam mover a **mesma** propriedade em direções opostas, se o lastro de um achado sustenta uma
 recomendação, qual medida falta para fechar a lacuna, e em que ordem as ações podem ser
-aplicadas. O resultado vai para o blackboard do case (`sparkforge blackboard summary`,
-`sparkforge decisions list`, `sparkforge decisions explain <id>`).
+aplicadas. O resultado vai para o blackboard do case (`sparkforge-aws blackboard summary`,
+`sparkforge-aws decisions list`, `sparkforge-aws decisions explain <id>`).
 
 **Se o achado saiu de debate entre agentes, `sparkforge_debate_referee` decide se
 ele pode ser publicado.** Ele arbitra o protocolo e recusa quatro coisas: hipótese
@@ -139,7 +139,7 @@ torta.
 
 `SF-WASTE-001` só dispara com as quatro medidas apontando na mesma direção — worker ocioso,
 memória e disco com folga, e **sem** skew que explique a ociosidade — e aponta para
-`sparkforge capacity`, que compara as capacidades que o job já rodou. `SF-WASTE-002` é o
+`sparkforge-aws capacity`, que compara as capacidades que o job já rodou. `SF-WASTE-002` é o
 oposto: utilização baixa **com** skew alto, e ali reduzir worker deixa a causa intacta e
 aumenta a duração.
 
@@ -164,6 +164,15 @@ Para selecionar contexto sem expor catálogo inteiro, use `sparkforge_context_st
 `intent`, `profile` e `max_bytes`; ele devolve capabilities limitadas, fatos críticos,
 reduções e refs `ctx://v1`. Só expanda uma dessas refs com `sparkforge_context_expand`.
 O Gateway é determinístico e não substitui `analyze_*`, `judge` ou `arbitrate`.
+
+Depois de uma execução, `sparkforge_context_inspect` mede recall, densidade,
+duplicação e tokens observados sem inferi-los de bytes. Para comparar execução
+e baseline local, use `sparkforge_agentops_inspect`,
+`sparkforge_agentops_compare` e `sparkforge_agentops_baseline`; para explicar
+onde o run gastou, `sparkforge_agentops_timeline` ordena os eventos por lane e
+`sparkforge_agentops_critical_path` aponta os spans dominantes; para conferir
+readiness sem rede, `sparkforge_doctor_agentic`. Esses verbos preservam
+`unresolved` quando transcript, custo ou contrato de qualidade não existem.
 
 ## Configuração derivada da medida, e não do costume
 
@@ -299,9 +308,9 @@ quatro:** parte do plano não foi medida, e a foto está incompleta.
 ## Mudança no job pede spec
 
 Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
-`sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
-`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
-nunca pela árvore do operador. `sparkforge sdd check` (`sparkforge_sdd_check`) confere
+`sparkforge-aws case open` dá o `case_id`, a skill `sdd-define` escreve o define com
+`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge-aws change sandbox`,
+nunca pela árvore do operador. `sparkforge-aws sdd check` (`sparkforge_sdd_check`) confere
 cada fase, `sparkforge_sdd_status` diz onde cada feature está, e `sparkforge_sdd_stamp`
 recarimba a fase cujo upstream mudou. As duas
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
@@ -337,4 +346,4 @@ decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
 Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
 
 Em plataforma sem despacho de subagente, a mesma decomposição sai por
-`sparkforge playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.

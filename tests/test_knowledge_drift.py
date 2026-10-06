@@ -6,7 +6,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from sparkforge.knowledge_drift import RepoIndex, build_index, drift, render_markdown, repo_root
+from sparkforge_aws.knowledge_drift import RepoIndex, build_index, drift, render_markdown, repo_root
 
 ROOT = Path(__file__).resolve().parents[1]
 URL = "https://exemplo.invalid/doc"
@@ -19,6 +19,7 @@ INDICE = RepoIndex(
     evals={"SF-LF-001": frozenset({"evals/x.yaml"})},
     agent_areas={"agents/lf.md": frozenset({"SF-LF"}), "agents/outro.md": frozenset({"SF-PY"})},
     agent_citations={"SF-ERR-017": frozenset({"agents/y.md"})},
+    skill_citations={"SF-LF-001": frozenset({"skills/lf-audit/SKILL.md"})},
 )
 
 
@@ -41,6 +42,7 @@ def test_lida_antes_da_mudanca_e_stale_e_entra_no_impacto():
         "goldens": ["infra_code/a"],
         "evals": ["evals/x.yaml"],
         "agents": ["agents/lf.md"],
+        "skills": ["skills/lf-audit/SKILL.md"],
     }
 
 
@@ -80,13 +82,15 @@ def test_agente_por_citacao_e_por_area():
     assert fonte["impact"]["agents"] == ["agents/y.md"]
 
 
-def test_sem_repositorio_os_tres_saltos_sao_unresolved():
+def test_sem_repositorio_os_quatro_saltos_sao_unresolved():
     saida = drift(LOCK, None, [_regra("SF-LF-001", "2026-08-22")], {}, None, DIA)
     fonte = _unica(saida)
     assert fonte["impact"]["rules"] == ["SF-LF-001"]
     assert fonte["impact"]["goldens"] is None and fonte["impact"]["agents"] is None
+    assert fonte["impact"]["skills"] is None
     assert saida["unresolved"] == [
-        {"field": campo, "reason": "sem_repositorio"} for campo in ("goldens", "evals", "agents")
+        {"field": campo, "reason": "sem_repositorio"}
+        for campo in ("goldens", "evals", "agents", "skills")
     ]
 
 

@@ -39,8 +39,8 @@ from typing import Any
 
 import pytest
 
-from sparkforge.agentic.executor.conflict import conditional_conflicts, direct_conflicts
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.agentic.executor.conflict import conditional_conflicts, direct_conflicts
+from sparkforge_aws.rules.loader import load_catalog
 
 RAIZ = Path(__file__).resolve().parents[1]
 

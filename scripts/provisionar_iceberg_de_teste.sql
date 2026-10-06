@@ -3,7 +3,7 @@
 -- POR QUE ESTE ARQUIVO EXISTE
 --
 -- As nove fixtures de `fixtures/iceberg/` sao SINTETICAS: o shape do dump que
--- `sparkforge/facts/iceberg_metadata.py` espera foi escrito a mao, e ninguem
+-- `sparkforge_aws/facts/iceberg_metadata.py` espera foi escrito a mao, e ninguem
 -- nunca rodou `collect_iceberg_metadata` contra uma tabela de verdade para
 -- conferir. Se o `SELECT *` do Athena devolver uma coluna a mais, uma a menos,
 -- ou um tipo diferente, nada acusaria.
@@ -33,11 +33,11 @@
 -- ---------------------------------------------------------------------------
 -- PASSO 1 (fora daqui): criar o bucket e o database
 -- ---------------------------------------------------------------------------
--- aws s3 mb s3://<BUCKET> --region us-east-1 --profile sparkforge
+-- aws s3 mb s3://<BUCKET> --region us-east-1 --profile sparkforge-aws
 -- aws athena start-query-execution \
 --   --query-string "CREATE DATABASE IF NOT EXISTS sparkforge_teste" \
 --   --result-configuration OutputLocation=s3://<BUCKET>/athena-results/ \
---   --region us-east-1 --profile sparkforge
+--   --region us-east-1 --profile sparkforge-aws
 
 -- ---------------------------------------------------------------------------
 -- PASSO 2: a tabela. `format-version` = 2 de proposito.
@@ -119,7 +119,7 @@ GROUP BY content;
 -- ---------------------------------------------------------------------------
 -- DROP TABLE sparkforge_teste.pedidos;
 -- DROP DATABASE sparkforge_teste;
--- aws s3 rb s3://<BUCKET> --force --region us-east-1 --profile sparkforge
+-- aws s3 rb s3://<BUCKET> --force --region us-east-1 --profile sparkforge-aws
 --
 -- O `DROP TABLE` de tabela Iceberg no Athena remove os dados do S3. O
 -- `s3 rb --force` fecha o que sobrar (resultados de query do Athena).

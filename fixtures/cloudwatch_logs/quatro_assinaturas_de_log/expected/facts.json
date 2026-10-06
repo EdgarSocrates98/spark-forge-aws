@@ -259,7 +259,7 @@
       "reason": "operacao_nao_medida",
       "resource": "default.dim_cliente",
       "signature_id": "ERR-LF-001",
-      "unblocked_by": "nenhum fact de operacao sobre o recurso; rode `sparkforge analyze pyspark` sobre o codigo do job e junte a saida ao case",
+      "unblocked_by": "nenhum fact de operacao sobre o recurso; rode `sparkforge-aws analyze pyspark` sobre o codigo do job e junte a saida ao case",
       "extractor": "lakeformation_missing_grant@0.1.0"
     },
     "provenance": {

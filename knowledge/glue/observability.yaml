@@ -8,7 +8,7 @@
 # exige a tabela, e a tabela precisa de fonte com data.
 #
 # Numero de retencao codificado em Python seria o defeito que
-# `sparkforge/facts/pricing.py` existe para nao repetir.
+# `sparkforge_aws/facts/pricing.py` existe para nao repetir.
 
 schema_version: 1
 

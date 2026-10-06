@@ -30,7 +30,7 @@ e ausência de evidência continua `unresolved`.
 - Threshold mutation, rule scope e runtime Glue — `675 passed`.
 - Bundle offline — `57` entradas verificadas.
 - `python -m pytest tests/test_dq_ai_unit.py tests/test_dq_ai_security.py tests/test_dq_ai_report.py tests/test_fixtures_golden_dq_ai.py -q` — `11 passed`.
-- `sparkforge sdd check --repo . --feature GLUE_DQ_ADVANCED_GOVERNANCE_GAPS` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature GLUE_DQ_ADVANCED_GOVERNANCE_GAPS` — `ok: true`.
 
 ## Entrega e limites
 

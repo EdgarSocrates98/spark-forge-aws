@@ -2,7 +2,7 @@
 
 Esta página é uma matriz de capacidade declarada para apoiar decisões offline.
 Ela não é benchmark, ranking, promessa de custo ou prova de disponibilidade.
-O comando `sparkforge architecture streaming` usa somente constraints
+O comando `sparkforge-aws architecture streaming` usa somente constraints
 explícitas do input; premissas ficam separadas e não eliminam candidatos.
 
 ## Candidatos e limites factuais

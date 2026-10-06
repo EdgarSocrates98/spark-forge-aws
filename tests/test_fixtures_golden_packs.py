@@ -14,9 +14,9 @@ import json
 import os
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.packs import ENV, installed_version
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.packs import ENV, installed_version
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "packs"

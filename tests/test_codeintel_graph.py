@@ -23,10 +23,10 @@ essa porta.
 
 import sqlite3
 
-from sparkforge.codeintel import graph
-from sparkforge.codeintel.db import abrir
-from sparkforge.codeintel.graph import chamadores, chamados, impacto
-from sparkforge.codeintel.index import indexar
+from sparkforge_aws.codeintel import graph
+from sparkforge_aws.codeintel.db import abrir
+from sparkforge_aws.codeintel.graph import chamadores, chamados, impacto
+from sparkforge_aws.codeintel.index import indexar
 
 
 def _indexar(tmp_path, arquivos):

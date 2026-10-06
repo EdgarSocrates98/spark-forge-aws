@@ -68,7 +68,7 @@ Os hashes são os de depois do rebase sobre a `main` com o #88 (`febcdecb`).
     a contagem desses mesmos caminhos.
   - `refresh_knowledge.py --offline --update` não atualiza
     `knowledge/offline-manifest.json`. O sha256 foi recalculado com
-    `sparkforge.tools.offline._content_sha256`.
+    `sparkforge_aws.tools.offline._content_sha256`.
   - `tests/test_platform_compilers.py` procurava `sf-orchestrator` no registro real e
     passou a procurar `sf-runtime-specialist`.
   - Três links para páginas de referência removidas saíram já na T1, porque o

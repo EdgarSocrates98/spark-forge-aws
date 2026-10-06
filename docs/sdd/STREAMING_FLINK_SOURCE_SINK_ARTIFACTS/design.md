@@ -9,7 +9,7 @@ upstream:
   sha256: "d147889d0ba15964d10ad81f0e9f64de7ee5cd5ec0ac0f615fdc0e07fac541d3"
 files:
   - {path: tests/test_facts_flink.py, action: modify, reason: "Cobrir objeto/lista, aliases, ausência e isolamento de source/sink."}
-  - {path: sparkforge/facts/flink.py, action: modify, reason: "Emitir facts explícitos de source/sink e unresolved nomeado."}
+  - {path: sparkforge_aws/facts/flink.py, action: modify, reason: "Emitir facts explícitos de source/sink e unresolved nomeado."}
   - {path: fixtures/flink/flink_positive/input/dump.json, action: modify, reason: "Adicionar source Kafka e sink Iceberg observados ao golden positivo."}
   - {path: fixtures/flink, action: modify, reason: "Regenerar facts/findings e metas do corpus offline."}
   - {path: scripts/regen_flink_fixtures.py, action: modify, reason: "Manter regeneração determinística do corpus."}

@@ -24,7 +24,7 @@
 │  cliente (stdio | POST /mcp)                                              │
 │        │                                                                  │
 │        ▼                                                                  │
-│  mcp.server.lowlevel.Server("sparkforge", version, description,           │
+│  mcp.server.lowlevel.Server("sparkforge-aws", version, description,           │
 │        │                     instructions, cache_hints,                   │
 │        │                     on_list_tools, on_call_tool)                 │
 │        │                                                                  │
@@ -35,7 +35,7 @@
 │        └── tools/call ──► _call(ctx, params)                              │
 │                             │                                             │
 │                             ▼                                             │
-│               sparkforge/adapters/mcp_envelope.py  (SEM import de mcp)    │
+│               sparkforge_aws/adapters/mcp_envelope.py  (SEM import de mcp)    │
 │               ┌──────────────────────────────────────────────────┐        │
 │               │ 1. fora do catálogo do transporte → erro         │        │
 │               │ 2. validar_entrada(args, inputSchema)            │        │
@@ -67,8 +67,8 @@ PROVA DE PARIDADE (fora do caminho de produção)
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/adapters/mcp_envelope.py` | As três garantias que o 1.x fazia implicitamente, mais a conversão de exceção, como funções puras sobre dicts; devolve `Envelope` | Python + `jsonschema` (dependência do núcleo); nenhum import de `mcp` |
-| `sparkforge/adapters/mcp.py` | Casca: `Server` 2.x com `on_list_tools`/`on_call_tool`, SPEC 71, `build_http_app`, `main` | `mcp>=2,<3`, starlette, uvicorn |
+| `sparkforge_aws/adapters/mcp_envelope.py` | As três garantias que o 1.x fazia implicitamente, mais a conversão de exceção, como funções puras sobre dicts; devolve `Envelope` | Python + `jsonschema` (dependência do núcleo); nenhum import de `mcp` |
+| `sparkforge_aws/adapters/mcp.py` | Casca: `Server` 2.x com `on_list_tools`/`on_call_tool`, SPEC 71, `build_http_app`, `main` | `mcp>=2,<3`, starlette, uvicorn |
 | `scripts/mcp_parity.py` | Gera o golden sob o 1.x (`snapshot`) e compara sob qualquer versão (`diff`), por cliente em processo | SDK instalado no momento da execução |
 | `fixtures/mcp_parity/` | Golden congelado: `tools_list_{stdio,http}.json`, `calls.json`, `meta.json` (versão do SDK e do `jsonschema` que gerou) | JSON canônico, `sort_keys` |
 | `tests/test_adapters_mcp_envelope.py` | Os quatro caminhos do envelope, sem o SDK | pytest |
@@ -226,11 +226,11 @@ O `ttl_ms` de 1 hora é **convenção**, não medida: o catálogo só muda com u
 |---|------|--------|---------|-------|--------------|
 | 1 | `scripts/mcp_parity.py` | Create | `snapshot` (recusa sob 2.x), `diff`, dupla execução, `AMOSTRA` literal, cliente em processo nas duas versões | @agentspec:python:python-developer | None |
 | 2 | `fixtures/mcp_parity/{tools_list_stdio,tools_list_http,calls,meta}.json` | Create | Golden gerado pelo item 1 **sob o 1.29** | (general) | 1 |
-| 3 | `sparkforge/adapters/mcp_envelope.py` | Create | `Envelope`, `envelope_da_chamada`, `validar_entrada`, `validar_saida`, mensagens do 1.29 | @agentspec:python:python-developer | None |
+| 3 | `sparkforge_aws/adapters/mcp_envelope.py` | Create | `Envelope`, `envelope_da_chamada`, `validar_entrada`, `validar_saida`, mensagens do 1.29 | @agentspec:python:python-developer | None |
 | 4 | `tests/test_adapters_mcp_envelope.py` | Create | 4 caminhos + exceção + nome fora do catálogo, sem SDK (AT-004, 005, 006, 009) | @agentspec:test:test-generator | 3 |
 | 5 | `pyproject.toml` | Modify | `mcp>=2,<3` em `mcp` e `dev`; comentário do pin reescrito | (general) | 2 |
 | 6 | `requirements.txt` | Modify | Espelho do piso | (general) | 5 |
-| 7 | `sparkforge/adapters/mcp.py` | Modify | `Server` 2.x, `_list`/`_call` sobre o envelope, metadados, `cache_hints`, docstring do topo | @voltagent-dev-exp:mcp-developer | 3, 5 |
+| 7 | `sparkforge_aws/adapters/mcp.py` | Modify | `Server` 2.x, `_list`/`_call` sobre o envelope, metadados, `cache_hints`, docstring do topo | @voltagent-dev-exp:mcp-developer | 3, 5 |
 | 8 | `tests/test_adapters_mcp.py` | Modify | `_call` via `mcp.Client(server)`; handlers registrados conferidos pela API 2.x; SPEC 71; HTTP (AT-001, 002, 007, 008, 011) | @agentspec:test:test-generator | 7 |
 | 9 | `tests/test_mcp_parity.py` | Create | Golden × servidor vivo, `ALLOWLIST` com motivo (AT-001..003, SC3) | @agentspec:test:test-generator | 2, 7 |
 | 10 | `tests/test_mcp_modern_era.py` | Create | Cliente 2.x no protocolo `2026-07-28`: `server/discover` + `tools/list` (AT-010, COULD) | @voltagent-dev-exp:mcp-developer | 7 |
@@ -258,13 +258,13 @@ O `ttl_ms` de 1 hora é **convenção**, não medida: o catálogo só muda com u
 **Agent Discovery:**
 - Scanned: `agents/**/*.md` do plugin e os agentes disponíveis na sessão.
 - Matched by: tipo de arquivo, palavra-chave (MCP, test, python), caminho.
-- Nota de execução: como no build do debate, quando delegar, **um escritor por vez** na árvore, e o briefing de cada agente leva as armadilhas do repositório (lotes por arquivo, `git add` de `.py` novo, sem `.glob` em `sparkforge/`, sem `def` duplicado no mesmo escopo, arquivos vazios na raiz).
+- Nota de execução: como no build do debate, quando delegar, **um escritor por vez** na árvore, e o briefing de cada agente leva as armadilhas do repositório (lotes por arquivo, `git add` de `.py` novo, sem `.glob` em `sparkforge_aws/`, sem `def` duplicado no mesmo escopo, arquivos vazios na raiz).
 
 ---
 
 ## Code Patterns
 
-### Pattern 1: envelope puro (`sparkforge/adapters/mcp_envelope.py`)
+### Pattern 1: envelope puro (`sparkforge_aws/adapters/mcp_envelope.py`)
 
 ```python
 from __future__ import annotations
@@ -354,7 +354,7 @@ Observações que o build confere contra o golden, sem assumir:
 - `json.dumps(resultado, indent=2)` **sem** `ensure_ascii=False`, porque é o que o 1.29 fazia. Se o golden mostrar outra coisa, o golden vence;
 - `executar` recebe `tools.call_tool`. O `KeyError` de nome desconhecido não acontece para nome do catálogo, mas o `except Exception` reproduz o `str(e)` do 1.x para qualquer outra falha.
 
-### Pattern 2: casca do servidor 2.x (`sparkforge/adapters/mcp.py`)
+### Pattern 2: casca do servidor 2.x (`sparkforge_aws/adapters/mcp.py`)
 
 ```python
 def build_server(transport: str = "stdio") -> Any:
@@ -365,7 +365,7 @@ def build_server(transport: str = "stdio") -> Any:
     except ImportError as exc:
         raise SystemExit(_INSTALL_HINT) from exc
 
-    from sparkforge.adapters.mcp_envelope import envelope_da_chamada
+    from sparkforge_aws.adapters.mcp_envelope import envelope_da_chamada
 
     catalogo = tools_do_transporte(transport)
 
@@ -391,7 +391,7 @@ def build_server(transport: str = "stdio") -> Any:
         )
 
     return Server(
-        "sparkforge",
+        "sparkforge-aws",
         version=_versao_do_pacote(),
         description=_DESCRICAO,
         instructions=_INSTRUCOES,
@@ -445,7 +445,7 @@ def _canonico(modelo: Any) -> str:
 Prova:
 A. [1.29] mcp_parity.py snapshot ×2 → iguais? → fixtures/mcp_parity/ (commit)
 B. [2.x]  test_mcp_parity.py: servidor vivo → _canonico → diff contra golden ⊆ ALLOWLIST
-C. [host] run_agentic_eval.py (N=3) → python -m sparkforge.evals compare
+C. [host] run_agentic_eval.py (N=3) → python -m sparkforge_aws.evals compare
 ```
 
 ---
@@ -469,7 +469,7 @@ C. [host] run_agentic_eval.py (N=3) → python -m sparkforge.evals compare
 | Integration | Construção, SPEC 71, HTTP `/mcp` e `/mcp/`, lifespan, SDK ausente | `tests/test_adapters_mcp.py` | pytest + `mcp.Client` | Todos os AT do adapter |
 | Parity | Golden 1.29 × servidor 2.x | `tests/test_mcp_parity.py` | pytest | `tools/list` × 2 + a amostra inteira |
 | Protocol | Era moderna `2026-07-28` | `tests/test_mcp_modern_era.py` | pytest + `mcp.Client` | `server/discover`, `tools/list` |
-| Agent eval | Baseline Haiku × candidato 2.x, N = 3 | `scripts/run_agentic_eval.py`, `python -m sparkforge.evals compare` | host `claude -p` | 0 transições pass→fail/mixed |
+| Agent eval | Baseline Haiku × candidato 2.x, N = 3 | `scripts/run_agentic_eval.py`, `python -m sparkforge_aws.evals compare` | host `claude -p` | 0 transições pass→fail/mixed |
 | Regression | Suíte completa, um processo por arquivo | `tests/test_suite_batches.py::LOTES` | pytest | 0 falhas |
 | Gates | lastro, status, surface, evals, lock, ruff, Snyk Code, SCA | `scripts/check_*.py`, `gen_lock.py --check` | — | Todos verdes |
 

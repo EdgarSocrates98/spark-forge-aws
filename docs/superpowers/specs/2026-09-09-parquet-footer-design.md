@@ -46,7 +46,7 @@ podem ser descartados. O motor diz que está tudo bem, e a leitura custa 40×.
 
 ## 2. As duas camadas
 
-### 2.1 Coletor — `sparkforge/collect/parquet_footer.py`
+### 2.1 Coletor — `sparkforge_aws/collect/parquet_footer.py`
 
 Lê **só o footer**, nunca o dado. Um artefato JSON por prefixo coletado, no
 molde de `collect/cloudwatch_logs.py`.
@@ -62,7 +62,7 @@ declara `--max-files`, e o artefato registra `files_seen`, `files_read` e
 `sampling` — um censo parcial que se anuncia como parcial. Escolher a amostra em
 silêncio seria escolher o diagnóstico.
 
-### 2.2 Extrator — `sparkforge/facts/parquet_footer.py`
+### 2.2 Extrator — `sparkforge_aws/facts/parquet_footer.py`
 
 ```
 parquet.file             num_rows, num_row_groups, total_byte_size, created_by, format_version

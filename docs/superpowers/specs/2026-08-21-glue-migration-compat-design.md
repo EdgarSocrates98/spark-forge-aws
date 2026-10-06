@@ -17,7 +17,7 @@ harness; esta fase entrega o vertical, e a §8 registra o critério para o encon
 
 ## 1. Contexto: o fato de versão está em dois lugares e um deles é código
 
-`sparkforge/facts/runtime_detect.py:51` carrega `GLUE_MATRIX`, uma constante Python com
+`sparkforge_aws/facts/runtime_detect.py:51` carrega `GLUE_MATRIX`, uma constante Python com
 Glue 3.0, 4.0, 5.0 e 5.1. Em paralelo, `knowledge/glue/runtime-matrix.md` descreve a mesma
 matéria para leitura humana. Não há mecanismo que force as duas a concordarem, e a §4 do
 `prompt_migrations_glue.md` proíbe exatamente esse arranjo: "nunca usar essa tabela
@@ -29,7 +29,7 @@ trabalho. Este documento **não** adota esses valores: eles precisam de fonte of
 data de consulta, e o mecanismo para isso já existe em `knowledge/sources.lock.json`, que
 vigia 131 fontes.
 
-O analisador de migração atual, `sparkforge/migration/glue/analyzer.py`, tem 4.8 KB, um
+O analisador de migração atual, `sparkforge_aws/migration/glue/analyzer.py`, tem 4.8 KB, um
 `target_runtime` com default `"5.1"` e checagens da forma
 `"python_version" in script_content and "3.10" in script_content`. Isso é busca de
 substring em texto, não análise de compatibilidade, e o par de versões está embutido em
@@ -66,7 +66,7 @@ Glue contendo `spark`, `python`, `scala`, `java`, `iceberg`, `hudi`, `delta`, `s
 `status` (suportada, EOS, EOL), `sources` e `retrieved`.
 
 `GLUE_MATRIX` é apagado de `runtime_detect.py`; o carregamento passa pelo dado. Um teste
-falha se qualquer versão voltar a aparecer hardcoded em `sparkforge/` fora do loader.
+falha se qualquer versão voltar a aparecer hardcoded em `sparkforge_aws/` fora do loader.
 
 `knowledge/glue/runtime-matrix.md` permanece para leitura humana e passa a ser conferido
 contra o YAML, no mesmo padrão de `scripts/sync_skills.py --check`: o espelho é exatamente o
@@ -102,14 +102,14 @@ O plano de execução que sai disso pode ser um salto único. A análise nunca �
 
 ### D-5 — o extrator observa, a regra julga
 
-`sparkforge/facts/migration.py` emite fato, nunca veredito. Um import `com.amazonaws.*` é
+`sparkforge_aws/facts/migration.py` emite fato, nunca veredito. Um import `com.amazonaws.*` é
 observação; que ele seja bloqueante para um alvo específico é julgamento de regra, com faixa
 de versão declarada. Essa divisão é o que permite reavaliar facts antigos com catálogo novo
 sem reparsear artefato.
 
 ## 4. Facts
 
-Extrator novo, `sparkforge/facts/migration.py`, com `EMITTED_KINDS` fechado como os outros 20:
+Extrator novo, `sparkforge_aws/facts/migration.py`, com `EMITTED_KINDS` fechado como os outros 20:
 
 | kind | observa |
 |---|---|
@@ -160,7 +160,7 @@ dado, performance, custo e canary nascem `BLOCKED` nomeando a evidência ausente
 - Nenhuma regra inalcançável sem `blocked_on` declarado.
 - **Par genérico:** um segundo par de versões seleciona conjunto diferente de regras sem
   alteração em Python. Este é o teste que prova ou derruba a generalidade.
-- **Sem versão hardcoded:** nenhuma versão de Glue aparece em `sparkforge/` fora do loader da
+- **Sem versão hardcoded:** nenhuma versão de Glue aparece em `sparkforge_aws/` fora do loader da
   matriz.
 - Paridade entre `runtime-matrix.yaml` e `runtime-matrix.md`.
 
@@ -180,7 +180,7 @@ Critério registrado: duas instâncias, estrutura comum medida, e só então o c
 
 ## 9. Em aberto para a implementação decidir
 
-- Onde vive o resolvedor de caminho de versão: módulo próprio em `sparkforge/migration/` ou
+- Onde vive o resolvedor de caminho de versão: módulo próprio em `sparkforge_aws/migration/` ou
   função no loader da matriz. Depende de quem mais precisar dele.
 - Se `mig.ansi_risk` é um kind só com subtipo no payload, ou kinds separados por classe de
   risco. A escolha afeta quantas regras precisam existir e deve sair do primeiro corpus de
@@ -192,7 +192,7 @@ Critério registrado: duas instâncias, estrutura comum medida, e só então o c
 
 1. `knowledge/glue/runtime-matrix.yaml` existe, com `sources` conferidas contra
    `knowledge/sources.lock.json` e `retrieved` preenchido em toda entrada.
-2. `GLUE_MATRIX` não existe mais em `sparkforge/`, e o teste que proíbe versão hardcoded passa.
+2. `GLUE_MATRIX` não existe mais em `sparkforge_aws/`, e o teste que proíbe versão hardcoded passa.
 3. Área `SF-MIG` no catálogo, com toda regra alcançável ou com `blocked_on` declarado.
 4. Extrator `migration.py` com `EMITTED_KINDS` fechado, e todo kind alcançado por regra.
 5. O par `4.0 → 6.0` produz um `MigrationAssessment` completo contra fixture, com os gates que

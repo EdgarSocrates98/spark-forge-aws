@@ -10,16 +10,16 @@ from __future__ import annotations
 import json
 import pathlib
 
-from sparkforge.facts.fusion import fuse
-from sparkforge.facts.lakeformation_missing_grant import (
+from sparkforge_aws.facts.fusion import fuse
+from sparkforge_aws.facts.lakeformation_missing_grant import (
     EMITTED_KINDS,
     OPERACOES_MAPEADAS,
     build_missing_grant,
     load_table,
     requirement,
 )
-from sparkforge.findings.models import Fact
-from sparkforge.simulate.diff import DERIVED_KINDS
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.simulate.diff import DERIVED_KINDS
 
 PROV = {"extractor": "teste@0.0.0", "artifact": "memoria"}
 ROLE = "arn:aws:iam::111111111111:role/glue-curated"
@@ -130,7 +130,7 @@ def _glue(versao: str) -> Fact:
     )
 
 
-LOCAL = "arn:aws:s3:::sparkforge-demo/default/dim_cliente"
+LOCAL = "arn:aws:s3:::sparkforge-aws-demo/default/dim_cliente"
 
 
 def _registrada(sim: bool = True, arn: str = LOCAL, tabela: str = TABELA) -> Fact:
@@ -232,7 +232,7 @@ def test_sem_operacao_recusa_por_nome():
     assert _de(saida, "lakeformation.missing_grant") == []
     (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
     assert recusa.attrs["reason"] == "operacao_nao_medida"
-    assert "sparkforge analyze pyspark" in recusa.attrs["unblocked_by"]
+    assert "sparkforge-aws analyze pyspark" in recusa.attrs["unblocked_by"]
 
 
 def test_fta_append_sem_all_acusa_all():
@@ -468,7 +468,7 @@ def test_mais_de_um_role_na_decisao_de_iam_e_principal_ambiguo():
 
 def test_mensagem_que_nomeia_s3_ou_arn_nao_e_tabela():
     for bruto in (
-        "s3://sparkforge-demo/default/dim_cliente",
+        "s3://sparkforge-aws-demo/default/dim_cliente",
         "arn:aws:glue:us-east-1:111111111111:table/default/dim_cliente",
     ):
         pool = [_gatilho(linha=_linha(bruto)), *cenario_fta_append_sem_all()[1:]]
@@ -622,7 +622,7 @@ def test_clausula_on_ilegivel_recusa_recurso_nao_lido():
 
 
 def test_s3a_e_s3n_nao_sao_tabela():
-    for bruto in ("s3a://sparkforge-demo/default/dim_cliente", "s3n://b/k"):
+    for bruto in ("s3a://sparkforge-aws-demo/default/dim_cliente", "s3n://b/k"):
         pool = [_gatilho(linha=_linha(bruto)), *cenario_fta_append_sem_all()[1:]]
         (recusa,) = _so_recusas(build_missing_grant(pool))
         assert recusa.attrs["reason"] == "recurso_nao_e_tabela", bruto
@@ -772,9 +772,9 @@ def test_trecho_cortado_recusa_truncado_e_nao_acusa_o_candidato_unico():
 def test_gatilho_real_guarda_o_teto_e_recusa_truncado():
     # Monta o gatilho pelo caminho REAL do matcher e do extrator de excecao: se o
     # teto mudar la, este teste acusa.
-    from sparkforge.errors.matcher import build_signature_matches
-    from sparkforge.facts.exception import build_exceptions
-    from sparkforge.facts.lakeformation_missing_grant import _TETO_DO_TRECHO
+    from sparkforge_aws.errors.matcher import build_signature_matches
+    from sparkforge_aws.facts.exception import build_exceptions
+    from sparkforge_aws.facts.lakeformation_missing_grant import _TETO_DO_TRECHO
 
     mensagem = _encostado(FRASE + "default.dim_cliente", "_hist (Service: AWSGlue)")
     log = Fact(
@@ -870,8 +870,8 @@ def test_recusas_de_clausulas_diferentes_nao_colapsam():
 
 def _gatilhos_reais(mensagem: str, classe: str = "AccessDeniedException") -> dict[str, Fact]:
     """Os gatilhos ERR-LF-001 que o matcher real grava, por porta."""
-    from sparkforge.errors.matcher import build_signature_matches
-    from sparkforge.facts.exception import build_exceptions
+    from sparkforge_aws.errors.matcher import build_signature_matches
+    from sparkforge_aws.facts.exception import build_exceptions
 
     log = Fact(
         kind="cloudwatch.log_event",
@@ -1067,7 +1067,7 @@ def test_fgac_sem_registro_coletado_recusa_e_nao_cobra_o_iam():
         (recusa,) = _so_recusas(build_missing_grant(pool))
         assert recusa.attrs["reason"] == "registro_nao_coletado"
         assert "conflito declarado" in recusa.attrs["unblocked_by"]
-        assert "sparkforge collect lakeformation" in recusa.attrs["unblocked_by"]
+        assert "sparkforge-aws collect lakeformation" in recusa.attrs["unblocked_by"]
 
 
 def test_fgac_negacoes_da_mesma_acao_em_dois_recursos_nao_colapsam():
@@ -1224,7 +1224,7 @@ def test_fta_registro_qualificado_por_catalogo_casa_no_lado_lf():
 # escopada ao prefixo da tabela da implicitDeny em `*`, no bucket nu, na localizacao
 # sem `/*`, num prefixo mais largo e num objeto qualquer: nenhum deles e evidencia
 # sobre a tabela. explicitDeny num recurso que contem a tabela vale para ela.
-BUCKET = "arn:aws:s3:::sparkforge-demo"
+BUCKET = "arn:aws:s3:::sparkforge-aws-demo"
 PUT = "s3:PutObject"
 
 
@@ -1307,7 +1307,7 @@ def test_prefixo_do_bucket_acusa_so_com_explicit_deny():
 
 
 def test_recurso_em_s3_uri_ou_arn_e_barra_final_normalizam():
-    uri = "s3://sparkforge-demo/default/dim_cliente"
+    uri = "s3://sparkforge-aws-demo/default/dim_cliente"
     for local, recurso in ((uri + "/", LOCAL + "/*"), (LOCAL, uri + "/*")):
         pool = _fgac_51(
             _registrada(False, arn=local), _decisao(PUT, "implicitDeny", recurso=recurso)
@@ -1317,7 +1317,7 @@ def test_recurso_em_s3_uri_ou_arn_e_barra_final_normalizam():
 
 
 def test_decisoes_da_tabela_isolada():
-    from sparkforge.facts.lakeformation_missing_grant import _decisoes_da_tabela
+    from sparkforge_aws.facts.lakeformation_missing_grant import _decisoes_da_tabela
 
     negada = _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*")
     coberta = _decisao(PUT, "allowed", recurso=LOCAL + "/*")
@@ -1359,7 +1359,7 @@ def test_decisao_negada_com_nome_desconhecido_recusa():
 
 
 def test_duas_localizacoes_para_a_mesma_tabela_nao_escolhem_a_primeira():
-    outra = "arn:aws:s3:::sparkforge-demo/staging/outra"
+    outra = "arn:aws:s3:::sparkforge-aws-demo/staging/outra"
     negada = _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*")
     for registros in (
         [_registrada(False), _registrada(False, arn=outra)],
@@ -1479,7 +1479,7 @@ def test_fta_modo_nao_lido_acusa_all_de_write_sem_recusa_de_modo():
 def _tabela_em_que_overwrite_cobra_mais(monkeypatch) -> None:
     """Nenhuma linha da tabela citada tem hoje overwrite cobrando mais que write; o
     ramo `modo_de_escrita_nao_lido` e generico, e continua medido com esta tabela."""
-    from sparkforge.facts import lakeformation_missing_grant as modulo
+    from sparkforge_aws.facts import lakeformation_missing_grant as modulo
 
     real = modulo.requirement
 
@@ -1518,7 +1518,7 @@ def test_modo_nao_lido_recusa_quando_so_o_overwrite_cobraria_mais(monkeypatch):
 def test_modo_nao_lido_nao_muta_o_fact_que_o_lado_devolveu(monkeypatch):
     # A marca `mode_unresolved` sai num fact novo: o que o lado construiu fica como
     # foi construido.
-    from sparkforge.facts import lakeformation_missing_grant as modulo
+    from sparkforge_aws.facts import lakeformation_missing_grant as modulo
 
     devolvido = Fact(
         kind="lakeformation.missing_grant",
@@ -1618,7 +1618,7 @@ def test_fontes_da_tabela_estao_no_lock():
 
 def test_runtime_ausente_manda_para_o_caminho_que_produz_a_versao():
     # `runtime detect` nunca vira `env.runtime_signal` com `component: glue`
-    # (sparkforge/facts/runtime_detect.py), entao mandar o operador para la nao destrava
+    # (sparkforge_aws/facts/runtime_detect.py), entao mandar o operador para la nao destrava
     # nada. O que da a versao hoje e o `glue_version` literal do Terraform.
     (recusa,) = _so_recusas(build_missing_grant(_fgac_sem_runtime()))
     texto = recusa.attrs["unblocked_by"]

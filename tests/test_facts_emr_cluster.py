@@ -17,7 +17,7 @@ import json
 
 import pytest
 
-from sparkforge.facts.emr_cluster import (
+from sparkforge_aws.facts.emr_cluster import (
     EMITTED_KINDS,
     extract_emr_cluster,
     extract_emr_cluster_path,
@@ -392,7 +392,7 @@ class TestAmNodeLabel:
     Ele existe porque `rules/engine.py::_absent_satisfied` so compara `kind`, e
     o gatilho de SF-EMR-008 e a ausencia de uma COMBINACAO. Cada teste desta
     classe e uma das decisoes documentadas na secao homonima da docstring de
-    `sparkforge/facts/emr_cluster.py`, e o invariante que as costura e: o fact
+    `sparkforge_aws/facts/emr_cluster.py`, e o invariante que as costura e: o fact
     afirma "o AM nao esta PROVADAMENTE solto", entao ele SO pode faltar quando o
     dump prova que nada restringe o AM. Fact emitido de menos acusa cluster
     correto; emitido de mais cala a regra sobre cluster exposto.

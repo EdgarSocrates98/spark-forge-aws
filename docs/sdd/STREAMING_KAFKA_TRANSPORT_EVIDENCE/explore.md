@@ -33,10 +33,10 @@ evidence-first do repositório.
 
 ## Evidência consultada
 
-- `sparkforge sdd status --repo .`: `STREAMING_TRANSPORT_DIAGNOSTICS` já emite
+- `sparkforge-aws sdd status --repo .`: `STREAMING_TRANSPORT_DIAGNOSTICS` já emite
   `kafka.partition` e `kafka.lag`, mas registra que regras com baseline e série
   continuam pendentes.
-- `sparkforge/facts/transport.py`: o extrator preserva `replication_factor`,
+- `sparkforge_aws/facts/transport.py`: o extrator preserva `replication_factor`,
   `isr_count`, offsets, lag e timestamps existentes, sem composição de série.
 - `knowledge/transport-diagnostics.md` e `docs/streaming/prompt-coverage.md`:
   snapshot de transporte não prova hot partition, causa ou tendência longa.

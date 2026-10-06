@@ -15,14 +15,14 @@ resource "aws_glue_job" "etl_fgac_alvo_registrado" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-lakeformation-fine-grained-access" = "true"
     "--enable-spark-ui"                          = "true"
-    "--spark-event-logs-path"                    = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"                    = "s3://sparkforge-aws-demo/spark-logs/"
     "--conf"                                     = "spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog"
   }
 }

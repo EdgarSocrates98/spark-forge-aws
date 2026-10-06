@@ -41,10 +41,10 @@ sobre dados sintéticos (`spark.range`). A observação está em
 
 ## Medidas lidas antes de propor
 
-- `sparkforge/facts/spark_plan.py` reconhece operador por nome exato
+- `sparkforge_aws/facts/spark_plan.py` reconhece operador por nome exato
   (`_JOIN_OPERATORS`, `_EXCHANGE_OPERATORS`, `_PYTHON_UDF_OPERATORS`...) e ignora raiz
   fora de `_KNOWN_OPERATOR_ROOTS`.
-- `sparkforge analyze plan` sobre o plano Photon observado, rodado fora do
+- `sparkforge-aws analyze plan` sobre o plano Photon observado, rodado fora do
   repositório: emite só `plan.analyzed` e `plan.aqe` — nenhum `plan.join`,
   `plan.exchange` nem `plan.unresolved`.
 - Sobre o plano da UDF: `plan.python_udf` com `operator: ArrowEvalPython` e
@@ -73,7 +73,7 @@ em número suficiente; C foi superada por A, que cobre o caso Photon sem abrir
   recebe o runtime, então a recusa por fact precisa de um caminho — um fact que
   `_runtime_e_facts` traduz para `photon: on`, ou o engine olhando os facts.
 - O que o `udf_type` do `ArrowEvalPython` passa a dizer, e quais regras o leem
-  (`sparkforge rules lookup` pelas que exigem `plan.python_udf`).
+  (`sparkforge-aws rules lookup` pelas que exigem `plan.python_udf`).
 - Se o plano que vem no event log (`SparkListenerSQLExecutionStart`) também traz
   operadores Photon: não observado (serverless não entrega event log); fica fora ou
   vira lacuna nomeada.

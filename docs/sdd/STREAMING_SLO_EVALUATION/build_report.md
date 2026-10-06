@@ -34,7 +34,7 @@ tasks:
     green: {command: "python -m pytest tests/test_surface_lock.py::TestOLockBateComAMedida::test_the_tool_catalogue_matches -q", exit: 0}
 claims:
   - text: "mode=slo compõe uma declaração streaming.slo com métricas diretamente observadas em streaming.progress.batch e separa met, violated e unresolved sem inferir sucesso por ausência de evidência."
-    evidence_ref: "sparkforge/facts/streaming_slo.py; tests/test_facts_streaming_slo.py"
+    evidence_ref: "sparkforge_aws/facts/streaming_slo.py; tests/test_facts_streaming_slo.py"
   - text: "SF-STREAM-011 julga somente violação SLO observada e SF-STREAM-012 preserva a barreira de evidência como finding estrutural."
     evidence_ref: "rules/catalog/streaming-operations.yaml; tests/test_streaming_rules.py::test_slo_evaluation_rules_are_evidence_first"
   - text: "CLI e MCP usam o mesmo core read-only para mode=slo."

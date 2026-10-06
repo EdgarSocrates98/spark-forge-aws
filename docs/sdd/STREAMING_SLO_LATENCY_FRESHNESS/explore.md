@@ -27,7 +27,7 @@ chosen: A
 
 ## Evidência que abriu a frente
 
-`sparkforge/facts/streaming_slo.py` já avalia séries timestampadas de progress,
+`sparkforge_aws/facts/streaming_slo.py` já avalia séries timestampadas de progress,
 sink, Kafka e Kinesis, mas só compara cada valor individual. O contrato de
 streaming cita p95 end-to-end latency e freshness como SLOs relevantes, porém
 `streaming.progress.batch` ainda não publica uma métrica de freshness derivada

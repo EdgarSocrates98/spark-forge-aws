@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.iceberg_metadata import (
+from sparkforge_aws.facts.iceberg_metadata import (
     _VERSOES_DA_SPEC,
     extract_iceberg_metadata,
 )
@@ -59,7 +59,7 @@ class TestAsTresVersoesDaSpec:
         legitima. Este teste existe para que a "unificacao" obvia das duas
         constantes tenha de passar por cima da distincao.
         """
-        from sparkforge.storage import feature_support
+        from sparkforge_aws.storage import feature_support
 
         assert 1 in _VERSOES_DA_SPEC
         assert 1 not in feature_support.SPEC_VERSIONS
@@ -144,7 +144,7 @@ class TestOFactSaiSempre:
         assert a["reason"] == "format_version_ausente_no_dump"
 
     def test_o_kind_esta_no_namespace_declarado(self):
-        from sparkforge.facts.iceberg_metadata import EMITTED_KINDS
+        from sparkforge_aws.facts.iceberg_metadata import EMITTED_KINDS
 
         assert "iceberg.format_version" in EMITTED_KINDS
 

@@ -7,7 +7,7 @@ Use quando houver requisitos de workload streaming e for necessário comparar ca
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/design-realtime-data-architecture/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-realtime-candidate-matrix.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge architecture streaming']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-realtime-candidate-matrix.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws architecture streaming']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -18,7 +18,7 @@ Use JSON offline para separar requisitos declarados de premissas e executar a
 matriz de candidatos:
 
 ```bash
-sparkforge architecture streaming \
+sparkforge-aws architecture streaming \
   --path workload-requirements.json \
   --out streaming-architecture.json
 ```

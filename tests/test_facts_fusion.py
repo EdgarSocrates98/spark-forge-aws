@@ -1,9 +1,9 @@
-from sparkforge.facts.catalog_schema import extract_catalog_schema
-from sparkforge.facts.fusion import EMITTED_KINDS, EXTRACTOR_ID, fuse
-from sparkforge.facts.sql_literal import extract_sql
-from sparkforge.findings.validate import validate_fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.catalog_schema import extract_catalog_schema
+from sparkforge_aws.facts.fusion import EMITTED_KINDS, EXTRACTOR_ID, fuse
+from sparkforge_aws.facts.sql_literal import extract_sql
+from sparkforge_aws.findings.validate import validate_fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 EXPECTED_KINDS = {
     "sql.projection.enriched",

@@ -1,9 +1,9 @@
 # SparkForge AWS — ledger de entrega das evoluções
 
-**Atualizado em:** 2026-10-03
-**Fonte de estado:** `sparkforge sdd status --repo .`  
-**Escopo:** `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md` e
-`prompt_evo_forge_lab.md`
+**Atualizado em:** 2026-10-05
+**Fonte de estado:** `sparkforge-aws sdd status --repo .`  
+**Escopo:** `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md`,
+`prompt_evo_forge_lab.md` e `prompt_evo_new_step1.md`
 
 Este ledger é a leitura curta do que foi entregue. O detalhe técnico permanece
 nos `ship.md`, no catálogo de regras, nas skills, no conhecimento e nos guias
@@ -17,12 +17,20 @@ referenciados aqui. Ele não transforma contrato offline em capacidade live.
 | Streaming / real-time / batch | Structured Streaming, Kafka/MSK/Kinesis, Flink, Glue Streaming/RTM, CDC/Debezium/DMS, Schema Registry, Iceberg, eventos, serving, SLO/FinOps/security, collectors read-only e matrizes de runtime | Entregue como contratos e diagnósticos offline |
 | Forge Lab | DSL, registry, Golden 20, geradores, faults allowlisted, Compose/Testcontainers, probes, oracle, receipts, promoção de fixtures, tier AWS explícito e contrato topológico offline | `FORGE_LAB_PRODUCT` + `FORGE_LAB_DIGITAL_TWIN` entregues offline |
 | Economia de contexto | profiles, caps, payload bytes, transcript usage, refresh incremental, grafo semântico, receipts e benchmark determinístico | Entregue; economia financeira/provider continua não inferida |
+| Agentic OS v2 | memória/trust, contexto mínimo, ledger, router shadow, checkpoint, Forge/A2A, AgentOps e superfícies CLI/MCP | Implementado; suíte final integral e gates de ship verdes |
 
 O produto está pronto para auxiliar projetos streaming e batch com evidência
 reproduzível, julgamento rastreável e especialistas roteáveis. Execução Spark/Flink,
 replay, endpoints live, benchmark cloud e validação funcional continuam exigindo
 artefatos reais; quando ausentes, o SparkForge retorna `unresolved`, `N/A + motivo`
 ou recusa nomeada.
+
+## Agentic OS v2 — onda em fechamento
+
+Os contratos estão em `docs/sdd/AGENTIC_ENGINEERING_OS_V2/`, com commits separados por
+área e ADR em `docs/vnext/adrs/ADR-012-agentic-os-v2-contracts.md`. O caminho é local-first:
+nenhum módulo novo chama provider ou AWS. `tokens_unresolved`, `cost_basis` ausente,
+qualidade sem contrato e memória sem evidência continuam estados explícitos.
 
 ## Estado SDD
 
@@ -301,9 +309,9 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 
 | Prova | Resultado |
 |---|---|
-| `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14533** coletados em 2026-10-03; pipeline end-to-end: 5 goldens, 967 testes de fixtures/reachability/kinds e gates focados; Forge Lab Digital Twin: 3 testes focados; Flink temporal: 11 unitários, 7 goldens, 69 kinds; suíte completa não executada |
-| Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped; resultado histórico, não reexecutado após Flink temporal |
+| `sparkforge-aws lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
+| Suíte integral atual | **14538 passed, 14 skipped** em 2026-10-05; registrada no ship do Agentic OS v2 |
+| Corpus e gates de domínio | pipeline end-to-end: 5 goldens, 967 testes de fixtures/reachability/kinds e gates focados; Forge Lab Digital Twin: 3 testes focados; Flink temporal: 11 unitários, 7 goldens, 69 kinds |
 | Docs e cobertura | **145 passed** em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror, hash locks, `twine check` e wheel instalado verdes; `verify_wheel --keep`: builds byte-identical, bundle integrate válido, **3514 passed, 5 skipped** em 1:24:00 |
 | Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; Flink temporal upstream: 11 unitários, 7 goldens e 69 kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 94 testes Iceberg, 116 gates de corpus e 604 snapshots temporais preservados; propagação composta: 332 goldens CloudWatch/consumers; fechamento residual: 37 cenários, 3 Glue cross-artifact e 1 scan; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
@@ -326,9 +334,8 @@ AWS ou eficácia de uma recomendação em produção.
    explícita e SLO de longo período ainda exigem coleta pareada live.
 4. IAM/KMS/VPC/resource policies e snapshots regionais/managed runtime precisam
    do artefato correspondente.
-5. `check_vnext_claims.py` reportou 27 divergências de provas command em
-   alegações históricas de `docs/vnext/`/`docs/harness/`; elas não são alteradas
-   por este fechamento e permanecem dívida documental explícita.
+5. `check_vnext_claims.py` está verde após a reconciliação dos documentos vNext e do
+   manifesto; entradas removidas permanecem classificadas como `REMOVIDA`.
 6. `activation_ready` permanece `false`; `shadow` e router legado são rollback.
 
 ## Como manter este ledger
@@ -336,7 +343,7 @@ AWS ou eficácia de uma recomendação em produção.
 Após cada fase, atualizar este arquivo e os documentos de domínio, então executar:
 
 ```powershell
-sparkforge sdd status --repo .
+sparkforge-aws sdd status --repo .
 python scripts/gen_reference_docs.py --check
 python scripts/sync_skills.py --check
 python scripts/check_surface_lock.py

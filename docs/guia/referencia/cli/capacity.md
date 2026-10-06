@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge capacity`
+# `sparkforge-aws capacity`
 
 Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades que o job JA rodou. Nunca aplica a mudanca.
 
 ```bash
-sparkforge capacity --help
+sparkforge-aws capacity --help
 ```
 
 ## Opções

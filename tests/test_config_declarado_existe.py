@@ -31,7 +31,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters.tools import TOOLS
+from sparkforge_aws.adapters.tools import TOOLS
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,7 +83,7 @@ NAO_E_NOME = None
 # `config/agentic-expansion.yaml` -- "resolveria hoje e deixaria o proximo registro sem
 # trava" --, e era exatamente ai que o gate estava.
 #
-# So REFERENCIA sai. `config/agents.yaml::agents[].name` NAO entra: `sparkforge/registry/
+# So REFERENCIA sai. `config/agents.yaml::agents[].name` NAO entra: `sparkforge_aws/registry/
 # loader.py` sintetiza o `AgentManifest` a partir do proprio registro, e cinco dos seis
 # nomes nao tem `agents/<nome>.md` por desenho. Definicao nao resolve para arquivo.
 MAPA = (
@@ -93,13 +93,13 @@ MAPA = (
         "config/agentic-expansion.yaml",
         ("tools",),
         _tool_existe,
-        "entrada em sparkforge.adapters.tools.TOOLS",
+        "entrada em sparkforge_aws.adapters.tools.TOOLS",
     ),
     (
         "config/agents.yaml",
         ("agents", "allowed_tools"),
         _tool_existe,
-        "entrada em sparkforge.adapters.tools.TOOLS",
+        "entrada em sparkforge_aws.adapters.tools.TOOLS",
     ),
     ("config/agents.yaml", ("agents", "knowledge_refs"), _caminho_existe, "caminho no repositorio"),
     ("config/teams-expansion.yaml", ("teams", "coordinator"), _agente_existe, "arquivo em agents/"),
@@ -319,7 +319,7 @@ def test_o_registro_de_subagents_saiu_e_ninguem_o_le():
 
     Os contratos existiam -- 16 de 16 -- e eram BYTE-IDENTICOS abaixo de `## Contract`;
     a descricao de cada um era o proprio nome com o hifen trocado por espaco. Nenhum
-    modulo de `sparkforge/`, `scripts/` ou `tests/` os lia, ao contrario de `skills/` e
+    modulo de `sparkforge_aws/`, `scripts/` ou `tests/` os lia, ao contrario de `skills/` e
     `agents/`, que varios leem. A lacuna U1 do define -- um consumidor FORA do
     repositorio -- nao e alcancavel daqui, e o rollback do D3 e a rede dela.
     """
@@ -328,7 +328,7 @@ def test_o_registro_de_subagents_saiu_e_ninguem_o_le():
 
     # E nenhum modulo passou a LER o que saiu.
     eu = Path(__file__).resolve()
-    for diretorio in ("sparkforge", "scripts", "tests"):
+    for diretorio in ("sparkforge_aws", "scripts", "tests"):
         for arquivo in sorted((ROOT / diretorio).rglob("*.py")):
             if arquivo.resolve() == eu:
                 continue  # o guarda nao e sujeito de si mesmo: a agulha mora aqui

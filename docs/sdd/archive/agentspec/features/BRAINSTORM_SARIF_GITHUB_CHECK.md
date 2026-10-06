@@ -15,11 +15,11 @@
 
 ## Initial Idea
 
-**Raw Input:** Frente §22 de `prompt_new_evo.md`, "UX: existe um produto escondido dentro da CLI". A proposta: `sparkforge scan . --format sarif` para aparecer no GitHub Code Scanning, e um GitHub Check no PR ("41 checks passed / 3 findings / 1 P0"). Deterministico e sem provider. Branch `feat/sarif-github-check`, a partir da `main` (que ja tem o #49).
+**Raw Input:** Frente §22 de `prompt_new_evo.md`, "UX: existe um produto escondido dentro da CLI". A proposta: `sparkforge-aws scan . --format sarif` para aparecer no GitHub Code Scanning, e um GitHub Check no PR ("41 checks passed / 3 findings / 1 P0"). Deterministico e sem provider. Branch `feat/sarif-github-check`, a partir da `main` (que ja tem o #49).
 
 **Context Gathered:**
-- Nenhum arquivo em `sparkforge/` cita SARIF. Tambem nao existe verbo `scan`. Existe `report sign`/`report verify`, uma familia `report` onde o verbo novo cabe.
-- `Finding` (`sparkforge/findings/models.py`) nao tem campo de localizacao: onde o problema esta vive em `subject`, e cada `evidence` e um `fact_id`, cujo fact tem o proprio `subject`.
+- Nenhum arquivo em `sparkforge_aws/` cita SARIF. Tambem nao existe verbo `scan`. Existe `report sign`/`report verify`, uma familia `report` onde o verbo novo cabe.
+- `Finding` (`sparkforge_aws/findings/models.py`) nao tem campo de localizacao: onde o problema esta vive em `subject`, e cada `evidence` e um `fact_id`, cujo fact tem o proprio `subject`.
 - **Medido nos goldens (`fixtures/**/expected/findings.json`, 222 findings):**
 
   | `subject.type` | Findings | Com `file` | Com `line` |
@@ -47,7 +47,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/report/` (ou `sparkforge/github/`) para a projecao; `adapters/_core.py`, `adapters/cli.py` e `adapters/tools.py` para o verbo e a tool; `fixtures/sarif/`; `docs/` e `examples/github/` | O verbo compoe sobre findings e facts, no molde dos verbos de topo |
+| Likely Location | `sparkforge_aws/report/` (ou `sparkforge_aws/github/`) para a projecao; `adapters/_core.py`, `adapters/cli.py` e `adapters/tools.py` para o verbo e a tool; `fixtures/sarif/`; `docs/` e `examples/github/` | O verbo compoe sobre findings e facts, no molde dos verbos de topo |
 | Relevant KB Domains | CI/CD (GitHub Actions), testing (golden, validacao por JSON Schema), static analysis reporting (SARIF 2.1.0) | Padrao de golden por fixture e de schema versionado |
 | IaC Patterns | GitHub Actions (`ci.yml`) | Um job novo, so por `workflow_dispatch` |
 
@@ -70,9 +70,9 @@
 | Type | Location | Count | Notes |
 |------|----------|-------|-------|
 | Input files | `fixtures/**/expected/findings.json` + `facts.json` | 222 findings, 6 tipos de `subject` | Entrada do invariante "nenhum finding some" |
-| Output examples | `fixtures/sarif/*/expected/{sparkforge.sarif,summary.md,annotations.txt}` (a criar) | 4 casos | Golden |
+| Output examples | `fixtures/sarif/*/expected/{sparkforge-aws.sarif,summary.md,annotations.txt}` (a criar) | 4 casos | Golden |
 | Ground truth | Schema `sarif-schema-2.1.0.json` (OASIS), versionado com a URL e o sha256 | 1 | Validacao de forma |
-| Related code | `sparkforge/findings/models.py`, `rules/catalog/*.yaml`, `adapters/_core.py` (`report sign`/`verify`) | — | `tool.driver.rules` vem do catalogo |
+| Related code | `sparkforge_aws/findings/models.py`, `rules/catalog/*.yaml`, `adapters/_core.py` (`report sign`/`verify`) | — | `tool.driver.rules` vem do catalogo |
 
 **How samples will be used:**
 
@@ -86,7 +86,7 @@
 
 ### Approach A: um verbo, duas saidas da mesma projecao, e recusa nomeada para o que nao tem linha ⭐ Recommended
 
-**Description:** `sparkforge report github` compoe sobre findings + facts e produz tres coisas.
+**Description:** `sparkforge-aws report github` compoe sobre findings + facts e produz tres coisas.
 - **SARIF 2.1.0** so com os findings que tem localizacao no repositorio. A localizacao vem do `subject` ou, se ele nao tiver, de um fact de `evidence` com arquivo e linha, e so conta se o arquivo existir sob `--repo`.
 - **Resumo em Markdown** para o check do PR, com todos os findings. Os sem localizacao ficam numa secao propria, com o motivo.
 - **Anotacoes** `::error|warning|notice file=,line=::` no stdout, que aparecem no diff do PR.
@@ -145,15 +145,15 @@ O pacote nao faz chamada de rede.
 
 | # | Decision | Rationale | Alternative Rejected |
 |---|----------|-----------|----------------------|
-| 1 | Verbo `sparkforge report github`, na familia `report` | Compoe sobre findings e facts, sem ler artefato | `scan .`, que descobre, extrai e julga tudo de uma vez |
+| 1 | Verbo `sparkforge-aws report github`, na familia `report` | Compoe sobre findings e facts, sem ler artefato | `scan .`, que descobre, extrai e julga tudo de uma vez |
 | 2 | Localizacao: `subject` com arquivo e linha; senao, fact de `evidence` com arquivo e linha; e o arquivo precisa existir sob `--repo` | So entra no SARIF o que o GitHub consegue mostrar numa linha real | Ancorar em arquivo sintetico |
 | 3 | Sem localizacao: secao do resumo com motivo (`runtime`, `arquivo fora do repo`, `sem linha`) | Regra 20: recusa tem nome | Descartar calado |
-| 4 | Saidas com nome fixo (`.sparkforge/report/sparkforge.sarif` e `summary.md`) dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness) | `--out <caminho>` |
+| 4 | Saidas com nome fixo (`.sparkforge/report/sparkforge-aws.sarif` e `summary.md`) dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness) | `--out <caminho>` |
 | 5 | Severidade: P0/P1 viram `error`, P2 vira `warning`, P3/P4 viram `note`; sem `security-severity` | As regras sao de performance e custo; marca-las como `security` as poria na contagem de vulnerabilidades | Mapear para `security-severity` |
 | 6 | `partialFingerprints` omitido | O `upload-sarif` o calcula a partir do fonte, e o GitHub so usa o `primaryLocationLineHash` | Calcular o hash no pacote |
 | 7 | `--fail-on P0\|P1`: exit 1 quando ha finding daquela severidade ou pior; erro de uso continua 2 | O check do PR fica vermelho sem API | Sempre 0 |
 | 8 | Tool MCP `sparkforge_report_github`, `READ_ONLY`, que devolve o SARIF, o resumo, as contagens e a recusa, sem gravar | Gravar e da CLI; a tool so le | Tool `LOCAL_MUTATION` |
-| 9 | Upload real so por `workflow_dispatch`, com `category: sparkforge-fixtures` | Os alertas das fixtures, codigo ruim de proposito, nao enchem a aba Security a cada push | Upload a cada push na `main` |
+| 9 | Upload real so por `workflow_dispatch`, com `category: sparkforge-aws-fixtures` | Os alertas das fixtures, codigo ruim de proposito, nao enchem a aba Security a cada push | Upload a cada push na `main` |
 
 ---
 
@@ -161,11 +161,11 @@ O pacote nao faz chamada de rede.
 
 | Feature Suggested | Reason Removed | Can Add Later? |
 |-------------------|----------------|----------------|
-| `sparkforge scan .` (descobrir artefatos, escolher extratores e julgar) | Muito maior; o workflow de exemplo encadeia analyze → judge → report | Yes |
+| `sparkforge-aws scan .` (descobrir artefatos, escolher extratores e julgar) | Muito maior; o workflow de exemplo encadeia analyze → judge → report | Yes |
 | So findings novos do PR (diff contra a base) | O proprio Code Scanning compara com a analise da base e marca o que o PR introduziu | Yes |
 | Checks API / check com nome proprio | Exige rede e token no pacote (abordagem C) | Yes |
 | PR Review Bot (comentarios) | Mesma razao, e as anotacoes no diff ja cobrem o que tem linha | Yes |
-| `sparkforge doctor` | Fora do nucleo desta frente | Yes |
+| `sparkforge-aws doctor` | Fora do nucleo desta frente | Yes |
 | TUI | Fora do nucleo desta frente | Yes |
 | GitHub Action publicada no Marketplace | O workflow de exemplo resolve; publicar exige versionamento e manutencao proprios | Yes |
 | `security-severity` / tag `security` | Regras de performance e custo nao sao vulnerabilidades | No, salvo se entrar regra de seguranca de verdade |

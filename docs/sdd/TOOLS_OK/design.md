@@ -23,7 +23,7 @@ decisions:
     rejected: ["listar as 106 tools: estoura o teto e dilui a regra", "citar a CLI em vez da tool MCP: na eval o agente chama tools MCP, e o grader confere por nome de tool"]
     rollback: "git revert do commit da regra"
   - id: D3
-    choice: "AC3 prova que todo verbo citado existe em sparkforge.adapters.tools.TOOLS e que o conjunto cobre todas as required_tools da suite fase0, lendo a propria suite."
+    choice: "AC3 prova que todo verbo citado existe em sparkforge_aws.adapters.tools.TOOLS e que o conjunto cobre todas as required_tools da suite fase0, lendo a propria suite."
     rejected: ["conferir contra lista escrita no teste: envelhece sem acusar"]
     rollback: "git revert do commit do teste"
   - id: D4

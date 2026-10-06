@@ -28,7 +28,7 @@
     "explanation": "A tentativa terminou em `TaskTimedOut`: o estado expirou pelo próprio `TimeoutSeconds` antes que o JobRun terminasse. Num Task `.sync` é o Step Functions que acompanha o JobRun, e quando ele para de acompanhar o histórico deixa de registrar o desfecho — o último evento sobre aquele JobRun é o `TaskSubmitted`. O `JobRunId` está em `sfn.job_run`; o que aconteceu com ele depois, não. A regra só fala quando a submissão ACONTECEU (`attrs.submitted: true`): um `.sync` que expira antes dela não deixou `JobRunId` nenhum para ler, e ali não há job órfão a investigar — há um prazo que não cobriu nem o `StartJobRun`. A regra afirma que o desfecho **não foi observado**, e nada além disso: ela não afirma que o job continuou rodando, nem que ele foi interrompido — a documentação do abort do `.sync` não descreve o caso de timeout (lacuna 2 de knowledge/stepfunctions/glue-integration.md). E não afirma custo: dizer \"você pagou por um job órfão\" exigiria o `dpu_seconds` de um run que ninguém leu (regra 13 do CLAUDE.md). **O timeout é consequência antes de ser causa** (regra 15): antes de aumentar `TimeoutSeconds`, leia por que o JobRun passou do prazo — skew, spill, GC ou executor perdido ao lado trocam uma falha rápida por uma falha cara.",
     "proposed_change": [
       "Ler o desfecho real daquele JobRun antes de tocar em qualquer limite: `aws glue get-job-run --job-name <nome> --run-id <JobRunId>` sobre o `JobRunId` que está em `sfn.job_run` diz se ele terminou, falhou, ou continuou depois do Task expirar.",
-      "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge analyze event-log`), e aumentar o limite só adia a mesma falha.",
+      "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge-aws analyze event-log`), e aumentar o limite só adia a mesma falha.",
       "Declarar o que acontece com o JobRun quando o Task expira: um estado de limpeza no `Catch` do timeout chamando `glue:batchStopJobRun` torna a resposta determinística, em vez de depender de comportamento não documentado."
     ],
     "expected_effect": "",
@@ -43,7 +43,7 @@
     ],
     "validation": [
       "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele: é a medida que falta, e ela existe.",
-      "Depois da correção, `sparkforge analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge judge` não produz mais SF-SFNX-002.",
+      "Depois da correção, `sparkforge-aws analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge-aws judge` não produz mais SF-SFNX-002.",
       "EIXO DE RESULTADO — o destino tem a mesma contagem total e por chave de negócio que uma execução de referência: um JobRun órfão que terminou sozinho pode ter escrito depois do Task expirar, e essa contagem é a única prova de que não houve duplicação."
     ],
     "rollback": [

@@ -11,9 +11,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from sparkforge.adapters import _core  # noqa: E402
-from sparkforge.adapters.cli import main  # noqa: E402
-from sparkforge.adapters.tools import TOOLS, call_tool  # noqa: E402
+from sparkforge_aws.adapters import _core  # noqa: E402
+from sparkforge_aws.adapters.cli import main  # noqa: E402
+from sparkforge_aws.adapters.tools import TOOLS, call_tool  # noqa: E402
 
 
 def run(args, capsys):

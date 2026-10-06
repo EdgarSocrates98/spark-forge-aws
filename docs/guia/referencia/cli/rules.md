@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge rules`
+# `sparkforge-aws rules`
 
 Consulta o catalogo de regras versionado.
 
@@ -8,14 +8,14 @@ Consulta o catalogo de regras versionado.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge rules lookup`](#sparkforge-rules-lookup) | Busca regras por id ou categoria (thresholds, fontes, severidade). |
+| [`sparkforge-aws rules lookup`](#sparkforge-aws-rules-lookup) | Busca regras por id ou categoria (thresholds, fontes, severidade). |
 
-## `sparkforge rules lookup`
+## `sparkforge-aws rules lookup`
 
 Busca regras por id ou categoria (thresholds, fontes, severidade).
 
 ```bash
-sparkforge rules lookup --help
+sparkforge-aws rules lookup --help
 ```
 
 ### Opções

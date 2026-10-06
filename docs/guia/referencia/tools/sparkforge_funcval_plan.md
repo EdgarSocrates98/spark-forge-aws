@@ -22,7 +22,7 @@ Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA extraidos
 
 ## Na CLI
 
-[`sparkforge funcval plan`](../cli/funcval.md)
+[`sparkforge-aws funcval plan`](../cli/funcval.md)
 
 ## Capacidade
 

@@ -10,7 +10,7 @@ upstream:
 hypothesis:
   claim: "O arquivo .py de um DAG basta, lido por AST, para julgar como ele dispara um job Glue: se espera o job, se o mata junto com a task, se segura o worker enquanto espera, e, cruzado com a definicao Terraform do job pelo job_name literal, se ha duas camadas de retry sobre o mesmo job."
   prediction: "Sobre fixtures sinteticas, cada uma das quatro regras novas dispara na fixture que a reproduz e fica calada nas negativas (DAG com wait_for_completion default e sem retry, e DAG que so o Glue retenta); argumento nao literal (variavel, f-string, chamada) e DAG gerado em laco saem af.unresolved nomeado, nunca como fact afirmado; o criterio de dominio passa com a area SF-AIRFLOW; e nenhum golden de achado existente muda. Se alguma regra ficar calada na sua fixture, disparar numa negativa, ou se algum golden de achado existente mudar, a afirmacao esta errada."
-  experiment: "Rodar sparkforge analyze airflow-dag e judge sobre as fixtures novas, fuse sobre a fixture pareada DAG + Terraform, tests/test_criterio_de_dominio.py, e python -m pytest tests/test_fixtures_golden*.py -q sem regenerar."
+  experiment: "Rodar sparkforge-aws analyze airflow-dag e judge sobre as fixtures novas, fuse sobre a fixture pareada DAG + Terraform, tests/test_criterio_de_dominio.py, e python -m pytest tests/test_fixtures_golden*.py -q sem regenerar."
 acceptance:
   - id: AC1
     statement: "Um DAG .py vira af.dag (dag_id, schedule quando literal, default_args com retries e execution_timeout quando literais) e um af.task por operador instanciado, com classe, task_id, os argumentos literais que a regra julga (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout) e a marca do que nao e literal; mais af.analyzed sempre."
@@ -31,7 +31,7 @@ acceptance:
     statement: "Com o DAG e o Terraform do job no mesmo case, fuse deriva o link do GlueJobOperator com o aws_glue_job de mesmo nome, e SF-AIRFLOW-004 dispara quando retries efetivo do Airflow e max_retries do job sao ambos maiores que zero; job_name nao literal, job ausente ou ambiguo saem nomeados em af.unresolved."
     verified_by: {kind: test, ref: "tests/test_airflow_dag.py::test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga"}
   - id: AC7
-    statement: "sparkforge analyze airflow-dag --path le arquivo ou diretorio e devolve os facts, e a tool MCP sparkforge_analyze_airflow_dag faz o mesmo."
+    statement: "sparkforge-aws analyze airflow-dag --path le arquivo ou diretorio e devolve os facts, e a tool MCP sparkforge_analyze_airflow_dag faz o mesmo."
     verified_by: {kind: test, ref: "tests/test_airflow_dag.py::test_cli_e_tool_devolvem_os_mesmos_facts"}
   - id: AC8
     statement: "A area SF-AIRFLOW passa pelo criterio de dominio: regra que julga, coordenador que a declara e rota por findings_area."
@@ -51,7 +51,7 @@ success:
     source: "python -m pytest tests/test_fixtures_golden*.py -q sem regeneracao"
   - id: SC3
     metric: "Regras, tools, extratores e rotas antes e depois"
-    source: "load_catalog(), TOOLS, sparkforge/facts/*.py e routing.yaml"
+    source: "load_catalog(), TOOLS, sparkforge_aws/facts/*.py e routing.yaml"
 out_of_scope:
   - "Dependencia entre DAGs (ExternalTaskSensor, TriggerDagRunOperator): abordagem C do explore."
   - "DAG gerado dinamicamente (laco, factory, import): sai af.unresolved, nao se tenta executar o arquivo."

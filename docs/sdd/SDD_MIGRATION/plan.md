@@ -88,7 +88,7 @@ def test_documentos_de_entrada_apontam_o_sdd():
     for nome in ("CLAUDE.md", "AGENTS.md", "CONTRIBUTING.md"):
         texto = (ROOT / nome).read_text(encoding="utf-8")
         assert "sdd-define" in texto, nome
-        assert "sparkforge sdd check" in texto, nome
+        assert "sparkforge-aws sdd check" in texto, nome
         assert "fluxo SDD em `.claude/sdd/`" not in texto, nome
 ```
 
@@ -100,7 +100,7 @@ no `AGENTS.md`, e o item de `CONTRIBUTING.md:80` reescrito. Commit.
 ```python
 def test_readme_e_journal():
     texto = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "sdd-define" in texto and "sparkforge sdd check" in texto
+    assert "sdd-define" in texto and "sparkforge-aws sdd check" in texto
     assert ".sparkforge/journal.jsonl" in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 ```
 

@@ -53,7 +53,7 @@ Em `tests/test_sdd_skills.py`, depois de `_aceito_pelo_parser`, e dentro de
 
 ```python
 # o comando inteiro entre crases; `<...>` vira valor ficticio antes de separar
-_COMANDO_CITADO = re.compile(r"`sparkforge ([^`]*)`")
+_COMANDO_CITADO = re.compile(r"`sparkforge-aws ([^`]*)`")
 _MARCADOR = re.compile(r"<[^<>]*>")
 
 
@@ -98,7 +98,7 @@ def test_o_detector_recusa_flag_inventada():
 
 Vermelho: `python -m pytest tests/test_sdd_skills.py::test_o_detector_recusa_flag_inventada -q`
 (`NameError: _flags_recusadas`, a unidade sob teste). Commit
-`test(sdd): check the flags of every sparkforge command the skills cite`.
+`test(sdd): check the flags of every sparkforge-aws command the skills cite`.
 
 ## T2 — descrições
 

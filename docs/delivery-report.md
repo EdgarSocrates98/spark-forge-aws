@@ -22,7 +22,7 @@ A evidência final da suíte foi **5444 passed, 5 skipped, 0 failed**, em `738.9
 
 | Requisito histórico | Entrega realizada | Status |
 | --- | --- | --- |
-| 1. Agents em loops, conversando, orquestrando, com conhecimento, ferramentas e autonomia | `sparkforge/agents/` com `room.py`, `supervisor.py`, `budget.py`, `autonomy.py`, `model_policy.py` e `observability.py`; `config/agents.yaml`; protocolo de kinds, handoffs, revisão cruzada e gates | **ENTREGUE** |
+| 1. Agents em loops, conversando, orquestrando, com conhecimento, ferramentas e autonomia | `sparkforge_aws/agents/` com `room.py`, `supervisor.py`, `budget.py`, `autonomy.py`, `model_policy.py` e `observability.py`; `config/agents.yaml`; protocolo de kinds, handoffs, revisão cruzada e gates | **ENTREGUE** |
 | 2. Sala como metáfora de cooperação e inspiração em boas práticas | `room.py` implementa a sala como barramento de mensagens estruturadas; `AGENT_PROTOCOL.md`, catálogo de times e handoffs evitam retransmissão de histórico e não criam chat obrigatório | **ENTREGUE** |
 | 3. Economia agressiva de tokens sem degradar evidência ou qualidade | Orçamento de rounds, mensagens, tokens, contexto e agents; estagnação; barato-primeiro; contexto seletivo; mensagens tipadas; revisão focalizada; aviso de tokens | **ENTREGUE** |
 | 4. Mais autonomia, conhecimento, especialização, skills e boas práticas | 20 agents especializados, 36+ skills, 15 bases de conhecimento, 35 catálogos agentic por área, matrizes de domínio e fontes oficiais | **ENTREGUE** |
@@ -38,12 +38,12 @@ A evidência final da suíte foi **5444 passed, 5 skipped, 0 failed**, em `738.9
 
 | Artefato | Responsabilidade |
 | --- | --- |
-| `sparkforge/agents/room.py` | Sala/barramento de mensagens tipadas, contexto e cooperação |
-| `sparkforge/agents/supervisor.py` | Coordenação de rodadas, delegação, revisão e parada |
-| `sparkforge/agents/budget.py` | Orçamento de tokens, mensagens, rounds e agentes |
-| `sparkforge/agents/autonomy.py` | Autonomia controlada para melhoria, construção, documentação e validação |
-| `sparkforge/agents/model_policy.py` | Seleção por inventário do coordenador, risco e fallback seguro |
-| `sparkforge/agents/observability.py` | Trace opcional, ocultação de conteúdo, uso e estimativa de tokens |
+| `sparkforge_aws/agents/room.py` | Sala/barramento de mensagens tipadas, contexto e cooperação |
+| `sparkforge_aws/agents/supervisor.py` | Coordenação de rodadas, delegação, revisão e parada |
+| `sparkforge_aws/agents/budget.py` | Orçamento de tokens, mensagens, rounds e agentes |
+| `sparkforge_aws/agents/autonomy.py` | Autonomia controlada para melhoria, construção, documentação e validação |
+| `sparkforge_aws/agents/model_policy.py` | Seleção por inventário do coordenador, risco e fallback seguro |
+| `sparkforge_aws/agents/observability.py` | Trace opcional, ocultação de conteúdo, uso e estimativa de tokens |
 | `config/agents.yaml` | Defaults, agentes, tools, knowledge, autonomia e observabilidade |
 | `AGENT_PROTOCOL.md` | Contrato de cooperação e handoff entre agentes e sessões |
 
@@ -95,7 +95,7 @@ O `sf-orchestrator` recebe o objetivo, identifica domínios, cria tarefas de esc
 | Entrega | Relatório, findings e manifest | Assinatura/verificação | Relatório completo |
 | Handoff | Lacunas ou trabalho em andamento | `.sparkforge/handoff.md` e `next_step` | Próximo responsável claro |
 
-Os arquivos `commands/sf-open.md`, `sf-next.md`, `sf-resume.md` e `sf-handoff.md` são comandos de host. Para terminal, as equivalências são `sparkforge case open`, `sparkforge next-step`, `sparkforge resume` e `sparkforge handoff`.
+Os arquivos `commands/sf-open.md`, `sf-next.md`, `sf-resume.md` e `sf-handoff.md` são comandos de host. Para terminal, as equivalências são `sparkforge-aws case open`, `sparkforge-aws next-step`, `sparkforge-aws resume` e `sparkforge-aws handoff`.
 
 ## 5. Evidência de qualidade
 
@@ -166,7 +166,7 @@ A segunda onda conclui a transformação do SparkForge AWS em uma plataforma de 
 | Agents especializados | 10 novos agents coordenadores | `agents/`, `.claude/agents/`, `.agents/agents/` e `.github/agents/` |
 | Skills coordenadoras | 3 novas skills dispatchable com fronteiras e protocolo | `skills/verify-agent-evidence/`, `skills/engineer-agent-context/` e `skills/engineer-agent-memory/` |
 | Subagents efêmeros | 16 templates com `max_rounds: 1` e rede proibida | `subagents/` e `config/subagents.yaml` |
-| Ferramentas locais | Contexto, custo, schema, lineage, avaliação e índice offline | `sparkforge/tools/` |
+| Ferramentas locais | Contexto, custo, schema, lineage, avaliação e índice offline | `sparkforge_aws/tools/` |
 | Bases de conhecimento | 6 novas bases de domínio e política offline-first | `knowledge/` e `knowledge/offline-manifest.json` |
 | Times cooperativos | 5 novos times para evidência, governança, streaming, FinOps e qualidade | `config/teams-expansion.yaml` |
 | Roteamento e registros | Rotas AGENT-066 a AGENT-075 e registros declarativos | `rules/catalog/routing.yaml` e `config/agentic-expansion.yaml` |

@@ -2,9 +2,9 @@
 
 Cada caso de `fixtures/knowledge_drift/` e um lock SINTETICO apontado por
 `SPARKFORGE_SOURCES_LOCK`; o catalogo, os documentos de `knowledge/`, os goldens,
-os evals e os agentes sao os reais. O golden muda quando um golden, eval ou
-agente novo passa a citar uma regra do impacto -- e e isso que ele deve
-acusar.
+os evals, os agentes e as skills sao os reais. O golden muda quando um golden,
+eval, agente ou skill novo passa a citar uma regra do impacto -- e e isso que
+ele deve acusar.
 
 Regenerar depois de mudanca DELIBERADA:
 `SPARKFORGE_REGEN_DRIFT=1 pytest tests/test_fixtures_golden_knowledge_drift.py`.
@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters.cli import main
+from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "knowledge_drift"
@@ -28,7 +28,7 @@ LF = "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-consideratio
 
 
 def _rodar(caso: str, monkeypatch, capsys, raiz: Path | None = ROOT) -> dict:
-    from sparkforge import knowledge_drift
+    from sparkforge_aws import knowledge_drift
 
     meta = yaml.safe_load((FIXTURES / caso / "meta.yaml").read_text(encoding="utf-8"))
     # O golden descreve o impacto sobre ESTE repositorio. Sem fixar a raiz, o
@@ -70,7 +70,7 @@ def test_lf_impacto_conferivel_por_arquivo(monkeypatch, capsys):
         achados = json.loads((ROOT / "fixtures" / golden / "expected" / "findings.json").read_text(
             encoding="utf-8"))
         assert regras & {a["rule_id"] for a in achados}, golden
-    for arquivo in fonte["impact"]["evals"] + fonte["impact"]["agents"]:
+    for arquivo in fonte["impact"]["evals"] + fonte["impact"]["agents"] + fonte["impact"]["skills"]:
         texto = (ROOT / arquivo).read_text(encoding="utf-8")
         assert any(r in texto or r.rsplit("-", 1)[0] in texto for r in regras), arquivo
 

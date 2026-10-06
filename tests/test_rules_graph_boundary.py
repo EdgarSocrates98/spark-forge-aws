@@ -79,12 +79,12 @@ from test_rules_emrs_boundary import (
     _regras_da_area,
 )
 
-from sparkforge.facts.data_quality import extract_data_quality_tree
-from sparkforge.facts.graph import extract_graph_tree
-from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.data_quality import extract_data_quality_tree
+from sparkforge_aws.facts.graph import extract_graph_tree
+from sparkforge_aws.facts.pyspark_ast import extract_tree as extract_pyspark_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 

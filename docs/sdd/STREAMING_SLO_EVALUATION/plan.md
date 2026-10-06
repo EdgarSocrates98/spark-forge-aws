@@ -9,7 +9,7 @@ upstream:
   sha256: "f7c7738dc096485d8b8529aed21dac5c3be668247c8a32f0ab36db515a11fd00"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming_slo.py, sparkforge/facts/streaming_slo.py]
+    files: [tests/test_facts_streaming_slo.py, sparkforge_aws/facts/streaming_slo.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_facts_streaming_slo.py, name: test_evaluates_direct_progress_metric}
   - id: T2
@@ -17,7 +17,7 @@ tasks:
     covers: [AC4]
     test: {path: tests/test_streaming_rules.py, name: test_slo_evaluation_rules_are_evidence_first}
   - id: T3
-    files: [sparkforge/facts/streaming_composition.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_analyze_streaming_composition.py]
+    files: [sparkforge_aws/facts/streaming_composition.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_analyze_streaming_composition.py]
     covers: [AC5]
     test: {path: tests/test_analyze_streaming_composition.py, name: test_slo_cli_and_mcp_envelopes_match}
   - id: T4

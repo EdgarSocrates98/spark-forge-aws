@@ -6,7 +6,7 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "Modulo auxiliar proprio, sparkforge/facts/glue_terraform.py, SEM EMITTED_KINDS, com as duas funcoes que hoje estao duplicadas entre stepfunctions.py e airflow_dag.py: o indice de nome literal de job Glue vindo de tf.attribute, e a leitura de max_retries com as tres origens (literal, absent, not_literal). Os dois extratores passam a importar."
+    summary: "Modulo auxiliar proprio, sparkforge_aws/facts/glue_terraform.py, SEM EMITTED_KINDS, com as duas funcoes que hoje estao duplicadas entre stepfunctions.py e airflow_dag.py: o indice de nome literal de job Glue vindo de tf.attribute, e a leitura de max_retries com as tres origens (literal, absent, not_literal). Os dois extratores passam a importar."
     tradeoffs:
       - "e o que os docstrings das DUAS copias ja pedem por escrito: o de airflow_dag.py diz 'o lugar certo da funcao e um modulo proprio'"
       - "a contagem de extratores nao se move: scripts/check_status_numbers.py::_extratores conta so modulo de facts/ que tem EMITTED_KINDS, e a docstring dele nomeia o precedente (runtime_matrix, pricing)"
@@ -43,9 +43,9 @@ depois da `SFN_TENTATIVA`.
 
 ## O que foi medido nesta árvore (2026-09-20, `main` em `e4141869`)
 
-- `sparkforge/facts/stepfunctions.py`, linhas 551 e 569: `_glue_jobs_por_nome` e
+- `sparkforge_aws/facts/stepfunctions.py`, linhas 551 e 569: `_glue_jobs_por_nome` e
   `_max_retries`.
-- `sparkforge/facts/airflow_dag.py`, linhas 931 e 955: as mesmas duas.
+- `sparkforge_aws/facts/airflow_dag.py`, linhas 931 e 955: as mesmas duas.
 - **Os corpos são idênticos; só os docstrings diferem.** O de `airflow_dag.py` diz:
   *"GEMEA de `stepfunctions._glue_jobs_por_nome`, e duplicada de proposito NESTE
   incremento: um leitor de DAG nao deveria importar um leitor de ASL para saber ler
@@ -53,7 +53,7 @@ depois da `SFN_TENTATIVA`.
   deste desenho."*
 - Chamadores: `stepfunctions.py` nas linhas 619 e 661, `airflow_dag.py` nas 1000 e 1040 —
   dois cada, dentro das derivações `build_sfn_glue_link` e `build_af_glue_link`.
-- Não há terceira cópia: `aws_glue_job.` aparece em `sparkforge/` só nesses dois módulos
+- Não há terceira cópia: `aws_glue_job.` aparece em `sparkforge_aws/` só nesses dois módulos
   (mais uma menção em `adapters/tools.py`, que é texto de descrição de tool).
 - **A contagem de extratores não se move.**
   `scripts/check_status_numbers.py::_extratores` devolve

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.context.planner import derive_triggers, plan_execution
+from sparkforge_aws.context.planner import derive_triggers, plan_execution
 
 
 def test_planner_derives_triggers_from_structured_evidence() -> None:

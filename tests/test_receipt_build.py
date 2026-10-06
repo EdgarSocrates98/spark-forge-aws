@@ -9,10 +9,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.case.store import SCHEMA_VERSION, save_case
-from sparkforge.receipt import RECEIPT_VERSION, build
-from sparkforge.receipt._hash import receipt_id_of, text_sha256
-from sparkforge.receipt.build import EMIT_TOOL, PROVES, SPAN_COLUMNS
+from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
+from sparkforge_aws.receipt import RECEIPT_VERSION, build
+from sparkforge_aws.receipt._hash import receipt_id_of, text_sha256
+from sparkforge_aws.receipt.build import EMIT_TOOL, PROVES, SPAN_COLUMNS
 
 NOW = "2026-09-12T00:00:00Z"
 SEGREDO_EM_MEASURES = 987654321

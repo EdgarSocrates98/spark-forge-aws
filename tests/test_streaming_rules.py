@@ -1,6 +1,6 @@
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 
 def _fact(kind: str, *, attrs=None, measures=None, file="streaming.jsonl"):

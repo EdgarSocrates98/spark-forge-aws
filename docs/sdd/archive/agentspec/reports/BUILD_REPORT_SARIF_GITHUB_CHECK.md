@@ -22,7 +22,7 @@ Branch `feat/sarif-github-check`, a partir da `main` (ja com #48 e #49).
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | B1–B7; B8 e este relatorio |
-| **Files Created** | `sparkforge/reporting/{__init__,locate,github}.py`, `fixtures/sarif/` (4 casos + `_schema/`), `tests/test_reporting_github.py`, `tests/test_fixtures_golden_sarif.py`, `docs/github-code-scanning.md`, `examples/github/sparkforge.yml` |
+| **Files Created** | `sparkforge_aws/reporting/{__init__,locate,github}.py`, `fixtures/sarif/` (4 casos + `_schema/`), `tests/test_reporting_github.py`, `tests/test_fixtures_golden_sarif.py`, `docs/github-code-scanning.md`, `examples/github/sparkforge-aws.yml` |
 | **Files Modified** | `adapters/{_core,cli,tools}.py`, `scripts/regen_fixtures.py`, `.github/workflows/ci.yml`, registros de tool nova (`tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `parity.yaml`, `manifest.json`, `config/agents.yaml`, `agents/executors/sf-synthesizer.md` + espelhos), `tests/test_fixtures_golden_mcp_parity.py`, `tests/test_mcp_modern_era.py`, docs com numeros medidos, `docs/surface.lock.json`, `docs/claims.lock.json` |
 | **Tests Passing** | Suite completa, um processo por arquivo: 262 arquivos, 12 072 passed, 0 failed, 9 skipped |
 | **Agents Used** | Nenhum delegado: o build foi direto |
@@ -56,7 +56,7 @@ Branch `feat/sarif-github-check`, a partir da `main` (ja com #48 e #49).
 ### Lint Check
 
 ```text
-ruff check sparkforge scripts tests -> All checks passed!
+ruff check sparkforge_aws scripts tests -> All checks passed!
 ```
 
 **Status:** ✅ Pass

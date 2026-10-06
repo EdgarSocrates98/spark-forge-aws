@@ -4,24 +4,24 @@
 
 ```bash
 # 1. Extraia os facts do repositório: Terraform e código
-sparkforge analyze terraform --path . --out facts_tf.json
-sparkforge analyze pyspark --path . --out facts_py.json
+sparkforge-aws analyze terraform --path . --out facts_tf.json
+sparkforge-aws analyze pyspark --path . --out facts_py.json
 
 # 2. Gere o diff e o diff de rollback de um valor (nada é aplicado)
-sparkforge change plan --facts facts_tf.json --facts facts_py.json --repo . \
+sparkforge-aws change plan --facts facts_tf.json --facts facts_py.json --repo . \
   --set spark.sql.shuffle.partitions=320 --out mudanca.patch
 
 # 3. Veja numa cópia o que o diff muda nos achados (guarde o "id" da saída)
-sparkforge change sandbox --repo . --diff mudanca.patch
+sparkforge-aws change sandbox --repo . --diff mudanca.patch
 
 # 4. Monte o pacote do PR a partir desse sandbox (nada é aplicado, git não roda)
-sparkforge change propose --sandbox <id> --repo .
+sparkforge-aws change propose --sandbox <id> --repo .
 
 # 5. Abra o PR seguindo .sparkforge/proposal/<id>/commands.md (você, ou o agente
 #    pela skill propose-change-pr, que para antes de git push e de gh pr create)
 
 # 6. Apague as cópias do sandbox quando terminar
-sparkforge change sandbox --repo . --clean
+sparkforge-aws change sandbox --repo . --clean
 ```
 
 ## Para que serve
@@ -46,7 +46,7 @@ Os três são os níveis L1 ("produzir a mudança"), L2 ("executar numa cópia i
 1. Extraia os facts do repositório inteiro, a partir da raiz. Os facts guardam o caminho do arquivo **relativo à raiz que você passou**, e o `--repo` do `change plan` precisa ser essa mesma raiz.
 2. Escolha de onde vem o valor:
    - `--set chave=valor` (repetível): você diz o valor;
-   - `--from-tune`: usa o valor que o [`tune`](custo-e-capacidade.md) deriva do shuffle medido. Para isso, junte também os facts do event log (`sparkforge analyze event-log --path <log> --out facts_run.json` e mais um `--facts facts_run.json`).
+   - `--from-tune`: usa o valor que o [`tune`](custo-e-capacidade.md) deriva do shuffle medido. Para isso, junte também os facts do event log (`sparkforge-aws analyze event-log --path <log> --out facts_run.json` e mais um `--facts facts_run.json`).
 3. Rode e leia o resultado.
 
 Saída real, encurtada, num `main.tf` que tem quatro chaves na mesma linha do `--conf`:
@@ -108,7 +108,7 @@ O comando sai com código 1 quando nada virou diff e alguma chave foi recusada.
 ## change sandbox passo a passo
 
 ```bash
-sparkforge change sandbox --repo . --diff mudanca.patch
+sparkforge-aws change sandbox --repo . --diff mudanca.patch
 ```
 
 O que ele faz, em ordem:
@@ -137,8 +137,8 @@ Saída real, encurtada, de um diff que tira um `spark.conf.set` do código:
   ],
   "next_steps": [
     {"action": "run_your_tests", "detail": "rode os seus testes sobre .sparkforge/sandbox/a6dd7ad28357b7f3/after: ..."},
-    {"action": "sparkforge benchmark", "detail": "desempenho so se afirma com dois runs medidos ..."},
-    {"action": "sparkforge funcval plan", "detail": "confira que o resultado continua o mesmo ..."}
+    {"action": "sparkforge-aws benchmark", "detail": "desempenho so se afirma com dois runs medidos ..."},
+    {"action": "sparkforge-aws funcval plan", "detail": "confira que o resultado continua o mesmo ..."}
   ]
 }
 ```
@@ -186,7 +186,7 @@ Nenhuma recusa aplica o diff pela metade, e nenhuma grava nada.
 Rode depois de um `change sandbox` que aplicou o diff (`applied: true`), passando o `id` que ele devolveu:
 
 ```bash
-sparkforge change propose --sandbox fc778c4f8222e1b0 --repo .
+sparkforge-aws change propose --sandbox fc778c4f8222e1b0 --repo .
 ```
 
 Se você tiver medidas de verdade, anexe os facts: `--benchmark bench.json` (facts `bench.*` de dois runs) e `--funcval funcval.json` (facts `funcval.*`). Sem elas, o texto do PR diz que a medida está **PENDENTE**, e está certo sair assim.
@@ -198,7 +198,7 @@ O pacote fica em `.sparkforge/proposal/<id>/` (o git ignora essa pasta):
 | `change.patch` | O diff, conferido: aplicado sobre a cópia validada, ele reproduz a cópia com a mudança |
 | `rollback.patch` | O caminho de volta |
 | `pr_body.md` | O texto do PR: o que muda, achados que somem, achados novos de baixa gravidade, obrigações de prova, medidas e o que a proposta **não** afirma. Termina com a seção **Assinatura** |
-| `commit_message.txt` e `branch.txt` | Mensagem do commit e nome da branch (`sparkforge/change-<8 letras do id>`) |
+| `commit_message.txt` e `branch.txt` | Mensagem do commit e nome da branch (`sparkforge_aws/change-<8 letras do id>`) |
 | `commands.md` | Os comandos git/gh, na ordem, com duas paradas: antes de `git push` e antes de `gh pr create` |
 | `evidence/sandbox_report.json` | O relatório do sandbox, para o revisor |
 | `evidence/receipt.json` | O recibo do scan da cópia com a mudança |
@@ -207,13 +207,13 @@ O pacote fica em `.sparkforge/proposal/<id>/` (o git ignora essa pasta):
 Para conferir depois que o texto do PR não foi editado:
 
 ```bash
-sparkforge report verify --report .sparkforge/proposal/<id>/pr_body.md \
+sparkforge-aws report verify --report .sparkforge/proposal/<id>/pr_body.md \
   --findings .sparkforge/sandbox/<id>/after/.sparkforge/scan/findings.json
 ```
 
 Se o scan da cópia não deixar nenhum achado, não há o que assinar: o texto do PR diz isso, e o pacote sai sem recibo.
 
-A política padrão do repositório (`.sparkforge/policy.yaml`) pede confirmação para `git push` e `gh pr create`. Rodar `sparkforge policy sync-settings` leva isso para o Claude Code.
+A política padrão do repositório (`.sparkforge/policy.yaml`) pede confirmação para `git push` e `gh pr create`. Rodar `sparkforge-aws policy sync-settings` leva isso para o Claude Code.
 
 ### As recusas do propose
 
@@ -245,5 +245,5 @@ Nada é gravado quando uma delas sai:
 
 ## Próximos passos
 
-- Referência: [`sparkforge change`](../referencia/cli/change.md), [`sparkforge_change_plan`](../referencia/tools/sparkforge_change_plan.md), [`sparkforge_change_sandbox`](../referencia/tools/sparkforge_change_sandbox.md), [`sparkforge_change_propose`](../referencia/tools/sparkforge_change_propose.md) e a skill [`propose-change-pr`](../referencia/skills/propose-change-pr.md).
+- Referência: [`sparkforge-aws change`](../referencia/cli/change.md), [`sparkforge_change_plan`](../referencia/tools/sparkforge_change_plan.md), [`sparkforge_change_sandbox`](../referencia/tools/sparkforge_change_sandbox.md), [`sparkforge_change_propose`](../referencia/tools/sparkforge_change_propose.md) e a skill [`propose-change-pr`](../referencia/skills/propose-change-pr.md).
 - Depois de aplicar de verdade, prove o que a mudança fez: [Mudanças com prova](mudancas-com-prova.md).

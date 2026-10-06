@@ -19,9 +19,9 @@ import time
 
 import pytest
 
-from sparkforge.codeintel.db import abrir
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.staleness import (
+from sparkforge_aws.codeintel.db import abrir
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.staleness import (
     ArvoreDivergente,
     IndiceAusente,
     IndiceDesatualizado,
@@ -638,7 +638,7 @@ def test_mudanca_grande_recusa_com_a_contagem_e_a_acao(tmp_path):
 
     assert erro.value.payload == {
         "error": "STALE_INDEX",
-        "action": "sparkforge code sync",
+        "action": "sparkforge-aws code sync",
         "changed_files": 4,
     }
 

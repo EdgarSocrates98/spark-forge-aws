@@ -34,7 +34,7 @@
 # copiar um dado de EC2. Nas duas `spark-8.0*` o sufixo APARECE porque a fonte do
 # Serverless o publica ali -- o formato daquelas duas paginas e outro. A chave e
 # o release label sem o prefixo `emr-`, a mesma normalizacao de
-# `sparkforge/facts/runtime_detect.py::_emr_key`, e por isso `spark-8.0.0` e
+# `sparkforge_aws/facts/runtime_detect.py::_emr_key`, e por isso `spark-8.0.0` e
 # `spark-8.0-preview` sao chaves legitimas: sao release labels de verdade, que a
 # `EMR_MATRIX` de EC2 nao conhece.
 #

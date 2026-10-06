@@ -43,9 +43,9 @@ from typing import Any
 
 import pytest
 
-from sparkforge.agentic.executor.unknowns import experiments_from, unknowns_from
-from sparkforge.agentic.models import Experiment, Unknown, UnknownStatus
-from sparkforge.findings.models import Fact
+from sparkforge_aws.agentic.executor.unknowns import experiments_from, unknowns_from
+from sparkforge_aws.agentic.models import Experiment, Unknown, UnknownStatus
+from sparkforge_aws.findings.models import Fact
 
 RAIZ = Path(__file__).resolve().parents[1]
 

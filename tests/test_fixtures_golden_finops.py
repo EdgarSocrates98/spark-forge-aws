@@ -1,12 +1,12 @@
 """Golden test do corpus finops: nove cenarios sinteticos do relatorio financeiro.
 
-Task 6 do plano `2026-08-28-finops-run-cost.md`. `sparkforge finops` NAO extrai de
+Task 6 do plano `2026-08-28-finops-run-cost.md`. `sparkforge-aws finops` NAO extrai de
 artefato -- compoe sobre facts JA extraidos (`glue.job_run`, `workload.declared`,
 sintomas) -- mesmo molde de `fixtures/capacity/` e
 `tests/test_fixtures_golden_capacity.py`, o dominio mais parecido porque tambem
 consome facts em vez de artefato bruto.
 
-A UNICA extracao real deste modulo e `extract_run_cost` (`sparkforge/facts/
+A UNICA extracao real deste modulo e `extract_run_cost` (`sparkforge_aws/facts/
 run_cost.py`), chamada aqui sobre os `glue.job_run` do proprio fixture para produzir
 `expected/facts.json` -- o golden dos dois kinds `glue.run_cost*` que
 `test_fixtures_kind_coverage.py` cobra. `build_finops_report` chama o MESMO extrator
@@ -40,10 +40,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.run_cost import extract_run_cost
-from sparkforge.findings.models import Fact, Finding, sort_facts
-from sparkforge.findings.validate import validate_fact
-from sparkforge.finops import build_finops_report
+from sparkforge_aws.facts.run_cost import extract_run_cost
+from sparkforge_aws.findings.models import Fact, Finding, sort_facts
+from sparkforge_aws.findings.validate import validate_fact
+from sparkforge_aws.finops import build_finops_report
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "finops"
@@ -70,7 +70,7 @@ def _meta(directory: Path) -> dict:
 
 
 def _input_facts(directory: Path) -> list[Fact]:
-    """Os facts que `sparkforge finops` consome, no molde de `--facts`.
+    """Os facts que `sparkforge-aws finops` consome, no molde de `--facts`.
 
     Sem passar por extrator: `id`/`schema_version` no arquivo -- quando
     presentes -- sao ignorados, os mesmos campos que `Fact` deriva.

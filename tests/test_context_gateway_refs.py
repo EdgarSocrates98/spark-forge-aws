@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
-from sparkforge.context.gateway_refs import ContextRefError, ContextRefStore
-from sparkforge.economy.cache import ArtifactCache
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.context.gateway_models import GatewayProfile, GatewayRequest
+from sparkforge_aws.context.gateway_refs import ContextRefError, ContextRefStore
+from sparkforge_aws.economy.cache import ArtifactCache
 
 
 def test_context_ref_round_trip_and_integrity(tmp_path) -> None:

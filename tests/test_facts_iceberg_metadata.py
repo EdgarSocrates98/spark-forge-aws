@@ -1,10 +1,10 @@
-from sparkforge.facts.iceberg_metadata import (
+from sparkforge_aws.facts.iceberg_metadata import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     extract_iceberg_metadata,
     extract_iceberg_metadata_path,
 )
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.validate import validate_fact
 
 EXPECTED_KINDS = {
     "iceberg.files_summary",

@@ -28,10 +28,10 @@ Os dois arquivos ao lado já fazem o resto:
 
 | Arquivo | O que faz |
 |---|---|
-| `mcp_config.json` | expõe as **136 tools** por stdio (recontado em 2026-10-03). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
+| `mcp_config.json` | expõe as **143 tools** por stdio (recontado em 2026-10-04). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **60 skills** e os **14 coordenadores** o Devin lê sozinho de `.agents/`, que
+As **60 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
@@ -65,7 +65,7 @@ key policy do KMS e Glue resource policy são avaliação separada.
 Apos iniciar uma sessao Devin neste repositorio, pergunte:
 
 ```text
-Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
 ```
 
 Ou, no Devin CLI:
@@ -74,7 +74,7 @@ Ou, no Devin CLI:
 devin mcp list
 ```
 
-A saida deve conter `sparkforge`. Se nao aparecer, veja `GUIA_DE_USO.md` secao 3.6
+A saida deve conter `sparkforge-aws`. Se nao aparecer, veja `GUIA_DE_USO.md` secao 3.6
 (Troubleshooting).
 
 ## Transporte HTTP para o Devin Desktop
@@ -83,7 +83,7 @@ O `.devin/mcp_config.json` e stdio. No Desktop, o MCP e configurado por `serverU
 Suba o servidor antes de abrir a sessao:
 
 ```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 ```
 
 E aponte o Desktop para `http://127.0.0.1:8765/mcp`. O arquivo de referencia para
@@ -138,18 +138,18 @@ seguem são o contrato do motor, não orientação.
 ## Antes de ler artefato no olho, rode o verbo
 
 Este é o hábito que faz o SparkForge valer a pena. Um `describe-job-run` de 400
-linhas lido a olho vira opinião; passado por `sparkforge analyze emr-eks` vira
-fact com namespace fechado, e `sparkforge judge` diz o que o catálogo tem a
+linhas lido a olho vira opinião; passado por `sparkforge-aws analyze emr-eks` vira
+fact com namespace fechado, e `sparkforge-aws judge` diz o que o catálogo tem a
 dizer sobre ele.
 
-As **60 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
+As skills em `.agents/skills/` são gatilhos para isso: cada uma abre
 dizendo **quando** entrar e **o que ela não julga**. Ler a fronteira antes de
 trazer o artefato economiza a investigação inteira.
 
 
 ## Economia: o que medir antes de dizer que economizou
 
-**136 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
+**143 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
 quando so precisa do veredito.
 
 **Leia o numero antes de afirmar reducao.** Medido em 2026-09-02 sobre o gold set

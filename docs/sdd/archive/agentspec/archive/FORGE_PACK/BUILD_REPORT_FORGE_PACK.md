@@ -21,7 +21,7 @@
 |--------|-------|
 | **Tasks Completed** | 10/10 entradas do manifesto |
 | **Files Created** | 4 do modulo, 3 de teste, 1 doc, este relatorio, e 23 arquivos em `fixtures/packs/` (1 pack valido, 7 de recusa, 1 de regra morta, o golden) |
-| **Lines of Code** | `sparkforge/packs/` ~430; `loader.py` refatorado (`validate_rule`); `_core` +~180, `tools.py` +~80, `cli.py` +~35 |
+| **Lines of Code** | `sparkforge_aws/packs/` ~430; `loader.py` refatorado (`validate_rule`); `_core` +~180, `tools.py` +~80, `cli.py` +~35 |
 | **Tests Passing** | ver Verification Results |
 | **Agents Used** | 0 (build direto: cada passo dependia de medida do anterior) |
 
@@ -32,7 +32,7 @@
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
 | 1 | `rules/loader.py` | (direct) | ✅ Complete | Corpo do laco virou `validate_rule`; `load_catalog()` sem `directory` acrescenta packs (import tardio) |
-| 2 | `sparkforge/packs/{__init__,manifest,load,check}.py` | (direct) | ✅ Complete | Comparador de faixa proprio; 7 recusas; `PackSet` com mapa de prefixo |
+| 2 | `sparkforge_aws/packs/{__init__,manifest,load,check}.py` | (direct) | ✅ Complete | Comparador de faixa proprio; 7 recusas; `PackSet` com mapa de prefixo |
 | 3 | `tests/test_packs_manifest.py`, `tests/test_packs_load.py` | (direct) | ✅ Complete | Faixa, manifesto, cada recusa, carga, verbos, knowledge, freshness |
 | 4 | Schemas de `rule_id`/`id` | (direct) | ✅ Complete | `finding.schema.json` e os 2 padroes de `tools.py` |
 | 5 | `_core` | (direct) | ✅ Complete | `pack_list`, `pack_check`, `knowledge_path` com `packs`, freshness por lock do pack, `rules_lookup` sem chaves `_` |

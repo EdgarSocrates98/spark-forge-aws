@@ -133,7 +133,7 @@ A armadilha do format-version 3 contra Athena, essa sim, já é judicável — e
 
 A separação entre as duas metades deste documento existe também como dado, em
 [`iceberg-feature-support.yaml`](iceberg-feature-support.yaml), carregado por
-`sparkforge/storage/feature_support.py`. O YAML é uma matriz de **13 features contra 14
+`sparkforge_aws/storage/feature_support.py`. O YAML é uma matriz de **13 features contra 14
 engines** (`glue`, `athena`, `emr_ec2`, `emr_serverless`, `emr_eks`, `redshift`, `trino`,
 `spark`, `flink`, `pyiceberg`, `bigquery`, `rest_client`, `s3_tables`, `lakeformation`) em
 que **cada célula carrega a própria evidência** — e o carregador recusa a matriz inteira se
@@ -177,7 +177,7 @@ célula ausente: ausência é recusa, e aquela célula era uma afirmação. Hoje
 `knowledge/<plataforma>/runtime-matrix.yaml` e uma coluna aqui seria a terceira cópia do mesmo
 fato. O que a matriz de feature declara é `min_library_version` — a partir de qual release da
 **biblioteca** a capacidade aparece, com a citação exata das notas curadas do Apache Iceberg —
-e `sparkforge/storage/readiness.py` calcula o cruzamento.
+e `sparkforge_aws/storage/readiness.py` calcula o cruzamento.
 
 `min_library_version` é **limite inferior**, nunca prova de suporte:
 

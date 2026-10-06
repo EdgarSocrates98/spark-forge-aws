@@ -191,7 +191,7 @@ class TestWatchlistIsDerivedFromBothOrigins:
     """
 
     def test_every_url_in_the_catalog_is_watched(self):
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         expected = {
             source["url"]
@@ -305,7 +305,7 @@ class TestOfflineSync:
 
 class TestChangedAt:
     """`changed_at` e a data em que o hash mudou pela ultima vez: e ela que deixa
-    `sparkforge/knowledge_freshness.py` dizer `stale`."""
+    `sparkforge_aws/knowledge_freshness.py` dizer `stale`."""
 
     URL = "https://x.dev/latest/a"
 

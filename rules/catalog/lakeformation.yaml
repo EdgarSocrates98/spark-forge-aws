@@ -1,6 +1,6 @@
 # Catálogo de regras — Lake Formation com controle de acesso fino (FGAC) em job Glue
 #
-# Depende do extrator de Terraform HCL (`sparkforge/facts/terraform.py`), que já
+# Depende do extrator de Terraform HCL (`sparkforge_aws/facts/terraform.py`), que já
 # observa tudo o que as duas regras precisam. Não há capacidade nova nesta área:
 # os dois defeitos são combinações de atributos do MESMO `aws_glue_job`, e o
 # extrator já emite os três como `tf.attribute` — o parâmetro de FGAC e
@@ -352,13 +352,13 @@ rules:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-08-22}
 
   # ---------------------------------------------------------------------------
-  # SF-LF-003 -- entrou em 2026-09-09, junto com `sparkforge/facts/lakeformation.py`.
+  # SF-LF-003 -- entrou em 2026-09-09, junto com `sparkforge_aws/facts/lakeformation.py`.
   #
   # POR QUE ELA PRECISOU DE UM EXTRATOR, e SF-LF-001/002 nao precisaram:
   # aquelas duas perguntam por uma chave EXATA (`--extra-jars`,
   # `command { name }`), e `where` compara igualdade. Esta pergunta "o catalogo
   # Iceberg deste job e o session catalog?", e o nome do catalogo esta DENTRO da
-  # chave (`spark.sql.catalog.<nome>`). `sparkforge/rules/expr.py::_CMP_OPS` tem
+  # chave (`spark.sql.catalog.<nome>`). `sparkforge_aws/rules/expr.py::_CMP_OPS` tem
   # seis comparadores e nenhuma funcao -- sem `startswith`, sem `in`. O predicado
   # foi derivado num fact (`attrs.is_session_catalog`), que e onde predicado mora
   # neste motor.
@@ -1132,7 +1132,7 @@ rules:
       - >-
         Saída 1 — o alvo **não** ser registrado no Lake Formation. Aí a escrita é
         do runtime role, e o que resta conferir é `s3:PutObject`,
-        `s3:DeleteObject` e KMS, que `sparkforge collect iam-access` responde.
+        `s3:DeleteObject` e KMS, que `sparkforge-aws collect iam-access` responde.
       - >-
         Saída 2 — trocar o job para **Full Table Access**. Aí quem escreve é a
         credencial do Lake Formation, com `ALL` no grant, mais
@@ -1174,7 +1174,7 @@ rules:
     validation:
       - >-
         A mensagem exata da primeira operação de escrita que falha, coletada por
-        `sparkforge collect cloudwatch-logs`. Sem ela, o resto é hipótese.
+        `sparkforge-aws collect cloudwatch-logs`. Sem ela, o resto é hipótese.
       - >-
         Contagem de linhas e agregado por chave no destino, antes e depois da
         saída escolhida -- as três mudam o caminho de escrita, e caminho
@@ -1343,7 +1343,7 @@ rules:
   #
   # `ERR-LF-001` declarava `lakeformation.missing_grant` em `evidence_required`, e
   # nenhum extrator o emitia: `SF-ERR-006` so podia mandar investigar a cadeia.
-  # O fact agora sai de `sparkforge/facts/lakeformation_missing_grant.py`, que ja
+  # O fact agora sai de `sparkforge_aws/facts/lakeformation_missing_grant.py`, que ja
   # resolveu modelo, versao e operacao -- por isso `runtime_scope: {}` e o gate
   # real e `requires_facts` (docs/gates-por-mudanca.md, secao runtime_scope).
   - id: SF-LF-011
@@ -1455,12 +1455,12 @@ rules:
         plataforma, não de job.
     validation:
       - >-
-        Com `side: lf`, recoletar com `sparkforge collect lakeformation`; com
-        `side: iam`, recoletar com `sparkforge collect iam-access --role-arn
+        Com `side: lf`, recoletar com `sparkforge-aws collect lakeformation`; com
+        `side: iam`, recoletar com `sparkforge-aws collect iam-access --role-arn
         <runtime-role> --resource-arn <localização>/* --action <attrs.action>`,
         repetindo `--action` para cada ação que a operação exige (na escrita
         sob FGAC, append ou overwrite, `s3:PutObject` e `s3:DeleteObject`).
-        Rodar `sparkforge fuse` de novo: o
+        Rodar `sparkforge-aws fuse` de novo: o
         `lakeformation.missing_grant` do recurso precisa sumir.
       - >-
         Reexecutar o job e confirmar que `ERR-LF-001` sai do log do run. Nenhum

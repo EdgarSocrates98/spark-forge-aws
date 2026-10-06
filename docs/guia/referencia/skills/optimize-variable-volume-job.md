@@ -2,12 +2,12 @@
 
 # Skill `optimize-variable-volume-job`
 
-Use quando o mesmo job Glue roda de dezenas de registros a centenas de milhões e um único perfil configurado para o pior caso fica caro em microcarga e ainda inadequado no full. Use também quando a pergunta for \"por que a carga vazia demora 5 minutos\", \"o job de teste custa quase igual ao de produção\" ou \"ficou mais lento essa semana\" num job cujo volume varia muito entre execuções. Se você está prestes a comparar runs de volumes diferentes só de cabeça, rode `sparkforge analyze event-log` em cada run e `sparkforge analyze pyspark` no código em vez disso — subparalelismo (SF-UI-006) que é esperado numa carga micro é sintoma real numa carga full, e o catálogo não distingue os dois perfis sozinho; quem separa é você.
+Use quando o mesmo job Glue roda de dezenas de registros a centenas de milhões e um único perfil configurado para o pior caso fica caro em microcarga e ainda inadequado no full. Use também quando a pergunta for \"por que a carga vazia demora 5 minutos\", \"o job de teste custa quase igual ao de produção\" ou \"ficou mais lento essa semana\" num job cujo volume varia muito entre execuções. Se você está prestes a comparar runs de volumes diferentes só de cabeça, rode `sparkforge-aws analyze event-log` em cada run e `sparkforge-aws analyze pyspark` no código em vez disso — subparalelismo (SF-UI-006) que é esperado numa carga micro é sintoma real numa carga full, e o catálogo não distingue os dois perfis sozinho; quem separa é você.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/optimize-variable-volume-job/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze event-log', 'sparkforge analyze pyspark', 'sparkforge collect event-log']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze event-log', 'sparkforge-aws analyze pyspark', 'sparkforge-aws collect event-log']} |
 
 ## Procedimento (texto integral)
 
@@ -18,12 +18,12 @@ O catálogo julga cada execução isoladamente contra o mesmo limiar. `SF-UI-006
 ### Procedimento
 
 1. **Classifique as execuções por perfil** (empty, micro, small, medium, large, full/bootstrap) a partir do volume real de entrada de cada uma. Os limites vêm do workload observado, não de um valor universal.
-2. Para cada perfil relevante, colete e extraia separadamente: `sparkforge collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>` → `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts_<perfil>.json`.
-3. `sparkforge analyze pyspark --path <lib> --out .sparkforge/code_facts.json` extrai os facts estruturais (join, partitioning, hint de broadcast, loop) que não mudam entre execuções — são decisões congeladas no código, não no volume do dia.
-4. `sparkforge judge --facts .sparkforge/facts_<perfil>.json --show-skipped` **em cada perfil separadamente**. Não julgue um `facts.json` que misture execuções de perfis diferentes — a mesma regra significa coisas opostas em cada um. Sem flag de versão: cada facts de event log já declara a versão do Spark observada naquele run (`spark.runtime_version`), e `judge` a usa sozinho — leia o campo `runtime` de cada saída, com `detected_from: ["event_log"]`. **É a checagem que esta skill mais precisa e a mais fácil de esquecer:** comparar perfis só faz sentido entre runs do mesmo runtime, e um `runtime.spark` diferente entre dois perfis significa que a diferença de findings pode ser de versão, não de volume. Para conferir os dois de uma vez sem abrir cada saída: `sparkforge runtime detect --facts .sparkforge/facts_<perfil_a>.json --facts .sparkforge/facts_<perfil_b>.json` — `divergences` vazio é o aceite.
+2. Para cada perfil relevante, colete e extraia separadamente: `sparkforge-aws collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>` → `sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts_<perfil>.json`.
+3. `sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/code_facts.json` extrai os facts estruturais (join, partitioning, hint de broadcast, loop) que não mudam entre execuções — são decisões congeladas no código, não no volume do dia.
+4. `sparkforge-aws judge --facts .sparkforge/facts_<perfil>.json --show-skipped` **em cada perfil separadamente**. Não julgue um `facts.json` que misture execuções de perfis diferentes — a mesma regra significa coisas opostas em cada um. Sem flag de versão: cada facts de event log já declara a versão do Spark observada naquele run (`spark.runtime_version`), e `judge` a usa sozinho — leia o campo `runtime` de cada saída, com `detected_from: ["event_log"]`. **É a checagem que esta skill mais precisa e a mais fácil de esquecer:** comparar perfis só faz sentido entre runs do mesmo runtime, e um `runtime.spark` diferente entre dois perfis significa que a diferença de findings pode ser de versão, não de volume. Para conferir os dois de uma vez sem abrir cada saída: `sparkforge-aws runtime detect --facts .sparkforge/facts_<perfil_a>.json --facts .sparkforge/facts_<perfil_b>.json` — `divergences` vazio é o aceite.
    O event log preenche `spark`, não `glue` (a matriz de compatibilidade deriva numa direção só), então as seis regras `SF-GLUE-*` de infraestrutura — inclusive `SF-GLUE-007`, que acusa `max_capacity` definido junto de `worker_type`/`number_of_workers` — ficam em `--show-skipped` com `reason: runtime_scope`. Para cobri-las, junte os facts do Terraform na mesma chamada (`--facts` é repetível) em vez de digitar a versão; `--glue 5.1` só quando você a souber de fonte confiável.
 5. Compare os findings entre perfis: o que dispara só no `empty`/`micro` é custo fixo (cold start, planejamento); o que dispara em todos os perfis, incluindo `full`, é estrutural no código, não do volume do dia.
-6. Duração e DPU-hours por run não vêm de um extrator de facts — leia do job run do Glue (`sparkforge collect glue-job` traz a definição, não o histórico de runs) ou do CloudWatch bruto (`sparkforge collect cloudwatch`), manualmente, para separar custo fixo de custo proporcional ao volume.
+6. Duração e DPU-hours por run não vêm de um extrator de facts — leia do job run do Glue (`sparkforge-aws collect glue-job` traz a definição, não o histórico de runs) ou do CloudWatch bruto (`sparkforge-aws collect cloudwatch`), manualmente, para separar custo fixo de custo proporcional ao volume.
 
 ### O que interpretar por perfil, não pelo limiar isolado
 
@@ -40,7 +40,7 @@ O catálogo julga cada execução isoladamente contra o mesmo limiar. `SF-UI-006
 | `SF-PY-009` | `pyspark.join` (hint de broadcast) | Estratégia de join congelada no código, nunca reavaliada por volume |
 | `SF-PY-004` | `pyspark.loop` | Custo de loop que só aparece — e domina — nos perfis grandes |
 
-Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de memória.
+Limiares e severidade vêm de `sparkforge-aws rules lookup --id <ID>`, nunca de memória.
 
 ### Quando NÃO usar
 
@@ -52,7 +52,7 @@ Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de mem�
 
 - Julgar um `facts.json` que combina execuções de perfis diferentes e tirar uma conclusão só dele.
 - Configurar um job único para o pior caso e pagar esse custo em toda microcarga.
-- Não ter curto-circuito para execuções sem mudança (`empty`/`micro`) — o toolkit não detecta "sem mudança desde a última execução"; essa lógica é do seu job, não do sparkforge.
+- Não ter curto-circuito para execuções sem mudança (`empty`/`micro`) — o toolkit não detecta "sem mudança desde a última execução"; essa lógica é do seu job, não do sparkforge_aws.
 - Misturar full, incremental e manutenção Iceberg no mesmo job ou fila, escondendo qual perfil está pagando qual custo.
 
 ### Preservar o resultado, com o verbo que produz a evidência
@@ -62,9 +62,9 @@ e mais mexe no dado: pular a execução quando "não houve mudança" só preserv
 detecção de "sem mudança" estiver certa. Errada, ela não falha — ela deixa o destino com o
 conteúdo do run anterior, e nenhum alarme dispara.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -94,7 +94,7 @@ Esta skill trata **capacidade e comportamento de jobs com volume variável**. Co
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze event-log`, `sparkforge analyze pyspark`, `sparkforge collect event-log`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze event-log`, `sparkforge-aws analyze pyspark`, `sparkforge-aws collect event-log`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

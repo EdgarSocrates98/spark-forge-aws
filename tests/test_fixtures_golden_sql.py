@@ -11,10 +11,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.sql_literal import extract_sql_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.sql_literal import extract_sql_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sql"
@@ -88,7 +88,7 @@ class TestAdversarial:
     def test_all_ath_rules_blocked_or_missing_facts(self):
         """Nenhuma das cinco SF-ATH-* pode disparar so com texto SQL nesta
         fase, SEM fusao: SF-ATH-001/002/005 exigem os facts `.enriched` (ou
-        `catalog.table_schema`) que so `sparkforge/facts/fusion.py` produz, a
+        `catalog.table_schema`) que so `sparkforge_aws/facts/fusion.py` produz, a
         partir de `catalog.table_schema` -- fixture nenhuma deste corpus roda
         fusao nem tem catalogo. As duas restantes (catalog.table_partitions,
         athena.workgroup) exigem fact kinds que nenhum extrator deste corpus

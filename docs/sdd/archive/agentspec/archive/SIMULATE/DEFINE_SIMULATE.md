@@ -1,6 +1,6 @@
 # DEFINE: Simulate (what-if estrutural)
 
-> `sparkforge simulate` altera o valor de propriedades de configuracao que ja existem numa camada nomeada, passa os dois lados pelo mesmo pipeline (tira derivados, rederiva, redetecta runtime, julga) e diz quais findings somem, quais aparecem e quais regras mudam de estado -- sem prever medida nenhuma. Antes, o passo 0 liga a derivacao de timeout, que nao tinha porta de producao.
+> `sparkforge-aws simulate` altera o valor de propriedades de configuracao que ja existem numa camada nomeada, passa os dois lados pelo mesmo pipeline (tira derivados, rederiva, redetecta runtime, julga) e diz quais findings somem, quais aparecem e quais regras mudam de estado -- sem prever medida nenhuma. Antes, o passo 0 liga a derivacao de timeout, que nao tinha porta de producao.
 
 ## Metadata
 
@@ -34,14 +34,14 @@ Para saber o que uma mudanca de configuracao faria com os achados, o operador ho
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G0 (passo 0): `facts/fusion.py::fuse()` passa a chamar `extract_timeout_diagnosis`, do mesmo jeito que ja chama `build_lakeformation`; `sparkforge fuse` passa a produzir `spark.timeout.*` quando ha os facts de origem |
-| **MUST** | G1: modulo puro `sparkforge/simulate/` com o mapa de camadas, a alteracao dos facts, a remocao dos derivados e a comparacao pela chave estavel (`proof.keys.stable_key`); o `judge` e a rederivacao sao chamados pelo adapter |
+| **MUST** | G0 (passo 0): `facts/fusion.py::fuse()` passa a chamar `extract_timeout_diagnosis`, do mesmo jeito que ja chama `build_lakeformation`; `sparkforge-aws fuse` passa a produzir `spark.timeout.*` quando ha os facts de origem |
+| **MUST** | G1: modulo puro `sparkforge_aws/simulate/` com o mapa de camadas, a alteracao dos facts, a remocao dos derivados e a comparacao pela chave estavel (`proof.keys.stable_key`); o `judge` e a rederivacao sao chamados pelo adapter |
 | **MUST** | G2: `--set <camada>:<chave>=<valor>`, repetivel; camadas `tf` (`tf.spark_conf`, `tf.attribute`), `code` (`pyspark.conf_set`), `effective` (`spark.conf_effective`), `emr` (`emr.configuration`, `emrs.configuration`, `emrc.configuration`); prefixo obrigatorio; camada desconhecida ou sem prefixo -> exit 2 |
 | **MUST** | G3: alteracao so em fact existente cujo `attrs.key` bate: `attrs.value` recebe o valor como texto; se o fact tinha `measures.value`, ele recebe o valor convertido em numero; valor nao numerico para medida numerica -> recusa `valor_nao_numerico_para_medida`; chave ausente na camada -> recusa `chave_ausente_na_camada`; qualquer recusa -> exit 2, sem simulacao parcial |
 | **MUST** | G4: os dois lados pelo mesmo pipeline: tira os kinds de `fusion`, `lakeformation` e `timeout_diagnosis`, rederiva com `fuse`, detecta o runtime a partir dos proprios facts, julga com `return_skipped=True` |
 | **MUST** | G5: saida com `changes` (por `--set`: valores antigos, novo, facts alterados), `disappeared` e `appeared` (por `(rule_id, chave estavel)`, com o subject), `persisted_count`, `skipped_delta` (regra que muda entre avaliada e pulada, com a razao), `runtime` antes e depois |
 | **MUST** | G6: `refused` fixo com `performance_prediction`, `dependency_incompatibility` (-> `migration_assess`) e `execution_graph` |
-| **MUST** | G7: CLI `sparkforge simulate --facts U [--facts ...] --set camada:chave=valor [--set ...]` com as flags de runtime do `judge`; tool `sparkforge_simulate` `_READ_ONLY` declarando `facts_path` |
+| **MUST** | G7: CLI `sparkforge-aws simulate --facts U [--facts ...] --set camada:chave=valor [--set ...]` com as flags de runtime do `judge`; tool `sparkforge_simulate` `_READ_ONLY` declarando `facts_path` |
 | **SHOULD** | G8: dono = o coordenador que declara `tune`; `parity.yaml` com "show what a configuration change would structurally move" |
 | **COULD** | G9: `docs/simulate.md` com as camadas, a regra de alteracao, o pipeline e as recusas |
 
@@ -49,7 +49,7 @@ Para saber o que uma mudanca de configuracao faria com os achados, o operador ho
 
 ## Success Criteria
 
-- [ ] SC0: `sparkforge fuse` sobre os facts de `eventlog/broadcast_timeout_stage_failure` produz `spark.timeout.*`; os **7** goldens de `fixtures/fusion/` ficam byte a byte (medido: nenhum tem fact de event log).
+- [ ] SC0: `sparkforge-aws fuse` sobre os facts de `eventlog/broadcast_timeout_stage_failure` produz `spark.timeout.*`; os **7** goldens de `fixtures/fusion/` ficam byte a byte (medido: nenhum tem fact de event log).
 - [ ] SC1: `fixtures/simulate/` com um caso por consequencia -- regra some, regra aparece, runtime muda, derivado de Lake Formation, timeout -- mais as recusas e o caso de simetria (sem `--set`, `disappeared` e `appeared` vazios).
 - [ ] SC2: nenhuma saida do corpus traz medida prevista; `refused` sempre com os tres itens.
 - [ ] SC3: mudar so `line`/`snippet` do subject nao cria diferenca (chave estavel).
@@ -96,7 +96,7 @@ Para saber o que uma mudanca de configuracao faria com os achados, o operador ho
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/facts/fusion.py` (G0); `sparkforge/simulate/`; `adapters/_core.py`, `cli.py`, `tools.py`; executor/coordenador do `tune`; `parity.yaml`; `manifest.json`; `fixtures/simulate/`; `tests/test_simulate_*.py`, `tests/test_fixtures_golden_simulate.py` | Nenhum recurso de nuvem |
+| **Deployment Location** | `sparkforge_aws/facts/fusion.py` (G0); `sparkforge_aws/simulate/`; `adapters/_core.py`, `cli.py`, `tools.py`; executor/coordenador do `tune`; `parity.yaml`; `manifest.json`; `fixtures/simulate/`; `tests/test_simulate_*.py`, `tests/test_fixtures_golden_simulate.py` | Nenhum recurso de nuvem |
 | **KB Domains** | Motor de regras (`judge`, `skipped`), derivacao (`fuse`, Lake Formation, timeout), configuracao Glue/Spark/EMR | — |
 | **IaC Impact** | None | — |
 

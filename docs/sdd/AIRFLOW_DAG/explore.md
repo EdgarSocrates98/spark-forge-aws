@@ -6,7 +6,7 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "Extrator do DAG .py por AST (molde de sparkforge/facts/pyspark_ast.py): af.dag, af.task, af.dependency e af.unresolved; verbo sparkforge analyze airflow-dag e tool MCP; area SF-AIRFLOW com quatro regras que julgam o DAG (wait_for_completion False com downstream; stop_job_run_on_kill False com execution_timeout; deferrable False com espera sincrona; duas camadas de retry cruzando com aws_glue_job pelo job_name literal, derivacao em fuse como o sfn.glue_job_link); coordenador glue-infra-reviewer com rota por findings_area."
+    summary: "Extrator do DAG .py por AST (molde de sparkforge_aws/facts/pyspark_ast.py): af.dag, af.task, af.dependency e af.unresolved; verbo sparkforge-aws analyze airflow-dag e tool MCP; area SF-AIRFLOW com quatro regras que julgam o DAG (wait_for_completion False com downstream; stop_job_run_on_kill False com execution_timeout; deferrable False com espera sincrona; duas camadas de retry cruzando com aws_glue_job pelo job_name literal, derivacao em fuse como o sfn.glue_job_link); coordenador glue-infra-reviewer com rota por findings_area."
     tradeoffs:
       - "mesmo desenho do STEP_FUNCTIONS, que acabou de passar pelas tres portas do criterio"
       - "a regra de maior valor (duas camadas de retry) so existe cruzando os dois artefatos"
@@ -40,8 +40,8 @@ operador em 2026-09-19: "Airflow pela mesma porta".
 - `knowledge/airflow-pipelines.md`: 56 palavras de princípio, sem regra e sem extrator.
   Ele cita `https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html`.
 - Nenhum fact de Airflow. O molde de leitura de Python por AST é
-  `sparkforge/facts/pyspark_ast.py`; o molde de domínio novo inteiro é
-  `sparkforge/facts/stepfunctions.py` com a derivação em `fuse`.
+  `sparkforge_aws/facts/pyspark_ast.py`; o molde de domínio novo inteiro é
+  `sparkforge_aws/facts/stepfunctions.py` com a derivação em `fuse`.
 - A área `SF-AIRFLOW` existiu como área de coordenação oca e saiu no SF_STUBS (#88). O
   nome volta agora com regra que julga.
 

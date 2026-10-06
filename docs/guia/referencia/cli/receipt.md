@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge receipt`
+# `sparkforge-aws receipt`
 
 Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o recibo e os artefatos, nunca autoria.
 
@@ -8,15 +8,15 @@ Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o reci
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge receipt emit`](#sparkforge-receipt-emit) | Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso. |
-| [`sparkforge receipt verify`](#sparkforge-receipt-verify) | Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 quando o recibo nao corresponde. |
+| [`sparkforge-aws receipt emit`](#sparkforge-aws-receipt-emit) | Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso. |
+| [`sparkforge-aws receipt verify`](#sparkforge-aws-receipt-verify) | Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 quando o recibo nao corresponde. |
 
-## `sparkforge receipt emit`
+## `sparkforge-aws receipt emit`
 
 Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso.
 
 ```bash
-sparkforge receipt emit --help
+sparkforge-aws receipt emit --help
 ```
 
 ### Opções
@@ -36,12 +36,12 @@ sparkforge receipt emit --help
 
 [`sparkforge_receipt_emit`](../tools/sparkforge_receipt_emit.md), [`sparkforge_receipt_verify`](../tools/sparkforge_receipt_verify.md)
 
-## `sparkforge receipt verify`
+## `sparkforge-aws receipt verify`
 
 Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 quando o recibo nao corresponde.
 
 ```bash
-sparkforge receipt verify --help
+sparkforge-aws receipt verify --help
 ```
 
 ### Opções

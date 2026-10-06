@@ -1,4 +1,4 @@
-"""Unidade do executor de debate (`sparkforge/agentic/executor/debate_run.py`).
+"""Unidade do executor de debate (`sparkforge_aws/agentic/executor/debate_run.py`).
 
 Os goldens de `tests/test_fixtures_golden_debate.py` cobrem desfecho e recusa
 por fixture. Aqui ficam as garantias que nao cabem num rastro: o plano congelado
@@ -14,19 +14,19 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.agentic.blackboard import (
+from sparkforge_aws.agentic.blackboard import (
     append_claim,
     append_objection,
     init_blackboard,
     read_claims,
     read_decisions,
 )
-from sparkforge.agentic.budget import case_budget_from_case, debate_rounds_from_budget
-from sparkforge.agentic.executor import debate_run as dr
-from sparkforge.agentic.executor.plan import debate_plan
-from sparkforge.agentic.executor.run import open_debate_plans, run_executor
-from sparkforge.agentic.models import Claim, ClaimType, Objection
-from sparkforge.case.store import SCHEMA_VERSION, save_case
+from sparkforge_aws.agentic.budget import case_budget_from_case, debate_rounds_from_budget
+from sparkforge_aws.agentic.executor import debate_run as dr
+from sparkforge_aws.agentic.executor.plan import debate_plan
+from sparkforge_aws.agentic.executor.run import open_debate_plans, run_executor
+from sparkforge_aws.agentic.models import Claim, ClaimType, Objection
+from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
 
 RAIZ = Path(__file__).resolve().parents[1]
 UNIAO = (

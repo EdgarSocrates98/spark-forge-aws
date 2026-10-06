@@ -70,7 +70,7 @@ ele, achado ausente e indistinguivel de regra pulada por versao.
 #### A exceção que o job LANÇOU — `SF-ERR`, e o que a separa de `SF-SPARK4`
 
 Quando o case traz event log com `spark.stage.failure`, o extrator
-`sparkforge/facts/exception.py` estrutura a razão da falha em `spark.exception`
+`sparkforge_aws/facts/exception.py` estrutura a razão da falha em `spark.exception`
 (classe, cabeça da mensagem, `caused_by`) e o matcher casa aquela CLASSE contra
 `knowledge/errors/`, emitindo `error.signature_match`. A área `SF-ERR` julga
 esse par.
@@ -99,7 +99,7 @@ significa que a assinatura não casou, ou que o companheiro não foi coletado.
 **As quatro últimas são a família de Lake Formation** (`SF-ERR-014` a
 `SF-ERR-017`), e elas são as primeiras da área cujo companheiro é um fact
 DERIVADO e não um extrator de artefato: `lakeformation.access_model` e
-`lakeformation.filesystem`, de `sparkforge/facts/lakeformation.py`. Duas coisas
+`lakeformation.filesystem`, de `sparkforge_aws/facts/lakeformation.py`. Duas coisas
 a saber antes de usá-las:
 
 - **a procedência do texto é declarada.** A página de troubleshooting do AWS

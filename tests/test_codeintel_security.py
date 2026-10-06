@@ -1,4 +1,4 @@
-"""As travas de `sparkforge/codeintel/security.py`, e a prova do INV-001.
+"""As travas de `sparkforge_aws/codeintel/security.py`, e a prova do INV-001.
 
 POR QUE O SUBPROCESSO APARECE TANTO AQUI
 -----------------------------------------
@@ -19,7 +19,7 @@ que passa sozinho e quebra a suite.
 O QUE ESTE ARQUIVO PROVA E O QUE ELE NAO PROVA
 -----------------------------------------------
 A classe `TestInv001` e a razao de ser do arquivo: ela indexa o pacote
-`sparkforge/` INTEIRO -- 140 arquivos, 1243 nos na medicao desta sessao -- com o
+`sparkforge_aws/` INTEIRO -- 140 arquivos, 1243 nos na medicao desta sessao -- com o
 hook de bloqueio ativo, e o indice termina. Isso e evidencia direta de que o
 caminho real de indexacao, busca e resumo nao abre socket, nao resolve nome e
 nao levanta processo. Ate esta fase o INV-001 nao tinha teste nenhum.
@@ -46,16 +46,16 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.codeintel import security
+from sparkforge_aws.codeintel import security
 
 RAIZ = Path(__file__).resolve().parents[1]
-PACOTE = RAIZ / "sparkforge" / "codeintel"
+PACOTE = RAIZ / "sparkforge_aws" / "codeintel"
 
 E_POSIX = sys.platform != "win32"
 
 
 def _copia_do_pacote(destino: Path) -> Path:
-    """Copia `sparkforge/codeintel/` para `destino`, para a mutacao nao sujar a arvore.
+    """Copia `sparkforge_aws/codeintel/` para `destino`, para a mutacao nao sujar a arvore.
 
     Mutar o pacote de verdade para ver o gate acusar deixaria a arvore suja se o
     teste falhasse no meio -- e um teste de seguranca que pode deixar
@@ -338,7 +338,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from sparkforge.codeintel.security import OperacaoBloqueada, hook_instalado, install_audit_hook
+from sparkforge_aws.codeintel.security import OperacaoBloqueada, hook_instalado, install_audit_hook
 
 r = {"antes": hook_instalado(), "primeira": install_audit_hook(),
      "segunda": install_audit_hook(), "depois": hook_instalado()}
@@ -438,9 +438,9 @@ import json
 import sys
 from pathlib import Path
 
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.search import buscar, resumo
-from sparkforge.codeintel.security import install_audit_hook
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.search import buscar, resumo
+from sparkforge_aws.codeintel.security import install_audit_hook
 
 raiz, banco = Path(sys.argv[1]), Path(sys.argv[2])
 install_audit_hook()
@@ -461,7 +461,7 @@ class TestInv001:
     def test_indexar_o_pacote_inteiro_sob_o_hook_nao_produz_egress(self, tmp_path):
         """A prova do invariante central da SPEC, que ate esta fase nao tinha teste.
 
-        Indexa `sparkforge/` inteiro com o hook que RECUSA socket, DNS,
+        Indexa `sparkforge_aws/` inteiro com o hook que RECUSA socket, DNS,
         `os.system` e `subprocess.Popen`. Se qualquer etapa -- varredura, leitura,
         `ast`, escrita no sqlite, FTS, busca, resumo -- tocasse a rede, o
         processo morreria com `OperacaoBloqueada` e `_rodar` falharia no
@@ -475,7 +475,7 @@ class TestInv001:
         banco = tmp_path / "indice.sqlite3"
         script = tmp_path / "inv001.py"
         script.write_text(SCRIPT_INV001, encoding="utf-8")
-        saida = _rodar(script, str(RAIZ / "sparkforge"), str(banco))
+        saida = _rodar(script, str(RAIZ / "sparkforge_aws"), str(banco))
 
         assert saida["arquivos"] > 0
         assert saida["nos"] > 0
@@ -519,7 +519,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, sys.argv[1])
-from sparkforge.codeintel.security import apply_resource_limits  # noqa: E402
+from sparkforge_aws.codeintel.security import apply_resource_limits  # noqa: E402
 
 limites = apply_resource_limits(
     memoria_bytes=int(sys.argv[2]),

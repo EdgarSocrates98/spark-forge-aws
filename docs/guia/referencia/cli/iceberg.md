@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge iceberg`
+# `sparkforge-aws iceberg`
 
 Comandos especificos de Apache Iceberg.
 
@@ -8,14 +8,14 @@ Comandos especificos de Apache Iceberg.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge iceberg assess-upgrade`](#sparkforge-iceberg-assess-upgrade) | Avalia subir o format version da tabela contra quem a consome. NAO executa. |
+| [`sparkforge-aws iceberg assess-upgrade`](#sparkforge-aws-iceberg-assess-upgrade) | Avalia subir o format version da tabela contra quem a consome. NAO executa. |
 
-## `sparkforge iceberg assess-upgrade`
+## `sparkforge-aws iceberg assess-upgrade`
 
 Avalia subir o format version da tabela contra quem a consome. NAO executa.
 
 ```bash
-sparkforge iceberg assess-upgrade --help
+sparkforge-aws iceberg assess-upgrade --help
 ```
 
 ### Opções

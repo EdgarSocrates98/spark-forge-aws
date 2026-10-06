@@ -9,11 +9,11 @@ upstream:
   sha256: "38528c0d6dd35d2c57af6699dd4fbf5a2271fc1ac5346ed2e7e6437827d13321"
 tasks:
   - id: T1
-    files: [tests/test_streaming_pipeline.py, sparkforge/facts/streaming_pipeline.py, sparkforge/facts/streaming_composition.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
+    files: [tests/test_streaming_pipeline.py, sparkforge_aws/facts/streaming_pipeline.py, sparkforge_aws/facts/streaming_composition.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py]
     covers: [AC1, AC2, AC4]
     test: {path: tests/test_streaming_pipeline.py, name: test_pipeline_contract_emits_verified_nodes_and_edges}
   - id: T2
-    files: [sparkforge/facts/streaming_composition.py, rules/catalog/streaming.yaml, tests/test_streaming_pipeline.py]
+    files: [sparkforge_aws/facts/streaming_composition.py, rules/catalog/streaming.yaml, tests/test_streaming_pipeline.py]
     covers: [AC3]
     test: {path: tests/test_streaming_pipeline.py, name: test_pipeline_rule_fires_only_for_observed_blind_spot}
   - id: T4

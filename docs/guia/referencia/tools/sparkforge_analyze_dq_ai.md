@@ -20,7 +20,7 @@ Extrai facts de um manifesto externo de recomendacao Glue DQ BASIC ou ADVANCED. 
 
 ## Na CLI
 
-[`sparkforge analyze dq-ai`](../cli/analyze.md), [`sparkforge dq-ai assess`](../cli/dq-ai.md)
+[`sparkforge-aws analyze dq-ai`](../cli/analyze.md), [`sparkforge-aws dq-ai assess`](../cli/dq-ai.md)
 
 ## Capacidade
 

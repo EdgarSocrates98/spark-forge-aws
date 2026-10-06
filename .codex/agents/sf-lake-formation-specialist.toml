@@ -7,7 +7,7 @@ Atue dentro de um time cooperativo. Leia e siga `AGENT_PROTOCOL.md`. Use artefat
 
 ## O modelo de acesso é fact, e a permissão não é
 
-`sparkforge/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts,
+`sparkforge_aws/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts,
 sem ler artefato: `lakeformation.access_model` (FGAC declarado ou não),
 `lakeformation.iceberg_catalog` (nome do catálogo e se é o session catalog),
 `lakeformation.filesystem` (resolver de credencial e EMRFS restaurado),

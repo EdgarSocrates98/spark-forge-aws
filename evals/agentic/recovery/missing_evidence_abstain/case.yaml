@@ -1,0 +1,8 @@
+schema_version: 1
+case_id: recovery-missing-evidence-abstain
+failure: missing_evidence
+attempt: 0
+strategy_fingerprint: me-001
+history: []
+profile: economy
+risk: low

@@ -18,10 +18,10 @@ import jsonschema
 import pytest
 import yaml
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.facts.scan import (
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.facts.scan import (
     DIRECTORY_IGNORED,
     DIRECTORY_REPARSE_POINT,
     DIRECTORY_SENSITIVE,
@@ -30,13 +30,13 @@ from sparkforge.facts.scan import (
     SIZE_ABOVE_LIMIT,
     Pulo,
 )
-from sparkforge.journal import journal_path, journaled
-from sparkforge.receipt._hash import text_sha256
-from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.checks import _pulo_alcancavel, change_kinds, check, evaluate, schema_for
-from sparkforge.sdd.load import discover, load_artifact, split_frontmatter
-from sparkforge.sdd.stamp import StampError, stamp
-from sparkforge.sdd.status import status
+from sparkforge_aws.journal import journal_path, journaled
+from sparkforge_aws.receipt._hash import text_sha256
+from sparkforge_aws.sdd import DEFAULT_ROOT, PHASES
+from sparkforge_aws.sdd.checks import _pulo_alcancavel, change_kinds, check, evaluate, schema_for
+from sparkforge_aws.sdd.load import discover, load_artifact, split_frontmatter
+from sparkforge_aws.sdd.stamp import StampError, stamp
+from sparkforge_aws.sdd.status import status
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -242,8 +242,8 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
     """Uma feature que passa em tudo. Cada teste de recusa estraga UMA coisa."""
     (repo / "tests").mkdir(parents=True, exist_ok=True)
     (repo / "tests" / "test_alvo.py").write_bytes(b"def test_alvo():\n    assert True\n")
-    (repo / "sparkforge").mkdir(exist_ok=True)
-    (repo / "sparkforge" / "existente.py").write_bytes(b"x = 1\n")
+    (repo / "sparkforge_aws").mkdir(exist_ok=True)
+    (repo / "sparkforge_aws" / "existente.py").write_bytes(b"x = 1\n")
     comum = {"sdd": 1, "feature": feature, "profile": profile, "status": "done"}
     caminhos: dict[str, Path] = {}
     define = {
@@ -272,8 +272,8 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "phase": "design",
         "upstream": _upstream(repo, caminhos["define"]),
         "files": [
-            {"path": "sparkforge/novo.py", "action": "create", "reason": "r"},
-            {"path": "sparkforge/existente.py", "action": "modify", "reason": "r"},
+            {"path": "sparkforge_aws/novo.py", "action": "create", "reason": "r"},
+            {"path": "sparkforge_aws/existente.py", "action": "modify", "reason": "r"},
         ],
         "decisions": [{"id": "D1", "choice": "c", "rejected": [], "rollback": "git revert"}],
         "covers": [{"part": "p", "acceptance": ["AC1"]}],
@@ -284,7 +284,7 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "upstream": _upstream(repo, caminhos["design"]),
         "tasks": [{
             "id": "T1",
-            "files": ["sparkforge/novo.py"],
+            "files": ["sparkforge_aws/novo.py"],
             "covers": ["AC1"],
             "test": {"path": "tests/test_alvo.py", "name": "test_alvo"},
         }],
@@ -946,7 +946,7 @@ def _ate(tmp_path, fase):
 def test_manifest_path_unknown(tmp_path):
     caminhos = _ate(tmp_path, "design")
     meta = _meta(caminhos["design"])
-    meta["files"].append({"path": "sparkforge/sumiu.py", "action": "delete", "reason": "r"})
+    meta["files"].append({"path": "sparkforge_aws/sumiu.py", "action": "delete", "reason": "r"})
     _reescreve(caminhos["design"], files=meta["files"])
     assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
 
@@ -954,9 +954,9 @@ def test_manifest_path_unknown(tmp_path):
 def _design_apaga_velho(tmp_path, fase):
     """Feature cortada depois de `fase`, com o design apagando um arquivo que existe."""
     caminhos = _ate(tmp_path, fase)
-    (tmp_path / "sparkforge" / "velho.py").write_bytes(b"y = 2\n")
+    (tmp_path / "sparkforge_aws" / "velho.py").write_bytes(b"y = 2\n")
     meta = _meta(caminhos["design"])
-    meta["files"].append({"path": "sparkforge/velho.py", "action": "delete", "reason": "r"})
+    meta["files"].append({"path": "sparkforge_aws/velho.py", "action": "delete", "reason": "r"})
     _reescreve(caminhos["design"], files=meta["files"])
     _restampa(tmp_path)
     return caminhos
@@ -966,7 +966,7 @@ def test_delete_some_depois_do_build_pronto(tmp_path):
     caminhos = _design_apaga_velho(tmp_path, "build_report")
     assert _codigos(check(tmp_path)) == ([], [])
     # o build apagou o arquivo, como o design mandava: nao e erro de manifesto
-    (tmp_path / "sparkforge" / "velho.py").unlink()
+    (tmp_path / "sparkforge_aws" / "velho.py").unlink()
     assert _codigos(check(tmp_path)) == ([], [])
     # com o build ainda em draft, o arquivo sumido volta a ser caminho desconhecido
     _reescreve(caminhos["build_report"], status="draft")
@@ -975,13 +975,13 @@ def test_delete_some_depois_do_build_pronto(tmp_path):
 
 def test_delete_sumido_sem_build_report_e_recusado(tmp_path):
     _design_apaga_velho(tmp_path, "plan")
-    (tmp_path / "sparkforge" / "velho.py").unlink()
+    (tmp_path / "sparkforge_aws" / "velho.py").unlink()
     assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
 
 
 def test_modify_sumido_e_recusado_mesmo_com_build_pronto(tmp_path):
     _ate(tmp_path, "build_report")
-    (tmp_path / "sparkforge" / "existente.py").unlink()
+    (tmp_path / "sparkforge_aws" / "existente.py").unlink()
     assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
 
 
@@ -1421,7 +1421,7 @@ def _codigos_emitidos() -> set[str]:
     codigos: set[str] = set()
     dinamicos: list[str] = []
     for nome in ("checks.py", "stamp.py"):
-        arvore = ast.parse((ROOT / "sparkforge" / "sdd" / nome).read_bytes())
+        arvore = ast.parse((ROOT / "sparkforge_aws" / "sdd" / nome).read_bytes())
         for no in ast.walk(arvore):
             if isinstance(no, ast.Call):
                 funcao = no.func
@@ -1527,8 +1527,8 @@ def test_status_com_fase_atual_invalida(tmp_path, estraga):
 
 
 def test_status_varre_uma_vez_so(tmp_path, monkeypatch):
-    import sparkforge.sdd.checks as modulo_checks
-    import sparkforge.sdd.load as modulo_load
+    import sparkforge_aws.sdd.checks as modulo_checks
+    import sparkforge_aws.sdd.load as modulo_load
 
     feature_limpa(tmp_path)
     chamadas = []
@@ -1546,7 +1546,7 @@ def test_status_varre_uma_vez_so(tmp_path, monkeypatch):
 
 
 def test_registry_unchecked_nao_repete_registro_compartilhado(tmp_path, monkeypatch):
-    import sparkforge.sdd.checks as modulo_checks
+    import sparkforge_aws.sdd.checks as modulo_checks
 
     tipos = {
         "tipo_a": {"section": "A", "registries": ["r1", "r2"]},
@@ -1611,21 +1611,21 @@ def test_cli_root_alternativo(tmp_path, capsys):
 def test_core_erros_acionaveis(tmp_path):
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_check(str(tmp_path / "nao-existe"))
-    assert "sparkforge" in erro.value.message
+    assert "sparkforge-aws" in erro.value.message
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_status(str(tmp_path / "nao-existe"))
-    assert "sparkforge sdd status" in erro.value.message
+    assert "sparkforge-aws sdd status" in erro.value.message
     # sem raiz, feature pedida nao e erro: a lacuna root_missing ja diz o que falta
     sem_raiz = _core.sdd_check(str(tmp_path), feature="NAO_HA")
     assert [u["code"] for u in sem_raiz["unresolved"]] == ["root_missing"]
     feature_limpa(tmp_path)
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_check(str(tmp_path), feature="NAO_HA")
-    assert "sparkforge sdd status" in erro.value.message
+    assert "sparkforge-aws sdd status" in erro.value.message
     assert erro.value.exit_code == 2
     with pytest.raises(_core.AdapterError) as erro:
         _core.sdd_stamp(str(tmp_path), "docs/sdd/F1/define.md")
-    assert "sparkforge sdd stamp" in erro.value.message
+    assert "sparkforge-aws sdd stamp" in erro.value.message
     assert "upstream_missing" in erro.value.message
     assert erro.value.exit_code == 2
 
@@ -1640,6 +1640,10 @@ def test_core_feature_so_com_lacuna_de_pulo_nao_e_erro(tmp_path):
 
 def _valida(nome: str, resposta: dict) -> dict:
     jsonschema.validate(resposta, TOOLS[nome]["outputSchema"])
+    # `_trust` e aditivo de call_tool (FASE 3): validado pelo schema acima e
+    # removido aqui para comparar so o payload do verbo; o formato e travado
+    # em tests/test_runtime_convergence_trust.py
+    resposta.pop("_trust", None)
     return resposta
 
 
@@ -1671,19 +1675,19 @@ def test_schemas_de_saida_cobrem_raiz_ausente_e_erro(tmp_path):
     ausente = {"repo": str(tmp_path / "nao-existe")}
     for nome in ("sparkforge_sdd_check", "sparkforge_sdd_status"):
         erro = _valida(nome, call_tool(nome, ausente))
-        assert "sparkforge" in erro["error"]
+        assert "sparkforge-aws" in erro["error"]
     feature_limpa(tmp_path)
     erro = _valida(
         "sparkforge_sdd_stamp",
         call_tool("sparkforge_sdd_stamp", {"repo": str(tmp_path), "path": "docs/sdd/F1/define.md"}),
     )
     assert erro["exit_code"] == 2
-    assert "sparkforge sdd stamp" in erro["error"]
+    assert "sparkforge-aws sdd stamp" in erro["error"]
     erro = _valida(
         "sparkforge_sdd_check",
         call_tool("sparkforge_sdd_check", {"repo": str(tmp_path), "feature": "NAO_HA"}),
     )
-    assert "sparkforge sdd status" in erro["error"]
+    assert "sparkforge-aws sdd status" in erro["error"]
 
 
 def test_classes_das_tools():

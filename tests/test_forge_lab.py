@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.lab.spec import (
+from sparkforge_aws.lab.spec import (
     FORGE_LAB_COMPONENTS,
     FORGE_LAB_SCENARIOS,
     analyze_forge_lab,

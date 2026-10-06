@@ -29,7 +29,7 @@ Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/
 
 ## Na CLI
 
-[`sparkforge case get`](../cli/case.md), [`sparkforge case open`](../cli/case.md), [`sparkforge case update`](../cli/case.md)
+[`sparkforge-aws case get`](../cli/case.md), [`sparkforge-aws case open`](../cli/case.md), [`sparkforge-aws case update`](../cli/case.md)
 
 ## Capacidade
 

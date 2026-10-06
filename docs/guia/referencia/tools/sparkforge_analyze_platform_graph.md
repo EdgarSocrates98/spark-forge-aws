@@ -21,7 +21,7 @@ Analisa um Metadata Graph de plataforma declarado em JSON/YAML e calcula lineage
 
 ## Na CLI
 
-[`sparkforge analyze platform-graph`](../cli/analyze.md)
+[`sparkforge-aws analyze platform-graph`](../cli/analyze.md)
 
 ## Capacidade
 

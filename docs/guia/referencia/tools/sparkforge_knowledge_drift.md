@@ -17,7 +17,7 @@ Knowledge Drift Radar: para cada fonte oficial vigiada cujo hash mudou (`changed
 
 ## Na CLI
 
-[`sparkforge knowledge drift`](../cli/knowledge.md)
+[`sparkforge-aws knowledge drift`](../cli/knowledge.md)
 
 ## Capacidade
 

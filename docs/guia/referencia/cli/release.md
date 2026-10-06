@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge release`
+# `sparkforge-aws release`
 
 O que uma release publica, e o que muda entre duas. Le matriz de versao; NAO avalia se algo quebra.
 
@@ -8,15 +8,15 @@ O que uma release publica, e o que muda entre duas. Le matriz de versao; NAO ava
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge release describe`](#sparkforge-release-describe) | O que a fonte daquela plataforma publica para uma release. Componente nao publicado sai em `unresolved` NOMEADO. |
-| [`sparkforge release diff`](#sparkforge-release-diff) | O que muda entre duas releases, com o eixo (`release`, `platform` ou os dois) DECLARADO na saida. |
+| [`sparkforge-aws release describe`](#sparkforge-aws-release-describe) | O que a fonte daquela plataforma publica para uma release. Componente nao publicado sai em `unresolved` NOMEADO. |
+| [`sparkforge-aws release diff`](#sparkforge-aws-release-diff) | O que muda entre duas releases, com o eixo (`release`, `platform` ou os dois) DECLARADO na saida. |
 
-## `sparkforge release describe`
+## `sparkforge-aws release describe`
 
 O que a fonte daquela plataforma publica para uma release. Componente nao publicado sai em `unresolved` NOMEADO.
 
 ```bash
-sparkforge release describe --help
+sparkforge-aws release describe --help
 ```
 
 ### Opções
@@ -30,12 +30,12 @@ sparkforge release describe --help
 
 [`sparkforge_release_describe`](../tools/sparkforge_release_describe.md)
 
-## `sparkforge release diff`
+## `sparkforge-aws release diff`
 
 O que muda entre duas releases, com o eixo (`release`, `platform` ou os dois) DECLARADO na saida.
 
 ```bash
-sparkforge release diff --help
+sparkforge-aws release diff --help
 ```
 
 ### Opções

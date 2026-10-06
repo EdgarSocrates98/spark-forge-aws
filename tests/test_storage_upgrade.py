@@ -6,7 +6,7 @@ para quem tem Athena consumindo.
 """
 import pytest
 
-from sparkforge.storage import upgrade
+from sparkforge_aws.storage import upgrade
 
 
 class TestVeredito:

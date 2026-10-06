@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters._core import AdapterError
-from sparkforge.packs import ENV, load_pack, resolve
-from sparkforge.rules.loader import CatalogError, catalog_dir, load_catalog
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters._core import AdapterError
+from sparkforge_aws.packs import ENV, load_pack, resolve
+from sparkforge_aws.rules.loader import CatalogError, catalog_dir, load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKS = ROOT / "fixtures" / "packs"

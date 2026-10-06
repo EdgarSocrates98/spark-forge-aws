@@ -124,7 +124,7 @@ Um job que falha por OOM "depois de horas" (`../spark/memory-and-oom.md` §3) s�
 
 A granularidade do ponto decide por quanto tempo o CloudWatch o guarda. A tabela está em
 [`observability.yaml`](observability.yaml), legível por máquina e carregada por
-`sparkforge/facts/cloudwatch_retention.py` — não é repetida aqui de propósito: duas cópias do
+`sparkforge_aws/facts/cloudwatch_retention.py` — não é repetida aqui de propósito: duas cópias do
 mesmo número divergem, e a que o código lê é a do YAML.
 
 Consequência prática: consultar um run antigo com período curto devolve série vazia. Vazio por

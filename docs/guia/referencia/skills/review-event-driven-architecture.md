@@ -7,7 +7,7 @@ Use quando houver dump de EventBridge, EventBridge Pipes, SQS ou SNS e for preci
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-event-driven-architecture/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/event-driven-architecture.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze event-driven', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/event-driven-architecture.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze event-driven', 'sparkforge-aws judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -24,7 +24,7 @@ idempotência.
    subscriptions, origem e destino de Pipes:
 
 ```bash
-sparkforge analyze event-driven \
+sparkforge-aws analyze event-driven \
   --path event-driven.json \
   --out event-driven.facts.json
 ```
@@ -35,7 +35,7 @@ sparkforge analyze event-driven \
 3. Julgue com o catálogo:
 
 ```bash
-sparkforge judge --facts event-driven.facts.json --show-skipped
+sparkforge-aws judge --facts event-driven.facts.json --show-skipped
 ```
 
 4. Para `SF-EVENT-001`, valide poison message, maxReceiveCount, retenção,
@@ -80,7 +80,7 @@ mutação ao operador.
 
 ### Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

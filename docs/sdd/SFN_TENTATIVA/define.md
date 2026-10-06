@@ -10,7 +10,7 @@ upstream:
 hypothesis:
   claim: "Os dois casos em que o extrator de historico hoje AFIRMA um numero que o arquivo nao sustenta -- a contagem que atravessa um redrive e o attempt_index de estados homonimos em ramos diferentes de um Parallel -- podem virar recusa nomeada sem tocar o caso que a SF-SFNX-001 existe para medir, que e o retry de um estado num fluxo de ramo unico."
   prediction: "Sobre fixtures sinteticas construidas a partir da forma de evento publicada: um historico com ExecutionRedriven sai com recusa propria e NAO produz sfn.retry_observado, e a SF-SFNX-001 fica calada nele; um historico com Parallel cujos dois ramos tem um estado de mesmo nome nao produz sfn.attempt daquele nome, sai recusado, e SF-SFNX-002 e SF-SFNX-003 ficam caladas ali; e um historico de ramo unico com o mesmo estado agendado varias vezes continua produzindo um sfn.attempt por agendamento, com indices 1..n, e a SF-SFNX-001 continua disparando e continua calada na fronteira. Se a recusa do redrive nao aparecer, se algum sfn.attempt for emitido no caso homonimo, se os indices do caso de ramo unico mudarem, ou se algum golden de achado existente mudar, a afirmacao esta errada."
-  experiment: "Rodar sparkforge analyze sfn-history e judge sobre as fixtures novas, fuse sobre a fixture pareada ASL + historico com redrive, e python -m pytest tests/test_fixtures_golden*.py -q sem regenerar."
+  experiment: "Rodar sparkforge-aws analyze sfn-history e judge sobre as fixtures novas, fuse sobre a fixture pareada ASL + historico com redrive, e python -m pytest tests/test_fixtures_golden*.py -q sem regenerar."
 acceptance:
   - id: AC1
     statement: "ExecutionRedriven deixa de sair como event_type_unknown e passa a sair em sfn.unresolved com razao propria, nomeando o evento; EvaluationFailed e MapRunRedriven entram na lista de tipos conhecidos e nao produzem fact nem recusa, como os demais MapRun*."
@@ -42,7 +42,7 @@ success:
     source: "python -m pytest tests/test_fixtures_golden*.py -q sem regeneracao"
   - id: SC3
     metric: "Fixtures do corpus sfn_history e razoes de sfn.unresolved distintas, antes e depois"
-    source: "fixtures/sfn_history/ e sparkforge/facts/sfn_history.py"
+    source: "fixtures/sfn_history/ e sparkforge_aws/facts/sfn_history.py"
 out_of_scope:
   - "Numerar as tentativas por ENTRADA de estado (abordagem B do explore): pende da lacuna U1 e seria trocar um indice errado por outro."
   - "A reentrada de estado por Choice, que continua contada como tentativa."

@@ -29,10 +29,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.controlm_jobs import EMITTED_KINDS, extract_controlm_jobs_tree
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.controlm_jobs import EMITTED_KINDS, extract_controlm_jobs_tree
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "controlm"
@@ -260,7 +260,7 @@ class TestOContrafactual:
     def test_a_fronteira_lida_no_fact_e_a_mesma_da_matriz(self):
         """E a matriz REALMENTE decide? O fact tem de citar o valor que o YAML
         de `knowledge/` publica, e nao um valor proprio."""
-        from sparkforge.controlm import matrix as cm
+        from sparkforge_aws.controlm import matrix as cm
 
         _, facts, _, _ = run_fixture(self.ABAIXO)
         fact = _by_kind(facts, "ctm.capability_incompatible")[0]
@@ -294,8 +294,8 @@ class TestARecusaTemNome:
         """A faixa e passado FECHADO. `9.0.22.125` existe na fonte e esta acima
         do teto; responder por ela usando a fronteira mais proxima seria
         extrapolar entre versoes observadas."""
-        from sparkforge.controlm import descriptor as cd
-        from sparkforge.facts.controlm_jobs import extract_controlm_jobs_tree as extrair
+        from sparkforge_aws.controlm import descriptor as cd
+        from sparkforge_aws.facts.controlm_jobs import extract_controlm_jobs_tree as extrair
 
         input_dir = FIXTURES / "capacidade_abaixo_da_fronteira" / "input"
         facts = extrair(input_dir, repo_root=input_dir, declared_version="9.0.22.125")
@@ -309,8 +309,8 @@ class TestARecusaTemNome:
         """A fonte anda de 5 em 5. `9.0.21.301` esta DENTRO da faixa e nao
         existe, e a recusa e outra: ela destrava com uma leitura que mostre que a
         versao existe, nao com ampliar a faixa."""
-        from sparkforge.controlm import descriptor as cd
-        from sparkforge.facts.controlm_jobs import extract_controlm_jobs_tree as extrair
+        from sparkforge_aws.controlm import descriptor as cd
+        from sparkforge_aws.facts.controlm_jobs import extract_controlm_jobs_tree as extrair
 
         input_dir = FIXTURES / "capacidade_abaixo_da_fronteira" / "input"
         facts = extrair(input_dir, repo_root=input_dir, declared_version="9.0.21.301")
@@ -326,7 +326,7 @@ class TestARecusaTemNome:
         contrafactual -- com a sonda apontando para o slug real, a mesma extracao
         produz `ctm.capability_incompatible`.
         """
-        from sparkforge.facts import controlm_jobs as cj
+        from sparkforge_aws.facts import controlm_jobs as cj
 
         input_dir = FIXTURES / "capacidade_abaixo_da_fronteira" / "input"
         monkeypatch.setattr(
@@ -459,7 +459,7 @@ class TestAOmissaoEDecididaNoExtrator:
         decisão desligada, alguém moveu o julgamento para uma condição do
         catálogo, e aquela condição não pode estar vendo a omissão.
         """
-        from sparkforge.facts import controlm_jobs as cj
+        from sparkforge_aws.facts import controlm_jobs as cj
 
         monkeypatch.setattr(cj, "_specific_dates", lambda quando, measures, attrs: None)
         directory = FIXTURES / "janela_data_especifica_sem_neutralizar"
@@ -495,7 +495,7 @@ class TestAOmissaoEDecididaNoExtrator:
         """As três decisões de `_neutralized`, medidas direto: lista de um item,
         escalar, e a lista que declara um dia AO LADO da anulação -- que é a
         combinação que a fonte proíbe, e não uma anulação."""
-        from sparkforge.facts.controlm_jobs import _neutralized
+        from sparkforge_aws.facts.controlm_jobs import _neutralized
 
         assert _neutralized(["NONE"]) is True
         assert _neutralized("NONE") is True
@@ -538,7 +538,7 @@ class TestOTetoDeDatasEExato:
         import ast
         from pathlib import Path as _Path
 
-        import sparkforge.facts.controlm_jobs as cj
+        import sparkforge_aws.facts.controlm_jobs as cj
 
         arvore = ast.parse(_Path(cj.__file__).read_text(encoding="utf-8"))
         literais = [
@@ -608,7 +608,7 @@ class TestOAninhamentoDeParenteses:
         """`attrs.balanced` viaja no fact e nenhuma regra o julga: a fonte fala
         de aninhamento e só, e `ctm build` é o validador de schema (`V-CTM-3`).
         Inventar a acusação aqui seria o sexto defeito sem fonte."""
-        from sparkforge.facts.controlm_jobs import _event_logic_facts
+        from sparkforge_aws.facts.controlm_jobs import _event_logic_facts
 
         facts = _event_logic_facts(
             ["(", {"Event": "a"}, "OR", {"Event": "b"}],
@@ -712,7 +712,7 @@ class TestOSLAContinuaSemFonteEComVeto:
                 assert palavra not in texto, (regra["id"], palavra)
 
     def test_o_extrator_nao_emite_kind_de_sla(self):
-        from sparkforge.facts.controlm_jobs import EMITTED_KINDS
+        from sparkforge_aws.facts.controlm_jobs import EMITTED_KINDS
 
         for kind in EMITTED_KINDS:
             assert "sla" not in kind.lower()
@@ -737,7 +737,7 @@ class TestOSLAContinuaSemFonteEComVeto:
         nunca como fronteira legível por máquina, e o vocabulário dos dois eixos
         é FECHADO justamente para que ninguém acrescente chave por analogia.
         """
-        from sparkforge.controlm import matrix as cm
+        from sparkforge_aws.controlm import matrix as cm
 
         matriz = cm.load()
         for slug, entrada in matriz["capabilities"].items():

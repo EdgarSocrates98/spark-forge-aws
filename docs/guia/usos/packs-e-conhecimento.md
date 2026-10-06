@@ -13,11 +13,11 @@ como somar regras próprias da sua equipe com um **Forge Pack**.
 Da raiz do repositório:
 
 ```bash
-sparkforge rules lookup --id SF-TIMEOUT-001 --source-freshness
-sparkforge knowledge path --file glue/lakeformation-fgac.md --source-freshness
+sparkforge-aws rules lookup --id SF-TIMEOUT-001 --source-freshness
+sparkforge-aws knowledge path --file glue/lakeformation-fgac.md --source-freshness
 export SPARKFORGE_PACKS=fixtures/packs/acme-platform
-sparkforge pack list
-sparkforge pack check fixtures/packs/acme-platform
+sparkforge-aws pack list
+sparkforge-aws pack check fixtures/packs/acme-platform
 ```
 
 1. Mostra uma regra inteira e o estado da fonte que ela cita.
@@ -27,8 +27,8 @@ sparkforge pack check fixtures/packs/acme-platform
 4. Lista os packs ativos e os recusados.
 5. Confere se cada regra do pack dispara no exemplo que a acompanha.
 
-Se o comando `sparkforge` não estiver no PATH, troque por
-`python -m sparkforge.adapters.cli`.
+Se o comando `sparkforge-aws` não estiver no PATH, troque por
+`python -m sparkforge_aws.adapters.cli`.
 
 ## Quando usar e quando não usar
 
@@ -49,8 +49,8 @@ ainda não extrai, um pack não resolve.
 ## Consultar regras
 
 ```bash
-sparkforge rules lookup --id SF-TIMEOUT-001
-sparkforge rules lookup --category timeout --limit 2
+sparkforge-aws rules lookup --id SF-TIMEOUT-001
+sparkforge-aws rules lookup --category timeout --limit 2
 ```
 
 Trecho real da busca por id:
@@ -135,8 +135,8 @@ outro, e o estado muda. A explicação completa está em
 ## Localizar conhecimento
 
 ```bash
-sparkforge knowledge path
-sparkforge knowledge path --file glue/lakeformation-fgac.md --source-freshness --as-of 2026-09-13
+sparkforge-aws knowledge path
+sparkforge-aws knowledge path --file glue/lakeformation-fgac.md --source-freshness --as-of 2026-09-13
 ```
 
 Sem `--file`, lista os documentos em `available`. Com `--file`, devolve o caminho
@@ -160,19 +160,19 @@ documento. Trecho real:
 ## Ver o que uma mudança de fonte arrasta
 
 ```bash
-sparkforge knowledge drift --as-of 2026-09-13
+sparkforge-aws knowledge drift --as-of 2026-09-13
 ```
 
 O **Knowledge Drift Radar** responde: se uma fonte mudou, que regras,
-documentos, exemplos, avaliações e agentes precisam ser revistos. Saída real de
-hoje:
+documentos, exemplos, avaliações, agentes e skills precisam ser revistos. Saída
+real de hoje:
 
 ```json
 {
   "as_of": "2026-09-13",
   "lock": {"sources": ..., "checked": ..., "pinned": ..., "changed": 0},
   "changed_sources": [],
-  "totals": {"rules": 0, "docs": 0, "goldens": 0, "evals": 0, "agents": 0},
+  "totals": {"rules": 0, "docs": 0, "goldens": 0, "evals": 0, "agents": 0, "skills": 0},
   "unresolved": [],
   "refused": [{"field": "conteudo_da_mudanca", "reason": "exige_leitura_humana_da_fonte"}]
 }
@@ -229,7 +229,7 @@ variável. Nenhuma tool a recebe como parâmetro.
 
 ```bash
 export SPARKFORGE_PACKS=fixtures/packs/acme-platform
-sparkforge pack list
+sparkforge-aws pack list
 ```
 
 Saída real:
@@ -259,8 +259,8 @@ a tool é `sparkforge_pack_list`, sem parâmetros.
 ### Conferir o pack
 
 ```bash
-sparkforge pack check fixtures/packs/acme-platform
-sparkforge pack check fixtures/packs/check_regra_morta
+sparkforge-aws pack check fixtures/packs/acme-platform
+sparkforge-aws pack check fixtures/packs/check_regra_morta
 ```
 
 `pack check` roda cada exemplo do pack pelo `judge` e compara com o
@@ -317,12 +317,12 @@ em [`docs/forge-pack.md`](../../forge-pack.md).
 
 Dois comandos vizinhos, sem aprofundar:
 
-- `sparkforge release describe --platform glue --release 5.1` mostra o que a fonte
+- `sparkforge-aws release describe --platform glue --release 5.1` mostra o que a fonte
   oficial publica para uma versão (Spark, Python, Iceberg, com fonte e data).
-  `sparkforge release diff` compara duas versões. Os dois leem a matriz de versão
+  `sparkforge-aws release diff` compara duas versões. Os dois leem a matriz de versão
   e **não** avaliam se algo quebra. Ver
   [`referencia/cli/release.md`](../referencia/cli/release.md).
-- `sparkforge validate --findings <arquivo>` confere um arquivo de achados contra
+- `sparkforge-aws validate --findings <arquivo>` confere um arquivo de achados contra
   o schema. Com `fixtures/athena/engine_v2_outdated/expected/findings.json`, a
   saída real é `{"valid": true, "count": 1}`. Ver
   [`referencia/cli/validate.md`](../referencia/cli/validate.md).

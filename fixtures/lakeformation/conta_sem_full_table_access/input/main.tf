@@ -12,7 +12,7 @@ resource "aws_glue_job" "etl_fta" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/fta.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/fta.py"
     python_version  = "3"
   }
 
@@ -20,7 +20,7 @@ resource "aws_glue_job" "etl_fta" {
     # Observabilidade declarada de proposito: sem ela `SF-GLUE-002` dispara
     # junto, e a fixture passaria a provar duas coisas ao mesmo tempo.
     "--enable-spark-ui"       = "true"
-    "--spark-event-logs-path" = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path" = "s3://sparkforge-aws-demo/spark-logs/"
     "--conf" = "spark.hadoop.fs.s3.credentialsResolverClass=com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver --conf spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem"
   }
 }

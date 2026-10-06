@@ -20,7 +20,7 @@ Extrai facts de um dump JSON de application Amazon EMR Serverless (`get-applicat
 
 ## Na CLI
 
-[`sparkforge analyze emr-serverless`](../cli/analyze.md)
+[`sparkforge-aws analyze emr-serverless`](../cli/analyze.md)
 
 ## Capacidade
 

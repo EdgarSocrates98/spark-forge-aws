@@ -34,7 +34,7 @@
   "registered_location": {
     "hybrid_access_enabled": null,
     "registered": false,
-    "resource_arn": "arn:aws:s3:::sparkforge-demo/analytics/dim_cliente",
+    "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/analytics/dim_cliente",
     "role_arn": "",
     "status": "nao_encontrado",
     "with_federation": null

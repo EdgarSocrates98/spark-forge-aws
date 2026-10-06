@@ -21,7 +21,7 @@
 # reducao anunciada nao tem base de comparacao declarada. E preco menor nao e
 # performance maior: a secao 52 manda medir as duas coisas separadamente, e
 # este repositorio nao mediu performance entre runtimes -- ver
-# `sparkforge/facts/benchmark.py`, que recusa comparacao sem as duas execucoes.
+# `sparkforge_aws/facts/benchmark.py`, que recusa comparacao sem as duas execucoes.
 #
 # REGIAO. A pagina de pricing publica um numero e a frase "Pricing can vary by
 # AWS Region", sem a tabela por regiao no documento servido (ela e montada no
@@ -31,7 +31,7 @@
 # declarada -- mesma razao registrada em
 # `knowledge/storage/iceberg-feature-support.yaml` para a chave `"*"`.
 #
-# `source_type` REUSA o vocabulario de `sparkforge/facts/runtime_matrix.py`,
+# `source_type` REUSA o vocabulario de `sparkforge_aws/facts/runtime_matrix.py`,
 # importado de la e nunca redeclarado -- mesma disciplina de
 # `knowledge/storage/iceberg-feature-support.yaml`. A pagina de pricing entra
 # como OFFICIAL_TECHNICAL_DOC; inventar um `OFFICIAL_PRICING_PAGE` so para esta

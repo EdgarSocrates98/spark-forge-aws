@@ -17,10 +17,10 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters.tools import call_tool
-from sparkforge.receipt._hash import text_sha256
-from sparkforge.sdd.checks import check
-from sparkforge.sdd.stamp import stamp
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.receipt._hash import text_sha256
+from sparkforge_aws.sdd.checks import check
+from sparkforge_aws.sdd.stamp import stamp
 
 ROOT = Path(__file__).resolve().parents[1]
 FEATURE = "JOB_SHUFFLE"
@@ -39,7 +39,7 @@ _DIFF = (
     b"+    return spark\n"
 )
 
-# a forma de `sparkforge/facts/funcval.py::_check_delta`
+# a forma de `sparkforge_aws/facts/funcval.py::_check_delta`
 _DELTA = {
     "id": "d1",
     "kind": "funcval.check_delta",
@@ -290,8 +290,8 @@ def test_coordenadores_apontam_o_sdd():
         frente, corpo = texto.split("\n---\n", 1)
         assert "sdd-" not in frente, nome
         assert "`sdd-define`" in corpo and "`sdd-build`" in corpo, nome
-        assert "sparkforge sdd check" in corpo, nome
-        assert "sparkforge case open" in corpo, nome
+        assert "sparkforge-aws sdd check" in corpo, nome
+        assert "sparkforge-aws case open" in corpo, nome
 
 
 _OPERADOR_DURAVEL = {
@@ -309,8 +309,8 @@ def test_skills_ensinam_o_operador_duravel():
         for trecho in trechos:
             assert trecho in operador, (nome, trecho)
     readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
-    for trecho in ("--root .sparkforge/sdd", "sparkforge change sandbox",
-                   "sparkforge change propose", "#kind:"):
+    for trecho in ("--root .sparkforge/sdd", "sparkforge-aws change sandbox",
+                   "sparkforge-aws change propose", "#kind:"):
         assert trecho in readme, trecho
 
 

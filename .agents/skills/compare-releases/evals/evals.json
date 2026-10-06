@@ -5,10 +5,10 @@
     {
       "id": 1,
       "prompt": "Use the compare-releases skill to review a case about compatibilidade e diferenças entre releases e runtimes. The supplied artifact is partial; produce an evidence-first handoff and do not invent measurements.",
-      "expected_output": "A structured handoff for compatibilidade e diferenças entre releases e runtimes using sparkforge release describe, with anchored facts, unresolved gaps, recommendation schema when applicable, validation, and rollback.",
+      "expected_output": "A structured handoff for compatibilidade e diferenças entre releases e runtimes using sparkforge-aws release describe, with anchored facts, unresolved gaps, recommendation schema when applicable, validation, and rollback.",
       "files": [],
       "expectations": [
-        "The response uses the primary evidence path `sparkforge release describe` or explains why the available artifact cannot support it.",
+        "The response uses the primary evidence path `sparkforge-aws release describe` or explains why the available artifact cannot support it.",
         "The response separates anchored facts from findings and cites a fact_id or source path.",
         "The response reports unresolved evidence instead of guessing missing runtime, cost, capacity, or authorization facts.",
         "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",
@@ -21,7 +21,7 @@
       "expected_output": "A bounded decision that distinguishes observed result from hypothesis, records provenance, and names the next deterministic validation command.",
       "files": [],
       "expectations": [
-        "The response uses the primary evidence path `sparkforge release describe` or explains why the available artifact cannot support it.",
+        "The response uses the primary evidence path `sparkforge-aws release describe` or explains why the available artifact cannot support it.",
         "The response separates anchored facts from findings and cites a fact_id or source path.",
         "The response reports unresolved evidence instead of guessing missing runtime, cost, capacity, or authorization facts.",
         "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",

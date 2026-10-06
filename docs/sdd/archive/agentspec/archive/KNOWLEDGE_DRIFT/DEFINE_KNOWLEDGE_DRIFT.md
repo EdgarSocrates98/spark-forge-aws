@@ -34,12 +34,12 @@ Quando uma pagina oficial que o SparkForge cita muda, o lock (`knowledge/sources
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: modulo puro `sparkforge/knowledge_drift.py`: entrada = lock, catalogo, secoes `Fontes` de `knowledge/` e a raiz do repositorio (opcional); saida por URL com `changed_at` = as citacoes (regra ou documento) com o `retrieved` declarado e o estado de `knowledge_freshness.estado`, e o impacto |
+| **MUST** | G1: modulo puro `sparkforge_aws/knowledge_drift.py`: entrada = lock, catalogo, secoes `Fontes` de `knowledge/` e a raiz do repositorio (opcional); saida por URL com `changed_at` = as citacoes (regra ou documento) com o `retrieved` declarado e o estado de `knowledge_freshness.estado`, e o impacto |
 | **MUST** | G2: citacao com `retrieved` anterior ao `changed_at` e `stale` e entra no impacto; citacao com `retrieved` igual ou posterior e `revalidada`, conta no total e fica FORA do impacto; URL fixa por versao (`pinned`) nunca entra |
 | **MUST** | G3: impacto de cada regra `stale`, so por ligacao em arquivo: goldens (`fixtures/*/*/expected/findings.json` com o `rule_id`), evals (arquivo em `evals/` que cita o `rule_id`), agentes (`agents/**/*.md` que declara a area da regra em `rule_areas` OU cita o `rule_id`) |
-| **MUST** | G4: sem raiz de repositorio (instalado por pip: o wheel so leva `sparkforge`, `rules/catalog` e `knowledge`), goldens, evals e agentes saem em `unresolved` com `sem_repositorio`; regras e docs continuam respondendo |
+| **MUST** | G4: sem raiz de repositorio (instalado por pip: o wheel so leva `sparkforge-aws`, `rules/catalog` e `knowledge`), goldens, evals e agentes saem em `unresolved` com `sem_repositorio`; regras e docs continuam respondendo |
 | **MUST** | G5: `refused` fixo com `conteudo_da_mudanca`: o radar nao diz se a mudanca tocou o trecho que a regra cita (exige leitura humana, ou claim com citacao, fora de escopo) |
-| **MUST** | G6: CLI `sparkforge knowledge drift [--url U] [--as-of AAAA-MM-DD]` e tool `sparkforge_knowledge_drift` READ_ONLY, sem parametro de caminho (le o lock de `knowledge_dir()`/`SPARKFORGE_SOURCES_LOCK`) |
+| **MUST** | G6: CLI `sparkforge-aws knowledge drift [--url U] [--as-of AAAA-MM-DD]` e tool `sparkforge_knowledge_drift` READ_ONLY, sem parametro de caminho (le o lock de `knowledge_dir()`/`SPARKFORGE_SOURCES_LOCK`) |
 | **MUST** | G7: `scripts/refresh_knowledge.py` chama a MESMA funcao e acrescenta a secao "Impacto" ao relatorio do PR |
 | **SHOULD** | G8: `docs/knowledge-freshness.md` ganha a secao do radar e registra o pre-requisito do operador: o refresh semanal falha desde 2026-08-10 porque o GitHub Actions nao pode criar PR no repositorio |
 | **COULD** | G9: totais por URL e gerais (regras, docs, goldens, evals, agentes distintos) para o resumo do PR |
@@ -61,7 +61,7 @@ Quando uma pagina oficial que o SparkForge cita muda, o lock (`knowledge/sources
 
 | ID | Scenario | Given | When | Then |
 |----|----------|-------|------|------|
-| AT-001 | Nada mudou | lock real (0 `changed_at`) | `sparkforge knowledge drift` | `changed_sources: []`, com as contagens do lock |
+| AT-001 | Nada mudou | lock real (0 `changed_at`) | `sparkforge-aws knowledge drift` | `changed_sources: []`, com as contagens do lock |
 | AT-002 | Fonte mudou | lock sintetico de SC2 | `knowledge drift` | a URL com as citacoes e o impacto; `stale` so nas citacoes lidas antes de 2026-09-09 |
 | AT-003 | Ja relida | a mesma URL, citacao lida em 2026-09-10 | `knowledge drift` | a citacao aparece como revalidada, e a regra dela nao entra no impacto |
 | AT-004 | Filtro por URL | lock sintetico com duas URLs mudadas | `knowledge drift --url <uma>` | so a URL pedida; URL nao vigiada sai erro com codigo 2 |
@@ -91,7 +91,7 @@ Quando uma pagina oficial que o SparkForge cita muda, o lock (`knowledge/sources
 |------|------------|--------|
 | Technical | O verbo nao acessa a rede; o refresh continua o unico ponto com rede | Tudo sai do lock e dos arquivos do repositorio |
 | Technical | O wheel nao leva `fixtures/`, `evals/` nem `agents/` | Instalado, tres saltos saem `unresolved` |
-| Technical | `glob` cru e proibido em `sparkforge/` (`tests/test_facts_scan.py`) | Varredura de `fixtures/`, `evals/` e `agents/` pela porta da casa (`iter_source_files`) |
+| Technical | `glob` cru e proibido em `sparkforge_aws/` (`tests/test_facts_scan.py`) | Varredura de `fixtures/`, `evals/` e `agents/` pela porta da casa (`iter_source_files`) |
 | Technical | `.claude/` e diretorio de plataforma (`TestNoPlatformKnowledge`) | Documentos SDD sem as chaves de metadado de regra escritas com dois-pontos |
 | Technical | Tool nova move os registros manuais | Tools 93 -> 94; READ_ONLY 61 -> 62; sem parametro de caminho (entra em `SEM_CAMINHO`) |
 | Technical | Regra 23 | Nada chama provider |
@@ -103,7 +103,7 @@ Quando uma pagina oficial que o SparkForge cita muda, o lock (`knowledge/sources
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/knowledge_drift.py` (novo), `scripts/refresh_knowledge.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `docs/knowledge-freshness.md`, `fixtures/knowledge_drift/` | Ao lado de `knowledge_freshness.py`, que ja faz o estado por citacao |
+| **Deployment Location** | `sparkforge_aws/knowledge_drift.py` (novo), `scripts/refresh_knowledge.py`, `sparkforge_aws/adapters/{_core,cli,tools}.py`, `docs/knowledge-freshness.md`, `fixtures/knowledge_drift/` | Ao lado de `knowledge_freshness.py`, que ja faz o estado por citacao |
 | **KB Domains** | Nenhum dominio do KB do agentspec cobre proveniencia de conhecimento | Padroes do repo: `knowledge_freshness`, `_rules_fired_in_goldens`, `playbook` (`rule_areas`), golden `fixtures/sarif/freshness` |
 | **IaC Impact** | None | O workflow nao muda |
 

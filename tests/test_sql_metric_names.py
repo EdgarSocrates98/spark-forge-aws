@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.sql_metric_names import MetricMapError, load_map, measure_for
+from sparkforge_aws.facts.sql_metric_names import MetricMapError, load_map, measure_for
 
 
 class TestLoad:
@@ -25,7 +25,7 @@ class TestLoad:
 
 class TestFailClosed:
     def test_missing_file_raises_instead_of_returning_empty(self, monkeypatch, tmp_path):
-        from sparkforge.facts import sql_metric_names
+        from sparkforge_aws.facts import sql_metric_names
 
         monkeypatch.setattr(sql_metric_names, "_MAP_PATH", tmp_path / "nao-existe.yaml")
         sql_metric_names.load_map.cache_clear()
@@ -34,7 +34,7 @@ class TestFailClosed:
         sql_metric_names.load_map.cache_clear()
 
     def test_malformed_file_raises_instead_of_returning_empty(self, monkeypatch, tmp_path):
-        from sparkforge.facts import sql_metric_names
+        from sparkforge_aws.facts import sql_metric_names
 
         alvo = tmp_path / "sql-metrics.yaml"
         alvo.write_text("metrics: nao-e-lista\n", encoding="utf-8")
@@ -45,7 +45,7 @@ class TestFailClosed:
         sql_metric_names.load_map.cache_clear()
 
     def test_duplicate_published_name_raises(self, monkeypatch, tmp_path):
-        from sparkforge.facts import sql_metric_names
+        from sparkforge_aws.facts import sql_metric_names
 
         alvo = tmp_path / "sql-metrics.yaml"
         alvo.write_text(

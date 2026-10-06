@@ -34,7 +34,7 @@ silenciosa a ausência de evidência específica.
 
 ## Evidência consultada
 
-- `sparkforge/facts/glue_streaming.py`: o contrato atual emite `glue.streaming.job`,
+- `sparkforge_aws/facts/glue_streaming.py`: o contrato atual emite `glue.streaming.job`,
   `glue.streaming.runtime`, `glue.streaming.analyzed` e `glue.streaming.unresolved`;
   `source_type` fica no job.
 - `fixtures/glue_streaming/`: o corpus cobre RTM válido, capacidade ausente e

@@ -13,10 +13,10 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze streaming
-  - sparkforge analyze pyspark
-  - sparkforge analyze streaming-integrations
-  - sparkforge judge
+  - sparkforge-aws analyze streaming
+  - sparkforge-aws analyze pyspark
+  - sparkforge-aws analyze streaming-integrations
+  - sparkforge-aws judge
 subagent: true
 agent: streaming-realtime-architect
 ---
@@ -29,10 +29,10 @@ somente com artefatos salvos.
 
 ## Procedimento
 
-1. Rode `sparkforge analyze streaming --artifact source --path <job.py-ou-dir>`
+1. Rode `sparkforge-aws analyze streaming --artifact source --path <job.py-ou-dir>`
    para source, sink, trigger, checkpoint, watermark, joins, deduplicação,
    state e `foreachBatch` declarados.
-2. Rode `sparkforge analyze streaming --artifact progress --path <progress.jsonl-ou-dir>`
+2. Rode `sparkforge-aws analyze streaming --artifact progress --path <progress.jsonl-ou-dir>`
    para batches, input/processed rate, duração, event time, sink e state
    observados. O fact `streaming.progress.series` também resume, quando completos,
    span temporal, duração de batch, memória total do state e watermark. Quando
@@ -40,11 +40,11 @@ somente com artefatos salvos.
    `freshness_ms`; `end_to_end_latency_ms` só aparece se o progress o declarar
    explicitamente. Série insuficiente deve permanecer `streaming.progress.unresolved`.
 3. Quando houver checkpoint ou integrações declaradas, rode
-   `sparkforge analyze streaming-integrations --path <dump.json-ou-dir>`.
+   `sparkforge-aws analyze streaming-integrations --path <dump.json-ou-dir>`.
    Metadados internos de checkpoint só podem ser interpretados quando formato
    e versão forem observáveis; não parseie layout interno por suposição.
 4. Confirme runtime/version antes de julgar regras versionadas. Depois rode
-   `sparkforge judge --facts <facts...> --show-skipped` e leia os motivos dos
+   `sparkforge-aws judge --facts <facts...> --show-skipped` e leia os motivos dos
    rules que ficaram fora de escopo ou sem evidência.
 5. Correlacione query, progresso, transporte, checkpoint, sink e validação
    funcional. `processedRowsPerSecond < inputRowsPerSecond`, `watermark_stalled`
@@ -117,7 +117,7 @@ continua `*.unresolved`.
 
 ## Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

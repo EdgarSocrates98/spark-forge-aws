@@ -24,7 +24,7 @@ Deriva glue/emr/spark/python/iceberg/athena dos facts ja extraidos e dos paramet
 
 ## Na CLI
 
-[`sparkforge runtime detect`](../cli/runtime.md)
+[`sparkforge-aws runtime detect`](../cli/runtime.md)
 
 ## Capacidade
 

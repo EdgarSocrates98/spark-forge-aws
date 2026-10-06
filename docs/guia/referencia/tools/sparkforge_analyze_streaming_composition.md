@@ -27,7 +27,7 @@ Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. Exig
 
 ## Na CLI
 
-[`sparkforge analyze streaming-composition`](../cli/analyze.md)
+[`sparkforge-aws analyze streaming-composition`](../cli/analyze.md)
 
 ## Capacidade
 

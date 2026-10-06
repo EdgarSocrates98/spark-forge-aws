@@ -4,7 +4,7 @@
 
 **Goal:** Dizer **o que** está de cada lado de cada join — hoje `plan.join` diz que o build side é o esquerdo, e nada diz qual tabela é essa.
 
-**Architecture:** Dois kinds novos em `sparkforge/facts/sql_metrics.py`, o módulo que já percorre o `sparkPlanInfo` do event log. `spark.sql.join` por nó de join, `spark.sql.join_input` por aresta `(join, relação, lado)` com `via_joins`. Nenhuma superfície nova: o extrator já é executado por `analyze sql-metrics` e pela tool que o expõe.
+**Architecture:** Dois kinds novos em `sparkforge_aws/facts/sql_metrics.py`, o módulo que já percorre o `sparkPlanInfo` do event log. `spark.sql.join` por nó de join, `spark.sql.join_input` por aresta `(join, relação, lado)` com `via_joins`. Nenhuma superfície nova: o extrator já é executado por `analyze sql-metrics` e pela tool que o expõe.
 
 **Tech Stack:** Python 3, `pytest`. Spec: [`../specs/2026-08-28-sql-join-graph-design.md`](../specs/2026-08-28-sql-join-graph-design.md).
 
@@ -33,7 +33,7 @@
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/facts/sql_metrics.py` | Conserto do AQE (Task 1), estrutura da árvore, `spark.sql.join` e `spark.sql.join_input` |
+| `sparkforge_aws/facts/sql_metrics.py` | Conserto do AQE (Task 1), estrutura da árvore, `spark.sql.join` e `spark.sql.join_input` |
 | `tests/test_facts_sql_metrics.py` | Casos do conserto e do grafo |
 | `fixtures/sql_metrics/` | Quatro cenários novos |
 | `tests/test_fixtures_golden_sql_metrics.py` | `REQUIRED_FIXTURES` e a garantia do corpus |
@@ -46,7 +46,7 @@
 ## Task 1: O conserto do AQE que a entrega anterior deixou passar
 
 **Files:**
-- Modify: `sparkforge/facts/sql_metrics.py`
+- Modify: `sparkforge_aws/facts/sql_metrics.py`
 - Test: `tests/test_facts_sql_metrics.py`
 
 `absorb_plan` reseta `self.accum` a cada árvore absorvida, e `self.values` persiste. Sob AQE isso perde dado **em silêncio**: um valor publicado contra o plano inicial fica órfão quando a árvore é reposta, porque `measures_by_node` só itera `self.accum`. A spec de C1 (§3.5) manda o contrário — *"valores já acumulados continuam atribuídos ao nó que declarou aquele acumulador; eles foram medidos sob aquele plano"*.
@@ -246,7 +246,7 @@ O cenário `aqe_replans_the_scan` pode mudar de saída — a mudança é o conse
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metrics.py tests/test_facts_sql_metrics.py fixtures/sql_metrics
+rtk git add sparkforge_aws/facts/sql_metrics.py tests/test_facts_sql_metrics.py fixtures/sql_metrics
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -257,7 +257,7 @@ Mensagem: `fix(facts): valor medido antes da reposta do AQE deixa de evaporar`
 ## Task 2: A estrutura da árvore
 
 **Files:**
-- Modify: `sparkforge/facts/sql_metrics.py`
+- Modify: `sparkforge_aws/facts/sql_metrics.py`
 - Test: `tests/test_facts_sql_metrics.py`
 
 Esta tarefa **não emite fact nenhum**. Ela dá ao módulo a estrutura que ele hoje joga fora, e é sobre ela que a Task 3 monta as arestas.
@@ -289,7 +289,7 @@ class TestEstruturaDaArvore:
         }
 
     def test_children_of_each_node_are_recorded(self):
-        from sparkforge.facts.sql_metrics import _estrutura
+        from sparkforge_aws.facts.sql_metrics import _estrutura
 
         filhos, profundidade = _estrutura(self._tres_niveis())
 
@@ -300,7 +300,7 @@ class TestEstruturaDaArvore:
         assert profundidade == 3
 
     def test_sources_below_a_node_carry_their_distance_in_joins(self):
-        from sparkforge.facts.sql_metrics import _fontes_abaixo
+        from sparkforge_aws.facts.sql_metrics import _fontes_abaixo
 
         arvore = self._tres_niveis()
         # a partir do filho esquerdo da raiz (o join interno, node_id 1)
@@ -312,7 +312,7 @@ class TestEstruturaDaArvore:
         ]
 
     def test_distance_counts_the_joins_in_between(self):
-        from sparkforge.facts.sql_metrics import _fontes_abaixo
+        from sparkforge_aws.facts.sql_metrics import _fontes_abaixo
 
         arvore = self._tres_niveis()
         fontes = _fontes_abaixo(arvore, 0)
@@ -324,7 +324,7 @@ class TestEstruturaDaArvore:
         ]
 
     def test_a_node_without_any_scan_below_reports_none(self):
-        from sparkforge.facts.sql_metrics import _fontes_abaixo
+        from sparkforge_aws.facts.sql_metrics import _fontes_abaixo
 
         arvore = {
             "nodeName": "Project",
@@ -474,7 +474,7 @@ Esperado: PASS. Reporte a contagem real.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metrics.py tests/test_facts_sql_metrics.py
+rtk git add sparkforge_aws/facts/sql_metrics.py tests/test_facts_sql_metrics.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -485,7 +485,7 @@ Mensagem: `feat(facts): a estrutura da arvore do plano, que o walk jogava fora`
 ## Task 3: As arestas
 
 **Files:**
-- Modify: `sparkforge/facts/sql_metrics.py`
+- Modify: `sparkforge_aws/facts/sql_metrics.py`
 - Test: `tests/test_facts_sql_metrics.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -613,7 +613,7 @@ class TestGrafoDeJoins:
         assert lacunas[0].attrs["position"] == "left"
 
     def test_a_plan_deeper_than_the_ceiling_is_a_named_gap(self):
-        from sparkforge.facts.sql_metrics import _TETO_DE_PROFUNDIDADE
+        from sparkforge_aws.facts.sql_metrics import _TETO_DE_PROFUNDIDADE
 
         no = _scan_node()
         for _ in range(_TETO_DE_PROFUNDIDADE + 5):
@@ -845,7 +845,7 @@ Esperado: PASS. Reporte a contagem real.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metrics.py tests/test_facts_sql_metrics.py
+rtk git add sparkforge_aws/facts/sql_metrics.py tests/test_facts_sql_metrics.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -943,10 +943,10 @@ Atualize os números de extratores e kinds, **medidos**:
 ```bash
 rtk python -c "
 import importlib, pkgutil
-import sparkforge.facts as F
+import sparkforge_aws.facts as F
 mods, kinds = [], set()
 for m in pkgutil.iter_modules(F.__path__):
-    mod = importlib.import_module(f'sparkforge.facts.{m.name}')
+    mod = importlib.import_module(f'sparkforge_aws.facts.{m.name}')
     ek = getattr(mod, 'EMITTED_KINDS', None)
     if ek:
         mods.append(m.name); kinds |= set(ek)

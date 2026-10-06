@@ -9,15 +9,15 @@ upstream:
   sha256: "0afa43ec783657446435582642609ca9ad9b5f166fafdc0cd08faf375672d62e"
 tasks:
   - id: T1
-    files: [tests/test_collect_streaming.py, sparkforge/collect/streaming.py]
+    files: [tests/test_collect_streaming.py, sparkforge_aws/collect/streaming.py]
     covers: [AC1, AC2]
     test: {path: tests/test_collect_streaming.py, name: test_kinesis_temporal_metrics_are_collected_and_normalized}
   - id: T2
-    files: [tests/test_collect_streaming.py, sparkforge/facts/transport.py]
+    files: [tests/test_collect_streaming.py, sparkforge_aws/facts/transport.py]
     covers: [AC3]
     test: {path: tests/test_collect_streaming.py, name: test_kinesis_temporal_metrics_feed_transport_analyzer}
   - id: T3
-    files: [tests/test_collect_streaming.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
+    files: [tests/test_collect_streaming.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py]
     covers: [AC4]
     test: {path: tests/test_collect_streaming.py, name: test_cli_and_mcp_streaming_temporal_collection_match}
   - id: T4

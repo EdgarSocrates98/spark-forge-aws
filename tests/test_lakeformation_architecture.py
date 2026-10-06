@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.lakeformation.architecture import analyze_architecture
-from sparkforge.lakeformation.capabilities import capability, load_matrix
-from sparkforge.lakeformation.catalog_routing import route_catalogs
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.lakeformation.architecture import analyze_architecture
+from sparkforge_aws.lakeformation.capabilities import capability, load_matrix
+from sparkforge_aws.lakeformation.catalog_routing import route_catalogs
 
 
 def _golden_input(**overrides):
@@ -263,6 +263,9 @@ def test_cli_and_mcp_architecture_parity(tmp_path, capsys):
     cli_result = json.loads(capsys.readouterr().out)
     mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
 
+    # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+    # tests/test_runtime_convergence_trust.py
+    mcp_result.pop("_trust", None)
     assert cli_result == mcp_result
 
 
@@ -275,7 +278,7 @@ def test_architecture_docs_and_vnext_are_anchored():
     assert "required_verification" in knowledge
 
     skill = (root / "skills/lakeformation-architecture/SKILL.md").read_text(encoding="utf-8")
-    assert "sparkforge lakeformation architect" in skill
+    assert "sparkforge-aws lakeformation architect" in skill
     assert "Não faz" in skill
 
     for path in (

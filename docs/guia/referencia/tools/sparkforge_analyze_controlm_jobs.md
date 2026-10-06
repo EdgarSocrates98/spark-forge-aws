@@ -21,7 +21,7 @@ Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC) -- o JSON de def
 
 ## Na CLI
 
-[`sparkforge analyze controlm-jobs`](../cli/analyze.md)
+[`sparkforge-aws analyze controlm-jobs`](../cli/analyze.md)
 
 ## Capacidade
 

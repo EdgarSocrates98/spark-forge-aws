@@ -1,10 +1,10 @@
 import random
 import textwrap
 
-from sparkforge.facts.call_graph import EMITTED_KINDS, build_call_graph
-from sparkforge.facts.pyspark_ast import extract_source
-from sparkforge.findings.models import Fact
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.facts.call_graph import EMITTED_KINDS, build_call_graph
+from sparkforge_aws.facts.pyspark_ast import extract_source
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.findings.validate import validate_fact
 
 FILE = "lib.py"
 

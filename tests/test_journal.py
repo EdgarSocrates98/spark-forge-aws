@@ -9,12 +9,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import _tool_da_cli, build_parser, main
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.journal import journal_path, journaled
-from sparkforge.journal.read import verify
-from sparkforge.journal.record import (
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import _tool_da_cli, build_parser, main
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.journal import journal_path, journaled
+from sparkforge_aws.journal.read import verify
+from sparkforge_aws.journal.record import (
     SEM_RAIZ_DE_CASE,
     UNRECORDED,
     Registro,
@@ -72,7 +72,9 @@ class TestConjunto:
         # `upstream.sha256` do artefato SDD. `sdd_check` e `sdd_status` so leem.
         # 29 -> 31 com `collect_schema_registry` e `collect_managed_flink`:
         # ambos gravam artefato + manifesto como os demais coletores.
-        assert len(esperado) == 31
+        # 31 -> 32 com `agentops_baseline` (2026-10-04): a ação `save`
+        # persiste baseline local e por isso entra no journal de mutações.
+        assert len(esperado) == 32
 
     def test_todo_verbo_do_journal_tem_porta_de_cli_pela_convencao(self) -> None:
         assert journaled() <= _verbos_de_cli()

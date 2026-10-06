@@ -9,20 +9,20 @@ upstream:
   sha256: "dae8f8025321cf1eff07f0368eafd020c12b4cb0ea4f7a777172a678049ca6f9"
 files:
   - {path: tests/test_token_estimate_unico.py, action: create, reason: "os tres testes de AC1 a AC3; o de identidade falha antes, porque os tres sitios tem formula propria"}
-  - {path: sparkforge/agents/budget.py, action: modify, reason: "dono unico da estimativa; a docstring passa a dizer que e a unica e por que o teto"}
-  - {path: sparkforge/tools/cost.py, action: modify, reason: "estimate_tokens deixa de ter corpo proprio e passa a ser o de agents/budget, mantendo o nome publico que o __init__ reexporta e o console script sparkforge-tools usa"}
-  - {path: sparkforge/context/funnel.py, action: modify, reason: "a conta em linha (piso) vira chamada a estimate_tokens (teto)"}
-  - {path: sparkforge/providers/mock.py, action: modify, reason: "as duas contas em linha (piso, podendo dar 0) viram chamada a estimate_tokens"}
-  - {path: sparkforge/codeintel/budget.py, action: modify, reason: "a docstring dizia a consolidacao devida; passa a dizer que foi feita, e mantem a razao de este modulo ficar fora"}
+  - {path: sparkforge_aws/agents/budget.py, action: modify, reason: "dono unico da estimativa; a docstring passa a dizer que e a unica e por que o teto"}
+  - {path: sparkforge_aws/tools/cost.py, action: modify, reason: "estimate_tokens deixa de ter corpo proprio e passa a ser o de agents/budget, mantendo o nome publico que o __init__ reexporta e o console script sparkforge-aws-tools usa"}
+  - {path: sparkforge_aws/context/funnel.py, action: modify, reason: "a conta em linha (piso) vira chamada a estimate_tokens (teto)"}
+  - {path: sparkforge_aws/providers/mock.py, action: modify, reason: "as duas contas em linha (piso, podendo dar 0) viram chamada a estimate_tokens"}
+  - {path: sparkforge_aws/codeintel/budget.py, action: modify, reason: "a docstring dizia a consolidacao devida; passa a dizer que foi feita, e mantem a razao de este modulo ficar fora"}
   - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "a linha auditada que diz 'existe quatro vezes, e essas divergem' passa a descrever o que existe"}
   - {path: docs/claims.lock.json, action: modify, reason: "as alegacoes que o gate de lastro listar, remediadas por id"}
 decisions:
   - id: D1
-    choice: "O dono e sparkforge/agents/budget.py::estimate_tokens: teto de len/4, minimo 1, nao-string vira JSON ordenado. E o mais completo dos quatro, e o que ja decide o corte das memorias de agente."
-    rejected: ["Criar um modulo novo so para a funcao: mais um arquivo em sparkforge/ para mover as alegacoes de corpus, sem ganho sobre o dono que ja existe."]
+    choice: "O dono e sparkforge_aws/agents/budget.py::estimate_tokens: teto de len/4, minimo 1, nao-string vira JSON ordenado. E o mais completo dos quatro, e o que ja decide o corte das memorias de agente."
+    rejected: ["Criar um modulo novo so para a funcao: mais um arquivo em sparkforge_aws/ para mover as alegacoes de corpus, sem ganho sobre o dono que ja existe."]
     rollback: "git revert; as quatro formulas voltam."
   - id: D2
-    choice: "tools/cost.py mantem o nome estimate_tokens como alias do dono (`from sparkforge.agents.budget import estimate_tokens`), porque o pacote sparkforge.tools o reexporta como API publica e o console script sparkforge-tools o chama. A identidade (is) prova que e a mesma funcao."
+    choice: "tools/cost.py mantem o nome estimate_tokens como alias do dono (`from sparkforge_aws.agents.budget import estimate_tokens`), porque o pacote sparkforge_aws.tools o reexporta como API publica e o console script sparkforge-aws-tools o chama. A identidade (is) prova que e a mesma funcao."
     rejected: ["Apagar tools.cost.estimate_tokens e mudar quem importa: quebraria a API publica do pacote e o console script."]
     rollback: "o mesmo revert de D1."
   - id: D3

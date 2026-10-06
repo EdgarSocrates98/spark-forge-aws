@@ -21,7 +21,7 @@ O caminho MAIS CURTO de chamadas de um simbolo ate outro, descendo pelas chamada
 
 ## Na CLI
 
-[`sparkforge code path`](../cli/code.md)
+[`sparkforge-aws code path`](../cli/code.md)
 
 ## Capacidade
 

@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.iceberg.maintenance import (
+from sparkforge_aws.iceberg.maintenance import (
     ACOES_POR_REGRA,
     DESTRUTIVAS,
     IcebergMaintenancePlanner,
@@ -92,7 +92,7 @@ class TestOPlanoDerivaDoCatalogo:
         """
         import ast
 
-        from sparkforge.iceberg import maintenance
+        from sparkforge_aws.iceberg import maintenance
 
         arvore = ast.parse(Path(maintenance.__file__).read_text(encoding="utf-8"))
         culpados = [

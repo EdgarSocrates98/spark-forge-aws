@@ -16,9 +16,9 @@ import json
 
 import pytest
 
-from sparkforge.adapters import _core, upstream
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
+from sparkforge_aws.adapters import _core, upstream
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
 
 JOB = "def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n"
 SCHEMA = "sparkforge/upstream-facts/v1"
@@ -296,7 +296,7 @@ class TestToolSurface:
         assert "upstream" in payload["error"]
 
     def test_tool_schema_declares_upstream(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         schema = TOOLS["sparkforge_analyze_pyspark"]["inputSchema"]
         assert "upstream" in schema["properties"]

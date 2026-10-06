@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/STREAMING_SLO_EVALUATION/define.md
   sha256: "0d342bd28bd368bbba8de8e6d543a74e265d220465744c7ed642fed47142f36d"
 files:
-  - {path: sparkforge/facts/streaming_slo.py, action: create, reason: "compor status SLO sobre declarations e batches observados"}
-  - {path: sparkforge/facts/streaming_composition.py, action: modify, reason: "despachar mode=slo e preservar envelope analisado"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "passar slo_name ao compositor comum"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "expor mode=slo e --slo-name"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "manter paridade de schema CLI/MCP"}
+  - {path: sparkforge_aws/facts/streaming_slo.py, action: create, reason: "compor status SLO sobre declarations e batches observados"}
+  - {path: sparkforge_aws/facts/streaming_composition.py, action: modify, reason: "despachar mode=slo e preservar envelope analisado"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "passar slo_name ao compositor comum"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "expor mode=slo e --slo-name"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "manter paridade de schema CLI/MCP"}
   - {path: rules/catalog/streaming-operations.yaml, action: modify, reason: "julgar violação observada e avaliação unresolved"}
   - {path: tests/test_facts_streaming_slo.py, action: create, reason: "provar comparação, janela e unresolved antes do código"}
   - {path: tests/test_streaming_rules.py, action: modify, reason: "provar regras SLO evidence-first"}
@@ -77,11 +77,11 @@ barreira determinística sem inventar zero, sucesso ou causa.
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category streaming_slo`: `SF-STREAM-004`, que
+- `sparkforge-aws rules lookup --category streaming_slo`: `SF-STREAM-004`, que
   confirma que declaração sem target não prova atendimento.
-- `sparkforge analyze streaming-ops --path ...`: o contrato atual emite
+- `sparkforge-aws analyze streaming-ops --path ...`: o contrato atual emite
   `streaming.slo` com target, metric, operator, unit, window e source.
 - `knowledge/streaming-operations.md`: separação entre declaração SLO e série
   observada; sem comparação de unidade/janela não há veredito.
-- `sparkforge/facts/streaming.py` e `sparkforge/facts/streaming_composition.py`:
+- `sparkforge_aws/facts/streaming.py` e `sparkforge_aws/facts/streaming_composition.py`:
   batches já carregam timestamp, query_name e measures de taxa/duração.

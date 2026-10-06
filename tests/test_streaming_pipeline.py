@@ -5,12 +5,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_streaming_composition
-from sparkforge.adapters.tools import call_tool
-from sparkforge.facts.streaming_pipeline import build_streaming_pipeline
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters._core import analyze_streaming_composition
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.facts.streaming_pipeline import build_streaming_pipeline
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -140,12 +140,16 @@ def test_pipeline_cli_mcp_envelopes_match(tmp_path: Path):
 
     expected = analyze_streaming_composition(**args)
     actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
+    # do envelope e comparado sem ele, e o formato e travado em
+    # tests/test_runtime_convergence_trust.py.
+    actual.pop("_trust", None)
     assert actual == expected
     completed = subprocess.run(
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "streaming-composition",
             "--facts",

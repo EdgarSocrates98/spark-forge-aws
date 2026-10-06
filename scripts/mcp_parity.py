@@ -2,7 +2,7 @@
 """Golden de paridade do servidor MCP: o que o cliente recebe, byte a byte.
 
 Existe por causa da migracao do SDK `mcp` 1.x para 2.x. O 1.x fazia calado
-tres coisas que `sparkforge/adapters/mcp.py` nunca escreveu -- validar
+tres coisas que `sparkforge_aws/adapters/mcp.py` nunca escreveu -- validar
 `arguments` contra o `inputSchema`, validar o resultado contra o
 `outputSchema` e montar `structuredContent` com o texto em
 `json.dumps(indent=2)` -- e o 2.x nao faz nenhuma delas. "A migracao nao mudou
@@ -189,7 +189,7 @@ async def _pedir(cliente: Any, modo: str, metodo: str, params: dict[str, Any]) -
 
 
 async def _coletar_async(modo: str) -> dict[str, Any]:
-    from sparkforge.adapters.mcp import build_server
+    from sparkforge_aws.adapters.mcp import build_server
 
     listas: dict[str, Any] = {}
     chamadas: dict[str, Any] = {}

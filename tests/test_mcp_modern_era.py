@@ -17,8 +17,8 @@ from importlib.metadata import version  # noqa: E402
 
 import anyio  # noqa: E402
 
-from sparkforge.adapters.mcp import _INSTRUCOES, _versao_do_pacote, build_server  # noqa: E402
-from sparkforge.adapters.tools import TOOLS  # noqa: E402
+from sparkforge_aws.adapters.mcp import _INSTRUCOES, _versao_do_pacote, build_server  # noqa: E402
+from sparkforge_aws.adapters.tools import TOOLS  # noqa: E402
 
 if int(version("mcp").split(".")[0]) < 2:
     pytest.skip("era 2026-07-28 so existe no SDK 2.x", allow_module_level=True)
@@ -58,7 +58,7 @@ def test_handshake_legado_continua_atendido():
 @pytest.mark.parametrize("modo", ["auto", "legacy"])
 def test_identidade_declarada(modo):
     sessao = _conectar(modo)
-    assert sessao["server_info"].name == "sparkforge"
+    assert sessao["server_info"].name == "sparkforge-aws"
     assert sessao["server_info"].version == _versao_do_pacote()
     assert sessao["server_info"].description is None
     assert sessao["instructions"] == _INSTRUCOES

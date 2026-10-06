@@ -50,7 +50,8 @@
         "rules": [
           "SF-GRAPH-005",
           "SF-ICE-009"
-        ]
+        ],
+        "skills": []
       },
       "revalidated": [],
       "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html"
@@ -73,7 +74,8 @@
     "docs": 1,
     "evals": 5,
     "goldens": 2,
-    "rules": 2
+    "rules": 2,
+    "skills": 0
   },
   "unresolved": []
 }

@@ -38,7 +38,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters.tools import TOOLS
+from sparkforge_aws.adapters.tools import TOOLS
 
 ROOT = Path(__file__).resolve().parents[1]
 MARCA_PT = "## Antes de responder sobre artefato, rode o verbo"
@@ -140,7 +140,7 @@ artifact directly comes after the verb, to double-check, never instead of it.
    `python -m pytest tests/test_bootstrap_budget.py tests/test_docs_coverage.py -q`
    (AC4; se o teto estourar, pare e relate — não encurte outras regras sem decisão).
 5. `python scripts/check_vnext_claims.py` (arquivo `.py` novo; remedie por id).
-   `python scripts/check_status_numbers.py --strict`. `python -m ruff check sparkforge scripts tests`.
+   `python scripts/check_status_numbers.py --strict`. `python -m ruff check sparkforge_aws scripts tests`.
 6. Commit: `docs(agents): answer artifact questions through the verb first`.
 
 ## T2 — a medida

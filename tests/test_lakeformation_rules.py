@@ -30,13 +30,13 @@ import copy
 
 import pytest
 
-from sparkforge.facts.lakeformation import build_lakeformation
-from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
-from sparkforge.facts.terraform import extract_terraform, extract_terraform_tree
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
-from sparkforge.rules.version_scope import in_scope
+from sparkforge_aws.facts.lakeformation import build_lakeformation
+from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant
+from sparkforge_aws.facts.terraform import extract_terraform, extract_terraform_tree
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
+from sparkforge_aws.rules.version_scope import in_scope
 from tests.test_fixtures_golden_infra_code import FIXTURES, run_fixture
 from tests.test_lakeformation_missing_grant import (
     _registrada,
@@ -247,7 +247,7 @@ class TestTheAreaIsSkippedBelowGlue5:
 
 # ---------------------------------------------------------------------------
 # SF-LF-003 e SF-LF-004 entraram em 2026-09-09, junto com
-# `sparkforge/facts/lakeformation.py`. As duas sao o PRIMEIRO caso desta area em
+# `sparkforge_aws/facts/lakeformation.py`. As duas sao o PRIMEIRO caso desta area em
 # que a regra nao le `tf.attribute` cru: o predicado que elas comparam por
 # igualdade foi derivado num fact, porque o DSL de regra nao alcanca "o nome do
 # catalogo esta dentro da chave".

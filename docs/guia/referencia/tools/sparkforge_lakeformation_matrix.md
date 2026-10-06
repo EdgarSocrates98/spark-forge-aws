@@ -18,7 +18,7 @@ Eixo de VERSAO de Lake Formation por runtime Glue: filesystem S3 default, FGAC p
 
 ## Na CLI
 
-[`sparkforge lakeformation matrix`](../cli/lakeformation.md)
+[`sparkforge-aws lakeformation matrix`](../cli/lakeformation.md)
 
 ## Capacidade
 

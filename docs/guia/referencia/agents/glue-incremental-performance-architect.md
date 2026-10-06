@@ -13,7 +13,7 @@ Investigacao ponta a ponta de job ou biblioteca Glue PySpark com fluxos full e i
 
 ## Skills que ele usa
 
-[`glue-incremental-performance-architect`](../skills/glue-incremental-performance-architect.md), [`sparkforge-diagnose`](../skills/sparkforge-diagnose.md), [`analyze-library-call-graph`](../skills/analyze-library-call-graph.md), [`design-incremental-processing`](../skills/design-incremental-processing.md), [`optimize-latest-per-key`](../skills/optimize-latest-per-key.md), [`analyze-batch-loop`](../skills/analyze-batch-loop.md), [`diagnose-oom`](../skills/diagnose-oom.md), [`optimize-variable-volume-job`](../skills/optimize-variable-volume-job.md), [`review-glue-terraform`](../skills/review-glue-terraform.md), [`optimize-pyspark-code`](../skills/optimize-pyspark-code.md), [`analyze-spark-plan`](../skills/analyze-spark-plan.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`diagnose-data-skew`](../skills/diagnose-data-skew.md), [`tune-glue-job`](../skills/tune-glue-job.md), [`optimize-parquet-layout`](../skills/optimize-parquet-layout.md), [`optimize-iceberg-table`](../skills/optimize-iceberg-table.md), [`benchmark-pyspark-job`](../skills/benchmark-pyspark-job.md)
+[`glue-incremental-performance-architect`](../skills/glue-incremental-performance-architect.md), [`sparkforge-aws-diagnose`](../skills/sparkforge-aws-diagnose.md), [`analyze-library-call-graph`](../skills/analyze-library-call-graph.md), [`design-incremental-processing`](../skills/design-incremental-processing.md), [`optimize-latest-per-key`](../skills/optimize-latest-per-key.md), [`analyze-batch-loop`](../skills/analyze-batch-loop.md), [`diagnose-oom`](../skills/diagnose-oom.md), [`optimize-variable-volume-job`](../skills/optimize-variable-volume-job.md), [`review-glue-terraform`](../skills/review-glue-terraform.md), [`optimize-pyspark-code`](../skills/optimize-pyspark-code.md), [`analyze-spark-plan`](../skills/analyze-spark-plan.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`diagnose-data-skew`](../skills/diagnose-data-skew.md), [`tune-glue-job`](../skills/tune-glue-job.md), [`optimize-parquet-layout`](../skills/optimize-parquet-layout.md), [`optimize-iceberg-table`](../skills/optimize-iceberg-table.md), [`benchmark-pyspark-job`](../skills/benchmark-pyspark-job.md)
 
 ## Executores que ele despacha
 
@@ -67,7 +67,7 @@ versão da chave sobrevive, e o bookmark decide o que é relido. Um desempate de
 trocado não muda contagem nenhuma e muda a linha que ficou — é exatamente o ponto cego dos
 quatro proxies, e ele é o seu terreno, não uma hipótese remota.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
 lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
@@ -86,9 +86,9 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 #### Mudança no job pede spec
 
 Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
-`sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
-`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
-nunca pela árvore do operador. `sparkforge sdd check` confere cada fase. As duas
+`sparkforge-aws case open` dá o `case_id`, a skill `sdd-define` escreve o define com
+`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge-aws change sandbox`,
+nunca pela árvore do operador. `sparkforge-aws sdd check` confere cada fase. As duas
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
 despacham subagentes, e subagente não faz nenhum dos dois.
 
@@ -115,4 +115,4 @@ decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
 Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
 
 Em plataforma sem despacho de subagente, a mesma decomposição sai por
-`sparkforge playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.

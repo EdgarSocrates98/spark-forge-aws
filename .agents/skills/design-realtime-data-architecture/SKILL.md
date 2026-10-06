@@ -13,7 +13,7 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge architecture streaming
+  - sparkforge-aws architecture streaming
 subagent: true
 agent: streaming-realtime-architect
 ---
@@ -24,7 +24,7 @@ Use JSON offline para separar requisitos declarados de premissas e executar a
 matriz de candidatos:
 
 ```bash
-sparkforge architecture streaming \
+sparkforge-aws architecture streaming \
   --path workload-requirements.json \
   --out streaming-architecture.json
 ```

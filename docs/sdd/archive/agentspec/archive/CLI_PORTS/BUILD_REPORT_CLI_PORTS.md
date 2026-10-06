@@ -70,7 +70,7 @@
 ### Lint Check
 
 ```text
-ruff check sparkforge tests/test_cli_ports.py tests/test_adapters_tools.py ...
+ruff check sparkforge_aws tests/test_cli_ports.py tests/test_adapters_tools.py ...
 All checks passed!
 ```
 
@@ -105,7 +105,7 @@ total       12723 passed, 13 skipped, 0 failed
 | `check_status_numbers.py --strict` | ✅ 0 divergencias |
 | `check_surface_lock.py --update` | ✅ 517 660 -> 526 807 (+9 147 bytes) |
 | `gen_reference_docs.py` | ✅ 255 paginas, 22 regravadas |
-| `policy sync-settings` | ✅ `mcp__sparkforge__sparkforge_collect_parquet_footer` em `permissions.ask` |
+| `policy sync-settings` | ✅ `mcp__sparkforge-aws__sparkforge_collect_parquet_footer` em `permissions.ask` |
 | spec-lint (define, design) | ✅ PASS |
 
 **Status:** ✅ 12723/12723 Pass

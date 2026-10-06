@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from sparkforge.workspace import (
+from sparkforge_aws.workspace import (
     FreshnessAssessment,
     GraphAdapter,
     GraphFragment,
     compose_federated_graph,
 )
-from sparkforge.workspace.graph import WorkspaceGraph, WorkspaceNode
+from sparkforge_aws.workspace.graph import WorkspaceGraph, WorkspaceNode
 
 
 def test_federated_graph_is_deterministic_and_preserves_evidence() -> None:

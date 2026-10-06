@@ -63,7 +63,7 @@ de fixture tem CR.
 `python scripts/run_agentic_eval.py --suite sdd --model haiku --runs 1`, exit
 0, em 2026-09-17T07:45:19Z, `claude-haiku-4-5-20251001`, host `2.1.274`,
 superfície `full`. Pontuado de novo com
-`python -m sparkforge.evals grade --suite sdd --run sdd-2026-09-17T07-45-19Z-r1`
+`python -m sparkforge_aws.evals grade --suite sdd --run sdd-2026-09-17T07-45-19Z-r1`
 (exit 0, scorecard idêntico). Só o scorecard foi copiado para
 `evals/agentic/sdd/baselines/2026-09-17-haiku-4-5/r1.json`, com LF.
 
@@ -77,16 +77,16 @@ superfície `full`. Pontuado de novo com
 | sdd-06 | correct | ok | 6 | 4 |
 
 k/N: acerto 6/6, tools 6/6, N=1. Nenhuma pergunta chamou a tool MCP; todas
-chegaram ao gate pela CLI `sparkforge sdd ...`. Nos transcripts de `sdd-01`,
+chegaram ao gate pela CLI `sparkforge-aws sdd ...`. Nos transcripts de `sdd-01`,
 `sdd-02` e `sdd-06`, lidos um a um, os erros de tool são tentativas de caminho
 e de shell (PowerShell e Bash com caminho Windows) antes do comando que
-funcionou; os outros três não foram lidos. O `sparkforge` do PATH era a
+funcionou; os outros três não foram lidos. O `sparkforge-aws` do PATH era a
 instalação editável deste repositório, não a cópia do workspace.
 
 **Segunda amostra (`r2`, commit `6f569393`).** O ship roda de novo o comando
 de AC5 (exit 0, 08:14:52Z), e o scorecard entrou como `r2.json` do mesmo
 baseline. Acerto 6/6; tools 5/6: em `sdd-03` o agente tentou
-`python -m sparkforge.cli sdd check`, que não é o ponto de entrada da CLI, e
+`python -m sparkforge_aws.cli sdd check`, que não é o ponto de entrada da CLI, e
 respondeu certo lendo o YAML com `Read`. Com as duas amostras, `compare` dá
 acerto 2/2 em todas as perguntas e tools 2/2 em cinco, 1/2 em `sdd-03`.
 Nenhuma afirmação de ganho sobre outro processo.

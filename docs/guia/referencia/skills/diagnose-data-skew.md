@@ -2,12 +2,12 @@
 
 # Skill `diagnose-data-skew`
 
-Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou desenhar o experimento de mitigação (broadcast, AQE skew join, salting). Use também quando a pergunta for \"uma task não termina\", \"uma chave concentra tudo\", \"o job trava numa partição só\" ou \"uma partição ficou gigante\", mesmo sem citar SF-UI-001. Se você está prestes a aplicar salting ou repartition por instinto, rode `sparkforge collect event-log`, `sparkforge analyze event-log` e `sparkforge judge --show-skipped` em vez disso — cruzar SF-UI-001 com SF-UI-002 diz se é skew de dados (tratável na chave) ou de computação (repartition não muda nada, e é o erro mais caro desta análise).
+Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou desenhar o experimento de mitigação (broadcast, AQE skew join, salting). Use também quando a pergunta for \"uma task não termina\", \"uma chave concentra tudo\", \"o job trava numa partição só\" ou \"uma partição ficou gigante\", mesmo sem citar SF-UI-001. Se você está prestes a aplicar salting ou repartition por instinto, rode `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log` e `sparkforge-aws judge --show-skipped` em vez disso — cruzar SF-UI-001 com SF-UI-002 diz se é skew de dados (tratável na chave) ou de computação (repartition não muda nada, e é o erro mais caro desta análise).
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/diagnose-data-skew/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge collect event-log', 'sparkforge analyze event-log', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws collect event-log', 'sparkforge-aws analyze event-log', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 
@@ -17,10 +17,10 @@ Skew de duração sozinho não diz o que fazer. O tratamento depende inteirament
 
 ### Procedimento
 
-1. `sparkforge collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>` — sem credencial, baixe manualmente e registre com `sparkforge.collect.register_artifact`.
-2. `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json`. Leia `unresolved`: log truncado é ponto cego, não ausência de skew.
-3. `sparkforge judge --facts .sparkforge/facts.json --show-skipped`. `--show-skipped` não é opcional aqui — distingue "não há skew" de "não coletei o dado que provaria skew". Sem flag de versão: `SF-UI-001` e `SF-UI-002`, as duas regras que decidem esta investigação, não guardam versão, então declarar runtime não muda o resultado. O que o event log declara (`spark.runtime_version`, a primeira linha do log) `judge` já lê sozinho — confira no campo `runtime` da saída, com `detected_from` dizendo de onde veio. Passe `--glue 5.1` só se souber a versão de fonte confiável e quiser cobrir também `SF-GLUE-*`; senão elas aparecem em `--show-skipped` com `reason: runtime_scope`, que aqui é ruído esperado e não lacuna de skew.
-4. `sparkforge next-step --repo . --findings .sparkforge/findings.json` — a árvore de roteamento já resolve o discriminador abaixo sozinha (`ROUTE-006`/`ROUTE-007` em `rules/catalog/routing.yaml`); não escolha o caminho por julgamento próprio.
+1. `sparkforge-aws collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>` — sem credencial, baixe manualmente e registre com `sparkforge_aws.collect.register_artifact`.
+2. `sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json`. Leia `unresolved`: log truncado é ponto cego, não ausência de skew.
+3. `sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped`. `--show-skipped` não é opcional aqui — distingue "não há skew" de "não coletei o dado que provaria skew". Sem flag de versão: `SF-UI-001` e `SF-UI-002`, as duas regras que decidem esta investigação, não guardam versão, então declarar runtime não muda o resultado. O que o event log declara (`spark.runtime_version`, a primeira linha do log) `judge` já lê sozinho — confira no campo `runtime` da saída, com `detected_from` dizendo de onde veio. Passe `--glue 5.1` só se souber a versão de fonte confiável e quiser cobrir também `SF-GLUE-*`; senão elas aparecem em `--show-skipped` com `reason: runtime_scope`, que aqui é ruído esperado e não lacuna de skew.
+4. `sparkforge-aws next-step --repo . --findings .sparkforge/findings.json` — a árvore de roteamento já resolve o discriminador abaixo sozinha (`ROUTE-006`/`ROUTE-007` em `rules/catalog/routing.yaml`); não escolha o caminho por julgamento próprio.
 
 ### O discriminador que decide o tratamento
 
@@ -53,7 +53,7 @@ Salting é a resposta mais citada e raramente a melhor primeira tentativa. Nunca
 | `SF-UI-001` | `spark.stage.task_duration` | Duração desigual entre tasks do mesmo stage |
 | `SF-UI-002` | `spark.stage.task_input` | Bytes lidos desiguais — o discriminador entre skew de dado e de computação |
 
-Limiares e severidade de cada regra vêm de `sparkforge rules lookup --id <ID>`, nunca de memória — um valor decorado vira mentira silenciosa quando o catálogo é atualizado.
+Limiares e severidade de cada regra vêm de `sparkforge-aws rules lookup --id <ID>`, nunca de memória — um valor decorado vira mentira silenciosa quando o catálogo é atualizado.
 
 ### Quando NÃO usar
 
@@ -76,9 +76,9 @@ coluna e exige uma segunda agregação para desfazer; pré-agregação só prese
 função for associativa e comutativa; e trocar a chave ou a regra de join muda a cardinalidade
 por construção. Aqui a exigência ganha o produtor que lhe faltava.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -116,7 +116,7 @@ Esta skill trata **skew de dados, distribuição de tasks e custo de shuffle**. 
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge collect event-log`, `sparkforge analyze event-log`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

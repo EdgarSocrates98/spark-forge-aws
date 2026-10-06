@@ -9,7 +9,7 @@ upstream:
   sha256: "7601c3bb853b3009436f8308102b235418330392c133e39499ba73c9165d6684"
 tasks:
   - id: T1
-    files: [tests/test_facts_lakeformation.py, sparkforge/facts/lakeformation.py]
+    files: [tests/test_facts_lakeformation.py, sparkforge_aws/facts/lakeformation.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_facts_lakeformation.py, name: TestFtaDeclarado::test_resolver_do_lake_formation_declara_fta}
   - id: T2
@@ -80,7 +80,7 @@ Rodar e ver falhar (`len(fta) == 1` com zero):
 python -m pytest -p no:cacheprovider --basetemp=E:/sfpt_fta "tests/test_facts_lakeformation.py::TestFtaDeclarado" -q
 ```
 
-Código, em `sparkforge/facts/lakeformation.py`: `"lakeformation.fta_declared"` em
+Código, em `sparkforge_aws/facts/lakeformation.py`: `"lakeformation.fta_declared"` em
 `EMITTED_KINDS`, e em `build_lakeformation`:
 
 ```python
@@ -161,7 +161,7 @@ class TestSfLf010:
 ```
 
 `_registrada` vem de `tests/test_lakeformation_missing_grant.py`; `Fact` de
-`sparkforge.findings.models`.
+`sparkforge_aws.findings.models`.
 
 Vermelho: `test_registrado_com_fta_declarado_nao_dispara` falha porque a regra dispara.
 

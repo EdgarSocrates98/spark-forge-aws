@@ -31,7 +31,7 @@ chosen: A
 
 ## Evidência que abriu a frente
 
-`sparkforge rules lookup --category streaming_slo` mostrou que `SF-STREAM-011`
+`sparkforge-aws rules lookup --category streaming_slo` mostrou que `SF-STREAM-011`
 e `SF-STREAM-012` já julgam `streaming.slo.evaluation` e
 `streaming.slo.unresolved`. `knowledge/transport-diagnostics.md` declara que
 `kafka.lag` e `kinesis.shard` carregam observações de lag/iterator age e que a

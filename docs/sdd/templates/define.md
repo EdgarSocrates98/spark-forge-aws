@@ -24,7 +24,7 @@ out_of_scope:
 unknowns:
   - id: U1
     blocks: [AC1]
-    unlock: "Ler o coordenador com sparkforge code symbol para saber que campo ele consome."
+    unlock: "Ler o coordenador com sparkforge-aws code symbol para saber que campo ele consome."
 case_id: null
 change_kinds: [agent_or_skill]
 ---
@@ -34,7 +34,7 @@ change_kinds: [agent_or_skill]
 > Template da skill `sdd-define`. Troque `feature: EXEMPLO` pelo nome da
 > feature e ponha `status: draft` ao copiar. `upstream` só existe quando a
 > feature tem `explore.md`; sem explore, apague o bloco inteiro. Rode
-> `sparkforge sdd stamp` para preencher o `sha256`, nunca o calcule à mão.
+> `sparkforge-aws sdd stamp` para preencher o `sha256`, nunca o calcule à mão.
 > `status: ready` só com zero recusa e depois da leitura do operador.
 
 ## Problema
@@ -54,6 +54,6 @@ O coordenador do case abre o relatório inteiro para ler três campos.
   `schema_invalid`.
 - A previsão da hipótese é mensurável no ship, parte por parte.
 - `success` sempre com `source`: de onde vem o número.
-- `change_kinds` sai da lista fechada de `sparkforge/sdd/change_kinds.yaml`; é
+- `change_kinds` sai da lista fechada de `sparkforge_aws/sdd/change_kinds.yaml`; é
   dela que o ship deriva os registros.
 - `case_id` só no perfil `operator`, copiado do case aberto.

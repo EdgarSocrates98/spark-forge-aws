@@ -18,14 +18,14 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
-from sparkforge.agentic.blackboard import read_claims
-from sparkforge.case.resume import render_handoff
-from sparkforge.durable import read_jsonl
-from sparkforge.journal import journal_path
-from sparkforge.journal.read import estado, verify
-from sparkforge.journal.record import recording
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.agentic.blackboard import read_claims
+from sparkforge_aws.case.resume import render_handoff
+from sparkforge_aws.durable import read_jsonl
+from sparkforge_aws.journal import journal_path
+from sparkforge_aws.journal.read import estado, verify
+from sparkforge_aws.journal.record import recording
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "journal"

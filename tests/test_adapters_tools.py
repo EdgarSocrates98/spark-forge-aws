@@ -4,7 +4,7 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +32,13 @@ class TestToolSurface:
         assert set(TOOLS) == {
             "sparkforge_context_start",
             "sparkforge_context_expand",
+            "sparkforge_context_inspect",
+            "sparkforge_agentops_inspect",
+            "sparkforge_agentops_compare",
+            "sparkforge_agentops_baseline",
+            "sparkforge_agentops_timeline",
+            "sparkforge_agentops_critical_path",
+            "sparkforge_doctor_agentic",
             "sparkforge_case_open",
             "sparkforge_case_get",
             "sparkforge_case_update",
@@ -230,7 +237,7 @@ class TestToolSurface:
         lado AWS", e a parte depois da virgula e verdade. So que
         `readOnlyHint` nao tem lado: ele afirma que a tool nao modifica o
         ambiente dela. Os sete coletores modificam o ambiente LOCAL -- todos
-        terminam em `sparkforge.collect.aws._write_and_register`, que grava o
+        terminam em `sparkforge_aws.collect.aws._write_and_register`, que grava o
         artefato e depois grava o manifesto `path` + `sha256` que
         `sparkforge_collect_verify` confere.
 
@@ -244,7 +251,7 @@ class TestToolSurface:
         for name in de_rede:
             assert TOOLS[name]["annotations"]["readOnlyHint"] is False, name
 
-    def test_only_case_and_report_writers_are_not_read_only(self):
+    def test_only_declared_local_writers_are_not_read_only(self):
         """A quarta lista manual desta classe, e ela mudou junto com as outras
         tres na Fase 4b: `sparkforge_report_sign` escreve o bloco de assinatura
         DENTRO do relatorio, no lugar. Um `sign` que so devolvesse o bloco para
@@ -270,7 +277,7 @@ class TestToolSurface:
         A Fase I3 descobriu que os SETE coletores AWS tambem escrevem, e nao
         por mudanca de capacidade: a anotacao deles dizia `readOnlyHint: True`
         e mentia. Eles gravam o artefato e o manifesto de integridade via
-        `sparkforge.collect.aws._write_and_register` desde que existem -- ver
+        `sparkforge_aws.collect.aws._write_and_register` desde que existem -- ver
         o comentario de `_WRITE_LOCAL_OPEN_WORLD` em `tools.py`.
 
         Eles NAO entram na lista a mao, e a razao nao e economia de digitacao:
@@ -283,7 +290,10 @@ class TestToolSurface:
         conjunto de rede e afirmar o resto preserva a garantia inteira e para
         de crescer.
 
-        Os CINCO locais continuam a mao de proposito, e ai a lista carrega
+        `sparkforge_agentops_baseline` grava baseline local quando `action=save`,
+        portanto tambem e mutacao local declarada e entra na lista.
+
+        Os locais continuam a mao de proposito, e ai a lista carrega
         garantia real: nao ha nenhuma outra propriedade declarada que separe
         `case_open` de `analyze_pyspark` -- derivar de `TOOLS` seria escrever
         `writers == writers` e o teste deixaria de cobrar decisao humana
@@ -341,6 +351,7 @@ class TestToolSurface:
             # `.sparkforge/proposal/<id>/` (tmp + troca), e o mesmo `now` grava os
             # mesmos bytes (§15 L3). Nao roda git e nao toca a arvore principal.
             "sparkforge_change_propose",
+            "sparkforge_agentops_baseline",
             # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
             #
             # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
@@ -433,7 +444,7 @@ class TestCallTool:
     def test_facts_path_turns_on_the_relevance_layer(self, tmp_path):
         import json as _json
 
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.findings.models import Fact
 
         fact = Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": 1})
         facts_path = tmp_path / "facts.json"
@@ -465,7 +476,7 @@ class TestCallTool:
             "sparkforge_case_update", {"repo": str(repo), "phase": "validation"}
         )
         assert blocked["exit_code"] == 2
-        assert "sparkforge benchmark" in blocked["error"]
+        assert "sparkforge-aws benchmark" in blocked["error"]
 
     def test_case_open_without_strict_gates_stays_advisory(self, repo):
         call_tool(
@@ -498,7 +509,7 @@ class TestCallTool:
         assert aceito["gate_overrides"][0]["reason"] == "job descontinuado"
 
     def test_facts_path_unlocks_the_phase_over_mcp(self, repo, tmp_path):
-        from sparkforge.findings.models import Fact
+        from sparkforge_aws.findings.models import Fact
 
         call_tool(
             "sparkforge_case_open",
@@ -553,7 +564,7 @@ class TestCallTool:
 
     def test_error_result_carries_a_collect_command(self, repo):
         result = call_tool("sparkforge_judge", {"facts_path": str(repo / "nope.json")})
-        assert "sparkforge analyze pyspark" in json.dumps(result)
+        assert "sparkforge-aws analyze pyspark" in json.dumps(result)
 
     def test_judge_accepts_a_list_of_facts_paths(self, repo, tmp_path):
         """Paridade com `judge --facts` repetivel na CLI: uma regra que cruza
@@ -786,7 +797,7 @@ _SQL_METRICS_EVENT_LOG_LINES = "".join(
     ]
 )
 
-# Artefato de metricas do CloudWatch no shape que `sparkforge collect cloudwatch`
+# Artefato de metricas do CloudWatch no shape que `sparkforge-aws collect cloudwatch`
 # grava -- ver `_artifact()` de `tests/test_facts_cloudwatch.py`. Com valores nao
 # vazios: uma serie vazia validaria `sparkforge_analyze_cloudwatch` contra o
 # schema pelo motivo errado (`glue.metric.unresolved`, nao `glue.metric`).
@@ -808,10 +819,10 @@ _CLOUDWATCH_ARTIFACT = json.dumps(
     }
 )
 
-# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# Artefato do FOOTER no shape que `sparkforge-aws collect parquet-footer` grava.
 # DOIS row groups com faixas disjuntas, de proposito: com um so, a medida de
 # faixa recusaria com `row_group_unico`.
-# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# Artefato do FOOTER no shape que `sparkforge-aws collect parquet-footer` grava.
 # DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
 # faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a
 # tool existe para publicar.
@@ -837,7 +848,7 @@ def _pqf_coluna(minimo: int, maximo: int) -> dict:
     }
 
 
-# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# Artefato do FOOTER no shape que `sparkforge-aws collect parquet-footer` grava.
 # DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
 # faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a tool
 # existe para publicar.
@@ -877,7 +888,7 @@ _PARQUET_FOOTER_ARTIFACT = json.dumps(
     }
 )
 
-# Artefato do LOG de UM run no shape que `sparkforge collect cloudwatch-logs`
+# Artefato do LOG de UM run no shape que `sparkforge-aws collect cloudwatch-logs`
 # grava. A linha carrega a assinatura `ERR-GLUE-001` de proposito: e ela que faz
 # a amostra de `sparkforge_analyze_error_signatures` casar por `log_line`.
 _CLOUDWATCH_LOGS_ARTIFACT = json.dumps(
@@ -909,7 +920,7 @@ _CLOUDWATCH_LOGS_ARTIFACT = json.dumps(
     }
 )
 
-# Artefato de UM run Glue no shape que `sparkforge collect glue-job-runs` grava
+# Artefato de UM run Glue no shape que `sparkforge-aws collect glue-job-runs` grava
 # -- um JSON por run terminal, nomeado `<job>_<run_id>.json`.
 _GLUE_JOB_RUN_ARTIFACT = json.dumps(
     {
@@ -1010,7 +1021,7 @@ def _debate_start_args(tmp_path):
     """
     from pathlib import Path
 
-    from sparkforge.case.store import SCHEMA_VERSION, save_case
+    from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
 
     raiz = Path(__file__).resolve().parents[1]
     pastas = (
@@ -1046,7 +1057,7 @@ def _receipt_args(tmp_path):
     recusa artefato fora de `--repo`, porque o verify nao o alcancaria."""
     from pathlib import Path
 
-    from sparkforge.case.store import SCHEMA_VERSION, save_case
+    from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
 
     raiz = Path(__file__).resolve().parents[1]
     pastas = (
@@ -2030,11 +2041,11 @@ def rodar(spark, vertices, arestas):
 def _fake_collect_boto3(monkeypatch):
     """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
-    from sparkforge.collect import aws as collect_aws
-    from sparkforge.collect import cloudwatch_logs as collect_cw_logs
-    from sparkforge.collect import glue_resource_link as collect_rlink
-    from sparkforge.collect import iam_access as collect_iam
-    from sparkforge.collect import lakeformation as collect_lf
+    from sparkforge_aws.collect import aws as collect_aws
+    from sparkforge_aws.collect import cloudwatch_logs as collect_cw_logs
+    from sparkforge_aws.collect import glue_resource_link as collect_rlink
+    from sparkforge_aws.collect import iam_access as collect_iam
+    from sparkforge_aws.collect import lakeformation as collect_lf
 
     # Um patch POR MODULO que importa `require_boto3` para o proprio namespace:
     # patchar so `aws` deixaria os outros escaparem para a rede. Foi o que
@@ -2125,8 +2136,8 @@ def _real_code_output_for(name, tmp_path):
         resultado = call_tool("sparkforge_code_export", {"repo": str(raiz)})
         # As DUAS metades da compatibilidade sao o que este teste prende: um
         # artefato que so declarasse a primeira convidaria a assumir a segunda.
-        assert resultado["sparkforge"]["compatible_fields"]
-        assert resultado["sparkforge"]["not_implemented"]
+        assert resultado["sparkforge-aws"]["compatible_fields"]
+        assert resultado["sparkforge-aws"]["not_implemented"]
         assert resultado["node_count"] >= 1
         return resultado
 
@@ -2203,6 +2214,46 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_context_expand",
             {"ref": started["refs"][0]["uri"], "max_bytes": 5000, "repo": str(tmp_path)},
         )
+
+    if name == "sparkforge_context_inspect":
+        return call_tool(
+            name,
+            {
+                "payload": {
+                    "items": [
+                        {"item_id": "f1", "kind": "fact", "critical": True, "evidence_refs": ["f1"]}
+                    ],
+                    "required_evidence_refs": ["f1"],
+                },
+                "observed_provider_tokens": 1,
+            },
+        )
+
+    if name == "sparkforge_agentops_inspect":
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
+
+    if name == "sparkforge_agentops_compare":
+        return call_tool(
+            name,
+            {"repo": str(tmp_path), "run_a": "missing-a", "run_b": "missing-b"},
+        )
+
+    if name == "sparkforge_agentops_baseline":
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "action": "save",
+                "run_id": "missing-run",
+                "baseline_path": str(tmp_path / "baseline.json"),
+            },
+        )
+
+    if name in {"sparkforge_agentops_timeline", "sparkforge_agentops_critical_path"}:
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
+
+    if name == "sparkforge_doctor_agentic":
+        return call_tool(name, {"repo": str(tmp_path)})
 
     if name == "sparkforge_case_get":
         _open_case(tmp_path)
@@ -2953,7 +3004,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         # host e `metrics` ter a metrica de token (so sai com provider).
         from pathlib import Path
 
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.observability import context_ledger
 
         assert monkeypatch is not None, f"{name} precisa de monkeypatch para o ledger"
         ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_amostra")
@@ -3318,7 +3369,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         return result
 
     if name == "sparkforge_collect_streaming_integrations":
-        from sparkforge.collect import streaming as collect_streaming
+        from sparkforge_aws.collect import streaming as collect_streaming
 
         class _Kinesis:
             def describe_stream_summary(self, **kwargs):
@@ -3344,7 +3395,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
 
     if name == "sparkforge_collect_schema_registry":
-        from sparkforge.collect import schema_registry as collect_schema_registry
+        from sparkforge_aws.collect import schema_registry as collect_schema_registry
 
         class _Glue:
             def get_registry(self, **kwargs):
@@ -3385,7 +3436,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
 
     if name == "sparkforge_collect_managed_flink":
-        from sparkforge.collect import managed_flink as collect_managed_flink
+        from sparkforge_aws.collect import managed_flink as collect_managed_flink
 
         class _ManagedFlink:
             def describe_application(self, **kwargs):
@@ -3791,7 +3842,7 @@ class TestErrorShapesValidateToo:
     def test_error_message_is_actionable(self, name, args, tmp_path):
         resolved = {k: self._resolve(v, tmp_path) for k, v in args.items()}
         message = call_tool(name, resolved)["error"]
-        assert "sparkforge" in message, f"{name}: erro sem comando que resolve"
+        assert "sparkforge-aws" in message, f"{name}: erro sem comando que resolve"
 
     def test_every_failable_tool_declares_both_shapes(self):
         for name, _ in self.FAILABLE:
@@ -3800,7 +3851,7 @@ class TestErrorShapesValidateToo:
 
 class TestGlueJobRunTools:
     def test_the_three_new_tools_are_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         novas = {
             "sparkforge_collect_glue_job_runs",
@@ -3826,7 +3877,7 @@ class TestGlueJobRunTools:
 
 class TestSqlMetricsTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_analyze_sql_metrics" in tools.TOOLS
         assert "sparkforge_analyze_sql_metrics" in tools._HANDLERS
@@ -3842,7 +3893,7 @@ class TestSqlMetricsTool:
 
 class TestWorkloadTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_workload" in tools.TOOLS
         assert "sparkforge_workload" in tools._HANDLERS
@@ -3858,7 +3909,7 @@ class TestWorkloadTool:
 
 class TestCapacityTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_capacity" in tools.TOOLS
         assert "sparkforge_capacity" in tools._HANDLERS
@@ -3866,7 +3917,7 @@ class TestCapacityTool:
 
 class TestFinopsTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_finops" in tools.TOOLS
         assert "sparkforge_finops" in tools._HANDLERS
@@ -3881,7 +3932,7 @@ class TestArbitrateTool:
     """
 
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_arbitrate" in tools.TOOLS
         assert "sparkforge_arbitrate" in tools._HANDLERS
@@ -3901,12 +3952,12 @@ class TestArbitrateTool:
     def test_ela_declara_caminho_e_por_isso_cai_na_cadeia_de_autorizacao(self):
         """`repo`, `findings_path` e `facts_path` sao nomes de caminho.
 
-        A cadeia de `sparkforge.agents.autonomy` confina TODO argumento cujo
+        A cadeia de `sparkforge_aws.agents.autonomy` confina TODO argumento cujo
         nome nomeia caminho dentro da raiz do case. Uma tool que grava no disco
         e nao declarasse nenhum cairia no conjunto de excecao -- e sairia da
         verificacao de confinamento sem que nada acusasse.
         """
-        from sparkforge.agents.autonomy import _e_chave_de_caminho
+        from sparkforge_aws.agents.autonomy import _e_chave_de_caminho
 
         propriedades = TOOLS["sparkforge_arbitrate"]["inputSchema"]["properties"]
         assert _e_chave_de_caminho("repo")
@@ -3914,7 +3965,7 @@ class TestArbitrateTool:
 
     def test_ela_e_local_mutation_e_nao_read_only(self):
         """Ela GRAVA: `.sparkforge/blackboard/*.jsonl` mais o ADR."""
-        from sparkforge.agents.autonomy import ToolClass, tool_class
+        from sparkforge_aws.agents.autonomy import ToolClass, tool_class
 
         assert tool_class("sparkforge_arbitrate") is ToolClass.LOCAL_MUTATION
 
@@ -3931,7 +3982,7 @@ class TestArbitrateTool:
             assert proibido not in schema, proibido
 
     def test_a_tool_grava_o_blackboard_que_os_verbos_de_leitura_liam_vazio(self, tmp_path):
-        from sparkforge.agentic.blackboard import read_claims
+        from sparkforge_aws.agentic.blackboard import read_claims
 
         lib = tmp_path / "lib"
         lib.mkdir()
@@ -3964,14 +4015,14 @@ class TestJudgeDeclaraOPlano:
     defeito que `emr` teve em `_RUNTIME_CONTEXT`."""
 
     def test_outputschema_declara_plan_e_evidence_standing(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         schema = json.dumps(TOOLS["sparkforge_judge"])
         assert "plan" in schema
         assert "evidence_standing" in schema
 
     def test_a_descricao_diz_que_nao_grava(self):
-        from sparkforge.adapters.tools import TOOLS
+        from sparkforge_aws.adapters.tools import TOOLS
 
         desc = TOOLS["sparkforge_judge"]["description"].lower()
         assert "nao grava" in desc or "não grava" in desc
@@ -3982,6 +4033,6 @@ class TestJudgeDeclaraOPlano:
         o plano NAO podia mover a classe da tool. Se ela virasse
         `LOCAL_MUTATION`, a cadeia de autorizacao de um verbo que muitas skills
         chamam mudaria em silencio."""
-        from sparkforge.agents.autonomy import ToolClass, tool_class
+        from sparkforge_aws.agents.autonomy import ToolClass, tool_class
 
         assert tool_class("sparkforge_judge") is ToolClass.READ_ONLY

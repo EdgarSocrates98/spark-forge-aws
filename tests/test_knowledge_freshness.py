@@ -1,4 +1,4 @@
-"""`sparkforge/knowledge_freshness.py`: o estado de cada fonte citada.
+"""`sparkforge_aws/knowledge_freshness.py`: o estado de cada fonte citada.
 
 Pares positivo/negativo por estado, com lock sintetico e `as_of` fixo, e a
 precedencia entre eles. O lock real nao entra aqui: ele muda a cada refresh, e
@@ -12,7 +12,7 @@ from datetime import date
 
 import pytest
 
-from sparkforge.knowledge_freshness import (
+from sparkforge_aws.knowledge_freshness import (
     AGING_BASIS,
     AGING_DAYS,
     ESTADOS,

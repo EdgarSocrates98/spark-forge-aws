@@ -21,7 +21,7 @@ Compara dois estados de um modulo Terraform (dois checkouts, dois `git worktree`
 
 ## Na CLI
 
-[`sparkforge analyze terraform-diff`](../cli/analyze.md)
+[`sparkforge-aws analyze terraform-diff`](../cli/analyze.md)
 
 ## Capacidade
 

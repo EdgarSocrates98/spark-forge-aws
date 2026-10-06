@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.streaming_slo import build_streaming_slo
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.streaming_slo import build_streaming_slo
+from sparkforge_aws.findings.models import Fact
 
 
 def _fact(kind: str, *, file: str, symbol: str = "", attrs=None, measures=None) -> Fact:

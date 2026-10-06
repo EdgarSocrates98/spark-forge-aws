@@ -16,8 +16,8 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 AS_OF = "2026-09-11"
@@ -26,7 +26,7 @@ CAMPOS = {"source_freshness", "freshness_policy"}
 
 @pytest.fixture(autouse=True)
 def _ledger_isolado(tmp_path, monkeypatch):
-    from sparkforge.observability import context_ledger
+    from sparkforge_aws.observability import context_ledger
 
     monkeypatch.setattr(
         context_ledger,
@@ -73,7 +73,7 @@ class TestRulesLookup:
             {"id": ["SF-ENV-001"], "source_freshness": True, "as_of": "2026-13-45"},
         )
         assert resultado["exit_code"] == 2
-        assert "sparkforge" in resultado["error"]
+        assert "sparkforge-aws" in resultado["error"]
 
     def test_sem_lock_tudo_unresolved_e_o_verbo_responde(self, tmp_path, monkeypatch):
         sem_lock = tmp_path / "knowledge"
@@ -107,7 +107,7 @@ class TestJudge:
         assert set(com["source_freshness"]) == _urls_das_fontes(com["items"])
 
     def test_cli_e_tool_concordam_com_a_flag(self, capsys):
-        from sparkforge.adapters import cli
+        from sparkforge_aws.adapters import cli
 
         argv = [
             "judge",
@@ -136,7 +136,11 @@ class TestJudge:
 
 class TestKnowledgePath:
     def test_sem_a_flag_nada_muda(self):
-        assert set(call_tool("sparkforge_knowledge_path", {})) == {"root", "file", "available"}
+        payload = call_tool("sparkforge_knowledge_path", {})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        payload.pop("_trust", None)
+        assert set(payload) == {"root", "file", "available"}
 
     def test_documento_usa_a_data_que_ele_declara(self):
         resultado = call_tool(

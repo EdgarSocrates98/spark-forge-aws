@@ -105,7 +105,7 @@ cluster clássico nem para outra versão sem nova observação.
   `PhotonArrowResultStage`/`PhotonArrowBatchSink` e
   `PhotonArrowBatchSource`; a seção `== Photon Explanation ==` disse "fully
   supported" também para essa UDF.
-- Medido pelo controlador com `sparkforge analyze plan` sobre os dois
+- Medido pelo controlador com `sparkforge-aws analyze plan` sobre os dois
   planos, fora deste repositório, em 2026-09-18: o extrator ainda não
   reconhecia o vocabulário `Photon*` — no plano com join emitiu só
   `plan.analyzed` e `plan.aqe`, nenhum `plan.join`/`plan.exchange`; no plano

@@ -35,13 +35,13 @@ Erro observado, permissão Lake Formation ausente/negada e KMS negado fecham em
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-prompt-green tests/test_lakeformation_prompt_acceptance.py -q` — exit 0; 13 passed
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-prompt-green tests/test_lakeformation_prompt_acceptance.py tests/test_lakeformation_architecture.py tests/test_lakeformation_fgac_fta_improvements.py tests/test_lakeformation_operational_closure.py tests/test_lakeformation_access_graph.py tests/test_lakeformation_engine.py -q` — exit 0; 68 passed
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-docs-green tests/test_reference_docs.py tests/test_sdd.py tests/test_offline_expansion.py tests/test_refresh_knowledge.py -q` — exit 0; 213 passed
-- `python -m ruff check sparkforge/lakeformation/architecture.py tests/test_lakeformation_prompt_acceptance.py` — exit 0
+- `python -m ruff check sparkforge_aws/lakeformation/architecture.py tests/test_lakeformation_prompt_acceptance.py` — exit 0
 - `python scripts/verify_offline_bundle.py` — exit 0; 58 checked
 - `python scripts/sync_skills.py --check` — exit 0
 - `python scripts/check_surface_lock.py` — exit 0
 - `python scripts/check_status_numbers.py --strict` — exit 0; 0 divergences
 - claims structural gate — exit 0; 0 divergences
-- `sparkforge sdd check --repo . --feature LAKE_FORMATION_PROMPT_ACCEPTANCE_COMPLETION` — exit 0
+- `sparkforge-aws sdd check --repo . --feature LAKE_FORMATION_PROMPT_ACCEPTANCE_COMPLETION` — exit 0
 
 ## Limites e handoff
 

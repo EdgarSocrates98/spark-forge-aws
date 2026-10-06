@@ -2,12 +2,12 @@
 
 # Skill `diagnose-oom`
 
-Use quando um job Glue falha com OutOfMemory, \"Container killed by YARN\", \"GC overhead limit exceeded\", ExecutorLostFailure, estouro de Python worker/pandas_udf, ou frases como \"o job morreu depois de 3 horas\" e \"aumentei a memória e continuou\". Use para classificar se é heap de driver, heap de executor, overhead de container, broadcast, metadata/plan explosion ou Python worker antes de mitigar. Se você está prestes a estimar heap e GC no olho, rode `sparkforge collect event-log`, `sparkforge analyze event-log` e `sparkforge judge` em vez disso — o fact `spark.executor.lost` já vem com `heap_oom_in_log`: executor removido sem OOM de heap no log é estouro de container fora do heap (a correção é `memoryOverhead`, não `memory`), e é o OOM mais mal diagnosticado que existe.
+Use quando um job Glue falha com OutOfMemory, \"Container killed by YARN\", \"GC overhead limit exceeded\", ExecutorLostFailure, estouro de Python worker/pandas_udf, ou frases como \"o job morreu depois de 3 horas\" e \"aumentei a memória e continuou\". Use para classificar se é heap de driver, heap de executor, overhead de container, broadcast, metadata/plan explosion ou Python worker antes de mitigar. Se você está prestes a estimar heap e GC no olho, rode `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log` e `sparkforge-aws judge` em vez disso — o fact `spark.executor.lost` já vem com `heap_oom_in_log`: executor removido sem OOM de heap no log é estouro de container fora do heap (a correção é `memoryOverhead`, não `memory`), e é o OOM mais mal diagnosticado que existe.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/diagnose-oom/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge collect event-log', 'sparkforge analyze event-log', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws collect event-log', 'sparkforge-aws analyze event-log', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 
@@ -17,11 +17,11 @@ Use quando um job Glue falha com OutOfMemory, \"Container killed by YARN\", \"GC
 
 ### Procedimento
 
-1. `sparkforge collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>`.
-2. `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json`. Reporte `unresolved` sempre — log truncado no meio da falha é o caso mais comum aqui, e é ponto cego, não ausência de causa.
-3. `sparkforge collect cloudwatch --repo . --job-name <nome> --job-run <id> --start <ISO8601> --end <ISO8601> --now <ISO8601>`. **Não há extrator de facts para CloudWatch ainda** — isto baixa o artefato bruto, e você lê `glue.driver.memory.heap.used.percentage`, `glue.ALL.memory.heap.used.percentage`, `glue.ALL.memory.non-heap.used.percentage` e `glue.ALL.disk.used.percentage` manualmente, como série temporal, conforme `knowledge/spark/memory-and-oom.md` seção 6. Diga isso no relatório em vez de fingir que veio de um julgamento automático.
-4. `sparkforge judge --facts .sparkforge/facts.json --show-skipped` aplica `SF-UI-004` (GC) e `SF-UI-005` (executor perdido). Nenhuma das duas guarda versão, então a flag não muda a classificação do OOM — omita e leia o campo `runtime` da saída, que mostra o que `judge` inferiu: o event log declara a versão do Spark na primeira linha e vira `spark.runtime_version`, com `detected_from: ["event_log"]`. Isso preenche `spark`, **não** `glue` (a matriz de compatibilidade deriva numa direção só), então `SF-GLUE-*` continua em `--show-skipped` com `reason: runtime_scope`. Para esta skill isso é aceitável: a classificação heap-vs-container sai de `attrs.heap_oom_in_log`, não de versão. Mas a *recomendação* que vem depois é uma mudança de configuração de memória, e o protocolo exige runtime confirmado antes disso — se for propor um valor de `memoryOverhead` ou de worker type, junte os facts do Terraform na mesma chamada (`--facts` é repetível) para que `runtime.glue` deixe de ser vazio, ou declare com `--glue` a versão que você conhece de fonte confiável.
-5. `sparkforge next-step --repo . --findings .sparkforge/findings.json` roteia para cá automaticamente quando `SF-UI-005` dispara (`ROUTE-005`).
+1. `sparkforge-aws collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>`.
+2. `sparkforge-aws analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json`. Reporte `unresolved` sempre — log truncado no meio da falha é o caso mais comum aqui, e é ponto cego, não ausência de causa.
+3. `sparkforge-aws collect cloudwatch --repo . --job-name <nome> --job-run <id> --start <ISO8601> --end <ISO8601> --now <ISO8601>`. **Não há extrator de facts para CloudWatch ainda** — isto baixa o artefato bruto, e você lê `glue.driver.memory.heap.used.percentage`, `glue.ALL.memory.heap.used.percentage`, `glue.ALL.memory.non-heap.used.percentage` e `glue.ALL.disk.used.percentage` manualmente, como série temporal, conforme `knowledge/spark/memory-and-oom.md` seção 6. Diga isso no relatório em vez de fingir que veio de um julgamento automático.
+4. `sparkforge-aws judge --facts .sparkforge/facts.json --show-skipped` aplica `SF-UI-004` (GC) e `SF-UI-005` (executor perdido). Nenhuma das duas guarda versão, então a flag não muda a classificação do OOM — omita e leia o campo `runtime` da saída, que mostra o que `judge` inferiu: o event log declara a versão do Spark na primeira linha e vira `spark.runtime_version`, com `detected_from: ["event_log"]`. Isso preenche `spark`, **não** `glue` (a matriz de compatibilidade deriva numa direção só), então `SF-GLUE-*` continua em `--show-skipped` com `reason: runtime_scope`. Para esta skill isso é aceitável: a classificação heap-vs-container sai de `attrs.heap_oom_in_log`, não de versão. Mas a *recomendação* que vem depois é uma mudança de configuração de memória, e o protocolo exige runtime confirmado antes disso — se for propor um valor de `memoryOverhead` ou de worker type, junte os facts do Terraform na mesma chamada (`--facts` é repetível) para que `runtime.glue` deixe de ser vazio, ou declare com `--glue` a versão que você conhece de fonte confiável.
+5. `sparkforge-aws next-step --repo . --findings .sparkforge/findings.json` roteia para cá automaticamente quando `SF-UI-005` dispara (`ROUTE-005`).
 
 ### O discriminador que decide tudo: `heap_oom_in_log`
 
@@ -41,7 +41,7 @@ O extrator de event log classifica cada `SparkListenerExecutorRemoved` procurand
 
 ### Classes que o event log não cobre sozinho
 
-Nem toda classe de OOM aparece em `spark.executor.lost` ou `spark.stage.gc`. Cruze com os facts estáticos de `sparkforge analyze pyspark`:
+Nem toda classe de OOM aparece em `spark.executor.lost` ou `spark.stage.gc`. Cruze com os facts estáticos de `sparkforge-aws analyze pyspark`:
 
 - **Driver OOM** (`collect`/`toPandas` sem limite) → finding `SF-PY-002` sobre `pyspark.driver_collect`.
 - **Broadcast OOM** (hint de broadcast num lado que cresceu) → finding `SF-PY-009` sobre `pyspark.join`.
@@ -57,7 +57,7 @@ O texto completo da exceção ainda precisa ser lido — nenhum extrator classif
 | `SF-UI-004` | `spark.stage.gc` | GC consumindo fração alta do tempo de executor — cruzar com heap para separar as duas causas opostas |
 | `SF-UI-005` | `spark.executor.lost` (`attrs.heap_oom_in_log`) | Executor removido, com ou sem OOM de heap no log — o discriminador container-vs-heap |
 
-Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de memória.
+Limiares e severidade vêm de `sparkforge-aws rules lookup --id <ID>`, nunca de memória.
 
 ### Quando NÃO usar
 
@@ -80,9 +80,9 @@ batch de `pandas_udf` muda o resultado de toda UDF que não seja linha a linha �
 batch inteiro devolve outra coisa com outro tamanho de batch. Separe qual das duas você está
 recomendando.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -120,7 +120,7 @@ Esta skill trata **OOM, heap, GC, spill e limites do event log**. Contrato comum
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge collect event-log`, `sparkforge analyze event-log`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

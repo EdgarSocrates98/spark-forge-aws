@@ -98,7 +98,7 @@ define e o design.
 - **Aceito, registrado.** O relatório não é assinado: quem escreve um
   `report.json` falso, grava o hash e apaga o arquivo passa como história. O
   gate prende o que o ship afirmou ter lido; provar que o sandbox o produziu
-  seria assinatura (`sparkforge report sign`), fora desta feature.
+  seria assinatura (`sparkforge-aws report sign`), fora desta feature.
 
 ## Desvios do plano
 
@@ -136,5 +136,5 @@ define e o design.
 - `python scripts/check_surface_lock.py --update`: skills 532007 → 532882.
 - `python scripts/check_vnext_claims.py`: 0 divergências.
 - `python scripts/check_status_numbers.py --strict`: 0 divergências.
-- `python -m ruff check sparkforge/sdd tests`: limpo depois de `8218bc3e`.
+- `python -m ruff check sparkforge_aws/sdd tests`: limpo depois de `8218bc3e`.
 - Bateria de 15 arquivos pedida pelo chamador: 1455 verdes.

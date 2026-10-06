@@ -1,6 +1,6 @@
 ---
 name: review-emr-eks
-description: "Use quando revisar a execução de um job Amazon EMR on EKS pelo par `describe-virtual-cluster` + `describe-job-run` do `emr-containers` (segredo em texto claro nas duas superfícies de configuração, destino de log ausente, `persistentAppUI` desligado, alocação dinâmica sem `shuffleTracking` no Kubernetes). Use também quando a pergunta for \\\"cadê os logs desse job run\\\", \\\"por que não tem Spark UI\\\", \\\"esse job rodou com qual configuração\\\" ou \\\"quem submeteu isso com senha na linha de submit\\\", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-job-run` no olho, rode `sparkforge analyze emr-eks` e `sparkforge judge` em vez disso. Esta skill NÃO julga capacidade de nó, pod pendente nem pod template — nada disso está no `emr-containers`, e supor que está é inventar. Para EMR on EC2 e EMR Serverless a skill é `review-emr-cluster`."
+description: "Use quando revisar a execução de um job Amazon EMR on EKS pelo par `describe-virtual-cluster` + `describe-job-run` do `emr-containers` (segredo em texto claro nas duas superfícies de configuração, destino de log ausente, `persistentAppUI` desligado, alocação dinâmica sem `shuffleTracking` no Kubernetes). Use também quando a pergunta for \\\"cadê os logs desse job run\\\", \\\"por que não tem Spark UI\\\", \\\"esse job rodou com qual configuração\\\" ou \\\"quem submeteu isso com senha na linha de submit\\\", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-job-run` no olho, rode `sparkforge-aws analyze emr-eks` e `sparkforge-aws judge` em vez disso. Esta skill NÃO julga capacidade de nó, pod pendente nem pod template — nada disso está no `emr-containers`, e supor que está é inventar. Para EMR on EC2 e EMR Serverless a skill é `review-emr-cluster`."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze emr-eks
-  - sparkforge judge
-  - sparkforge collect emr-eks
+  - sparkforge-aws analyze emr-eks
+  - sparkforge-aws judge
+  - sparkforge-aws collect emr-eks
 subagent: true
 agent: emr-infra-reviewer
 ---
@@ -70,7 +70,7 @@ Cluster virtual e execução são **APIs separadas** do `emr-containers`, e nenh
 outra — diferente do Serverless, onde `GetApplication` devolve tudo num objeto:
 
 ```bash
-sparkforge collect emr-eks --repo . \
+sparkforge-aws collect emr-eks --repo . \
   --virtual-cluster-id 0abcXXXXXXXXXXXXXXXXXXXXXXXXX \
   --job-run-id 0runXXXXXXXXXXXXXXXXXXXXXXXXX \
   --now <ISO8601>
@@ -97,7 +97,7 @@ todo o lado EKS.
 ### 2. Extraia os facts
 
 ```bash
-sparkforge analyze emr-eks --path <arquivo ou diretório com os dumps> \
+sparkforge-aws analyze emr-eks --path <arquivo ou diretório com os dumps> \
   --out .sparkforge/facts_emr_eks.json
 ```
 
@@ -125,7 +125,7 @@ afirma sobre uma linha que ninguém leu inteira.
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_emr_eks.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_emr_eks.json --show-skipped
 ```
 
 **Sem flag de versão, e aqui isso é uma decisão medida, não conveniência.** As quatro regras
@@ -133,7 +133,7 @@ desta área declaram escopo de runtime **vazio**, e a razão **não** é falta d
 **publica** matriz de release para EMR on EKS, e ela está transcrita em
 `knowledge/emr-eks/runtime-matrix.md`. A razão é a outra ponta, e está na DV-14 do design da
 fase: **nenhuma fonte alimenta `RuntimeContext.spark` a partir de um artefato `emrc.*`**.
-`sparkforge/facts/runtime_detect.py` deriva Spark de `GLUE_MATRIX` (por `glue_version`), de
+`sparkforge_aws/facts/runtime_detect.py` deriva Spark de `GLUE_MATRIX` (por `glue_version`), de
 `EMR_MATRIX` (por release de EMR on EC2) e da leitura direta de `spark.runtime_version` do
 event log — o `releaseLabel` do EKS não entra em nenhuma das três. A matriz existe publicada e
 ninguém a ligou ao contexto.
@@ -192,7 +192,7 @@ e acusá-lo é acusar configuração correta.
 ## Referência rápida — as quatro regras e o fact que cada uma consome
 
 Limiares e severidades **não** estão aqui de propósito; a lista autoritativa é
-`sparkforge rules lookup --category emr-eks`. Esta tabela é uma foto, e o catálogo cresce.
+`sparkforge-aws rules lookup --category emr-eks`. Esta tabela é uma foto, e o catálogo cresce.
 
 | Regra | Fact que consome | O que ela de fato afirma |
 |---|---|---|
@@ -321,7 +321,7 @@ então não há chamada de API que só alimente campo inerte.
 - Você quer achar stage dominante, skew, spill ou GC de um run: isso é execução, e vem de
   `analyze-spark-ui` sobre o event log — que só existe se `SF-EMRK-002` e `SF-EMRK-003`
   estiverem verdes.
-- O problema está no código ou no plano físico: comece por `sparkforge-diagnose`.
+- O problema está no código ou no plano físico: comece por `sparkforge-aws-diagnose`.
 - A pergunta é sobre tabela Iceberg, small files ou layout: `optimize-iceberg-table` e
   `optimize-parquet-layout`.
 
@@ -357,9 +357,9 @@ submissão, e duas delas mudam o comportamento de execução: trocar a origem de
 (`SF-EMRK-001`) e mexer em alocação dinâmica (`SF-EMRK-004`). Nenhuma das duas pode mudar o
 conjunto de linhas escrito, e é exatamente isso que precisa ser provado — não assumido.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts` é
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts` é
 repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -385,8 +385,8 @@ Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_ste
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved` — nesta área os dois que
 mais importam são `emrc.unresolved` e `emrc.pod_template.unresolved`; confirme o runtime, e
-lembre que aqui ele **não** vem do artefato. Feche assinando com `sparkforge report sign` e
-conferindo com `sparkforge report verify`.
+lembre que aqui ele **não** vem do artefato. Feche assinando com `sparkforge-aws report sign` e
+conferindo com `sparkforge-aws report verify`.
 
 Manutenção destrutiva você **não executa**. Nesta área ela tem uma forma dominante e uma
 armadilha: rotacionar um segredo exposto (`SF-EMRK-001`) derruba todo consumidor que ainda usa o
@@ -410,7 +410,7 @@ Esta skill trata **revisão de workloads EMR on EKS**. Contrato comum, sem subst
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze emr-eks`, `sparkforge judge`, `sparkforge collect emr-eks`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze emr-eks`, `sparkforge-aws judge`, `sparkforge-aws collect emr-eks`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

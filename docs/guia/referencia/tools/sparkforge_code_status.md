@@ -18,7 +18,7 @@ O estado do indice local e NENHUM fonte: se existe, se esta fresco em relacao a 
 
 ## Na CLI
 
-[`sparkforge code status`](../cli/code.md), [`sparkforge code sync`](../cli/code.md)
+[`sparkforge-aws code status`](../cli/code.md), [`sparkforge-aws code sync`](../cli/code.md)
 
 ## Capacidade
 

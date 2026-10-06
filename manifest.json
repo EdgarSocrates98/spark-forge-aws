@@ -59,7 +59,7 @@
     "sdd-plan",
     "sdd-ship",
     "spark4-compatibility",
-    "sparkforge-diagnose",
+    "sparkforge-aws-diagnose",
     "tool-specialist-routing",
     "tune-glue-job"
   ],
@@ -101,7 +101,7 @@
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
     "rule_count": 221,
-    "retrieved": "2026-10-03"
+    "retrieved": "2026-10-04"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
   "tools": [
@@ -156,6 +156,11 @@
     "sparkforge_analyze_terraform_diff",
     "sparkforge_analyze_workload",
     "sparkforge_arbitrate",
+    "sparkforge_agentops_baseline",
+    "sparkforge_agentops_compare",
+    "sparkforge_agentops_inspect",
+    "sparkforge_agentops_critical_path",
+    "sparkforge_agentops_timeline",
     "sparkforge_benchmark",
     "sparkforge_capacity",
     "sparkforge_case_get",
@@ -192,6 +197,7 @@
     "sparkforge_collect_parquet_footer",
     "sparkforge_collect_verify",
     "sparkforge_context_expand",
+    "sparkforge_context_inspect",
     "sparkforge_context_start",
     "sparkforge_controlm_describe",
     "sparkforge_decision_evaluate",
@@ -200,6 +206,7 @@
     "sparkforge_debate_start",
     "sparkforge_debate_submit",
     "sparkforge_doctor",
+    "sparkforge_doctor_agentic",
     "sparkforge_economy_report",
     "sparkforge_finops",
     "sparkforge_dq_ai_assess",
@@ -244,18 +251,18 @@
   ],
   "mcp": {
     "config": ".mcp.json",
-    "module": "sparkforge.adapters.mcp",
+    "module": "sparkforge_aws.adapters.mcp",
     "transports": [
       "stdio",
       "http"
     ]
   },
   "schemas": {
-    "fact": "sparkforge/findings/schemas/fact.schema.json",
-    "finding": "sparkforge/findings/schemas/finding.schema.json",
-    "business_rule": "sparkforge/findings/schemas/business_rule.schema.json",
+    "fact": "sparkforge_aws/findings/schemas/fact.schema.json",
+    "finding": "sparkforge_aws/findings/schemas/finding.schema.json",
+    "business_rule": "sparkforge_aws/findings/schemas/business_rule.schema.json",
     "case": ".sparkforge/case.yaml",
-    "dq_ai_report": "sparkforge/findings/schemas/dq_ai_report.schema.json"
+    "dq_ai_report": "sparkforge_aws/findings/schemas/dq_ai_report.schema.json"
   },
   "agent_tooling": {
     "_comment": "Ecossistema caveman, de Julius Brussee, MIT. Vendorizado para que a economia de token seja do projeto e nao da maquina: zero instalacao, zero rede, sem npm e sem npx. Creditos e procedencia em vendor/CREDITS.md.",
@@ -272,7 +279,7 @@
     "requires_install": [],
     "gate": "python scripts/vendor_caveman.py --check"
   },
-  "cli": "sparkforge",
+  "cli": "sparkforge-aws",
   "plugin": ".claude-plugin/plugin.json",
   "parity": "parity.yaml",
   "evals": "evals/fase0.xml"

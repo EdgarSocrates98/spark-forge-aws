@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge controlm`
+# `sparkforge-aws controlm`
 
 Conhecimento versionado do Control-M Automation API. Le matriz de versao; NAO le artefato, NAO chama BMC e NAO julga.
 
@@ -8,14 +8,14 @@ Conhecimento versionado do Control-M Automation API. Le matriz de versao; NAO le
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge controlm describe`](#sparkforge-controlm-describe) | O que vale numa versao do Automation API. Versao fora da faixa coberta sai como recusa NOMEADA, com o intervalo. |
+| [`sparkforge-aws controlm describe`](#sparkforge-aws-controlm-describe) | O que vale numa versao do Automation API. Versao fora da faixa coberta sai como recusa NOMEADA, com o intervalo. |
 
-## `sparkforge controlm describe`
+## `sparkforge-aws controlm describe`
 
 O que vale numa versao do Automation API. Versao fora da faixa coberta sai como recusa NOMEADA, com o intervalo.
 
 ```bash
-sparkforge controlm describe --help
+sparkforge-aws controlm describe --help
 ```
 
 ### Opções

@@ -19,7 +19,7 @@ Escolhe, entre as capacidades que o job JA RODOU, a mais BARATA que cumpre o SLA
 
 ## Na CLI
 
-[`sparkforge capacity`](../cli/capacity.md), [`sparkforge finops`](../cli/finops.md)
+[`sparkforge-aws capacity`](../cli/capacity.md), [`sparkforge-aws finops`](../cli/finops.md)
 
 ## Capacidade
 

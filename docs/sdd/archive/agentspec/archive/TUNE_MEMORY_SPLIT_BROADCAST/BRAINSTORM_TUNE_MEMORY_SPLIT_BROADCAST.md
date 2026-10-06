@@ -18,7 +18,7 @@
 **Raw Input:** Segunda das três candidatas depois do §15: o `tune` deriva só `spark.sql.shuffle.partitions`, e as outras propriedades saem recusadas. A frente 2 foi quebrada em duas. Esta (2a) cobre memória, split e broadcast. A 2b cobre timeouts, speculation e a reescrita das regras 15 e 16.
 
 **Context Gathered:**
-- `sparkforge/tuning/spark_conf.py::_SEM_BASE_MEDIDA` recusa seis propriedades. A recusa de `spark.executor.memoryOverhead` diz que só existe o pico de heap, e está **desatualizada**: `facts/event_log.py::_EXECUTOR_MEMORY_METRICS` já extrai, por executor, `peak_jvm_heap_bytes`, `peak_jvm_offheap_bytes`, `peak_offheap_execution_bytes`, `peak_onheap_execution_bytes`, `peak_onheap_storage_bytes` e `peak_python_rss_bytes` em `spark.executor.memory_usage`.
+- `sparkforge_aws/tuning/spark_conf.py::_SEM_BASE_MEDIDA` recusa seis propriedades. A recusa de `spark.executor.memoryOverhead` diz que só existe o pico de heap, e está **desatualizada**: `facts/event_log.py::_EXECUTOR_MEMORY_METRICS` já extrai, por executor, `peak_jvm_heap_bytes`, `peak_jvm_offheap_bytes`, `peak_offheap_execution_bytes`, `peak_onheap_execution_bytes`, `peak_onheap_storage_bytes` e `peak_python_rss_bytes` em `spark.executor.memory_usage`.
 - `knowledge/spark/memory-and-oom.md` §2: "Python worker vive no overhead, não no heap". Um executor perdido sem OOM no log aponta para overhead.
 - A recusa de `spark.sql.files.maxPartitionBytes` pede a distribuição de tamanho por fonte, e ela existe: `s3.prefix_summary` (p50, p95, max) e `parquet.file`/`parquet.row_group` (do footer).
 - `spark.sql.autoBroadcastJoinThreshold` compara contra o **tamanho estimado pelo otimizador** (`knowledge/spark/config-reference.md` §2). Sem estatística, a estimativa cai no default de 8 EiB (`plan-reading.md` §1). Hoje nenhum extrator lê `Statistics(sizeInBytes=…)`: o `spark_plan` só interpreta `== Physical Plan ==` e conta as linhas lógicas como puladas. O `plan.join` carrega estratégia e lado do build, sem tamanho. O `spark.sql.join_input` só carrega `via_joins`.
@@ -29,7 +29,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/tuning/spark_conf.py`, `sparkforge/facts/spark_plan.py`, `sparkforge/facts/sql_metrics.py` | Estender, sem módulo novo |
+| Likely Location | `sparkforge_aws/tuning/spark_conf.py`, `sparkforge_aws/facts/spark_plan.py`, `sparkforge_aws/facts/sql_metrics.py` | Estender, sem módulo novo |
 | Relevant KB Domains | `knowledge/spark/{memory-and-oom,config-reference,plan-reading}.md`, `knowledge/storage/parquet-layout.md`; regras 11, 13, 19 e 20 do CLAUDE.md | Valor proposto mora no `tune`, fora do catálogo |
 | IaC Patterns | N/A | |
 

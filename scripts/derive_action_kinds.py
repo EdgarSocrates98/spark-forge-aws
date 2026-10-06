@@ -19,7 +19,7 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8")
 
-from sparkforge.rules.loader import load_catalog  # noqa: E402
+from sparkforge_aws.rules.loader import load_catalog  # noqa: E402
 
 
 def main() -> int:

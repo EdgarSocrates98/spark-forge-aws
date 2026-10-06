@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.catalog.contract import analyze_lakehouse_catalog
-from sparkforge.platform.ecosystem import analyze_platform_ecosystem
-from sparkforge.platform.graph import analyze_platform_graph
+from sparkforge_aws.catalog.contract import analyze_lakehouse_catalog
+from sparkforge_aws.platform.ecosystem import analyze_platform_ecosystem
+from sparkforge_aws.platform.graph import analyze_platform_graph
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "platform"

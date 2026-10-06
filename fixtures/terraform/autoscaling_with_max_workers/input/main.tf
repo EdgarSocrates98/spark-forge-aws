@@ -1,5 +1,5 @@
 resource "aws_iam_role" "glue_role" {
-  name               = "sparkforge-demo-glue-role"
+  name               = "sparkforge-aws-demo-glue-role"
   assume_role_policy = data.aws_iam_policy_document.glue_assume.json
 }
 
@@ -14,7 +14,7 @@ resource "aws_glue_job" "etl_autoscaling" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl.py"
     python_version  = "3"
   }
 
@@ -27,7 +27,7 @@ resource "aws_glue_job" "etl_autoscaling" {
   default_arguments = {
     "--enable-auto-scaling"   = "true"
     "--enable-spark-ui"       = "true"
-    "--spark-event-logs-path" = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path" = "s3://sparkforge-aws-demo/spark-logs/"
     "--job-bookmark-option"   = "job-bookmark-disable"
     "--enable-metrics"        = "true"
   }

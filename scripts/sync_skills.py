@@ -69,19 +69,19 @@ PLATFORM_BY_MIRROR_ROOT = {
 }
 
 # --------------------------------------------------------------------------
-# Renderizacao por plataforma: mora em sparkforge/integrate/render.py
+# Renderizacao por plataforma: mora em sparkforge_aws/integrate/render.py
 # --------------------------------------------------------------------------
 # Um renderizador so para os espelhos deste repositorio e para a integracao por
-# usuario (`sparkforge integrate`), feature INTEGRACAO_USUARIO, D1. Este arquivo e
+# usuario (`sparkforge-aws integrate`), feature INTEGRACAO_USUARIO, D1. Este arquivo e
 # a fachada: reexporta os nomes que os testes e o `--check` usam e passa o proprio
 # `AGENTS_SRC` as funcoes que leem perfis.
 #
 # O modulo e carregado PELO CAMINHO, a partir de `ROOT`, e nao por
-# `import sparkforge...`. `tests/test_arvore_versionada.py` roda este script sobre
+# `import sparkforge_aws...`. `tests/test_arvore_versionada.py` roda este script sobre
 # uma copia de `git archive HEAD`; um import pelo pacote acharia o `render.py` do
 # disco (instalacao editavel), e o gate deixaria de conferir o renderizador
 # commitado. `render.py` so importa a biblioteca padrao, e por isso carrega sozinho.
-_RENDER_PATH = ROOT / "sparkforge" / "integrate" / "render.py"
+_RENDER_PATH = ROOT / "sparkforge_aws" / "integrate" / "render.py"
 _RENDER_SPEC = importlib.util.spec_from_file_location("_sparkforge_render", _RENDER_PATH)
 if _RENDER_SPEC is None or _RENDER_SPEC.loader is None:
     raise ImportError(f"renderizador nao encontrado: {_RENDER_PATH}")

@@ -1,8 +1,8 @@
 """Tests for SparkForge Workflow Engine and DAG Waves (Phase 7)."""
 import pytest
 
-from sparkforge.registry.models import RiskLevel
-from sparkforge.workflows import ExecutionDAG, StructuredHandoff, TaskSpec
+from sparkforge_aws.registry.models import RiskLevel
+from sparkforge_aws.workflows import ExecutionDAG, StructuredHandoff, TaskSpec
 
 
 def test_task_spec_serialization():

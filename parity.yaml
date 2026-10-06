@@ -4,7 +4,7 @@ platforms: [claude_code, devin_desktop, devin_cli, codex, copilot_ci]
 mechanisms: [mcp, cli, files, playbook, subagent]
 
 notes: >
-  Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge.adapters.mcp
+  Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge_aws.adapters.mcp
   --transport http` e serverUrl `http://<host>:<port>/mcp`. Claude Code, Devin CLI e CI usam
   stdio. `.mcp.json` configura o de Claude Code -- e SO o dele: ele parametriza
   `PYTHONPATH` e `SPARKFORGE_CATALOG` por `${CLAUDE_PLUGIN_ROOT}`, variavel do carregador
@@ -15,10 +15,10 @@ notes: >
   seria o defeito do transporte HTTP da Fase 1 outra vez.
   Devin CLI nao le Knowledge nem Playbooks da conta Devin, por isso o procedimento e
   autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
-  interativa: roda o CLI `sparkforge` como processo de linha de comando dentro do workflow,
+  interativa: roda o CLI `sparkforge-aws` como processo de linha de comando dentro do workflow,
   ou opera diretamente sobre arquivo quando nem isso esta disponivel.
   Codex, como Copilot CI, nao mantem sessao MCP interativa da mesma forma: roda o CLI
-  `sparkforge` como processo de linha de comando dentro do seu ambiente de execucao, ou
+  `sparkforge-aws` como processo de linha de comando dentro do seu ambiente de execucao, ou
   opera diretamente sobre arquivo. Por isso `codex` nunca declara `mcp` em nenhuma
   capacidade -- o mesmo raciocinio ja aplicado a `copilot_ci`, nao um caso novo.
   `subagent` NAO e mecanismo declarado neste manifesto, de proposito. Despacho de
@@ -927,7 +927,7 @@ capabilities:
   - name: referee the debate protocol and refuse a closure not anchored in evidence
     tools: [sparkforge_debate_referee]
     cli: [debate referee]
-    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md]
+    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
@@ -938,7 +938,7 @@ capabilities:
   - name: run the debate protocol turn by turn and close it through the referee
     tools: [sparkforge_debate_start, sparkforge_debate_next, sparkforge_debate_submit]
     cli: [debate start, debate next, debate submit]
-    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md]
+    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
@@ -1413,6 +1413,33 @@ capabilities:
     tools: [sparkforge_collect_managed_flink]
     cli: [collect managed-flink]
     knowledge: [knowledge/flink-streaming.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: inspect agentic context quality and local AgentOps economy
+    tools:
+      - sparkforge_context_inspect
+      - sparkforge_agentops_inspect
+      - sparkforge_agentops_compare
+      - sparkforge_agentops_baseline
+      - sparkforge_agentops_timeline
+      - sparkforge_agentops_critical_path
+      - sparkforge_doctor_agentic
+    cli:
+      - context inspect
+      - agentops inspect
+      - agentops compare
+      - agentops baseline
+      - agentops timeline
+      - agentops critical-path
+      - doctor agentic
+    knowledge:
+      - docs/sdd/AGENTIC_ENGINEERING_OS_V2/design.md
+      - knowledge/token-economy.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

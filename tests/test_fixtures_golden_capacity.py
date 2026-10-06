@@ -1,12 +1,12 @@
 """Golden test do corpus capacity: seis cenarios sinteticos da escolha de capacidade sob SLA.
 
-Task 4 do plano `2026-08-28-capacity-sla-optimizer.md`. `sparkforge capacity`
+Task 4 do plano `2026-08-28-capacity-sla-optimizer.md`. `sparkforge-aws capacity`
 NAO extrai de artefato -- classifica facts JA extraidos -- entao cada fixture
 tem `input/facts.json` no molde do que `--facts` consome (`workload.declared`
 e `spark.sql.scan` do run CORRENTE) e `input/history/<run>.json`, um arquivo
 por RUN ANTERIOR, cada um com exatamente UM `glue.job_run` e os
 `spark.sql.scan` daquele run -- a mesma separacao que `--history` exige
-(`sparkforge/adapters/_core.py`). Mesmo molde de `fixtures/workload/` e
+(`sparkforge_aws/adapters/_core.py`). Mesmo molde de `fixtures/workload/` e
 `tests/test_fixtures_golden_workload.py`, o dominio mais parecido porque
 tambem consome facts em vez de artefato bruto.
 
@@ -35,10 +35,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.capacity import build_capacity_plan
-from sparkforge.capacity.plan import resolution_supports
-from sparkforge.findings.models import Fact
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.capacity import build_capacity_plan
+from sparkforge_aws.capacity.plan import resolution_supports
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.findings.validate import validate_fact
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "capacity"
@@ -64,7 +64,7 @@ def _meta(directory: Path) -> dict:
 def _facts_from_json(path: Path) -> list[Fact]:
     """Reconstitui Facts do formato que `--facts`/`--history` consomem.
 
-    Sem passar por extrator: `sparkforge capacity` recebe facts que outro
+    Sem passar por extrator: `sparkforge-aws capacity` recebe facts que outro
     verbo JA extraiu, e `id`/`schema_version` no arquivo -- quando presentes
     -- sao ignorados, os mesmos campos que `Fact` deriva.
     """

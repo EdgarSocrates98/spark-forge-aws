@@ -1,11 +1,11 @@
 # Simulate
 
-Antes de aplicar uma mudança de configuração, `sparkforge simulate` diz que
+Antes de aplicar uma mudança de configuração, `sparkforge-aws simulate` diz que
 achados ela tira e que achados ela cria (§19 de `prompt_new_evo.md`). Não roda o
 job, e nenhum número de desempenho sai daqui.
 
 ```bash
-sparkforge simulate --facts terraform.json --set tf:max_concurrent_runs=1
+sparkforge-aws simulate --facts terraform.json --set tf:max_concurrent_runs=1
 ```
 
 A tool MCP é `sparkforge_simulate` (`READ_ONLY`). O dono é o
@@ -74,7 +74,7 @@ confere isso.
 | Campo | Por quê |
 |---|---|
 | `performance_prediction` | Spill, tempo e custo não são fact de configuração |
-| `dependency_incompatibility` | Use `sparkforge migration assess` |
+| `dependency_incompatibility` | Use `sparkforge-aws migration assess` |
 | `execution_graph` | O grafo de execução não é previsível a partir de configuração |
 
 ## A derivação de timeout

@@ -9,19 +9,19 @@ upstream:
   sha256: "54317f304c56fc972062e52c83ca5882446c35817593df467eaff771a01e7ca7"
 tasks:
   - id: T1
-    files: [knowledge/glue/lakeformation-permissions.yaml, sparkforge/facts/lakeformation_missing_grant.py, tests/test_lakeformation_missing_grant.py]
+    files: [knowledge/glue/lakeformation-permissions.yaml, sparkforge_aws/facts/lakeformation_missing_grant.py, tests/test_lakeformation_missing_grant.py]
     covers: [AC10]
     test: {path: tests/test_lakeformation_missing_grant.py, name: test_tabela_de_operacao_cita_fonte_e_cobre_o_extrator}
   - id: T2
-    files: [sparkforge/facts/lakeformation_missing_grant.py, tests/test_lakeformation_missing_grant.py, tests/test_harness_untrusted.py, docs/superpowers/STATUS.md, docs/claims.lock.json]
+    files: [sparkforge_aws/facts/lakeformation_missing_grant.py, tests/test_lakeformation_missing_grant.py, tests/test_harness_untrusted.py, docs/superpowers/STATUS.md, docs/claims.lock.json]
     covers: [AC1, AC2, AC3, AC8, AC9, AC17]
     test: {path: tests/test_lakeformation_missing_grant.py, name: test_fta_append_sem_all_acusa_all}
   - id: T3
-    files: [sparkforge/facts/lakeformation_missing_grant.py, tests/test_lakeformation_missing_grant.py]
+    files: [sparkforge_aws/facts/lakeformation_missing_grant.py, tests/test_lakeformation_missing_grant.py]
     covers: [AC4, AC5, AC6, AC7]
     test: {path: tests/test_lakeformation_missing_grant.py, name: test_fgac_escrita_cobra_iam_com_denied_by}
   - id: T4
-    files: [sparkforge/facts/fusion.py, sparkforge/simulate/diff.py, tests/test_rules_catalog_reachability.py, tests/test_lakeformation_missing_grant.py]
+    files: [sparkforge_aws/facts/fusion.py, sparkforge_aws/simulate/diff.py, tests/test_rules_catalog_reachability.py, tests/test_lakeformation_missing_grant.py]
     covers: [AC11]
     test: {path: tests/test_lakeformation_missing_grant.py, name: test_fuse_deriva_missing_grant}
   - id: T5
@@ -33,7 +33,7 @@ tasks:
     covers: [AC12, AC16]
     test: {path: tests/test_fixtures_golden_cloudwatch_logs.py, name: test_all_required_fixtures_exist}
   - id: T7
-    files: [sparkforge/lakeformation/graph.py, tests/test_lakeformation_access_graph.py]
+    files: [sparkforge_aws/lakeformation/graph.py, tests/test_lakeformation_access_graph.py]
     covers: [AC14, AC15]
     test: {path: tests/test_lakeformation_access_graph.py, name: test_grafo_usa_missing_grant_quando_existe}
 ---
@@ -86,7 +86,7 @@ artefato de `collect lakeformation`); aqui cada ramo do extrator e medido sozinh
 """
 from __future__ import annotations
 
-from sparkforge.facts.lakeformation_missing_grant import (
+from sparkforge_aws.facts.lakeformation_missing_grant import (
     OPERACOES_MAPEADAS,
     load_table,
     requirement,
@@ -117,7 +117,7 @@ def test_tabela_de_operacao_cita_fonte_e_cobre_o_extrator():
 
 `python -m pytest tests/test_lakeformation_missing_grant.py -q`. Falha esperada: erro de
 coleta (exit 2) com `ModuleNotFoundError: No module named
-'sparkforge.facts.lakeformation_missing_grant'`. O módulo ausente é a unidade sob teste.
+'sparkforge_aws.facts.lakeformation_missing_grant'`. O módulo ausente é a unidade sob teste.
 
 ### 3. Código mínimo
 
@@ -126,7 +126,7 @@ coleta (exit 2) com `ModuleNotFoundError: No module named
 ```yaml
 # Operacao do job Glue Spark -> permissao que ela exige, por modelo de acesso.
 #
-# Lido por `sparkforge/facts/lakeformation_missing_grant.py::load_table`. Cada linha
+# Lido por `sparkforge_aws/facts/lakeformation_missing_grant.py::load_table`. Cada linha
 # cita a fonte pela chave de `fontes` e traz a frase literal em `quote`. Linha sem
 # fonte ou sem frase reprova a carga: a tabela nao e escrita de memoria.
 #
@@ -190,7 +190,7 @@ operacoes:
     quote: "A principal with this permission can create a metadata table or resource link in the Data Catalog within the specified database."
 ```
 
-`sparkforge/facts/lakeformation_missing_grant.py`, primeira versão (só a tabela):
+`sparkforge_aws/facts/lakeformation_missing_grant.py`, primeira versão (só a tabela):
 
 ```python
 """`lakeformation.missing_grant` -- a permissao que a operacao exigia e o grant
@@ -224,7 +224,7 @@ from typing import Any
 
 import yaml
 
-from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
+from sparkforge_aws.knowledge_ref import knowledge_dir, safe_knowledge_file
 
 EXTRACTOR_ID = "lakeformation_missing_grant@0.1.0"
 
@@ -293,7 +293,7 @@ __all__ = [
 
 ### 5. Gates vizinhos
 
-`python scripts/verify_wheel.py` (é leitura de disco em código de `sparkforge/`: o YAML
+`python scripts/verify_wheel.py` (é leitura de disco em código de `sparkforge_aws/`: o YAML
 precisa estar no wheel. `knowledge/` já entra por `force-include`).
 
 ### 6. Commit
@@ -308,11 +308,11 @@ Acrescentar a `tests/test_lakeformation_missing_grant.py`. Os helpers e os `cena
 ficam no nível do módulo porque T5 os importa.
 
 ```python
-from sparkforge.facts.lakeformation_missing_grant import (
+from sparkforge_aws.facts.lakeformation_missing_grant import (
     EMITTED_KINDS,
     build_missing_grant,
 )
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 PROV = {"extractor": "teste@0.0.0", "artifact": "memoria"}
 ROLE = "arn:aws:iam::111111111111:role/glue-curated"
@@ -416,7 +416,7 @@ def _registrada(sim: bool = True) -> Fact:
         subject={"type": "table", "file": "lf.json", "symbol": TABELA, "catalog_id": ""},
         attrs={
             "registered": sim,
-            "resource_arn": "arn:aws:s3:::sparkforge-demo/default/dim_cliente",
+            "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/default/dim_cliente",
             "role_arn": "",
             "hybrid_access_enabled": None,
             "with_federation": None,
@@ -490,7 +490,7 @@ def test_sem_operacao_recusa_por_nome():
     assert _de(saida, "lakeformation.missing_grant") == []
     (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
     assert recusa.attrs["reason"] == "operacao_nao_medida"
-    assert "sparkforge analyze pyspark" in recusa.attrs["unblocked_by"]
+    assert "sparkforge-aws analyze pyspark" in recusa.attrs["unblocked_by"]
 
 
 def test_fta_append_sem_all_acusa_all():
@@ -542,7 +542,7 @@ coleta (exit 2) com `ImportError: cannot import name 'build_missing_grant'`.
 
 ### 3. Código mínimo
 
-Acrescentar a `sparkforge/facts/lakeformation_missing_grant.py`, depois de `requirement`.
+Acrescentar a `sparkforge_aws/facts/lakeformation_missing_grant.py`, depois de `requirement`.
 Os imports de topo passam a ser:
 
 ```python
@@ -556,8 +556,8 @@ from typing import Any
 
 import yaml
 
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.knowledge_ref import knowledge_dir, safe_knowledge_file
 ```
 
 Constantes, logo abaixo de `OPERACOES_MAPEADAS`:
@@ -585,10 +585,10 @@ _SQL = {
 _DESTRAVA = {
     "recurso_ambiguo": (
         "a mensagem nao nomeia o recurso e o case tem mais de uma tabela com grant ou "
-        "registro coletado; colete so a tabela da falha com `sparkforge collect lakeformation`"
+        "registro coletado; colete so a tabela da falha com `sparkforge-aws collect lakeformation`"
     ),
     "operacao_nao_medida": (
-        "nenhum fact de operacao sobre o recurso; rode `sparkforge analyze pyspark` sobre o "
+        "nenhum fact de operacao sobre o recurso; rode `sparkforge-aws analyze pyspark` sobre o "
         "codigo do job e junte a saida ao case"
     ),
     "operacao_nao_ligada_ao_recurso": (
@@ -600,16 +600,16 @@ _DESTRAVA = {
         "job; decida o modelo antes (secao 5 de knowledge/glue/lakeformation-fgac.md)"
     ),
     "modelo_ausente": (
-        "nenhum modelo de acesso declarado; rode `sparkforge analyze terraform` sobre o job "
+        "nenhum modelo de acesso declarado; rode `sparkforge-aws analyze terraform` sobre o job "
         "(argumento de FGAC ou confs de FTA)"
     ),
     "grant_nao_coletado": (
-        "nenhum `lakeformation.grant` para o recurso; rode `sparkforge collect lakeformation` "
+        "nenhum `lakeformation.grant` para o recurso; rode `sparkforge-aws collect lakeformation` "
         "sobre ele"
     ),
     "principal_ambiguo": (
         "mais de um principal com grant na tabela e nenhuma decisao de IAM que diga qual e o "
-        "role do job; rode `sparkforge collect iam-access` para o runtime role"
+        "role do job; rode `sparkforge-aws collect iam-access` para o runtime role"
     ),
     "permissao_de_database_nao_coletada": (
         "create exige permissao no DATABASE, e `collect lakeformation` coleta grant de tabela"
@@ -617,7 +617,7 @@ _DESTRAVA = {
     "fta_escrita_em_alvo_nao_registrado": (
         "sob FTA, tabela nao registrada no Lake Formation e escrita pela credencial do "
         "runtime role, e nao pelo grant (secao 5 de knowledge/glue/lakeformation-fgac.md); "
-        "rode `sparkforge collect iam-access` com s3:PutObject sobre o alvo"
+        "rode `sparkforge-aws collect iam-access` com s3:PutObject sobre o alvo"
     ),
     "operacao_sem_requisito_declarado": (
         "a tabela citada nao declara requisito para esta operacao neste modelo; nada e "
@@ -861,7 +861,7 @@ __all__ = [
 ```
 
 `tests/test_harness_untrusted.py`: no import de `_derivados_de_facts`, acrescentar
-`lakeformation_missing_grant` à tupla de `from sparkforge.facts import (...)`, e depois da
+`lakeformation_missing_grant` à tupla de `from sparkforge_aws.facts import (...)`, e depois da
 linha `yield "lakeformation", lakeformation.build_lakeformation(pool)`:
 
 ```python
@@ -948,14 +948,14 @@ testes novos, porque `_lado_iam` devolve `[]`:
 
 ### 3. Código mínimo
 
-Em `sparkforge/facts/lakeformation_missing_grant.py`, acrescentar o import
-`from sparkforge.facts import lakeformation_matrix` e a constante
+Em `sparkforge_aws/facts/lakeformation_missing_grant.py`, acrescentar o import
+`from sparkforge_aws.facts import lakeformation_matrix` e a constante
 `EIXO_ESCRITA_FGAC = "fgac_spark_native_write"` junto das outras. Acrescentar a `_DESTRAVA`:
 
 ```python
     "runtime_ausente": (
-        "a escrita sob FGAC depende da versao do Glue; rode `sparkforge runtime detect` ou "
-        "`sparkforge analyze terraform` sobre o job (glue_version)"
+        "a escrita sob FGAC depende da versao do Glue; rode `sparkforge-aws runtime detect` ou "
+        "`sparkforge-aws analyze terraform` sobre o job (glue_version)"
     ),
     "runtime_divergente": (
         "o case observa mais de uma versao de Glue; resolva a divergencia antes"
@@ -974,7 +974,7 @@ Em `sparkforge/facts/lakeformation_missing_grant.py`, acrescentar o import
         "estao la, e nenhuma e escolhida aqui (regra 32)"
     ),
     "acao_iam_nao_simulada": (
-        "a acao exigida nao foi simulada; rode `sparkforge collect iam-access` incluindo-a"
+        "a acao exigida nao foi simulada; rode `sparkforge-aws collect iam-access` incluindo-a"
     ),
 ```
 
@@ -1085,8 +1085,8 @@ def _lado_iam(
 Acrescentar a `tests/test_lakeformation_missing_grant.py`:
 
 ```python
-from sparkforge.facts.fusion import fuse
-from sparkforge.simulate.diff import DERIVED_KINDS
+from sparkforge_aws.facts.fusion import fuse
+from sparkforge_aws.simulate.diff import DERIVED_KINDS
 
 
 def _tf_conf_resolver() -> Fact:
@@ -1122,16 +1122,16 @@ Falha esperada: `AssertionError` em `assert "lakeformation.missing_grant" in kin
 
 ### 3. Código mínimo
 
-`sparkforge/facts/fusion.py`, junto dos imports de `timeout_diagnosis`:
+`sparkforge_aws/facts/fusion.py`, junto dos imports de `timeout_diagnosis`:
 
 ```python
-from sparkforge.facts.lakeformation_missing_grant import (
+from sparkforge_aws.facts.lakeformation_missing_grant import (
     EMITTED_KINDS as MISSING_GRANT_EMITTED_KINDS,
 )
-from sparkforge.facts.lakeformation_missing_grant import (
+from sparkforge_aws.facts.lakeformation_missing_grant import (
     SOURCE_KINDS as MISSING_GRANT_SOURCE_KINDS,
 )
-from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
+from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant
 ```
 
 Logo depois do laço `for fact in derivados_lf: combined[fact.id] = fact`:
@@ -1153,12 +1153,12 @@ Logo depois do laço `for fact in derivados_lf: combined[fact.id] = fact`:
             combined[fact.id] = fact
 ```
 
-`sparkforge/simulate/diff.py`:
+`sparkforge_aws/simulate/diff.py`:
 
 ```python
-from sparkforge.facts import fusion, lakeformation, lakeformation_missing_grant, timeout_diagnosis
-from sparkforge.findings.models import Fact
-from sparkforge.proof.keys import stable_key
+from sparkforge_aws.facts import fusion, lakeformation, lakeformation_missing_grant, timeout_diagnosis
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.proof.keys import stable_key
 
 DERIVED_KINDS = frozenset(
     fusion.EMITTED_KINDS
@@ -1173,7 +1173,7 @@ Também atualize o docstring do módulo: onde está escrito "`fusion`, `lakeform
 e `timeout_diagnosis`".
 
 `tests/test_rules_catalog_reachability.py`: acrescentar `lakeformation_missing_grant` às duas
-listas. Na tupla de import de `sparkforge.facts`, logo depois de `lakeformation_grants,`.
+listas. Na tupla de import de `sparkforge_aws.facts`, logo depois de `lakeformation_grants,`.
 Em `EXTRACTORS`, logo depois de `lakeformation_grants,` com o comentário:
 
 ```python
@@ -1191,7 +1191,7 @@ Em `EXTRACTORS`, logo depois de `lakeformation_grants,` com o comentário:
 
 `python -m pytest tests/test_rules_catalog_reachability.py tests/test_facts_fusion.py tests/test_simulate.py -q`.
 Se algum desses arquivos não existir com esse nome, localize com
-`sparkforge code search fuse` e `sparkforge code search strip_derived` e rode os testes que
+`sparkforge-aws code search fuse` e `sparkforge-aws code search strip_derived` e rode os testes que
 chamam essas funções. `test_rules_catalog_reachability` pode acusar os dois kinds como
 órfãos, porque nenhuma regra os consome até T5. Se acusar, o vermelho fica registrado no
 build_report e T5 o fecha.
@@ -1207,7 +1207,7 @@ build_report e T5 o fecha.
 `tests/test_lakeformation_rules.py`, no fim:
 
 ```python
-from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
+from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant
 from tests.test_lakeformation_missing_grant import (
     cenario_fgac_escrita_negada,
     cenario_fgac_escrita_registrada,
@@ -1274,7 +1274,7 @@ def test_fontes_da_tabela_estao_no_lock():
   #
   # `ERR-LF-001` declarava `lakeformation.missing_grant` em `evidence_required`, e
   # nenhum extrator o emitia: `SF-ERR-006` so podia mandar investigar a cadeia.
-  # O fact agora sai de `sparkforge/facts/lakeformation_missing_grant.py`, que ja
+  # O fact agora sai de `sparkforge_aws/facts/lakeformation_missing_grant.py`, que ja
   # resolveu modelo, versao e operacao -- por isso `runtime_scope: {}` e o gate
   # real e `requires_facts` (docs/gates-por-mudanca.md, secao runtime_scope).
   - id: SF-LF-011
@@ -1350,8 +1350,8 @@ def test_fontes_da_tabela_estao_no_lock():
         plataforma, não de job.
     validation:
       - >-
-        Recoletar com `sparkforge collect lakeformation` (ou `collect iam-access`,
-        sob FGAC) e rodar `sparkforge fuse` de novo. O `lakeformation.missing_grant`
+        Recoletar com `sparkforge-aws collect lakeformation` (ou `collect iam-access`,
+        sob FGAC) e rodar `sparkforge-aws fuse` de novo. O `lakeformation.missing_grant`
         do recurso precisa sumir.
       - >-
         Reexecutar o job e confirmar que `ERR-LF-001` sai do log do run. Nenhum
@@ -1381,7 +1381,7 @@ logo depois da afirmação:
 
 ```yaml
 #   ATUALIZADO em 2026-09-21 (docs/sdd/LF_GRANTS/): `lakeformation.missing_grant`
-#   passou a ser emitido por `sparkforge/facts/lakeformation_missing_grant.py`, e
+#   passou a ser emitido por `sparkforge_aws/facts/lakeformation_missing_grant.py`, e
 #   `SF-LF-011` o consome. `ram.unaccepted_share` continua sem coletor e foi movido
 #   para `evidence_out_of_reach` da assinatura. `SF-ERR-006` fica como esta: ela
 #   dispara sem grant coletado, que e o caso que o fact novo recusa por nome.
@@ -1446,8 +1446,8 @@ Falha esperada: `AssertionError` no conjunto, porque os dois diretórios não ex
 ### 3. Código mínimo
 
 **Runner e regen, idênticos.** Em `tests/test_fixtures_golden_cloudwatch_logs.py::_extract`,
-acrescentar o import `from sparkforge.facts.lakeformation_grants import
-extract_lakeformation_tree` e `from sparkforge.facts.lakeformation_missing_grant import
+acrescentar o import `from sparkforge_aws.facts.lakeformation_grants import
+extract_lakeformation_tree` e `from sparkforge_aws.facts.lakeformation_missing_grant import
 build_missing_grant`. Logo antes de `facts.extend(build_lakeformation(facts))`:
 
 ```python
@@ -1470,7 +1470,7 @@ E depois de `facts.extend(build_signature_matches(facts))`:
 Em `scripts/regen_fixtures.py::regen_cloudwatch_logs`, na mesma posição relativa, o mesmo
 bloco de `input_dir / "lf"` (com `input_dir` no lugar de `entrada`) e a mesma linha
 `facts.extend(build_missing_grant(facts))` depois de `build_signature_matches`. Acrescente
-o import `from sparkforge.facts.lakeformation_missing_grant import build_missing_grant  # noqa: E402`.
+o import `from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant  # noqa: E402`.
 `extract_lakeformation_tree` já é importado ali.
 
 **Fixture positiva** `fixtures/cloudwatch_logs/lf_negado_fta_append_sem_all/`:
@@ -1518,13 +1518,13 @@ resource "aws_glue_job" "curated_fta" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/fta.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/fta.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"       = "true"
-    "--spark-event-logs-path" = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path" = "s3://sparkforge-aws-demo/spark-logs/"
     "--conf"                  = "spark.hadoop.fs.s3.credentialsResolverClass=com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver --conf spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem"
   }
 }
@@ -1537,7 +1537,7 @@ from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 
-novos = spark.read.parquet("s3://sparkforge-demo/landing/clientes/")
+novos = spark.read.parquet("s3://sparkforge-aws-demo/landing/clientes/")
 novos.write.mode("append").saveAsTable("analytics.dim_cliente")
 ```
 
@@ -1569,7 +1569,7 @@ novos.write.mode("append").saveAsTable("analytics.dim_cliente")
   "registered_location": {
     "hybrid_access_enabled": null,
     "registered": true,
-    "resource_arn": "arn:aws:s3:::sparkforge-demo/analytics/dim_cliente",
+    "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/analytics/dim_cliente",
     "role_arn": "arn:aws:iam::111111111111:role/lf-registration",
     "status": "ok",
     "with_federation": false
@@ -1631,7 +1631,7 @@ se ajusta à saída. Qualquer outra regra que dispare na positiva (por exemplo s
 o Terraform) entra em `expects_rules` com uma linha no `proves:` explicando por quê.
 
 `tests/test_fixtures_kind_coverage.py`: acrescentar o import de `lakeformation_missing_grant`
-logo depois de `lakeformation_grants,` na tupla de `sparkforge.facts`, e ao dicionário, logo
+logo depois de `lakeformation_grants,` na tupla de `sparkforge_aws.facts`, e ao dicionário, logo
 depois de `"lakeformation_grants": lakeformation_grants,`:
 
 ```python
@@ -1662,7 +1662,7 @@ e `python scripts/check_vnext_claims.py` (o corpus de fixtures mudou).
 `tests/test_lakeformation_access_graph.py`, no fim:
 
 ```python
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 _ROLE = "arn:aws:iam::111111111111:role/glue-curated"
 _PROV = {"extractor": "teste@0.0.0", "artifact": "memoria"}
@@ -1727,7 +1727,7 @@ def test_grafo_sem_missing_grant_inalterado():
 
 ### 3. Código mínimo
 
-`sparkforge/lakeformation/graph.py::build_access_graph`, junto das outras listas no início:
+`sparkforge_aws/lakeformation/graph.py::build_access_graph`, junto das outras listas no início:
 
 ```python
     faltas = [f for f in lista if getattr(f, "kind", "") == "lakeformation.missing_grant"]

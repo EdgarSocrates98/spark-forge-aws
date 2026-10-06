@@ -21,10 +21,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.dq_ai import assessment as dq_ai_assessment
-from sparkforge.dqdl import validator as dqdl_validator
-from sparkforge.errors import matcher
-from sparkforge.facts import (
+from sparkforge_aws.dq_ai import assessment as dq_ai_assessment
+from sparkforge_aws.dqdl import validator as dqdl_validator
+from sparkforge_aws.errors import matcher
+from sparkforge_aws.facts import (
     airflow_dag,
     athena_cost,
     athena_workgroup,
@@ -102,8 +102,8 @@ from sparkforge.facts import (
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
 
-# `matcher` (`sparkforge/errors/matcher.py`) e `exception`
-# (`sparkforge/facts/exception.py`) entram nesta lista no MESMO commit de
+# `matcher` (`sparkforge_aws/errors/matcher.py`) e `exception`
+# (`sparkforge_aws/facts/exception.py`) entram nesta lista no MESMO commit de
 # `fixtures/exception/`, e a divida que os mantinha fora esta paga aqui.
 #
 # A lacuna era declarada e datada: os dois modulos ja estavam na outra lista
@@ -207,8 +207,8 @@ EXTRACTORS = {
     # `tests/test_fixtures_golden_host_transcript.py`.
     "host_transcript": host_transcript,
     "iceberg_metadata": iceberg_metadata,
-    # `matcher` e o unico modulo desta lista que NAO mora em `sparkforge/facts/`
-    # -- ele e `sparkforge/errors/matcher.py`, e o import dele vem separado la
+    # `matcher` e o unico modulo desta lista que NAO mora em `sparkforge_aws/facts/`
+    # -- ele e `sparkforge_aws/errors/matcher.py`, e o import dele vem separado la
     # em cima por isso. A lista e manual e duplicada em
     # `tests/test_rules_catalog_reachability.py`: extrator novo entra nas DUAS,
     # e esquecer uma nao quebra nada aqui.
@@ -347,7 +347,7 @@ def test_every_unresolved_kind_is_exercised():
 
 
 def _rules():
-    from sparkforge.rules.loader import catalog_dir, load_catalog
+    from sparkforge_aws.rules.loader import catalog_dir, load_catalog
 
     return [r for r in load_catalog(catalog_dir()) if r["id"].startswith("SF-")]
 
@@ -368,7 +368,7 @@ def _judgeable_rules():
     """`_executable_rules()` menos as bloqueadas por `blocked_on`.
 
     `blocked_on` faz `judge()` pular a regra INCONDICIONALMENTE, antes mesmo
-    de olhar `runtime_scope` ou `when` (`sparkforge/rules/engine.py`). Uma
+    de olhar `runtime_scope` ou `when` (`sparkforge_aws/rules/engine.py`). Uma
     regra bloqueada NUNCA aparece em `findings.json` -- nao porque falte
     fixture, mas porque o motor nunca a avalia. Exigir golden positivo ou
     ramo de severidade dela e exigir cobertura de um julgamento que nao
@@ -402,7 +402,7 @@ def test_every_rule_has_a_fixture_that_fires_it():
     e uma das duas: criar a fixture que a exercita, ou remover a regra.
 
     Exceto regra `blocked_on`: `judge()` a pula incondicionalmente
-    (`sparkforge/rules/engine.py`), entao nenhuma fixture pode fazer uma
+    (`sparkforge_aws/rules/engine.py`), entao nenhuma fixture pode fazer uma
     regra bloqueada disparar -- ver `_judgeable_rules()`. Isso nao e uma
     lacuna de corpus, e o contrato do bloqueio; a decisao consciente de
     manter cada `blocked_on` no catalogo mora em

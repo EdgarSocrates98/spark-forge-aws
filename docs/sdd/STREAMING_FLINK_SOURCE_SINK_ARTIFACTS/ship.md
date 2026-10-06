@@ -38,7 +38,7 @@ zero. As provas estão no build report e nos testes referenciados nos ACs.
 - `python scripts/check_status_numbers.py --strict`.
 - `python scripts/verify_offline_bundle.py --check`.
 - `python scripts/check_surface_lock.py`.
-- `sparkforge sdd check --repo . --feature STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`.
 - Suíte completa não executada; permanece para uma fase explicitamente solicitada.
 
 ## Limites

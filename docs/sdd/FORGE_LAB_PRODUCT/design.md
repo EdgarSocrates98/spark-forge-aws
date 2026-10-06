@@ -8,19 +8,19 @@ upstream:
   path: docs/sdd/FORGE_LAB_PRODUCT/define.md
   sha256: "acf2bbebe59812db106f11646d248d37b2f83888fac10434dd2c5e8d1d481da0"
 files:
-  - {path: sparkforge/lab/contract.py, action: create, reason: "Registry, fidelidade, profiles, modes, scenario DSL e validação canônica."}
-  - {path: sparkforge/lab/scenario.py, action: create, reason: "Compilador de cenário para actions reutilizáveis."}
-  - {path: sparkforge/lab/generators.py, action: create, reason: "Dataset generator determinístico com seed, skew, late events e duplicidade."}
-  - {path: sparkforge/lab/workload.py, action: create, reason: "Workload generator separado do dataset."}
-  - {path: sparkforge/lab/faults.py, action: create, reason: "Fault plan para Toxiproxy, processo, compute, application e data."}
-  - {path: sparkforge/lab/runtime.py, action: create, reason: "Planos comuns de Compose/Testcontainers e guardas de execução."}
-  - {path: sparkforge/lab/doctor.py, action: create, reason: "Diagnóstico local de Docker, recursos, arquitetura, portas e imagens sem iniciar serviços."}
-  - {path: sparkforge/lab/evidence.py, action: create, reason: "Run directory, artifact capture, receipt, oracle, compare e promoção."}
-  - {path: sparkforge/lab/compatibility.py, action: create, reason: "Matriz multi-engine, equivalência e perfis Polaris sem alegar resultado não medido."}
-  - {path: sparkforge/lab/aws.py, action: create, reason: "Contrato L3, TTL, budget, tags, prefixo e recusa default de mutações AWS."}
-  - {path: sparkforge/lab/cli.py, action: create, reason: "Handlers CLI-first para o ciclo operacional do Lab."}
-  - {path: sparkforge/lab/__init__.py, action: modify, reason: "Exportar API de produto Lab."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Registrar comando top-level lab sem ampliar MCP por padrão."}
+  - {path: sparkforge_aws/lab/contract.py, action: create, reason: "Registry, fidelidade, profiles, modes, scenario DSL e validação canônica."}
+  - {path: sparkforge_aws/lab/scenario.py, action: create, reason: "Compilador de cenário para actions reutilizáveis."}
+  - {path: sparkforge_aws/lab/generators.py, action: create, reason: "Dataset generator determinístico com seed, skew, late events e duplicidade."}
+  - {path: sparkforge_aws/lab/workload.py, action: create, reason: "Workload generator separado do dataset."}
+  - {path: sparkforge_aws/lab/faults.py, action: create, reason: "Fault plan para Toxiproxy, processo, compute, application e data."}
+  - {path: sparkforge_aws/lab/runtime.py, action: create, reason: "Planos comuns de Compose/Testcontainers e guardas de execução."}
+  - {path: sparkforge_aws/lab/doctor.py, action: create, reason: "Diagnóstico local de Docker, recursos, arquitetura, portas e imagens sem iniciar serviços."}
+  - {path: sparkforge_aws/lab/evidence.py, action: create, reason: "Run directory, artifact capture, receipt, oracle, compare e promoção."}
+  - {path: sparkforge_aws/lab/compatibility.py, action: create, reason: "Matriz multi-engine, equivalência e perfis Polaris sem alegar resultado não medido."}
+  - {path: sparkforge_aws/lab/aws.py, action: create, reason: "Contrato L3, TTL, budget, tags, prefixo e recusa default de mutações AWS."}
+  - {path: sparkforge_aws/lab/cli.py, action: create, reason: "Handlers CLI-first para o ciclo operacional do Lab."}
+  - {path: sparkforge_aws/lab/__init__.py, action: modify, reason: "Exportar API de produto Lab."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Registrar comando top-level lab sem ampliar MCP por padrão."}
   - {path: labs/forge-lab/lab.yaml, action: modify, reason: "Manifesto com registry, tiers, profiles, Golden 20 e contrato de evidência."}
   - {path: labs/forge-lab/compose.yaml, action: modify, reason: "Profiles compartilhados, nomes de projeto e imagens externalizadas/pinadas."}
   - {path: lab/versions.yaml, action: create, reason: "Fonte única de versões, images, digests e compatibilidade."}

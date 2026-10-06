@@ -128,13 +128,13 @@ Tudo o que uma regra cobra, mais três coisas que só a área cobra:
 | `test_rule_scope_by_nature` | a área não pode sumir inteira de um runtime | ver a seção de `runtime_scope` acima: é o modo de falha específico da área nova, e não aparece em nenhuma das listas mantidas à mão |
 
 E a decisão que vem antes dos gates: **uma área ou várias?** O eixo do contrato de migração
-é derivado da área (`sparkforge/findings/models.py:area_of`), e um achado move um eixo só.
+é derivado da área (`sparkforge_aws/findings/models.py:area_of`), e um achado move um eixo só.
 Três eixos distintos numa área só os deixaria empatados no mesmo balde — foi por isso que
 `SF-KMS`, `SF-NET` e `SF-XACC` nasceram separadas em vez de uma `SF-PLAT`.
 
 ## Acrescentar ou alterar um EXTRATOR de facts
 
-`sparkforge/facts/*.py`
+`sparkforge_aws/facts/*.py`
 
 ```
 python -m pytest tests/test_rules_catalog_reachability.py \
@@ -150,8 +150,8 @@ kind declarado e nunca emitido torna inalcançável qualquer regra que dependa d
 os outros não têm: ele precisa ser **chamado por alguém**. Um módulo com `EMITTED_KINDS`
 correto e nenhuma chamada emite zero facts em produção e passa nos dois testes acima, porque
 os dois leem o módulo e não o pipeline. Os pontos de chamada existentes são `fuse()`
-(`sparkforge/facts/fusion.py`), um verbo próprio sob `analyze` em
-`sparkforge/adapters/_core.py`, e o `_extract`/`_derive` de cada
+(`sparkforge_aws/facts/fusion.py`), um verbo próprio sob `analyze` em
+`sparkforge_aws/adapters/_core.py`, e o `_extract`/`_derive` de cada
 `tests/test_fixtures_golden_*.py` com o `regen_*` correspondente em
 `scripts/regen_fixtures.py`. **O runner do golden e o `regen_*` são um par**: se um deriva e o
 outro não, o golden nunca fecha.
@@ -160,10 +160,10 @@ outro não, o golden nunca fecha.
 igualdade (`where`) e seis comparadores (`expr`) — sem `startswith`, sem `in`, sem chamada de
 função, e `ast.Call` levanta `ExprError` por desenho de segurança. Predicado que precise de
 mais do que isso — "o nome do catálogo dentro da chave de conf é o session catalog?" — se
-resolve **derivando um fact**, nunca afrouxando `sparkforge/rules/expr.py`. Precedente medido:
-`sparkforge/facts/lakeformation.py`, 2026-09-09.
+resolve **derivando um fact**, nunca afrouxando `sparkforge_aws/rules/expr.py`. Precedente medido:
+`sparkforge_aws/facts/lakeformation.py`, 2026-09-09.
 
-## Mexer no funil de contexto (`sparkforge/codeintel/context.py`, `ranking.py`, `budget.py`)
+## Mexer no funil de contexto (`sparkforge_aws/codeintel/context.py`, `ranking.py`, `budget.py`)
 
 ```
 python scripts/check_recall_economy.py
@@ -252,7 +252,7 @@ python scripts/verify_offline_bundle.py
 `knowledge/offline-manifest.json` guarda o `sha256` de cada documento. Editar o `.md`
 sem regravar o hash reprova o bundle inteiro.
 
-Para regravar, use `sparkforge.tools.offline._content_sha256` — a docstring dela pede
+Para regravar, use `sparkforge_aws.tools.offline._content_sha256` — a docstring dela pede
 isso explicitamente: *"hash calculado de um jeito e conferido de outro e o defeito que
 o gate existe para pegar."* Ela remove todo `CR` em vez de traduzir `CRLF`, porque um
 manifesto gravado no Windows já reprovou os 43 documentos no Linux.
@@ -325,7 +325,7 @@ componente em disputa tem que ser decisão consciente de quem editou a matriz.
 Registrados aqui porque uma regra nova que leia `default_arguments` herda os dois sem
 perceber, e o sintoma é silêncio.
 
-- **`non_overridable_arguments` é ignorado inteiro.** `sparkforge/facts/terraform.py` não
+- **`non_overridable_arguments` é ignorado inteiro.** `sparkforge_aws/facts/terraform.py` não
   emite fact nenhum para esse bloco. Um `aws_glue_job` que forneça argumento por ali é
   invisível para toda regra que lê `default_arguments` — hoje `SF-LF-001`, `SF-GLUE-002` e
   `SF-GLUE-003`. Medido ao escrever `SF-LF-001`.
@@ -335,7 +335,7 @@ perceber, e o sintoma é silêncio.
   kind de "desconhecido" no molde de `tf.observability.unknown`, que sinaliza a lacuna em
   vez de escondê-la.
 
-## Ler dado do disco em código de `sparkforge/`
+## Ler dado do disco em código de `sparkforge_aws/`
 
 ```
 python scripts/verify_wheel.py
@@ -347,7 +347,7 @@ o **caso instalado**. Teste em árvore passa dos dois jeitos.
 Na Task 1 da fase `SF-MIG` um módulo novo calculou `Path(__file__).resolve().parents[2]`
 para achar `knowledge/`, o que aponta um nível acima de onde o pacote a empacota. Em
 árvore funcionava; num wheel instalado, importar o módulo levantava `FileNotFoundError`.
-Existe resolvedor pronto para isso desde a Fase 3a: `sparkforge/knowledge_ref.py`, com
+Existe resolvedor pronto para isso desde a Fase 3a: `sparkforge_aws/knowledge_ref.py`, com
 teste do fallback para o diretório do pacote. **Procure antes de escrever.**
 
 ## Alterar dependência: `pyproject.toml`, `requirements.txt`, `locks/` ou os workflows
@@ -508,6 +508,46 @@ assim que o tempo passa, pelo único motivo de ter envelhecido -- não porque o 
 parou de ser verdade no dia em que foi medido.
 
 ---
+
+## Alterar o resultado de `call_tool` — campo aditivo no envelope
+
+Medido na FASE 3 da onda de convergência (2026-10-06): o envelope `_trust`
+(`{label, authority, taint}`) entrou em **todo** resultado de `call_tool`, e
+~55 asserts de paridade legada que comparavam `call_tool(...) == cli(...)`
+byte a byte ficaram vermelhos de uma vez — espalhados por ~24 arquivos de
+teste, nenhum deles rodando numa execução dirigida óbvia.
+
+O padrão correto do lado do teste: remover `_trust` antes de comparar o
+payload (`payload.pop("_trust", None)`), porque o formato do envelope é
+travado em `tests/test_runtime_convergence_trust.py`. Nunca remover o campo
+da implementação para agradar assert antigo.
+
+Cascata completa quando o envelope ou o catálogo de tools muda:
+
+```
+python -m pytest tests/test_adapters_cli.py tests/test_adapters_detail_level.py \
+  tests/test_adapters_freshness.py tests/test_analyze_cdc.py \
+  tests/test_analyze_event_driven.py tests/test_analyze_flink.py \
+  tests/test_analyze_glue_streaming.py tests/test_analyze_schema_registry.py \
+  tests/test_analyze_streaming.py tests/test_analyze_streaming_composition.py \
+  tests/test_analyze_streaming_ops.py tests/test_analyze_transport.py \
+  tests/test_cli_debate.py tests/test_collect_managed_flink.py \
+  tests/test_collect_schema_registry.py tests/test_collect_streaming.py \
+  tests/test_data_observability.py tests/test_lakeformation_architecture.py \
+  tests/test_lakeformation_fgac_fta_improvements.py \
+  tests/test_lakeformation_operational_closure.py tests/test_lakehouse_catalog.py \
+  tests/test_orchestration.py tests/test_platform_ecosystem.py \
+  tests/test_platform_graph.py tests/test_sdd.py \
+  tests/test_docs_coverage.py tests/test_agent_coverage.py \
+  tests/test_adapters_mcp_compact.py tests/test_harness_authorization.py -q
+```
+
+E, sempre que uma tool entra: `manifest.json` (raiz, escrito à mão — o gate
+`test_docs_coverage` compara com `TOOLS`), os coordenadores
+(`test_agent_coverage` exige que a tool seja citada no corpus de algum
+coordenador), `parity.yaml`, `tests/test_adapters_mcp_compact.py` (contagens
+por transporte) e `tests/test_harness_authorization.py` (contagem de tools
+que declaram caminho).
 
 ## Quando nada acima serve
 

@@ -32,7 +32,7 @@
   "registered_location": {
     "hybrid_access_enabled": null,
     "registered": false,
-    "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/arestas",
+    "resource_arn": "arn:aws:s3:::sparkforge-aws-demo/curated/arestas",
     "role_arn": "",
     "status": "nao_encontrado",
     "with_federation": null

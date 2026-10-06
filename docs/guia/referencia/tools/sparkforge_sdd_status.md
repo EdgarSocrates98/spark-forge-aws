@@ -17,7 +17,7 @@ Fase atual de cada feature do SDD, o status declarado, a proxima fase e os codig
 
 ## Na CLI
 
-[`sparkforge sdd check`](../cli/sdd.md), [`sparkforge sdd status`](../cli/sdd.md)
+[`sparkforge-aws sdd check`](../cli/sdd.md), [`sparkforge-aws sdd status`](../cli/sdd.md)
 
 ## Capacidade
 

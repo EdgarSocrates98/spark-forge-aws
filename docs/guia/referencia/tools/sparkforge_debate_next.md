@@ -17,7 +17,7 @@ O proximo passo do debate, derivado SO dos arquivos do case: o brief do lado da 
 
 ## Na CLI
 
-[`sparkforge debate next`](../cli/debate.md), [`sparkforge debate start`](../cli/debate.md), [`sparkforge debate submit`](../cli/debate.md)
+[`sparkforge-aws debate next`](../cli/debate.md), [`sparkforge-aws debate start`](../cli/debate.md), [`sparkforge-aws debate submit`](../cli/debate.md)
 
 ## Capacidade
 

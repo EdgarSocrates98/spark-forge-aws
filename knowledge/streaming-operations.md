@@ -14,7 +14,7 @@ ausência como sucesso e não compara séries com janelas ou unidades diferentes
 
 ### Avaliação offline observada
 
-`sparkforge analyze streaming-composition --mode slo` compõe uma declaração
+`sparkforge-aws analyze streaming-composition --mode slo` compõe uma declaração
 `streaming.slo` com facts já extraídos. Para Structured Streaming, exige
 `--query-name` e aceita somente métricas diretamente presentes no progress:
 `input_rows_per_second`, `processed_rows_per_second`, `batch_duration_ms` e

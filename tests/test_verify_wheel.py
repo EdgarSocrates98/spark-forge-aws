@@ -201,7 +201,7 @@ class TestMainReturnCodes:
 
 class TestBundleDoIntegrate:
     """O pacote INSTALADO acha `skills/` e `agents/` pelo caminho padrao de
-    `sparkforge.integrate.sources`, sem `bundle=` injetado (AC1)."""
+    `sparkforge_aws.integrate.sources`, sem `bundle=` injetado (AC1)."""
 
     def test_bundle_check_failure_returns_1(self, monkeypatch, tmp_path):
         # 7 = depois do twine check: os indices dos passos anteriores nao mudam.
@@ -216,7 +216,7 @@ class TestBundleDoIntegrate:
         fake = _FakeRun()
         monkeypatch.setattr(verify_wheel, "_run", fake)
         assert main([]) == 0
-        (idx,) = [i for i, c in enumerate(fake.calls) if "sparkforge.integrate" in " ".join(
+        (idx,) = [i for i, c in enumerate(fake.calls) if "sparkforge_aws.integrate" in " ".join(
             str(x) for x in c
         )]
         assert fake.calls[idx][0] == str(verify_wheel.venv_python(tmp_path / "venv"))

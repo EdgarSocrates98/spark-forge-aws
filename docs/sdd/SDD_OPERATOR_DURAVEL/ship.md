@@ -39,7 +39,7 @@ observações, todas medidas em `tests/test_sdd_operator.py`:
    `sandbox_desatualizado` (`test_spec_em_docs_sdd_desatualiza_o_sandbox`).
 
 Ressalva dita: a comparação do funcval continua sintética (a forma de
-`_check_delta`); `sparkforge funcval compare` não roda no teste. Um operador
+`_check_delta`); `sparkforge-aws funcval compare` não roda no teste. Um operador
 de verdade usando o perfil fora da sessão fica para `SDD_EVAL`.
 
 `SC1`: códigos novos exercitados — `moved_not_observed` (recusa) e

@@ -36,10 +36,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.emr_cluster import extract_emr_cluster_path
-from sparkforge.facts.emr_serverless import extract_emr_serverless_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import ROUTING_FILE, catalog_dir, load_catalog
+from sparkforge_aws.facts.emr_cluster import extract_emr_cluster_path
+from sparkforge_aws.facts.emr_serverless import extract_emr_serverless_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import ROUTING_FILE, catalog_dir, load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES_EC2 = ROOT / "fixtures" / "emr"

@@ -133,7 +133,7 @@ def main() -> int:
     args = parser.parse_args()
     findings = audit()
     report = {
-        "contract": "sparkforge-skill-v1",
+        "contract": "sparkforge-aws-skill-v1",
         "skills": len([p for p in SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").is_file()]),
         "errors": sum(item.severity == "error" for item in findings),
         "findings": [asdict(item) for item in findings],
@@ -147,7 +147,7 @@ def main() -> int:
         for item in findings:
             print(f"{item.severity}: {item.skill}: {item.message}")
     else:
-        print(f"OK: {report['skills']} skills seguem sparkforge-skill-v1")
+        print(f"OK: {report['skills']} skills seguem sparkforge-aws-skill-v1")
     return 1 if args.strict and findings else 0
 
 

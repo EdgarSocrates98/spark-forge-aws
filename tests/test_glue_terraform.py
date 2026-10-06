@@ -13,9 +13,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.facts import airflow_dag, glue_terraform, stepfunctions
-from sparkforge.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts import airflow_dag, glue_terraform, stepfunctions
+from sparkforge_aws.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
+from sparkforge_aws.findings.models import Fact
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -50,7 +50,7 @@ def test_a_definicao_e_unica_e_os_dois_extratores_importam():
 
     # E nenhuma copia local sobreviveu.
     for nome in ("stepfunctions", "airflow_dag"):
-        fonte = (RAIZ / "sparkforge" / "facts" / f"{nome}.py").read_text(encoding="utf-8")
+        fonte = (RAIZ / "sparkforge_aws" / "facts" / f"{nome}.py").read_text(encoding="utf-8")
         assert "def _glue_jobs_por_nome" not in fonte, nome
         assert "def _max_retries" not in fonte, nome
 
@@ -114,7 +114,7 @@ def test_o_modulo_auxiliar_nao_conta_como_extrator():
 
     A regra do `CLAUDE.md` que manda por extrator novo nas duas listas manuais NAO vale
     aqui, e este teste e o lugar onde isso esta escrito de forma executavel. A lista
-    das varreduras conferidas esta no docstring de `sparkforge/facts/glue_terraform.py`;
+    das varreduras conferidas esta no docstring de `sparkforge_aws/facts/glue_terraform.py`;
     os tres arquivos varridos abaixo sao os que CITARIAM o modulo pelo nome, nao todas
     elas -- as que descobrem por `pkgutil`/`glob` ja o ignoram por nao ter o atributo.
     """

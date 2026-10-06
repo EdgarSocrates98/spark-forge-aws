@@ -15,18 +15,18 @@
 
 ## Initial Idea
 
-**Raw Input:** Frente §19 de `prompt_new_evo.md`, "Counterfactual / What-if Analysis": `sparkforge simulate` responde o que acontece se a configuracao X mudar, que regras somem, que riscos aparecem -- "nao para inventar performance, para raciocinar sobre consequencias estruturais conhecidas". Branch `feat/simulate`, a partir da `main` (ja com #56 e #57).
+**Raw Input:** Frente §19 de `prompt_new_evo.md`, "Counterfactual / What-if Analysis": `sparkforge-aws simulate` responde o que acontece se a configuracao X mudar, que regras somem, que riscos aparecem -- "nao para inventar performance, para raciocinar sobre consequencias estruturais conhecidas". Branch `feat/simulate`, a partir da `main` (ja com #56 e #57).
 
 **Context Gathered:**
 - **O que ja existe:**
   - Todo kind de configuracao guarda a propriedade em `attrs.key` e o valor em `attrs.value`: `spark.conf_effective` (event log), `pyspark.conf_set` (codigo), `tf.spark_conf` e `tf.attribute` (Terraform), `emr.configuration`, `emrs.configuration`, `emrc.configuration`.
   - `judge_findings` julga os facts como chegam e nao roda derivacao nenhuma. A unica derivacao com porta de producao e o verbo `fuse` (`facts/fusion.py::fuse(facts)`, que chama `build_lakeformation`).
-  - A chave estavel do Change Proof (`sparkforge/proof/keys.py`) compara findings de antes e depois sem que linha ou snippet contem.
+  - A chave estavel do Change Proof (`sparkforge_aws/proof/keys.py`) compara findings de antes e depois sem que linha ou snippet contem.
   - `migration_assess` ja expande um par de versoes em degraus e julga cada um: mudar runtime nao e desta frente.
 - **Medido em 2026-09-12:**
   - **29 regras** leem kinds de configuracao diretamente: `tf.attribute` 18 (`worker_type`, `glue_version`, `--job-bookmark-option`, `--enable-lakeformation-fine-grained-access`, `max_retries`...), EMR 6, `tf.spark_conf` 2, `pyspark.conf_set` 1, `mig.*` 2. **Nenhuma** le `spark.conf_effective` diretamente.
   - **20 regras** leem kinds DERIVADOS da configuracao: `lakeformation.*` 13, `sql.*` enriquecidos 4, `spark.timeout.*` 2, `iceberg.library_conflict` 1.
-  - **`extract_timeout_diagnosis` nao tem porta de producao.** Os chamadores sao so testes; em `sparkforge/` a string aparece numa docstring de `facts/utilization.py`. Os facts `spark.timeout.*` so existem nos goldens, e `SF-TIMEOUT-001/002` nunca disparam num case real.
+  - **`extract_timeout_diagnosis` nao tem porta de producao.** Os chamadores sao so testes; em `sparkforge_aws/` a string aparece numa docstring de `facts/utilization.py`. Os facts `spark.timeout.*` so existem nos goldens, e `SF-TIMEOUT-001/002` nunca disparam num case real.
 
 ---
 
@@ -117,7 +117,7 @@
 Hoje, para saber o que uma mudanca de configuracao faria com os achados, o operador precisa aplica-la, extrair de novo e rejulgar. 29 regras leem configuracao e 20 leem derivados dela, e nenhum verbo responde "se eu mudar esta propriedade neste arquivo, o que some e o que aparece" antes de mudar. E a derivacao de timeout, que 2 regras exigem, nem chega ao produto.
 
 ### Success Criteria (Draft)
-- [ ] Passo 0: `sparkforge fuse` produz `spark.timeout.*`; os goldens que mudam, medidos e com a razao.
+- [ ] Passo 0: `sparkforge-aws fuse` produz `spark.timeout.*`; os goldens que mudam, medidos e com a razao.
 - [ ] `fixtures/simulate/` com um caso por consequencia: regra some, regra aparece, runtime muda, derivado de Lake Formation, timeout, as duas recusas, e simetria (sem `--set`, diff vazio).
 - [ ] Nenhuma medida prevista; `refused` com os tres itens.
 - [ ] Tool READ_ONLY valida contra o schema com amostra real; registros, surface lock e claims por ids.

@@ -73,7 +73,7 @@ def test_seis_skills_existem():
         assert texto.startswith("---\nname: " + nome + "\n")
         for secao in ("## Quando NÃO usar", "## Referência rápida", "## Red flags"):
             assert secao in texto, (nome, secao)
-        assert "sparkforge sdd check" in texto, nome
+        assert "sparkforge-aws sdd check" in texto, nome
 ```
 
 Escrever as seis skills seguindo a tabela do design. Ler
@@ -88,7 +88,7 @@ tests/test_skill_content.py tests/test_sync_render.py tests/test_agents_parity.p
 ```python
 def test_comandos_citados_existem():
     parser = build_parser()
-    padrao = re.compile(r"`sparkforge ([a-z][a-z-]*(?: [a-z][a-z-]*)?)")
+    padrao = re.compile(r"`sparkforge-aws ([a-z][a-z-]*(?: [a-z][a-z-]*)?)")
     for nome in SKILLS_SDD:
         texto = (ROOT / "skills" / nome / "SKILL.md").read_text(encoding="utf-8")
         for verbo in set(padrao.findall(texto)):

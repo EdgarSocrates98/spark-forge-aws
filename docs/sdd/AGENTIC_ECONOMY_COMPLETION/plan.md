@@ -9,15 +9,15 @@ upstream:
   sha256: "0cf5344736e8c7f10e46d71c74d7699ff94c9d1b2d22f3ce61609195a8094e96"
 tasks:
   - id: T1
-    files: [sparkforge/workspace/federation.py, sparkforge/workspace/__init__.py, sparkforge/workspace/manifest.py, tests/test_workspace_federation.py]
+    files: [sparkforge_aws/workspace/federation.py, sparkforge_aws/workspace/__init__.py, sparkforge_aws/workspace/manifest.py, tests/test_workspace_federation.py]
     covers: [AC1]
     test: {path: tests/test_workspace_federation.py, name: test_static_and_live_graph_compose_with_explicit_bridge}
   - id: T2
-    files: [sparkforge/knowledge_engine/packs.py, tests/test_knowledge_compiler.py]
+    files: [sparkforge_aws/knowledge_engine/packs.py, tests/test_knowledge_compiler.py]
     covers: [AC2]
     test: {path: tests/test_knowledge_compiler.py, name: test_descriptors_reuse_unchanged_manifest_without_reading_pack_bodies}
   - id: T3
-    files: [sparkforge/adapters/mcp_compact.py, sparkforge/adapters/mcp.py, fixtures/mcp_parity/compact_tools_list.json, fixtures/mcp_parity/compact_calls.json, tests/test_adapters_mcp_compact.py, tests/test_adapters_mcp_compact_parity.py, tests/test_adapters_mcp.py, tests/test_host_surface_contracts.py, docs/surface.lock.json]
+    files: [sparkforge_aws/adapters/mcp_compact.py, sparkforge_aws/adapters/mcp.py, fixtures/mcp_parity/compact_tools_list.json, fixtures/mcp_parity/compact_calls.json, tests/test_adapters_mcp_compact.py, tests/test_adapters_mcp_compact_parity.py, tests/test_adapters_mcp.py, tests/test_host_surface_contracts.py, docs/surface.lock.json]
     covers: [AC3]
     test: {path: tests/test_adapters_mcp_compact.py, name: test_compact_catalog_splits_read_and_mutation_execution}
   - id: T4
@@ -82,5 +82,5 @@ python -m pytest -q
 
 O resultado esperado é exit 0; registrar contagem, skips e warnings no
 build report. Em seguida rodar `python scripts/check_surface_lock.py`,
-`python scripts/check_token_efficient_bench.py`, `ruff check sparkforge scripts tests`
+`python scripts/check_token_efficient_bench.py`, `ruff check sparkforge_aws scripts tests`
 e `git diff --check`. Commit: `test: complete monolithic suite validation`.

@@ -21,7 +21,7 @@ Extrai facts determinísticos de dumps JSON/JSONL já salvos de Apache Flink ou 
 
 ## Na CLI
 
-[`sparkforge analyze flink`](../cli/analyze.md)
+[`sparkforge-aws analyze flink`](../cli/analyze.md)
 
 ## Capacidade
 

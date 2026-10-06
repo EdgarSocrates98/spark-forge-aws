@@ -18,7 +18,7 @@ O caminho de acesso a uma tabela governada como GRAFO, derivado de facts -- conc
 
 ## Na CLI
 
-[`sparkforge lakeformation access-graph`](../cli/lakeformation.md)
+[`sparkforge-aws lakeformation access-graph`](../cli/lakeformation.md)
 
 ## Capacidade
 

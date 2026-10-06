@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/STREAMING_REALTIME_DATA_PLATFORM/define.md
   sha256: "1aa247b5fee9475f008a37b0ebcbcacc6abb7b883566d563188ea2c169c891da"
 files:
-  - {path: sparkforge/facts/pyspark_ast.py, action: modify, reason: "Emite facts estruturais adicionais para APIs Structured Streaming sem remover facts batch."}
-  - {path: sparkforge/facts/streaming.py, action: create, reason: "Extrai StreamingQueryProgress local em JSON/JSONL, inclusive séries e unresolved nomeados."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Mantém contrato único de análise streaming e paginação compartilhada entre CLI e MCP."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Expõe sparkforge analyze streaming com tipo de artefato explícito."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Expõe sparkforge_analyze_streaming com schema e handler idênticos ao core."}
+  - {path: sparkforge_aws/facts/pyspark_ast.py, action: modify, reason: "Emite facts estruturais adicionais para APIs Structured Streaming sem remover facts batch."}
+  - {path: sparkforge_aws/facts/streaming.py, action: create, reason: "Extrai StreamingQueryProgress local em JSON/JSONL, inclusive séries e unresolved nomeados."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Mantém contrato único de análise streaming e paginação compartilhada entre CLI e MCP."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Expõe sparkforge-aws analyze streaming com tipo de artefato explícito."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Expõe sparkforge_analyze_streaming com schema e handler idênticos ao core."}
   - {path: rules/catalog/streaming.yaml, action: create, reason: "Julga somente facts streaming ancorados, com runtime_scope e actions reversíveis."}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "Roteia SF-STREAM para spark-performance-architect por findings_area."}
   - {path: agents/spark-performance-architect.md, action: modify, reason: "Declara SF-STREAM como área coordenada após existir extrator e catálogo."}
@@ -84,11 +84,11 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| source-extractor | `sparkforge/facts/pyspark_ast.py` | AC1, AC7 |
-| progress-extractor | `sparkforge/facts/streaming.py`, `sparkforge/adapters/_core.py` | AC2, AC3, AC7 |
+| source-extractor | `sparkforge_aws/facts/pyspark_ast.py` | AC1, AC7 |
+| progress-extractor | `sparkforge_aws/facts/streaming.py`, `sparkforge_aws/adapters/_core.py` | AC2, AC3, AC7 |
 | catalog-and-runtime-guards | `rules/catalog/streaming.yaml`, `rules/catalog/routing.yaml` | AC4, AC5 |
 | fixture-corpus | `fixtures/streaming/`, `tests/test_fixtures_golden_streaming.py` | AC3, AC5, AC7 |
-| cli-mcp-contract | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py`, `tests/test_streaming_surface.py` | AC6 |
+| cli-mcp-contract | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py`, `tests/test_streaming_surface.py` | AC6 |
 | catalog-routing-and-generated-surfaces | agents, mirrors, references, `docs/surface.lock.json`, manifests | AC8 |
 | knowledge-boundary | `knowledge/streaming-reliability.md`, `knowledge/INDEX.md` | AC4, AC8 |
 
@@ -124,7 +124,7 @@ fixture path. Findings must cite the emitted fact IDs.
 - AWS Glue Developer Guide, “Streaming ETL jobs” and “Using a streaming data source”,
   consulted on 2026-10-01; records Kinesis/Kafka/MSK inputs, checkpoints versus job
   bookmarks, Glue window behavior, and the boundary between Glue and upstream Spark.
-- Existing local knowledge via `sparkforge knowledge path --file knowledge/streaming-reliability.md`
+- Existing local knowledge via `sparkforge-aws knowledge path --file knowledge/streaming-reliability.md`
   and runtime/rule lookup verbs; local prose remains a pointer, not a substitute for the
   runtime artifact.
 
@@ -132,6 +132,6 @@ fixture path. Findings must cite the emitted fact IDs.
 
 Each implementation slice is independently revertible. Before ship, run focused tests,
 catalog reachability/golden gates, `python scripts/sync_skills.py --check`, reference and
-surface generation checks, offline knowledge locks, and `sparkforge sdd check`. Full-suite
+surface generation checks, offline knowledge locks, and `sparkforge-aws sdd check`. Full-suite
 baseline already has an environmental temp-file failure documented in the case; it is not
 used as evidence of streaming correctness.

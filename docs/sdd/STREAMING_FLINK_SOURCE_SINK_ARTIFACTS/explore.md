@@ -35,7 +35,7 @@ spot quando o dump não as traz.
 
 ## Evidência consultada
 
-- `sparkforge/facts/flink.py`: `EMITTED_KINDS` não inclui source/sink e o
+- `sparkforge_aws/facts/flink.py`: `EMITTED_KINDS` não inclui source/sink e o
   extrator só lê `operators`, `checkpoints` e `state` no namespace Apache.
 - `tests/test_facts_flink.py` e `fixtures/flink/`: corpus cobre os kinds atuais,
   mas não tem contrato explícito para source/sink.

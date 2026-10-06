@@ -32,7 +32,7 @@ decisions:
   - id: D2
     choice: "Templates sao artefatos validos de uma feature de exemplo, e nao texto com marcadores <...>, para que um teste prove que o formato ensinado passa no gate."
     rejected: ["templates com placeholders livres, que ensinariam um formato que o gate recusa"]
-    rollback: "git revert do commit dos templates; as skills continuam apontando o schema em sparkforge/sdd/schema/."
+    rollback: "git revert do commit dos templates; as skills continuam apontando o schema em sparkforge_aws/sdd/schema/."
   - id: D3
     choice: "TDD e execucao por subagente moram dentro de sdd-build, e nao numa skill tdd separada."
     rejected: ["skill sdd-tdd a parte, que duplicaria o laco vermelho-verde e o registro no build_report"]
@@ -60,12 +60,12 @@ covers:
 | `sdd-build` | superpowers executing-plans, subagent-driven-development, test-driven-development; AgentSpec build | lei do vermelho antes do verde; `red`/`green` registrados com comando e exit; um subagente por tarefa com o texto da tarefa; revisao de spec e depois de qualidade; claim so com `evidence_ref`; perfil operator so por `change sandbox` | `red_not_declared`, `claim_without_evidence`, `change_missing`, `verified_by_dangling` |
 | `sdd-ship` | AgentSpec ship, superpowers finishing-a-development-branch (parte) | rodar os gates das secoes de `change_kinds`; listar os registros; fechar a hipotese sem reescreve-la; desvios; STATUS | `hypothesis_open_at_ship`, `registry_unchecked` |
 
-Toda skill termina a fase do mesmo jeito: `sparkforge sdd stamp` na fase escrita
-(quando ela tem upstream) e `sparkforge sdd check --feature <F>`; `status: ready`
+Toda skill termina a fase do mesmo jeito: `sparkforge-aws sdd stamp` na fase escrita
+(quando ela tem upstream) e `sparkforge-aws sdd check --feature <F>`; `status: ready`
 so com zero recusa.
 
 ## Cascata
 
-Mudou uma fase? `sparkforge sdd status` mostra quem ficou `upstream_stale`. A
+Mudou uma fase? `sparkforge-aws sdd status` mostra quem ficou `upstream_stale`. A
 skill da fase de baixo revisa o conteudo **antes** de carimbar: carimbar sem
 revisar e o erro que a cascata existe para pegar.

@@ -65,7 +65,7 @@ FIM = re.compile(r"^## ")
 
 def _catalogo() -> list[dict]:
     sys.path.insert(0, str(ROOT))
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     return list(load_catalog())
 
@@ -73,10 +73,10 @@ def _catalogo() -> list[dict]:
 def _modulos_de_fact() -> list[object]:
     sys.path.insert(0, str(ROOT))
     modulos = []
-    for caminho in sorted((ROOT / "sparkforge" / "facts").glob("*.py")):
+    for caminho in sorted((ROOT / "sparkforge_aws" / "facts").glob("*.py")):
         if caminho.stem == "__init__":
             continue
-        modulos.append(importlib.import_module(f"sparkforge.facts.{caminho.stem}"))
+        modulos.append(importlib.import_module(f"sparkforge_aws.facts.{caminho.stem}"))
     return modulos
 
 
@@ -96,7 +96,7 @@ def _kinds() -> set[str]:
 
 def _tools() -> dict:
     sys.path.insert(0, str(ROOT))
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     return TOOLS
 
@@ -111,7 +111,7 @@ def _tools_com_detail_level() -> int:
     sys.path.insert(0, str(ROOT))
     import inspect
 
-    from sparkforge.adapters import _core
+    from sparkforge_aws.adapters import _core
 
     total = 0
     for nome in _tools():
@@ -146,7 +146,7 @@ def _rotas() -> int:
 
 
 def _goldset() -> list:
-    from sparkforge.economy.goldset import derivar_goldset
+    from sparkforge_aws.economy.goldset import derivar_goldset
 
     return list(derivar_goldset())
 
@@ -158,7 +158,7 @@ def _fora_do_goldset() -> list:
     achados" ser lido como "existem 23 achados" -- o gate esconderia o proprio
     denominador.
     """
-    from sparkforge.economy.goldset import fora_do_alcance
+    from sparkforge_aws.economy.goldset import fora_do_alcance
 
     return list(fora_do_alcance())
 
@@ -218,7 +218,7 @@ MEDIDAS: dict[str, Callable[[], int]] = {
     "Gates do case": _gates_do_case,
     "Regras do `AGENT_PROTOCOL.md`": lambda: _regras_do_protocolo(),
     # DERIVADO das regras, nunca lido de arquivo -- ver
-    # `sparkforge/economy/goldset.py` sobre por que congelar o gold set o faria
+    # `sparkforge_aws/economy/goldset.py` sobre por que congelar o gold set o faria
     # afirmar sobre a ancoragem de ontem.
     "Perguntas do gold set de recuperação": lambda: len(_goldset()),
     "Achados que NÃO rendem pergunta de ouro": lambda: len(_fora_do_goldset()),
@@ -229,7 +229,7 @@ MEDIDAS: dict[str, Callable[[], int]] = {
     "Módulos da camada agêntica": lambda: len(
         [
             f
-            for f in glob.glob(str(ROOT / "sparkforge" / "agentic" / "*.py"))
+            for f in glob.glob(str(ROOT / "sparkforge_aws" / "agentic" / "*.py"))
             if os.path.basename(f) != "__init__.py"
         ]
     ),
@@ -327,7 +327,7 @@ MEDIDAS_PROSA: dict[str, Callable[[], int]] = {
     # `agentic-sf-*`: desde entao toda regra do catalogo tem `status`.
     "Regras executáveis": lambda: sum(1 for r in _catalogo() if r.get("status")),
     # Medido por `inspect.signature` sobre a funcao que cada tool despacha em
-    # `sparkforge/adapters/_core.py`, e nao por busca de texto no schema: o
+    # `sparkforge_aws/adapters/_core.py`, e nao por busca de texto no schema: o
     # parametro e o contrato, o texto do schema e descricao dele.
     "Tools com `detail_level`": _tools_com_detail_level,
 }
@@ -404,7 +404,7 @@ PROSA: tuple[Alegacao, ...] = (
     ),
     Alegacao(
         _GUIA + "09-camada-agentica.md",
-        r"`sparkforge/agentic/` \((\d+) módulos",
+        r"`sparkforge_aws/agentic/` \((\d+) módulos",
         "Módulos da camada agêntica",
     ),
     Alegacao(
