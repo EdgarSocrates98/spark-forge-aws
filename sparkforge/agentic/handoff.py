@@ -165,7 +165,7 @@ def _resolve_plan(
     """
     if plan is not None:
         try:
-            resolved = (
+            return (
                 plan if isinstance(plan, RoleContextPlan) else RoleContextPlan.from_dict(plan)
             )
         except (TypeError, ValueError, KeyError) as exc:
@@ -173,7 +173,6 @@ def _resolve_plan(
                 "reason": "handoff_receiver_plan_invalid",
                 "detail": f"receiver plan malformado: {exc}",
             }
-        return resolved
     nome = receiver or handoff.recipient_role
     resolved = role_plan(nome)
     if resolved is None:
@@ -473,12 +472,15 @@ def admit_handoff(
     if effective_taint == Taint.SUSPICIOUS:
         reasons.append("handoff_taint_suspicious")
 
+    cleared_sections: dict[str, Any] = {
+        field: () for field in denied if field in _SECTION_KIND
+    }
     filtered = replace(
         h,
-        **{field: () for field in denied if field in _SECTION_KIND},
         context_items=tuple(admitted_items),
         trust=effective_trust,
         taint=effective_taint,
+        **cleared_sections,
     )
     decision = HandoffDecision.REVIEW if reasons else HandoffDecision.ALLOW
     return HandoffAdmission(
