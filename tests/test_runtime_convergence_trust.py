@@ -11,8 +11,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from sparkforge.adapters import tools
 from sparkforge.agentic.trust import RoleContextPlan, TrustLabel
 from sparkforge.observability import context_ledger

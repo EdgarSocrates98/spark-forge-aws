@@ -60,6 +60,10 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
     actual = call_tool(
         "sparkforge_analyze_streaming_integrations", {"path": str(source), "limit": 20}
     )
+    # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
+    # do envelope e comparado sem ele, e o formato e travado em
+    # tests/test_runtime_convergence_trust.py.
+    actual.pop("_trust", None)
     assert actual == expected
     completed = subprocess.run(
         [

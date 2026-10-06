@@ -18,3 +18,9 @@ fixtures/journal/** -text
 # serem os mesmos em toda plataforma: o gerador gravou bytes, e o golden e a
 # suite agentica leem a copia do checkout.
 fixtures/sdd/** -text
+# `CLAUDE.md` e `AGENTS.md` tem teto de bytes medido pelo teste de bootstrap
+# budget sobre os bytes do WORKTREE. Checkout Windows com CRLF infla cada
+# arquivo em ~380+ bytes e reprova o gate sem nenhuma mudanca de conteudo --
+# mesma classe de defeito que `fixtures/` ja tratava com `-text`.
+CLAUDE.md eol=lf
+AGENTS.md eol=lf

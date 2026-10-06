@@ -18,7 +18,11 @@ Caminho critico medido do run: maiores duracoes, retries e waiting entre spans c
 
 ## Na CLI
 
-Sem verbo de CLI declarado para esta tool.
+[`sparkforge agentops baseline`](../cli/agentops.md), [`sparkforge agentops compare`](../cli/agentops.md), [`sparkforge agentops critical-path`](../cli/agentops.md), [`sparkforge agentops inspect`](../cli/agentops.md), [`sparkforge agentops timeline`](../cli/agentops.md), [`sparkforge context inspect`](../cli/context.md), [`sparkforge doctor agentic`](../cli/doctor.md)
+
+## Capacidade
+
+inspect agentic context quality and local AgentOps economy
 
 ## Anotações MCP
 

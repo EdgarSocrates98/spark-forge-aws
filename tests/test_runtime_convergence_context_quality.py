@@ -80,19 +80,11 @@ class TestEixosDistintos:
 
 class TestCounterfactualAblation:
     def test_minimum_sufficient_empirico(self):
-        full = ContextQualityReport.from_items(
-            [_obs("a"), _obs("b"), _obs("c")],
-            required_evidence_refs=["f1"],
-            observed_provider_tokens=300,
-        )
         # Cada ablacao remove um item; recall medido de verdade por passo.
         from sparkforge.context.quality import ContextObservation as C
 
         def report_sem(removidos):
             items = [i for i in full_items if i.item_id not in removidos]
-            for i in items:
-                if i.item_id == "a":
-                    pass
             return ContextQualityReport.from_items(
                 items,
                 required_evidence_refs=["f1"],

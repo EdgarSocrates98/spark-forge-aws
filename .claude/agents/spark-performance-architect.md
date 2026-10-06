@@ -169,7 +169,9 @@ O Gateway é determinístico e não substitui `analyze_*`, `judge` ou `arbitrate
 Depois de uma execução, `sparkforge_context_inspect` mede recall, densidade,
 duplicação e tokens observados sem inferi-los de bytes. Para comparar execução
 e baseline local, use `sparkforge_agentops_inspect`,
-`sparkforge_agentops_compare` e `sparkforge_agentops_baseline`; para conferir
+`sparkforge_agentops_compare` e `sparkforge_agentops_baseline`; para explicar
+onde o run gastou, `sparkforge_agentops_timeline` ordena os eventos por lane e
+`sparkforge_agentops_critical_path` aponta os spans dominantes; para conferir
 readiness sem rede, `sparkforge_doctor_agentic`. Esses verbos preservam
 `unresolved` quando transcript, custo ou contrato de qualidade não existem.
 

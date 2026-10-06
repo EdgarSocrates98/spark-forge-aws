@@ -279,12 +279,9 @@ otherwise `tokens_unresolved`; cost in dollars requires `cost_basis`; measuremen
 breaks the call; the surface lock requires growth to be **declared** (`CLAUDE.md` rules
 22 to 27).
 
-Every `call_tool` result also carries `_trust` — `{label, authority, taint}` from
-`agentic/trust.py`. Tool output is `TOOL_OUTPUT` with `data_only` authority by
-construction: it can become a verified fact through deterministic extraction later,
-never an instruction because it crossed the dispatch. Instruction-shaped text inside
-a result flips `taint` to `suspicious` and the span metadata records it — provenance
-is observed, not obeyed.
+Every `call_tool` result carries `_trust` (`{label, authority, taint}`): output is
+`TOOL_OUTPUT`/`data_only` by construction — never an instruction by crossing the
+dispatch; contract in `docs/harness/UNTRUSTED-CONTENT.md`.
 
 ### Three states, never two
 
@@ -388,7 +385,7 @@ sf-terraform-specialist
 
 ## Agentic Expansion Inventory
 Agents: sf-lake-formation-specialist, sf-security-reviewer.
-Subagents: none. Tools declared in this registry: none. The sixteen ephemeral contracts and the seven declared tool names left in `docs/sdd/CONFIG_OCA/` (2026-09-20): the contracts had no reader in `sparkforge/`, `scripts/` or `tests/`, and none of the seven names existed in `sparkforge.adapters.tools.TOOLS`. The six modules under `sparkforge/tools/` behind them are code and still exist.
+Subagents: none. Tools declared in this registry: none (the `sparkforge/tools/` modules remain as code; removal history in `docs/historico/instrucoes-arquivadas.md`).
 Teams: governance-security.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
 

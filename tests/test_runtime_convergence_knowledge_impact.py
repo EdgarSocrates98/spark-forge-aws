@@ -13,7 +13,6 @@ from pathlib import Path
 from sparkforge.knowledge_drift import (
     IMPACTO,
     SALTOS_DO_REPOSITORIO,
-    RepoIndex,
     build_index,
     drift,
 )

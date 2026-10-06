@@ -20,17 +20,15 @@ from pathlib import Path
 from sparkforge.agentic.memory import (
     DECISIONS_FILE,
     QUARANTINE_FILE,
-    MemoryConflict,
+    DecisionMemoryRecord,
     RuntimeCompatibilityPolicy,
-    decisions_file_path,
+    classify_memory_candidate,
     detect_memory_conflicts,
     evaluate_runtime,
     freshness_state,
     memory_path,
     memory_stats,
     persist_memory_candidate,
-    classify_memory_candidate,
-    DecisionMemoryRecord,
     retrieve_memory,
 )
 

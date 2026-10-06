@@ -95,7 +95,6 @@ class TestPromocaoContinuaGated:
     def test_contrato_shadow_nao_promove_mesmo_com_score_alto(self, tmp_path):
         service = _service(tmp_path)
         contract = service.validate("routing.data_domain")
-        decision = _router().route(ModelRoutingInput(task_type="diagnose"))
         outcome = route_with_mode(
             DecisionInput("task-1", "diagnose Glue job"),
             {"route": "p/m"},

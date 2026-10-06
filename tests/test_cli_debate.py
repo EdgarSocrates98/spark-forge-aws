@@ -297,6 +297,9 @@ class TestMcpEACli:
         brief_mcp = call_tool(
             "sparkforge_debate_next", {"repo": str(caso["repo"]), "debate_id": debate_id}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        brief_mcp.pop("_trust", None)
         assert brief_mcp == brief_cli
 
     def test_submit_inline_pelo_mcp_passa_a_recusa_sem_traducao(self, caso, capsys):

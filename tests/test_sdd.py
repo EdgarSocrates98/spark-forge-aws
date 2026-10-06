@@ -1640,6 +1640,10 @@ def test_core_feature_so_com_lacuna_de_pulo_nao_e_erro(tmp_path):
 
 def _valida(nome: str, resposta: dict) -> dict:
     jsonschema.validate(resposta, TOOLS[nome]["outputSchema"])
+    # `_trust` e aditivo de call_tool (FASE 3): validado pelo schema acima e
+    # removido aqui para comparar so o payload do verbo; o formato e travado
+    # em tests/test_runtime_convergence_trust.py
+    resposta.pop("_trust", None)
     return resposta
 
 

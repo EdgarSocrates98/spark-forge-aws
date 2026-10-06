@@ -999,7 +999,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # já selecionadas e entra no conjunto explícito sem caminho.
         # The platform and Forge Lab analyzers add path-bearing read-only
         # capabilities; the exception set remains explicit and unchanged.
-        assert len(TOOLS) - len(sem_caminho) == 131
+        # 131 -> 133 com `agentops_timeline` e `agentops_critical_path`
+        # (2026-10-06, FASE 10): ambas `_READ_ONLY` e declaram `db_path`,
+        # o banco de spans que leem -- entram no lado que declara caminho
+        # sem mover o conjunto de excecao.
+        assert len(TOOLS) - len(sem_caminho) == 133
 
 
 class TestAImposicaoNoDespacho:

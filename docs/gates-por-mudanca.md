@@ -509,6 +509,46 @@ parou de ser verdade no dia em que foi medido.
 
 ---
 
+## Alterar o resultado de `call_tool` — campo aditivo no envelope
+
+Medido na FASE 3 da onda de convergência (2026-10-06): o envelope `_trust`
+(`{label, authority, taint}`) entrou em **todo** resultado de `call_tool`, e
+~55 asserts de paridade legada que comparavam `call_tool(...) == cli(...)`
+byte a byte ficaram vermelhos de uma vez — espalhados por ~24 arquivos de
+teste, nenhum deles rodando numa execução dirigida óbvia.
+
+O padrão correto do lado do teste: remover `_trust` antes de comparar o
+payload (`payload.pop("_trust", None)`), porque o formato do envelope é
+travado em `tests/test_runtime_convergence_trust.py`. Nunca remover o campo
+da implementação para agradar assert antigo.
+
+Cascata completa quando o envelope ou o catálogo de tools muda:
+
+```
+python -m pytest tests/test_adapters_cli.py tests/test_adapters_detail_level.py \
+  tests/test_adapters_freshness.py tests/test_analyze_cdc.py \
+  tests/test_analyze_event_driven.py tests/test_analyze_flink.py \
+  tests/test_analyze_glue_streaming.py tests/test_analyze_schema_registry.py \
+  tests/test_analyze_streaming.py tests/test_analyze_streaming_composition.py \
+  tests/test_analyze_streaming_ops.py tests/test_analyze_transport.py \
+  tests/test_cli_debate.py tests/test_collect_managed_flink.py \
+  tests/test_collect_schema_registry.py tests/test_collect_streaming.py \
+  tests/test_data_observability.py tests/test_lakeformation_architecture.py \
+  tests/test_lakeformation_fgac_fta_improvements.py \
+  tests/test_lakeformation_operational_closure.py tests/test_lakehouse_catalog.py \
+  tests/test_orchestration.py tests/test_platform_ecosystem.py \
+  tests/test_platform_graph.py tests/test_sdd.py \
+  tests/test_docs_coverage.py tests/test_agent_coverage.py \
+  tests/test_adapters_mcp_compact.py tests/test_harness_authorization.py -q
+```
+
+E, sempre que uma tool entra: `manifest.json` (raiz, escrito à mão — o gate
+`test_docs_coverage` compara com `TOOLS`), os coordenadores
+(`test_agent_coverage` exige que a tool seja citada no corpus de algum
+coordenador), `parity.yaml`, `tests/test_adapters_mcp_compact.py` (contagens
+por transporte) e `tests/test_harness_authorization.py` (contagem de tools
+que declaram caminho).
+
 ## Quando nada acima serve
 
 Rode a suíte completa e acrescente a linha que faltava:

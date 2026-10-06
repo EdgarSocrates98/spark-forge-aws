@@ -23,15 +23,6 @@ from sparkforge.agentic.recovery import (
 )
 from sparkforge.agentic.stop import ExpectedGainState, StopPolicy
 from sparkforge.decision.authority import AuthorityPolicy
-
-
-_GATED_ACTIONS = frozenset(
-    {
-        RecoveryAction.RETRY.value,
-        RecoveryAction.REPLAN.value,
-        RecoveryAction.ESCALATE.value,
-    }
-)
 from sparkforge.decision.fingerprint import digest
 from sparkforge.economy.decision_activation import ActivationEvidence
 from sparkforge.economy.decision_contracts import DecisionContract
@@ -40,6 +31,14 @@ from sparkforge.economy.decision_models import (
     DecisionInput,
 )
 from sparkforge.economy.decision_plane import DecisionPlaneService
+
+_GATED_ACTIONS = frozenset(
+    {
+        RecoveryAction.RETRY.value,
+        RecoveryAction.REPLAN.value,
+        RecoveryAction.ESCALATE.value,
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)

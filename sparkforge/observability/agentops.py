@@ -342,7 +342,7 @@ def critical_path(db_path: Path | str, run_id: str) -> dict[str, Any]:
         retries[nome] = retries.get(nome, 0) + 1
     retries = {nome: n for nome, n in retries.items() if n > 1}
     waiting = 0.0
-    for anterior, seguinte in zip(spans, spans[1:]):
+    for anterior, seguinte in zip(spans, spans[1:], strict=False):
         fim = anterior.get("end_time")
         inicio = seguinte.get("start_time")
         if fim is not None and inicio is not None and inicio > fim:

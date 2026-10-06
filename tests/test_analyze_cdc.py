@@ -18,6 +18,10 @@ def test_cli_and_mcp_cdc_envelopes_match():
         "sparkforge_analyze_cdc",
         {"path": str(DEBEZIUM), "artifact": "debezium", "limit": 3},
     )
+    # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
+    # do envelope e comparado sem ele, e o formato e travado em
+    # tests/test_runtime_convergence_trust.py.
+    actual.pop("_trust", None)
     assert actual == expected
     completed = subprocess.run(
         [

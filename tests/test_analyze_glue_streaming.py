@@ -15,6 +15,10 @@ GLUE = ROOT / "fixtures" / "glue_streaming" / "rtm_valid" / "input" / "job.json"
 def test_cli_and_mcp_glue_streaming_envelopes_match():
     expected = analyze_glue_streaming(str(GLUE), limit=3)
     actual = call_tool("sparkforge_analyze_glue_streaming", {"path": str(GLUE), "limit": 3})
+    # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
+    # do envelope e comparado sem ele, e o formato e travado em
+    # tests/test_runtime_convergence_trust.py.
+    actual.pop("_trust", None)
     assert actual == expected
     completed = subprocess.run(
         [

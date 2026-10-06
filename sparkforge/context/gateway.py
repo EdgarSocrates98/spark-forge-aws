@@ -7,6 +7,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from sparkforge.agentic.role_plans import role_plan
+from sparkforge.agentic.trust import RoleContextPlan, TrustLabel
 from sparkforge.codeintel.query_expansion import expand_query
 from sparkforge.context.context_tree import build_context_tree
 from sparkforge.context.gateway_budget import (
@@ -15,8 +17,6 @@ from sparkforge.context.gateway_budget import (
     serialized_bytes,
 )
 from sparkforge.context.gateway_capabilities import discover_capabilities, load_profiles
-from sparkforge.agentic.role_plans import role_plan
-from sparkforge.agentic.trust import RoleContextPlan, TrustLabel
 from sparkforge.context.gateway_models import (
     AnswerState,
     BudgetReport,

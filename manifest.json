@@ -159,6 +159,8 @@
     "sparkforge_agentops_baseline",
     "sparkforge_agentops_compare",
     "sparkforge_agentops_inspect",
+    "sparkforge_agentops_critical_path",
+    "sparkforge_agentops_timeline",
     "sparkforge_benchmark",
     "sparkforge_capacity",
     "sparkforge_case_get",

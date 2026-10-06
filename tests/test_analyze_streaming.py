@@ -19,6 +19,10 @@ def test_streaming_core_and_mcp_share_progress_contract():
         "sparkforge_analyze_streaming",
         {"path": str(PROGRESS), "artifact": "progress", "limit": 3},
     )
+    # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
+    # do envelope e comparado sem ele, e o formato e travado em
+    # tests/test_runtime_convergence_trust.py.
+    actual.pop("_trust", None)
     assert actual == expected
     assert expected["unresolved"] == 0
     assert expected["by_kind"]["streaming.progress.series"] == 1

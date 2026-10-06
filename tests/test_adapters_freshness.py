@@ -136,7 +136,11 @@ class TestJudge:
 
 class TestKnowledgePath:
     def test_sem_a_flag_nada_muda(self):
-        assert set(call_tool("sparkforge_knowledge_path", {})) == {"root", "file", "available"}
+        payload = call_tool("sparkforge_knowledge_path", {})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        payload.pop("_trust", None)
+        assert set(payload) == {"root", "file", "available"}
 
     def test_documento_usa_a_data_que_ele_declara(self):
         resultado = call_tool(
