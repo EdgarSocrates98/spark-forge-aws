@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "6b1b97a137d7397ff6c7a98f7fe7be100132983f",
+  "extracted_from": "d55923d4491734ce934a18c41a1cdca3099bc41f",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -10433,26 +10433,6 @@
       }
     },
     {
-      "doc": "docs/vnext/CURRENT-STATE.md",
-      "line": 62,
-      "text": "3",
-      "context": "| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e D",
-      "type": "number",
-      "id": "VNX-063",
-      "state": "REMOVIDA",
-      "note": "Removida: o inventário agora descreve mirrors declarados sem congelar uma contagem; `.github/` também participa da superfície."
-    },
-    {
-      "context": "5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não imple",
-      "doc": "docs/vnext/CURRENT-STATE.md",
-      "id": "VNX-067",
-      "line": 81,
-      "note": "'3 niveis' de Progressive Disclosure (metadados / instrucoes / referencias) nao esta implementado como estrutura distinguivel: `skills/*/SKILL.md` tem hoje um unico arquivo por skill (verificado nesta sessao -- nenhum `concise.md` ou `patterns.md` ao lado), nao os tres arquivos que o texto descreve. E design pretendido, nao capacidade construida.",
-      "state": "REMOVIDA",
-      "text": "3",
-      "type": "number"
-    },
-    {
       "context": "PESO_LINEAGE em zero, declarado e nao omitido",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-736",
@@ -10470,6 +10450,26 @@
       },
       "state": "PROVADA",
       "text": "0",
+      "type": "number"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 62,
+      "text": "3",
+      "context": "| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e D",
+      "type": "number",
+      "id": "VNX-063",
+      "state": "REMOVIDA",
+      "note": "Removida: o inventário agora descreve mirrors declarados sem congelar uma contagem; `.github/` também participa da superfície."
+    },
+    {
+      "context": "5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não imple",
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "id": "VNX-067",
+      "line": 81,
+      "note": "'3 niveis' de Progressive Disclosure (metadados / instrucoes / referencias) nao esta implementado como estrutura distinguivel: `skills/*/SKILL.md` tem hoje um unico arquivo por skill (verificado nesta sessao -- nenhum `concise.md` ou `patterns.md` ao lado), nao os tres arquivos que o texto descreve. E design pretendido, nao capacidade construida.",
+      "state": "REMOVIDA",
+      "text": "3",
       "type": "number"
     },
     {
