@@ -35,7 +35,7 @@ from sparkforge.knowledge_freshness import estado
 RULE_ID = re.compile(r"\b[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3}\b")
 _FRONTMATTER = re.compile(r"^---\r?\n(.*?)\r?\n---", re.DOTALL)
 _TEXTO = frozenset({".yaml", ".yml", ".json", ".xml", ".md", ".txt"})
-SALTOS_DO_REPOSITORIO = ("goldens", "evals", "agents")
+SALTOS_DO_REPOSITORIO = ("goldens", "evals", "agents", "skills")
 IMPACTO = ("rules", "docs", *SALTOS_DO_REPOSITORIO)
 REFUSED: tuple[dict[str, str], ...] = (
     {"field": "conteudo_da_mudanca", "reason": "exige_leitura_humana_da_fonte"},
@@ -48,6 +48,8 @@ class RepoIndex:
     evals: Mapping[str, frozenset[str]]
     agent_areas: Mapping[str, frozenset[str]]
     agent_citations: Mapping[str, frozenset[str]]
+    # `None` quando o checkout nao tem `skills/` -- salto nao varrido, nao vazio.
+    skill_citations: Mapping[str, frozenset[str]] | None
 
     def agents_of(self, rule_id: str) -> set[str]:
         """Agente que declara a area da regra OU cita o `rule_id`. A area e o
@@ -55,6 +57,10 @@ class RepoIndex:
         area = rule_id.rsplit("-", 1)[0]
         por_area = {agente for agente, areas in self.agent_areas.items() if area in areas}
         return por_area | set(self.agent_citations.get(rule_id, ()))
+
+    def skills_of(self, rule_id: str) -> set[str]:
+        """Skill cujo SKILL.md cita o `rule_id` no corpo (§147)."""
+        return set((self.skill_citations or {}).get(rule_id, ()))
 
 
 def repo_root() -> Path | None:
@@ -112,7 +118,27 @@ def build_index(root: Path) -> RepoIndex:
         for rule_id in set(RULE_ID.findall(texto)):
             citacoes[rule_id].add(relativo)
 
-    return RepoIndex(_congelar(goldens), _congelar(evals), _congelar(areas), _congelar(citacoes))
+    # `skills/` nao faz parte da assinatura de `repo_root()`: checkout sem o
+    # diretorio ainda e checkout, e `iter_source_files` levanta ScanError numa
+    # raiz inexistente. Ausente vira `None` -- o drift reporta `unresolved`,
+    # nunca uma lista vazia fingindo que nenhuma skill cita a regra.
+    skill_citations: dict[str, frozenset[str]] | None = None
+    if (root / "skills").is_dir():
+        varridas: dict[str, set[str]] = defaultdict(set)
+        for caminho in iter_source_files(root / "skills", "SKILL.md"):
+            relativo = caminho.relative_to(root).as_posix()
+            texto = caminho.read_text(encoding="utf-8", errors="replace")
+            for rule_id in set(RULE_ID.findall(texto)):
+                varridas[rule_id].add(relativo)
+        skill_citations = _congelar(varridas)
+
+    return RepoIndex(
+        _congelar(goldens),
+        _congelar(evals),
+        _congelar(areas),
+        _congelar(citacoes),
+        skill_citations,
+    )
 
 
 def _citacoes(
@@ -190,6 +216,11 @@ def drift(
             impacto["goldens"] = sorted({g for r in regras for g in index.goldens.get(r, ())})
             impacto["evals"] = sorted({e for r in regras for e in index.evals.get(r, ())})
             impacto["agents"] = sorted({a for r in regras for a in index.agents_of(r)})
+            impacto["skills"] = (
+                None
+                if index.skill_citations is None
+                else sorted({s for r in regras for s in index.skills_of(r)})
+            )
         for chave, valores in impacto.items():
             distintos[chave].update(valores or [])
         por_fonte.append(
@@ -209,6 +240,8 @@ def drift(
         unresolved.extend(
             {"field": chave, "reason": "sem_repositorio"} for chave in SALTOS_DO_REPOSITORIO
         )
+    elif index.skill_citations is None:
+        unresolved.append({"field": "skills", "reason": "sem_diretorio_skills"})
     entradas = [e for e in fontes.values() if isinstance(e, Mapping)]
     return {
         "as_of": as_of.isoformat(),
@@ -231,6 +264,7 @@ _ROTULOS = {
     "goldens": "Goldens que provam essas regras",
     "evals": "Evals que citam essas regras",
     "agents": "Agentes que declaram a area ou citam a regra",
+    "skills": "Skills que citam a regra no SKILL.md",
 }
 
 
@@ -244,12 +278,14 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
         + ", ".join(f"{totais[chave]} {chave}" for chave in IMPACTO) + ".",
         "",
     ]
+    razoes = {u["field"]: u["reason"] for u in payload.get("unresolved", [])}
     for fonte in payload["changed_sources"]:
         linhas += [f"### {fonte['url']} (mudou em {fonte['changed_at']})", ""]
         for chave in IMPACTO:
             valores = fonte["impact"][chave]
             if valores is None:
-                linhas.append(f"- {_ROTULOS[chave]}: sem repositorio (`unresolved`)")
+                razao = razoes.get(chave, "unresolved")
+                linhas.append(f"- {_ROTULOS[chave]}: `{razao}` (`unresolved`)")
             elif valores:
                 linhas.append(f"- {_ROTULOS[chave]}: {', '.join(valores)}")
         if fonte["revalidated"]:

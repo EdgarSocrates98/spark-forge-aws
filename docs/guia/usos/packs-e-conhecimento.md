@@ -164,15 +164,15 @@ sparkforge knowledge drift --as-of 2026-09-13
 ```
 
 O **Knowledge Drift Radar** responde: se uma fonte mudou, que regras,
-documentos, exemplos, avaliações e agentes precisam ser revistos. Saída real de
-hoje:
+documentos, exemplos, avaliações, agentes e skills precisam ser revistos. Saída
+real de hoje:
 
 ```json
 {
   "as_of": "2026-09-13",
   "lock": {"sources": ..., "checked": ..., "pinned": ..., "changed": 0},
   "changed_sources": [],
-  "totals": {"rules": 0, "docs": 0, "goldens": 0, "evals": 0, "agents": 0},
+  "totals": {"rules": 0, "docs": 0, "goldens": 0, "evals": 0, "agents": 0, "skills": 0},
   "unresolved": [],
   "refused": [{"field": "conteudo_da_mudanca", "reason": "exige_leitura_humana_da_fonte"}]
 }
