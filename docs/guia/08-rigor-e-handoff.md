@@ -136,6 +136,35 @@ no commit é o manifesto: ele registra `sha256`, `source` (origem) e
 que uma sessão que retome em outra ferramenta saiba exatamente o que falta e
 como coletar de novo.
 
+## Evidência estrangeira: `sparkforge/upstream-facts/v1`
+
+Quando um orquestrador (The Forge) encadeia o diagnóstico de outro motor neste
+analisador, o handoff chega a `analyze pyspark` por `--upstream <arquivo>` (ou o
+argumento `upstream` da tool `sparkforge_analyze_pyspark`): um documento JSON
+`{"schema": "sparkforge/upstream-facts/v1", "facts": [...]}` cujos facts têm o
+shape nativo (`id`, `schema_version`, `kind`, `subject`, `measures`, `attrs`,
+`provenance`) com identidade estrangeira obrigatória:
+
+- `id` no namespace `upstream:` e `kind` em `upstream.` — nunca recomputados:
+  uma observação de fora não pode se disfarçar de local nem disparar regra
+  nativa (nenhuma regra casa com `upstream.*`);
+- `provenance.extractor` é exatamente `theforge/handoff`, o canal de intake —
+  um extrator nativo ali é lavagem de origem e recusa o documento;
+- `attrs.upstream` carrega `provider`, `run_id`, `node`, `item` (strings não
+  vazias) do motor de origem, mais `plan_run`, `epistemic`, `claim` e
+  `evidence_ids` quando existem;
+- chaves imperativas (`prompt`, `task`, `instruction`, `plan`, `command`, …) em
+  qualquer profundidade de `subject`/`measures`/`attrs`/`provenance` recusam o
+  documento inteiro — o intake transporta evidência, nunca instrução;
+- limites duros: 256 KiB por documento, 128 facts. Na admissão,
+  `provenance.artifact`/`artifact_sha256` são gravados com o arquivo consumido,
+  sobrepondo o que o documento declarar.
+
+Os facts admitidos entram no fim de `items` (ordem do documento preservada),
+obedecem o filtro `--kind` como qualquer fact, e nunca contam em `unresolved`
+— esse número mede ponto cego do extrator local. `filters_applied.upstream`
+nomeia o documento consumido.
+
 ## Próximos passos
 
 - [Investigação com case](usos/investigacao-com-case.md): o case, as hipóteses e a retomada.

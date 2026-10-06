@@ -274,6 +274,11 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
+    "sparkforge_analyze_pyspark": (
+        "2026-10-24: `upstream` opcional na entrada (documento "
+        "sparkforge/upstream-facts/v1 de outro motor) e `filters_applied.upstream` "
+        "na saida; sem ele a resposta e a mesma"
+    ),
 }
 # Trocas NAO aditivas aceitas, uma por (tool, caminho dentro da tool), cada uma com
 # motivo. Descricao so aceita texto por texto; enum so aceita CRESCER com os valores
@@ -398,6 +403,12 @@ _MOTIVO_TRUST = (
     "e neutralizado dos dois lados e o restante segue byte a byte"
 )
 CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
+    "sucesso_analyze": (
+        "2026-10-24: `filters_applied.upstream` entrou na saida do "
+        "analyze_pyspark (intake sparkforge/upstream-facts/v1) — a chamada "
+        "gravada nao pede o documento, entao o filtro vem nulo. "
+        + _MOTIVO_TRUST
+    ),
     "sucesso_verbo_lookup": (
         "2026-09-14: a SF-TIMEOUT-002 passou a mirar `spark.network.timeout` com "
         "`direction: increase`, e o `proposed_change` cita o valor que o `tune` deriva "
@@ -407,7 +418,6 @@ CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
         + _MOTIVO_TRUST
     ),
     "erro_fronteira": _MOTIVO_TRUST,
-    "sucesso_analyze": _MOTIVO_TRUST,
     "sucesso_collect_offline": _MOTIVO_TRUST,
     "sucesso_debate": _MOTIVO_TRUST,
     "sucesso_verbo_release": _MOTIVO_TRUST,
@@ -459,7 +469,7 @@ _CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
     r"(?:content\[0\]\.text"
     r"|structuredContent\._trust"
     r"|structuredContent\.rules_index"
-    r"|structuredContent\.filters_applied\.(?:severity|runtime|index)"
+    r"|structuredContent\.filters_applied\.(?:severity|runtime|index|upstream)"
     r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
 )
 
@@ -510,7 +520,12 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
             payload.pop("rules_index")
         filtros = payload.get("filters_applied")
         if isinstance(filtros, dict):
-            for chave, nao_pedido in (("severity", None), ("runtime", None), ("index", False)):
+            for chave, nao_pedido in (
+                ("severity", None),
+                ("runtime", None),
+                ("index", False),
+                ("upstream", None),
+            ):
                 if filtros.get(chave, nao_pedido) == nao_pedido:
                     filtros.pop(chave, None)
         return payload
@@ -631,7 +646,9 @@ class TestHandshakeLegado:
         # 35 -> 47 em 2026-09-18: `databricks` e `photon` na ENTRADA de seis
         # tools (judge, case_open, runtime_detect, arbitrate, debate_start,
         # root_cause), espelho das flags da CLI, fora de `required`. Doze chaves.
-        assert aditivas == {"stdio": 47, "http": 47}
+        # 47 -> 48 em 2026-10-24: `upstream` opcional na entrada de
+        # `sparkforge_analyze_pyspark` (intake upstream-facts/v1). Uma chave.
+        assert aditivas == {"stdio": 48, "http": 48}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
@@ -653,7 +670,10 @@ class TestHandshakeLegado:
         # -- `structuredContent._trust` em cinco chamadas declaradas e o texto
         # serializado em seis (erro_fronteira nao tem structuredContent), cada
         # uma com o restante conferido byte a byte pelo `_neutro`.
-        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 19
+        # 19 -> 20 em 2026-10-24: `sucesso_analyze` declara `upstream` nulo em
+        # `structuredContent.filters_applied` — o texto serializado ja divergia
+        # por `_trust`, entao a entrada nova soma um unico caminho.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 20
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
