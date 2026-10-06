@@ -65,6 +65,12 @@ from sparkforge.agentic.recovery import (
     RecoveryDecision,
     RecoveryPolicy,
 )
+from sparkforge.agentic.stop import (
+    ExpectedGainState,
+    StopAction,
+    StopDecision,
+    StopPolicy,
+)
 from sparkforge.agentic.trust import (
     AgentHandoff,
     InstructionAuthority,
@@ -84,6 +90,7 @@ __all__ = [
     "FailureClass",
     "Evidence",
     "EvidenceAuthority",
+    "ExpectedGainState",
     "Experiment",
     "ExperimentStatus",
     "GovernorDecision",
@@ -102,6 +109,9 @@ __all__ = [
     "RecoveryPolicy",
     "RoleContextPlan",
     "SemanticCheckpoint",
+    "StopAction",
+    "StopDecision",
+    "StopPolicy",
     "Taint",
     "TrustEnvelope",
     "TrustLabel",

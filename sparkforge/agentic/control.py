@@ -21,6 +21,7 @@ from sparkforge.agentic.recovery import (
     RecoveryDecision,
     RecoveryPolicy,
 )
+from sparkforge.agentic.stop import ExpectedGainState, StopPolicy
 from sparkforge.decision.authority import AuthorityPolicy
 from sparkforge.decision.fingerprint import digest
 from sparkforge.economy.decision_activation import ActivationEvidence
@@ -59,9 +60,11 @@ class RecoveryGovernor:
         self,
         policy: RecoveryPolicy | None = None,
         governor: AgentGovernor | None = None,
+        stop_policy: StopPolicy | None = None,
     ) -> None:
         self.policy = policy or RecoveryPolicy()
         self.governor = governor or AgentGovernor()
+        self.stop_policy = stop_policy or StopPolicy()
         self._seen_cycles: set[str] = set()
 
     def resolve(
@@ -74,6 +77,7 @@ class RecoveryGovernor:
         profile: str = "economy",
         risk: str = "low",
         budget: Any | None = None,
+        gain_state: ExpectedGainState | None = None,
     ) -> GovernedRecovery:
         repeated_cycle = strategy_fingerprint in self._seen_cycles
         decision = self.policy.next(
@@ -83,6 +87,24 @@ class RecoveryGovernor:
             history=tuple(history) + ((strategy_fingerprint,) if repeated_cycle else ()),
         )
         self._seen_cycles.add(strategy_fingerprint)
+        if gain_state is not None and not decision.terminal:
+            stop = self.stop_policy.evaluate(gain_state)
+            if stop.stops:
+                return GovernedRecovery(
+                    replace(
+                        decision,
+                        action=RecoveryAction.STOP.value,
+                        reason=f"stop_gate:{stop.action.value}",
+                        terminal=True,
+                    ),
+                    self.governor.resolve(
+                        profile, risk, "unresolved", requested=GovernorLimits(0, 0, 0, 0)
+                    ),
+                    False,
+                    strategy_fingerprint,
+                    _budget_snapshot(budget),
+                    _budget_snapshot(budget),
+                )
         needs_retry_budget = decision.action in {
             RecoveryAction.RETRY.value,
             RecoveryAction.REPLAN.value,
