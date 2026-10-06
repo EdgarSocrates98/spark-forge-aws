@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/STREAMING_READ_ONLY_COLLECTORS/define.md
   sha256: "88b0c9beff0fa5fa6e86d006d50763b1212f9fe1f3a5770c9d6c5608995f3f95"
 files:
-  - {path: sparkforge/collect/base.py, action: modify, reason: "registrar artifact kind streaming_integrations"}
-  - {path: sparkforge/collect/streaming.py, action: create, reason: "coletar cinco fontes read-only com redaction e cache"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "publicar wrapper comum CLI/MCP"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar collect streaming-integrations"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar tool MCP open-world/local mutation"}
+  - {path: sparkforge_aws/collect/base.py, action: modify, reason: "registrar artifact kind streaming_integrations"}
+  - {path: sparkforge_aws/collect/streaming.py, action: create, reason: "coletar cinco fontes read-only com redaction e cache"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "publicar wrapper comum CLI/MCP"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar collect streaming-integrations"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar tool MCP open-world/local mutation"}
   - {path: tests/test_collect_streaming.py, action: create, reason: "provar fakes, cache, redaction e limites"}
   - {path: knowledge/streaming-integrations.md, action: modify, reason: "documentar fronteira e coleta"}
 decisions:

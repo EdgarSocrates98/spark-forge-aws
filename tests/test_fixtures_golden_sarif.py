@@ -1,9 +1,9 @@
-"""Golden de `sparkforge report github` sobre o corpus `fixtures/sarif/`.
+"""Golden de `sparkforge-aws report github` sobre o corpus `fixtures/sarif/`.
 
 Cada caso traz `input/findings.json`, `input/facts.json` e `input/repo/` (a
 arvore que existe no repositorio), mais `meta.yaml` com `source_roots`,
 `fail_on` e `category`. O golden e o que a CLI grava e imprime:
-`sparkforge.sarif`, `summary.md`, `annotations.txt` e `result.json` (contagens,
+`sparkforge-aws.sarif`, `summary.md`, `annotations.txt` e `result.json` (contagens,
 recusas, gate e exit code). `scripts/regen_fixtures.py::saidas_sarif` produz os
 quatro pelo mesmo `_core.report_github` e o mesmo `report_github_textos` da CLI.
 
@@ -29,13 +29,13 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sarif"
 ESQUEMA = FIXTURES / "_schema" / "sarif-schema-2.1.0.json"
 ESQUEMA_SHA256 = "c3b4bb2d6093897483348925aaa73af03b3e3f4bd4ca38cef26dcb4212a2682e"
-SAIDAS = ("sparkforge.sarif", "summary.md", "annotations.txt", "result.json")
+SAIDAS = ("sparkforge-aws.sarif", "summary.md", "annotations.txt", "result.json")
 
 
 def _regen() -> Any:
     """`scripts/regen_fixtures.py` pelo caminho, sem por a raiz no `sys.path`.
 
-    No gate de wheel a raiz no `sys.path` faria o `sparkforge` do repositorio
+    No gate de wheel a raiz no `sys.path` faria o `sparkforge-aws` do repositorio
     vencer o instalado.
     """
     spec = importlib.util.spec_from_file_location(
@@ -80,7 +80,7 @@ class TestCaso:
             assert saidas[nome] == _texto(caso / "expected" / nome), nome
 
     def test_sarif_valida_contra_o_schema_oasis(self, caso):
-        sarif = json.loads(_texto(caso / "expected" / "sparkforge.sarif"))
+        sarif = json.loads(_texto(caso / "expected" / "sparkforge-aws.sarif"))
         assert not list(_validador().iter_errors(sarif))
 
     def test_nenhum_finding_some(self, caso):
@@ -88,12 +88,12 @@ class TestCaso:
         findings = json.loads(_texto(caso / "input" / "findings.json"))
         contagem = resultado["counts"]
         assert contagem["located"] + contagem["refused"] == contagem["findings"] == len(findings)
-        sarif = json.loads(_texto(caso / "expected" / "sparkforge.sarif"))
+        sarif = json.loads(_texto(caso / "expected" / "sparkforge-aws.sarif"))
         assert len(sarif["runs"][0]["results"]) == contagem["located"]
 
     def test_a_cli_grava_imprime_e_sai_como_o_golden(self, caso, tmp_path, monkeypatch, capsys):
         """A CLI de verdade, numa copia do `repo/`: arquivos, stdout e exit code."""
-        from sparkforge.adapters import _core, cli
+        from sparkforge_aws.adapters import _core, cli
 
         regen = _regen()
         monkeypatch.setattr(_core, "_versao_sparkforge", lambda: regen.SARIF_GOLDEN_VERSION)
@@ -124,14 +124,14 @@ class TestCaso:
         assert codigo == esperado["exit_code"]
         assert saida.out.replace("\r\n", "\n") == _texto(caso / "expected" / "annotations.txt")
         gravado = repo / ".sparkforge" / "report"
-        for nome in ("sparkforge.sarif", "summary.md"):
+        for nome in ("sparkforge-aws.sarif", "summary.md"):
             assert _texto(gravado / nome) == _texto(caso / "expected" / nome), nome
 
 
 def test_todo_motivo_de_recusa_aparece_ou_esta_na_unidade():
     """`limite_do_github` e coberto em `tests/test_reporting_github.py` com
     limite reduzido: cinco mil resultados num golden seriam ruido."""
-    from sparkforge.reporting.locate import MOTIVOS
+    from sparkforge_aws.reporting.locate import MOTIVOS
 
     vistos = set()
     for caso in _casos():
@@ -144,7 +144,7 @@ def test_a_nota_do_callsite_sai_em_todo_resultado_localizado_por_stage():
     """SC4: a linha e da ACAO que originou o stage, e o texto diz que nao e a causa."""
     for nome in ("stage_python", "stage_scala"):
         caso = FIXTURES / nome
-        sarif = json.loads(_texto(caso / "expected" / "sparkforge.sarif"))
+        sarif = json.loads(_texto(caso / "expected" / "sparkforge-aws.sarif"))
         resultados = sarif["runs"][0]["results"]
         assert resultados
         assert all("(nao e a causa)" in r["message"]["text"] for r in resultados), nome

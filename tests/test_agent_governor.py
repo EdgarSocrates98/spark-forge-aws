@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.agentic.governor import (
+from sparkforge_aws.agentic.governor import (
     AgentGovernor,
     GovernorLimits,
     GovernorStatus,

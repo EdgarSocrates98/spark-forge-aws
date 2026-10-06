@@ -11,8 +11,8 @@ julgar as duas na mesma clausula.
 """
 from __future__ import annotations
 
-from sparkforge.facts.utilization import extract_utilization
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.utilization import extract_utilization
+from sparkforge_aws.findings.models import Fact
 
 
 def _metric(name, p50=None, p95=None):
@@ -122,7 +122,7 @@ class TestRecusas:
 
 class TestSchema:
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         casos = [
             [_metric("glue.driver.workerUtilization", p50=0.31), _task_duration(100.0, 1140.0)],

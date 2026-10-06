@@ -16,7 +16,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   },
   {
@@ -45,7 +45,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   },
   {
@@ -74,7 +74,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   },
   {
@@ -103,7 +103,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   },
   {
@@ -132,7 +132,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   },
   {
@@ -162,7 +162,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   },
   {
@@ -185,7 +185,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "36ea3384b5c2e9016676c3072fe468fd8f632295ae6217f466e8d433ce7d065c"
+      "artifact_sha256": "d2d2a4052221e60c37c32a50d8a0d3b8e9d1d2cee11e0b2be1769de92d5aaacb"
     }
   }
 ]

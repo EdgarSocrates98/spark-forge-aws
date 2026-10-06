@@ -20,7 +20,7 @@ Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA extrai
 
 ## Na CLI
 
-[`sparkforge analyze call-graph`](../cli/analyze.md)
+[`sparkforge-aws analyze call-graph`](../cli/analyze.md)
 
 ## Capacidade
 

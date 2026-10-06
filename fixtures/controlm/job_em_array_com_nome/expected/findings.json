@@ -41,7 +41,7 @@
       "`ctm build` sobre o JSON, executado contra o endpoint do ambiente alvo, retorna sucesso — é a validação oficial da BMC e é a que enxerga o setting do servidor.",
       "EIXO DE RESULTADO — o conjunto de jobs publicado é o mesmo. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Converter forma de declaração não pode acrescentar, remover nem renomear job, e é exatamente aqui que a conversão com nomes duplicados falharia.",
       "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e as listas de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item.",
-      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
+      "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
     ],
     "rollback": [
       "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção foi no ambiente e não no arquivo — religar o setting —, o rollback é de configuração de plataforma e afeta todas as definições em array, não só esta."
@@ -103,7 +103,7 @@
       "`ctm build` sobre o JSON, executado contra o endpoint do ambiente alvo, retorna sucesso — é a validação oficial da BMC e é a que enxerga o setting do servidor.",
       "EIXO DE RESULTADO — o conjunto de jobs publicado é o mesmo. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Converter forma de declaração não pode acrescentar, remover nem renomear job, e é exatamente aqui que a conversão com nomes duplicados falharia.",
       "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e as listas de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item.",
-      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
+      "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
     ],
     "rollback": [
       "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção foi no ambiente e não no arquivo — religar o setting —, o rollback é de configuração de plataforma e afeta todas as definições em array, não só esta."

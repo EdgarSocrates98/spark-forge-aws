@@ -23,7 +23,7 @@ Compara DUAS execucoes a partir dos facts de event log de cada uma (`sparkforge_
 
 ## Na CLI
 
-[`sparkforge benchmark`](../cli/benchmark.md)
+[`sparkforge-aws benchmark`](../cli/benchmark.md)
 
 ## Capacidade
 

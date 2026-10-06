@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.agentic.recovery import FailureClass, RecoveryPolicy
-from sparkforge.agentic.stop import (
+from sparkforge_aws.agentic.recovery import FailureClass, RecoveryPolicy
+from sparkforge_aws.agentic.stop import (
     ExpectedGainState,
     StopAction,
     StopDecision,
@@ -188,7 +188,7 @@ class TestStopGovernedIntegration:
     """O gate de ganho mora no circuito governado, não num módulo solto."""
 
     def test_recovery_governor_accepts_gain_state(self) -> None:
-        from sparkforge.agentic.control import RecoveryGovernor
+        from sparkforge_aws.agentic.control import RecoveryGovernor
 
         governor = RecoveryGovernor()
         governed = governor.resolve(
@@ -202,7 +202,7 @@ class TestStopGovernedIntegration:
         assert governed.decision.terminal is True
 
     def test_continue_leaves_recovery_untouched(self) -> None:
-        from sparkforge.agentic.control import RecoveryGovernor
+        from sparkforge_aws.agentic.control import RecoveryGovernor
 
         governor = RecoveryGovernor()
         governed = governor.resolve(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.evals.decision_plane import DecisionEvaluationRunner
+from sparkforge_aws.evals.decision_plane import DecisionEvaluationRunner
 
 ROOT = Path(__file__).resolve().parents[1]
 

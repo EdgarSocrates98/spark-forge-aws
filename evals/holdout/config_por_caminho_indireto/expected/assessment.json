@@ -427,7 +427,7 @@
     "canary": "BLOCKED"
   },
   "missing_evidence": {
-    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge/facts/consumers.py`)",
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge_aws/facts/consumers.py`)",
     "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",
     "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
     "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",

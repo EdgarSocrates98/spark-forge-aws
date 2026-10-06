@@ -21,7 +21,7 @@ Busca simbolo por parte do nome no indice local e devolve `node_id`, caminho e l
 
 ## Na CLI
 
-[`sparkforge code search`](../cli/code.md)
+[`sparkforge-aws code search`](../cli/code.md)
 
 ## Capacidade
 

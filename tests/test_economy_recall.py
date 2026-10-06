@@ -1,6 +1,6 @@
 """Recall e economia do `ContextPack`, e o contrafactual que prova o gate.
 
-Ver `sparkforge/economy/recall.py` para por que ha duas perguntas por fixture e
+Ver `sparkforge_aws/economy/recall.py` para por que ha duas perguntas por fixture e
 por que economia nao tem piso.
 """
 
@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.economy.goldset import derivar_goldset
-from sparkforge.economy.recall import (
+from sparkforge_aws.economy.goldset import derivar_goldset
+from sparkforge_aws.economy.recall import (
     NIVEIS,
     MedidaDeRecall,
     SimboloExigido,
@@ -92,7 +92,7 @@ def test_o_contrafactual_da_ancoragem_no_grafo(monkeypatch):
     consulta. Ele nao existe hoje, e e a mesma lacuna que faz
     `scripts/check_recall_economy.py` recusar publicar razao de economia.
     """
-    from sparkforge.codeintel import context
+    from sparkforge_aws.codeintel import context
 
     pergunta = derivar_goldset()[0]
     antes = medir([pergunta])[0]
@@ -248,7 +248,7 @@ def test_no_nivel_summary_derruba_snippet_e_quebra_de_escore():
 
 def test_a_medicao_nao_escreve_na_arvore_do_repositorio(medidas):
     """Indice deixado em `fixtures/` viraria artefato bruto que o CI teria de perdoar."""
-    from sparkforge.economy.goldset import _RAIZ
+    from sparkforge_aws.economy.goldset import _RAIZ
 
     sujeira = [
         p.relative_to(_RAIZ).as_posix()

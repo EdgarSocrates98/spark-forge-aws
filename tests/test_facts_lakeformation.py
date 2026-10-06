@@ -12,12 +12,12 @@ igualdade sobre nenhuma chave que os extratores emitem hoje.
 
 from __future__ import annotations
 
-from sparkforge.facts.lakeformation import (
+from sparkforge_aws.facts.lakeformation import (
     EMITTED_KINDS,
     FGAC_ARGUMENT,
     build_lakeformation,
 )
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 PROV = {"extractor": "teste@0.0.0", "artifact": "memoria"}
 

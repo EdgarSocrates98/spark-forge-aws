@@ -9,7 +9,7 @@ resource "aws_glue_job" "etl_no_observability" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl.py"
     python_version  = "3"
   }
 
@@ -17,6 +17,6 @@ resource "aws_glue_job" "etl_no_observability" {
   # diagnosticar este job depois do fato -- SF-GLUE-002.
   default_arguments = {
     "--job-bookmark-option" = "job-bookmark-disable"
-    "--TempDir"             = "s3://sparkforge-demo/temp/"
+    "--TempDir"             = "s3://sparkforge-aws-demo/temp/"
   }
 }

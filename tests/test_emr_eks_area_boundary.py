@@ -40,7 +40,7 @@ nome nas tres decisoes de namespace -- `emr.`, `emrs.` (D-5d-1) e `emrc.` (D-2
 da spec de EMR on EKS) --, escolhidas para que nenhum seja prefixo do outro.
 
 Os facts vem dos GOLDENS commitados (`expected/facts.json`), carregados pela
-mesma porta que a CLI usa em `sparkforge judge --facts` (`_facts_from_dicts`).
+mesma porta que a CLI usa em `sparkforge-aws judge --facts` (`_facts_from_dicts`).
 Reextrair aqui mediria o extrator de novo -- coisa que os `test_fixtures_golden_*`
 ja fazem -- e faria este arquivo depender de tres extratores para afirmar sobre
 regras.
@@ -55,9 +55,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.adapters._core import AdapterError, _facts_from_dicts, judge_findings
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import ROUTING_FILE, catalog_dir, load_catalog
+from sparkforge_aws.adapters._core import AdapterError, _facts_from_dicts, judge_findings
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import ROUTING_FILE, catalog_dir, load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -183,7 +183,7 @@ def _catalogo() -> tuple[dict, ...]:
 def _julgar(directory: Path) -> dict:
     """Um golden commitado, julgado com o runtime declarado pela propria fixture.
 
-    `_facts_from_dicts` e a mesma funcao que `sparkforge judge --facts` chama:
+    `_facts_from_dicts` e a mesma funcao que `sparkforge-aws judge --facts` chama:
     afirmar sobre outra porta mediria um caminho que nenhum operador percorre.
     """
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
@@ -477,7 +477,7 @@ def _judge_com_emr(release: str, facts_path: Path = FACTS_EKS) -> dict:
 class TestOEixoDeRuntimeNaoVemDaMatrizDeEC2:
     """O contrafactual da divida que o `STATUS.md` registra para o Serverless.
 
-    O `STATUS.md` registra que `sparkforge judge --facts <facts de EMR
+    O `STATUS.md` registra que `sparkforge-aws judge --facts <facts de EMR
     Serverless> --emr 7.5.0` grava `spark`, `python` e `iceberg` derivados da
     `EMR_MATRIX` -- que e de EMR on EC2 -- sobre um conjunto de facts que nao tem
     um unico fact de EC2. Tres campos inventados.

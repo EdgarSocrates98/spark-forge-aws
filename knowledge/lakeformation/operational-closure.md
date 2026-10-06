@@ -1,7 +1,7 @@
 # Lake Formation — operational closure
 
 Este documento descreve a camada operacional composta por
-`sparkforge lakeformation architect`. Ele não substitui facts nem coleta AWS:
+`sparkforge-aws lakeformation architect`. Ele não substitui facts nem coleta AWS:
 recebe declarações e facts já extraídos e organiza revisão, preflight,
 explain-access, root-cause e migração.
 

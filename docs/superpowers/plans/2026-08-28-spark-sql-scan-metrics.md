@@ -4,14 +4,14 @@
 
 **Goal:** Ler as métricas SQL que o Spark já publica no event log e emitir, por nó de leitura, quantos bytes e quantos arquivos aquela fonte custou — medido, nunca estimado.
 
-**Architecture:** Extrator novo `sparkforge/facts/sql_metrics.py`, que lê o mesmo artefato de event log que `event_log.py` lê, com outra ótica. Passada única em streaming: `SparkListenerSQLExecutionStart` traz a árvore (`sparkPlanInfo`) e o mapa `accumulatorId → (nó, nome de métrica)`; `SparkListenerDriverAccumUpdates` e os `Accumulables` de `SparkListenerTaskEnd` trazem os valores. Nome de métrica fora do mapa canônico de `knowledge/` vira lacuna declarada, nunca palpite.
+**Architecture:** Extrator novo `sparkforge_aws/facts/sql_metrics.py`, que lê o mesmo artefato de event log que `event_log.py` lê, com outra ótica. Passada única em streaming: `SparkListenerSQLExecutionStart` traz a árvore (`sparkPlanInfo`) e o mapa `accumulatorId → (nó, nome de métrica)`; `SparkListenerDriverAccumUpdates` e os `Accumulables` de `SparkListenerTaskEnd` trazem os valores. Nome de métrica fora do mapa canônico de `knowledge/` vira lacuna declarada, nunca palpite.
 
 **Tech Stack:** Python 3, `pytest`, `PyYAML`. Spec: [`../specs/2026-08-28-spark-sql-scan-metrics-design.md`](../specs/2026-08-28-spark-sql-scan-metrics-design.md).
 
 **Convenções do repositório que valem em toda tarefa:**
 
 - Fact nunca aplica limiar, nunca atribui severidade, nunca toca a rede.
-- Todo fact declara `subject.type` de um enum fechado (`sparkforge/findings/schemas/fact.schema.json`). Aqui é sempre `plan_node` ou `source_location`.
+- Todo fact declara `subject.type` de um enum fechado (`sparkforge_aws/findings/schemas/fact.schema.json`). Aqui é sempre `plan_node` ou `source_location`.
 - Todo comando roda com prefixo `rtk` (ver `CLAUDE.md`): `rtk pytest`, `rtk git commit`.
 - Commit em português, Conventional Commits, via `rtk git commit -F <arquivo>` — heredoc dentro de `$(...)` dispara prompt de permissão.
 - Não rode a suíte inteira sem alvo (17 minutos). Rode o que cada tarefa pede.
@@ -26,8 +26,8 @@
 |---|---|
 | `knowledge/spark/sql-metrics.yaml` | Mapa canônico nome de métrica → measure, legível por máquina |
 | `knowledge/spark/sql-metrics.md` | A prosa que explica o mapa e aponta para o YAML |
-| `sparkforge/facts/sql_metric_names.py` | Carregador fail-closed do YAML, no molde de `facts/cloudwatch_retention.py` |
-| `sparkforge/facts/sql_metrics.py` | O extrator |
+| `sparkforge_aws/facts/sql_metric_names.py` | Carregador fail-closed do YAML, no molde de `facts/cloudwatch_retention.py` |
+| `sparkforge_aws/facts/sql_metrics.py` | O extrator |
 | `tests/test_sql_metric_names.py` | Testes do carregador |
 | `tests/test_facts_sql_metrics.py` | Testes do extrator |
 | `tests/test_fixtures_golden_sql_metrics.py` | Módulo golden do domínio novo |
@@ -39,9 +39,9 @@
 |---|---|
 | `knowledge/sources.lock.json` | Fonte do mapa, com `retrieved`, `checked_at`, `sha256` |
 | `knowledge/offline-manifest.json` | sha256 do `.md` novo |
-| `sparkforge/adapters/_core.py` | `analyze_sql_metrics` |
-| `sparkforge/adapters/cli.py` | Parser, handler e entrada de despacho |
-| `sparkforge/adapters/tools.py` | Schema da tool, handler e entrada de despacho |
+| `sparkforge_aws/adapters/_core.py` | `analyze_sql_metrics` |
+| `sparkforge_aws/adapters/cli.py` | Parser, handler e entrada de despacho |
+| `sparkforge_aws/adapters/tools.py` | Schema da tool, handler e entrada de despacho |
 | `manifest.json` | Lista `tools` ganha a nova |
 | `parity.yaml` | Capability de análise ganha CLI e tool |
 | `agents/` (coordenador ou executor) | Citar a tool nova, senão o gate de órfão reprova |
@@ -125,7 +125,7 @@ Documento novo em `knowledge/` exige entrada no `knowledge/offline-manifest.json
 ```bash
 rtk python -c "
 import json, pathlib
-from sparkforge.tools.offline import _content_sha256
+from sparkforge_aws.tools.offline import _content_sha256
 p = pathlib.Path('knowledge/offline-manifest.json')
 m = json.loads(p.read_text(encoding='utf-8'))
 alvo = pathlib.Path('knowledge/spark/sql-metrics.md')
@@ -160,7 +160,7 @@ Mensagem: `docs(knowledge): mapa canonico de metrica SQL do Spark, com fonte e d
 ## Task 2: Carregador fail-closed do mapa
 
 **Files:**
-- Create: `sparkforge/facts/sql_metric_names.py`
+- Create: `sparkforge_aws/facts/sql_metric_names.py`
 - Test: `tests/test_sql_metric_names.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -173,7 +173,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.sql_metric_names import MetricMapError, measure_for, load_map
+from sparkforge_aws.facts.sql_metric_names import MetricMapError, measure_for, load_map
 
 
 class TestLoad:
@@ -195,7 +195,7 @@ class TestLoad:
 
 class TestFailClosed:
     def test_missing_file_raises_instead_of_returning_empty(self, monkeypatch, tmp_path):
-        from sparkforge.facts import sql_metric_names
+        from sparkforge_aws.facts import sql_metric_names
 
         monkeypatch.setattr(sql_metric_names, "_MAP_PATH", tmp_path / "nao-existe.yaml")
         sql_metric_names.load_map.cache_clear()
@@ -204,7 +204,7 @@ class TestFailClosed:
         sql_metric_names.load_map.cache_clear()
 
     def test_malformed_file_raises_instead_of_returning_empty(self, monkeypatch, tmp_path):
-        from sparkforge.facts import sql_metric_names
+        from sparkforge_aws.facts import sql_metric_names
 
         alvo = tmp_path / "sql-metrics.yaml"
         alvo.write_text("metrics: nao-e-lista\n", encoding="utf-8")
@@ -215,7 +215,7 @@ class TestFailClosed:
         sql_metric_names.load_map.cache_clear()
 
     def test_duplicate_published_name_raises(self, monkeypatch, tmp_path):
-        from sparkforge.facts import sql_metric_names
+        from sparkforge_aws.facts import sql_metric_names
 
         alvo = tmp_path / "sql-metrics.yaml"
         alvo.write_text(
@@ -238,13 +238,13 @@ class TestFailClosed:
 rtk pytest tests/test_sql_metric_names.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.sql_metric_names'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.sql_metric_names'`.
 
 - [ ] **Step 3: Implementar**
 
-Antes de escrever, **leia `sparkforge/facts/cloudwatch_retention.py`** e siga a forma dele: mesmo tipo de exceção, mesmo uso de cache, mesma disciplina de fail-closed.
+Antes de escrever, **leia `sparkforge_aws/facts/cloudwatch_retention.py`** e siga a forma dele: mesmo tipo de exceção, mesmo uso de cache, mesma disciplina de fail-closed.
 
-`sparkforge/facts/sql_metric_names.py`:
+`sparkforge_aws/facts/sql_metric_names.py`:
 
 ```python
 """Carregador do mapa canonico de nome de metrica SQL do Spark.
@@ -327,7 +327,7 @@ Esperado: PASS, 7 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metric_names.py tests/test_sql_metric_names.py
+rtk git add sparkforge_aws/facts/sql_metric_names.py tests/test_sql_metric_names.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -338,7 +338,7 @@ Mensagem: `feat(facts): carregador fail-closed do mapa de metricas SQL`
 ## Task 3: A árvore do plano e o mapa de acumuladores
 
 **Files:**
-- Create: `sparkforge/facts/sql_metrics.py`
+- Create: `sparkforge_aws/facts/sql_metrics.py`
 - Test: `tests/test_facts_sql_metrics.py`
 
 Esta tarefa lê a árvore e monta o mapa. **Nenhum valor ainda** — os valores são a Task 4.
@@ -353,7 +353,7 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.facts.sql_metrics import extract_sql_metrics
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics
 
 SQL_START = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart"
 
@@ -463,11 +463,11 @@ class TestNoLeak:
 rtk pytest tests/test_facts_sql_metrics.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.sql_metrics'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.sql_metrics'`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/facts/sql_metrics.py`:
+`sparkforge_aws/facts/sql_metrics.py`:
 
 ```python
 """Extrator de metricas SQL por no do plano, a partir do Spark event log.
@@ -497,9 +497,9 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
-from sparkforge.facts.secrets import redact
-from sparkforge.facts.sql_metric_names import measure_for
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.facts.secrets import redact
+from sparkforge_aws.facts.sql_metric_names import measure_for
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "sql_metrics@0.1.0"
 
@@ -727,7 +727,7 @@ Esperado: PASS, 6 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metrics.py tests/test_facts_sql_metrics.py
+rtk git add sparkforge_aws/facts/sql_metrics.py tests/test_facts_sql_metrics.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -738,7 +738,7 @@ Mensagem: `feat(facts): arvore do plano e mapa de acumuladores do event log SQL`
 ## Task 4: Os valores — driver e tarefa
 
 **Files:**
-- Modify: `sparkforge/facts/sql_metrics.py`
+- Modify: `sparkforge_aws/facts/sql_metrics.py`
 - Test: `tests/test_facts_sql_metrics.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -990,7 +990,7 @@ Esperado: PASS, 11 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metrics.py tests/test_facts_sql_metrics.py
+rtk git add sparkforge_aws/facts/sql_metrics.py tests/test_facts_sql_metrics.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1001,7 +1001,7 @@ Mensagem: `feat(facts): bytes e arquivos por no de leitura, medidos pelo Spark`
 ## Task 5: AQE, reatribuição e as recusas restantes
 
 **Files:**
-- Modify: `sparkforge/facts/sql_metrics.py`
+- Modify: `sparkforge_aws/facts/sql_metrics.py`
 - Test: `tests/test_facts_sql_metrics.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1112,7 +1112,7 @@ class TestRefusals:
         assert len(lacunas) == 1
 
     def test_missing_file_becomes_a_fact_never_an_exception(self, tmp_path):
-        from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+        from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
 
         facts = extract_sql_metrics_path(tmp_path / "nao-existe.jsonl")
         assert [f.attrs["reason"] for f in facts] == ["read_error"]
@@ -1251,7 +1251,7 @@ Acrescente a `tests/test_facts_sql_metrics.py`:
 ```python
 class TestSchema:
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         plano = {
             "nodeName": "Union",
@@ -1275,7 +1275,7 @@ class TestSchema:
             validate_fact(fact.to_dict())
 
     def test_every_emitted_kind_is_declared(self):
-        from sparkforge.facts.sql_metrics import EMITTED_KINDS
+        from sparkforge_aws.facts.sql_metrics import EMITTED_KINDS
 
         facts = extract_sql_metrics([_start(plan=_scan_node())], "log.jsonl")
         assert {f.kind for f in facts} <= EMITTED_KINDS
@@ -1290,7 +1290,7 @@ Esperado: PASS, 19 testes. Este é o gate que a entrega anterior não tinha e po
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/facts/sql_metrics.py tests/test_facts_sql_metrics.py
+rtk git add sparkforge_aws/facts/sql_metrics.py tests/test_facts_sql_metrics.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1301,8 +1301,8 @@ Mensagem: `feat(facts): AQE, reatribuicao de acumulador e as recusas nomeadas`
 ## Task 6: Camada `_core` e CLI
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py`
-- Modify: `sparkforge/adapters/cli.py`
+- Modify: `sparkforge_aws/adapters/_core.py`
+- Modify: `sparkforge_aws/adapters/cli.py`
 - Test: `tests/test_adapters_cli.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1350,14 +1350,14 @@ class TestSqlMetricsCommand:
         return alvo
 
     def test_analyze_sql_metrics_prints_scan_facts(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         assert main(["analyze", "sql-metrics", "--path", str(self._log(tmp_path))]) == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["by_kind"]["spark.sql.scan"] == 1
 
     def test_out_file_carries_the_measured_bytes(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         out = tmp_path / "facts.json"
         code = main(
@@ -1383,7 +1383,7 @@ Esperado: FAIL com `SystemExit: 2` — argparse não conhece `sql-metrics`.
 Import no topo, junto dos outros extratores:
 
 ```python
-from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
 ```
 
 E, junto dos outros `analyze_*`:
@@ -1401,7 +1401,7 @@ def analyze_sql_metrics(
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um Spark event log (JSON Lines):\n"
-            f"    sparkforge analyze sql-metrics --path .sparkforge/artifacts/eventlog/app.jsonl",
+            f"    sparkforge-aws analyze sql-metrics --path .sparkforge/artifacts/eventlog/app.jsonl",
             exit_code=2,
         )
     facts = extract_sql_metrics_path(target)
@@ -1466,7 +1466,7 @@ Esperado: PASS. Reporte a contagem real.
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/adapters/_core.py sparkforge/adapters/cli.py tests/test_adapters_cli.py
+rtk git add sparkforge_aws/adapters/_core.py sparkforge_aws/adapters/cli.py tests/test_adapters_cli.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1477,7 +1477,7 @@ Mensagem: `feat(cli): analyze sql-metrics`
 ## Task 7: Tool MCP, manifesto, paridade e o gate de órfão
 
 **Files:**
-- Modify: `sparkforge/adapters/tools.py`
+- Modify: `sparkforge_aws/adapters/tools.py`
 - Modify: `manifest.json`
 - Modify: `parity.yaml`
 - Modify: um arquivo de `agents/`
@@ -1490,7 +1490,7 @@ Acrescente a `tests/test_adapters_tools.py`:
 ```python
 class TestSqlMetricsTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_analyze_sql_metrics" in tools.TOOLS
         assert "sparkforge_analyze_sql_metrics" in tools._HANDLERS
@@ -1515,7 +1515,7 @@ Esperado: FAIL com `AssertionError`.
 
 - [ ] **Step 3: Declarar a tool**
 
-Em `sparkforge/adapters/tools.py`, junto das outras tools de `analyze`. Use `_ANALYZE_FACTS_SCHEMA` — o schema padrão, porque o subject deste extrator declara `type: plan_node`, que já está no enum:
+Em `sparkforge_aws/adapters/tools.py`, junto das outras tools de `analyze`. Use `_ANALYZE_FACTS_SCHEMA` — o schema padrão, porque o subject deste extrator declara `type: plan_node`, que já está no enum:
 
 ```python
     "sparkforge_analyze_sql_metrics": {
@@ -1593,7 +1593,7 @@ rtk pytest tests/test_harness_authorization.py -q
 - [ ] **Step 7: Commit**
 
 ```bash
-rtk git add sparkforge/adapters/tools.py manifest.json parity.yaml tests/test_adapters_tools.py tests/test_harness_authorization.py agents .claude .agents .github
+rtk git add sparkforge_aws/adapters/tools.py manifest.json parity.yaml tests/test_adapters_tools.py tests/test_harness_authorization.py agents .claude .agents .github
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1645,10 +1645,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.sql_metrics import extract_sql_metrics_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sql_metrics"
@@ -1727,7 +1727,7 @@ class TestOQueOCorpusInteiroGarante:
         quebraria aqui -- e e disto que depende a confiabilidade do fingerprint
         que vem depois.
         """
-        from sparkforge.facts.sql_metric_names import measure_for
+        from sparkforge_aws.facts.sql_metric_names import measure_for
 
         for directory in fixture_dirs():
             publicadas: dict[int, set[str]] = {}
@@ -1810,10 +1810,10 @@ Atualize também os números de extratores e de kinds da frase que abre a seçã
 ```bash
 rtk python -c "
 import importlib, pkgutil
-import sparkforge.facts as F
+import sparkforge_aws.facts as F
 mods, kinds = [], set()
 for m in pkgutil.iter_modules(F.__path__):
-    mod = importlib.import_module(f'sparkforge.facts.{m.name}')
+    mod = importlib.import_module(f'sparkforge_aws.facts.{m.name}')
     ek = getattr(mod, 'EMITTED_KINDS', None)
     if ek:
         mods.append(m.name); kinds |= set(ek)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sparkforge.agentic.runtime import (
+from sparkforge_aws.agentic.runtime import (
     RuntimeName,
     can_debate,
     can_spawn_parallel,

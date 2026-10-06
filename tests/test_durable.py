@@ -1,4 +1,4 @@
-"""Escrita que sobrevive a queda: `sparkforge.durable` e os donos de estado que o usam.
+"""Escrita que sobrevive a queda: `sparkforge_aws.durable` e os donos de estado que o usam.
 
 A queda e simulada pelo estado do arquivo (cauda cortada, `os.replace` que
 falha), nunca matando processo: o teste precisa ser estavel no Windows e no CI.
@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge import durable
-from sparkforge.agentic import blackboard
-from sparkforge.agentic.executor import debate_run
-from sparkforge.case import store
+from sparkforge_aws import durable
+from sparkforge_aws.agentic import blackboard
+from sparkforge_aws.agentic.executor import debate_run
+from sparkforge_aws.case import store
 
 
 def _sabotar_replace(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -137,7 +137,7 @@ class TestReadJsonl:
 
 
 def test_write_atomic_bytes_preserva_quebra_de_linha(tmp_path):
-    from sparkforge.durable import write_atomic_bytes
+    from sparkforge_aws.durable import write_atomic_bytes
 
     alvo = tmp_path / "sub" / "a.md"
     write_atomic_bytes(alvo, b"um\ndois\r\ntres\n")

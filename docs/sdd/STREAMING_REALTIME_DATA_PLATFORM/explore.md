@@ -41,7 +41,7 @@ Perfil: `dev`; a mudança é no próprio SparkForge.
 ## Baseline observado
 
 - Branch `main`, commit inicial `a540c7805da0c79bbd71b6ed741f0ec3875e9b2f`.
-- `sparkforge doctor --repo .`: pacote ok (`sparkforge 0.5.0`, Python `3.14.6`), MCP montável com `115 tools`, catálogo com `177 regras`; boto3 ausente, fontes de knowledge com drift e integrações de usuário não configuradas.
+- `sparkforge-aws doctor --repo .`: pacote ok (`sparkforge-aws 0.5.0`, Python `3.14.6`), MCP montável com `115 tools`, catálogo com `177 regras`; boto3 ausente, fontes de knowledge com drift e integrações de usuário não configuradas.
 - Índice de código sincronizado em `.sparkforge/local/codeintel/graph.sqlite3`: `1.391` arquivos, `14.851` nós, `23.645` edges, `33.137` unresolved; busca por `streaming` retornou somente testes de Lake Formation e busca por `kafka` somente `tests/test_database_specialists.py`.
 - Fact modules: `52`; skills canônicas com `SKILL.md`: `52`; agents coordenadores: `12`; executors: `5`; knowledge packs: `18` diretórios.
 - O primeiro `python -m pytest -q` foi bloqueado antes dos testes pela permissão de `C:\Users\edgar\AppData\Local\Temp\pytest-of-edgar`. Uma segunda execução com `--basetemp=.pytest-baseline` foi iniciada para separar limitação ambiental de regressões; o diretório de baseline não pertence à feature.
@@ -56,11 +56,11 @@ Uma menção em Markdown não conta como capacidade implementada.
 |---|---:|---:|---:|---|---|
 | Structured Streaming |  | x |  | `knowledge/streaming-reliability.md`; nenhum analyzer de progress/source | knowledge-only |
 | Spark Real-Time |  |  | x | nenhum runtime matrix, extractor ou rule específico | ausente |
-| Kafka |  | x |  | `sparkforge/streaming/kafka.py` e teste unitário, sem artifact/facts/rules | workflow-only |
+| Kafka |  | x |  | `sparkforge_aws/streaming/kafka.py` e teste unitário, sem artifact/facts/rules | workflow-only |
 | MSK |  | x |  | mesmo especialista genérico de Kafka; sem dump de cluster/versão | workflow-only |
 | Kafka Connect |  |  | x | nenhum artifact contract, collector ou analyzer | ausente |
 | Kafka Streams |  |  | x | nenhum model/runtime knowledge específico | ausente |
-| Kinesis |  | x |  | `sparkforge/streaming/kinesis.py` e teste unitário, sem facts/rules | workflow-only |
+| Kinesis |  | x |  | `sparkforge_aws/streaming/kinesis.py` e teste unitário, sem facts/rules | workflow-only |
 | Flink | x |  |  | só referência resumida em `knowledge/streaming-reliability.md` | knowledge-only |
 | Managed Flink | x |  |  | skill AWS geral cita serviço, sem artifact/runtime guard | knowledge-only |
 | Glue Streaming / RTM |  | x |  | regras existentes cobrem Lake Formation e docs Glue, não análise streaming | knowledge-only |

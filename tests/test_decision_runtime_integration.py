@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.agentic.shadow import observe_route, route_with_mode
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_models import DecisionInput
-from sparkforge.economy.decision_plane import DecisionPlaneService
-from sparkforge.economy.decision_receipts import DecisionReceiptStore
-from sparkforge.economy.router import CapabilityModelRouter
-from sparkforge.registry.models import ExecutionProfile, RiskLevel
+from sparkforge_aws.agentic.shadow import observe_route, route_with_mode
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_models import DecisionInput
+from sparkforge_aws.economy.decision_plane import DecisionPlaneService
+from sparkforge_aws.economy.decision_receipts import DecisionReceiptStore
+from sparkforge_aws.economy.router import CapabilityModelRouter
+from sparkforge_aws.registry.models import ExecutionProfile, RiskLevel
 
 
 def test_runtime_observes_authoritative_router_without_dispatch_side_effect(tmp_path: Path) -> None:

@@ -9,11 +9,11 @@ upstream:
   sha256: "d6d3d2020ca7a18feedf36880a8b4057b668aa5df4ff23b1aaa55134084502ca"
 tasks:
   - id: T1
-    files: [knowledge/databricks/runtime-matrix.yaml, knowledge/databricks/runtime-matrix.md, sparkforge/facts/runtime_matrix.py, tests/test_databricks_runtime_matrix.py, knowledge/offline-manifest.json, knowledge/sources.lock.json, docs/surface.lock.json, docs/claims.lock.json]
+    files: [knowledge/databricks/runtime-matrix.yaml, knowledge/databricks/runtime-matrix.md, sparkforge_aws/facts/runtime_matrix.py, tests/test_databricks_runtime_matrix.py, knowledge/offline-manifest.json, knowledge/sources.lock.json, docs/surface.lock.json, docs/claims.lock.json]
     covers: [AC2]
     test: {path: tests/test_databricks_runtime_matrix.py, name: test_matriz_tem_fonte_data_e_vocabulario_fechado}
   - id: T2
-    files: [sparkforge/findings/models.py, sparkforge/facts/runtime_detect.py, sparkforge/adapters/_core.py, sparkforge/adapters/tools.py, tests/test_databricks_platform.py, fixtures/runtime/databricks_flag_runtime, tests/test_fixtures_golden_runtime.py, fixtures/scan, docs/claims.lock.json]
+    files: [sparkforge_aws/findings/models.py, sparkforge_aws/facts/runtime_detect.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/tools.py, tests/test_databricks_platform.py, fixtures/runtime/databricks_flag_runtime, tests/test_fixtures_golden_runtime.py, fixtures/scan, docs/claims.lock.json]
     covers: [AC1]
     test: {path: tests/test_databricks_platform.py, name: test_flag_declara_plataforma_e_deriva_spark}
   - id: T3
@@ -21,15 +21,15 @@ tasks:
     covers: [AC4]
     test: {path: tests/test_databricks_platform.py, name: test_divergencia_spark_registrada}
   - id: T4
-    files: [sparkforge/adapters/_core.py, tests/test_databricks_platform.py, fixtures/runtime/databricks_event_log_runtime, tests/test_fixtures_golden_runtime.py]
+    files: [sparkforge_aws/adapters/_core.py, tests/test_databricks_platform.py, fixtures/runtime/databricks_event_log_runtime, tests/test_fixtures_golden_runtime.py]
     covers: [AC3]
     test: {path: tests/test_databricks_platform.py, name: test_event_log_declara_plataforma_databricks}
   - id: T5
-    files: [sparkforge/facts/runtime_detect.py, sparkforge/adapters/_core.py, sparkforge/rules/engine.py, rules/catalog/env.yaml, manifest.json, tests/test_databricks_platform.py, fixtures/runtime/databricks_flag_runtime, fixtures/runtime/databricks_divergent_spark, fixtures/runtime/databricks_event_log_runtime, knowledge/sources.lock.json, tests/test_rules_catalog_reachability.py, tests/test_fixtures_kind_coverage.py]
+    files: [sparkforge_aws/facts/runtime_detect.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/rules/engine.py, rules/catalog/env.yaml, manifest.json, tests/test_databricks_platform.py, fixtures/runtime/databricks_flag_runtime, fixtures/runtime/databricks_divergent_spark, fixtures/runtime/databricks_event_log_runtime, knowledge/sources.lock.json, tests/test_rules_catalog_reachability.py, tests/test_fixtures_kind_coverage.py]
     covers: [AC5]
     test: {path: tests/test_databricks_platform.py, name: test_photon_recusa_regra_de_plano}
   - id: T6
-    files: [sparkforge/tuning/spark_conf.py, tests/test_databricks_platform.py]
+    files: [sparkforge_aws/tuning/spark_conf.py, tests/test_databricks_platform.py]
     covers: [AC7]
     test: {path: tests/test_databricks_platform.py, name: test_shuffle_partitions_auto_recusado}
   - id: T7
@@ -41,7 +41,7 @@ tasks:
     covers: [AC8]
     test: {path: tests/test_databricks_platform.py, name: test_fixture_pareada_mesmos_findings_neutros}
   - id: T9
-    files: [sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, sparkforge/adapters/_core.py, tests/test_databricks_platform.py, docs/surface.lock.json, docs/guia/referencia]
+    files: [sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, sparkforge_aws/adapters/_core.py, tests/test_databricks_platform.py, docs/surface.lock.json, docs/guia/referencia]
     covers: [AC9]
     test: {path: tests/test_databricks_platform.py, name: test_flags_seguem_o_emr}
   - id: T10
@@ -79,7 +79,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts import runtime_matrix
+from sparkforge_aws.facts import runtime_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGINA = "https://docs.databricks.com/aws/en/release-notes/runtime/"
@@ -115,7 +115,7 @@ def test_matriz_tem_fonte_data_e_vocabulario_fechado(tmp_path):
 ```
 
 2. `python -m pytest tests/test_databricks_runtime_matrix.py -q`: falha com
-   `AttributeError: module 'sparkforge.facts.runtime_matrix' has no attribute 'DATABRICKS_COMPONENTS'`.
+   `AttributeError: module 'sparkforge_aws.facts.runtime_matrix' has no attribute 'DATABRICKS_COMPONENTS'`.
 
 3. Dado, em `knowledge/databricks/runtime-matrix.yaml`:
 
@@ -131,7 +131,7 @@ def test_matriz_tem_fonte_data_e_vocabulario_fechado(tmp_path):
 # CHAVE: o numero da versao como a pagina o escreve ("15.4", "18"), sem
 # "LTS". O rotulo que a Clusters API e a Jobs API carregam
 # ("15.4.x-scala2.12") e normalizado para a chave em
-# `sparkforge/facts/runtime_detect.py::_databricks_key`; ver
+# `sparkforge_aws/facts/runtime_detect.py::_databricks_key`; ver
 # `runtime-matrix.md` secao 2.
 #
 # Pagina atualizada em 2026-09-11 e lida em 2026-09-17.
@@ -213,7 +213,7 @@ deixa `spark` vazio: a derivação não inventa.
 - Adaptive query execution. https://docs.databricks.com/aws/en/optimizations/aqe (retrieved 2026-09-17)
 ```
 
-5. Loader, em `sparkforge/facts/runtime_matrix.py`. Logo depois de
+5. Loader, em `sparkforge_aws/facts/runtime_matrix.py`. Logo depois de
    `_emr_serverless_path()`:
 
 ```python
@@ -254,7 +254,7 @@ def databricks_sources() -> tuple[str, ...]:
 7. Gates vizinhos, na ordem:
 
 ```bash
-python -c "from sparkforge.tools.offline import _content_sha256; from pathlib import Path; print(_content_sha256(Path('knowledge/databricks/runtime-matrix.md')))"
+python -c "from sparkforge_aws.tools.offline import _content_sha256; from pathlib import Path; print(_content_sha256(Path('knowledge/databricks/runtime-matrix.md')))"
 ```
 
    Acrescente a `knowledge/offline-manifest.json`, na lista `documents` e na
@@ -281,8 +281,8 @@ python scripts/check_vnext_claims.py
 """Databricks como plataforma declarada, com fronteira onde o significado muda."""
 from pathlib import Path
 
-from sparkforge.adapters._core import build_runtime
-from sparkforge.facts.runtime_detect import _collect
+from sparkforge_aws.adapters._core import build_runtime
+from sparkforge_aws.facts.runtime_detect import _collect
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -306,7 +306,7 @@ def test_flag_declara_plataforma_e_deriva_spark():
 2. `python -m pytest tests/test_databricks_platform.py::test_flag_declara_plataforma_e_deriva_spark -q`:
    falha com `TypeError: build_runtime() got an unexpected keyword argument 'databricks'`.
 
-3. `sparkforge/findings/models.py`, em `RuntimeContext`: depois de
+3. `sparkforge_aws/findings/models.py`, em `RuntimeContext`: depois de
    `emr: str = ""` acrescente
 
 ```python
@@ -340,7 +340,7 @@ def test_flag_declara_plataforma_e_deriva_spark():
         }
 ```
 
-4. `sparkforge/facts/runtime_detect.py`:
+4. `sparkforge_aws/facts/runtime_detect.py`:
 
    Logo depois da linha `EMR_SERVERLESS_MATRIX: dict[str, dict[str, str]] = runtime_matrix.load_emr_serverless()`:
 
@@ -421,7 +421,7 @@ _IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key, "databricks": _databrick
         databricks=_databricks_key(databricks_resolvido) if databricks_resolvido else "",
 ```
 
-5. `sparkforge/adapters/_core.py`, em `build_runtime`: acrescente
+5. `sparkforge_aws/adapters/_core.py`, em `build_runtime`: acrescente
    `databricks: str | None = None,` depois de `emr: str | None = None,` na
    assinatura, e no dict `raw`, depois da linha `chave_do_release: emr,`:
 
@@ -434,7 +434,7 @@ _IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key, "databricks": _databrick
    Em `build_runtime_context`: o mesmo parâmetro na assinatura, e a chamada vira
    `build_runtime(glue, spark, python, iceberg, athena, facts=facts, emr=emr, databricks=databricks)`.
 
-6. `sparkforge/adapters/tools.py`, em `_RUNTIME_CONTEXT`: acrescente
+6. `sparkforge_aws/adapters/tools.py`, em `_RUNTIME_CONTEXT`: acrescente
    `"databricks"` e `"photon"` a `required`, logo depois de `"emr"` e de
    `"athena"`, e em `properties`:
 
@@ -514,7 +514,7 @@ python -m pytest tests/test_fixtures_golden_scan.py tests/test_fixtures_golden_r
 1. Teste, em `tests/test_databricks_platform.py`:
 
 ```python
-from sparkforge.facts.runtime_detect import detect_runtime
+from sparkforge_aws.facts.runtime_detect import detect_runtime
 
 
 def test_divergencia_spark_registrada():
@@ -591,8 +591,8 @@ python -m pytest tests/test_fixtures_golden_runtime.py tests/test_databricks_pla
 1. Teste, em `tests/test_databricks_platform.py`:
 
 ```python
-from sparkforge.adapters._core import runtime_sources_from_facts
-from sparkforge.findings.models import Fact
+from sparkforge_aws.adapters._core import runtime_sources_from_facts
+from sparkforge_aws.findings.models import Fact
 
 _CHAVE_VERSAO = "spark.databricks.clusterUsageTags.sparkVersion"
 
@@ -621,7 +621,7 @@ def test_event_log_declara_plataforma_databricks():
 2. `python -m pytest tests/test_databricks_platform.py::test_event_log_declara_plataforma_databricks -q`:
    `AssertionError` no primeiro `assert` (`{} == {'event_log': ...}`).
 
-3. `sparkforge/adapters/_core.py`: logo acima de `def _runtime_reading`:
+3. `sparkforge_aws/adapters/_core.py`: logo acima de `def _runtime_reading`:
 
 ```python
 # Chave que carrega o numero do Databricks Runtime. Documentada como
@@ -685,9 +685,9 @@ python -m pytest tests/test_databricks_platform.py tests/test_fixtures_golden_ru
 1. Teste, em `tests/test_databricks_platform.py`:
 
 ```python
-from sparkforge.facts.spark_plan import extract_plan_path
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.spark_plan import extract_plan_path
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 PLANO = ROOT / "fixtures" / "plan" / "cartesian_join" / "input"
 
@@ -721,7 +721,7 @@ def test_photon_recusa_regra_de_plano():
    `AssertionError` em `"SF-PLAN-003" not in ...` (a regra ainda dispara com
    Photon ligado).
 
-3. `sparkforge/rules/engine.py`: logo acima de `def judge`:
+3. `sparkforge_aws/rules/engine.py`: logo acima de `def judge`:
 
 ```python
 # Kinds de PLANO. Sob Databricks com Photon ligado, os operadores fisicos tem
@@ -749,7 +749,7 @@ def _photon_recusa(rule: dict[str, Any], runtime: dict[str, str]) -> bool:
             continue
 ```
 
-4. `sparkforge/facts/runtime_detect.py`: `from dataclasses import replace`
+4. `sparkforge_aws/facts/runtime_detect.py`: `from dataclasses import replace`
    junto dos imports, `EMITTED_KINDS` passa a
    `frozenset({"env.runtime_signal", "env.platform", "databricks.photon"})`, e
    logo acima de `def detect_runtime`:
@@ -796,7 +796,7 @@ def _photon_fact(photon: str) -> Fact:
     return context, sort_facts(facts)
 ```
 
-5. `sparkforge/adapters/_core.py`: `build_runtime` e `build_runtime_context`
+5. `sparkforge_aws/adapters/_core.py`: `build_runtime` e `build_runtime_context`
    ganham `photon: str | None = None,` depois de `databricks`; no dict `raw`
    de `build_runtime`, depois de `"databricks_runtime": databricks,`, entra
    `"photon": photon,`; e a chamada de `build_runtime_context` passa
@@ -881,7 +881,7 @@ python -m pytest tests/test_rules_loader.py tests/test_rules_catalog_reachabilit
 1. Teste, em `tests/test_databricks_platform.py`:
 
 ```python
-from sparkforge.tuning.spark_conf import build_conf_advice
+from sparkforge_aws.tuning.spark_conf import build_conf_advice
 
 
 def test_shuffle_partitions_auto_recusado():
@@ -911,7 +911,7 @@ def test_shuffle_partitions_auto_recusado():
 2. `python -m pytest tests/test_databricks_platform.py::test_shuffle_partitions_auto_recusado -q`:
    `StopIteration` (nenhuma recusa para a propriedade).
 
-3. `sparkforge/tuning/spark_conf.py`, em `build_conf_advice`: logo antes de
+3. `sparkforge_aws/tuning/spark_conf.py`, em `build_conf_advice`: logo antes de
    `if not spark_version:` do bloco de shuffle, acrescente
 
 ```python
@@ -958,7 +958,7 @@ Databricks produz, nunca de uma lista de regras escrita a mao.
 """
 import importlib
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 EXTRATORES = (
     "event_log", "spark_plan", "sql_metrics", "pyspark_ast", "parquet_footer",
@@ -978,7 +978,7 @@ EXCECOES = {
 def _kinds() -> set[str]:
     kinds: set[str] = set()
     for nome in EXTRATORES:
-        kinds |= set(importlib.import_module(f"sparkforge.facts.{nome}").EMITTED_KINDS)
+        kinds |= set(importlib.import_module(f"sparkforge_aws.facts.{nome}").EMITTED_KINDS)
     return kinds
 
 
@@ -1129,7 +1129,7 @@ expects_rules:
 ```python
 import yaml
 
-from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge_aws.facts.event_log import extract_event_log_path
 
 EVENTLOG = ROOT / "fixtures" / "eventlog"
 
@@ -1172,7 +1172,7 @@ import argparse
 import inspect
 import json
 
-from sparkforge.adapters import _core, cli, tools
+from sparkforge_aws.adapters import _core, cli, tools
 
 
 def _subparsers(parser):
@@ -1212,7 +1212,7 @@ def test_flags_seguem_o_emr(capsys):
    `AssertionError` listando os parsers, schemas e funções que têm `emr` e não
    têm as duas novas.
 
-3. `sparkforge/adapters/cli.py`, logo depois de `_EMR_FLAG_HELP`:
+3. `sparkforge_aws/adapters/cli.py`, logo depois de `_EMR_FLAG_HELP`:
 
 ```python
 _DATABRICKS_FLAG_HELP = (
@@ -1244,7 +1244,7 @@ _PHOTON_FLAG_HELP = (
    - Em cada chamada com `emr=args.emr,` (nove), acrescente
      `databricks=args.databricks, photon=args.photon,` logo depois.
 
-   `sparkforge/adapters/_core.py`:
+   `sparkforge_aws/adapters/_core.py`:
 
    - Em toda função pública com `emr: str | None = None,` na assinatura,
      acrescente logo depois `databricks: str | None = None,` e
@@ -1253,7 +1253,7 @@ _PHOTON_FLAG_HELP = (
      `build_runtime_context` ou a outra função daqui), acrescente
      `databricks=databricks, photon=photon` ao lado.
 
-   `sparkforge/adapters/tools.py`, logo depois de `_EMR_INPUT`:
+   `sparkforge_aws/adapters/tools.py`, logo depois de `_EMR_INPUT`:
 
 ```python
 _DATABRICKS_INPUT: dict[str, Any] = {

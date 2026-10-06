@@ -120,7 +120,7 @@ Explicitly NOT included in this feature:
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/evals/`, `sparkforge/decision/`, `config/evolution/`, `tests/`, `evals/fixtures/` | A feature estende contracts existentes de evolution, host, replay e receipts; não cria serviço novo |
+| **Deployment Location** | `sparkforge_aws/evals/`, `sparkforge_aws/decision/`, `config/evolution/`, `tests/`, `evals/fixtures/` | A feature estende contracts existentes de evolution, host, replay e receipts; não cria serviço novo |
 | **KB Domains** | `genai`, `prompt-engineering`, `testing`, `python` | Consultar avaliação estruturada/pareada, validação com evidência, integração e value objects tipados |
 | **IaC Impact** | None | Não há recursos AWS, Terraform ou mudança de deployment |
 

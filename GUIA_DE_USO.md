@@ -21,10 +21,10 @@ Para construir evidência reproduzível de um caso streaming ou batch, consulte 
 [guia operacional do Forge Lab](docs/guia/forge-lab.md). O caminho mínimo é:
 
 ```bash
-sparkforge lab doctor
-sparkforge lab verify --repo .
-sparkforge lab scenarios --json --repo .
-sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+sparkforge-aws lab doctor
+sparkforge-aws lab verify --repo .
+sparkforge-aws lab scenarios --json --repo .
+sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42 --repo .
 ```
 
 O Lab é plan-only por padrão. `run`, `up`, `down`, `shell` e `gc` só podem
@@ -35,22 +35,22 @@ de prova estão descritos no [contrato do produto](docs/knowledge/forge-lab-prod
 ## 1.2 Streaming, CDC e SLO observado
 
 Para um caso streaming, use `streaming-realtime-architect` ou
-`cdc-contract-reviewer` conforme a rota devolvida por `sparkforge next-step`.
+`cdc-contract-reviewer` conforme a rota devolvida por `sparkforge-aws next-step`.
 Extraia progress, transporte, checkpoint, CDC, Flink ou Glue separadamente e
 componha somente depois. A avaliação SLO offline usa a mesma superfície para
 progress Structured Streaming e para `kafka.lag`/`kinesis.shard`:
 
 ```bash
-sparkforge analyze streaming --path progress.jsonl --artifact progress --out progress.facts.json
-sparkforge analyze transport --path kafka.json --artifact kafka --out transport.facts.json
-sparkforge analyze streaming-ops --path slo-contract.json --out slo-contract.facts.json
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming --path progress.jsonl --artifact progress --out progress.facts.json
+sparkforge-aws analyze transport --path kafka.json --artifact kafka --out transport.facts.json
+sparkforge-aws analyze streaming-ops --path slo-contract.json --out slo-contract.facts.json
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out slo-evaluation.facts.json
 
 # saída do sink Structured Streaming
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name output-rows --query-name orders-query \
   --sink-name orders-sink --out sink-slo.facts.json
@@ -67,7 +67,7 @@ Para declarar a composição cross-engine de um pipeline, use selectors exatos e
 facts já extraídos:
 
 ```bash
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
   --facts iceberg-facts.json --mode pipeline \
   --pipeline-path orders-pipeline.json --out pipeline-facts.json
@@ -82,10 +82,10 @@ Para revisar drift entre Glue Streaming efetivo e Terraform, use os facts já
 extraídos e o compositor geral:
 
 ```bash
-sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
-sparkforge analyze terraform --path infra/ --out terraform.facts.json
-sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
-sparkforge judge --facts fused.facts.json --show-skipped
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge-aws analyze terraform --path infra/ --out terraform.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge-aws judge --facts fused.facts.json --show-skipped
 ```
 
 O vínculo exige `aws_glue_job.name` literal e único. O resultado preserva
@@ -98,9 +98,9 @@ produção executa com a configuração declarada.
 Se houver histórico terminal sanitizado, componha-o com a definição efetiva:
 
 ```bash
-sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
-sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
-sparkforge judge --facts runtime.facts.json --show-skipped
+sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
 
 Leia `glue.streaming.runtime_link`, `observed_run_ids`, `drifts` e
@@ -121,8 +121,8 @@ latest version, grava manifesto/cache local e limita a definição; não executa
 create, update ou delete na AWS:
 
 ```bash
-sparkforge collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
-sparkforge analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+sparkforge-aws collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
+sparkforge-aws analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
 ```
 
 Definição ausente, inválida ou acima do limite é `unresolved`, não contrato
@@ -133,8 +133,8 @@ Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
 de correlacionar com checkpoint, operator e transporte:
 
 ```bash
-sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
-sparkforge judge --facts flink.facts.json --show-skipped
+sparkforge-aws analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge-aws judge --facts flink.facts.json --show-skipped
 ```
 
 O resultado pode conter `flink.source`, `flink.sink` e `flink.metric` com identidade,
@@ -152,12 +152,12 @@ Para coletar observabilidade temporal bounded sem misturar namespaces, use os
 collectors read-only existentes com as duas pontas da janela:
 
 ```bash
-sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+sparkforge-aws collect streaming-integrations --repo . --kinesis-stream orders \
   --metrics-start 2026-10-02T00:00:00Z \
   --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
   --now 2026-10-02T00:10:00Z
 
-sparkforge collect managed-flink --repo . --application-name orders \
+sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 \
   --metrics-start 2026-10-03T00:00:00Z \
   --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
@@ -221,7 +221,7 @@ dentro um `AGENT.md`, e não tem. Se a varredura é recursiva, a documentação 
 coordenador nos cinco passos — o caminho que não depende de descoberta nenhuma:
 
 ```bash
-sparkforge playbook emr-infra-reviewer --repo .
+sparkforge-aws playbook emr-infra-reviewer --repo .
 ```
 
 `.claude/agents/` e `.agents/agents/` — executores inclusive — são **espelhos gerados** de
@@ -271,7 +271,7 @@ tools `run_subagent`/`read_subagent` são **removidas** de dentro de um subagent
 `max-nesting` que reverteria isso este repositório **não declara** em perfil nenhum. Na
 prática: pedir o perfil como subagente entrega o **método** do coordenador (o corpo, o
 `## Não faz`, as áreas de regra), e a decomposição em executores tem de rodar **inline**
-— que é exatamente o que `sparkforge playbook <coordenador>` devolve, em ordem. Em Claude
+— que é exatamente o que `sparkforge-aws playbook <coordenador>` devolve, em ordem. Em Claude
 Code o coordenador despacha os executores; no Devin, não conte com isso.
 
 No Devin Desktop o recorte é mais estreito: subagente é capacidade do **Devin Local
@@ -310,7 +310,7 @@ repositório declara **não-despachável** justamente por orquestrar as outras v
 `next-step`. Publicar aquele `agent:` seria roteamento mecânico com cara de decisão — o
 mesmo defeito que a ordem alfabética produziria.
 
-**`sparkforge-diagnose` não despacha, de propósito.** Ela abre o case e roteia, e o
+**`sparkforge-aws-diagnose` não despacha, de propósito.** Ela abre o case e roteia, e o
 ciclo de vida do case é o que faz a investigação atravessar sessões e ferramentas.
 Despachá-la jogaria esse ciclo de vida para um contexto que **não volta**: um subagente
 Devin não herda o histórico do pai, devolve texto livre sem contrato de saída, e some
@@ -325,7 +325,7 @@ Nenhum arquivo deste repositório liga ou desliga subagentes. `subagents_enabled
 chave de usuário (não de projeto), e um admin da organização pode escolher *None* em
 "Default subagent model", que desliga o despacho por completo. A própria Cognition
 declara custom subagents **experimentais**. Nos três casos o caminho é o mesmo da
-seção 5: `sparkforge playbook <coordenador>`, que é o piso e não depende de despacho.
+seção 5: `sparkforge-aws playbook <coordenador>`, que é o piso e não depende de despacho.
 
 ### 3.4 Ligar o servidor MCP no Devin
 
@@ -346,9 +346,9 @@ do ecossistema:
 // .devin/mcp_config.json
 {
   "mcpServers": {
-    "sparkforge": {
+    "sparkforge-aws": {
       "command": "python",
-      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+      "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"]
     }
   }
 }
@@ -358,7 +358,7 @@ Ou pela própria CLI, sem editar arquivo:
 
 ```bash
 pip install "sparkforge-aws[mcp]"
-devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+devin mcp add -s project sparkforge-aws -- python -m sparkforge_aws.adapters.mcp --transport stdio
 devin mcp list
 ```
 
@@ -384,7 +384,7 @@ verdade, nunca com uma variável de outra ferramenta.
 transporte:
 
 ```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
@@ -398,10 +398,10 @@ compact`; o servidor publica exatamente estas seis tools: `context_start`,
 
 ```bash
 # Devin CLI, Claude Code ou outro cliente stdio
-python -m sparkforge.adapters.mcp --transport stdio --mode compact
+python -m sparkforge_aws.adapters.mcp --transport stdio --mode compact
 
 # Devin Desktop ou outro cliente HTTP
-python -m sparkforge.adapters.mcp --transport http --mode compact --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --mode compact --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
@@ -414,7 +414,7 @@ Para instalar essa escolha no host, use o profile de integração. `economy` e
 `balanced` gravam `--mode compact`; `deep` mantém o catálogo full:
 
 ```bash
-sparkforge integrate claude --scope user --profile economy
+sparkforge-aws integrate claude --scope user --profile economy
 ```
 
 ### 3.4 Economia de contexto e execução determinística
@@ -431,7 +431,7 @@ provider:
 Exemplo local:
 
 ```bash
-sparkforge context start --intent "Glue FGAC Iceberg" --profile economy
+sparkforge-aws context start --intent "Glue FGAC Iceberg" --profile economy
 python scripts/check_token_efficient_bench.py
 ```
 
@@ -451,19 +451,19 @@ sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
 verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
 ao vivo que não foi observada.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 143 tools fazem (catálogo atual)
+**E quando não houver MCP nenhum:** a CLI `sparkforge-aws` faz tudo o que as 143 tools fazem (catálogo atual)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
 As superfícies Agentic OS v2 são locais e compartilham `_core` entre CLI e MCP:
 
 ```bash
-sparkforge context inspect --input context.json
-sparkforge agentops inspect <run_id> --repo .
-sparkforge agentops compare <run_a> <run_b> --repo .
-sparkforge agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
-sparkforge agentops baseline compare <run_b> --path .sparkforge/baselines/base.json --repo .
-sparkforge doctor agentic --repo .
+sparkforge-aws context inspect --input context.json
+sparkforge-aws agentops inspect <run_id> --repo .
+sparkforge-aws agentops compare <run_a> <run_b> --repo .
+sparkforge-aws agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
+sparkforge-aws agentops baseline compare <run_b> --path .sparkforge/baselines/base.json --repo .
+sparkforge-aws doctor agentic --repo .
 ```
 
 O payload de `context inspect` deve declarar `items`; cada item pode trazer `relevant`,
@@ -479,7 +479,7 @@ nenhum desses comandos chama AWS ou provider.
 Apos conectar:
 
 ```text
-Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
 ```
 
 Ou, sem depender do agente, teste o stdio diretamente:
@@ -503,8 +503,8 @@ ativo. Um `connection refused` indica que o servidor nao subiu ou a porta esta e
 |---|---|---|
 | `CatalogError: .../${CLAUDE_PLUGIN_ROOT}/...` | `.mcp.json` sendo usado no Devin | Use `.devin/mcp_config.json` ou `devin mcp add` |
 | `ModuleNotFoundError: mcp` | extra `[mcp]` nao instalado | `pip install "sparkforge-aws[mcp]"` |
-| `devin mcp list` nao mostra `sparkforge` | arquivo no escopo global em vez de projeto | confira se `.devin/mcp_config.json` existe na raiz do repo |
-| Desktop nao conecta ao `serverUrl` | servidor HTTP nao rodando ou porta errada | suba com `python -m sparkforge.adapters.mcp --transport http ...` e verifique o endereco |
+| `devin mcp list` nao mostra `sparkforge-aws` | arquivo no escopo global em vez de projeto | confira se `.devin/mcp_config.json` existe na raiz do repo |
+| Desktop nao conecta ao `serverUrl` | servidor HTTP nao rodando ou porta errada | suba com `python -m sparkforge_aws.adapters.mcp --transport http ...` e verifique o endereco |
 | Tools aparecem, mas chamadas falham com `CatalogError` | `SPARKFORGE_CATALOG` aponta para caminho inexistente | remova a variavel ou aponte para um diretorio real |
 
 Para reinstalar do zero:
@@ -512,8 +512,8 @@ Para reinstalar do zero:
 ```bash
 pip uninstall sparkforge-aws -y
 pip install "sparkforge-aws[mcp]"
-devin mcp remove -s project sparkforge || true
-devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+devin mcp remove -s project sparkforge-aws || true
+devin mcp add -s project sparkforge-aws -- python -m sparkforge_aws.adapters.mcp --transport stdio
 ```
 
 ## 4. GitHub Copilot
@@ -528,7 +528,7 @@ Ou selecione o agente **Glue Incremental Performance Architect**.
 
 ## 5. Coordenador e playbook: como entrar sem escolher à mão
 
-Qual coordenador usar não é escolha manual. `sparkforge next-step` (CLI) ou
+Qual coordenador usar não é escolha manual. `sparkforge-aws next-step` (CLI) ou
 `sparkforge_next_step` (MCP) consulta as rotas `AGENT-*` de
 `rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
 fase da investigação e área do achado dominante. Há 14 coordenadores, cada um com
@@ -549,7 +549,7 @@ despacha os cinco executores (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-ve
 `sf-synthesizer`) como subagentes, na ordem do loop de fase — ver a seção 3 para onde os
 perfis moram no Devin.
 
-`sparkforge playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook` devolve a
+`sparkforge-aws playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook` devolve a
 mesma decomposição em passos sequenciais: o que cada executor faz, não faz, pressupõe e
 entrega, na ordem certa. Ele é o **piso das cinco plataformas**, não um substituto de
 segunda classe: é o único caminho em Codex e Copilot CI, onde despacho de subagente não
@@ -586,8 +586,8 @@ ninguém precisar declará-la.
 Em EMR Serverless o artefato é um só, e os dois verbos são estes:
 
 ```bash
-sparkforge collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
-sparkforge analyze emr-serverless --path .sparkforge/artifacts/<dir-ou-arquivo>   --out .sparkforge/facts_emr_serverless.json
+sparkforge-aws collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
+sparkforge-aws analyze emr-serverless --path .sparkforge/artifacts/<dir-ou-arquivo>   --out .sparkforge/facts_emr_serverless.json
 ```
 
 `collect` exige o **id** da application e nunca o nome — `name` é opcional na API e a
@@ -623,7 +623,7 @@ Se a investigação vai **mudar** o job, `funcval plan` deriva, **antes** da mud
 precisa ser medido nos dois lados — contagem, schema, chaves e agregados do alvo:
 
 ```bash
-sparkforge funcval plan \
+sparkforge-aws funcval plan \
   --facts .sparkforge/facts.json \
   --facts .sparkforge/facts_catalog.json \
   --key pedido_id,dt \
@@ -643,7 +643,7 @@ Medidos os dois lados — quem mede é você, o motor não executa consulta nenh
 `funcval compare` julga antes contra depois, **nunca** observado contra catálogo:
 
 ```bash
-sparkforge funcval compare \
+sparkforge-aws funcval compare \
   --plan .sparkforge/facts_funcval_plan.json \
   --before .sparkforge/funcval_before.json \
   --after .sparkforge/funcval_after.json \
@@ -668,19 +668,19 @@ cada um responde uma metade que o anterior deixou aberta.
 
 ```bash
 # 1. o que o JOB declara -- FGAC, Full Table Access, catálogo, filesystem
-sparkforge analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+sparkforge-aws analyze terraform --path infra/ --out .sparkforge/facts_tf.json
 
 # 2. o que a TABELA e a CONTA respondem
-sparkforge collect lakeformation --repo . --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela> --now <ISO8601>
-sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/     --out .sparkforge/facts_lf.json
+sparkforge-aws collect lakeformation --repo . --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela> --now <ISO8601>
+sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/     --out .sparkforge/facts_lf.json
 
 # 3. o que o IAM decide, SIMULADO -- não o documento da policy
-sparkforge collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey     --now <ISO8601>
-sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/     --out .sparkforge/facts_iam.json
+sparkforge-aws collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey     --now <ISO8601>
+sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/     --out .sparkforge/facts_iam.json
 
 # 4. a mensagem exata da falha
-sparkforge collect cloudwatch-logs --repo . --job-name <job> --job-run <run>     --log-group /aws-glue/jobs/error --start <ISO8601> --end <ISO8601> --now <ISO8601>
-sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_log.json
+sparkforge-aws collect cloudwatch-logs --repo . --job-name <job> --job-run <run>     --log-group /aws-glue/jobs/error --start <ISO8601> --end <ISO8601> --now <ISO8601>
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_log.json
 ```
 
 **Três coisas que decidem a qualidade da resposta, e todas são escolha de quem coleta:**
@@ -717,9 +717,9 @@ A investigação só está concluída quando houver:
 - gargalo dominante comprovado;
 - arquitetura-alvo;
 - mudança implementada;
-- benchmark — `sparkforge benchmark --before … --after …`;
-- validação funcional — `sparkforge funcval plan` **antes** da mudança e
-  `sparkforge funcval compare` depois, com os dois lados medidos por você;
+- benchmark — `sparkforge-aws benchmark --before … --after …`;
+- validação funcional — `sparkforge-aws funcval plan` **antes** da mudança e
+  `sparkforge-aws funcval compare` depois, com os dois lados medidos por você;
 - custo;
 - risco;
 - rollback.
@@ -742,7 +742,7 @@ manifesto é o que substitui o artefato ausente no commit: ele registra
 
 Checklist de retomada, em ordem:
 
-1. Rode `sparkforge resume --repo <raiz>` (ou `/sf-resume`) para reidratar o
+1. Rode `sparkforge-aws resume --repo <raiz>` (ou `/sf-resume`) para reidratar o
    payload — onde parou, runtime, achados principais, hipóteses abertas.
 2. Leia `coverage.unresolved`. Um nó não resolvido é **ponto cego**, não
    ausência de problema — nunca trate contagem zero de achados como "está
@@ -753,7 +753,7 @@ Checklist de retomada, em ordem:
 4. Para cada artefato em `missing_artifacts`, recolete usando o
    `collect_command` exato registrado no manifesto — não improvise outro
    comando nem assuma que o artefato antigo ainda é válido.
-5. Deixe `sparkforge next-step` decidir a rota (via `routing.yaml`). Não
+5. Deixe `sparkforge-aws next-step` decidir a rota (via `routing.yaml`). Não
    escolha a próxima skill por julgamento próprio — é isso que divergiria
    entre modelos e entre ferramentas.
 
@@ -772,7 +772,7 @@ repositório. **Clonar é a instalação inteira**: não há `npm install`, não
 | Mensagem de commit comprimida | `/caveman-commit` |
 | Revisão de diff comprimida | `/caveman-review` |
 | Comprimir um arquivo de memória (`CLAUDE.md`, notas) | `/caveman-compress <arquivo>` |
-| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` (para mudança no próprio SparkForge, o fluxo é o SDD do repositório: skills `sdd-*` e `sparkforge sdd check`, em [`docs/sdd/README.md`](docs/sdd/README.md)) |
+| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` (para mudança no próprio SparkForge, o fluxo é o SDD do repositório: skills `sdd-*` e `sparkforge-aws sdd check`, em [`docs/sdd/README.md`](docs/sdd/README.md)) |
 | Delegar a subagente comprimido | skill `cavecrew` → `cavecrew-investigator`, `cavecrew-builder`, `cavecrew-reviewer` |
 | Voltar ao português normal | `stop caveman` ou `normal mode` |
 
@@ -797,7 +797,7 @@ globalmente, fora deste repositório. A razão completa está em
 
 ## 11. Sem MCP e sem Python
 
-Se as tools MCP não estiverem disponíveis, use a CLI `sparkforge` (mesmas
+Se as tools MCP não estiverem disponíveis, use a CLI `sparkforge-aws` (mesmas
 funções, mesma saída). Se nem Python estiver disponível, leia
 `rules/catalog/*.yaml` diretamente — é YAML legível por humano, com o mesmo
 `rule_id`, o mesmo limiar, a mesma guarda de versão (`runtime_scope`) e a

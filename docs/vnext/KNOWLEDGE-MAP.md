@@ -23,35 +23,35 @@ aqueles mapas resolve-se a favor deles.
 **Fact e Finding.** A separação de que todo o resto depende. Um `Fact` é observação
 ancorada num artefato, com procedência, e **nunca** carrega juízo nem limiar. Um `Finding`
 é juízo, e nunca existe sem evidência: `evidence` cita os `fact_id` que o sustentam.
-Limiar mora na regra do catálogo, nunca no extrator. `sparkforge/findings/models.py`.
+Limiar mora na regra do catálogo, nunca no extrator. `sparkforge_aws/findings/models.py`.
 
 **Catálogo de regras.** Conhecimento em forma executável. Cada regra declara de que facts
 precisa (`requires_facts`), em que faixa de versão vale (`runtime_scope`), o que propõe, o
 que arrisca, como validar e como reverter — com fonte e data. `rules/catalog/`, lido por
-`sparkforge/rules/engine.py`.
+`sparkforge_aws/rules/engine.py`.
 
 **Fail-closed por versão.** Regra fora da faixa não some em silêncio: é reportada como
 pulada, com motivo. Silêncio, para quem lê um relatório, é indistinguível de "avaliei e
 não achei" — e essa confusão é o defeito que o mecanismo existe para impedir.
-`sparkforge/rules/version_scope.py`.
+`sparkforge_aws/rules/version_scope.py`.
 
 **Waves de execução.** Tarefas independentes em paralelo, dependentes em sequência,
 derivadas de um grafo em vez de estágios numerados à mão.
-`sparkforge/workflows/dag.py:ExecutionDAG.compute_waves()`.
+`sparkforge_aws/workflows/dag.py:ExecutionDAG.compute_waves()`.
 
 **Cadeia de autorização.** Toda ferramenta declara a classe de mutação que pratica, e
 mutação pode exigir aprovação. `CallPolicy` decide allowlist, denylist, perfil, raiz e
-aprovações; `sparkforge.adapters.tools.call_tool(..., policy=...)` aplica a decisão e
+aprovações; `sparkforge_aws.adapters.tools.call_tool(..., policy=...)` aplica a decisão e
 devolve recusa estruturada. A política é opcional por compatibilidade: sem policy
-declarada não existe bloqueio universal. `sparkforge/registry/models.py`,
-`sparkforge/agents/autonomy.py`, `sparkforge/policy/`.
+declarada não existe bloqueio universal. `sparkforge_aws/registry/models.py`,
+`sparkforge_aws/agents/autonomy.py`, `sparkforge_aws/policy/`.
 
 **Arquitetura Lake Formation.** Contrato determinístico que separa engine/runtime,
 FGAC/FTA, formato, operação, ownership dos catálogos, cross-account e credential
 vending. A matriz versionada está em
 `knowledge/lakeformation/capability-matrix.yaml`; o motor está em
-`sparkforge/lakeformation/architecture.py` e a rota de contas em
-`sparkforge/lakeformation/catalog_routing.py`. A saída distingue `consistent`,
+`sparkforge_aws/lakeformation/architecture.py` e a rota de contas em
+`sparkforge_aws/lakeformation/catalog_routing.py`. A saída distingue `consistent`,
 `unresolved` e `blocked`, preservando `required_verification`.
 
 O fechamento operacional está em `knowledge/lakeformation/operational-closure.md`
@@ -62,36 +62,36 @@ por progressive disclosure a partir das dimensões declaradas.
 ## Vocabulário de contexto e custo
 
 **Funil de contexto.** Reduzir o repositório inteiro ao mínimo que sustenta a resposta,
-descartando ruído e preservando evidência. `sparkforge/context/funnel.py`.
+descartando ruído e preservando evidência. `sparkforge_aws/context/funnel.py`.
 
 **Disclosure progressivo.** Carregar metadado primeiro, instrução depois, referência
-completa só quando necessário. `sparkforge/context/progressive.py`.
+completa só quando necessário. `sparkforge_aws/context/progressive.py`.
 
 **Cascata de tiers.** A ideia central da economia de token deste projeto: o primeiro tier
 é determinístico e custa zero token, e só o que ele não resolve sobe para modelo — mais
-barato antes, mais caro depois, multi-agente por último. `sparkforge/economy/`.
+barato antes, mais caro depois, multi-agente por último. `sparkforge_aws/economy/`.
 
 **Observabilidade local.** Tokens, custo estimado, latência, spans e chamadas de
 ferramenta gravados localmente, sem depender de serviço pago. O que é medido e o que é
 estimado ficam distinguíveis — número estimado apresentado como medido é a mesma classe de
-mentira que um finding sem evidência. `sparkforge/observability/`.
+mentira que um finding sem evidência. `sparkforge_aws/observability/`.
 
 **Agentic OS v2.** Contratos locais que conectam memória, trust, contexto, economia,
 checkpoint, Forge e AgentOps sem substituir o núcleo determinístico. As fontes principais
-são `sparkforge/agentic/`, `sparkforge/context/quality.py`,
-`sparkforge/economy/ledger.py`, `sparkforge/agentic/checkpoint.py`,
-`sparkforge/protocols/forge.py` e `sparkforge/observability/agentops.py`.
+são `sparkforge_aws/agentic/`, `sparkforge_aws/context/quality.py`,
+`sparkforge_aws/economy/ledger.py`, `sparkforge_aws/agentic/checkpoint.py`,
+`sparkforge_aws/protocols/forge.py` e `sparkforge_aws/observability/agentops.py`.
 
 **Trust, taint e autoridade.** Proveniência e confiança não autorizam instrução.
 Dados externos e handoffs recebem `DATA_ONLY`; uma rota `active` exige autoridade,
-evidência de promoção e rollback. `sparkforge/agentic/trust.py` e
-`sparkforge/economy/model_router.py`.
+evidência de promoção e rollback. `sparkforge_aws/agentic/trust.py` e
+`sparkforge_aws/economy/model_router.py`.
 
 **Unresolved.** Estado explícito para aquilo que o artefato, transcript, preço ou
 benchmark não permite afirmar. Não é sinônimo de falso nem de ausência comprovada.
 
 **Paridade entre plataformas.** Uma fonte canônica compilada para cada plataforma-alvo, e
-um gate que reprova quando os espelhos divergem da fonte. `sparkforge/adapters/`,
+um gate que reprova quando os espelhos divergem da fonte. `sparkforge_aws/adapters/`,
 `parity.yaml`, `scripts/sync_skills.py`.
 
 Lake Formation acceptance and observability are version-aware: the decision

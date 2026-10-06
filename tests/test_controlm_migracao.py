@@ -12,14 +12,14 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.controlm import matrix as cm_matrix
-from sparkforge.controlm.migration import (
+from sparkforge_aws.controlm import matrix as cm_matrix
+from sparkforge_aws.controlm.migration import (
     SEVERIDADE_POR_FRONTEIRA,
     ControlMMigrationError,
     avaliar,
     caminho,
 )
-from sparkforge.facts.controlm_jobs import extract_controlm_jobs_path
+from sparkforge_aws.facts.controlm_jobs import extract_controlm_jobs_path
 
 ROOT = Path(__file__).resolve().parents[1]
 # A fixture que o incremento 2 ja usa como prova do cruzamento: um job com
@@ -114,10 +114,10 @@ class TestOContrafactualDaDirecao:
         Este teste existe para que a "correcao" obvia -- reintroduzir a inversao
         — tenha de passar por cima de uma medicao.
         """
-        from sparkforge.controlm import migration
+        from sparkforge_aws.controlm import migration
 
         assert not hasattr(migration, "_inverter")
-        from sparkforge.controlm import descriptor as d
+        from sparkforge_aws.controlm import descriptor as d
 
         antes = dict(d.describe("9.0.22.000").capabilities)
         depois = dict(d.describe("9.0.22.005").capabilities)

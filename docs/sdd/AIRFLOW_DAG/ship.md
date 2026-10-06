@@ -37,7 +37,7 @@ deviations:
 
 ## O que o domínio entrega
 
-- **Extrator.** `sparkforge analyze airflow-dag --path` e a tool
+- **Extrator.** `sparkforge-aws analyze airflow-dag --path` e a tool
   `sparkforge_analyze_airflow_dag` leem o `.py` do DAG por `ast.parse`, e **nunca** o
   importam nem executam. Sai `af.dag`, `af.task`, `af.dependency`, `af.unresolved` com
   razão própria e `af.analyzed`.
@@ -80,7 +80,7 @@ deviations:
 | `python scripts/check_status_numbers.py --strict` (AC10) | 0 divergências |
 | `python scripts/check_vnext_claims.py` | 0 divergências |
 | `python -m pytest tests/test_fixtures_golden*.py -q` | 3268 passed, 4 skipped |
-| `python -m ruff check sparkforge scripts tests` | limpo |
+| `python -m ruff check sparkforge_aws scripts tests` | limpo |
 
 ## Pendências
 
@@ -91,7 +91,7 @@ deviations:
   operador chama para pará-lo.
 - **Módulo compartilhado:** `_glue_jobs_por_nome` e `_max_retries` estão duplicados entre
   `airflow_dag.py` e `stepfunctions.py`, de propósito. Um
-  `sparkforge/facts/glue_terraform.py` é incremento separado, e a revisão conferiu que as
+  `sparkforge_aws/facts/glue_terraform.py` é incremento separado, e a revisão conferiu que as
   cópias não divergiram.
 - **Fora de escopo:** dependência entre DAGs, DAG dinâmico, metadados de execução, e
   operadores que não são o `GlueJobOperator`.

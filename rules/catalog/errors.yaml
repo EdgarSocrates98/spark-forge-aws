@@ -1,9 +1,9 @@
 # Catálogo de regras — o julgamento sobre a exceção que o job LANÇOU.
 #
-# A camada de fato já existe e não mora aqui: `sparkforge/facts/exception.py`
+# A camada de fato já existe e não mora aqui: `sparkforge_aws/facts/exception.py`
 # estrutura `spark.stage.failure.attrs.reason` em `spark.exception`
 # (`exception_class`, `message_head`, `is_chained`, `caused_by`), e
-# `sparkforge/errors/matcher.py::build_signature_matches` constata que aquela
+# `sparkforge_aws/errors/matcher.py::build_signature_matches` constata que aquela
 # exceção casa com uma assinatura de `knowledge/errors/`
 # (`error.signature_match`, com `signature_id` e `matched_on`). Nenhum dos dois
 # julga. O julgamento é este arquivo.
@@ -38,8 +38,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # O CAMINHO ABRIU, E AS QUATRO ENTRARAM (2026-09-09)
 #
-# O coletor entrou (`sparkforge/collect/cloudwatch_logs.py` e
-# `sparkforge/facts/cloudwatch_logs.py`), e `build_signature_matches` passou a
+# O coletor entrou (`sparkforge_aws/collect/cloudwatch_logs.py` e
+# `sparkforge_aws/facts/cloudwatch_logs.py`), e `build_signature_matches` passou a
 # casar a mesma assinatura contra o TEXTO DA LINHA, com
 # `matched_on: "log_line"`. As quatro produzem `error.signature_match` hoje, e
 # `fixtures/cloudwatch_logs/quatro_assinaturas_de_log/` é onde isso está medido.
@@ -58,8 +58,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # O `evidence_required` DAS QUATRO NOMEIA KIND QUE NÃO EXISTE, e isso é MEDIDO
 #
-# Medido em 2026-09-09, contra os 195 kinds que `sparkforge/facts/*.py` e
-# `sparkforge/errors/matcher.py` declaram em `EMITTED_KINDS`:
+# Medido em 2026-09-09, contra os 195 kinds que `sparkforge_aws/facts/*.py` e
+# `sparkforge_aws/errors/matcher.py` declaram em `EMITTED_KINDS`:
 #
 #   ERR-ATH-001   `iceberg.table_property`, `env.consumer`        OS DOIS EXISTEM
 #   ERR-GLUE-001  `pyspark.skew_join`, `eventlog.executor_oom`,
@@ -69,7 +69,7 @@
 #   ERR-LF-001    `lakeformation.missing_grant`,
 #                 `ram.unaccepted_share`                          NENHUM EXISTE
 #   ATUALIZADO em 2026-09-21 (docs/sdd/LF_GRANTS/): `lakeformation.missing_grant`
-#   passou a ser emitido por `sparkforge/facts/lakeformation_missing_grant.py`, e
+#   passou a ser emitido por `sparkforge_aws/facts/lakeformation_missing_grant.py`, e
 #   `SF-LF-011` o consome. `ram.unaccepted_share` continua sem coletor e foi movido
 #   para `evidence_out_of_reach` da assinatura. `SF-ERR-006` fica como esta: ela
 #   dispara sem grant coletado, que e o caso que o fact novo recusa por nome.
@@ -196,7 +196,7 @@ rules:
   #   `unsafe_fixes` e nao acrescentar `workarounds` e escolha, nao lacuna.
   #
   # JA EXISTE POR OUTRO NOME -- `signature: {regex, exception, message_pattern}`.
-  #   O matcher tem TRES portas de casamento (ver `sparkforge/errors/matcher.py`),
+  #   O matcher tem TRES portas de casamento (ver `sparkforge_aws/errors/matcher.py`),
   #   e `signature` e a string que a terceira usa. Separar o campo em tres so
   #   duplicaria o que o matcher ja distingue no codigo, e o teste do golden do
   #   log prova que as tres portas funcionam.
@@ -276,7 +276,7 @@ rules:
         `ListBuffer`; coleções paralelas passaram a exigir import próprio em
         2.13.
       - >-
-        Rodar `sparkforge glue dependency-audit <dir> --glue 6.0` sobre o
+        Rodar `sparkforge-aws glue dependency-audit <dir> --glue 6.0` sobre o
         diretório do job para ler `mig.jar_binary.scala_minor` de todos os JARs
         de uma vez, em vez de conferir o acusado sozinho.
     # Mesmo `kind` e mesmo `target` de `SF-SPARK4-004`, e a mesma `direction`:
@@ -1784,12 +1784,12 @@ rules:
   # ram.unaccepted_share]`, e NENHUM dos dois e kind emitido -- por isso
   # `SF-ERR-006` teve de usar `tf.spark_conf` como substituto medido. As quatro
   # novas nao repetem isso: elas declaram `lakeformation.access_model` e
-  # `lakeformation.filesystem`, que `sparkforge/facts/lakeformation.py` EMITE, e
+  # `lakeformation.filesystem`, que `sparkforge_aws/facts/lakeformation.py` EMITE, e
   # o `evidence_required` da assinatura e o `requires_facts` da regra passam a
   # dizer a mesma coisa.
   #
   #   ATUALIZADO em 2026-09-21 (docs/sdd/LF_GRANTS/): `lakeformation.missing_grant`
-  #   passou a ser emitido por `sparkforge/facts/lakeformation_missing_grant.py`, e
+  #   passou a ser emitido por `sparkforge_aws/facts/lakeformation_missing_grant.py`, e
   #   `SF-LF-011` o consome. `ram.unaccepted_share` continua sem coletor e foi movido
   #   para `evidence_out_of_reach` da assinatura. `SF-ERR-006` fica como esta: ela
   #   dispara sem grant coletado, que e o caso que o fact novo recusa por nome.

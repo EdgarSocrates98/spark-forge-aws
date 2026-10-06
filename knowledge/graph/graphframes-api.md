@@ -1,7 +1,7 @@
 # GraphFrames — a API real, e as duas perguntas que decidem regra
 
 Esta página existe porque a §6 do
-[spec da Fase 6a](../../docs/superpowers/specs/2026-08-05-sparkforge-fase6a-graph-design.md)
+[spec da Fase 6a](../../docs/superpowers/specs/2026-08-05-sparkforge-aws-fase6a-graph-design.md)
 marcou **quatro perguntas como não verificadas**, e duas delas decidem severidade
 e existência de regra. Cada afirmação abaixo tem URL e `retrieved:`. Onde a fonte
 contrariou o spec, a conclusão está escrita como **veto**, com o motivo — a §7 é
@@ -473,5 +473,5 @@ a nota de release — porque o que se instala é o jar.
 
 **Deste repositório**
 
-- `GLUE_MATRIX` e `EMR_MATRIX` em [`../../sparkforge/facts/runtime_detect.py`](../../sparkforge/facts/runtime_detect.py).
+- `GLUE_MATRIX` e `EMR_MATRIX` em [`../../sparkforge_aws/facts/runtime_detect.py`](../../sparkforge_aws/facts/runtime_detect.py).
 - [`availability.md`](availability.md) — a matriz de jar por release, e o silêncio da AWS.

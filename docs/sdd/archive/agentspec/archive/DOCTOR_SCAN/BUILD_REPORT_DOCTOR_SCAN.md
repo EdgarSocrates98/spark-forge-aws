@@ -20,7 +20,7 @@
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | 15/15 entradas do manifesto |
-| **Files Created** | 4 modulos (`sparkforge/scan/{__init__,plan,summary}.py`, `sparkforge/doctor.py`), 3 de teste, 7 casos de fixture, 1 manual, este relatorio |
+| **Files Created** | 4 modulos (`sparkforge_aws/scan/{__init__,plan,summary}.py`, `sparkforge_aws/doctor.py`), 3 de teste, 7 casos de fixture, 1 manual, este relatorio |
 | **Lines of Code** | `scan/plan.py` ~200, `scan/summary.py` ~55, `doctor.py` ~160; `_core` +~200, `tools.py` +~130, `cli.py` +~60 |
 | **Tests Passing** | ver Verification Results |
 | **Agents Used** | 0 (build direto) |
@@ -31,8 +31,8 @@
 
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
-| 1-3 | `sparkforge/scan/` | (direct) | ✅ Complete | Plano puro, `KIND_PARA_ANALYZE` fechado, seis recusas, resumo |
-| 4 | `sparkforge/doctor.py` | (direct) | ✅ Complete | `Checagem`, nove `avaliar_*` puros, `resumo` |
+| 1-3 | `sparkforge_aws/scan/` | (direct) | ✅ Complete | Plano puro, `KIND_PARA_ANALYZE` fechado, seis recusas, resumo |
+| 4 | `sparkforge_aws/doctor.py` | (direct) | ✅ Complete | `Checagem`, nove `avaliar_*` puros, `resumo` |
 | 5 | `_core.scan`, `_core.doctor` | (direct) | ✅ Complete | Um analyze por arquivo, `fuse` + `judge`, escrita em `.sparkforge/scan/`, SARIF pelo `report_github_write`; doctor sonda as portas |
 | 6-7 | CLI e tools | (direct) | ✅ Complete | `scan [raiz] --dry-run --format --fail-on --glue...`, `doctor --repo --online`; `sparkforge_scan` `_WRITE_IDEMPOTENT`, `sparkforge_doctor` `_READ_ONLY` |
 | 8-11 | Testes e fixtures | (direct) | ✅ Complete | `test_scan_plan` (12), `test_doctor` (17), golden com 7 casos + SC1, SC4, dry-run |
@@ -48,7 +48,7 @@
 ### Lint Check
 
 ```text
-ruff check sparkforge tests scripts  ->  All checks passed!
+ruff check sparkforge_aws tests scripts  ->  All checks passed!
 ```
 
 ### Type Check
@@ -89,11 +89,11 @@ A 1a passada foi morta por falta de memoria no lote goldens-2; antes disso, o a-
 
 | # | Issue | Resolution |
 |---|-------|------------|
-| 1 | `code_status` passa por `garantir_frescor`, que grava a conferencia no indice quando ele existe (por isso `sparkforge_code_status` esta entre as tools que escrevem). O doctor chamando-o seria `_READ_ONLY` mentiroso | O doctor so confere a EXISTENCIA do indice e aponta `sparkforge code status --root .` para o frescor; teste mede o `mtime_ns` do banco antes e depois |
+| 1 | `code_status` passa por `garantir_frescor`, que grava a conferencia no indice quando ele existe (por isso `sparkforge_code_status` esta entre as tools que escrevem). O doctor chamando-o seria `_READ_ONLY` mentiroso | O doctor so confere a EXISTENCIA do indice e aponta `sparkforge-aws code status --root .` para o frescor; teste mede o `mtime_ns` do banco antes e depois |
 | 2 | O caso `analyze_falhou` montado com dump Iceberg malformado nao falhava | Medido: Iceberg, Athena e EMR aceitam dump malformado como `*.unresolved`; CloudWatch, parquet-footer, IAM, grants e resource link levantam. O fixture passou a usar grants de Lake Formation |
 | 3 | `pack_list` devolve `env` com o NOME da variavel, sempre; o doctor dava `ok` com 0 packs | `skip` quando nao ha pack ativo nem recusado |
 | 4 | `unlock` do indice ensinava `code init --repo .`; a flag e `--root` | Corrigido nos tres `unlock` |
-| 5 | Mensagem de raiz inexistente sem comando que resolve (`test_error_message_is_actionable`) | Mensagem com `sparkforge scan <raiz> --dry-run` / `sparkforge doctor --repo <raiz>` |
+| 5 | Mensagem de raiz inexistente sem comando que resolve (`test_error_message_is_actionable`) | Mensagem com `sparkforge-aws scan <raiz> --dry-run` / `sparkforge-aws doctor --repo <raiz>` |
 | 6 | `_REPORT_DIR` inexistente no `_core` (pego antes de rodar) | Usa o retorno de `report_github_write` |
 | 7 | 28 claims movidas (tools 95 -> 97, READ_ONLY, com caminho 87 -> 89, contagens de `.py` e bytes, receptor 90,6 -> 90,5) | Probe e aplicacao por id |
 

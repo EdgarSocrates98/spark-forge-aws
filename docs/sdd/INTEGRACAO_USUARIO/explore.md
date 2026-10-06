@@ -6,7 +6,7 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "`sparkforge integrate <host> --scope user` renderiza cada host a partir das skills e agents embutidos no wheel: plugin do Claude por marketplace local em ~/.sparkforge, e diretorios globais de agents, skills (~/.agents/skills) e MCP de usuario para Devin, Codex e Copilot CLI, com manifesto do que foi escrito para update e detach."
+    summary: "`sparkforge-aws integrate <host> --scope user` renderiza cada host a partir das skills e agents embutidos no wheel: plugin do Claude por marketplace local em ~/.sparkforge, e diretorios globais de agents, skills (~/.agents/skills) e MCP de usuario para Devin, Codex e Copilot CLI, com manifesto do que foi escrito para update e detach."
     tradeoffs:
       - "o conteudo chega a qualquer repo sem copiar nada para ele, e vem de uma origem so (o wheel), com ou sem GitHub"
       - "reusa os renderizadores de scripts/sync_skills.py em vez de escrever um quinto"
@@ -48,9 +48,9 @@ O prompt foi quebrado em frentes, cada uma com ciclo próprio:
 4. Distribuição restrita: bundle offline completo, executável standalone e modo `vendor`
    como evolução do `scripts/install_skills.py`.
 5. `attach` mínimo por repositório.
-6. Launcher (`sparkforge claude`, `sparkforge devin`).
+6. Launcher (`sparkforge-aws claude`, `sparkforge-aws devin`).
 
-O que já existe hoje: `sparkforge doctor`, `scripts/install_skills.py` (a cópia por repo),
+O que já existe hoje: `sparkforge-aws doctor`, `scripts/install_skills.py` (a cópia por repo),
 `scripts/verify_offline_bundle.py`, `.claude-plugin/plugin.json` (só o manifesto), e o
 wheel já embute `rules/catalog` e `knowledge` (`pyproject.toml`,
 `[tool.hatch.build.targets.wheel.force-include]`).

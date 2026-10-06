@@ -15,19 +15,19 @@ Todos os exemplos usam arquivos sintéticos de `fixtures/controlm/`.
 
 ```bash
 # 1. O que vale na versão do Automation API do seu ambiente
-sparkforge controlm describe --version 9.0.21.300 --detail-level compact
+sparkforge-aws controlm describe --version 9.0.21.300 --detail-level compact
 
 # 2. Extrair os facts da definição, declarando a versão do ambiente alvo
 mkdir -p /tmp/sf
-sparkforge analyze controlm-jobs \
+sparkforge-aws analyze controlm-jobs \
   --path fixtures/controlm/capacidade_abaixo_da_fronteira/input \
   --version 9.0.21.300 --out /tmp/sf/facts_ctm.json
 
 # 3. Julgar contra o catálogo de regras
-sparkforge judge --facts /tmp/sf/facts_ctm.json
+sparkforge-aws judge --facts /tmp/sf/facts_ctm.json
 
 # 4. Vai trocar de versão? Veja o que muda em cada degrau
-sparkforge migrate controlm fixtures/controlm/capacidade_acima_da_fronteira/input \
+sparkforge-aws migrate controlm fixtures/controlm/capacidade_acima_da_fronteira/input \
   --from 9.0.22.010 --to 9.0.21.300
 ```
 
@@ -83,7 +83,7 @@ A faixa de versões coberta é `9.0.21.200` a `9.0.22.100`.
 ### 1. O que vale na sua versão: `controlm describe`
 
 ```bash
-sparkforge controlm describe --version 9.0.21.300 --detail-level compact
+sparkforge-aws controlm describe --version 9.0.21.300 --detail-level compact
 ```
 
 Trecho real:
@@ -112,20 +112,20 @@ Trecho real:
 da faixa é recusada, com o intervalo:
 
 ```bash
-sparkforge controlm describe --version 9.0.20.000
+sparkforge-aws controlm describe --version 9.0.20.000
 ```
 
 ```text
 versao '9.0.20.000' fora da faixa que esta matriz sustenta: 9.0.21.200 a 9.0.22.100. A faixa e passado FECHADO e nao se extrapola -- ...
   A matriz e do Control-M AUTOMATION API, nao do produto Control-M:
   as duas coisas usam a grafia `9.0.2x.yyy` e nao sao a mesma.
-    sparkforge controlm describe --version 9.0.21.200
+    sparkforge-aws controlm describe --version 9.0.21.200
 ```
 
 ### 2. Extrair os facts: `analyze controlm-jobs`
 
 ```bash
-sparkforge analyze controlm-jobs \
+sparkforge-aws analyze controlm-jobs \
   --path fixtures/controlm/capacidade_abaixo_da_fronteira/input \
   --version 9.0.21.300 --out /tmp/sf/facts_ctm.json --detail-level summary
 ```
@@ -165,7 +165,7 @@ O segredo nunca entra no `facts.json`.
 ### 3. Julgar: `judge`
 
 ```bash
-sparkforge judge --facts /tmp/sf/facts_ctm.json
+sparkforge-aws judge --facts /tmp/sf/facts_ctm.json
 ```
 
 Resumo real: um finding.
@@ -192,7 +192,7 @@ SF-CTM-003 P2 Lista de SpecificDates acima do teto que a fonte publica
            medido: {"months_count": 1, "month_days_count": 1, "week_days_count": 1, "specific_dates_count": 401}
 ```
 
-As regras da área, pelo título (`sparkforge rules lookup --id SF-CTM-00N`):
+As regras da área, pelo título (`sparkforge-aws rules lookup --id SF-CTM-00N`):
 
 | Regra | O que confere |
 |---|---|
@@ -205,7 +205,7 @@ As regras da área, pelo título (`sparkforge rules lookup --id SF-CTM-00N`):
 ### 4. Trocar de versão: `migrate controlm`
 
 ```bash
-sparkforge migrate controlm fixtures/controlm/capacidade_acima_da_fronteira/input \
+sparkforge-aws migrate controlm fixtures/controlm/capacidade_acima_da_fronteira/input \
   --from 9.0.22.010 --to 9.0.21.300
 ```
 

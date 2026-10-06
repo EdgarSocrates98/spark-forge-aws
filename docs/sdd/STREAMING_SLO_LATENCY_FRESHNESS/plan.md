@@ -9,11 +9,11 @@ upstream:
   sha256: "0b0d2358127cb92da2545d38230c0b8d1c861329717b830c0ac06e82b50330dd"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming_ops.py, sparkforge/facts/streaming_ops.py, tests/test_facts_streaming.py, sparkforge/facts/streaming.py]
+    files: [tests/test_facts_streaming_ops.py, sparkforge_aws/facts/streaming_ops.py, tests/test_facts_streaming.py, sparkforge_aws/facts/streaming.py]
     covers: [AC1, AC2, AC4]
     test: {path: tests/test_facts_streaming.py, name: test_progress_derives_freshness_only_from_event_time_max}
   - id: T2
-    files: [tests/test_facts_streaming_slo.py, sparkforge/facts/streaming_slo.py]
+    files: [tests/test_facts_streaming_slo.py, sparkforge_aws/facts/streaming_slo.py]
     covers: [AC3, AC4]
     test: {path: tests/test_facts_streaming_slo.py, name: test_evaluates_p95_freshness_slo}
   - id: T3

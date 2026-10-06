@@ -8,9 +8,9 @@ upstream:
   path: docs/sdd/GLUE_DQ_ADVANCED_GOVERNANCE_GAPS/define.md
   sha256: "b2b2d976c7e3c8652d1c078603f13d9a2f3c0421d01a710632282b1ece6be7d2"
 files:
-  - {path: sparkforge/facts/glue_dq_advanced.py, action: modify, reason: "normalizar sampling/geography/authorization/risk e manter rejeição de rows"}
-  - {path: sparkforge/dq_ai/assessment.py, action: modify, reason: "derivar statuses e unresolved reasons"}
-  - {path: sparkforge/reporting/dq_ai.py, action: modify, reason: "projetar evidência, claims e contexto de risco"}
+  - {path: sparkforge_aws/facts/glue_dq_advanced.py, action: modify, reason: "normalizar sampling/geography/authorization/risk e manter rejeição de rows"}
+  - {path: sparkforge_aws/dq_ai/assessment.py, action: modify, reason: "derivar statuses e unresolved reasons"}
+  - {path: sparkforge_aws/reporting/dq_ai.py, action: modify, reason: "projetar evidência, claims e contexto de risco"}
   - {path: knowledge/glue/dq-advanced-matrix.yaml, action: modify, reason: "documentar defaults e claims com status documental"}
   - {path: knowledge/glue/dq-advanced-matrix.md, action: modify, reason: "explicar fronteira observada/documentada"}
   - {path: rules/catalog/data-quality-ai.yaml, action: modify, reason: "adicionar SF-DQ-AI-006..008"}

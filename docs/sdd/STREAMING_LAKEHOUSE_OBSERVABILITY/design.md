@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_LAKEHOUSE_OBSERVABILITY/define.md
   sha256: "223742092b42c8ff07952fdf7882197bf22f8ebe34c589af96b57a93e2e992e7"
 files:
-  - {path: sparkforge/facts/streaming_composition.py, action: create, reason: "composição pura sobre facts de streaming, transporte e Iceberg"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "expor composição e carregar facts"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze streaming-composition"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
+  - {path: sparkforge_aws/facts/streaming_composition.py, action: create, reason: "composição pura sobre facts de streaming, transporte e Iceberg"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "expor composição e carregar facts"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze streaming-composition"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
   - {path: rules/catalog/streaming_composition.yaml, action: create, reason: "rules para relação não-append e evidência de transporte"}
   - {path: fixtures/streaming_composition, action: create, reason: "goldens positivos, observáveis e unresolved"}
   - {path: skills/analyze-streaming-composition/SKILL.md, action: create, reason: "workflow evidence-first de correlação"}

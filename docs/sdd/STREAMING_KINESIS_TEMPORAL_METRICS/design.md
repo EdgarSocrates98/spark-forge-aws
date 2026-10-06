@@ -9,11 +9,11 @@ upstream:
   sha256: "9168a681ff86b0114854e98ef6bd017a2e059931e2b82411691780af814f053f"
 files:
   - {path: tests/test_collect_streaming.py, action: modify, reason: "fake CloudWatch, janela, cache, analyzer, CLI/MCP e documentação"}
-  - {path: sparkforge/collect/streaming.py, action: modify, reason: "queries AWS/Kinesis stream-level, normalização, paginação e cache por janela"}
-  - {path: sparkforge/facts/transport.py, action: modify, reason: "consumir observations CloudWatch como kinesis.metric temporal"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "propagar janela para collector existente"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "expor start/end/period opcionais no verbo existente"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "declarar parâmetros no schema MCP sem nova tool"}
+  - {path: sparkforge_aws/collect/streaming.py, action: modify, reason: "queries AWS/Kinesis stream-level, normalização, paginação e cache por janela"}
+  - {path: sparkforge_aws/facts/transport.py, action: modify, reason: "consumir observations CloudWatch como kinesis.metric temporal"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "propagar janela para collector existente"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "expor start/end/period opcionais no verbo existente"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "declarar parâmetros no schema MCP sem nova tool"}
   - {path: knowledge/transport-diagnostics.md, action: modify, reason: "documentar série Kinesis stream-level, retenção e limites"}
   - {path: knowledge/streaming-integrations.md, action: modify, reason: "documentar comando e unresolved temporal"}
   - {path: docs/guia/03-cli.md, action: modify, reason: "documentar coleta temporal Kinesis"}

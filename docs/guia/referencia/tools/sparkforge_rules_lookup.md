@@ -24,7 +24,7 @@ Consulta o catalogo de regras determinístico por id ou categoria, devolvendo th
 
 ## Na CLI
 
-[`sparkforge rules lookup`](../cli/rules.md)
+[`sparkforge-aws rules lookup`](../cli/rules.md)
 
 ## Capacidade
 

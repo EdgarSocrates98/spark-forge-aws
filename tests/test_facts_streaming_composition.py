@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_path
-from sparkforge.facts.streaming import extract_streaming_progress_path
-from sparkforge.facts.streaming_composition import build_streaming_composition
-from sparkforge.facts.transport import extract_transport_path
+from sparkforge_aws.facts.iceberg_metadata import extract_iceberg_metadata_path
+from sparkforge_aws.facts.streaming import extract_streaming_progress_path
+from sparkforge_aws.facts.streaming_composition import build_streaming_composition
+from sparkforge_aws.facts.transport import extract_transport_path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_composition"

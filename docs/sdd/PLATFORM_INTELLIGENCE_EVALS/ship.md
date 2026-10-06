@@ -37,7 +37,7 @@ permanecem unresolved sem transcript do host.
 - `python -m pytest tests/test_platform_evals.py -q --basetemp .sparkforge/local/pytest-platform-evals` — `2 passed`, exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
-- `sparkforge sdd check --repo . --feature PLATFORM_INTELLIGENCE_EVALS` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature PLATFORM_INTELLIGENCE_EVALS` — `ok: true`.
 
 ## Limites e rollback
 

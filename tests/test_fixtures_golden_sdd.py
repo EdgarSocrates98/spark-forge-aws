@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.sdd.checks import check
-from sparkforge.sdd.status import status
+from sparkforge_aws.sdd.checks import check
+from sparkforge_aws.sdd.status import status
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sdd"

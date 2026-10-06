@@ -28,7 +28,7 @@ manifesto silencioso é pior que erro barulhento:
 |---|---|---|---|
 | `.claude/`, `.agents/`, `.github/` | `skills/`, `agents/` | `python scripts/sync_skills.py --check` | Cada plataforma lê de um diretório próprio |
 | `requirements.txt` | `pyproject.toml` | `python scripts/gen_requirements.py --check` | Ferramenta de SCA não lê `pyproject.toml` sem lockfile — e scan que não roda não é scan que passa |
-| `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
+| `sparkforge_aws/rules/catalog/`, `sparkforge_aws/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
 constrói o artefato, instala num venv limpo e reproduz as fixtures golden byte a byte

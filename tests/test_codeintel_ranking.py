@@ -21,7 +21,7 @@ AS QUATRO AFIRMACOES QUE ESTE ARQUIVO EXISTE PARA PRENDER
 
 import pytest
 
-from sparkforge.codeintel.ranking import (
+from sparkforge_aws.codeintel.ranking import (
     DICIONARIO_PADRAO,
     Escore,
     Expansao,
@@ -31,7 +31,7 @@ from sparkforge.codeintel.ranking import (
     expandir,
     ordenar,
 )
-from sparkforge.codeintel.search import Achado
+from sparkforge_aws.codeintel.search import Achado
 
 
 def _achado(node_id="node_a", name="f", qualificado=None, kind="function", path="a/b.py", linha=1):
@@ -360,7 +360,7 @@ def test_peso_de_lineage_e_zero_declarado_e_nao_omitido():
     zero ate que alguem meca. Quem medir troca o valor E este teste, de proposito:
     a mudanca fica visivel no diff em vez de passar como ajuste de constante.
     """
-    from sparkforge.codeintel import ranking
+    from sparkforge_aws.codeintel import ranking
 
     assert ranking.PESO_LINEAGE == 0
     assert ranking.PESO_ENTRYPOINT == 0

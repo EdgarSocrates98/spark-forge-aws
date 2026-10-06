@@ -24,10 +24,10 @@ from typing import Any
 
 import pytest
 
-from sparkforge.errors.matcher import build_signature_matches
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.errors.matcher import build_signature_matches
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSINATURAS = ROOT / "knowledge" / "errors"
@@ -47,7 +47,7 @@ PROV = {"artifact": "eventlog.json", "artifact_sha256": "", "extractor": "test"}
 
 
 def _excecao(classe: str, causas: list[str] | None = None) -> Fact:
-    """Forma de `sparkforge/facts/exception.py`: classe, cabeca da mensagem,
+    """Forma de `sparkforge_aws/facts/exception.py`: classe, cabeca da mensagem,
     `is_chained` e `caused_by[]`."""
     return Fact(
         kind="spark.exception",
@@ -187,19 +187,19 @@ def _regras_da_area() -> list[dict]:
 def _kinds_emitidos() -> set[str]:
     """Todo kind que algum extrator do motor declara em `EMITTED_KINDS`.
 
-    Varre `sparkforge/facts/*.py` E `sparkforge/errors/matcher.py`, porque o
+    Varre `sparkforge_aws/facts/*.py` E `sparkforge_aws/errors/matcher.py`, porque o
     matcher mora fora de `facts/` e as varreduras automaticas do repositorio
     nao o alcancam -- ele so e visto pelas listas manuais.
     """
     import importlib
     import pkgutil
 
-    import sparkforge.facts as pacote
-    from sparkforge.errors.matcher import EMITTED_KINDS as MATCHER_KINDS
+    import sparkforge_aws.facts as pacote
+    from sparkforge_aws.errors.matcher import EMITTED_KINDS as MATCHER_KINDS
 
     kinds: set[str] = set(MATCHER_KINDS)
     for modulo in pkgutil.iter_modules(pacote.__path__):
-        alvo = importlib.import_module(f"sparkforge.facts.{modulo.name}")
+        alvo = importlib.import_module(f"sparkforge_aws.facts.{modulo.name}")
         kinds |= set(getattr(alvo, "EMITTED_KINDS", ()) or ())
     return kinds
 
@@ -422,7 +422,7 @@ class TestOQueAAreaNaoCarrega:
         `iceberg.concurrent_writer`, `lakeformation.missing_grant` e
         `ram.unaccepted_share` -- e, medido em 2026-09-09, NENHUM deles era
         emitido por este motor. Desde 2026-09-21 `lakeformation.missing_grant`
-        e emitido (`sparkforge/facts/lakeformation_missing_grant.py`) e
+        e emitido (`sparkforge_aws/facts/lakeformation_missing_grant.py`) e
         consumido por `SF-LF-011`, e `ram.unaccepted_share` foi para
         `evidence_out_of_reach` de `ERR-LF-001`; `SF-ERR-006` segue com o
         substituto medido.

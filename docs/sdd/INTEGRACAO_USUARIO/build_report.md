@@ -62,7 +62,7 @@ change_id: null
   testes de regressão diretos que o plano nomeia e `ruff`; goldens e gates de número
   rodam na T10.
 - **Vermelho com exit 4.** O node id apontava para um teste que importa a unidade sob
-  teste ainda inexistente (`sparkforge.integrate`); o pytest sai 4 nesse caso.
+  teste ainda inexistente (`sparkforge_aws.integrate`); o pytest sai 4 nesse caso.
 
 - **Revisão de T1–T3: quatro importantes, corrigidos em seis commits (`6480aa3b` a
   `8f64e460`), cada um com teste vermelho antes.**
@@ -85,7 +85,7 @@ change_id: null
 
 - **Revisão de T4–T6 (e da primeira rodada): nove importantes, corrigidos em seis commits
   (`c0bf56eb` a `0b4b0821`), cada um com teste vermelho antes.**
-  - TOML: `sparkforge` escrito à mão em qualquer forma fora dos marcadores é recusado, e o
+  - TOML: `sparkforge-aws` escrito à mão em qualquer forma fora dos marcadores é recusado, e o
     arquivo final é validado com `tomllib` quando ele existe (no 3.10, regex, com a lacuna
     declarada); marcadores só no início de linha;
   - todos os hosts são renderizados antes da primeira escrita, e falha no meio salva o
@@ -147,7 +147,7 @@ change_id: null
 - **`verify_wheel` não rodou completo nesta máquina.** O sistema o parou três vezes por
   falta de memória (ele roda a suíte inteira dentro do wheel instalado). Rodou a checagem
   leve: wheel construído, instalado num venv isolado, `content_root()` achando 51 skills
-  e 12 agents no site-packages, `sparkforge integrate --help` respondendo. O completo é o
+  e 12 agents no site-packages, `sparkforge-aws integrate --help` respondendo. O completo é o
   passo `python scripts/verify_wheel.py` do CI do PR. Tamanho do wheel (SC2): 2.051.377
   bytes na main, 2.681.246 com o bundle.
 - **Arquivos fora do manifesto do design:** `tests/test_facts_scan.py` (lista de varredura

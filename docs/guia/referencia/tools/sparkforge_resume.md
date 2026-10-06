@@ -19,7 +19,7 @@ Monta o payload de rehidratacao de um case: onde parou, runtime, baseline, achad
 
 ## Na CLI
 
-[`sparkforge handoff`](../cli/handoff.md), [`sparkforge resume`](../cli/resume.md)
+[`sparkforge-aws handoff`](../cli/handoff.md), [`sparkforge-aws resume`](../cli/resume.md)
 
 ## Capacidade
 

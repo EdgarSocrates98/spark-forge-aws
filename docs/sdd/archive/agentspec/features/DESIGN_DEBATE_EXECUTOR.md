@@ -30,22 +30,22 @@
 ```text
                       mesmos insumos do arbitrate (findings + UNIÃO de facts + runtime)
                                              │
- sparkforge debate start --rules A,B ────────┤  recalcula os planos (executor, sem gravar)
+ sparkforge-aws debate start --rules A,B ────────┤  recalcula os planos (executor, sem gravar)
                                              ▼  e congela o do par escolhido
  .sparkforge/debate/<debate_id>/  plan.json · submissions.jsonl · facts.jsonl
                                              │
- sparkforge debate next  --debate <id> ──────┤  brief do lado da vez │ done │ budget_exhausted
- sparkforge debate submit --debate <id> ─────┤  valida → reextrai evidência → grava Claim/
+ sparkforge-aws debate next  --debate <id> ──────┤  brief do lado da vez │ done │ budget_exhausted
+ sparkforge-aws debate submit --debate <id> ─────┤  valida → reextrai evidência → grava Claim/
                                              │  Objection/Rebuttal (blackboard) → avança
                                              ▼
                               referee_over_blackboard (já existe) ──► Decision (vencedor | unresolved)
 
-   gera as submissões (nunca dentro de sparkforge/):
+   gera as submissões (nunca dentro de sparkforge_aws/):
      skills/run-debate/        subagente do host por lado (interativo)
      scripts/run_debate.py     claude -p por lado, workspace de prova (headless)
 
    mede (pacote de avaliação):
-     sparkforge/evals/debate_grade.py  Decision × gabarito + custo dos transcripts
+     sparkforge_aws/evals/debate_grade.py  Decision × gabarito + custo dos transcripts
      evals/agentic/debate/<caso>/      3 variantes do par SF-GRAPH-005 × SF-LF-001
 ```
 
@@ -57,11 +57,11 @@ As dependências respeitam as duas fronteiras: `agentic/executor` (runtime) não
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/agentic/executor/debate_run.py` | Máquina de estados pura: `start`, `next`, `submit`, fechamento | stdlib; `executor/{run,plan}.py`, `agentic/{referee,blackboard,debate}.py` |
-| `sparkforge/agentic/executor/debate_evidence.py` | Reextração da evidência nova com extratores da allowlist | `sparkforge/facts/*` (`extract*_path`) |
-| `sparkforge/adapters/_core.py` + `cli.py` | `debate start/next/submit` ao lado de `debate referee` | argparse; padrão `arbitrate_findings` |
-| `sparkforge/adapters/tools.py` | 3 tools MCP (`LOCAL_MUTATION`) | padrão `sparkforge_arbitrate` |
-| `sparkforge/evals/debate_grade.py` | Pontua a `Decision` contra o gabarito e soma o custo dos transcripts | `host_transcript`, `evals/grade` |
+| `sparkforge_aws/agentic/executor/debate_run.py` | Máquina de estados pura: `start`, `next`, `submit`, fechamento | stdlib; `executor/{run,plan}.py`, `agentic/{referee,blackboard,debate}.py` |
+| `sparkforge_aws/agentic/executor/debate_evidence.py` | Reextração da evidência nova com extratores da allowlist | `sparkforge_aws/facts/*` (`extract*_path`) |
+| `sparkforge_aws/adapters/_core.py` + `cli.py` | `debate start/next/submit` ao lado de `debate referee` | argparse; padrão `arbitrate_findings` |
+| `sparkforge_aws/adapters/tools.py` | 3 tools MCP (`LOCAL_MUTATION`) | padrão `sparkforge_arbitrate` |
+| `sparkforge_aws/evals/debate_grade.py` | Pontua a `Decision` contra o gabarito e soma o custo dos transcripts | `host_transcript`, `evals/grade` |
 | `scripts/run_debate.py` | Driver headless | `subprocess` (fora do pacote), workspace de prova do runner de eval |
 | `skills/run-debate/SKILL.md` | Driver interativo | skill do repositório (+ `sync_skills.py`) |
 | `evals/agentic/debate/<caso>/` | Gabarito: 3 variantes | findings, facts, `case.yaml` com `budget:`, `expected.yaml` |
@@ -158,7 +158,7 @@ As dependências respeitam as duas fronteiras: `agentic/executor` (runtime) não
 | **Date** | 2026-09-11 |
 
 **Choice:**
-- `sparkforge debate start|next|submit` fica no mesmo subparser de `debate referee`.
+- `sparkforge-aws debate start|next|submit` fica no mesmo subparser de `debate referee`.
 - As tools são `sparkforge_debate_start`, `sparkforge_debate_next` e `sparkforge_debate_submit`, todas `LOCAL_MUTATION`. O `next` também é mutação, porque grava a `Decision` no fechamento.
 - `submit` pela CLI recebe `--file`. Pela MCP recebe a submissão inline.
 
@@ -175,7 +175,7 @@ As dependências respeitam as duas fronteiras: `agentic/executor` (runtime) não
 
 **Choice:** `scripts/run_debate.py`, só com constantes e allowlists, como o runner de eval:
 1. copia o caso da suíte **sem** `expected.yaml` para o workspace de prova;
-2. roda `sparkforge arbitrate` e `debate start` ali;
+2. roda `sparkforge-aws arbitrate` e `debate start` ali;
 3. repete: `next` → `claude -p` com o brief, e o protocolo pede um único bloco ` ```json ` no fim → extrai o último bloco → `submit`;
 4. submissão recusada volta ao lado com o motivo e consome o budget.
 
@@ -192,12 +192,12 @@ Os transcripts ficam em `~/.sparkforge/debate-evals/<run>/<caso>/<n>-<lado>.json
 | **Status** | Accepted |
 | **Date** | 2026-09-11 |
 
-**Choice:** `sparkforge/evals/debate_grade.py` lê a `Decision` do workspace e o `expected.yaml` do caso. Por caso sai:
+**Choice:** `sparkforge_aws/evals/debate_grade.py` lê a `Decision` do workspace e o `expected.yaml` do caso. Por caso sai:
 - `outcome`: `correct_winner`, `wrong_winner`, `correct_unresolved`, `false_resolution` (fechou onde o gabarito é `unresolved`) ou `missed_resolution`;
 - `rounds`, `refused_submissions`;
 - custo somado dos transcripts via `host_transcript`, com byte e token separados.
 
-A CLI é `python -m sparkforge.evals debate --run <nome>`, com nomes sob bases fixas, como no eval harness.
+A CLI é `python -m sparkforge_aws.evals debate --run <nome>`, com nomes sob bases fixas, como no eval harness.
 
 ---
 
@@ -205,12 +205,12 @@ A CLI é `python -m sparkforge.evals debate --run <nome>`, com nomes sob bases f
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/agentic/executor/debate_run.py` | Create | Máquina de estados (D1, D2, D4) | @python-developer | None |
-| 2 | `sparkforge/agentic/executor/debate_evidence.py` | Create | Reextração com allowlist (D3) | @python-developer | None |
-| 3 | `sparkforge/adapters/_core.py` | Modify | `debate_start/next/submit` | @python-developer | 1, 2 |
-| 4 | `sparkforge/adapters/cli.py` | Modify | Subcomandos no parser `debate` | @python-developer | 3 |
-| 5 | `sparkforge/adapters/tools.py` | Modify | 3 tools MCP + handlers (D5) | @mcp-developer | 3 |
-| 6 | `sparkforge/evals/debate_grade.py` + `sparkforge/evals/cli.py` | Create/Modify | Grader + subcomando `debate` (D7) | @python-developer | 1 |
+| 1 | `sparkforge_aws/agentic/executor/debate_run.py` | Create | Máquina de estados (D1, D2, D4) | @python-developer | None |
+| 2 | `sparkforge_aws/agentic/executor/debate_evidence.py` | Create | Reextração com allowlist (D3) | @python-developer | None |
+| 3 | `sparkforge_aws/adapters/_core.py` | Modify | `debate_start/next/submit` | @python-developer | 1, 2 |
+| 4 | `sparkforge_aws/adapters/cli.py` | Modify | Subcomandos no parser `debate` | @python-developer | 3 |
+| 5 | `sparkforge_aws/adapters/tools.py` | Modify | 3 tools MCP + handlers (D5) | @mcp-developer | 3 |
+| 6 | `sparkforge_aws/evals/debate_grade.py` + `sparkforge_aws/evals/cli.py` | Create/Modify | Grader + subcomando `debate` (D7) | @python-developer | 1 |
 | 7 | `scripts/run_debate.py` | Create | Driver headless (D6) | @python-developer | 3 |
 | 8 | `skills/run-debate/SKILL.md` + espelhos (`scripts/sync_skills.py`) | Create | Driver interativo | @agent-creator | 5 |
 | 9 | `fixtures/debate/<caso>/` (≥ 8) | Create | Goldens: submissões gravadas por desfecho e por recusa | @test-generator | 1 |
@@ -299,7 +299,7 @@ decided_by: lakeformation.access_model   # o fact que o lado precisa reextrair
 
 | External System | Integration Type | Authentication |
 |-----------------|-----------------|----------------|
-| Claude Code (`claude -p`, subagentes) | Host que gera as submissões, fora de `sparkforge/` | Sessão do operador |
+| Claude Code (`claude -p`, subagentes) | Host que gera as submissões, fora de `sparkforge_aws/` | Sessão do operador |
 | Servidor MCP do SparkForge | Tools `sparkforge_debate_*` | Nenhuma |
 
 ---
@@ -346,7 +346,7 @@ AT-001…AT-014 do DEFINE mapeiam para as linhas acima: 001–011 no golden e na
 
 ## Security Considerations
 
-- Regra 23: nenhum provider nem `subprocess` em `sparkforge/`; `tests/test_evals_invariants.py` passa a cobrir os módulos novos.
+- Regra 23: nenhum provider nem `subprocess` em `sparkforge_aws/`; `tests/test_evals_invariants.py` passa a cobrir os módulos novos.
 - Evidência só reextraída pelo executor, com extrator na allowlist e caminho confinado ao case (D3).
 - As submissões anteriores entram no brief rotuladas `untrusted_content: true`, porque são texto de agente.
 - O driver roda no workspace de prova, sem `expected.yaml`, e grava transcript fora do repositório.

@@ -1,6 +1,6 @@
 import pytest
 
-from sparkforge.decision.models import (
+from sparkforge_aws.decision.models import (
     DecisionResult,
     DecisionStatus,
     LocalMeasurement,

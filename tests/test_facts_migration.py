@@ -1,6 +1,6 @@
 import pytest
 
-from sparkforge.facts import migration
+from sparkforge_aws.facts import migration
 
 JOB_COM_SDK_V1 = '''
 from awsglue.context import GlueContext
@@ -135,7 +135,7 @@ class TestDependenciaEFormato:
 
     def test_scala_minor_e_o_numero_depois_do_ponto(self, tmp_path):
         """`scala_minor` existe porque o avaliador de `expr` do catalogo
-        (`sparkforge/rules/expr.py`) compara NUMERO, nao versao: a string
+        (`sparkforge_aws/rules/expr.py`) compara NUMERO, nao versao: a string
         "2.12" nao e comparavel com 13 ali. Mesma razao de
         `mig.python_dep.major`, e o limiar continua na regra."""
         (tmp_path / "conector_2.12-1.4.0.jar").write_bytes(b"")
@@ -405,7 +405,7 @@ class TestModuloDePandasOnSpark:
 # na regra `SF-SPARK4-003`, que e onde o juizo pertence -- o extrator nao sabe,
 # e nao pode saber, contra o que aquele numero sera comparado.
 #
-# Existe porque o avaliador de `expr` do catalogo (`sparkforge/rules/expr.py`)
+# Existe porque o avaliador de `expr` do catalogo (`sparkforge_aws/rules/expr.py`)
 # compara NUMEROS, nao versoes: sem um inteiro em `attrs`, uma regra de piso de
 # dependencia teria que comparar a string `"11.0.0"` com `15`, o que nao e uma
 # comparacao que aquele avaliador faz.

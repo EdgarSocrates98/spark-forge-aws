@@ -9,23 +9,23 @@ upstream:
   sha256: "8e009ca0926d2111c0c25bd84eab88fdde36360fc4563fa790a1eff089eaaa8c"
 tasks:
   - id: T1
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC2]
     test: {path: tests/test_sdd.py, name: test_change_id_aceita_proposal}
   - id: T2
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC3]
     test: {path: tests/test_sdd.py, name: test_case_e_change_historicos_depois_do_ship}
   - id: T3
-    files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, tests/test_sdd.py]
     covers: [AC4]
     test: {path: tests/test_sdd.py, name: test_fact_por_kind}
   - id: T4
-    files: [sparkforge/sdd/checks.py, sparkforge/sdd/schema/plan.json, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, sparkforge_aws/sdd/schema/plan.json, tests/test_sdd.py]
     covers: [AC5]
     test: {path: tests/test_sdd.py, name: test_proof_de_tarefa_operator}
   - id: T5
-    files: [sparkforge/sdd/checks.py, sparkforge/sdd/schema/build_report.json, tests/test_sdd.py]
+    files: [sparkforge_aws/sdd/checks.py, sparkforge_aws/sdd/schema/build_report.json, tests/test_sdd.py]
     covers: [AC6, AC7]
     test: {path: tests/test_sdd.py, name: test_moved_confere_o_relatorio}
   - id: T6
@@ -84,8 +84,8 @@ def test_change_id_aceita_proposal(tmp_path):
 Vermelho: `python -m pytest tests/test_sdd.py::test_change_id_aceita_proposal -q`
 falha no segundo `assert` (`change_missing` com a proposal presente).
 
-Código, em `sparkforge/sdd/checks.py`: importar
-`from sparkforge.change.proposal import PROPOSAL_DIR` e `PurePosixPath`, e trocar
+Código, em `sparkforge_aws/sdd/checks.py`: importar
+`from sparkforge_aws.change.proposal import PROPOSAL_DIR` e `PurePosixPath`, e trocar
 o corpo de `_gate_change`:
 
 ```python
@@ -115,7 +115,7 @@ def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     ident = str(artefato.meta.get("change_id") or "")
     if not _pastas_da_mudanca(ctx.repo, ident):
         ctx.recusa("change_missing", artefato.path, "change_id",
-                   "o build do operador passa por `sparkforge change sandbox`; registre o id "
+                   "o build do operador passa por `sparkforge-aws change sandbox`; registre o id "
                    "em change_id (vale enquanto existir .sparkforge/sandbox/<id>/ ou "
                    ".sparkforge/proposal/<id>/)")
 ```
@@ -210,7 +210,7 @@ def _conferir_fact(ctx: _Contexto, artefato: Artifact, referencia: str) -> None:
     if alvo is None or not alvo.is_file() or not _fact_presente(alvo, seletor):
         ctx.lacuna("fact_not_collected", artefato.path,
                    f"{seletor or referencia} nao esta em {caminho}; colete o artefato e "
-                   "rode o `sparkforge analyze` que o extrai")
+                   "rode o `sparkforge-aws analyze` que o extrai")
 ```
 
 e o ramo `fact` de `_gate_verified_by` vira `_conferir_fact(ctx, artefato, referencia)`.
@@ -218,7 +218,7 @@ Commit `feat(sdd): let a fact reference select by kind`.
 
 ## T4 — `proof` de tarefa
 
-`sparkforge/sdd/schema/plan.json`, em `tasks.items.properties`, ao lado de `test`:
+`sparkforge_aws/sdd/schema/plan.json`, em `tasks.items.properties`, ao lado de `test`:
 
 ```json
 "proof": {
@@ -296,7 +296,7 @@ def _conferir_ref_funcval(
     alvo = resolve_within(ctx.repo, referencia)
     if alvo is None or not alvo.is_file():
         ctx.lacuna("funcval_not_run", artefato.path,
-                   f"rode `sparkforge funcval compare --out {referencia}` para {dono}")
+                   f"rode `sparkforge-aws funcval compare --out {referencia}` para {dono}")
         return
     _conferir_funcval(ctx, artefato, campo, alvo, referencia)
 
@@ -356,7 +356,7 @@ def _conferir_achado(
                    "a regra precisa estar em resolved e fora de new")
     else:
         ctx.lacuna("finding_not_observed", artefato.path,
-                   f"{dono} prova que {regra} sai; rode `sparkforge change sandbox` e "
+                   f"{dono} prova que {regra} sai; rode `sparkforge-aws change sandbox` e "
                    f"registre o id em change_id ({_ONDE_O_RELATORIO_MORA})")
 
 
@@ -396,7 +396,7 @@ Commit `feat(sdd): let an operator task prove itself without pytest`.
 
 ## T5 — `moved` no build
 
-`sparkforge/sdd/schema/build_report.json`, em `tasks.items.properties`:
+`sparkforge_aws/sdd/schema/build_report.json`, em `tasks.items.properties`:
 
 ```json
 "moved": {
@@ -486,7 +486,7 @@ def _conferir_movido(
         ctx.recusa("moved_not_observed", artefato.path, campo,
                    f"{dono}: {', '.join(faltam)} nao sai no relatorio de {ident} "
                    f"({_ONDE_O_RELATORIO_MORA}); a regra precisa estar em resolved e fora "
-                   "de new: rode `sparkforge change sandbox` de novo ou corrija moved")
+                   "de new: rode `sparkforge-aws change sandbox` de novo ou corrija moved")
 
 
 def _gate_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -635,8 +635,8 @@ def test_skills_ensinam_o_operador_duravel():
         for trecho in trechos:
             assert trecho in operador, (nome, trecho)
     readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
-    for trecho in ("--root .sparkforge/sdd", "sparkforge change sandbox",
-                   "sparkforge change propose", "#kind:"):
+    for trecho in ("--root .sparkforge/sdd", "sparkforge-aws change sandbox",
+                   "sparkforge-aws change propose", "#kind:"):
         assert trecho in readme, trecho
 ```
 

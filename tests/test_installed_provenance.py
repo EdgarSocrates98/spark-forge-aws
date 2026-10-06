@@ -1,8 +1,8 @@
 # tests/test_installed_provenance.py
-"""Afirma que `sparkforge` veio do pacote instalado, nao do repositorio.
+"""Afirma que `sparkforge-aws` veio do pacote instalado, nao do repositorio.
 
 Opt-in por `SPARKFORGE_VERIFY_INSTALLED=1`. Sem isto o gate de paridade e
-teatro: se o repositorio estiver no sys.path, `import sparkforge` pega o
+teatro: se o repositorio estiver no sys.path, `import sparkforge_aws` pega o
 codigo-fonte, os goldens batem com eles mesmos, e o teste passa sem provar que
 o ARTEFATO funciona.
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-import sparkforge
+import sparkforge_aws
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,8 +25,8 @@ pytestmark = pytest.mark.skipif(
 
 
 def _package_root() -> Path:
-    assert sparkforge.__file__, "sparkforge sem __file__: import de namespace package?"
-    return Path(sparkforge.__file__).resolve().parent
+    assert sparkforge_aws.__file__, "sparkforge-aws sem __file__: import de namespace package?"
+    return Path(sparkforge_aws.__file__).resolve().parent
 
 
 class TestProvenance:
@@ -36,15 +36,15 @@ class TestProvenance:
 
         "Instalado" e "dentro do repositorio" nao sao mutuamente exclusivos:
         um venv criado na raiz do checkout (`.venv/`, comum em dev e em CI que
-        faz build-in-place) poe `site-packages/sparkforge` como descendente de
+        faz build-in-place) poe `site-packages/sparkforge-aws` como descendente de
         ROOT sem que o import venha do source. Comparar contra o diretorio-
         fonte exato -- em vez de "esta em algum lugar sob ROOT" -- e o que
         distingue os dois casos.
         """
         package = _package_root()
-        source_dir = ROOT / "sparkforge"
+        source_dir = ROOT / "sparkforge_aws"
         assert package != source_dir, (
-            f"sparkforge foi importado do diretorio-fonte {source_dir}, dentro do "
+            f"sparkforge-aws foi importado do diretorio-fonte {source_dir}, dentro do "
             f"repositorio {ROOT}, em vez de um pacote instalado. O gate estaria "
             f"comparando o repo consigo mesmo. Rode a partir de um cwd fora do "
             f"repo, com PYTHONSAFEPATH=1 e `-o pythonpath=`, e confirme que o "
@@ -54,7 +54,7 @@ class TestProvenance:
     def test_sparkforge_lives_in_site_packages(self):
         package = _package_root()
         assert "site-packages" in package.parts, (
-            f"sparkforge veio de {package}, fora de site-packages. Isso indica "
+            f"sparkforge-aws veio de {package}, fora de site-packages. Isso indica "
             f"instalacao nao-padrao (editable install, PYTHONPATH manual ou "
             f"vendoring). Reinstale a partir do wheel com "
             f"`pip install dist/*.whl` num venv limpo e rode o teste a partir "
@@ -64,7 +64,7 @@ class TestProvenance:
     def test_the_catalog_comes_from_inside_the_package(self):
         """Se o catalogo vier da raiz de um repo qualquer que exista no cwd, o
         artefato nao esta sendo exercitado."""
-        from sparkforge.rules.loader import catalog_dir
+        from sparkforge_aws.rules.loader import catalog_dir
 
         package = _package_root()
         assert package in catalog_dir().parents, (
@@ -84,7 +84,7 @@ class TestProvenance:
         # truncamento grosseiro (build quebrado, catalogo vazio ou parcial por
         # empacotamento errado) mas nao perda parcial que ainda deixe >= 48
         # regras -- essa classe de defeito exigiria um oraculo fora do artefato.
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         rules = load_catalog()
         assert len(rules) >= 48, f"catalogo embarcado com {len(rules)} regras"
@@ -95,8 +95,8 @@ class TestProvenance:
         # corrente no dia em que a linha foi escrita: o catalogo tinha zero
         # regras `blocked_on` (a Fase 6b Task 7 introduziu a primeira,
         # SF-MIG-003). O campo em si e suportado pelo loader
-        # (`sparkforge/rules/loader.py::_REQUIRED`, `_validate_executability`)
-        # e pelo motor (`sparkforge/rules/engine.py::judge`, que pula a regra
+        # (`sparkforge_aws/rules/loader.py::_REQUIRED`, `_validate_executability`)
+        # e pelo motor (`sparkforge_aws/rules/engine.py::judge`, que pula a regra
         # ANTES de olhar os facts) desde muito antes desta fase; e
         # `STATUS.md` rastreia a contagem de regras bloqueadas como numero
         # MEDIDO na tabela de estado atual, nao como algo que devesse ser
@@ -126,7 +126,7 @@ class TestProvenance:
             )
 
     def test_knowledge_comes_from_inside_the_package(self):
-        from sparkforge.knowledge_ref import knowledge_dir
+        from sparkforge_aws.knowledge_ref import knowledge_dir
 
         package = _package_root()
         assert package in knowledge_dir().parents, (

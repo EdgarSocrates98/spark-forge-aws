@@ -27,9 +27,9 @@ projeto de terceiro, que pode mudar num bump futuro.
 ```json
 {
   "extraKnownMarketplaces": {
-    "sparkforge-caveman": { "source": { "source": "directory", "path": "./vendor" } }
+    "sparkforge-aws-caveman": { "source": { "source": "directory", "path": "./vendor" } }
   },
-  "enabledPlugins": { "caveman@sparkforge-caveman": true, "ck@sparkforge-caveman": true }
+  "enabledPlugins": { "caveman@sparkforge-aws-caveman": true, "ck@sparkforge-aws-caveman": true }
 }
 ```
 
@@ -65,7 +65,7 @@ economizar token. Vale a cópia vendorizada, que é a pinada e revisada.
 `vendor/caveman/src/mcp-servers/caveman-shrink/` é um proxy MCP do mesmo autor, **sem
 dependência nenhuma**, que comprime o campo `description` do catálogo de tools antes do
 modelo lê-lo. Está em disco e pronto — e continua desligado, porque foi medido contra os
-41 tools do servidor `sparkforge` em 2026-08-07:
+41 tools do servidor `sparkforge-aws` em 2026-08-07:
 
 | | bytes |
 |---|---|

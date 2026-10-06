@@ -1,8 +1,8 @@
 """Testes da montagem do fingerprint a partir dos facts."""
 from __future__ import annotations
 
-from sparkforge.findings.models import Fact
-from sparkforge.workload.fingerprint import build_fingerprint
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.workload.fingerprint import build_fingerprint
 
 
 def _scan(bytes_read=1000, files_read=10, execution_id=0, node_id=1):

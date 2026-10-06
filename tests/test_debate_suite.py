@@ -9,7 +9,7 @@ esta na uniao: o lado precisa pedir ao executor que o reextraia pelo extrator
 `lakeformation-grants`, que esta na allowlist de `debate_evidence`.
 
 Por que `lakeformation.grant` e nao `lakeformation.access_model`: o
-`access_model` sai de uma DERIVACAO (`sparkforge/facts/lakeformation.py`), e a
+`access_model` sai de uma DERIVACAO (`sparkforge_aws/facts/lakeformation.py`), e a
 reextracao so roda extrator `extract*_path` sobre arquivo. O grant sai de um
 extrator de arquivo, e o atributo que separa as duas acoes e
 `is_iam_allowed_principals`:
@@ -56,9 +56,9 @@ import pytest
 import yaml
 
 from scripts import run_debate
-from sparkforge.adapters import _core
-from sparkforge.agentic.executor.debate_evidence import EVIDENCE_EXTRACTORS, extract_evidence
-from sparkforge.evals.debate_grade import (
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.agentic.executor.debate_evidence import EVIDENCE_EXTRACTORS, extract_evidence
+from sparkforge_aws.evals.debate_grade import (
     DEBATE_FACTS_FILE,
     RESULT_FILE,
     grade_case,

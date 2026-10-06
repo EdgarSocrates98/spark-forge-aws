@@ -31,7 +31,7 @@ enhanced nem infere saúde, causalidade, custo ou performance.
 - `python scripts/check_status_numbers.py --strict` (exit 0)
 - `python scripts/refresh_knowledge.py --check --offline` (exit 0)
 - `python scripts/verify_offline_bundle.py --check` (exit 0)
-- `sparkforge sdd check --repo . --feature STREAMING_KINESIS_TEMPORAL_METRICS` (exit 0)
+- `sparkforge-aws sdd check --repo . --feature STREAMING_KINESIS_TEMPORAL_METRICS` (exit 0)
 
 ## Limites
 

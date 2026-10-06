@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.collect import parquet_footer as collect_parquet
-from sparkforge.collect.base import CollectorUnavailable
-from sparkforge.scan.plan import plan
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.collect import parquet_footer as collect_parquet
+from sparkforge_aws.collect.base import CollectorUnavailable
+from sparkforge_aws.scan.plan import plan
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKLOAD = ROOT / "fixtures" / "workload"
@@ -31,7 +31,7 @@ def test_analyze_workload_devolve_o_golden_do_extrator(caso):
 def test_analyze_workload_sem_arquivo_diz_o_comando(tmp_path):
     with pytest.raises(_core.AdapterError) as exc:
         _core.analyze_workload(str(tmp_path / "workload.yaml"))
-    assert "sparkforge analyze workload" in str(exc.value) and exc.value.exit_code == 2
+    assert "sparkforge-aws analyze workload" in str(exc.value) and exc.value.exit_code == 2
 
 
 def test_analyze_workload_yaml_malformado_vira_unresolved(tmp_path):
@@ -105,7 +105,7 @@ def test_collect_parquet_footer_sem_pyarrow_vira_status(tmp_path, monkeypatch):
 def test_collect_parquet_footer_max_files_fora_da_faixa(tmp_path):
     with pytest.raises(_core.AdapterError) as exc:
         _core.collect_parquet_footer(str(tmp_path), prefix=str(tmp_path), now="x", max_files=0)
-    assert "sparkforge collect parquet-footer" in str(exc.value) and exc.value.exit_code == 2
+    assert "sparkforge-aws collect parquet-footer" in str(exc.value) and exc.value.exit_code == 2
 
 
 def test_scan_le_workload_yaml_so_na_raiz(tmp_path):

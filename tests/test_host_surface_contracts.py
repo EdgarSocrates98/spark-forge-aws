@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from sparkforge.adapters.mcp import tools_do_transporte
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters.mcp import tools_do_transporte
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 
 def test_full_and_compact_surfaces_have_declared_sizes() -> None:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.codeintel.query_expansion import expand_query
-from sparkforge.knowledge_engine.compiler import compile_knowledge
-from sparkforge.knowledge_engine.packs import PackRegistry
+from sparkforge_aws.codeintel.query_expansion import expand_query
+from sparkforge_aws.knowledge_engine.compiler import compile_knowledge
+from sparkforge_aws.knowledge_engine.packs import PackRegistry
 
 
 def test_query_expansion_is_versioned_and_deterministic() -> None:

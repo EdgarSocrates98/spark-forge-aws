@@ -1,5 +1,5 @@
-from sparkforge.facts.pyspark_ast import extract_source
-from sparkforge.facts.streaming import extract_streaming_progress_path
+from sparkforge_aws.facts.pyspark_ast import extract_source
+from sparkforge_aws.facts.streaming import extract_streaming_progress_path
 
 
 def _progress(batch_id: int, input_rate: float, processed_rate: float, state_rows: int) -> dict:

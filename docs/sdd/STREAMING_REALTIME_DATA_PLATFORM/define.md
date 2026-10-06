@@ -35,7 +35,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_facts_streaming.py::test_streaming_extraction_is_deterministic_and_batch_safe"}
   - id: AC8
     statement: "O catálogo, routing, referências geradas, mirrors aplicáveis e surface lock reconhecem a primeira onda sem tool órfã ou rule inalcançável."
-    verified_by: {kind: command, ref: "python scripts/check_surface_lock.py; python scripts/sync_skills.py --check; sparkforge sdd check --repo . --feature STREAMING_REALTIME_DATA_PLATFORM"}
+    verified_by: {kind: command, ref: "python scripts/check_surface_lock.py; python scripts/sync_skills.py --check; sparkforge-aws sdd check --repo . --feature STREAMING_REALTIME_DATA_PLATFORM"}
 success:
   - id: SC1
     metric: "Casos de streaming da primeira onda com extração, julgamento, routing e validação verdes"
@@ -45,7 +45,7 @@ success:
     source: "python scripts/check_surface_lock.py"
   - id: SC3
     metric: "Estado SDD da feature e lacunas nomeadas"
-    source: "sparkforge sdd check --repo . --feature STREAMING_REALTIME_DATA_PLATFORM"
+    source: "sparkforge-aws sdd check --repo . --feature STREAMING_REALTIME_DATA_PLATFORM"
 out_of_scope:
   - "Collectors que chamam Kafka, MSK, Kinesis, Flink, DMS, Debezium ou AWS live; a primeira onda aceita artifacts locais e mantém o core offline-first."
   - "Inferir throughput, latência, custo, capacidade, exactly-once, retenção ou número ideal de partições sem measurement e runtime confirmado."

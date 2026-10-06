@@ -55,7 +55,7 @@ atribuição causal.
 | surface | python scripts/check_surface_lock.py | 0 divergências |
 | bundle offline | python scripts/verify_offline_bundle.py --check --repo . | 69 checked, 0 failed |
 | números correntes | python scripts/check_status_numbers.py --strict | 0 divergências |
-| SDD | sparkforge sdd check --repo . --feature STREAMING_ICEBERG_TEMPORAL | ok |
+| SDD | sparkforge-aws sdd check --repo . --feature STREAMING_ICEBERG_TEMPORAL | ok |
 
 ## Entregue
 

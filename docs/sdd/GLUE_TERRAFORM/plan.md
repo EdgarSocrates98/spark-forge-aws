@@ -9,7 +9,7 @@ upstream:
   sha256: "31f4c2b96eecce27a6b489fe259ea171ba41916b69eec11b4e0aa4d0f855a837"
 tasks:
   - id: T1
-    files: [tests/test_glue_terraform.py, sparkforge/facts/glue_terraform.py, sparkforge/facts/stepfunctions.py, sparkforge/facts/airflow_dag.py, docs/claims.lock.json, docs/harness/CODEINTEL-GAP.md]
+    files: [tests/test_glue_terraform.py, sparkforge_aws/facts/glue_terraform.py, sparkforge_aws/facts/stepfunctions.py, sparkforge_aws/facts/airflow_dag.py, docs/claims.lock.json, docs/harness/CODEINTEL-GAP.md]
     covers: [AC1, AC2, AC3, AC4, AC5]
     test: {path: tests/test_glue_terraform.py, name: test_a_definicao_e_unica_e_os_dois_extratores_importam}
 ---
@@ -45,9 +45,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.facts import airflow_dag, glue_terraform, stepfunctions
-from sparkforge.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts import airflow_dag, glue_terraform, stepfunctions
+from sparkforge_aws.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
+from sparkforge_aws.findings.models import Fact
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -82,7 +82,7 @@ def test_a_definicao_e_unica_e_os_dois_extratores_importam():
 
     # E nenhuma copia local sobreviveu.
     for nome in ("stepfunctions", "airflow_dag"):
-        fonte = (RAIZ / "sparkforge" / "facts" / f"{nome}.py").read_text(encoding="utf-8")
+        fonte = (RAIZ / "sparkforge_aws" / "facts" / f"{nome}.py").read_text(encoding="utf-8")
         assert "def _glue_jobs_por_nome" not in fonte, nome
         assert "def _max_retries" not in fonte, nome
 
@@ -175,20 +175,20 @@ python -m pytest tests/test_glue_terraform.py -q
 ```
 
 Falha esperada: **exit 2**, erro na **coleta**, com a linha decisiva
-`ModuleNotFoundError: No module named 'sparkforge.facts.glue_terraform'`. O módulo
+`ModuleNotFoundError: No module named 'sparkforge_aws.facts.glue_terraform'`. O módulo
 ausente é a unidade sob teste, então isso conta como vermelho pela regra da casa.
 
 Confirme também o estado de partida, para o relato:
 
 ```bash
-python -c "import pathlib; print(sum(pathlib.Path('sparkforge/facts/'+n+'.py').read_text(encoding='utf-8').count('def _glue_jobs_por_nome') for n in ('stepfunctions','airflow_dag')))"
+python -c "import pathlib; print(sum(pathlib.Path('sparkforge_aws/facts/'+n+'.py').read_text(encoding='utf-8').count('def _glue_jobs_por_nome') for n in ('stepfunctions','airflow_dag')))"
 ```
 
 Deve imprimir `2`.
 
 ### 3. Código mínimo
 
-#### 3.1 Criar `sparkforge/facts/glue_terraform.py`
+#### 3.1 Criar `sparkforge_aws/facts/glue_terraform.py`
 
 ```python
 """Leitura do Terraform de job Glue, compartilhada pelos extratores de orquestracao.
@@ -216,7 +216,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 __all__ = ["glue_jobs_por_nome", "glue_max_retries"]
 
@@ -278,13 +278,13 @@ def glue_max_retries(
     return ("not_literal", None, None) if interpolado else ("absent", 0, None)
 ```
 
-#### 3.2 `sparkforge/facts/stepfunctions.py`
+#### 3.2 `sparkforge_aws/facts/stepfunctions.py`
 
-1. No bloco de imports, **depois** de `from sparkforge.facts.scan import iter_source_files`,
+1. No bloco de imports, **depois** de `from sparkforge_aws.facts.scan import iter_source_files`,
    acrescente:
 
    ```python
-   from sparkforge.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
+   from sparkforge_aws.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
    ```
 
 2. **Apague** as duas funções `_glue_jobs_por_nome` e `_max_retries` inteiras, com os
@@ -295,10 +295,10 @@ def glue_max_retries(
    - `origem, retries, retries_id = _max_retries(facts, arquivo, simbolo)` →
      `origem, retries, retries_id = glue_max_retries(facts, arquivo, simbolo)`
 
-#### 3.3 `sparkforge/facts/airflow_dag.py`
+#### 3.3 `sparkforge_aws/facts/airflow_dag.py`
 
 O mesmo, nos quatro pontos equivalentes: o import depois de
-`from sparkforge.facts.scan import iter_source_files`, as duas funções apagadas — **com
+`from sparkforge_aws.facts.scan import iter_source_files`, as duas funções apagadas — **com
 os docstrings que declaravam a duplicação de propósito, que deixam de ser verdade** — e
 as duas chamadas em `build_af_glue_link`.
 
@@ -319,7 +319,7 @@ python -m pytest tests/test_facts_fusion.py tests/test_fixtures_golden_fusion.py
 python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q
 python -m pytest tests/test_harness_untrusted.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py -q
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 python scripts/check_status_numbers.py --strict
 ```
 
@@ -349,8 +349,8 @@ própria `proof.cmd` por `shlex.split`, nunca `shell=True`. Regrave
 ### 7. Commit
 
 ```bash
-git add sparkforge/facts/glue_terraform.py tests/test_glue_terraform.py \
-  sparkforge/facts/stepfunctions.py sparkforge/facts/airflow_dag.py
+git add sparkforge_aws/facts/glue_terraform.py tests/test_glue_terraform.py \
+  sparkforge_aws/facts/stepfunctions.py sparkforge_aws/facts/airflow_dag.py
 git commit -F <arquivo com a mensagem>
 ```
 
@@ -365,7 +365,7 @@ the Airflow domain landed, and the docstring said where it belonged: "o lugar
 certo da funcao e um modulo proprio". Three final reviews in a row checked by
 hand that the copies had not drifted. Repeated manual checking is the symptom.
 
-`sparkforge/facts/glue_terraform.py` is not an extractor: it reads facts, not
+`sparkforge_aws/facts/glue_terraform.py` is not an extractor: it reads facts, not
 artifacts, and has no `EMITTED_KINDS`. That absence is what keeps it out of all
 three sweeps the repository runs, and `tests/test_glue_terraform.py` now says so
 executably — the manual lists union `EMITTED_KINDS`, so adding it there would

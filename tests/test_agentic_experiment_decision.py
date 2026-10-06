@@ -4,20 +4,20 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.agentic.decision import (
+from sparkforge_aws.agentic.decision import (
     DecisionContext,
     generate_adr,
     is_significant_decision,
     make_decision,
 )
-from sparkforge.agentic.experiment import (
+from sparkforge_aws.agentic.experiment import (
     ExperimentPlan,
     design_experiment,
     design_experiment_for_unknown,
     design_experiment_from_deadlock,
     evaluate_experiment_result,
 )
-from sparkforge.agentic.models import (
+from sparkforge_aws.agentic.models import (
     Experiment,
     ExperimentStatus,
     Hypothesis,
@@ -243,7 +243,7 @@ class TestCustoETempoNaoSaoInventados:
     """
 
     def _hipotese(self):
-        from sparkforge.agentic.models import Hypothesis
+        from sparkforge_aws.agentic.models import Hypothesis
 
         return Hypothesis(
             statement="Spill domina o stage 7",
@@ -270,7 +270,7 @@ class TestCustoETempoNaoSaoInventados:
 
     def test_plano_de_deadlock_soma_o_que_foi_declarado(self):
         h = self._hipotese()
-        from sparkforge.agentic.models import Hypothesis
+        from sparkforge_aws.agentic.models import Hypothesis
 
         h2 = Hypothesis(
             statement="Skew domina o stage 7",

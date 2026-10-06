@@ -7,7 +7,7 @@ Accepted
 Atualmente, definições de agentes, skills, subagentes e times estão fragmentadas em múltiplos formatos e locais (`config/agents.yaml`, `config/subagents.yaml`, `config/agentic-expansion.yaml`, `config/teams-expansion.yaml`, `agents/*.md`, `skills/*`). Isso gera risco de divergência entre plataformas (Antigravity, Cursor, Claude Code, Devin) e dificulta a validação programática e a evolução de schemas.
 
 ## Decision
-Adotamos um **Registro Canônico Único** (`sparkforge/registry/`) baseado em modelos Pydantic e esquemas JSON estritos para todas as entidades da factory:
+Adotamos um **Registro Canônico Único** (`sparkforge_aws/registry/`) baseado em modelos Pydantic e esquemas JSON estritos para todas as entidades da factory:
 - `AgentManifest`
 - `SkillManifest`
 - `ToolManifest`

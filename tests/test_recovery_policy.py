@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.agentic.recovery import FailureClass, RecoveryPolicy
+from sparkforge_aws.agentic.recovery import FailureClass, RecoveryPolicy
 
 
 def test_recovery_covers_every_failure_class_with_one_action() -> None:

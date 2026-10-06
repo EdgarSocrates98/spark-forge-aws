@@ -9,7 +9,7 @@ upstream:
   sha256: "858b1e993a77e71a7671de6a59afb1960dcd1139cc89ae4ebfdbd4065ac716b5"
 files:
   - {path: tests/test_facts_lakeformation.py, action: modify, reason: "TestFtaDeclarado (AC1, AC2), escrita antes do codigo; o teste de contrato do modulo passa a cobrir o kind novo"}
-  - {path: sparkforge/facts/lakeformation.py, action: modify, reason: "_fta_declarados() e o kind em EMITTED_KINDS"}
+  - {path: sparkforge_aws/facts/lakeformation.py, action: modify, reason: "_fta_declarados() e o kind em EMITTED_KINDS"}
   - {path: tests/test_lakeformation_rules.py, action: modify, reason: "TestSfLf010 (AC4, AC5)"}
   - {path: rules/catalog/lakeformation.yaml, action: modify, reason: "SF-LF-010 ganha absent de lakeformation.fta_declared; title, explanation, risks e rollback dizem isso"}
   - {path: tests/test_rules_catalog_reachability.py, action: modify, reason: "comentario de ALLOWED_SET_LEVEL de SF-LF-010 passa a nomear os dois absent"}
@@ -51,7 +51,7 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| extrator | `tests/test_facts_lakeformation.py`, `sparkforge/facts/lakeformation.py` | AC1, AC2, AC3 |
+| extrator | `tests/test_facts_lakeformation.py`, `sparkforge_aws/facts/lakeformation.py` | AC1, AC2, AC3 |
 | regra | `tests/test_lakeformation_rules.py`, `rules/catalog/lakeformation.yaml`, `tests/test_rules_catalog_reachability.py` | AC4, AC5 |
 | goldens e registros | `tests/test_fixtures_golden_cloudwatch_logs.py`, as duas fixtures FTA, guia, `STATUS.md` | AC6, AC7, AC8 |
 
@@ -65,7 +65,7 @@ mostrar outra coisa, entra como desvio no build.
 
 - `rules/catalog/lakeformation.yaml`, `SF-LF-010` (lida no arquivo; o MCP do SparkForge
   não conectou nesta sessão).
-- Docstring de `_access_models` e `_marcadores_de_fta` em `sparkforge/facts/lakeformation.py`:
+- Docstring de `_access_models` e `_marcadores_de_fta` em `sparkforge_aws/facts/lakeformation.py`:
   as duas chaves que a documentação da AWS publica como pedido de credencial do FTA.
 - `knowledge/glue/lakeformation-fgac.md` §5 (FTA e EMRFS) e §7 (chave por catálogo, a
   verificar), pelas citações do próprio módulo.

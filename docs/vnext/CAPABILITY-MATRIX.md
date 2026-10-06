@@ -16,12 +16,12 @@ prova de suporte. Sua fonte operacional é
 `knowledge/lakeformation/capability-matrix.yaml`, com células por engine
 (`glue`, `emr_ec2`, `emr_serverless`), release, FGAC/FTA, formato e operação.
 O consumidor determinístico é
-`sparkforge/lakeformation/capabilities.py`; capability não declarada retorna
+`sparkforge_aws/lakeformation/capabilities.py`; capability não declarada retorna
 `unknown` e desbloqueio nomeado, nunca extrapolação.
 
 Ownership de catálogo, RAM, resource link, `GetDataAccess`, filesystem e grants
 continuam dimensões independentes no preflight. Use
-`sparkforge lakeformation architect --input architecture.json` para obter a
+`sparkforge-aws lakeformation architect --input architecture.json` para obter a
 decisão estruturada antes de qualquer coleta ou recomendação.
 
 A matriz operacional inclui Hive/Parquet/Iceberg/Hudi/Delta e operações read,

@@ -44,16 +44,16 @@ files:
   - {path: docs/superpowers/STATUS.md, action: modify, reason: "linha de Skills nomeia a entrega"}
 decisions:
   - id: D1
-    choice: "O teste de comandos passa a navegar ate o subparser do verbo e exigir que cada token --flag do comando citado esteja nas option_strings dele; marcador <...> vira um valor ficticio antes de separar os tokens, e comando cujo verbo e marcador (sparkforge <verbo>) fica fora."
+    choice: "O teste de comandos passa a navegar ate o subparser do verbo e exigir que cada token --flag do comando citado esteja nas option_strings dele; marcador <...> vira um valor ficticio antes de separar os tokens, e comando cujo verbo e marcador (sparkforge-aws <verbo>) fica fora."
     rejected:
-      - "parse_args do comando inteiro com valores ficticios: fragmentos como `sparkforge funcval compare --out` nao trazem os obrigatorios e seriam recusados sem erro de flag"
+      - "parse_args do comando inteiro com valores ficticios: fragmentos como `sparkforge-aws funcval compare --out` nao trazem os obrigatorios e seriam recusados sem erro de flag"
       - "lista manual de flags por verbo: envelhece sem que nada acuse"
     rollback: "git revert do commit do teste."
   - id: D2
     choice: "Os blocos repetidos vao para tres secoes do docs/sdd/README.md (O laco de cada fase, Caminho da mudanca do operador, Conhecimento citado, nunca memoria); cada skill aponta para a secao numa linha e guarda so o comando da propria fase, para continuar agindo sozinha."
     rejected:
       - "manter as copias: e o que a revisao apontou como custo de contexto"
-      - "tirar tambem o comando de cada skill: a skill deixaria de ser suficiente para agir, e test_seis_skills_existem exige sparkforge sdd check no texto"
+      - "tirar tambem o comando de cada skill: a skill deixaria de ser suficiente para agir, e test_seis_skills_existem exige sparkforge-aws sdd check no texto"
     rollback: "git revert do commit de texto e python scripts/sync_skills.py."
   - id: D3
     choice: "As descricoes ficam so com o gatilho, com teto de 320 caracteres travado por teste; o resumo do fluxo sai da description e fica no corpo."
@@ -79,7 +79,7 @@ covers:
 
 ## Conhecimento consultado
 
-Nada de Glue ou Spark. Lido no código: `sparkforge/adapters/cli.py`
+Nada de Glue ou Spark. Lido no código: `sparkforge_aws/adapters/cli.py`
 (`build_parser`, subparsers `sdd`, `funcval compare --out`,
 `benchmark --out`, `change propose --sandbox --repo --funcval --benchmark`),
 `tests/test_skill_content.py` (description começa com "Use quando", seções

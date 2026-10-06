@@ -18,10 +18,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.diagnosis.root_cause import _modulo_por_kind
-from sparkforge.facts.benchmark import _RUN_MEASURES
-from sparkforge.proof import PolicyError, load_policy, stable_key, validate_policy
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.diagnosis.root_cause import _modulo_por_kind
+from sparkforge_aws.facts.benchmark import _RUN_MEASURES
+from sparkforge_aws.proof import PolicyError, load_policy, stable_key, validate_policy
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 KIND_POR_FONTE = {

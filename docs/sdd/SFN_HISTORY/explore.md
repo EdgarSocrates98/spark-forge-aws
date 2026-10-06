@@ -6,7 +6,7 @@ profile: dev
 status: ready
 approaches:
   - id: A
-    summary: "Extrator do JSON salvo de aws stepfunctions get-execution-history: sfn.execution (arn, status derivado dos eventos terminais, duracao), sfn.attempt (um por par TaskScheduled/terminal do mesmo estado, com ordem da tentativa, resultado, duracao e erro), sfn.job_run (JobRunId lido do output do TaskSubmitted do Glue) e sfn.unresolved nomeado; verbo sparkforge analyze sfn-history e tool MCP; area SF-SFNX com regras que confrontam o DECLARADO (sfn.task do ASL) com o MEDIDO (sfn.attempt), derivacao em fuse no molde de bridge.py."
+    summary: "Extrator do JSON salvo de aws stepfunctions get-execution-history: sfn.execution (arn, status derivado dos eventos terminais, duracao), sfn.attempt (um por par TaskScheduled/terminal do mesmo estado, com ordem da tentativa, resultado, duracao e erro), sfn.job_run (JobRunId lido do output do TaskSubmitted do Glue) e sfn.unresolved nomeado; verbo sparkforge-aws analyze sfn-history e tool MCP; area SF-SFNX com regras que confrontam o DECLARADO (sfn.task do ASL) com o MEDIDO (sfn.attempt), derivacao em fuse no molde de bridge.py."
     tradeoffs:
       - "e o unico caminho que destrava a lacuna U1 das duas features anteriores: quantos JobRun distintos uma falha produziu"
       - "confronto declarado x medido e o que o bridge.py ja faz entre codigo e execucao; o molde existe"
@@ -60,11 +60,11 @@ documentações descreve. O que decide é observação. Pedido do operador em 20
 
 ## O que o repositório já tem
 
-- `sparkforge/facts/stepfunctions.py` lê o ASL e emite `sfn.task` com o retry **declarado**.
-- `sparkforge/facts/bridge.py` é o molde do confronto entre o que o código declara e o que
+- `sparkforge_aws/facts/stepfunctions.py` lê o ASL e emite `sfn.task` com o retry **declarado**.
+- `sparkforge_aws/facts/bridge.py` é o molde do confronto entre o que o código declara e o que
   a execução mediu, com a regra 13 do `CLAUDE.md` ao lado: nomear o sintoma, nunca atribuir
   custo.
-- `sparkforge/facts/event_log.py` é o precedente de ler artefato de execução salvo.
+- `sparkforge_aws/facts/event_log.py` é o precedente de ler artefato de execução salvo.
 
 ## Perguntas feitas
 

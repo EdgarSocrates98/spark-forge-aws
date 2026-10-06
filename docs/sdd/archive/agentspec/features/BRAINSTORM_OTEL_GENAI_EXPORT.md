@@ -18,7 +18,7 @@
 **Raw Input:** Frente §13 de `prompt_new_evo.md`, "OpenTelemetry GenAI nativo", que e o item 2 do P0 no roadmap (§31) e o item 5 do TOP 10 (§33). A proposta: um trace por case com `agent.invoke`, `model.invoke`, `tool.execute` e os atributos `gen_ai.*`, exportavel para CloudWatch, Grafana, Datadog, Langfuse, Jaeger ou um OTLP Collector, sem acoplar o core. Branch `feat/otel-genai`, a partir da `main` (ja com #48, #49 e #50).
 
 **Context Gathered:**
-- Nenhum arquivo em `sparkforge/` cita `opentelemetry`, `otel` ou `gen_ai`.
+- Nenhum arquivo em `sparkforge_aws/` cita `opentelemetry`, `otel` ou `gen_ai`.
 - O que ja e medido:
   - `adapters/tools.py:call_tool` e o despacho unico, e cada chamada vira um `TraceSpan` gravado por `observability/context_ledger.py` em `.sparkforge/traces.db`: nome da tool, inicio e fim, `payload_bytes` com `payload_basis`, `detail_level`, `item_count` e `outcome` (`ok`, `error`, `unauthorized`).
   - Token e custo ficam vazios de proposito (regras 22, 24 e 25).
@@ -47,7 +47,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/observability/otlp.py` para a projecao; `adapters/_core.py`, `adapters/cli.py` e `adapters/tools.py` para o verbo e a tool; `facts/host_transcript.py` para os horarios; `adapters/mcp.py` e `context_ledger.py` para o canal; `fixtures/otel/`; `docs/` | Verbo que compoe sobre o que ja foi medido, como `economy report` e `report github` |
+| Likely Location | `sparkforge_aws/observability/otlp.py` para a projecao; `adapters/_core.py`, `adapters/cli.py` e `adapters/tools.py` para o verbo e a tool; `facts/host_transcript.py` para os horarios; `adapters/mcp.py` e `context_ledger.py` para o canal; `fixtures/otel/`; `docs/` | Verbo que compoe sobre o que ja foi medido, como `economy report` e `report github` |
 | Relevant KB Domains | Observability (OpenTelemetry, OTLP, semconv GenAI), testing (golden), CI/CD (GitHub Actions) | Golden por fixture e prova por consumidor real |
 | IaC Patterns | `.github/workflows/ci.yml` | Um job novo com `otelcol-contrib` fixado por versao |
 
@@ -87,7 +87,7 @@
 
 ### Approach A: projecao pura sobre o que ja esta gravado ⭐ Recommended
 
-**Description:** `sparkforge/observability/otlp.py` e uma funcao pura: spans do `traces.db` por `run_id`, mais facts `host.*` opcionais, viram `TracesData` e `MetricsData`. O verbo `sparkforge telemetry export` grava em JSON Lines, e a tool MCP devolve o mesmo sem gravar.
+**Description:** `sparkforge_aws/observability/otlp.py` e uma funcao pura: spans do `traces.db` por `run_id`, mais facts `host.*` opcionais, viram `TracesData` e `MetricsData`. O verbo `sparkforge-aws telemetry export` grava em JSON Lines, e a tool MCP devolve o mesmo sem gravar.
 - **Ids deterministicos:** `traceId = sha256(run_id)[:32]` e `spanId = sha256(span_id)[:16]`. O mesmo run exportado duas vezes sai byte a byte igual.
 - **Lado host:** trace proprio.
 - **Correlacao:** nenhuma ligacao entre `host.tool_call` e o span do SparkForge.
@@ -147,13 +147,13 @@
 
 | # | Decision | Rationale | Alternative Rejected |
 |---|----------|-----------|----------------------|
-| 1 | Verbo `sparkforge telemetry export --run-id <id> [--facts <host.json> ...]`, que compoe sobre `traces.db` e facts | Nao le artefato; o `traces.db` ja e o que `economy report` le | Instrumentar com o SDK OTel |
+| 1 | Verbo `sparkforge-aws telemetry export --run-id <id> [--facts <host.json> ...]`, que compoe sobre `traces.db` e facts | Nao le artefato; o `traces.db` ja e o que `economy report` le | Instrumentar com o SDK OTel |
 | 2 | Saida em JSON Lines com `TracesData` e `MetricsData`, com nome fixo sob `.sparkforge/telemetry/`, dentro de `--repo` | Nada do argv vira caminho de escrita (licao do Snyk no eval harness). Se a mesma linha pode misturar `TracesData` e `MetricsData` para o `otlpjsonfile`, ou se sao dois arquivos, o Design decide com o Collector | `--out <caminho>` |
 | 3 | Ids por `sha256` do id local, truncado a 16 e 8 bytes | Deterministico; o export repetido nao duplica trace no backend | Ids aleatorios |
 | 4 | Span SparkForge: `execute_tool {tool}`, `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function` | Semconv GenAI | Nome proprio de span |
 | 5 | `mcp.method.name=tools/call` so quando o span registrou o canal MCP. `adapters/mcp.py` passa o canal ao `call_tool`, e o `record()` o grava em `metadata`, sem migrar schema | Afirmar canal sem medida seria inventar | Assumir MCP para todo span |
-| 6 | `payload_bytes` sai como `sparkforge.payload_bytes`, com `sparkforge.payload_basis` ao lado | Regra 22: byte nao e token | `gen_ai.usage.*` com bytes |
-| 7 | `outcome` error ou unauthorized vira status ERROR, com `sparkforge.outcome` | O consumidor distingue "falhou" de "nao pode" | So status ERROR |
+| 6 | `payload_bytes` sai como `sparkforge_aws.payload_bytes`, com `sparkforge_aws.payload_basis` ao lado | Regra 22: byte nao e token | `gen_ai.usage.*` com bytes |
+| 7 | `outcome` error ou unauthorized vira status ERROR, com `sparkforge_aws.outcome` | O consumidor distingue "falhou" de "nao pode" | So status ERROR |
 | 8 | Span `invoke_agent` do host com `gen_ai.request.model` e os quatro `gen_ai.usage.*`, e inicio e fim do primeiro e do ultimo `timestamp` do transcript | Token so com fonte (regra 24) | Tokens estimados |
 | 9 | Tool calls do host viram spans filhos `execute_tool`, com horario da linha do `tool_use` e da linha do `tool_result` | Horario medido na fonte | Spans sem duracao |
 | 10 | Span sem horario medido nao sai: vira recusa nomeada na contagem do `result.json`, e `exportados + recusados = total` | Regra 20; mesma disciplina do `report github` | Horario zero ou inventado |

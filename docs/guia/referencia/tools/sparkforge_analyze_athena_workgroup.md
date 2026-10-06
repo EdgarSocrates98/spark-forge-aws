@@ -20,7 +20,7 @@ Extrai facts de um dump JSON de workgroups do Athena (`get_work_group`): engine 
 
 ## Na CLI
 
-[`sparkforge analyze athena-workgroup`](../cli/analyze.md)
+[`sparkforge-aws analyze athena-workgroup`](../cli/analyze.md)
 
 ## Capacidade
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sparkforge.local/contracts/forge-lab-scenario-v1.schema.json",
+  "$id": "https://sparkforge_aws.local/contracts/forge-lab-scenario-v1.schema.json",
   "title": "Forge Lab Scenario v1",
   "type": "object",
   "required": ["schema_version", "suite", "scenarios"],

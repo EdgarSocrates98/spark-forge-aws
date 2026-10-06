@@ -35,7 +35,7 @@ ausência ou acesso negado em nó/aresta positiva.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `python scripts/verify_offline_bundle.py --check` — `69 checked`, `failed: []`.
-- `sparkforge sdd check --repo . --feature TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH` — `ok: true` após stamp.
+- `sparkforge-aws sdd check --repo . --feature TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH` — `ok: true` após stamp.
 
 ## Entrega
 

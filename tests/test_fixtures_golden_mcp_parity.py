@@ -29,7 +29,7 @@ import pytest
 
 pytest.importorskip("mcp", reason="SDK do MCP e extra opcional")
 
-from sparkforge.adapters.mcp import _TTL_TOOLS_LIST_MS, _versao_do_pacote  # noqa: E402
+from sparkforge_aws.adapters.mcp import _TTL_TOOLS_LIST_MS, _versao_do_pacote  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "mcp_parity"
@@ -40,7 +40,7 @@ def _carregar_script() -> Any:
 
     Este modulo tambem roda no gate de wheel (`verify_wheel.py` coleta todo
     `test_fixtures_*.py`), onde a raiz do repositorio no `sys.path` faria o
-    `sparkforge` do repositorio vencer o instalado. La o extra `mcp` nao e
+    `sparkforge-aws` do repositorio vencer o instalado. La o extra `mcp` nao e
     instalado e o `importorskip` acima pula antes de chegar aqui.
     """
     spec = importlib.util.spec_from_file_location("mcp_parity", ROOT / "scripts" / "mcp_parity.py")
@@ -683,7 +683,7 @@ class TestEra2026:
             assert _sem_envelope(moderno["calls"][chave]["result"]) == chamada["result"], chave
 
     def test_carimbo_so_com_nome_e_versao(self, moderno):
-        esperado = {"name": "sparkforge", "version": _versao_do_pacote()}
+        esperado = {"name": "sparkforge-aws", "version": _versao_do_pacote()}
         for chamada in moderno["calls"].values():
             carimbo = chamada["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]
             assert carimbo == esperado

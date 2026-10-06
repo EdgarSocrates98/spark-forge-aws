@@ -29,10 +29,10 @@ import sqlite3
 
 import pytest
 
-from sparkforge.adapters.cli import main as cli_main
-from sparkforge.codeintel.db import BANCO_PADRAO, SCHEMA_VERSION
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.search import Achado, buscar, construir_consulta, resumo
+from sparkforge_aws.adapters.cli import main as cli_main
+from sparkforge_aws.codeintel.db import BANCO_PADRAO, SCHEMA_VERSION
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.search import Achado, buscar, construir_consulta, resumo
 
 FONTE_OPERADORES = (
     # `b.a` da uma linha cujo `qualified_name` tem os dois tokens `b` e `a`, que e
@@ -429,11 +429,11 @@ class TestCli:
         assert cli_main(["code", "search", "x", "--db", str(banco)]) == 2
         erro = capsys.readouterr().err
         # A recusa passou a vir de `staleness.garantir_frescor`, que nomeia
-        # `sparkforge code sync` (a constante `ACAO_DE_SYNC`) em vez de
+        # `sparkforge-aws code sync` (a constante `ACAO_DE_SYNC`) em vez de
         # `code index`. A GARANTIA e a mesma e por isso o teste continua: a
         # recusa acontece ANTES de abrir o banco, o erro nomeia o comando que
         # resolve, e nenhum arquivo vazio fica no disco.
-        assert "sparkforge code sync" in erro
+        assert "sparkforge-aws code sync" in erro
         # O erro tem que nomear o banco QUE FOI PEDIDO. `--db` ignorado em favor
         # do default sob `--root` daria o mesmo codigo de saida e a mesma frase,
         # e o operador procuraria o defeito no arquivo errado.

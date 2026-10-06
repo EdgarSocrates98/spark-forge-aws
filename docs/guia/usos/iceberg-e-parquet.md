@@ -4,23 +4,23 @@ Este guia mostra como achar problemas de **layout**, ou seja, de como o dado est
 tabela Iceberg com dívida acumulada, arquivos pequenos demais e Parquet que não deixa pular
 dado. Todos os exemplos usam arquivos sintéticos da pasta `fixtures/` e foram rodados de verdade.
 
-Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge` é o comando instalado.
-Se ele não for encontrado, troque por `python -m sparkforge.adapters.cli`.
+Os comandos rodam na raiz do repositório, no Git Bash. `sparkforge-aws` é o comando instalado.
+Se ele não for encontrado, troque por `python -m sparkforge_aws.adapters.cli`.
 
 ## Receita rápida
 
 ```bash
 # 1. pasta temporária e metadata tables do Iceberg
-SAIDA=/tmp/sparkforge-guia; mkdir -p "$SAIDA"
-sparkforge analyze iceberg --path fixtures/iceberg/delete_debt/input/dump.json --out "$SAIDA/facts_iceberg.json"
+SAIDA=/tmp/sparkforge-aws-guia; mkdir -p "$SAIDA"
+sparkforge-aws analyze iceberg --path fixtures/iceberg/delete_debt/input/dump.json --out "$SAIDA/facts_iceberg.json"
 # 2. listagem do S3 (quantos arquivos e de que tamanho)
-sparkforge analyze s3-listing --path fixtures/s3/small_files_prefix/input/listing.json --out "$SAIDA/facts_s3.json"
+sparkforge-aws analyze s3-listing --path fixtures/s3/small_files_prefix/input/listing.json --out "$SAIDA/facts_s3.json"
 # 3. rodapé (footer) do Parquet
-sparkforge analyze parquet-footer --path fixtures/parquet_footer/espalhado_com_filtro/input/footer.json --out "$SAIDA/facts_footer.json"
+sparkforge-aws analyze parquet-footer --path fixtures/parquet_footer/espalhado_com_filtro/input/footer.json --out "$SAIDA/facts_footer.json"
 # 4. a consulta que lê a tabela
-sparkforge analyze sql --path fixtures/parquet_footer/espalhado_com_filtro/input/query.sql --out "$SAIDA/facts_query.json"
+sparkforge-aws analyze sql --path fixtures/parquet_footer/espalhado_com_filtro/input/query.sql --out "$SAIDA/facts_query.json"
 # 5. julgue tudo junto
-sparkforge judge --facts "$SAIDA/facts_iceberg.json" --facts "$SAIDA/facts_s3.json" \
+sparkforge-aws judge --facts "$SAIDA/facts_iceberg.json" --facts "$SAIDA/facts_s3.json" \
   --facts "$SAIDA/facts_footer.json" --facts "$SAIDA/facts_query.json" --glue 5.0
 ```
 
@@ -64,19 +64,19 @@ consulta no Athena, veja [athena-e-sql.md](athena-e-sql.md).
 
 | Artefato | Como obter |
 |---|---|
-| Metadata tables do Iceberg (`files`, `delete_files`, `snapshots`, propriedades) | `sparkforge collect iceberg-metadata` (roda consulta no Athena, acessa AWS) |
+| Metadata tables do Iceberg (`files`, `delete_files`, `snapshots`, propriedades) | `sparkforge-aws collect iceberg-metadata` (roda consulta no Athena, acessa AWS) |
 | Listagem do prefixo no S3 | `aws s3api list-objects-v2` (AWS CLI), salvo em JSON |
-| Footer do Parquet | `sparkforge collect parquet-footer` (lê só o rodapé; exige pyarrow; acessa o S3 se o prefixo for `s3://`) |
+| Footer do Parquet | `sparkforge-aws collect parquet-footer` (lê só o rodapé; exige pyarrow; acessa o S3 se o prefixo for `s3://`) |
 | A consulta que lê a tabela | O arquivo `.sql`, ou o `.py` com `spark.sql("...")` |
 
 Estes comandos acessam AWS e não foram rodados neste guia. As flags do `collect` foram
 conferidas no `--help`:
 
 ```bash
-sparkforge collect iceberg-metadata --repo . --table <db.tabela> --workgroup <workgroup-athena> \
+sparkforge-aws collect iceberg-metadata --repo . --table <db.tabela> --workgroup <workgroup-athena> \
   --output-location <s3://bucket/resultados/> --now <ISO8601>
 aws s3api list-objects-v2 --bucket <bucket> --prefix <prefixo/> > listing.json
-sparkforge collect parquet-footer --repo . --prefix <s3://bucket/tabela/ ou pasta local> \
+sparkforge-aws collect parquet-footer --repo . --prefix <s3://bucket/tabela/ ou pasta local> \
   --max-files 20 --now <ISO8601>
 ```
 
@@ -91,7 +91,7 @@ sem permissão, o artefato sai com um `status` que diz o motivo, em vez de erro.
 ### 1. Leia as metadata tables do Iceberg
 
 ```bash
-sparkforge analyze iceberg --path fixtures/iceberg/delete_debt/input/dump.json --detail-level summary
+sparkforge-aws analyze iceberg --path fixtures/iceberg/delete_debt/input/dump.json --detail-level summary
 ```
 
 ```json
@@ -119,8 +119,8 @@ Cada camada vira um fact próprio: data files em `files_summary`, delete files e
 ### 2. Julgue a tabela
 
 ```bash
-sparkforge analyze iceberg --path fixtures/iceberg/delete_debt/input/dump.json --out "$SAIDA/facts_iceberg.json"
-sparkforge judge --facts "$SAIDA/facts_iceberg.json" --glue 5.0
+sparkforge-aws analyze iceberg --path fixtures/iceberg/delete_debt/input/dump.json --out "$SAIDA/facts_iceberg.json"
+sparkforge-aws judge --facts "$SAIDA/facts_iceberg.json" --glue 5.0
 ```
 
 Trecho real do achado:
@@ -145,7 +145,7 @@ SF-ICE-002  P1  Dívida de delete files em tabela merge-on-read
 ### 3. Conte os arquivos no S3
 
 ```bash
-sparkforge analyze s3-listing --path fixtures/s3/small_files_prefix/input/listing.json --detail-level summary
+sparkforge-aws analyze s3-listing --path fixtures/s3/small_files_prefix/input/listing.json --detail-level summary
 ```
 
 ```json
@@ -163,9 +163,9 @@ sparkforge analyze s3-listing --path fixtures/s3/small_files_prefix/input/listin
 ### 4. Veja se o Parquet deixa pular dado
 
 ```bash
-sparkforge analyze parquet-footer --path fixtures/parquet_footer/espalhado_com_filtro/input/footer.json --out "$SAIDA/facts_footer.json"
-sparkforge analyze sql --path fixtures/parquet_footer/espalhado_com_filtro/input/query.sql --out "$SAIDA/facts_query.json"
-sparkforge judge --facts "$SAIDA/facts_footer.json" --facts "$SAIDA/facts_query.json" --glue 5.0
+sparkforge-aws analyze parquet-footer --path fixtures/parquet_footer/espalhado_com_filtro/input/footer.json --out "$SAIDA/facts_footer.json"
+sparkforge-aws analyze sql --path fixtures/parquet_footer/espalhado_com_filtro/input/query.sql --out "$SAIDA/facts_query.json"
+sparkforge-aws judge --facts "$SAIDA/facts_footer.json" --facts "$SAIDA/facts_query.json" --glue 5.0
 ```
 
 A consulta é `SELECT id, cat FROM curated.espalhado WHERE id = 42`. O achado:
@@ -188,7 +188,7 @@ SF-PQ-008  P1  Estatística presente e inútil — row groups cobrem quase todo 
 
 ### 5. Antes de subir o format version: `iceberg assess-upgrade`
 
-`sparkforge iceberg` tem um subcomando só, `assess-upgrade`. Ele avalia subir o `format-version`
+`sparkforge-aws iceberg` tem um subcomando só, `assess-upgrade`. Ele avalia subir o `format-version`
 da tabela contra quem a consome e **não executa** nada.
 
 Ele lê o inventário de consumidores em `.sparkforge/consumers.yaml`, dentro do diretório do job.
@@ -198,7 +198,7 @@ copiado para uma pasta temporária:
 ```bash
 mkdir -p "$SAIDA/job_pedidos/.sparkforge"
 cp fixtures/consumers/v3_with_athena_consumer/input/consumers.yaml "$SAIDA/job_pedidos/.sparkforge/consumers.yaml"
-sparkforge iceberg assess-upgrade --from 2 --to 3 "$SAIDA/job_pedidos"
+sparkforge-aws iceberg assess-upgrade --from 2 --to 3 "$SAIDA/job_pedidos"
 ```
 
 ```json
@@ -265,6 +265,6 @@ O SparkForge só recomenda. Ele não roda manutenção.
 ## Próximos passos
 
 1. Ache a camada do problema e corrija só ela.
-2. Antes de reescrever a tabela, defina o que conferir no resultado com `sparkforge funcval plan`
+2. Antes de reescrever a tabela, defina o que conferir no resultado com `sparkforge-aws funcval plan`
    (veja a [referência do funcval](../referencia/cli/funcval.md)).
 3. Se quem lê a tabela é o Athena, siga para [athena-e-sql.md](athena-e-sql.md).

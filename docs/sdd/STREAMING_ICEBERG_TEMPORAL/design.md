@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/STREAMING_ICEBERG_TEMPORAL/define.md
   sha256: "32e10987c906b783fad9baee9110d682ea294b8ba064513e325a844c0c0f76b8"
 files:
-  - {path: sparkforge/facts/iceberg_metadata.py, action: modify, reason: "emitir iceberg.snapshot sem remover snapshots_summary legado"}
-  - {path: sparkforge/facts/streaming_composition.py, action: modify, reason: "despachar mode=iceberg_temporal"}
-  - {path: sparkforge/facts/streaming_iceberg_temporal.py, action: create, reason: "pareamento puro de batches e snapshots observados"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "passar tabela/query/tolerância ao novo modo comum"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "expor enum e ajuda do modo temporal Iceberg"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "manter paridade CLI/MCP read-only"}
+  - {path: sparkforge_aws/facts/iceberg_metadata.py, action: modify, reason: "emitir iceberg.snapshot sem remover snapshots_summary legado"}
+  - {path: sparkforge_aws/facts/streaming_composition.py, action: modify, reason: "despachar mode=iceberg_temporal"}
+  - {path: sparkforge_aws/facts/streaming_iceberg_temporal.py, action: create, reason: "pareamento puro de batches e snapshots observados"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "passar tabela/query/tolerância ao novo modo comum"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "expor enum e ajuda do modo temporal Iceberg"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "manter paridade CLI/MCP read-only"}
   - {path: tests/test_facts_iceberg_metadata.py, action: modify, reason: "provar facts por snapshot e ausência de timestamp"}
   - {path: tests/test_facts_streaming_composition.py, action: modify, reason: "provar pareamento e unresolved temporal Iceberg"}
   - {path: tests/test_streaming_rules.py, action: modify, reason: "provar regra evidence-first"}
@@ -59,11 +59,11 @@ ids para reextração. Nenhuma operação escreve no Iceberg ou no ambiente.
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category streaming_iceberg`: `SF-STREAMICE-001`
+- `sparkforge-aws rules lookup --category streaming_iceberg`: `SF-STREAMICE-001`
   existente exige vínculo factual e trata non-append como necessidade de replay,
   não como causa.
 - `knowledge/streaming-lakehouse-observability.md`: contrato offline de
   snapshots, progresso, unresolved e limites de causalidade.
-- `sparkforge code symbol` sobre `_snapshots_summary_fact` e
+- `sparkforge-aws code symbol` sobre `_snapshots_summary_fact` e
   `analyze_streaming_composition`: a mudança reutiliza o extractor e o core
   existentes, sem criar ferramenta paralela.

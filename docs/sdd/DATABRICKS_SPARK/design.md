@@ -13,14 +13,14 @@ files:
   - {path: tests/test_databricks_rule_audit.py, action: create, reason: "teste de AC6: regra sem escopo alcancavel por artefato Spark generico nao remedia com termo de AWS fora da lista de excecoes"}
   - {path: knowledge/databricks/runtime-matrix.yaml, action: create, reason: "matriz Databricks Runtime -> Spark como dado, com fonte e data no nivel do documento e vocabulario fechado (spark)"}
   - {path: knowledge/databricks/runtime-matrix.md, action: create, reason: "documento com a secao Fontes que a watchlist le, a normalizacao do rotulo 15.4.x-scala2.12 e as lacunas U1 e U2"}
-  - {path: sparkforge/facts/runtime_matrix.py, action: modify, reason: "load_databricks(), no molde de load_emr_serverless, com lru_cache e vocabulario fechado"}
-  - {path: sparkforge/facts/runtime_detect.py, action: modify, reason: "_PLATFORM_KEYS ganha databricks, DATABRICKS_MATRIX deriva spark, normalizacao do rotulo, fact databricks.photon com state on/off/undeclared, EMITTED_KINDS"}
-  - {path: sparkforge/findings/models.py, action: modify, reason: "RuntimeContext ganha databricks e photon, e to_dict os serializa"}
-  - {path: sparkforge/rules/engine.py, action: modify, reason: "motivo de pulo databricks.photon.unresolved quando runtime databricks com photon on e a regra exige kind de plano (plan.*, spark.sql.*)"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "_runtime_reading le spark.conf_effective com a chave de versao do Databricks Runtime; build_runtime e build_runtime_context recebem databricks e photon como fonte cli"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "--databricks e --photon nos mesmos parsers do --emr, e no laco que itera as flags de runtime"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "entradas databricks e photon nos mesmos schemas MCP que ja aceitam emr"}
-  - {path: sparkforge/tuning/spark_conf.py, action: modify, reason: "recusa shuffle_partitions_auto quando o valor efetivo ou pedido de spark.sql.shuffle.partitions e auto"}
+  - {path: sparkforge_aws/facts/runtime_matrix.py, action: modify, reason: "load_databricks(), no molde de load_emr_serverless, com lru_cache e vocabulario fechado"}
+  - {path: sparkforge_aws/facts/runtime_detect.py, action: modify, reason: "_PLATFORM_KEYS ganha databricks, DATABRICKS_MATRIX deriva spark, normalizacao do rotulo, fact databricks.photon com state on/off/undeclared, EMITTED_KINDS"}
+  - {path: sparkforge_aws/findings/models.py, action: modify, reason: "RuntimeContext ganha databricks e photon, e to_dict os serializa"}
+  - {path: sparkforge_aws/rules/engine.py, action: modify, reason: "motivo de pulo databricks.photon.unresolved quando runtime databricks com photon on e a regra exige kind de plano (plan.*, spark.sql.*)"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "_runtime_reading le spark.conf_effective com a chave de versao do Databricks Runtime; build_runtime e build_runtime_context recebem databricks e photon como fonte cli"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "--databricks e --photon nos mesmos parsers do --emr, e no laco que itera as flags de runtime"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "entradas databricks e photon nos mesmos schemas MCP que ja aceitam emr"}
+  - {path: sparkforge_aws/tuning/spark_conf.py, action: modify, reason: "recusa shuffle_partitions_auto quando o valor efetivo ou pedido de spark.sql.shuffle.partitions e auto"}
   - {path: rules/catalog/env.yaml, action: modify, reason: "regra nova SF-ENV-006 (photon undeclared sob databricks), e SF-ENV-001, 004 e 005 citando Databricks ao lado de Glue e EMR"}
   - {path: rules/catalog/spark-plan.yaml, action: modify, reason: "SF-PLAN-004 com remediacao neutra de plataforma"}
   - {path: rules/catalog/parquet.yaml, action: modify, reason: "SF-PQ-002 com remediacao neutra de plataforma"}
@@ -91,7 +91,7 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| matriz | `knowledge/databricks/runtime-matrix.{yaml,md}`, `sparkforge/facts/runtime_matrix.py` | AC2 |
+| matriz | `knowledge/databricks/runtime-matrix.{yaml,md}`, `sparkforge_aws/facts/runtime_matrix.py` | AC2 |
 | detecção | `runtime_detect.py`, `findings/models.py`, `adapters/_core.py`, `fixtures/runtime/databricks_*` | AC1, AC3, AC4 |
 | photon | `rules/engine.py`, regra SF-ENV nova em `env.yaml` | AC5 |
 | auditoria | cinco arquivos do catálogo, `tests/test_databricks_rule_audit.py` | AC6 |
@@ -103,7 +103,7 @@ covers:
 
 - `RuntimeContext` está serializado em 15 goldens de `fixtures/scan/`. Por isso
   D1 regenera goldens pelo `regen_fixtures.py`, nunca à mão.
-- `run_judge` tem oito chamadas em `sparkforge/adapters/_core.py`. Por isso D3
+- `run_judge` tem oito chamadas em `sparkforge_aws/adapters/_core.py`. Por isso D3
   põe a recusa de Photon no engine, que é o ponto único.
 - Das 231 regras executáveis com `runtime_scope` vazio, as que exigem só kinds
   de extratores genéricos de Spark (event log, plano, métricas SQL, AST PySpark,

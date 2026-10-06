@@ -7,8 +7,8 @@ fontes que nao falam da mesma coisa.
 import pytest
 import yaml
 
-from sparkforge.facts import pricing
-from sparkforge.facts.runtime_matrix import SOURCE_TYPES
+from sparkforge_aws.facts import pricing
+from sparkforge_aws.facts.runtime_matrix import SOURCE_TYPES
 
 
 class TestTodaEntradaCarregaProcedencia:
@@ -29,7 +29,7 @@ class TestTodaEntradaCarregaProcedencia:
         import inspect
 
         fonte = inspect.getsource(pricing)
-        assert "from sparkforge.facts.runtime_matrix import SOURCE_TYPES" in fonte
+        assert "from sparkforge_aws.facts.runtime_matrix import SOURCE_TYPES" in fonte
         assert "SOURCE_TYPES = " not in fonte
 
 

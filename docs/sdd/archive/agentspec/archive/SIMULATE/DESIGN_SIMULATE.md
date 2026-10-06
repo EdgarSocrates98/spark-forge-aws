@@ -17,7 +17,7 @@
 ## Architecture Overview
 
 ```text
- CLI  sparkforge simulate           MCP  sparkforge_simulate (READ_ONLY)
+ CLI  sparkforge-aws simulate           MCP  sparkforge_simulate (READ_ONLY)
             └──────────────┬──────────────┘
                            v
  adapters/_core.py  simulate_change(facts_path[], sets[], runtime flags)
@@ -28,7 +28,7 @@
    - simulate.diff(antes, depois, stable_keys) -> disappeared/appeared/skipped_delta
                            │
                            v
- sparkforge/simulate/ (puro; nao roda judge nem le arquivo)
+ sparkforge_aws/simulate/ (puro; nao roda judge nem le arquivo)
    layers.py  CAMADAS: tf, code, effective, emr -> kinds
    patch.py   parse_sets, apply_sets (attrs.value; measures.value numerico)
    diff.py    strip_derived, diff por (rule_id, chave estavel), skipped_delta
@@ -43,9 +43,9 @@
 | Component | Purpose | Technology |
 |-----------|---------|------------|
 | `facts/fusion.py` | Passo 0: `fuse()` chama `extract_timeout_diagnosis` depois do `build_lakeformation`, com a mesma checagem de namespace | — |
-| `sparkforge/simulate/layers.py` | Mapa camada -> kinds | stdlib |
-| `sparkforge/simulate/patch.py` | Parse do `--set` e alteracao dos facts | stdlib |
-| `sparkforge/simulate/diff.py` | Remocao dos derivados, comparacao, `skipped_delta` | `proof.keys.stable_key` |
+| `sparkforge_aws/simulate/layers.py` | Mapa camada -> kinds | stdlib |
+| `sparkforge_aws/simulate/patch.py` | Parse do `--set` e alteracao dos facts | stdlib |
+| `sparkforge_aws/simulate/diff.py` | Remocao dos derivados, comparacao, `skipped_delta` | `proof.keys.stable_key` |
 | `adapters/_core.py` `simulate_change` | Pipeline dos dois lados | `fuse`, `judge`, `build_runtime_context` |
 | `adapters/cli.py`, `adapters/tools.py` | Verbo `simulate`, tool `sparkforge_simulate` READ_ONLY | argparse |
 | `agents/spark-performance-architect.md` (+ espelhos) | Dono: o coordenador que ja declara `tune` | — |
@@ -71,7 +71,7 @@
 1. Timeout no `judge_findings`: o `judge` nao deriva nada hoje, e passar a derivar mudaria todo verbo que julga.
 
 **Consequences:**
-- `sparkforge fuse` passa a produzir `spark.timeout.*`; `SF-TIMEOUT-001/002` alcancaveis por `fuse` -> `judge`.
+- `sparkforge-aws fuse` passa a produzir `spark.timeout.*`; `SF-TIMEOUT-001/002` alcancaveis por `fuse` -> `judge`.
 - O golden `test_fixtures_golden_timeout.py` segue com o helper proprio; um teste novo prende que `fuse()` produz o mesmo que o helper.
 
 ---
@@ -122,7 +122,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-12 |
 
-**Choice:** CLI `sparkforge simulate --facts U [--facts ...] --set camada:chave=valor [--set ...]` com as flags de runtime; tool `sparkforge_simulate` `_READ_ONLY` com `facts_path` e `sets` (catalogo 91 -> 92; tools com caminho 85 -> 86; READ_ONLY 59 -> 60). Dono: `spark-performance-architect`, o coordenador que declara `tune`. `refused` fixo: `performance_prediction`, `dependency_incompatibility` (-> `migration_assess`), `execution_graph`.
+**Choice:** CLI `sparkforge-aws simulate --facts U [--facts ...] --set camada:chave=valor [--set ...]` com as flags de runtime; tool `sparkforge_simulate` `_READ_ONLY` com `facts_path` e `sets` (catalogo 91 -> 92; tools com caminho 85 -> 86; READ_ONLY 59 -> 60). Dono: `spark-performance-architect`, o coordenador que declara `tune`. `refused` fixo: `performance_prediction`, `dependency_incompatibility` (-> `migration_assess`), `execution_graph`.
 
 ---
 
@@ -130,11 +130,11 @@
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/facts/fusion.py` + teste de `fuse` com timeout | Modify/Create | Passo 0 | (general) | None |
-| 2 | `sparkforge/simulate/{__init__,layers,patch,diff}.py` | Create | Modulo puro | @agentspec:python:python-developer | None |
+| 1 | `sparkforge_aws/facts/fusion.py` + teste de `fuse` com timeout | Modify/Create | Passo 0 | (general) | None |
+| 2 | `sparkforge_aws/simulate/{__init__,layers,patch,diff}.py` | Create | Modulo puro | @agentspec:python:python-developer | None |
 | 3 | `tests/test_simulate_patch.py`, `tests/test_simulate_diff.py` | Create | Unidade | @agentspec:test:test-generator | 2 |
-| 4 | `sparkforge/adapters/_core.py` | Modify | `simulate_change` | (general) | 1, 2 |
-| 5 | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py` | Modify | Verbo e tool | (general) | 4 |
+| 4 | `sparkforge_aws/adapters/_core.py` | Modify | `simulate_change` | (general) | 1, 2 |
+| 5 | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py` | Modify | Verbo e tool | (general) | 4 |
 | 6 | `fixtures/simulate/` + `tests/test_fixtures_golden_simulate.py` | Create | Os seis cenarios do prototipo e as recusas, com `FIXTURES = ROOT / "fixtures" / "simulate"` | @agentspec:test:test-generator | 4, 5 |
 | 7 | Registros (`test_adapters_tools`, `test_harness_authorization`, `test_fixtures_golden_mcp_parity`, `parity.yaml`, `manifest.json`, `spark-performance-architect.md` + `sync_skills`) | Modify | Tool nova | (general) | 5 |
 | 8 | `docs/simulate.md`, `docs/superpowers/STATUS.md`, surface lock, claims | Create/Modify | Guia; timeout com porta; gates | (general) | all |

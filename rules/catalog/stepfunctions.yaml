@@ -1,6 +1,6 @@
 # Catálogo de regras — como o AWS Step Functions dispara o job Glue
 #
-# Depende de `sparkforge/facts/stepfunctions.py`, que lê a definição ASL (o
+# Depende de `sparkforge_aws/facts/stepfunctions.py`, que lê a definição ASL (o
 # `.asl.json` do repositório, ou a saída salva de `aws stepfunctions
 # describe-state-machine`) e, em `fuse`, liga o estado Task ao `aws_glue_job` de mesmo
 # `name` (`sfn.glue_job_link`). As frases citadas estão em
@@ -92,7 +92,7 @@ rules:
     tradeoffs:
       - "Esperar o job custa tempo de execução do workflow; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
     validation:
-      - "`sparkforge analyze step-functions --path <definição corrigida>` mostra o `sfn.task` com `pattern: sync`, e `sparkforge judge` não produz mais SF-SFN-001 para o estado."
+      - "`sparkforge-aws analyze step-functions --path <definição corrigida>` mostra o `sfn.task` com `pattern: sync`, e `sparkforge-aws judge` não produz mais SF-SFN-001 para o estado."
       - "EIXO DE RESULTADO — numa execução de teste, o estado seguinte lê a saída completa do job: a contagem de linhas que ele lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun."
       - "Uma execução de teste em que o job falha termina a state machine em falha (ou no Catch declarado), e não segue para o estado seguinte."
     rollback:
@@ -151,7 +151,7 @@ rules:
     tradeoffs:
       - "Retry sobre o job inteiro compra resiliência com o custo de um JobRun completo por tentativa; retry no próprio Glue compra a mesma resiliência com outro custo — e as duas camadas juntas são a SF-SFN-004."
     validation:
-      - "`sparkforge analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito."
+      - "`sparkforge-aws analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge-aws judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito."
       - "EIXO DE RESULTADO — numa execução de teste em que o job falha na primeira tentativa, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: a tentativa extra não duplicou nem perdeu linha."
       - "O histórico da execução (`aws stepfunctions get-execution-history`) mostra, para o estado, no máximo 1 + `MaxAttempts` agendamentos do Task."
     rollback:
@@ -203,7 +203,7 @@ rules:
     tradeoffs:
       - "Separar só a chamada do Glue numa STANDARD aninhada preserva a EXPRESS para o resto, ao custo de uma state machine a mais para manter."
     validation:
-      - "`sparkforge analyze step-functions` sobre a saída nova de `describe-state-machine` mostra o `sfn.task` do Glue com `state_machine_type: STANDARD`, ou com `pattern: request_response`, e `sparkforge judge` não produz mais SF-SFN-003."
+      - "`sparkforge-aws analyze step-functions` sobre a saída nova de `describe-state-machine` mostra o `sfn.task` do Glue com `state_machine_type: STANDARD`, ou com `pattern: request_response`, e `sparkforge-aws judge` não produz mais SF-SFN-003."
       - "EIXO DE RESULTADO — uma execução de teste termina com o JobRun em `SUCCEEDED` antes do estado seguinte, e o destino tem a contagem que o job escreveu."
     rollback:
       - "Reverter o commit da definição e do tipo no IaC que publica a state machine, e republicá-la."
@@ -243,7 +243,7 @@ rules:
       knowledge/stepfunctions/glue-integration.md, lacuna 1.
     proposed_change:
       - "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Step Functions (onde `MaxAttempts` e `ErrorEquals` são explícitos e aparecem no histórico da execução), ou o retrier do Step Functions restrito a erros de chamada e o retry do job no Glue."
-      - "Antes de escolher, medir: um histórico de execução real com falha (`aws stepfunctions get-execution-history`) e os JobRuns do job no mesmo intervalo (`sparkforge collect glue-job-runs`) mostram quantos JobRuns uma falha produziu de fato."
+      - "Antes de escolher, medir: um histórico de execução real com falha (`aws stepfunctions get-execution-history`) e os JobRuns do job no mesmo intervalo (`sparkforge-aws collect glue-job-runs`) mostram quantos JobRuns uma falha produziu de fato."
     action:
       kind: orchestration.restrict_run_policy
       target: glue.max_retries
@@ -259,7 +259,7 @@ rules:
     tradeoffs:
       - "Retry no Step Functions é visível no histórico da execução e configurável por erro; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
     validation:
-      - "`sparkforge fuse` sobre os facts de `analyze step-functions` e `analyze terraform` mostra o `sfn.glue_job_link` com `glue_max_retries: 0` ou `sfn_retry_effective: 0`, e `sparkforge judge` não produz mais SF-SFN-004."
+      - "`sparkforge-aws fuse` sobre os facts de `analyze step-functions` e `analyze terraform` mostra o `sfn.glue_job_link` com `glue_max_retries: 0` ou `sfn_retry_effective: 0`, e `sparkforge-aws judge` não produz mais SF-SFN-004."
       - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
     rollback:
       - "Restaurar o `max_retries` anterior no Terraform e o retrier anterior na definição ASL, e reaplicar os dois."

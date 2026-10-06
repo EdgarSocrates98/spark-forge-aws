@@ -2,12 +2,12 @@
 
 # Skill `review-emr-cluster`
 
-Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for \"por que esse cluster custa isso\", \"o cluster subiu e não desce\", \"esse cluster morreu no bootstrap\" ou \"cadê os logs do cluster que terminou\", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-cluster` no olho, rode `sparkforge analyze emr-cluster` e `sparkforge judge` em vez disso — o extrator normaliza grupos e frotas num kind só e o catálogo aplica as regras SF-EMR sobre o que ele achou. Cobre também EMR Serverless: se o dump é `get-application`, o verbo é `sparkforge analyze emr-serverless` e a área é SF-EMRS.
+Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for \"por que esse cluster custa isso\", \"o cluster subiu e não desce\", \"esse cluster morreu no bootstrap\" ou \"cadê os logs do cluster que terminou\", mesmo sem falar em regra. Em vez de ler `describe-cluster` no olho, rode `sparkforge-aws analyze emr-cluster` e `sparkforge-aws judge`: o extrator normaliza grupos e frotas num kind só e o catálogo aplica SF-EMR. Cobre também EMR Serverless: se o dump é `get-application`, o verbo é `sparkforge-aws analyze emr-serverless` e a área é SF-EMRS.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-emr-cluster/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/emr/runtime-matrix.md', '../../knowledge/emr/cluster-configuration.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze emr-cluster', 'sparkforge judge', 'sparkforge analyze emr-serverless']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/emr/runtime-matrix.md', '../../knowledge/emr/cluster-configuration.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze emr-cluster', 'sparkforge-aws judge', 'sparkforge-aws analyze emr-serverless']} |
 
 ## Procedimento (texto integral)
 
@@ -25,7 +25,7 @@ que vigora. O extrator resolve as três; o catálogo aplica `SF-EMR-*` sobre o r
 Um cluster EMR não cabe num comando. São **seis**, e a união deles é o artefato:
 
 ```bash
-sparkforge collect emr-cluster --repo . --cluster-id j-XXXXXXXXXXXXX --now <ISO8601>
+sparkforge-aws collect emr-cluster --repo . --cluster-id j-XXXXXXXXXXXXX --now <ISO8601>
 ```
 
 À mão, o equivalente é rodar os seis e juntar os objetos num JSON só, em PascalCase, sob as
@@ -56,7 +56,7 @@ Duas armadilhas de coleta:
 #### 2. Extraia os facts
 
 ```bash
-sparkforge analyze emr-cluster --path <arquivo ou diretório com os dumps> \
+sparkforge-aws analyze emr-cluster --path <arquivo ou diretório com os dumps> \
   --out .sparkforge/facts_emr.json
 ```
 
@@ -72,7 +72,7 @@ Nenhuma decisão de executor se sustenta em `describe-cluster` sozinho. Quando o
 `SF-EMR-001` (ou qualquer conversa sobre memória e cores por executor), traga o run:
 
 ```bash
-sparkforge analyze event-log --path <event log> --out .sparkforge/facts_eventlog.json
+sparkforge-aws analyze event-log --path <event log> --out .sparkforge/facts_eventlog.json
 ```
 
 `--facts` é repetível: passe os dois arquivos na mesma chamada de `judge`, que une e
@@ -81,10 +81,10 @@ deduplica as listas antes de julgar.
 #### 4. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_emr.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_emr.json --show-skipped
 
 # com o run junto, para sustentar dimensionamento:
-sparkforge judge \
+sparkforge-aws judge \
   --facts .sparkforge/facts_emr.json \
   --facts .sparkforge/facts_eventlog.json \
   --show-skipped
@@ -136,7 +136,7 @@ e um relatório com o literal é a segunda cópia.
 ### Referência rápida
 
 Regras desta área e o fact que cada uma consome. Limiares e severidades **não** estão aqui
-de propósito, e a lista autoritativa é `sparkforge rules lookup --category emr-infra` — o
+de propósito, e a lista autoritativa é `sparkforge-aws rules lookup --category emr-infra` — o
 catálogo cresce, esta tabela é uma foto.
 
 | Regra | Fact que consome | O que acusa |
@@ -156,15 +156,15 @@ Quando o dump for de `get-application` e não de `describe-cluster`, o procedime
 acima **não se aplica** — não há grupo, frota, nó nem `Configurations` em dois níveis. O que
 se aplica é a mesma disciplina, sobre outra área (`SF-EMRS`) e outro namespace (`emrs.*`,
 disjunto de `emr.*` de propósito). A lista autoritativa das regras é
-`sparkforge rules lookup --category emr-serverless`, nunca memória.
+`sparkforge-aws rules lookup --category emr-serverless`, nunca memória.
 
 São **uma** chamada e um artefato, contra os seis do EC2:
 
 ```bash
-sparkforge collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
-sparkforge analyze emr-serverless --path <arquivo ou diretório> \
+sparkforge-aws collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
+sparkforge-aws analyze emr-serverless --path <arquivo ou diretório> \
   --out .sparkforge/facts_emr_serverless.json
-sparkforge judge --facts .sparkforge/facts_emr_serverless.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_emr_serverless.json --show-skipped
 ```
 
 Cinco coisas que decidem a leitura, e nenhuma delas existe no EC2:
@@ -202,7 +202,7 @@ vazio), mas versão que você cite entra **declarada**, nunca derivada do `relea
 - O job roda em AWS Glue, não em EMR: a área é `SF-GLUE` e a skill é `review-glue-terraform`.
 - Você quer achar stage dominante, skew, spill ou GC de um run: isso é execução, e vem de
   `analyze-spark-ui` sobre o event log.
-- O problema está no código ou no plano físico: comece por `sparkforge-diagnose`.
+- O problema está no código ou no plano físico: comece por `sparkforge-aws-diagnose`.
 - A pergunta é sobre tabela Iceberg, small files ou layout: `optimize-iceberg-table` e
   `optimize-parquet-layout`.
 - O dump é do **`emr-containers`** (`describe-virtual-cluster` + `describe-job-run`): o
@@ -243,9 +243,9 @@ jobs ao default `static`, e um job que dependia de `dynamic` passa a apagar o de
 Nenhuma das duas direções é neutra, e o sintoma não é falha: é resultado errado a jusante. A
 `SF-EMR-005` mostra a forma da validação — contagem **por partição**, não só o total.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -283,7 +283,7 @@ Esta skill trata **revisão de cluster EMR e EMR Serverless**. Contrato comum, s
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze emr-cluster`, `sparkforge judge`, `sparkforge analyze emr-serverless`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze emr-cluster`, `sparkforge-aws judge`, `sparkforge-aws analyze emr-serverless`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

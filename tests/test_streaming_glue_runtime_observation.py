@@ -6,16 +6,16 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.fusion import fuse
-from sparkforge.facts.glue_streaming import extract_glue_streaming_path
-from sparkforge.facts.streaming_glue_runtime import (
+from sparkforge_aws.facts.fusion import fuse
+from sparkforge_aws.facts.glue_streaming import extract_glue_streaming_path
+from sparkforge_aws.facts.streaming_glue_runtime import (
     EMITTED_KINDS,
     build_streaming_glue_runtime_observation,
 )
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_glue_runtime_observation"

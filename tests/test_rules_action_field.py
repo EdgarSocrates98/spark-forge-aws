@@ -41,8 +41,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.findings.models import Finding
-from sparkforge.rules.loader import CatalogError, _validate_action, catalog_dir, load_catalog
+from sparkforge_aws.findings.models import Finding
+from sparkforge_aws.rules.loader import CatalogError, _validate_action, catalog_dir, load_catalog
 
 _OPOSTAS = (frozenset({"increase", "decrease"}), frozenset({"add", "remove"}))
 

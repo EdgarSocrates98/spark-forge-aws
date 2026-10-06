@@ -1,5 +1,5 @@
-from sparkforge.findings import signature as sig
-from sparkforge.findings.signature import SIGNATURE_RE, compute_signature, normalize_body
+from sparkforge_aws.findings import signature as sig
+from sparkforge_aws.findings.signature import SIGNATURE_RE, compute_signature, normalize_body
 
 
 def test_reformatar_o_corpo_nao_muda_a_assinatura():

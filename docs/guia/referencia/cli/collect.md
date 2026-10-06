@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge collect`
+# `sparkforge-aws collect`
 
 Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).
 
@@ -8,32 +8,32 @@ Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge collect athena-workgroup`](#sparkforge-collect-athena-workgroup) | Baixa a configuracao de um workgroup via a API do Athena. |
-| [`sparkforge collect cloudwatch`](#sparkforge-collect-cloudwatch) | Baixa metricas de observabilidade Glue via CloudWatch. |
-| [`sparkforge collect cloudwatch-logs`](#sparkforge-collect-cloudwatch-logs) | Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem). |
-| [`sparkforge collect emr-cluster`](#sparkforge-collect-emr-cluster) | Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de scaling de um cluster EMR on EC2. |
-| [`sparkforge collect emr-eks`](#sparkforge-collect-emr-eks) | Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: no `emr-containers` cluster virtual e execucao sao APIs separadas. |
-| [`sparkforge collect emr-serverless`](#sparkforge-collect-emr-serverless) | Baixa get-application de uma application EMR Serverless. Uma chamada, nao seis: capacidade, auto-stop, runtimeConfiguration e monitoramento chegam no mesmo objeto. |
-| [`sparkforge collect event-log`](#sparkforge-collect-event-log) | Baixa o Spark event log de um job run via S3. |
-| [`sparkforge collect glue-job`](#sparkforge-collect-glue-job) | Baixa a definicao de um job via a API do Glue. |
-| [`sparkforge collect glue-job-runs`](#sparkforge-collect-glue-job-runs) | Baixa o historico de execucoes de um job, um artefato por run terminal. |
-| [`sparkforge collect glue-resource-link`](#sparkforge-collect-glue-resource-link) | Le o resource link na conta consumidora e o recurso de origem que ele declara. |
-| [`sparkforge collect iam-access`](#sparkforge-collect-iam-access) | Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao. |
-| [`sparkforge collect iceberg-metadata`](#sparkforge-collect-iceberg-metadata) | Consulta metadata tables Iceberg de uma tabela via Athena. |
-| [`sparkforge collect lakeformation`](#sparkforge-collect-lakeformation) | Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela. |
-| [`sparkforge collect managed-flink`](#sparkforge-collect-managed-flink) | Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação. |
-| [`sparkforge collect parquet-footer`](#sparkforge-collect-parquet-footer) | Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow. |
-| [`sparkforge collect schema-registry`](#sparkforge-collect-schema-registry) | Coleta metadata e latest version read-only do AWS Glue Schema Registry. |
-| [`sparkforge collect streaming-integrations`](#sparkforge-collect-streaming-integrations) | Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio. |
-| [`sparkforge collect verify`](#sparkforge-collect-verify) | Verifica presenca e integridade de todos os artefatos do manifesto. |
-| [`sparkforge collect workspace-graph`](#sparkforge-collect-workspace-graph) | Coleta grafo live limitado aos cloud_resources declarados no workspace manifest. |
+| [`sparkforge-aws collect athena-workgroup`](#sparkforge-aws-collect-athena-workgroup) | Baixa a configuracao de um workgroup via a API do Athena. |
+| [`sparkforge-aws collect cloudwatch`](#sparkforge-aws-collect-cloudwatch) | Baixa metricas de observabilidade Glue via CloudWatch. |
+| [`sparkforge-aws collect cloudwatch-logs`](#sparkforge-aws-collect-cloudwatch-logs) | Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem). |
+| [`sparkforge-aws collect emr-cluster`](#sparkforge-aws-collect-emr-cluster) | Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de scaling de um cluster EMR on EC2. |
+| [`sparkforge-aws collect emr-eks`](#sparkforge-aws-collect-emr-eks) | Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: no `emr-containers` cluster virtual e execucao sao APIs separadas. |
+| [`sparkforge-aws collect emr-serverless`](#sparkforge-aws-collect-emr-serverless) | Baixa get-application de uma application EMR Serverless. Uma chamada, nao seis: capacidade, auto-stop, runtimeConfiguration e monitoramento chegam no mesmo objeto. |
+| [`sparkforge-aws collect event-log`](#sparkforge-aws-collect-event-log) | Baixa o Spark event log de um job run via S3. |
+| [`sparkforge-aws collect glue-job`](#sparkforge-aws-collect-glue-job) | Baixa a definicao de um job via a API do Glue. |
+| [`sparkforge-aws collect glue-job-runs`](#sparkforge-aws-collect-glue-job-runs) | Baixa o historico de execucoes de um job, um artefato por run terminal. |
+| [`sparkforge-aws collect glue-resource-link`](#sparkforge-aws-collect-glue-resource-link) | Le o resource link na conta consumidora e o recurso de origem que ele declara. |
+| [`sparkforge-aws collect iam-access`](#sparkforge-aws-collect-iam-access) | Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao. |
+| [`sparkforge-aws collect iceberg-metadata`](#sparkforge-aws-collect-iceberg-metadata) | Consulta metadata tables Iceberg de uma tabela via Athena. |
+| [`sparkforge-aws collect lakeformation`](#sparkforge-aws-collect-lakeformation) | Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela. |
+| [`sparkforge-aws collect managed-flink`](#sparkforge-aws-collect-managed-flink) | Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação. |
+| [`sparkforge-aws collect parquet-footer`](#sparkforge-aws-collect-parquet-footer) | Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow. |
+| [`sparkforge-aws collect schema-registry`](#sparkforge-aws-collect-schema-registry) | Coleta metadata e latest version read-only do AWS Glue Schema Registry. |
+| [`sparkforge-aws collect streaming-integrations`](#sparkforge-aws-collect-streaming-integrations) | Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio. |
+| [`sparkforge-aws collect verify`](#sparkforge-aws-collect-verify) | Verifica presenca e integridade de todos os artefatos do manifesto. |
+| [`sparkforge-aws collect workspace-graph`](#sparkforge-aws-collect-workspace-graph) | Coleta grafo live limitado aos cloud_resources declarados no workspace manifest. |
 
-## `sparkforge collect athena-workgroup`
+## `sparkforge-aws collect athena-workgroup`
 
 Baixa a configuracao de um workgroup via a API do Athena.
 
 ```bash
-sparkforge collect athena-workgroup --help
+sparkforge-aws collect athena-workgroup --help
 ```
 
 ### Opções
@@ -48,12 +48,12 @@ sparkforge collect athena-workgroup --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect cloudwatch`
+## `sparkforge-aws collect cloudwatch`
 
 Baixa metricas de observabilidade Glue via CloudWatch.
 
 ```bash
-sparkforge collect cloudwatch --help
+sparkforge-aws collect cloudwatch --help
 ```
 
 ### Opções
@@ -71,12 +71,12 @@ sparkforge collect cloudwatch --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect cloudwatch-logs`
+## `sparkforge-aws collect cloudwatch-logs`
 
 Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem).
 
 ```bash
-sparkforge collect cloudwatch-logs --help
+sparkforge-aws collect cloudwatch-logs --help
 ```
 
 ### Opções
@@ -97,12 +97,12 @@ sparkforge collect cloudwatch-logs --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect emr-cluster`
+## `sparkforge-aws collect emr-cluster`
 
 Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de scaling de um cluster EMR on EC2.
 
 ```bash
-sparkforge collect emr-cluster --help
+sparkforge-aws collect emr-cluster --help
 ```
 
 ### Opções
@@ -117,12 +117,12 @@ sparkforge collect emr-cluster --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect emr-eks`
+## `sparkforge-aws collect emr-eks`
 
 Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: no `emr-containers` cluster virtual e execucao sao APIs separadas.
 
 ```bash
-sparkforge collect emr-eks --help
+sparkforge-aws collect emr-eks --help
 ```
 
 ### Opções
@@ -138,12 +138,12 @@ sparkforge collect emr-eks --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect emr-serverless`
+## `sparkforge-aws collect emr-serverless`
 
 Baixa get-application de uma application EMR Serverless. Uma chamada, nao seis: capacidade, auto-stop, runtimeConfiguration e monitoramento chegam no mesmo objeto.
 
 ```bash
-sparkforge collect emr-serverless --help
+sparkforge-aws collect emr-serverless --help
 ```
 
 ### Opções
@@ -158,12 +158,12 @@ sparkforge collect emr-serverless --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect event-log`
+## `sparkforge-aws collect event-log`
 
 Baixa o Spark event log de um job run via S3.
 
 ```bash
-sparkforge collect event-log --help
+sparkforge-aws collect event-log --help
 ```
 
 ### Opções
@@ -180,12 +180,12 @@ sparkforge collect event-log --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect glue-job`
+## `sparkforge-aws collect glue-job`
 
 Baixa a definicao de um job via a API do Glue.
 
 ```bash
-sparkforge collect glue-job --help
+sparkforge-aws collect glue-job --help
 ```
 
 ### Opções
@@ -200,12 +200,12 @@ sparkforge collect glue-job --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect glue-job-runs`
+## `sparkforge-aws collect glue-job-runs`
 
 Baixa o historico de execucoes de um job, um artefato por run terminal.
 
 ```bash
-sparkforge collect glue-job-runs --help
+sparkforge-aws collect glue-job-runs --help
 ```
 
 ### Opções
@@ -221,12 +221,12 @@ sparkforge collect glue-job-runs --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect glue-resource-link`
+## `sparkforge-aws collect glue-resource-link`
 
 Le o resource link na conta consumidora e o recurso de origem que ele declara.
 
 ```bash
-sparkforge collect glue-resource-link --help
+sparkforge-aws collect glue-resource-link --help
 ```
 
 ### Opções
@@ -244,12 +244,12 @@ sparkforge collect glue-resource-link --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect iam-access`
+## `sparkforge-aws collect iam-access`
 
 Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao.
 
 ```bash
-sparkforge collect iam-access --help
+sparkforge-aws collect iam-access --help
 ```
 
 ### Opções
@@ -266,12 +266,12 @@ sparkforge collect iam-access --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect iceberg-metadata`
+## `sparkforge-aws collect iceberg-metadata`
 
 Consulta metadata tables Iceberg de uma tabela via Athena.
 
 ```bash
-sparkforge collect iceberg-metadata --help
+sparkforge-aws collect iceberg-metadata --help
 ```
 
 ### Opções
@@ -288,12 +288,12 @@ sparkforge collect iceberg-metadata --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect lakeformation`
+## `sparkforge-aws collect lakeformation`
 
 Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela.
 
 ```bash
-sparkforge collect lakeformation --help
+sparkforge-aws collect lakeformation --help
 ```
 
 ### Opções
@@ -311,12 +311,12 @@ sparkforge collect lakeformation --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect managed-flink`
+## `sparkforge-aws collect managed-flink`
 
 Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação.
 
 ```bash
-sparkforge collect managed-flink --help
+sparkforge-aws collect managed-flink --help
 ```
 
 ### Opções
@@ -335,12 +335,12 @@ sparkforge collect managed-flink --help
 
 [`sparkforge_collect_managed_flink`](../tools/sparkforge_collect_managed_flink.md)
 
-## `sparkforge collect parquet-footer`
+## `sparkforge-aws collect parquet-footer`
 
 Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow.
 
 ```bash
-sparkforge collect parquet-footer --help
+sparkforge-aws collect parquet-footer --help
 ```
 
 ### Opções
@@ -356,12 +356,12 @@ sparkforge collect parquet-footer --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect schema-registry`
+## `sparkforge-aws collect schema-registry`
 
 Coleta metadata e latest version read-only do AWS Glue Schema Registry.
 
 ```bash
-sparkforge collect schema-registry --help
+sparkforge-aws collect schema-registry --help
 ```
 
 ### Opções
@@ -381,12 +381,12 @@ sparkforge collect schema-registry --help
 
 [`sparkforge_collect_schema_registry`](../tools/sparkforge_collect_schema_registry.md)
 
-## `sparkforge collect streaming-integrations`
+## `sparkforge-aws collect streaming-integrations`
 
 Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio.
 
 ```bash
-sparkforge collect streaming-integrations --help
+sparkforge-aws collect streaming-integrations --help
 ```
 
 ### Opções
@@ -411,12 +411,12 @@ sparkforge collect streaming-integrations --help
 
 [`sparkforge_collect_streaming_integrations`](../tools/sparkforge_collect_streaming_integrations.md)
 
-## `sparkforge collect verify`
+## `sparkforge-aws collect verify`
 
 Verifica presenca e integridade de todos os artefatos do manifesto.
 
 ```bash
-sparkforge collect verify --help
+sparkforge-aws collect verify --help
 ```
 
 ### Opções
@@ -429,12 +429,12 @@ sparkforge collect verify --help
 
 [`sparkforge_collect_athena_workgroup`](../tools/sparkforge_collect_athena_workgroup.md), [`sparkforge_collect_cloudwatch`](../tools/sparkforge_collect_cloudwatch.md), [`sparkforge_collect_cloudwatch_logs`](../tools/sparkforge_collect_cloudwatch_logs.md), [`sparkforge_collect_emr_cluster`](../tools/sparkforge_collect_emr_cluster.md), [`sparkforge_collect_emr_eks`](../tools/sparkforge_collect_emr_eks.md), [`sparkforge_collect_emr_serverless`](../tools/sparkforge_collect_emr_serverless.md), [`sparkforge_collect_event_log`](../tools/sparkforge_collect_event_log.md), [`sparkforge_collect_glue_job`](../tools/sparkforge_collect_glue_job.md), [`sparkforge_collect_glue_job_runs`](../tools/sparkforge_collect_glue_job_runs.md), [`sparkforge_collect_glue_resource_link`](../tools/sparkforge_collect_glue_resource_link.md), [`sparkforge_collect_iam_access`](../tools/sparkforge_collect_iam_access.md), [`sparkforge_collect_iceberg_metadata`](../tools/sparkforge_collect_iceberg_metadata.md), [`sparkforge_collect_lakeformation`](../tools/sparkforge_collect_lakeformation.md), [`sparkforge_collect_parquet_footer`](../tools/sparkforge_collect_parquet_footer.md), [`sparkforge_collect_verify`](../tools/sparkforge_collect_verify.md)
 
-## `sparkforge collect workspace-graph`
+## `sparkforge-aws collect workspace-graph`
 
 Coleta grafo live limitado aos cloud_resources declarados no workspace manifest.
 
 ```bash
-sparkforge collect workspace-graph --help
+sparkforge-aws collect workspace-graph --help
 ```
 
 ### Opções

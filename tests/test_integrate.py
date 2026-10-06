@@ -1,4 +1,4 @@
-"""`sparkforge integrate` e `sparkforge detach`: a integracao por usuario.
+"""`sparkforge-aws integrate` e `sparkforge-aws detach`: a integracao por usuario.
 
 Todo teste aponta HOME, USERPROFILE e APPDATA para `tmp_path` e injeta o executor
 do `claude`: nenhum teste toca o HOME real nem chama o binario `claude` de verdade.
@@ -20,11 +20,11 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge import __version__
-from sparkforge import doctor as dr
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main as cli_main
-from sparkforge.integrate import detach, integrate, render, sources, status
+from sparkforge_aws import __version__
+from sparkforge_aws import doctor as dr
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main as cli_main
+from sparkforge_aws.integrate import detach, integrate, render, sources, status
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,7 +39,7 @@ def _home_isolado(tmp_path, monkeypatch):
     monkeypatch.delenv("CODEX_HOME", raising=False)
     # Sem `which`/`runner` injetados, o `claude` e sempre "ausente": nenhum teste
     # chega ao binario de verdade, nem pelo `all`.
-    from sparkforge.integrate import claude as _claude
+    from sparkforge_aws.integrate import claude as _claude
 
     def _nunca(argv):
         raise AssertionError(f"teste chamou o binario claude: {argv}")
@@ -68,14 +68,16 @@ def test_wheel_embute_skills_e_agents(tmp_path):
     )
     assert build.returncode == 0, f"`python -m build` falhou: {build.stderr[-800:]}"
     (roda,) = sorted(out.glob("*.whl"))
-    prefixo = "sparkforge/integrate/bundle/"
+    prefixo = "sparkforge_aws/integrate/bundle/"
     with zipfile.ZipFile(roda) as wheel:
         nomes = wheel.namelist()
         assert f"{prefixo}skills/sdd-plan/SKILL.md" in nomes
         assert f"{prefixo}agents/sf-runtime-specialist.md" in nomes
         assert f"{prefixo}agents/executors/sf-judge.md" in nomes
-        # `sparkforge/agents/` e pacote Python: o bundle nao pode cair nele.
-        assert not [n for n in nomes if n.startswith("sparkforge/agents/") and n.endswith(".md")]
+        # `sparkforge_aws/agents/` e pacote Python: o bundle nao pode cair nele.
+        assert not [
+            n for n in nomes if n.startswith("sparkforge_aws/agents/") and n.endswith(".md")
+        ]
         destino = tmp_path / "instalado"
         wheel.extractall(destino, members=[n for n in nomes if n.startswith(prefixo)])
 
@@ -83,7 +85,7 @@ def test_wheel_embute_skills_e_agents(tmp_path):
     sem_repo = tmp_path / "sem_repo"
     (sem_repo / "skills").mkdir(parents=True)
     (sem_repo / "agents").mkdir()
-    bundle = destino / "sparkforge" / "integrate" / "bundle"
+    bundle = destino / "sparkforge_aws" / "integrate" / "bundle"
     raiz = sources.content_root(repo_root=sem_repo, bundle=bundle)
     assert raiz == bundle
     assert _relativos(sources.skills_dir(raiz)) == _relativos(ROOT / "skills")
@@ -335,9 +337,9 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
     dados = json.loads(config.read_text(encoding="utf-8"))
     assert dados["mcpServers"]["outro"] == outro
-    assert dados["mcpServers"]["sparkforge"] == {
+    assert dados["mcpServers"]["sparkforge-aws"] == {
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
     }
     assert "PYTHONPATH" not in json.dumps(dados)
 
@@ -347,10 +349,10 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     assert (appdata / "devin" / "agents" / "sf-runtime-specialist.md").is_file()
     assert (appdata / "devin" / "mcp_config.json").is_file()
 
-    # `sparkforge` que o SparkForge nao escreveu: recusa, e o arquivo fica igual.
+    # `sparkforge-aws` que o SparkForge nao escreveu: recusa, e o arquivo fica igual.
     alheio = tmp_path / "home_alheia" / ".config" / "devin" / "mcp_config.json"
     alheio.parent.mkdir(parents=True)
-    texto = json.dumps({"mcpServers": {"sparkforge": {"command": "meu"}}})
+    texto = json.dumps({"mcpServers": {"sparkforge-aws": {"command": "meu"}}})
     alheio.write_text(texto, encoding="utf-8")
     recusado = integrate("devin", home=tmp_path / "home_alheia", windows=False)
     assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
@@ -372,9 +374,9 @@ def test_integrate_economy_selects_compact_mcp_surface(tmp_path):
     assert resultado["refused"] == []
     config = home / ".config" / "devin" / "mcp_config.json"
     dados = json.loads(config.read_text(encoding="utf-8"))
-    assert dados["mcpServers"]["sparkforge"]["args"] == [
+    assert dados["mcpServers"]["sparkforge-aws"]["args"] == [
         "-m",
-        "sparkforge.adapters.mcp",
+        "sparkforge_aws.adapters.mcp",
         "--transport",
         "stdio",
         "--mode",
@@ -397,10 +399,10 @@ def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
     assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
     dados = json.loads(config.read_text(encoding="utf-8"))
     assert dados["mcpServers"]["outro"] == outro
-    assert dados["mcpServers"]["sparkforge"] == {
+    assert dados["mcpServers"]["sparkforge-aws"] == {
         "type": "local",
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
         "tools": ["*"],
     }
 
@@ -445,9 +447,9 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
     dados = tomllib.loads(texto)
     assert dados["model"] == "gpt-5"
     assert dados["mcp_servers"]["outro"] == {"command": "node", "args": ["servidor.js"]}
-    assert dados["mcp_servers"]["sparkforge"] == {
+    assert dados["mcp_servers"]["sparkforge-aws"] == {
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
     }
     for arquivo in (home / ".codex" / "agents").glob("*.toml"):
         agente = tomllib.loads(arquivo.read_text(encoding="utf-8"))
@@ -462,14 +464,14 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
     assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge]\ncommand = "meu"\n'
 
 
-# `sparkforge` escrito a mao, em cada forma que o TOML aceita para a mesma chave.
+# `sparkforge-aws` escrito a mao, em cada forma que o TOML aceita para a mesma chave.
 FORMAS_TOML = {
     "tabela": '[mcp_servers.sparkforge]\ncommand = "meu"\n',
-    "aspas_duplas": '[mcp_servers."sparkforge"]\ncommand = "meu"\n',
-    "aspas_simples": "[mcp_servers.'sparkforge']\ncommand = \"meu\"\n",
-    "espacos": '[ mcp_servers . sparkforge ]\ncommand = "meu"\n',
+    "aspas_duplas": '[mcp_servers."sparkforge-aws"]\ncommand = "meu"\n',
+    "aspas_simples": "[mcp_servers.'sparkforge-aws']\ncommand = \"meu\"\n",
+    "espacos": '[ mcp_servers . sparkforge-aws ]\ncommand = "meu"\n',
     "inline_sob_mcp_servers": '[mcp_servers]\nsparkforge = { command = "meu" }\n',
-    "pontuada_sob_mcp_servers": '[mcp_servers]\nsparkforge.command = "meu"\n',
+    "pontuada_sob_mcp_servers": '[mcp_servers]\nsparkforge_aws.command = "meu"\n',
     "pontuada_na_raiz": 'mcp_servers.sparkforge.command = "meu"\n',
     "subtabela_env": '[mcp_servers.sparkforge.env]\nX = "1"\n',
 }
@@ -484,7 +486,7 @@ def _home_codex(base: Path, texto: str) -> tuple[Path, Path]:
 
 @pytest.mark.parametrize("forma", sorted(FORMAS_TOML))
 def test_codex_recusa_sparkforge_a_mao_em_qualquer_forma(tmp_path, forma):
-    from sparkforge.integrate import writer
+    from sparkforge_aws.integrate import writer
 
     texto = FORMAS_TOML[forma]
     home, config = _home_codex(tmp_path / "home", texto)
@@ -496,13 +498,13 @@ def test_codex_recusa_sparkforge_a_mao_em_qualquer_forma(tmp_path, forma):
 
 
 @pytest.mark.parametrize("texto", [
-    '[mcp_servers.outro]\nnota = "sparkforge"\n',
+    '[mcp_servers.outro]\nnota = "sparkforge-aws"\n',
     '# [mcp_servers.sparkforge]\nmodel = "x"\n',
     '[mcp_servers.sparkforge_x]\ncommand = "y"\n',
     '[outra]\nsparkforge = 1\n',
 ])
 def test_regex_do_310_nao_acusa_o_que_nao_e_sparkforge(texto):
-    from sparkforge.integrate import writer
+    from sparkforge_aws.integrate import writer
 
     assert not writer._sparkforge_por_texto(texto)
 
@@ -518,7 +520,7 @@ def test_marcador_so_conta_no_inicio_da_linha(tmp_path):
 
 @pytest.mark.parametrize("caso", ["dois_blocos", "sem_fim", "fim_antes"])
 def test_bloco_toml_quebrado_recusa_sem_tocar(tmp_path, caso):
-    from sparkforge.integrate import writer
+    from sparkforge_aws.integrate import writer
 
     bloco = writer.toml_block("py", ["-m", "x"])
     inicio, resto = bloco.split("\n", 1)
@@ -646,7 +648,7 @@ def test_json_mexido_em_outra_parte_tira_so_a_nossa_entrada(tmp_path):
     config.write_bytes(_json_estilo(atual))
 
     assert detach("devin", home=home)["refused"] == []
-    del atual["mcpServers"]["sparkforge"]
+    del atual["mcpServers"]["sparkforge-aws"]
     assert config.read_bytes() == _json_estilo(atual)
 
 
@@ -686,7 +688,7 @@ def test_entrada_mcp_editada_pelo_usuario_recusa_integrate_e_detach(tmp_path):
     assert integrate("devin", home=home, windows=False, root=raiz)["refused"] == []
     config = home / ".config" / "devin" / "mcp_config.json"
     dados = _ler_json(config)
-    dados["mcpServers"]["sparkforge"]["env"] = {"AWS_PROFILE": "dev"}
+    dados["mcpServers"]["sparkforge-aws"]["env"] = {"AWS_PROFILE": "dev"}
     config.write_bytes(json.dumps(dados, indent=2).encode("utf-8"))
     editado = config.read_bytes()
 
@@ -731,7 +733,7 @@ def test_config_symlink_grava_no_alvo_e_o_link_continua_link(tmp_path):
         "refused"
     ] == []
     assert link.is_symlink(), "o integrate trocou o link por um arquivo"
-    assert "sparkforge" in _ler_json(alvo)["mcpServers"]
+    assert "sparkforge-aws" in _ler_json(alvo)["mcpServers"]
     assert detach("devin", home=home)["refused"] == []
     assert link.is_symlink()
     assert alvo.read_bytes() == original
@@ -865,7 +867,7 @@ def test_skill_removida_do_bundle_sai_quando_o_ultimo_dono_sai(tmp_path):
 
 
 def test_manifesto_v1_migra_para_um_sha_por_arquivo(tmp_path):
-    from sparkforge.integrate import writer
+    from sparkforge_aws.integrate import writer
 
     home = tmp_path / "home"
     compartilhado = home / ".agents" / "skills" / "sdd-plan" / "SKILL.md"
@@ -1151,7 +1153,7 @@ def test_bundle_ausente_sai_recusa_nomeada_pela_cli(tmp_path, monkeypatch, capsy
 
 
 def test_falha_de_escrita_no_meio_deixa_o_gravado_no_manifesto(tmp_path, monkeypatch):
-    from sparkforge.integrate import writer
+    from sparkforge_aws.integrate import writer
 
     raiz = _raiz_minima(tmp_path)
     home = tmp_path / "home"
@@ -1310,9 +1312,9 @@ class _ClaudeFalso:
         if comando[:2] == ["plugin", "list"]:
             return 0, json.dumps([{"id": p, "scope": "user"} for p in sorted(self.plugins)])
         if comando[:3] == ["plugin", "marketplace", "add"]:
-            if "sparkforge-local" in self.marketplaces:
+            if "sparkforge-aws-local" in self.marketplaces:
                 return 1, "marketplace ja existe"
-            self.marketplaces.add("sparkforge-local")
+            self.marketplaces.add("sparkforge-aws-local")
         elif comando[:3] == ["plugin", "marketplace", "remove"]:
             if comando[3] not in self.marketplaces:
                 return 1, f'Marketplace "{comando[3]}" not found'
@@ -1345,10 +1347,10 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     assert recusa["reason"] == "claude_cli_ausente"
     assert recusa["commands"] == [
         f"claude plugin marketplace add {marketplace} --scope user",
-        "claude plugin install sparkforge-aws@sparkforge-local --scope user --json",
+        "claude plugin install sparkforge-aws@sparkforge-aws-local --scope user --json",
     ]
     catalogo = json.loads((marketplace / ".claude-plugin" / "marketplace.json").read_text("utf-8"))
-    assert catalogo["name"] == "sparkforge-local"
+    assert catalogo["name"] == "sparkforge-aws-local"
     assert catalogo["plugins"][0]["name"] == "sparkforge-aws"
     assert catalogo["plugins"][0]["source"] == "./plugins/sparkforge-aws"
     manifesto = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
@@ -1357,9 +1359,9 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     assert re.fullmatch(rf"{re.escape(__version__)}\+[0-9a-f]{{8}}", manifesto["version"])
     assert catalogo["plugins"][0]["version"] == manifesto["version"]
     mcp = json.loads((plugin / ".mcp.json").read_text("utf-8"))
-    assert mcp == {"mcpServers": {"sparkforge": {
+    assert mcp == {"mcpServers": {"sparkforge-aws": {
         "command": sys.executable,
-        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
     }}}
     assert "PYTHONPATH" not in (plugin / ".mcp.json").read_text("utf-8")
     assert _conteudo(plugin / "agents") == _agents_renderizados(
@@ -1382,7 +1384,7 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
         ["/bin/claude", *LISTA_MKT],
         ["/bin/claude", "plugin", "marketplace", "add", str(marketplace), "--scope", "user"],
         ["/bin/claude", *LISTA_PLUGINS],
-        ["/bin/claude", "plugin", "install", "sparkforge-aws@sparkforge-local",
+        ["/bin/claude", "plugin", "install", "sparkforge-aws@sparkforge-aws-local",
          "--scope", "user", "--json"],
     ]
     # Registrado e sem mudanca: a segunda execucao nao chama o CLI de novo.
@@ -1394,9 +1396,9 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert saiu["refused"] == []
     assert claude.chamadas[4:] == [
-        ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-local",
+        ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-aws-local",
          "--scope", "user"],
-        ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-local",
+        ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-aws-local",
          "--scope", "user"],
     ]
     assert not marketplace.exists()
@@ -1404,7 +1406,7 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
 
 def test_run_do_claude_tem_timeout_stdin_fechado_e_utf8(monkeypatch):
     """I3: o executor de verdade nunca espera um prompt nem decodifica pelo cp1252."""
-    from sparkforge.integrate import claude as _claude
+    from sparkforge_aws.integrate import claude as _claude
 
     visto: dict = {}
 
@@ -1468,8 +1470,8 @@ def test_integrate_depois_dos_comandos_a_mao_marca_registrado(tmp_path):
     home = tmp_path / "h"
     ausente = integrate("claude", home=home, which=lambda _: None)
     assert ausente["refused"][0]["reason"] == "claude_cli_ausente"
-    claude = _ClaudeFalso(marketplaces={"sparkforge-local"},
-                          plugins={"sparkforge-aws@sparkforge-local"})
+    claude = _ClaudeFalso(marketplaces={"sparkforge-aws-local"},
+                          plugins={"sparkforge-aws@sparkforge-aws-local"})
     depois = integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert depois["refused"] == []
     assert [argv[1:] for argv in claude.chamadas] == [LISTA_MKT, LISTA_PLUGINS]
@@ -1486,8 +1488,8 @@ def _lista_trocada(claude: _ClaudeFalso, saida: str):
     return runner
 
 
-UNINSTALL = ["plugin", "uninstall", "sparkforge-aws@sparkforge-local", "--scope", "user"]
-MKT_REMOVE = ["plugin", "marketplace", "remove", "sparkforge-local", "--scope", "user"]
+UNINSTALL = ["plugin", "uninstall", "sparkforge-aws@sparkforge-aws-local", "--scope", "user"]
+MKT_REMOVE = ["plugin", "marketplace", "remove", "sparkforge-aws-local", "--scope", "user"]
 
 
 def test_detach_com_lista_que_nao_se_entende_roda_o_uninstall(tmp_path):
@@ -1498,7 +1500,7 @@ def test_detach_com_lista_que_nao_se_entende_roda_o_uninstall(tmp_path):
     claude = _ClaudeFalso()
     integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     outro_formato = json.dumps([{"plugin": "sparkforge-aws",
-                                 "source": {"marketplace": "sparkforge-local"}}])
+                                 "source": {"marketplace": "sparkforge-aws-local"}}])
     saiu = detach("claude", home=home, runner=_lista_trocada(claude, outro_formato),
                   which=lambda _: "/bin/claude")
     assert saiu["refused"] == []
@@ -1529,8 +1531,8 @@ def test_detach_sem_registro_desinstala_o_que_o_operador_instalou(tmp_path):
     marketplace = home / ".sparkforge" / "claude"
     integrate("claude", home=home, which=lambda _: None)
     assert not _manifesto(home)["hosts"]["claude"].get("registered")
-    claude = _ClaudeFalso(marketplaces={"sparkforge-local"},
-                          plugins={"sparkforge-aws@sparkforge-local"})
+    claude = _ClaudeFalso(marketplaces={"sparkforge-aws-local"},
+                          plugins={"sparkforge-aws@sparkforge-aws-local"})
     saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert saiu["refused"] == []
     assert [argv[1:] for argv in claude.chamadas] == [LISTA_PLUGINS, UNINSTALL, MKT_REMOVE]
@@ -1574,8 +1576,8 @@ def test_detach_sem_registro_com_cli(tmp_path, caso):
 def test_versao_do_plugin_muda_com_o_conteudo_e_o_python(tmp_path):
     """I5: `plugin.json.version` e `<versao>+<8 hex>` do conteudo do plugin (skills,
     agents e .mcp.json): trocar o Python muda o .mcp.json, e a versao muda junto."""
-    from sparkforge.integrate import claude as _claude
-    from sparkforge.integrate.hosts import claude_plugin_dir
+    from sparkforge_aws.integrate import claude as _claude
+    from sparkforge_aws.integrate.hosts import claude_plugin_dir
 
     home = tmp_path / "h"
     plugin = claude_plugin_dir(home)
@@ -1602,7 +1604,7 @@ def test_versao_do_plugin_muda_com_o_conteudo_e_o_python(tmp_path):
               python="/py/b")
     depois = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
     assert antes["version"] != depois["version"]
-    assert claude.chamadas[-1][1:] == ["plugin", "update", "sparkforge-aws@sparkforge-local"]
+    assert claude.chamadas[-1][1:] == ["plugin", "update", "sparkforge-aws@sparkforge-aws-local"]
 
 
 def test_comando_mostrado_cita_caminho_com_espaco(tmp_path):
@@ -1724,7 +1726,7 @@ def test_foto_ve_diretorio_vazio(tmp_path):
 
 
 def test_scope_user_nao_escreve_no_repo_pela_cli(tmp_path):
-    """AC10 pelo entrypoint de verdade: `python -m sparkforge.adapters.cli` com o cwd
+    """AC10 pelo entrypoint de verdade: `python -m sparkforge_aws.adapters.cli` com o cwd
     no repositorio e HOME/USERPROFILE/APPDATA apontados para o tmp."""
     repo = _repo_com_copia(tmp_path)
     casa = tmp_path / "casa"
@@ -1738,7 +1740,7 @@ def test_scope_user_nao_escreve_no_repo_pela_cli(tmp_path):
     ambiente.pop("CODEX_HOME", None)
     antes = _foto(repo)
     proc = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "integrate", "devin",
+        [sys.executable, "-m", "sparkforge_aws.adapters.cli", "integrate", "devin",
          "--scope", "user"],
         cwd=repo, env=ambiente, capture_output=True, stdin=subprocess.DEVNULL,
         encoding="utf-8", errors="replace", timeout=300, check=False,
@@ -1935,7 +1937,7 @@ def test_cli_imprime_a_lista_antes_de_remover(tmp_path, monkeypatch, capsys):
 
 
 def test_prompt_sem_resposta_ou_invalido_vira_ignore_com_motivo(tmp_path):
-    from sparkforge.integrate import conflict
+    from sparkforge_aws.integrate import conflict
 
     colisoes = [{"name": "x", "kind": "skill", "location": ".agents/skills",
                  "identical": True, "files": [".agents/skills/x/SKILL.md"]}]
@@ -1996,7 +1998,7 @@ def test_cwd_no_home_nunca_apaga_a_propria_integracao(tmp_path, escolha):
 def test_resolve_recusa_o_home_mesmo_com_a_colisao_na_mao(tmp_path, monkeypatch):
     """C1: `resolve` confere de novo. A skill que o usuario editou no HOME nao sai,
     nem com a colisao montada a mao e `overwrite`."""
-    from sparkforge.integrate import conflict
+    from sparkforge_aws.integrate import conflict
 
     home = _home_com(tmp_path, "devin", "codex", "copilot")
     (home / ".git").mkdir()
@@ -2017,7 +2019,7 @@ def test_resolve_recusa_o_home_mesmo_com_a_colisao_na_mao(tmp_path, monkeypatch)
 def test_repo_ancestral_ou_destino_de_integracao_recusa(tmp_path, onde):
     """C1: o repositorio que CONTEM o HOME, ou que mora DENTRO de um destino da
     integracao (`~/.agents`, `$CODEX_HOME`), tambem recusa."""
-    from sparkforge.integrate import conflict
+    from sparkforge_aws.integrate import conflict
 
     home = tmp_path / "casa" / "home"
     codex_home = tmp_path / "codex_fora"
@@ -2110,15 +2112,16 @@ def test_doctor_informa_integracao_por_host(tmp_path, monkeypatch, capsys):
     }
     devin = por_id["integracao_devin"]
     assert devin.status == dr.WARN
-    assert f"sparkforge {__version__}" in devin.detail
+    assert f"sparkforge-aws {__version__}" in devin.detail
     assert ".agents/skills/sdd-plan" in devin.detail
     # I1: `.agents/skills` so sai do repo com codex e copilot integrados tambem; o
     # unlock cita os hosts que faltam, nao um merge que nao removeria nada.
     assert devin.unlock == (
-        "sparkforge integrate codex --scope user && sparkforge integrate copilot --scope user"
+        "sparkforge-aws integrate codex --scope user &&"
+        " sparkforge-aws integrate copilot --scope user"
     )
     assert por_id["integracao_claude"].status == dr.SKIP
-    assert por_id["integracao_claude"].unlock == "sparkforge integrate claude --scope user"
+    assert por_id["integracao_claude"].unlock == "sparkforge-aws integrate claude --scope user"
     # Codex e Copilot nao estao integrados, mas leem `.agents/skills`: o dobro so
     # aparece quando o host esta integrado.
     assert por_id["integracao_codex"].status == dr.SKIP
@@ -2148,7 +2151,7 @@ def test_doctor_com_os_tres_hosts_manda_o_merge(tmp_path):
     )}
     devin = por_id["integracao_devin"]
     assert devin.status == dr.WARN and ".agents/skills/sdd-plan" in devin.detail
-    assert devin.unlock == "sparkforge integrate devin --scope user --on-conflict merge"
+    assert devin.unlock == "sparkforge-aws integrate devin --scope user --on-conflict merge"
 
 
 def test_host_com_config_pendente_nao_conta_como_integrado(tmp_path):
@@ -2173,4 +2176,4 @@ def test_host_com_config_pendente_nao_conta_como_integrado(tmp_path):
     devin = por_id["integracao_devin"]
     assert devin.status == dr.WARN
     assert "config_pendente" in devin.detail and ".config/devin/mcp_config.json" in devin.detail
-    assert devin.unlock == "sparkforge detach devin"
+    assert devin.unlock == "sparkforge-aws detach devin"

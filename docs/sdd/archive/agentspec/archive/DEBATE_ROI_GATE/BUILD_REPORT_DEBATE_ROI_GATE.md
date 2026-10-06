@@ -20,7 +20,7 @@
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | 10/10 (grupos do manifesto) |
-| **Files Created** | `sparkforge/agentic/executor/gate.py`, `rules/catalog/debate_gate.yaml`, `tests/test_agentic_executor_gate.py`, 3 casos golden em `fixtures/debate/gate_*` |
+| **Files Created** | `sparkforge_aws/agentic/executor/gate.py`, `rules/catalog/debate_gate.yaml`, `tests/test_agentic_executor_gate.py`, 3 casos golden em `fixtures/debate/gate_*` |
 | **Lines of Code** | módulo novo de ~300 linhas; ajustes em `run.py`, `debate_run.py` e `tools.py` |
 | **Build Time** | 1 sessão |
 | **Tests Passing** | 12 894 passed, 13 skipped, 0 failed (9 lotes; goldens-4 rodado de novo depois de regravar o golden de receipt) |
@@ -49,7 +49,7 @@
 
 | File | Agent | Verified | Notes |
 | ---- | ----- | -------- | ----- |
-| `sparkforge/agentic/executor/gate.py` | (direct) | ✅ | Puro; política inválida vira `unresolved` |
+| `sparkforge_aws/agentic/executor/gate.py` | (direct) | ✅ | Puro; política inválida vira `unresolved` |
 | `rules/catalog/debate_gate.yaml` | (direct) | ✅ | Fora das áreas de regra |
 | `tests/test_agentic_executor_gate.py` | (direct) | ✅ | Quatro vereditos, ordem, política, trace, varredura de texto |
 | `fixtures/debate/gate_{experimentar_antes,nao_debater,unresolved}/` | (direct) | ✅ | Recusa sem gravar; `nao_debater` sem budget prova a ordem |

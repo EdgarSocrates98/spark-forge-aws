@@ -3,9 +3,9 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.facts.spark_plan import extract_plan, extract_plan_path
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.spark_plan import extract_plan, extract_plan_path
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 PLANOS = ROOT / "fixtures" / "plan"
@@ -90,7 +90,7 @@ def test_plano_sem_photon_nao_muda_veredito():
 
 
 def test_fact_de_photon_recusa_regra_de_plano_sem_declaracao():
-    from sparkforge.findings.models import Fact
+    from sparkforge_aws.findings.models import Fact
 
     base = _facts("photon_join")
     join = Fact(
@@ -115,8 +115,8 @@ def test_udf_sob_photon_continua_julgada():
 
 
 def test_photon_off_contra_plano_photon_diverge():
-    from sparkforge.adapters._core import build_runtime
-    from sparkforge.findings.models import Fact
+    from sparkforge_aws.adapters._core import build_runtime
+    from sparkforge_aws.findings.models import Fact
 
     context, facts = build_runtime(databricks="19", photon="off", facts=_facts("photon_join"))
     assert context.photon == "on"
@@ -149,7 +149,7 @@ def test_photon_off_contra_plano_photon_diverge():
 
 
 def test_plano_photon_cala_sf_env_006():
-    from sparkforge.adapters._core import build_runtime
+    from sparkforge_aws.adapters._core import build_runtime
 
     context, facts = build_runtime(databricks="19", facts=_facts("photon_join"))
     assert "SF-ENV-006" not in {f.rule_id for f in judge(facts, load_catalog(), context.to_dict())}
@@ -164,8 +164,8 @@ def test_plano_photon_sem_plataforma_nao_registra_fact_nem_diverge():
     mas `_photon` so entra em `context.photon`/divergencia/fact sob a
     plataforma databricks. Sem plataforma nenhuma, a ausencia de declaracao
     nao gera nem divergencia nem fact -- ver o ramo `if not databricks` de
-    `_photon` em `sparkforge/facts/runtime_detect.py`."""
-    from sparkforge.adapters._core import build_runtime
+    `_photon` em `sparkforge_aws/facts/runtime_detect.py`."""
+    from sparkforge_aws.adapters._core import build_runtime
 
     context, facts = build_runtime(facts=_facts("photon_join"))
     assert context.photon == ""
@@ -177,7 +177,7 @@ def test_plano_photon_com_declaracao_concordante_fica_sem_divergencia():
     """`--photon on` diante de um plano que ja mostra Photon concorda com a
     observacao: `context.photon` fica "on", a fonte do fact e "plan" (quem
     observou), e nao ha divergencia `photon:` -- so discordancia diverge."""
-    from sparkforge.adapters._core import build_runtime
+    from sparkforge_aws.adapters._core import build_runtime
 
     context, facts = build_runtime(databricks="19", photon="on", facts=_facts("photon_join"))
     assert context.photon == "on"
@@ -190,7 +190,7 @@ def test_plano_photon_declarado_sem_databricks_continua_divergindo():
     """`--photon on` sem `--databricks` e a declaracao sem plataforma que o
     ramo `if not databricks` de `_photon` marca como divergencia -- o plano
     Photon nao muda esse caminho, so acrescenta a fonte `plan` aos sources."""
-    from sparkforge.adapters._core import build_runtime
+    from sparkforge_aws.adapters._core import build_runtime
 
     context, facts = build_runtime(photon="on", facts=_facts("photon_join"))
     assert context.photon == ""
@@ -205,8 +205,8 @@ def test_databricks_do_event_log_com_plano_photon_sem_flag():
     `tests/test_databricks_platform.py::test_event_log_declara_plataforma_databricks`
     usa) mais um plano Photon, sem `--photon`: a observacao do plano decide
     sozinha, fonte "plan"."""
-    from sparkforge.adapters._core import build_runtime
-    from sparkforge.findings.models import Fact
+    from sparkforge_aws.adapters._core import build_runtime
+    from sparkforge_aws.findings.models import Fact
 
     chave = "spark.databricks.clusterUsageTags.sparkVersion"
     evento = Fact(
@@ -242,15 +242,15 @@ def test_sf_plan_002_ainda_casa_udf_pandas():
     nao tinha cobertura: nenhuma fixture ou teste tinha um no `*InPandas`. O
     fact e sintetico -- subject copiado de um `plan.python_udf` real extraido
     de `photon_udf`, trocando o operador Arrow por `MapInPandas`, cujo
-    `udf_type` vem de `_PYTHON_UDF_OPERATORS` (sparkforge/facts/spark_plan.py)
+    `udf_type` vem de `_PYTHON_UDF_OPERATORS` (sparkforge_aws/facts/spark_plan.py)
     em vez de fixado a mao, para o teste cair se o mapeamento mudar."""
-    from sparkforge.facts.spark_plan import _PYTHON_UDF_OPERATORS
-    from sparkforge.findings.models import Fact
+    from sparkforge_aws.facts.spark_plan import _PYTHON_UDF_OPERATORS
+    from sparkforge_aws.findings.models import Fact
 
     real = next(f for f in _facts("photon_udf") if f.kind == "plan.python_udf")
     subject = dict(real.subject)
     subject["operator"] = "MapInPandas"
-    # `_subject` (sparkforge/facts/spark_plan.py) monta o symbol como
+    # `_subject` (sparkforge_aws/facts/spark_plan.py) monta o symbol como
     # "(node_id) operator" -- reconstroi aqui em vez de deixar o texto do
     # operador Arrow original parado no campo.
     subject["symbol"] = f"({subject['node_id']}) MapInPandas"

@@ -1,6 +1,6 @@
-from sparkforge.facts.pyspark_ast import extract_source
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
+from sparkforge_aws.facts.pyspark_ast import extract_source
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
 
 GLUE_50 = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
 
@@ -172,7 +172,7 @@ class TestVerticalSliceEndToEnd:
     """A prova da Fase 0: codigo-fonte entra, Finding ancorado sai."""
 
     def test_coalesce_one_yields_sf_py_005_at_the_right_line(self):
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         source = 'df.select("a").coalesce(1).write.parquet("s3://b/p")\n'
         facts = extract_source(source, "lib/loader.py")
@@ -191,7 +191,7 @@ class TestVerticalSliceEndToEnd:
         assert finding.evidence[0].startswith("f_")
 
     def test_repartition_200_does_not_trigger_coalesce_rule(self):
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         facts = extract_source("df.repartition(200)\n", "lib/loader.py")
         catalog = [r for r in load_catalog() if r["id"] == "SF-PY-005"]
@@ -342,8 +342,8 @@ class TestObservabilityIsJudgedPerResource:
     """
 
     def _judge_002(self, source):
-        from sparkforge.facts.terraform import extract_terraform
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.facts.terraform import extract_terraform
+        from sparkforge_aws.rules.loader import load_catalog
 
         facts = extract_terraform(source, "main.tf")
         catalog = [r for r in load_catalog() if r["id"] == "SF-GLUE-002"]
@@ -391,8 +391,8 @@ class TestPartitionProjectionIsJudgedPerTable:
     """
 
     def _judge_003(self, *tables):
-        from sparkforge.facts.catalog_schema import extract_catalog_schema
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.facts.catalog_schema import extract_catalog_schema
+        from sparkforge_aws.rules.loader import load_catalog
 
         facts = extract_catalog_schema({"tables": list(tables)}, "catalog.json")
         catalog = [r for r in load_catalog() if r["id"] == "SF-ATH-003"]
@@ -447,10 +447,10 @@ class TestPartitionFilterIsJudgedPerQuery:
     """
 
     def _judge_002(self, source):
-        from sparkforge.facts.catalog_schema import extract_catalog_schema
-        from sparkforge.facts.fusion import fuse
-        from sparkforge.facts.sql_literal import extract_sql_from_pyspark
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.facts.catalog_schema import extract_catalog_schema
+        from sparkforge_aws.facts.fusion import fuse
+        from sparkforge_aws.facts.sql_literal import extract_sql_from_pyspark
+        from sparkforge_aws.rules.loader import load_catalog
 
         catalog_facts = extract_catalog_schema(
             {"tables": [_catalog_table("db.eventos", projection=False)]}, "catalog.json"
@@ -524,7 +524,7 @@ class TestBlockedOnIsDistinctFromMissingData:
         decisao -- registrada com o motivo, nao uma excecao muda -- e qualquer
         `blocked_on` que nao esteja nela continua reprovando aqui, sem
         excecao."""
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         blocked = {r["id"]: r["blocked_on"] for r in load_catalog() if r.get("blocked_on")}
         inesperados = {k: v for k, v in blocked.items() if k not in self.BLOQUEIO_CONSCIENTE}
@@ -539,7 +539,7 @@ class TestBlockedOnIsDistinctFromMissingData:
         `blocked_on` por `runtime_scope`, esta asserção reprova ate alguem
         tirar a entrada da allowlist -- a isencao nao pode sobreviver ao motivo
         que a justifica."""
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         by_id = {r["id"]: r for r in load_catalog()}
         for rule_id in self.BLOQUEIO_CONSCIENTE:

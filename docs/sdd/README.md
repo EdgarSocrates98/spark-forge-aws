@@ -20,8 +20,8 @@ docs/sdd/
 ```
 
 `templates/` não é feature: só pasta no padrão `^[A-Z0-9_]+$` entra na
-descoberta. O contrato de cada fase está em `sparkforge/sdd/schema/`, e o mapa de
-tipo de mudança para registros do ship em `sparkforge/sdd/change_kinds.yaml`.
+descoberta. O contrato de cada fase está em `sparkforge_aws/sdd/schema/`, e o mapa de
+tipo de mudança para registros do ship em `sparkforge_aws/sdd/change_kinds.yaml`.
 Todo campo e todo código de recusa e de lacuna, com quando dispara e em que
 fase, está em [`CONTRATO.md`](CONTRATO.md), travado por teste contra o código.
 
@@ -37,9 +37,9 @@ O inventário detalhado por prompt e frente está em
 
 | verbo | tool MCP | o que faz |
 |---|---|---|
-| `sparkforge sdd check --repo . [--feature F]` | `sparkforge_sdd_check` | confere schema, ordem, cascata por hash, testes, manifesto, cobertura, hipótese e registros; `ok` só com zero recusa e zero lacuna |
-| `sparkforge sdd status --repo .` | `sparkforge_sdd_status` | a fase de cada feature e quem ficou `upstream_stale` |
-| `sparkforge sdd stamp --repo . <artefato>` | `sparkforge_sdd_stamp` | grava o `sha256` do upstream; só a linha do hash muda |
+| `sparkforge-aws sdd check --repo . [--feature F]` | `sparkforge_sdd_check` | confere schema, ordem, cascata por hash, testes, manifesto, cobertura, hipótese e registros; `ok` só com zero recusa e zero lacuna |
+| `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` | a fase de cada feature e quem ficou `upstream_stale` |
+| `sparkforge-aws sdd stamp --repo . <artefato>` | `sparkforge_sdd_stamp` | grava o `sha256` do upstream; só a linha do hash muda |
 
 Toda fase termina igual (veja [O laço de cada fase](#o-laço-de-cada-fase)):
 `status: ready` só com zero recusa, e as lacunas esperadas daquela fase são
@@ -51,9 +51,9 @@ permitidas; `ok` do `check` só com zero recusa e zero lacuna.
    `feature: EXEMPLO` pelo nome da feature e ponha `status: draft`.
 2. Rascunhe. O que só o operador resolve vira **uma pergunta por vez**.
 3. Fase com upstream (todas menos explore, e define sem explore):
-   `sparkforge sdd stamp --repo . <root>/<F>/<fase>.md`. Nunca escreva o
+   `sparkforge-aws sdd stamp --repo . <root>/<F>/<fase>.md`. Nunca escreva o
    `sha256` à mão.
-4. `sparkforge sdd check --repo . --feature <F>`. Cada recusa traz `field` e
+4. `sparkforge-aws sdd check --repo . --feature <F>`. Cada recusa traz `field` e
    `unlock`: corrija aquele campo e rode de novo.
 5. `status: ready` com **zero recusa** e **depois da leitura do operador** —
    zero recusa sozinho não é sign-off. As lacunas esperadas são permitidas no
@@ -61,7 +61,7 @@ permitidas; `ok` do `check` só com zero recusa e zero lacuna.
    `test_not_written`, `fact_not_collected`, `funcval_not_run` e, no
    operator, `finding_not_observed`. `build_report` e `ship` só vão a `done`
    com zero recusa e zero lacuna.
-6. **Cascata.** Mudou uma fase? `sparkforge sdd status --repo .` mostra quem
+6. **Cascata.** Mudou uma fase? `sparkforge-aws sdd status --repo .` mostra quem
    ficou `upstream_stale`. A fase de baixo é **revisada antes** de ser
    carimbada de novo: carimbar sem revisar é o erro que a cascata existe para
    pegar.
@@ -74,19 +74,19 @@ abaixo).
 A sessão nunca escreve na árvore do operador. Spec e evidências ficam em
 `.sparkforge/sdd/<F>/`; o job muda só por este caminho:
 
-1. `sparkforge funcval plan --facts <f> --key <k> --out <p>`, com a chave de
+1. `sparkforge-aws funcval plan --facts <f> --key <k> --out <p>`, com a chave de
    negócio **declarada**, antes da mudança.
-2. `sparkforge change plan --facts <f> --set k=v --out d.patch` (ou
-   `--from-tune`): valor de configuração sai de `sparkforge tune`, não do
+2. `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` (ou
+   `--from-tune`): valor de configuração sai de `sparkforge-aws tune`, não do
    design.
-3. `sparkforge change sandbox --repo . --diff d.patch`: o `id` vira
+3. `sparkforge-aws change sandbox --repo . --diff d.patch`: o `id` vira
    `change_id`. Achado novo P0 ou P1 no sandbox: pare e volte ao design.
-4. `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>`:
+4. `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>`:
    o `--out` é o `ref` do `verified_by` funcval, senão `funcval_not_run`
    nunca sai.
-5. `sparkforge benchmark --before <a> --after <b> --out bench.json` sobre dois
+5. `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` sobre dois
    runs medidos.
-6. `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
+6. `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
    sem as duas flags, a medida fica PENDENTE no pacote. O PR vai pela skill
    `propose-change-pr`, que para antes de `git push` e de `gh pr create`.
 7. O `rollback` de cada decisão é o `rollback.patch` do pacote, ou
@@ -95,12 +95,12 @@ A sessão nunca escreve na árvore do operador. Spec e evidências ficam em
 ## Conhecimento citado, nunca memória
 
 - Comportamento de Glue, Spark, Iceberg ou Lake Formation sai de
-  `sparkforge rules lookup --id <SF-...>` ou
-  `sparkforge knowledge path --file <documento>`, **com a versão alvo antes**:
+  `sparkforge-aws rules lookup --id <SF-...>` ou
+  `sparkforge-aws knowledge path --file <documento>`, **com a versão alvo antes**:
   com AQE ou sem AQE, o mesmo número significa outra coisa.
-- O que o código já faz sai de `sparkforge code search <nome>`,
-  `sparkforge code symbol <node_id>` (quem chama, o que quebra) e
-  `sparkforge code path <origem> <destino>`.
+- O que o código já faz sai de `sparkforge-aws code search <nome>`,
+  `sparkforge-aws code symbol <node_id>` (quem chama, o que quebra) e
+  `sparkforge-aws code path <origem> <destino>`.
 - Documentação oficial e changelog sustentam uma decisão; texto de modelo
   sozinho (T5) não. Nota de clareza ou confiança que o agente atribui a si
   mesmo não entra em artefato.
@@ -122,8 +122,8 @@ Uma por fase, canônicas em `skills/` e espelhadas por `scripts/sync_skills.py`:
 
 - `dev`: evoluir o próprio SparkForge.
 - `operator`: quem usa os agents para mudar o próprio job Glue/PySpark. O define
-  carrega o `case_id` de `sparkforge case open`; o build passa por
-  `sparkforge change sandbox` e o PR pela skill `propose-change-pr`. A árvore do
+  carrega o `case_id` de `sparkforge-aws case open`; o build passa por
+  `sparkforge-aws change sandbox` e o PR pela skill `propose-change-pr`. A árvore do
   operador nunca é escrita pela sessão.
 
 ## Perfil operator: onde mora a spec
@@ -132,15 +132,15 @@ No repositório do operador, os artefatos e as evidências ficam em
 `.sparkforge/sdd/<FEATURE>/`, e todo verbo do SDD leva a raiz:
 
 ```
-sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>
-sparkforge sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/<fase>.md
+sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>
+sparkforge-aws sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/<fase>.md
 ```
 
-Por quê: a cópia que `sparkforge change sandbox` valida poda `.sparkforge`.
-Uma spec em `docs/sdd/` muda a árvore copiada, e `sparkforge change propose`
+Por quê: a cópia que `sparkforge-aws change sandbox` valida poda `.sparkforge`.
+Uma spec em `docs/sdd/` muda a árvore copiada, e `sparkforge-aws change propose`
 recusa o pacote com `sandbox_desatualizado`. A árvore do job continua mudando
-só pelo diff de `sparkforge change sandbox` e pelo pacote de
-`sparkforge change propose`. Não ponha `.sparkforge/sdd/` no `.gitignore`: é a
+só pelo diff de `sparkforge-aws change sandbox` e pelo pacote de
+`sparkforge-aws change propose`. Não ponha `.sparkforge/sdd/` no `.gitignore`: é a
 spec do operador. `.sparkforge/sandbox/` e `.sparkforge/proposal/` são
 recriados a cada execução.
 

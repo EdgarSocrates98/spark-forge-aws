@@ -7,14 +7,14 @@ Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-explore/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge sdd check', 'sparkforge sdd status', 'sparkforge code search']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd status', 'sparkforge-aws code search']} |
 
 ## Procedimento (texto integral)
 
 ## SDD Explore
 
 Fase 0 do SDD próprio. Transforma um pedido vago numa abordagem escolhida, com
-as rejeitadas registradas ao lado. O `sparkforge sdd check` confere a forma do
+as rejeitadas registradas ao lado. O `sparkforge-aws sdd check` confere a forma do
 artefato; quem decide é o operador.
 
 **Portão duro:** nada de código, nada de arquivo fora de `docs/sdd/<FEATURE>/`
@@ -25,13 +25,13 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 
 ### Antes de começar
 
-1. **Contexto do repositório.** `sparkforge sdd status --repo .` mostra as
+1. **Contexto do repositório.** `sparkforge-aws sdd status --repo .` mostra as
    features que já existem; talvez a ideia seja a continuação de uma delas.
-   `sparkforge code search <termo>` diz o que o código já tem. Leia os commits
+   `sparkforge-aws code search <termo>` diz o que o código já tem. Leia os commits
    recentes.
 2. **Perfil, primeira pergunta.** "A mudança é no SparkForge (`dev`) ou num job
    seu (`operator`)?" O perfil muda o resto do ciclo: no `operator`, o build
-   passa sempre por `sparkforge change sandbox`, e a sessão nunca escreve na
+   passa sempre por `sparkforge-aws change sandbox`, e a sessão nunca escreve na
    árvore do operador.
 3. **Escopo.** Pedido com vários subsistemas independentes é decomposto antes:
    cada pedaço vira uma feature com pasta própria e ciclo próprio. Explore o
@@ -46,7 +46,7 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
    propósito, restrição, critério de sucesso e o que fica de fora.
 2. **Fato vem de verbo, não de memória** (regra em
    `docs/sdd/README.md#conhecimento-citado-nunca-memória`). Regra do catálogo
-   por área: `sparkforge rules lookup --category <área>`.
+   por área: `sparkforge-aws rules lookup --category <área>`.
 3. **Duas ou três abordagens**, cada uma com trade-offs, a recomendada primeiro
    e o porquê. Corte o que ninguém pediu (YAGNI).
 4. **O operador escolhe.** Apresente, pergunte, espere. Se ele recusar todas,
@@ -54,7 +54,7 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 5. **Grave** `docs/sdd/<FEATURE>/explore.md` a partir de
    `docs/sdd/templates/explore.md`, com `status: draft` enquanto a conversa não
    fecha.
-6. **Confira** com `sparkforge sdd check --repo . --feature <FEATURE>`, pelo
+6. **Confira** com `sparkforge-aws sdd check --repo . --feature <FEATURE>`, pelo
    laço de `docs/sdd/README.md#o-laço-de-cada-fase`. O explore é a primeira
    fase e não leva `upstream`, então não há stamp aqui.
 7. **Próximo passo:** `sdd-define`. Com `explore.md` presente, o define passa a
@@ -73,39 +73,39 @@ atribui é T5 na escala de autoridade e não sustenta decisão sozinho.
 
 ### Perfil operator
 
-- O case é a fonte dos fatos do job: `sparkforge case get --repo .` quando ele já
+- O case é a fonte dos fatos do job: `sparkforge-aws case get --repo .` quando ele já
   existe. O explore não coleta artefato; se falta medida, a abordagem diz qual
   coleta a destrava.
 - Glue, Spark, Python e Iceberg: a versão vem do case ou de
-  `sparkforge runtime detect`, nunca de suposição. A mesma configuração muda de
+  `sparkforge-aws runtime detect`, nunca de suposição. A mesma configuração muda de
   significado entre versões.
 - Priorize abordagens que reduzem trabalho e movimentação de dados antes das que
   aumentam workers.
-- Valor de configuração não se escolhe aqui: é `sparkforge tune` que o deriva da
+- Valor de configuração não se escolhe aqui: é `sparkforge-aws tune` que o deriva da
   medida, mais adiante.
 
 ### Quando NÃO usar
 
 - Requisito já claro e validado, ou `explore.md` já existe: vá para `sdd-define`.
 - Para achar a causa de um job lento ou que falha: isso é diagnóstico
-  (`sparkforge-diagnose`, `sparkforge next-step`). O explore decide o que mudar
+  (`sparkforge-aws-diagnose`, `sparkforge-aws next-step`). O explore decide o que mudar
   depois que a causa é conhecida.
-- Para escolher o valor de uma configuração: `sparkforge tune`.
+- Para escolher o valor de uma configuração: `sparkforge-aws tune`.
 - Para afirmar que uma abordagem é mais rápida ou mais barata sem medida.
 
 ### Referência rápida
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| features existentes | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
-| o que o código já tem | `sparkforge code search <termo>` | `sparkforge_code_search` |
-| quem chama um símbolo | `sparkforge code symbol <node_id>` | `sparkforge_code_symbol` |
-| regra do catálogo | `sparkforge rules lookup --category <área>` | `sparkforge_rules_lookup` |
-| documento de conhecimento | `sparkforge knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| case do operador | `sparkforge case get --repo .` | `sparkforge_case_get` |
-| conferir a fase | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| features existentes | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
+| o que o código já tem | `sparkforge-aws code search <termo>` | `sparkforge_code_search` |
+| quem chama um símbolo | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
+| regra do catálogo | `sparkforge-aws rules lookup --category <área>` | `sparkforge_rules_lookup` |
+| documento de conhecimento | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
+| case do operador | `sparkforge-aws case get --repo .` | `sparkforge_case_get` |
+| conferir a fase | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
 
-Template: `docs/sdd/templates/explore.md`. Contrato: `sparkforge/sdd/schema/explore.json`.
+Template: `docs/sdd/templates/explore.md`. Contrato: `sparkforge_aws/sdd/schema/explore.json`.
 Visão geral do ciclo: `docs/sdd/README.md`.
 
 ### Red flags
@@ -126,7 +126,7 @@ Esta skill trata **exploração de alternativas e escolha explícita**. Contrato
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge sdd check`, `sparkforge sdd status`, `sparkforge code search`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws sdd status`, `sparkforge-aws code search`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

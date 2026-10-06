@@ -15,7 +15,7 @@
 #   2026-09-02) e que os vetos V-CTM-5 (SLA) e V-BR-3 (fan-in) recusaram nas
 #   suas áreas.
 #
-#   Consequência declarada: `sparkforge/iceberg/maintenance.py` mantém
+#   Consequência declarada: `sparkforge_aws/iceberg/maintenance.py` mantém
 #   `rewrite_manifests` em `refused`, com esta razão. A ação existe e é
 #   conhecida; o que falta é saber QUANDO propô-la.
 #
@@ -62,7 +62,7 @@
 #   declara o argumento de FGAC. Ela carregava fonte, `runtime_scope` e o
 #   conserto localizado no catálogo, e ainda assim **nunca disparava sozinha**:
 #   essa chave é um dos DOIS marcadores de Full Table Access que
-#   `sparkforge/facts/lakeformation.py::_marcadores_de_fta` procura, então com
+#   `sparkforge_aws/facts/lakeformation.py::_marcadores_de_fta` procura, então com
 #   FGAC ligado o `lakeformation.access_model` sai sempre com `model: "both"` e
 #   `SF-LF-005` acusa a mesma entrada. Medido sobre a fixture
 #   `fgac_com_lakeformation_enabled_no_catalogo`, depois removida:
@@ -121,14 +121,14 @@
 # Passaram para `{}`. Três razões, em ordem de gravidade:
 #
 #   1. FALSO NEGATIVO MEDIDO. `RuntimeContext.iceberg` não é observado por
-#      extrator nenhum. `sparkforge/facts/runtime_detect.py` só o preenche por
+#      extrator nenhum. `sparkforge_aws/facts/runtime_detect.py` só o preenche por
 #      dois caminhos: derivando de `GLUE_MATRIX` quando alguma fonte trouxe
 #      `glue_version`, ou lendo `iceberg_version`/`iceberg` de uma fonte -- que
 #      na prática é a flag `--iceberg` da CLI. `iceberg_metadata.py` extrai
 #      metadados de tabela Iceberg e não emite versão de runtime.
 #      Consequência: fora do Glue, e sem alguém digitar a versão à mão, o campo
 #      é `""`. Depois que o curinga e as comparações passaram a exigir a chave
-#      presente (`sparkforge/rules/version_scope.py`), um runtime EMR realista
+#      presente (`sparkforge_aws/rules/version_scope.py`), um runtime EMR realista
 #      -- `{'glue':'','spark':'3.5.1','python':'','iceberg':'','athena':''}`,
 #      em que só o event log observou Spark -- apagava a ÁREA SF-ICE INTEIRA.
 #      Tabelas Iceberg existem em EMR; a área sumia porque ninguém DETECTOU a
@@ -349,7 +349,7 @@ rules:
   # da contagem em `iceberg.table_analyzed.unresolved_count`. Ela dispara de
   # verdade em tabela com passivo escrito por writer que registra sort order
   # (outro engine, ou Iceberg >= 1.11).
-  # `sparkforge/facts/iceberg_metadata.py::_written_before_sort_order` só
+  # `sparkforge_aws/facts/iceberg_metadata.py::_written_before_sort_order` só
   # afirma `true` com arquivo comprovadamente sob outra ordem registrada, só
   # `false` com TODOS comprovadamente sob a vigente, e deixa o atributo ausente
   # no resto. O `where` abaixo exige `true` explícito, então ambiguidade não
@@ -475,7 +475,7 @@ rules:
   # SF-ICE-006 -- a CONFIGURACAO do catalogo, e nao a saude da tabela. As cinco
   # primeiras regras desta area leem dump de metadata table; esta le
   # `lakeformation.iceberg_catalog`, que e derivado das tres superficies de conf
-  # por `sparkforge/facts/lakeformation.py`.
+  # por `sparkforge_aws/facts/lakeformation.py`.
   #
   # O kind mora no namespace `lakeformation.*` e a regra mora na area SF-ICE, e
   # isso NAO e inconsistencia: namespace de kind diz quem PRODUZIU o fact, area

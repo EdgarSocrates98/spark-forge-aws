@@ -45,7 +45,7 @@ recriar a tabela, e tabela recriada é dado reescrito. Trocar `SELECT *` por col
 muda o schema do resultado por construção, e trocar a engine version troca a implementação que
 avalia a expressão. A mais barata das três é a que mais parece neutra.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
 lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
@@ -79,5 +79,5 @@ sabia da migração.
 
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook athena-query-optimizer` (CLI) ou
+Em plataforma sem despacho de subagente: `sparkforge-aws playbook athena-query-optimizer` (CLI) ou
 a tool MCP `sparkforge_playbook`.

@@ -5,7 +5,7 @@ connector is added. The contract is
 `contracts/lakehouse-catalog-v1.schema.json`; the analyzer is:
 
 ```bash
-sparkforge analyze lakehouse-catalog --path catalog.yaml
+sparkforge-aws analyze lakehouse-catalog --path catalog.yaml
 ```
 
 It models Glue Catalog, Iceberg REST, Polaris, S3 Tables, Lake Formation and

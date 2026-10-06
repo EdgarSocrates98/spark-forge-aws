@@ -16,7 +16,7 @@ python scripts/sync_skills.py
 ## 3. Sobe o servidor MCP (HTTP)
 
 ```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+python -m sparkforge_aws.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 ```
 
 Deixe esse processo rodando. O endpoint do Desktop e:
@@ -32,7 +32,7 @@ Va em **Devin Settings > MCP** e adicione um servidor com a URL acima. Use o con
 ```json
 {
   "mcpServers": {
-    "sparkforge": {
+    "sparkforge-aws": {
       "serverUrl": "http://127.0.0.1:8765/mcp"
     }
   }
@@ -54,17 +54,17 @@ Abra um novo chat no Devin Desktop e cole o conteudo de `PROMPT.md`.
 Pergunte ao agente:
 
 ```text
-Liste as tools MCP do sparkforge que estao disponiveis e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws que estao disponiveis e confirme que consegue chamar sparkforge_runtime_detect.
 ```
 
 ## 8. Workflow tipico
 
-1. Abra o case: `sparkforge case open --repo . --case-id <id> --now <ISO-8601> --glue <versao>`
-2. Detecte runtime: `sparkforge runtime detect --glue <versao>`
-3. Analise codigo: `sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json`
-4. Julgue: `sparkforge judge --facts .sparkforge/facts.json --out .sparkforge/findings.json`
-5. Proximo passo: `sparkforge next-step --repo . --findings .sparkforge/findings.json`
-6. Siga a rota indicada, usando skills, subagentes ou `sparkforge playbook <coordenador>`.
+1. Abra o case: `sparkforge-aws case open --repo . --case-id <id> --now <ISO-8601> --glue <versao>`
+2. Detecte runtime: `sparkforge-aws runtime detect --glue <versao>`
+3. Analise codigo: `sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json`
+4. Julgue: `sparkforge-aws judge --facts .sparkforge/facts.json --out .sparkforge/findings.json`
+5. Proximo passo: `sparkforge-aws next-step --repo . --findings .sparkforge/findings.json`
+6. Siga a rota indicada, usando skills, subagentes ou `sparkforge-aws playbook <coordenador>`.
 
 ## 9. Subagentes no Desktop
 
@@ -74,8 +74,8 @@ Com **Subagents (Preview)** ativado, diga:
 Use o agente glue-incremental-performance-architect como subagente para investigar este job.
 ```
 
-Fora do Devin Local agent com subagentes ativados, a coordenacao e feita por `sparkforge playbook`:
+Fora do Devin Local agent com subagentes ativados, a coordenacao e feita por `sparkforge-aws playbook`:
 
 ```bash
-sparkforge playbook glue-incremental-performance-architect --repo .
+sparkforge-aws playbook glue-incremental-performance-architect --repo .
 ```

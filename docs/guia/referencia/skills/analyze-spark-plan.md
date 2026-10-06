@@ -2,18 +2,18 @@
 
 # Skill `analyze-spark-plan`
 
-Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin, CartesianProduct), Sort, Window, HashAggregate, Generate/explode, UDF Python no plano (BatchEvalPython/ArrowEvalPython) e o antes/depois do AQE — inclusive sob Photon (Databricks), via `plan.photon`. Use também quando a pergunta for \"por que não usa broadcast\", \"por que lê a tabela inteira\", \"o filtro não desceu pro scan\" ou \"quantos shuffles esse job tem\", mesmo sem citar explain. Salve o `explain` num arquivo e rode `sparkforge analyze plan`: ele emite `plan.file_scan`, `plan.join`, `plan.python_udf`, `plan.aqe`, `plan.exchange` e `plan.photon`, julgados por `SF-PLAN-001..004`, `SF-PQ-002` e `SF-PQ-004`. Para concluir causa (skew, spill, OOM), junte `analyze pyspark` e o `analyze event-log` da execução: o plano diz o que foi declarado, não o que cu...
+Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin, CartesianProduct), Sort, Window, HashAggregate, Generate/explode, UDF Python no plano (BatchEvalPython/ArrowEvalPython) e o antes/depois do AQE — inclusive sob Photon (Databricks), via `plan.photon`. Use também quando a pergunta for \"por que não usa broadcast\", \"por que lê a tabela inteira\", \"o filtro não desceu pro scan\" ou \"quantos shuffles esse job tem\", sem citar explain. Salve o `explain` num arquivo e rode `sparkforge-aws analyze plan`: ele emite `plan.file_scan`, `plan.join`, `plan.python_udf`, `plan.aqe`, `plan.exchange` e `plan.photon`, sob SF-PLAN-001..004 e SF-PQ-002/004. Para causa (skew, spill, OOM), junte `analyze pyspark` e o `analyze event-log` da execução: o plano diz o que foi declarado, não o que cu...
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-spark-plan/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze plan', 'sparkforge analyze pyspark', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze plan', 'sparkforge-aws analyze pyspark', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 
 ## Analyze Spark Plan
 
-`sparkforge analyze plan` lê a saída de `explain()` e a transforma em facts. O que ele **não** faz é inventar o que o texto não diz: `explain()` é saída para humano, não formato de máquina, e o extrator declara o ponto cego em vez de meio-parsear. Quatro limites valem antes de qualquer conclusão:
+`sparkforge-aws analyze plan` lê a saída de `explain()` e a transforma em facts. O que ele **não** faz é inventar o que o texto não diz: `explain()` é saída para humano, não formato de máquina, e o extrator declara o ponto cego em vez de meio-parsear. Quatro limites valem antes de qualquer conclusão:
 
 - **Modo.** `formatted` é o preferido (um campo por linha, sem ambiguidade de vírgula); `simple` e `extended` são suportados — de `extended`/`cost` só a seção `== Physical Plan ==` é interpretada, e as seções lógicas são ignoradas de propósito, contadas em `measures.skipped_logical_lines`, nunca em `unresolved`. `codegen` é **rejeitado**: é Java gerado, não plano, e vira `plan.unresolved` com `reason: unsupported_mode`.
 - **Truncamento.** O Spark corta listas longas de campos com `... 56 more fields`. Contar o que sobrou inflaria em silêncio a razão de `SF-PQ-004`, então o extrator não emite `read_schema_columns` nem `referenced_columns` nesse caso: emite `plan.unresolved` com `reason: truncated_field_list`, e a regra não dispara. **Não leia isso como "sem achado"** — leia como "não deu para contar".
@@ -28,15 +28,15 @@ O checklist de leitura em `knowledge/spark/plan-reading.md` continua sendo o tra
 2. **Extraia os facts do plano.**
 
    ```bash
-   sparkforge analyze plan --path <plano>.txt --out .sparkforge/facts_plan.json
+   sparkforge-aws analyze plan --path <plano>.txt --out .sparkforge/facts_plan.json
    ```
 
    Sai `plan.file_scan` (tabela particionada, `PartitionFilters` vazio, colunas de `ReadSchema` vs. referenciadas), `plan.join` (com e sem equi-condição), `plan.python_udf` (`BatchEvalPython` com `udf_type: python`, `ArrowEvalPython` com `udf_type: arrow` — o plano não distingue `pandas_udf` de UDF Python otimizada para Arrow), `plan.exchange`, `plan.aqe` e, sob nó de prefixo `Photon`, `plan.photon`. O `subject` de cada fact é o **nó** do plano (`{"type": "plan_node", "symbol": "(1) Scan parquet db.tabela"}`), não a linha do arquivo de texto: o operador age sobre "a leitura de `db.tabela` no nó 1", e `file`/`line` acompanham só como procedência. Confira `unresolved` na saída antes de seguir.
 3. **Leia de baixo para cima.** O plano executa das folhas (`Scan`) para a raiz. Percorra o checklist de `knowledge/spark/plan-reading.md` seção 6: `PartitionFilters` presente onde a tabela é particionada, `ReadSchema` só com as colunas usadas, contagem de `Exchange` justificável, ausência de `CartesianProduct`/`BroadcastNestedLoopJoin`, presença de `BatchEvalPython`/`ArrowEvalPython`, fan-out de `Generate`, estratégia de cada join confirmada (não só assumida).
 4. **Nunca conclua estratégia de join só pelo `explain()`.** Com AQE ligado (default em Glue 4.0/5.x), o plano pode ser reescrito depois de cada shuffle. O plano final está na aba SQL do Spark UI, ou no event log real — não no `explain()` do código. `SF-PLAN-004` marca isso como achado próprio.
-5. **Correlacione com o que o código pede.** `sparkforge analyze pyspark --path <arquivo ou diretório> --out .sparkforge/facts.json` extrai os facts estáticos por AST (`pyspark.join`, `pyspark.udf`, `pyspark.explode`, `pyspark.partitioning`, `pyspark.chain`, `pyspark.withcolumn_run`) que dão nome de arquivo e linha a cada operador suspeito do plano.
-6. **Julgue os dois juntos.** `sparkforge judge --facts .sparkforge/facts_plan.json --facts .sparkforge/facts.json --show-skipped` aplica `SF-PLAN-*` e `SF-PQ-002`/`SF-PQ-004` sobre os facts do plano e o catálogo `SF-PY-*` (`rules/catalog/pyspark.yaml`) sobre os do código. `--facts` é repetível e `judge` une antes de julgar; passar os arquivos separados perde toda regra que correlaciona as duas fontes. Cada regra que dispara aponta um operador do plano e a linha exata de origem — é o passo que transforma "o Exchange 3 é caro" em "a linha 142 é o problema". Sem flag de versão: as regras `SF-PY-*` são estruturais, nenhuma declara `runtime_scope`, e os facts de AST não observam runtime — o campo `runtime` da saída volta vazio, com `detected_from: []`, e o que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, fora do alcance deste `facts.json`. Isso importa nesta skill mais do que nas outras por um motivo: **a leitura do plano depende da versão e o motor não vai te cobrir aqui.** Se o AQE reescreveu o plano, quais operadores existem e quais defaults valem muda entre Glue 4.0 e 5.x, e nenhuma regra do catálogo guarda essa diferença. Confirme a versão numa fonte real antes de concluir — `sparkforge analyze terraform` e mais esse arquivo na mesma chamada fazem `runtime.detected_from` virar `["terraform"]`, e `--glue 5.1` serve quando você sabe a versão de fonte confiável e não tem o `.tf` à mão.
-7. **Se há execução real, feche o ciclo.** `sparkforge analyze event-log --path <log> --out .sparkforge/facts.json` (procedimento completo em `analyze-spark-ui`) confirma se o operador suspeito do plano realmente custou — duração, spill, GC do stage correspondente àquele nó do plano.
+5. **Correlacione com o que o código pede.** `sparkforge-aws analyze pyspark --path <arquivo ou diretório> --out .sparkforge/facts.json` extrai os facts estáticos por AST (`pyspark.join`, `pyspark.udf`, `pyspark.explode`, `pyspark.partitioning`, `pyspark.chain`, `pyspark.withcolumn_run`) que dão nome de arquivo e linha a cada operador suspeito do plano.
+6. **Julgue os dois juntos.** `sparkforge-aws judge --facts .sparkforge/facts_plan.json --facts .sparkforge/facts.json --show-skipped` aplica `SF-PLAN-*` e `SF-PQ-002`/`SF-PQ-004` sobre os facts do plano e o catálogo `SF-PY-*` (`rules/catalog/pyspark.yaml`) sobre os do código. `--facts` é repetível e `judge` une antes de julgar; passar os arquivos separados perde toda regra que correlaciona as duas fontes. Cada regra que dispara aponta um operador do plano e a linha exata de origem — é o passo que transforma "o Exchange 3 é caro" em "a linha 142 é o problema". Sem flag de versão: as regras `SF-PY-*` são estruturais, nenhuma declara `runtime_scope`, e os facts de AST não observam runtime — o campo `runtime` da saída volta vazio, com `detected_from: []`, e o que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, fora do alcance deste `facts.json`. Isso importa nesta skill mais do que nas outras por um motivo: **a leitura do plano depende da versão e o motor não vai te cobrir aqui.** Se o AQE reescreveu o plano, quais operadores existem e quais defaults valem muda entre Glue 4.0 e 5.x, e nenhuma regra do catálogo guarda essa diferença. Confirme a versão numa fonte real antes de concluir — `sparkforge-aws analyze terraform` e mais esse arquivo na mesma chamada fazem `runtime.detected_from` virar `["terraform"]`, e `--glue 5.1` serve quando você sabe a versão de fonte confiável e não tem o `.tf` à mão.
+7. **Se há execução real, feche o ciclo.** `sparkforge-aws analyze event-log --path <log> --out .sparkforge/facts.json` (procedimento completo em `analyze-spark-ui`) confirma se o operador suspeito do plano realmente custou — duração, spill, GC do stage correspondente àquele nó do plano.
 
 ### Do operador do plano à regra que o correlaciona
 
@@ -44,7 +44,7 @@ Duas tabelas, porque são dois caminhos diferentes. A primeira é o que o motor 
 
 ### Referência rápida
 
-Julgadas direto dos facts do plano (`sparkforge analyze plan`):
+Julgadas direto dos facts do plano (`sparkforge-aws analyze plan`):
 
 | Operador no plano | Regra | Fact que a regra consome |
 |---|---|---|
@@ -56,7 +56,7 @@ Julgadas direto dos facts do plano (`sparkforge analyze plan`):
 | Plano não-final do AQE | `SF-PLAN-004` | `plan.aqe` |
 | Nó de prefixo `Photon` (Databricks) | — (pula `SF-PLAN-*`/`SF-PQ-*` com `databricks.photon.unresolved`, exceto o que só exige `plan.python_udf`/`plan.aqe`) | `plan.photon` |
 
-Correlacionadas ao código (`sparkforge analyze pyspark`), para ancorar o operador em arquivo e linha:
+Correlacionadas ao código (`sparkforge-aws analyze pyspark`), para ancorar o operador em arquivo e linha:
 
 | Operador no plano | Regra `SF-PY` correlacionada | Fact que a regra consome |
 |---|---|---|
@@ -68,7 +68,7 @@ Correlacionadas ao código (`sparkforge analyze pyspark`), para ancorar o operad
 | `Exchange` de repartition com argumento literal | `SF-PY-010` | `pyspark.partitioning` |
 | Sequência longa de projeções antes do plano final | `SF-PY-007` | `pyspark.withcolumn_run` |
 
-Limiares e severidade de cada regra vêm de `sparkforge rules lookup --id <ID>`, nunca de memória — o catálogo muda, e um número decorado vira mentira silenciosa.
+Limiares e severidade de cada regra vêm de `sparkforge-aws rules lookup --id <ID>`, nunca de memória — o catálogo muda, e um número decorado vira mentira silenciosa.
 
 ### Quando NÃO usar
 
@@ -108,7 +108,7 @@ Esta skill trata **plano físico Spark, scans, joins, exchanges e AQE**. Contrat
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze plan`, `sparkforge analyze pyspark`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze plan`, `sparkforge-aws analyze pyspark`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

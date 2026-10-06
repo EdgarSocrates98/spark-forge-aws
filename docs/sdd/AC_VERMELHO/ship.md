@@ -54,8 +54,8 @@ So mutacao por criterio chegaria na propriedade real. Fica como proxima feature 
 | `python scripts/check_vnext_claims.py` (AC6) | 0 divergencias |
 | `python scripts/check_surface_lock.py` | 0 divergencias |
 | `python scripts/check_status_numbers.py --strict` | 0 divergencias |
-| `python -m ruff check sparkforge scripts tests` | limpo |
-| `sparkforge sdd check --repo .` | sem recusa |
+| `python -m ruff check sparkforge_aws scripts tests` | limpo |
+| `sparkforge-aws sdd check --repo .` | sem recusa |
 
 ## Licoes
 

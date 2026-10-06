@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge benchmark`
+# `sparkforge-aws benchmark`
 
 Compara duas execucoes a partir dos facts de event log de cada uma. Nao executa nada e nao mede relogio.
 
 ```bash
-sparkforge benchmark --help
+sparkforge-aws benchmark --help
 ```
 
 ## Opções

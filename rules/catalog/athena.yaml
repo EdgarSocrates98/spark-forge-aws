@@ -2,7 +2,7 @@
 # Adição de escopo em 2026-07-29. Depende de extrator de SQL e de metadados de tabela
 # da Fase 1. SF-ATH-001, SF-ATH-002 e SF-ATH-005 ficaram inertes até existir uma etapa
 # de fusão de facts que correlacione texto de query com schema do catálogo -- ver
-# `sparkforge/facts/fusion.py`, adicionado para desbloqueá-las (comentário em cada
+# `sparkforge_aws/facts/fusion.py`, adicionado para desbloqueá-las (comentário em cada
 # regra explica o que estava faltando e como `fusion.py` resolve).
 # Athena entra no escopo porque, num lakehouse Glue + Iceberg, ela é o consumidor, e
 # decisões tomadas no job Glue determinam o custo da query meses depois.
@@ -16,10 +16,10 @@
 # Duas razões concretas para o escopo ser vazio, não `{athena: "*"}`:
 #
 #   1. A versão de engine do Athena NÃO é detectada. `RuntimeContext.athena`
-#      (`sparkforge/findings/models.py`) tem default `""`, `to_dict()` sempre
+#      (`sparkforge_aws/findings/models.py`) tem default `""`, `to_dict()` sempre
 #      emite a chave, e o único caminho que a preenche é a flag `--athena` da
 #      CLI -- nenhum extrator observa Athena. Depois que o curinga passou a
-#      exigir presença da chave (`sparkforge/rules/version_scope.py`),
+#      exigir presença da chave (`sparkforge_aws/rules/version_scope.py`),
 #      `{athena: "*"}` apagaria a ÁREA INTEIRA em todo runtime real: Glue 4.0,
 #      5.0, 5.1 e EMR-like. Silêncio total, que é exatamente o defeito que esta
 #      fase existe para eliminar.
@@ -43,9 +43,9 @@ retrieved: 2026-07-29
 
 rules:
 
-  # DESBLOQUEADA: `sparkforge/facts/fusion.py` correlaciona `sql.projection`
+  # DESBLOQUEADA: `sparkforge_aws/facts/fusion.py` correlaciona `sql.projection`
   # (texto da query) com `catalog.table_schema` (schema do catalogo,
-  # `sparkforge/facts/catalog_schema.py`) pelo nome da tabela e produz
+  # `sparkforge_aws/facts/catalog_schema.py`) pelo nome da tabela e produz
   # `sql.projection.enriched`, que carrega `attrs.star` (da query) E
   # `attrs.table_format_columnar` (resolvido do catalogo) NO MESMO fact --
   # contornando o motor de regras (rules/engine.py) so avaliar `where`/`expr`
@@ -94,7 +94,7 @@ rules:
       - {url: "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena", retrieved: 2026-07-29}
 
   # DESBLOQUEADA: `sql.predicate.partition_filter` (emitido por
-  # `sparkforge/facts/fusion.py`, so quando a fusao confirma que a coluna do
+  # `sparkforge_aws/facts/fusion.py`, so quando a fusao confirma que a coluna do
   # predicado esta em `catalog.table_schema.attrs.partition_keys`) e o fact
   # kind que faltava para `absent:` deixar de ser vacuamente verdadeiro. Antes
   # da fusao, nenhum extrator de SQL sozinho sabia qual coluna e a de particao
@@ -263,7 +263,7 @@ rules:
     sources:
       - {url: "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine", retrieved: 2026-07-29}
 
-  # DESBLOQUEADA: `sql.predicate.enriched` (`sparkforge/facts/fusion.py`)
+  # DESBLOQUEADA: `sql.predicate.enriched` (`sparkforge_aws/facts/fusion.py`)
   # carrega `attrs.on_partition_column` e `attrs.type_mismatch` resolvidos a
   # partir de `catalog.table_schema` (qual coluna e a de particao; o tipo
   # declarado dela) NO MESMO fact que os attrs vindos da query

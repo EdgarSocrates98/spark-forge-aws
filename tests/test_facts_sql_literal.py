@@ -1,10 +1,10 @@
-from sparkforge.facts.sql_literal import (
+from sparkforge_aws.facts.sql_literal import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     extract_sql,
     extract_sql_from_pyspark,
 )
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.validate import validate_fact
 
 EXPECTED_KINDS = {
     "sql.projection",

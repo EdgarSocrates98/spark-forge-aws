@@ -1,4 +1,4 @@
-"""Unidade do Debate ROI Gate (`sparkforge/agentic/executor/gate.py`).
+"""Unidade do Debate ROI Gate (`sparkforge_aws/agentic/executor/gate.py`).
 
 O par real do catalogo (`SF-GRAPH-005` x `SF-LF-001`, so na uniao das duas
 fixtures da regra 29) e a base: as variacoes mudam severidade, `kind` ou
@@ -17,8 +17,8 @@ from typing import Any
 
 import pytest
 
-from sparkforge.agentic.executor import gate
-from sparkforge.agentic.executor.run import open_debate_plans, run_executor
+from sparkforge_aws.agentic.executor import gate
+from sparkforge_aws.agentic.executor.run import open_debate_plans, run_executor
 
 RAIZ = Path(__file__).resolve().parents[1]
 UNIAO = (

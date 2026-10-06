@@ -20,7 +20,7 @@ Extrai facts de um dump JSON de cluster EMR on EC2 (`describe-cluster` mais `lis
 
 ## Na CLI
 
-[`sparkforge analyze emr-cluster`](../cli/analyze.md)
+[`sparkforge-aws analyze emr-cluster`](../cli/analyze.md)
 
 ## Capacidade
 

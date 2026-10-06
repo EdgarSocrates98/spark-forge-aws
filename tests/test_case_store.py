@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.case.router import load_gate_contract
-from sparkforge.case.store import (
+from sparkforge_aws.case.router import load_gate_contract
+from sparkforge_aws.case.store import (
     GATES,
     HYPOTHESIS_OUTCOMES,
     PHASES,
@@ -96,7 +96,7 @@ class TestRoundTrip:
         assert first == second
 
     def test_load_missing_case_raises_with_actionable_message(self, tmp_path):
-        with pytest.raises(CaseError, match="sparkforge case open"):
+        with pytest.raises(CaseError, match="sparkforge-aws case open"):
             load_case(tmp_path)
 
     def test_load_rejects_unknown_schema_version(self, tmp_path):
@@ -152,7 +152,7 @@ class TestMutators:
         assert original["phase"] == "intake"
 
 
-_PACOTE = Path(__file__).resolve().parents[1] / "sparkforge"
+_PACOTE = Path(__file__).resolve().parents[1] / "sparkforge_aws"
 
 # O grep literal do criterio 1: `<algo>["phase"] =`, e nao `==`. Ele varre TEXTO,
 # de proposito -- e a mesma busca que um revisor humano faria, e ela pega a linha
@@ -275,7 +275,7 @@ class TestGateContract:
         for gate, contract in load_gate_contract().items():
             if not contract.get("satisfied_by"):
                 continue
-            assert contract.get("produced_by", "").startswith("sparkforge "), gate
+            assert contract.get("produced_by", "").startswith("sparkforge-aws "), gate
             phases = contract["guards_phases"]
             assert phases and set(phases) <= set(PHASES), gate
 
@@ -298,11 +298,11 @@ class TestStrictGates:
         with pytest.raises(CaseError) as exc:
             set_phase(self._case(), PHASE_GUARDADA, fact_kinds=set())
         assert "baseline_captured" in str(exc.value)
-        assert "sparkforge benchmark" in str(exc.value)
+        assert "sparkforge-aws benchmark" in str(exc.value)
 
     def test_a_mensagem_nomeia_fase_gate_fact_e_comando(self):
         """D-5: a Fase 4a mediu que mensagem inacionavel passa no CI quando o
-        teste so cobre `code == 2` e a string "sparkforge". Este assere conteudo."""
+        teste so cobre `code == 2` e a string "sparkforge-aws". Este assere conteudo."""
         with pytest.raises(CaseError) as exc:
             set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
         message = str(exc.value)
@@ -310,7 +310,7 @@ class TestStrictGates:
         assert "flows_mapped" in message
         assert KIND_FLOWS in message
         assert (
-            "sparkforge analyze call-graph --facts .sparkforge/facts.json "
+            "sparkforge-aws analyze call-graph --facts .sparkforge/facts.json "
             "--out .sparkforge/facts_callgraph.json"
         ) in message
 
@@ -365,7 +365,7 @@ class TestStrictGates:
             set_phase(self._case(), "report", fact_kinds=sem_funcval)
         assert "functional_validation_defined" in str(exc.value)
         assert "funcval.plan" in str(exc.value)
-        assert "sparkforge funcval plan" in str(exc.value)
+        assert "sparkforge-aws funcval plan" in str(exc.value)
 
     def test_o_booleano_manual_nao_destrava_sob_rigor(self):
         """Desvio D-4b-2: `case update --gate X --gate-value true` seria override
@@ -404,7 +404,7 @@ class TestStrictGates:
                     "gates": {
                         "baseline_capturd": {
                             "satisfied_by": "bench.run_delta",
-                            "produced_by": "sparkforge benchmark",
+                            "produced_by": "sparkforge-aws benchmark",
                             "guards_phases": ["validation"],
                         }
                     },
@@ -435,12 +435,12 @@ def _catalogo_com_gates(directory, gates):
 _CONTRATO_COMPLETO = {
     "baseline_captured": {
         "satisfied_by": KIND_BASELINE,
-        "produced_by": "sparkforge benchmark --before a --after b --out c",
+        "produced_by": "sparkforge-aws benchmark --before a --after b --out c",
         "guards_phases": list(PHASES[PHASES.index("validation"):]),
     },
     "flows_mapped": {
         "satisfied_by": KIND_FLOWS,
-        "produced_by": "sparkforge analyze call-graph --facts a --out b",
+        "produced_by": "sparkforge-aws analyze call-graph --facts a --out b",
         "guards_phases": list(PHASES[PHASES.index("hypothesis"):]),
     },
     "dominant_bottleneck_identified": {"advisory_reason": "sem produtor"},

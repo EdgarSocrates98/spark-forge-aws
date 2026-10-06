@@ -31,7 +31,7 @@ not claim that the real system lacks the component.
 Run offline:
 
 ```text
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
   --facts iceberg-facts.json --mode pipeline \
   --pipeline-path orders-pipeline.json

@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts.glue_job_run import EMITTED_KINDS, extract_glue_job_runs_path
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.facts.glue_job_run import EMITTED_KINDS, extract_glue_job_runs_path
+from sparkforge_aws.findings.validate import validate_fact
 
 
 def _write_run(root: Path, run_id: str, **extra) -> Path:
@@ -109,9 +109,9 @@ class TestRunFacts:
 
 class TestPercentileParity:
     def test_matches_the_sibling_extractors(self):
-        from sparkforge.facts.event_log import _nearest_rank as event_log_rank
-        from sparkforge.facts.glue_job_run import _nearest_rank as run_rank
-        from sparkforge.facts.iceberg_metadata import _nearest_rank as iceberg_rank
+        from sparkforge_aws.facts.event_log import _nearest_rank as event_log_rank
+        from sparkforge_aws.facts.glue_job_run import _nearest_rank as run_rank
+        from sparkforge_aws.facts.iceberg_metadata import _nearest_rank as iceberg_rank
 
         values = [1, 2, 3, 10, 20, 1000]
         for pct in (50, 95, 99, 100):
@@ -241,7 +241,7 @@ def _write_cloudwatch(root: Path, run_id: str, value: float) -> Path:
 
 class TestSchemaValidation:
     """O gate que faltava: nenhum dos cinco kinds deste modulo emitia
-    `subject.type`, e `sparkforge.findings.validate.validate_fact` reprovava
+    `subject.type`, e `sparkforge_aws.findings.validate.validate_fact` reprovava
     com "'type' is a required property" em `subject`. `tests/test_fixtures_
     golden_s3.py::TestGolden::test_everything_validates_against_schema` ja
     cobre este gate para os extratores irmaos; este modulo golden nao existia
@@ -287,7 +287,7 @@ class TestCorrelation:
         ]
 
         assert len(missing) == 1
-        assert "sparkforge collect cloudwatch" in missing[0].attrs["collect_command"]
+        assert "sparkforge-aws collect cloudwatch" in missing[0].attrs["collect_command"]
         assert "--job-run jr_1" in missing[0].attrs["collect_command"]
 
     def test_without_the_directory_correlation_is_declared_not_silent(self, tmp_path):

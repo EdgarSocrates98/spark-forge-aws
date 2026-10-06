@@ -19,7 +19,7 @@
 
 **Context Gathered:**
 - `glue.job_run` carrega por run `execution_time_s`, `dpu_seconds` (com `dpu_source`), `state`, `started_on`/`completed_on`, `worker_type`, `number_of_workers`, `autoscaling`, `glue_version`, `execution_class`. `glue.run_cost` carrega `cost`, `currency`, `dpu_hours`, `price_per_dpu_hour` e a fonte do preco.
-- Nenhum desses fatos carrega volume lido. O `capacity` (`sparkforge/capacity/plan.py`) ja resolve isso: volume de um run e a soma de `bytes_read` dos `spark.sql.scan` do arquivo daquele run; o historico e UM ARQUIVO POR RUN; a tolerancia vem de `workload.declared` (`volume_tolerance`, padrao 0,25); run sem scan sai como `volume_unknown`.
+- Nenhum desses fatos carrega volume lido. O `capacity` (`sparkforge_aws/capacity/plan.py`) ja resolve isso: volume de um run e a soma de `bytes_read` dos `spark.sql.scan` do arquivo daquele run; o historico e UM ARQUIVO POR RUN; a tolerancia vem de `workload.declared` (`volume_tolerance`, padrao 0,25); run sem scan sai como `volume_unknown`.
 - Os fixtures de `capacity` e `finops` tem de 3 a 30 runs por job.
 - Regras que limitam o recorte: 12 (nunca interpolar entre capacidades), 13 (nunca estimar economia: exige o custo do run que nao aconteceu), 14 (sem `dpu_seconds` nao ha custo), 22 a 25 (byte e token nao se somam; token e dolar so com fonte), 30 (sem benchmark da camada agentica).
 - `benchmark` compara dois event logs por tempo de task (nao e relogio); o Change Proof ja recusa atribuicao com mais de uma mudanca.
@@ -28,7 +28,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/finops/realized.py` (novo), `adapters/{_core,cli,tools}.py`, `fixtures/gain/` | Ao lado do relatorio financeiro; reusa `_volume_de` do capacity |
+| Likely Location | `sparkforge_aws/finops/realized.py` (novo), `adapters/{_core,cli,tools}.py`, `fixtures/gain/` | Ao lado do relatorio financeiro; reusa `_volume_de` do capacity |
 | Relevant KB Domains | Nenhum dominio do KB do agentspec cobre FinOps de Glue; a fonte e o proprio repositorio | Padroes: `capacity/plan.py`, `facts/run_cost.py`, `finops/report.py` |
 | IaC Patterns | N/A | Nada de infraestrutura |
 
@@ -67,7 +67,7 @@
 
 ### Approach A: Verbo `gain` ⭐ Recommended
 
-**Description:** Modulo puro `sparkforge/finops/realized.py` com `realized_gain(baseline, candidate, declared)`; verbo de topo `sparkforge gain --baseline <run.json>... --candidate <run.json>...`; tool `sparkforge_gain` READ_ONLY que declara caminho.
+**Description:** Modulo puro `sparkforge_aws/finops/realized.py` com `realized_gain(baseline, candidate, declared)`; verbo de topo `sparkforge-aws gain --baseline <run.json>... --candidate <run.json>...`; tool `sparkforge_gain` READ_ONLY que declara caminho.
 
 **Pros:**
 - Uma pergunta por verbo, como `capacity`, `finops` e `benchmark`.
@@ -82,7 +82,7 @@
 
 ### Approach B: Modo do `finops`
 
-**Description:** `sparkforge finops --baseline --candidate`, sem verbo novo.
+**Description:** `sparkforge-aws finops --baseline --candidate`, sem verbo novo.
 
 **Pros:**
 - Nenhuma tool nova.

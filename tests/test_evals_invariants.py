@@ -1,7 +1,7 @@
 """As invariantes que o eval harness nao pode perder, provadas por AST.
 
 Regra 23 do `CLAUDE.md`: o projeto nao chama provider nenhum. Ela era medida em
-prosa ("`sparkforge/` nao importa `anthropic`, `openai`, `bedrock` nem
+prosa ("`sparkforge_aws/` nao importa `anthropic`, `openai`, `bedrock` nem
 `litellm`") e nenhum teste a conferia -- ate aqui. O eval harness e o primeiro
 modulo que lida com AGENTE de perto, e o lugar mais facil de alguem acrescentar
 "so uma chamada de modelo para julgar a resposta". Este arquivo fecha a porta:
@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PACOTE = ROOT / "sparkforge"
+PACOTE = ROOT / "sparkforge_aws"
 PROVIDERS = {"anthropic", "openai", "litellm", "google.generativeai", "mistralai", "cohere"}
 BEDROCK = ("bedrock-runtime", "bedrock-agent-runtime", "bedrock-agentcore")
 MODULOS_DO_EVAL = (
@@ -139,8 +139,8 @@ def test_braco_suite_da_superficie_nega_so_o_que_o_gabarito_nao_exige():
     nao conhece derrubaria o braco; tool nova no registro entra negada sem
     ninguem editar lista."""
     from scripts import run_agentic_eval as runner
-    from sparkforge.adapters.tools import TOOLS
-    from sparkforge.evals.suite import load_suite
+    from sparkforge_aws.adapters.tools import TOOLS
+    from sparkforge_aws.evals.suite import load_suite
 
     suite = load_suite(runner.SUITE_DIR)
     assert runner._negadas(suite, "full") == []

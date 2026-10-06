@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.findings.models import Fact
-from sparkforge.simulate import Mudanca, SimulateError, apply_sets, parse_sets
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.simulate import Mudanca, SimulateError, apply_sets, parse_sets
 
 
 def tf_attr(key, value, measures=None):

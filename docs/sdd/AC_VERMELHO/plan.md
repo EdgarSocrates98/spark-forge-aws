@@ -9,7 +9,7 @@ upstream:
   sha256: "b1c78ad94b04dad58fbcea2f1781af552d759fc77a753d806b1b685e82402ec0"
 tasks:
   - id: T1
-    files: [tests/test_sdd_ac_vermelho.py, sparkforge/sdd/checks.py, sparkforge/sdd/schema/define.json, docs/sdd/CONTRATO.md, tests/test_sdd.py, docs/claims.lock.json]
+    files: [tests/test_sdd_ac_vermelho.py, sparkforge_aws/sdd/checks.py, sparkforge_aws/sdd/schema/define.json, docs/sdd/CONTRATO.md, tests/test_sdd.py, docs/claims.lock.json]
     covers: [AC1, AC2, AC3, AC4]
     test: {path: tests/test_sdd_ac_vermelho.py, name: test_criterio_sem_vermelho_ligado_e_recusado}
   - id: T2
@@ -110,7 +110,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.sdd.checks import check
+from sparkforge_aws.sdd.checks import check
 from tests.test_sdd import _codigos, _define_meta, _meta, _reescreve, _restampa, feature_limpa
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -263,7 +263,7 @@ vermelho. Guarde o comando e o exit para o `red` da T1 (seção *O vermelho dest
 
 ### 3. Código mínimo
 
-#### 3.1 `sparkforge/sdd/schema/define.json`
+#### 3.1 `sparkforge_aws/sdd/schema/define.json`
 
 Troque a linha
 
@@ -281,7 +281,7 @@ por
 `pattern: "\\S"` é o que faz `"   "` sair `schema_invalid` (D3: o motivo é texto que a
 revisão lê).
 
-#### 3.2 `sparkforge/sdd/checks.py`
+#### 3.2 `sparkforge_aws/sdd/checks.py`
 
 Logo **depois** da função `_gate_red` (termina em `"(exit diferente de zero)")`), antes de
 `def _gate_claims`, acrescente:
@@ -432,8 +432,8 @@ python -m pytest tests/test_sdd.py -q
 python -m pytest tests/test_sdd_operator.py tests/test_sdd_skills.py tests/test_sdd_migration.py -q
 python -m pytest tests/test_fixtures_golden_sdd.py tests/test_sdd_eval_suite.py -q
 python -m pytest tests/test_arvore_versionada.py tests/test_suite_batches.py -q
-python -m ruff check sparkforge scripts tests
-python -m sparkforge.adapters.cli sdd check --repo .
+python -m ruff check sparkforge_aws scripts tests
+python -m sparkforge_aws.adapters.cli sdd check --repo .
 ```
 
 Medido nesta fase com o gate dev-only injetado e as duas edições de 3.4 aplicadas numa
@@ -464,7 +464,7 @@ também estiver escrito no documento auditado, esse documento entra no commit (e
 ### 7. Commit
 
 ```bash
-git add tests/test_sdd_ac_vermelho.py sparkforge/sdd/checks.py sparkforge/sdd/schema/define.json docs/sdd/CONTRATO.md tests/test_sdd.py
+git add tests/test_sdd_ac_vermelho.py sparkforge_aws/sdd/checks.py sparkforge_aws/sdd/schema/define.json docs/sdd/CONTRATO.md tests/test_sdd.py
 git commit -F C:/Users/edgar/AppData/Local/Temp/claude/E--projetos-spark-forge-aws/aecdc55f-7550-4610-801b-0b1e6d24fd0a/scratchpad/commit-t1.txt
 ```
 
@@ -635,7 +635,7 @@ python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/tes
 python -m pytest tests/test_reference_docs.py tests/test_surface_lock.py -q
 python -m pytest tests/test_sdd_skills.py tests/test_sdd.py tests/test_sdd_ac_vermelho.py -q
 python -m pytest tests/test_arvore_versionada.py -q
-python -m sparkforge.adapters.cli sdd check --repo .
+python -m sparkforge_aws.adapters.cli sdd check --repo .
 ```
 
 `tests/test_agents_parity.py::TestMirrors::test_sync_check_passes_after_sync` roda o
@@ -686,5 +686,5 @@ auditado) ao `git add`, e um parágrafo com os ids e o valor medido.
 
 O `build_report.md` desta feature registra a T1 com os quatro node ids no `red` (seção
 *O vermelho desta feature*) e a T2 com o comando do passo 2 dela. Depois do stamp,
-`python -m sparkforge.adapters.cli sdd check --repo . --feature AC_VERMELHO` tem de sair
+`python -m sparkforge_aws.adapters.cli sdd check --repo . --feature AC_VERMELHO` tem de sair
 sem recusa: é o gate novo conferindo a feature que o criou.

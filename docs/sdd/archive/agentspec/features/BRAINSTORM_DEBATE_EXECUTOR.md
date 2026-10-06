@@ -19,9 +19,9 @@
 
 **Context Gathered:**
 - A regra 23 é medida e, desde `37cf718`, **testada**: `tests/test_evals_invariants.py` reprova import de SDK de provider, cliente Bedrock e `subprocess` nos módulos de avaliação.
-- `sparkforge arbitrate` (executor determinístico, L0) emite `DebatePlan` quando a arbitragem não fecha, e para em `debate.unresolved`. `sparkforge debate referee` (tool `sparkforge_debate_referee`) já verifica o protocolo e recusa quatro coisas: hipótese que sobrevive ao fechamento, claim sem `evidence_refs`, objeção sem réplica e referência pendurada. Falta **quem gera as rodadas** (`docs/agentic-evolution-report.md`, "MISSING — executor de debate").
-- `sparkforge/agentic/runtime.py` já abstrai **hosts** (Claude Code, Devin, Codex), e não providers. `sparkforge/economy/router.py` recomenda tier de modelo e não chama nada.
-- **Precedente medido:** `scripts/run_agentic_eval.py` dispara `claude -p` de fora do pacote, e a regra 23 continua valendo para `sparkforge/`. É um meio-termo entre "chamar provider" e "não executar nada".
+- `sparkforge-aws arbitrate` (executor determinístico, L0) emite `DebatePlan` quando a arbitragem não fecha, e para em `debate.unresolved`. `sparkforge-aws debate referee` (tool `sparkforge_debate_referee`) já verifica o protocolo e recusa quatro coisas: hipótese que sobrevive ao fechamento, claim sem `evidence_refs`, objeção sem réplica e referência pendurada. Falta **quem gera as rodadas** (`docs/agentic-evolution-report.md`, "MISSING — executor de debate").
+- `sparkforge_aws/agentic/runtime.py` já abstrai **hosts** (Claude Code, Devin, Codex), e não providers. `sparkforge_aws/economy/router.py` recomenda tier de modelo e não chama nada.
+- **Precedente medido:** `scripts/run_agentic_eval.py` dispara `claude -p` de fora do pacote, e a regra 23 continua valendo para `sparkforge_aws/`. É um meio-termo entre "chamar provider" e "não executar nada".
 - **Baseline de 2026-09-11** (`evals/agentic/fase0/baselines/2026-09-11-haiku-4-5/`): Haiku acerta a resposta mas quase nunca passa pelas tools (3 de 39), e na raiz do repositório copiava o gabarito de `expected/`. Qualquer driver headless roda no workspace de prova.
 - `DebateBudget` e `should_trigger_debate()` existem e ninguém os consome no laço; as entidades `Claim`, `Objection`, `Rebuttal` e `Decision` já estão no blackboard.
 
@@ -29,8 +29,8 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | Máquina de estados em `sparkforge/agentic/executor/` (junto de `plan.py`, `digest.py`, `run.py`); verbos em `sparkforge/adapters/{cli,tools}.py` ao lado de `debate referee`; skill em `skills/`; driver headless em `scripts/run_debate.py`; grader em `sparkforge/evals/debate_grade.py`; suíte em `evals/agentic/debate/` | Runtime (executor) e avaliação (grader) em pacotes separados, respeitando `tests/test_harness_boundary.py` |
-| Relevant KB Domains | agentspec: `genai` (orquestração multiagente), `testing`, `python`, `pydantic`. Repo: `docs/agentic-evolution-report.md`, `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`, `sparkforge/agentic/{debate,arbitration,blackboard,budget}.py`, `sparkforge/agentic/executor/` | O KB do agentspec traz padrão de orquestração genérico; o protocolo concreto é o do repositório |
+| Likely Location | Máquina de estados em `sparkforge_aws/agentic/executor/` (junto de `plan.py`, `digest.py`, `run.py`); verbos em `sparkforge_aws/adapters/{cli,tools}.py` ao lado de `debate referee`; skill em `skills/`; driver headless em `scripts/run_debate.py`; grader em `sparkforge_aws/evals/debate_grade.py`; suíte em `evals/agentic/debate/` | Runtime (executor) e avaliação (grader) em pacotes separados, respeitando `tests/test_harness_boundary.py` |
+| Relevant KB Domains | agentspec: `genai` (orquestração multiagente), `testing`, `python`, `pydantic`. Repo: `docs/agentic-evolution-report.md`, `docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md`, `sparkforge_aws/agentic/{debate,arbitration,blackboard,budget}.py`, `sparkforge_aws/agentic/executor/` | O KB do agentspec traz padrão de orquestração genérico; o protocolo concreto é o do repositório |
 | IaC Patterns | N/A | O driver headless usa o `claude` local, como o runner de eval |
 
 ---
@@ -52,9 +52,9 @@
 | Type | Location | Count | Notes |
 |------|----------|-------|-------|
 | Input files | `fixtures/graph/import_sem_jar_no_iac` ∪ `fixtures/infra_code/fgac_com_jar_extra` | 1 caso real | O caso da regra 29: 3 findings, 60 facts, 1 contradição não resolvida, portanto um `DebatePlan` real |
-| Output examples | saída de `sparkforge arbitrate` sobre o caso acima; exemplos de entrada de `sparkforge_debate_referee` | 1 + testes do referee | Formato de `DebatePlan` e da entrada do referee |
+| Output examples | saída de `sparkforge-aws arbitrate` sobre o caso acima; exemplos de entrada de `sparkforge_debate_referee` | 1 + testes do referee | Formato de `DebatePlan` e da entrada do referee |
 | Ground truth | `evals/agentic/debate/` (a criar) | ≥ 3 casos sintéticos | `winner: <rule_id>` ou `unresolved`, decidível por um fact que o papel precisa coletar |
-| Related code | `sparkforge/agentic/executor/{plan,run,conflict}.py`, `sparkforge/agentic/{debate,budget,blackboard}.py`, `scripts/run_agentic_eval.py`, `sparkforge/evals/` | — | Plano, laço, budget, persistência, driver headless e grader a reusar |
+| Related code | `sparkforge_aws/agentic/executor/{plan,run,conflict}.py`, `sparkforge_aws/agentic/{debate,budget,blackboard}.py`, `scripts/run_agentic_eval.py`, `sparkforge_aws/evals/` | — | Plano, laço, budget, persistência, driver headless e grader a reusar |
 
 **How samples will be used:**
 
@@ -130,7 +130,7 @@ N/A.
 
 | # | Decision | Rationale | Alternative Rejected |
 |---|----------|-----------|----------------------|
-| 1 | A regra 23 continua: nenhum SDK de provider nem chamada de modelo em `sparkforge/` | Resposta 3; a regra agora tem teste (`tests/test_evals_invariants.py`) | Extra opcional com SDK; pacote irmão com adapters |
+| 1 | A regra 23 continua: nenhum SDK de provider nem chamada de modelo em `sparkforge_aws/` | Resposta 3; a regra agora tem teste (`tests/test_evals_invariants.py`) | Extra opcional com SDK; pacote irmão com adapters |
 | 2 | A geração acontece num HOST disparado de fora do pacote (skill interativa; `claude -p` headless em `scripts/`) | Precedente do runner de eval | Chamada direta de provider |
 | 3 | O estado do debate mora no blackboard do case; `next` recalcula tudo dele | Retomada sem mecanismo novo | Estado em memória do driver |
 | 4 | Dois papéis, proponente e cético; pedir evidência é o papel chamando tools do SparkForge | A contradição do catálogo é binária; o `referee` já verifica | Os sete papéis do "Scientific Debate" |
@@ -139,7 +139,7 @@ N/A.
 | 7 | A parada vem do consenso sem objeção nova ou do `DebateBudget`; sempre fecha pelo `referee`; `upheld: false` gera `Decision` `unresolved` | Vencedor por maioria seria julgamento sem garantia (memória "fato versus julgamento") | Maioria de evidência quando o budget acaba |
 | 8 | `debate start/next/submit` como tools MCP `LOCAL_MUTATION`, com o crescimento declarado no commit | Hosts diferentes (Claude Code, Devin) acessam igual; precedente `arbitrate` | Só CLI |
 | 9 | O driver headless roda no workspace de prova | O baseline mostrou o agente copiando o gabarito | Rodar na raiz do repositório |
-| 10 | O grader da suíte fica em `sparkforge/evals/debate_grade.py` (avaliação), separado da máquina de estados (runtime) | `tests/test_harness_boundary.py` | Grader dentro do executor |
+| 10 | O grader da suíte fica em `sparkforge_aws/evals/debate_grade.py` (avaliação), separado da máquina de estados (runtime) | `tests/test_harness_boundary.py` | Grader dentro do executor |
 
 ---
 
@@ -184,7 +184,7 @@ Quando a arbitragem determinística não fecha uma contradição, o SparkForge e
 - [ ] Sobre o caso da regra 29, `debate start → next/submit → referee` termina com `Decision` gravada nos dois drivers, e a retomada depois de matar o driver no meio continua do mesmo ponto.
 - [ ] 100% das submissões inválidas saem recusadas com o nome da razão, sem avançar o estado (golden por razão).
 - [ ] A suíte `evals/agentic/debate/` tem ≥ 3 casos sintéticos com gabarito, e o grader reporta por caso `winner` acertado ou não e `unresolved` correto, com custo dos transcripts em colunas separadas.
-- [ ] Os invariantes de `tests/test_evals_invariants.py` e `tests/test_harness_boundary.py` seguem verdes: 0 SDK de provider, 0 `subprocess` em `sparkforge/`.
+- [ ] Os invariantes de `tests/test_evals_invariants.py` e `tests/test_harness_boundary.py` seguem verdes: 0 SDK de provider, 0 `subprocess` em `sparkforge_aws/`.
 - [ ] Uma execução real da suíte (N ≥ 3) fica registrada como baseline, sem afirmação de ganho.
 
 ### Constraints Identified

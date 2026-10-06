@@ -164,7 +164,7 @@
     "measures": {},
     "attrs": {
       "key": "script_location",
-      "value": "s3://sparkforge-demo/scripts/etl.py",
+      "value": "s3://sparkforge-aws-demo/scripts/etl.py",
       "present": true,
       "literal": true,
       "block": "command"
@@ -236,7 +236,7 @@
     "measures": {},
     "attrs": {
       "key": "--spark-event-logs-path",
-      "value": "s3://sparkforge-demo/spark-logs/",
+      "value": "s3://sparkforge-aws-demo/spark-logs/",
       "present": true,
       "literal": true,
       "block": "default_arguments"

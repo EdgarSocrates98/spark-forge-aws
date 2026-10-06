@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge analyze`
+# `sparkforge-aws analyze`
 
 Extrai facts deterministicos de codigo-fonte.
 
@@ -8,63 +8,63 @@ Extrai facts deterministicos de codigo-fonte.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge analyze airflow-dag`](#sparkforge-analyze-airflow-dag) | Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal. |
-| [`sparkforge analyze athena-workgroup`](#sparkforge-analyze-athena-workgroup) | Extrai facts de um dump JSON de workgroups do Athena. |
-| [`sparkforge analyze call-graph`](#sparkforge-analyze-call-graph) | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos. |
-| [`sparkforge analyze catalog-schema`](#sparkforge-analyze-catalog-schema) | Extrai facts de um dump JSON do Glue Data Catalog. |
-| [`sparkforge analyze cdc`](#sparkforge-analyze-cdc) | Extrai facts offline de dumps CDC, Debezium ou AWS DMS. |
-| [`sparkforge analyze cloudwatch`](#sparkforge-analyze-cloudwatch) | Extrai facts de um artefato de metricas do CloudWatch ja coletado. |
-| [`sparkforge analyze cloudwatch-logs`](#sparkforge-analyze-cloudwatch-logs) | Extrai facts do LOG do run ja coletado do CloudWatch Logs. |
-| [`sparkforge analyze consumers`](#sparkforge-analyze-consumers) | Extrai facts do inventario declarado de consumidores de tabela. |
-| [`sparkforge analyze controlm-jobs`](#sparkforge-analyze-controlm-jobs) | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem. |
-| [`sparkforge analyze data-observability`](#sparkforge-analyze-data-observability) | Avalia SLI/SLO, error budget, incidentes e dependências offline. |
-| [`sparkforge analyze data-quality`](#sparkforge-analyze-data-quality) | Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa. |
-| [`sparkforge analyze dbt-artifacts`](#sparkforge-analyze-dbt-artifacts) | Analisa manifest, catalog e run_results do dbt sem executar dbt. |
-| [`sparkforge analyze dq-ai`](#sparkforge-analyze-dq-ai) | Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas. |
-| [`sparkforge analyze duckdb-microscope`](#sparkforge-analyze-duckdb-microscope) | Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL. |
-| [`sparkforge analyze emr-cluster`](#sparkforge-analyze-emr-cluster) | Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam). |
-| [`sparkforge analyze emr-eks`](#sparkforge-analyze-emr-eks) | Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump. |
-| [`sparkforge analyze emr-serverless`](#sparkforge-analyze-emr-serverless) | Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe. |
-| [`sparkforge analyze error-signatures`](#sparkforge-analyze-error-signatures) | Casa knowledge/errors/ contra os facts do case. Derivacao pura. |
-| [`sparkforge analyze event-driven`](#sparkforge-analyze-event-driven) | Extrai facts offline de EventBridge/Pipes, SQS e SNS. |
-| [`sparkforge analyze event-log`](#sparkforge-analyze-event-log) | Extrai facts de um Spark event log (.jsonl) ja coletado. |
-| [`sparkforge analyze flink`](#sparkforge-analyze-flink) | Extrai facts offline de dumps Apache Flink ou Managed Flink. |
-| [`sparkforge analyze forge-lab`](#sparkforge-analyze-forge-lab) | Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas. |
-| [`sparkforge analyze glue-job-runs`](#sparkforge-analyze-glue-job-runs) | Extrai facts de historico do diretorio de artefatos de run Glue. |
-| [`sparkforge analyze glue-resource-link`](#sparkforge-analyze-glue-resource-link) | Extrai a topologia do catalogo ja coletada: link, alvo e nome. |
-| [`sparkforge analyze glue-streaming`](#sparkforge-analyze-glue-streaming) | Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode. |
-| [`sparkforge analyze graph`](#sparkforge-analyze-graph) | Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure. |
-| [`sparkforge analyze iam-access`](#sparkforge-analyze-iam-access) | Extrai a DECISAO de IAM ja simulada, com a camada que decidiu. |
-| [`sparkforge analyze iceberg`](#sparkforge-analyze-iceberg) | Extrai facts de um dump JSON das metadata tables Iceberg. |
-| [`sparkforge analyze lakeformation-grants`](#sparkforge-analyze-lakeformation-grants) | Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings). |
-| [`sparkforge analyze lakehouse-catalog`](#sparkforge-analyze-lakehouse-catalog) | Analisa topologia declarada de catalogs, engines, tabelas e bindings. |
-| [`sparkforge analyze orchestration`](#sparkforge-analyze-orchestration) | Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M. |
-| [`sparkforge analyze parquet-footer`](#sparkforge-analyze-parquet-footer) | Extrai facts do FOOTER do Parquet ja coletado. |
-| [`sparkforge analyze plan`](#sparkforge-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
-| [`sparkforge analyze platform-ecosystem`](#sparkforge-analyze-platform-ecosystem) | Analisa serving, ingestion, AI Data Engineering e radar opcional. |
-| [`sparkforge analyze platform-graph`](#sparkforge-analyze-platform-graph) | Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos. |
-| [`sparkforge analyze pyspark`](#sparkforge-analyze-pyspark) | Extrai facts de PySpark via AST estatico (nunca importa o codigo). |
-| [`sparkforge analyze s3-listing`](#sparkforge-analyze-s3-listing) | Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel). |
-| [`sparkforge analyze schema-registry`](#sparkforge-analyze-schema-registry) | Extrai facts offline de contratos e evolução de schemas. |
-| [`sparkforge analyze sfn-history`](#sparkforge-analyze-sfn-history) | Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao. |
-| [`sparkforge analyze sql`](#sparkforge-analyze-sql) | Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark. |
-| [`sparkforge analyze sql-metrics`](#sparkforge-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
-| [`sparkforge analyze step-functions`](#sparkforge-analyze-step-functions) | Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao. |
-| [`sparkforge analyze streaming`](#sparkforge-analyze-streaming) | Extrai facts de fonte Structured Streaming ou StreamingQueryProgress. |
-| [`sparkforge analyze streaming-composition`](#sparkforge-analyze-streaming-composition) | Compõe facts já extraídos de streaming, transporte e Iceberg. |
-| [`sparkforge analyze streaming-integrations`](#sparkforge-analyze-streaming-integrations) | Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage. |
-| [`sparkforge analyze streaming-ops`](#sparkforge-analyze-streaming-ops) | Extrai facts declarados de SLO, FinOps, segurança e serving streaming. |
-| [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
-| [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
-| [`sparkforge analyze transport`](#sparkforge-analyze-transport) | Extrai facts offline de dumps Kafka, MSK ou Kinesis. |
-| [`sparkforge analyze workload`](#sparkforge-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
+| [`sparkforge-aws analyze airflow-dag`](#sparkforge-aws-analyze-airflow-dag) | Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal. |
+| [`sparkforge-aws analyze athena-workgroup`](#sparkforge-aws-analyze-athena-workgroup) | Extrai facts de um dump JSON de workgroups do Athena. |
+| [`sparkforge-aws analyze call-graph`](#sparkforge-aws-analyze-call-graph) | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos. |
+| [`sparkforge-aws analyze catalog-schema`](#sparkforge-aws-analyze-catalog-schema) | Extrai facts de um dump JSON do Glue Data Catalog. |
+| [`sparkforge-aws analyze cdc`](#sparkforge-aws-analyze-cdc) | Extrai facts offline de dumps CDC, Debezium ou AWS DMS. |
+| [`sparkforge-aws analyze cloudwatch`](#sparkforge-aws-analyze-cloudwatch) | Extrai facts de um artefato de metricas do CloudWatch ja coletado. |
+| [`sparkforge-aws analyze cloudwatch-logs`](#sparkforge-aws-analyze-cloudwatch-logs) | Extrai facts do LOG do run ja coletado do CloudWatch Logs. |
+| [`sparkforge-aws analyze consumers`](#sparkforge-aws-analyze-consumers) | Extrai facts do inventario declarado de consumidores de tabela. |
+| [`sparkforge-aws analyze controlm-jobs`](#sparkforge-aws-analyze-controlm-jobs) | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem. |
+| [`sparkforge-aws analyze data-observability`](#sparkforge-aws-analyze-data-observability) | Avalia SLI/SLO, error budget, incidentes e dependências offline. |
+| [`sparkforge-aws analyze data-quality`](#sparkforge-aws-analyze-data-quality) | Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa. |
+| [`sparkforge-aws analyze dbt-artifacts`](#sparkforge-aws-analyze-dbt-artifacts) | Analisa manifest, catalog e run_results do dbt sem executar dbt. |
+| [`sparkforge-aws analyze dq-ai`](#sparkforge-aws-analyze-dq-ai) | Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas. |
+| [`sparkforge-aws analyze duckdb-microscope`](#sparkforge-aws-analyze-duckdb-microscope) | Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL. |
+| [`sparkforge-aws analyze emr-cluster`](#sparkforge-aws-analyze-emr-cluster) | Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam). |
+| [`sparkforge-aws analyze emr-eks`](#sparkforge-aws-analyze-emr-eks) | Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump. |
+| [`sparkforge-aws analyze emr-serverless`](#sparkforge-aws-analyze-emr-serverless) | Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe. |
+| [`sparkforge-aws analyze error-signatures`](#sparkforge-aws-analyze-error-signatures) | Casa knowledge/errors/ contra os facts do case. Derivacao pura. |
+| [`sparkforge-aws analyze event-driven`](#sparkforge-aws-analyze-event-driven) | Extrai facts offline de EventBridge/Pipes, SQS e SNS. |
+| [`sparkforge-aws analyze event-log`](#sparkforge-aws-analyze-event-log) | Extrai facts de um Spark event log (.jsonl) ja coletado. |
+| [`sparkforge-aws analyze flink`](#sparkforge-aws-analyze-flink) | Extrai facts offline de dumps Apache Flink ou Managed Flink. |
+| [`sparkforge-aws analyze forge-lab`](#sparkforge-aws-analyze-forge-lab) | Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas. |
+| [`sparkforge-aws analyze glue-job-runs`](#sparkforge-aws-analyze-glue-job-runs) | Extrai facts de historico do diretorio de artefatos de run Glue. |
+| [`sparkforge-aws analyze glue-resource-link`](#sparkforge-aws-analyze-glue-resource-link) | Extrai a topologia do catalogo ja coletada: link, alvo e nome. |
+| [`sparkforge-aws analyze glue-streaming`](#sparkforge-aws-analyze-glue-streaming) | Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode. |
+| [`sparkforge-aws analyze graph`](#sparkforge-aws-analyze-graph) | Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure. |
+| [`sparkforge-aws analyze iam-access`](#sparkforge-aws-analyze-iam-access) | Extrai a DECISAO de IAM ja simulada, com a camada que decidiu. |
+| [`sparkforge-aws analyze iceberg`](#sparkforge-aws-analyze-iceberg) | Extrai facts de um dump JSON das metadata tables Iceberg. |
+| [`sparkforge-aws analyze lakeformation-grants`](#sparkforge-aws-analyze-lakeformation-grants) | Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings). |
+| [`sparkforge-aws analyze lakehouse-catalog`](#sparkforge-aws-analyze-lakehouse-catalog) | Analisa topologia declarada de catalogs, engines, tabelas e bindings. |
+| [`sparkforge-aws analyze orchestration`](#sparkforge-aws-analyze-orchestration) | Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M. |
+| [`sparkforge-aws analyze parquet-footer`](#sparkforge-aws-analyze-parquet-footer) | Extrai facts do FOOTER do Parquet ja coletado. |
+| [`sparkforge-aws analyze plan`](#sparkforge-aws-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
+| [`sparkforge-aws analyze platform-ecosystem`](#sparkforge-aws-analyze-platform-ecosystem) | Analisa serving, ingestion, AI Data Engineering e radar opcional. |
+| [`sparkforge-aws analyze platform-graph`](#sparkforge-aws-analyze-platform-graph) | Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos. |
+| [`sparkforge-aws analyze pyspark`](#sparkforge-aws-analyze-pyspark) | Extrai facts de PySpark via AST estatico (nunca importa o codigo). |
+| [`sparkforge-aws analyze s3-listing`](#sparkforge-aws-analyze-s3-listing) | Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel). |
+| [`sparkforge-aws analyze schema-registry`](#sparkforge-aws-analyze-schema-registry) | Extrai facts offline de contratos e evolução de schemas. |
+| [`sparkforge-aws analyze sfn-history`](#sparkforge-aws-analyze-sfn-history) | Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao. |
+| [`sparkforge-aws analyze sql`](#sparkforge-aws-analyze-sql) | Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark. |
+| [`sparkforge-aws analyze sql-metrics`](#sparkforge-aws-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
+| [`sparkforge-aws analyze step-functions`](#sparkforge-aws-analyze-step-functions) | Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao. |
+| [`sparkforge-aws analyze streaming`](#sparkforge-aws-analyze-streaming) | Extrai facts de fonte Structured Streaming ou StreamingQueryProgress. |
+| [`sparkforge-aws analyze streaming-composition`](#sparkforge-aws-analyze-streaming-composition) | Compõe facts já extraídos de streaming, transporte e Iceberg. |
+| [`sparkforge-aws analyze streaming-integrations`](#sparkforge-aws-analyze-streaming-integrations) | Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage. |
+| [`sparkforge-aws analyze streaming-ops`](#sparkforge-aws-analyze-streaming-ops) | Extrai facts declarados de SLO, FinOps, segurança e serving streaming. |
+| [`sparkforge-aws analyze terraform`](#sparkforge-aws-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
+| [`sparkforge-aws analyze terraform-diff`](#sparkforge-aws-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
+| [`sparkforge-aws analyze transport`](#sparkforge-aws-analyze-transport) | Extrai facts offline de dumps Kafka, MSK ou Kinesis. |
+| [`sparkforge-aws analyze workload`](#sparkforge-aws-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
 
-## `sparkforge analyze airflow-dag`
+## `sparkforge-aws analyze airflow-dag`
 
 Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal.
 
 ```bash
-sparkforge analyze airflow-dag --help
+sparkforge-aws analyze airflow-dag --help
 ```
 
 ### Opções
@@ -82,12 +82,12 @@ sparkforge analyze airflow-dag --help
 
 [`sparkforge_analyze_airflow_dag`](../tools/sparkforge_analyze_airflow_dag.md)
 
-## `sparkforge analyze athena-workgroup`
+## `sparkforge-aws analyze athena-workgroup`
 
 Extrai facts de um dump JSON de workgroups do Athena.
 
 ```bash
-sparkforge analyze athena-workgroup --help
+sparkforge-aws analyze athena-workgroup --help
 ```
 
 ### Opções
@@ -105,12 +105,12 @@ sparkforge analyze athena-workgroup --help
 
 [`sparkforge_analyze_athena_workgroup`](../tools/sparkforge_analyze_athena_workgroup.md)
 
-## `sparkforge analyze call-graph`
+## `sparkforge-aws analyze call-graph`
 
 Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos.
 
 ```bash
-sparkforge analyze call-graph --help
+sparkforge-aws analyze call-graph --help
 ```
 
 ### Opções
@@ -128,12 +128,12 @@ sparkforge analyze call-graph --help
 
 [`sparkforge_analyze_call_graph`](../tools/sparkforge_analyze_call_graph.md)
 
-## `sparkforge analyze catalog-schema`
+## `sparkforge-aws analyze catalog-schema`
 
 Extrai facts de um dump JSON do Glue Data Catalog.
 
 ```bash
-sparkforge analyze catalog-schema --help
+sparkforge-aws analyze catalog-schema --help
 ```
 
 ### Opções
@@ -151,12 +151,12 @@ sparkforge analyze catalog-schema --help
 
 [`sparkforge_analyze_catalog_schema`](../tools/sparkforge_analyze_catalog_schema.md)
 
-## `sparkforge analyze cdc`
+## `sparkforge-aws analyze cdc`
 
 Extrai facts offline de dumps CDC, Debezium ou AWS DMS.
 
 ```bash
-sparkforge analyze cdc --help
+sparkforge-aws analyze cdc --help
 ```
 
 ### Opções
@@ -175,12 +175,12 @@ sparkforge analyze cdc --help
 
 [`sparkforge_analyze_cdc`](../tools/sparkforge_analyze_cdc.md)
 
-## `sparkforge analyze cloudwatch`
+## `sparkforge-aws analyze cloudwatch`
 
 Extrai facts de um artefato de metricas do CloudWatch ja coletado.
 
 ```bash
-sparkforge analyze cloudwatch --help
+sparkforge-aws analyze cloudwatch --help
 ```
 
 ### Opções
@@ -198,12 +198,12 @@ sparkforge analyze cloudwatch --help
 
 [`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
 
-## `sparkforge analyze cloudwatch-logs`
+## `sparkforge-aws analyze cloudwatch-logs`
 
 Extrai facts do LOG do run ja coletado do CloudWatch Logs.
 
 ```bash
-sparkforge analyze cloudwatch-logs --help
+sparkforge-aws analyze cloudwatch-logs --help
 ```
 
 ### Opções
@@ -221,12 +221,12 @@ sparkforge analyze cloudwatch-logs --help
 
 [`sparkforge_analyze_cloudwatch_logs`](../tools/sparkforge_analyze_cloudwatch_logs.md), [`sparkforge_analyze_error_signatures`](../tools/sparkforge_analyze_error_signatures.md)
 
-## `sparkforge analyze consumers`
+## `sparkforge-aws analyze consumers`
 
 Extrai facts do inventario declarado de consumidores de tabela.
 
 ```bash
-sparkforge analyze consumers --help
+sparkforge-aws analyze consumers --help
 ```
 
 ### Opções
@@ -244,12 +244,12 @@ sparkforge analyze consumers --help
 
 [`sparkforge_analyze_consumers`](../tools/sparkforge_analyze_consumers.md)
 
-## `sparkforge analyze controlm-jobs`
+## `sparkforge-aws analyze controlm-jobs`
 
 Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem.
 
 ```bash
-sparkforge analyze controlm-jobs --help
+sparkforge-aws analyze controlm-jobs --help
 ```
 
 ### Opções
@@ -268,12 +268,12 @@ sparkforge analyze controlm-jobs --help
 
 [`sparkforge_analyze_controlm_jobs`](../tools/sparkforge_analyze_controlm_jobs.md)
 
-## `sparkforge analyze data-observability`
+## `sparkforge-aws analyze data-observability`
 
 Avalia SLI/SLO, error budget, incidentes e dependências offline.
 
 ```bash
-sparkforge analyze data-observability --help
+sparkforge-aws analyze data-observability --help
 ```
 
 ### Opções
@@ -287,12 +287,12 @@ sparkforge analyze data-observability --help
 
 [`sparkforge_analyze_data_observability`](../tools/sparkforge_analyze_data_observability.md)
 
-## `sparkforge analyze data-quality`
+## `sparkforge-aws analyze data-quality`
 
 Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa.
 
 ```bash
-sparkforge analyze data-quality --help
+sparkforge-aws analyze data-quality --help
 ```
 
 ### Opções
@@ -310,12 +310,12 @@ sparkforge analyze data-quality --help
 
 [`sparkforge_analyze_data_quality`](../tools/sparkforge_analyze_data_quality.md)
 
-## `sparkforge analyze dbt-artifacts`
+## `sparkforge-aws analyze dbt-artifacts`
 
 Analisa manifest, catalog e run_results do dbt sem executar dbt.
 
 ```bash
-sparkforge analyze dbt-artifacts --help
+sparkforge-aws analyze dbt-artifacts --help
 ```
 
 ### Opções
@@ -329,12 +329,12 @@ sparkforge analyze dbt-artifacts --help
 
 [`sparkforge_analyze_dbt_artifacts`](../tools/sparkforge_analyze_dbt_artifacts.md)
 
-## `sparkforge analyze dq-ai`
+## `sparkforge-aws analyze dq-ai`
 
 Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas.
 
 ```bash
-sparkforge analyze dq-ai --help
+sparkforge-aws analyze dq-ai --help
 ```
 
 ### Opções
@@ -352,12 +352,12 @@ sparkforge analyze dq-ai --help
 
 [`sparkforge_analyze_dq_ai`](../tools/sparkforge_analyze_dq_ai.md), [`sparkforge_dq_ai_assess`](../tools/sparkforge_dq_ai_assess.md)
 
-## `sparkforge analyze duckdb-microscope`
+## `sparkforge-aws analyze duckdb-microscope`
 
 Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL.
 
 ```bash
-sparkforge analyze duckdb-microscope --help
+sparkforge-aws analyze duckdb-microscope --help
 ```
 
 ### Opções
@@ -371,12 +371,12 @@ sparkforge analyze duckdb-microscope --help
 
 [`sparkforge_analyze_duckdb_microscope`](../tools/sparkforge_analyze_duckdb_microscope.md)
 
-## `sparkforge analyze emr-cluster`
+## `sparkforge-aws analyze emr-cluster`
 
 Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam).
 
 ```bash
-sparkforge analyze emr-cluster --help
+sparkforge-aws analyze emr-cluster --help
 ```
 
 ### Opções
@@ -394,12 +394,12 @@ sparkforge analyze emr-cluster --help
 
 [`sparkforge_analyze_emr_cluster`](../tools/sparkforge_analyze_emr_cluster.md)
 
-## `sparkforge analyze emr-eks`
+## `sparkforge-aws analyze emr-eks`
 
 Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump.
 
 ```bash
-sparkforge analyze emr-eks --help
+sparkforge-aws analyze emr-eks --help
 ```
 
 ### Opções
@@ -417,12 +417,12 @@ sparkforge analyze emr-eks --help
 
 [`sparkforge_analyze_emr_eks`](../tools/sparkforge_analyze_emr_eks.md)
 
-## `sparkforge analyze emr-serverless`
+## `sparkforge-aws analyze emr-serverless`
 
 Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe.
 
 ```bash
-sparkforge analyze emr-serverless --help
+sparkforge-aws analyze emr-serverless --help
 ```
 
 ### Opções
@@ -440,12 +440,12 @@ sparkforge analyze emr-serverless --help
 
 [`sparkforge_analyze_emr_serverless`](../tools/sparkforge_analyze_emr_serverless.md)
 
-## `sparkforge analyze error-signatures`
+## `sparkforge-aws analyze error-signatures`
 
 Casa knowledge/errors/ contra os facts do case. Derivacao pura.
 
 ```bash
-sparkforge analyze error-signatures --help
+sparkforge-aws analyze error-signatures --help
 ```
 
 ### Opções
@@ -463,12 +463,12 @@ sparkforge analyze error-signatures --help
 
 [`sparkforge_analyze_cloudwatch_logs`](../tools/sparkforge_analyze_cloudwatch_logs.md), [`sparkforge_analyze_error_signatures`](../tools/sparkforge_analyze_error_signatures.md)
 
-## `sparkforge analyze event-driven`
+## `sparkforge-aws analyze event-driven`
 
 Extrai facts offline de EventBridge/Pipes, SQS e SNS.
 
 ```bash
-sparkforge analyze event-driven --help
+sparkforge-aws analyze event-driven --help
 ```
 
 ### Opções
@@ -486,12 +486,12 @@ sparkforge analyze event-driven --help
 
 [`sparkforge_analyze_event_driven`](../tools/sparkforge_analyze_event_driven.md)
 
-## `sparkforge analyze event-log`
+## `sparkforge-aws analyze event-log`
 
 Extrai facts de um Spark event log (.jsonl) ja coletado.
 
 ```bash
-sparkforge analyze event-log --help
+sparkforge-aws analyze event-log --help
 ```
 
 ### Opções
@@ -509,12 +509,12 @@ sparkforge analyze event-log --help
 
 [`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
 
-## `sparkforge analyze flink`
+## `sparkforge-aws analyze flink`
 
 Extrai facts offline de dumps Apache Flink ou Managed Flink.
 
 ```bash
-sparkforge analyze flink --help
+sparkforge-aws analyze flink --help
 ```
 
 ### Opções
@@ -533,12 +533,12 @@ sparkforge analyze flink --help
 
 [`sparkforge_analyze_flink`](../tools/sparkforge_analyze_flink.md)
 
-## `sparkforge analyze forge-lab`
+## `sparkforge-aws analyze forge-lab`
 
 Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.
 
 ```bash
-sparkforge analyze forge-lab --help
+sparkforge-aws analyze forge-lab --help
 ```
 
 ### Opções
@@ -552,12 +552,12 @@ sparkforge analyze forge-lab --help
 
 [`sparkforge_analyze_forge_lab`](../tools/sparkforge_analyze_forge_lab.md)
 
-## `sparkforge analyze glue-job-runs`
+## `sparkforge-aws analyze glue-job-runs`
 
 Extrai facts de historico do diretorio de artefatos de run Glue.
 
 ```bash
-sparkforge analyze glue-job-runs --help
+sparkforge-aws analyze glue-job-runs --help
 ```
 
 ### Opções
@@ -577,12 +577,12 @@ sparkforge analyze glue-job-runs --help
 
 [`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
 
-## `sparkforge analyze glue-resource-link`
+## `sparkforge-aws analyze glue-resource-link`
 
 Extrai a topologia do catalogo ja coletada: link, alvo e nome.
 
 ```bash
-sparkforge analyze glue-resource-link --help
+sparkforge-aws analyze glue-resource-link --help
 ```
 
 ### Opções
@@ -600,12 +600,12 @@ sparkforge analyze glue-resource-link --help
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
 
-## `sparkforge analyze glue-streaming`
+## `sparkforge-aws analyze glue-streaming`
 
 Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.
 
 ```bash
-sparkforge analyze glue-streaming --help
+sparkforge-aws analyze glue-streaming --help
 ```
 
 ### Opções
@@ -623,12 +623,12 @@ sparkforge analyze glue-streaming --help
 
 [`sparkforge_analyze_glue_streaming`](../tools/sparkforge_analyze_glue_streaming.md)
 
-## `sparkforge analyze graph`
+## `sparkforge-aws analyze graph`
 
 Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure.
 
 ```bash
-sparkforge analyze graph --help
+sparkforge-aws analyze graph --help
 ```
 
 ### Opções
@@ -646,12 +646,12 @@ sparkforge analyze graph --help
 
 [`sparkforge_analyze_graph`](../tools/sparkforge_analyze_graph.md)
 
-## `sparkforge analyze iam-access`
+## `sparkforge-aws analyze iam-access`
 
 Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.
 
 ```bash
-sparkforge analyze iam-access --help
+sparkforge-aws analyze iam-access --help
 ```
 
 ### Opções
@@ -669,12 +669,12 @@ sparkforge analyze iam-access --help
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
 
-## `sparkforge analyze iceberg`
+## `sparkforge-aws analyze iceberg`
 
 Extrai facts de um dump JSON das metadata tables Iceberg.
 
 ```bash
-sparkforge analyze iceberg --help
+sparkforge-aws analyze iceberg --help
 ```
 
 ### Opções
@@ -692,12 +692,12 @@ sparkforge analyze iceberg --help
 
 [`sparkforge_analyze_iceberg`](../tools/sparkforge_analyze_iceberg.md)
 
-## `sparkforge analyze lakeformation-grants`
+## `sparkforge-aws analyze lakeformation-grants`
 
 Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings).
 
 ```bash
-sparkforge analyze lakeformation-grants --help
+sparkforge-aws analyze lakeformation-grants --help
 ```
 
 ### Opções
@@ -715,12 +715,12 @@ sparkforge analyze lakeformation-grants --help
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
 
-## `sparkforge analyze lakehouse-catalog`
+## `sparkforge-aws analyze lakehouse-catalog`
 
 Analisa topologia declarada de catalogs, engines, tabelas e bindings.
 
 ```bash
-sparkforge analyze lakehouse-catalog --help
+sparkforge-aws analyze lakehouse-catalog --help
 ```
 
 ### Opções
@@ -734,12 +734,12 @@ sparkforge analyze lakehouse-catalog --help
 
 [`sparkforge_analyze_lakehouse_catalog`](../tools/sparkforge_analyze_lakehouse_catalog.md)
 
-## `sparkforge analyze orchestration`
+## `sparkforge-aws analyze orchestration`
 
 Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.
 
 ```bash
-sparkforge analyze orchestration --help
+sparkforge-aws analyze orchestration --help
 ```
 
 ### Opções
@@ -753,12 +753,12 @@ sparkforge analyze orchestration --help
 
 [`sparkforge_analyze_orchestration`](../tools/sparkforge_analyze_orchestration.md)
 
-## `sparkforge analyze parquet-footer`
+## `sparkforge-aws analyze parquet-footer`
 
 Extrai facts do FOOTER do Parquet ja coletado.
 
 ```bash
-sparkforge analyze parquet-footer --help
+sparkforge-aws analyze parquet-footer --help
 ```
 
 ### Opções
@@ -776,12 +776,12 @@ sparkforge analyze parquet-footer --help
 
 [`sparkforge_analyze_parquet_footer`](../tools/sparkforge_analyze_parquet_footer.md)
 
-## `sparkforge analyze plan`
+## `sparkforge-aws analyze plan`
 
 Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED).
 
 ```bash
-sparkforge analyze plan --help
+sparkforge-aws analyze plan --help
 ```
 
 ### Opções
@@ -799,12 +799,12 @@ sparkforge analyze plan --help
 
 [`sparkforge_analyze_plan`](../tools/sparkforge_analyze_plan.md)
 
-## `sparkforge analyze platform-ecosystem`
+## `sparkforge-aws analyze platform-ecosystem`
 
 Analisa serving, ingestion, AI Data Engineering e radar opcional.
 
 ```bash
-sparkforge analyze platform-ecosystem --help
+sparkforge-aws analyze platform-ecosystem --help
 ```
 
 ### Opções
@@ -818,12 +818,12 @@ sparkforge analyze platform-ecosystem --help
 
 [`sparkforge_analyze_platform_ecosystem`](../tools/sparkforge_analyze_platform_ecosystem.md)
 
-## `sparkforge analyze platform-graph`
+## `sparkforge-aws analyze platform-graph`
 
 Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.
 
 ```bash
-sparkforge analyze platform-graph --help
+sparkforge-aws analyze platform-graph --help
 ```
 
 ### Opções
@@ -842,12 +842,12 @@ sparkforge analyze platform-graph --help
 
 [`sparkforge_analyze_platform_graph`](../tools/sparkforge_analyze_platform_graph.md)
 
-## `sparkforge analyze pyspark`
+## `sparkforge-aws analyze pyspark`
 
 Extrai facts de PySpark via AST estatico (nunca importa o codigo).
 
 ```bash
-sparkforge analyze pyspark --help
+sparkforge-aws analyze pyspark --help
 ```
 
 ### Opções
@@ -865,12 +865,12 @@ sparkforge analyze pyspark --help
 
 [`sparkforge_analyze_pyspark`](../tools/sparkforge_analyze_pyspark.md)
 
-## `sparkforge analyze s3-listing`
+## `sparkforge-aws analyze s3-listing`
 
 Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel).
 
 ```bash
-sparkforge analyze s3-listing --help
+sparkforge-aws analyze s3-listing --help
 ```
 
 ### Opções
@@ -888,12 +888,12 @@ sparkforge analyze s3-listing --help
 
 [`sparkforge_analyze_s3_listing`](../tools/sparkforge_analyze_s3_listing.md)
 
-## `sparkforge analyze schema-registry`
+## `sparkforge-aws analyze schema-registry`
 
 Extrai facts offline de contratos e evolução de schemas.
 
 ```bash
-sparkforge analyze schema-registry --help
+sparkforge-aws analyze schema-registry --help
 ```
 
 ### Opções
@@ -911,12 +911,12 @@ sparkforge analyze schema-registry --help
 
 [`sparkforge_analyze_schema_registry`](../tools/sparkforge_analyze_schema_registry.md)
 
-## `sparkforge analyze sfn-history`
+## `sparkforge-aws analyze sfn-history`
 
 Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao.
 
 ```bash
-sparkforge analyze sfn-history --help
+sparkforge-aws analyze sfn-history --help
 ```
 
 ### Opções
@@ -934,12 +934,12 @@ sparkforge analyze sfn-history --help
 
 [`sparkforge_analyze_sfn_history`](../tools/sparkforge_analyze_sfn_history.md)
 
-## `sparkforge analyze sql`
+## `sparkforge-aws analyze sql`
 
 Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark.
 
 ```bash
-sparkforge analyze sql --help
+sparkforge-aws analyze sql --help
 ```
 
 ### Opções
@@ -958,12 +958,12 @@ sparkforge analyze sql --help
 
 [`sparkforge_analyze_sql`](../tools/sparkforge_analyze_sql.md)
 
-## `sparkforge analyze sql-metrics`
+## `sparkforge-aws analyze sql-metrics`
 
 Extrai metrica por no do plano de um Spark event log ja coletado.
 
 ```bash
-sparkforge analyze sql-metrics --help
+sparkforge-aws analyze sql-metrics --help
 ```
 
 ### Opções
@@ -981,12 +981,12 @@ sparkforge analyze sql-metrics --help
 
 [`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
 
-## `sparkforge analyze step-functions`
+## `sparkforge-aws analyze step-functions`
 
 Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao.
 
 ```bash
-sparkforge analyze step-functions --help
+sparkforge-aws analyze step-functions --help
 ```
 
 ### Opções
@@ -1004,12 +1004,12 @@ sparkforge analyze step-functions --help
 
 [`sparkforge_analyze_step_functions`](../tools/sparkforge_analyze_step_functions.md)
 
-## `sparkforge analyze streaming`
+## `sparkforge-aws analyze streaming`
 
 Extrai facts de fonte Structured Streaming ou StreamingQueryProgress.
 
 ```bash
-sparkforge analyze streaming --help
+sparkforge-aws analyze streaming --help
 ```
 
 ### Opções
@@ -1028,12 +1028,12 @@ sparkforge analyze streaming --help
 
 [`sparkforge_analyze_streaming`](../tools/sparkforge_analyze_streaming.md)
 
-## `sparkforge analyze streaming-composition`
+## `sparkforge-aws analyze streaming-composition`
 
 Compõe facts já extraídos de streaming, transporte e Iceberg.
 
 ```bash
-sparkforge analyze streaming-composition --help
+sparkforge-aws analyze streaming-composition --help
 ```
 
 ### Opções
@@ -1058,12 +1058,12 @@ sparkforge analyze streaming-composition --help
 
 [`sparkforge_analyze_streaming_composition`](../tools/sparkforge_analyze_streaming_composition.md)
 
-## `sparkforge analyze streaming-integrations`
+## `sparkforge-aws analyze streaming-integrations`
 
 Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.
 
 ```bash
-sparkforge analyze streaming-integrations --help
+sparkforge-aws analyze streaming-integrations --help
 ```
 
 ### Opções
@@ -1081,12 +1081,12 @@ sparkforge analyze streaming-integrations --help
 
 [`sparkforge_analyze_streaming_integrations`](../tools/sparkforge_analyze_streaming_integrations.md)
 
-## `sparkforge analyze streaming-ops`
+## `sparkforge-aws analyze streaming-ops`
 
 Extrai facts declarados de SLO, FinOps, segurança e serving streaming.
 
 ```bash
-sparkforge analyze streaming-ops --help
+sparkforge-aws analyze streaming-ops --help
 ```
 
 ### Opções
@@ -1104,12 +1104,12 @@ sparkforge analyze streaming-ops --help
 
 [`sparkforge_analyze_streaming_ops`](../tools/sparkforge_analyze_streaming_ops.md)
 
-## `sparkforge analyze terraform`
+## `sparkforge-aws analyze terraform`
 
 Extrai facts de blocos aws_glue_job em HCL Terraform.
 
 ```bash
-sparkforge analyze terraform --help
+sparkforge-aws analyze terraform --help
 ```
 
 ### Opções
@@ -1127,12 +1127,12 @@ sparkforge analyze terraform --help
 
 [`sparkforge_analyze_terraform`](../tools/sparkforge_analyze_terraform.md)
 
-## `sparkforge analyze terraform-diff`
+## `sparkforge-aws analyze terraform-diff`
 
 Compara dois estados de um modulo Terraform e marca o que mudou.
 
 ```bash
-sparkforge analyze terraform-diff --help
+sparkforge-aws analyze terraform-diff --help
 ```
 
 ### Opções
@@ -1151,12 +1151,12 @@ sparkforge analyze terraform-diff --help
 
 [`sparkforge_analyze_terraform_diff`](../tools/sparkforge_analyze_terraform_diff.md)
 
-## `sparkforge analyze transport`
+## `sparkforge-aws analyze transport`
 
 Extrai facts offline de dumps Kafka, MSK ou Kinesis.
 
 ```bash
-sparkforge analyze transport --help
+sparkforge-aws analyze transport --help
 ```
 
 ### Opções
@@ -1175,12 +1175,12 @@ sparkforge analyze transport --help
 
 [`sparkforge_analyze_transport`](../tools/sparkforge_analyze_transport.md)
 
-## `sparkforge analyze workload`
+## `sparkforge-aws analyze workload`
 
 Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem.
 
 ```bash
-sparkforge analyze workload --help
+sparkforge-aws analyze workload --help
 ```
 
 ### Opções

@@ -10,7 +10,7 @@ upstream:
 hypothesis_outcome: confirmed
 registries: [fixture_corpus_gates, reachability_lists, fixture_kind_coverage, sync_skills, agents_parity, snippet_measure, offline_manifest, sources_lock, surface_lock, generated_reference, status_numbers_gate]
 deviations:
-  - "A superfície reutiliza sparkforge analyze flink --artifact flink; não foi criada tool ou collector novo."
+  - "A superfície reutiliza sparkforge-aws analyze flink --artifact flink; não foi criada tool ou collector novo."
   - "A suíte completa não foi executada; validação ficou restrita a testes focados, coleta de testes e gates do feature."
 ---
 
@@ -40,7 +40,7 @@ causalidade, throughput ou validação funcional.
 - `python scripts/check_status_numbers.py --strict` — exit 0, 0 divergências.
 - `python scripts/refresh_knowledge.py --check --offline` — exit 0, 340 fontes.
 - `python scripts/verify_offline_bundle.py --check` — exit 0, 69/69.
-- `sparkforge sdd check --repo . --feature STREAMING_FLINK_TEMPORAL_METRICS` — exit 0.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_FLINK_TEMPORAL_METRICS` — exit 0.
 - `git diff --check` — exit 0.
 
 ## Limites

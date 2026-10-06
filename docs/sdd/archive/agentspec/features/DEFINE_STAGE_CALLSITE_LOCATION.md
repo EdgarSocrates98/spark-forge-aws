@@ -102,7 +102,7 @@ O `report github` recusa como `runtime` todo finding de stage, mesmo quando o ev
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/reporting/locate.py`, `sparkforge/reporting/github.py`, `fixtures/sarif/` (3 casos), `scripts/regen_fixtures.py` (so se os casos precisarem), `.github/workflows/ci.yml` | Branch empilhado sobre o PR #50 |
+| **Deployment Location** | `sparkforge_aws/reporting/locate.py`, `sparkforge_aws/reporting/github.py`, `fixtures/sarif/` (3 casos), `scripts/regen_fixtures.py` (so se os casos precisarem), `.github/workflows/ci.yml` | Branch empilhado sobre o PR #50 |
 | **KB Domains** | Spark event log (stage name, callsite), testing (golden em pares), SARIF | — |
 | **IaC Impact** | Modify existing (`ci.yml`, um item de matriz) | — |
 

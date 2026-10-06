@@ -402,7 +402,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -419,14 +419,14 @@
     "measures": {},
     "attrs": {
       "key": "script_location",
-      "value": "s3://sparkforge-demo/scripts/etl_sdk.py",
+      "value": "s3://sparkforge-aws-demo/scripts/etl_sdk.py",
       "present": true,
       "literal": true,
       "block": "command"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -450,7 +450,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -467,14 +467,14 @@
     "measures": {},
     "attrs": {
       "key": "--extra-jars",
-      "value": "s3://sparkforge-demo/jars/conector-interno-1.4.0.jar",
+      "value": "s3://sparkforge-aws-demo/jars/conector-interno-1.4.0.jar",
       "present": true,
       "literal": true,
       "block": "default_arguments"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -498,7 +498,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -522,7 +522,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -546,7 +546,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -563,14 +563,14 @@
     "measures": {},
     "attrs": {
       "key": "--spark-event-logs-path",
-      "value": "s3://sparkforge-demo/spark-logs/",
+      "value": "s3://sparkforge-aws-demo/spark-logs/",
       "present": true,
       "literal": true,
       "block": "default_arguments"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -594,7 +594,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -611,14 +611,14 @@
     "measures": {},
     "attrs": {
       "key": "--TempDir",
-      "value": "s3://sparkforge-demo/temp/",
+      "value": "s3://sparkforge-aws-demo/temp/",
       "present": true,
       "literal": true,
       "block": "default_arguments"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -644,7 +644,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -668,7 +668,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -692,7 +692,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -716,7 +716,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -742,7 +742,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -768,7 +768,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -794,7 +794,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -818,7 +818,7 @@
     "attrs": {},
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -836,7 +836,7 @@
     "attrs": {},
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -859,7 +859,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "83c9ee43d7164a3dfda79c2e82e317e79119dbadb5b8be409b4913fc3a13f45d",
+      "artifact_sha256": "e7ff1d521dff87b61ce0aa049443ab90c644eae6560d2b23f88ce9319682875d",
       "extractor": "terraform@0.1.0"
     }
   },

@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.observability.agentops import (
+from sparkforge_aws.observability.agentops import (
     critical_path,
     inspect_run,
     run_timeline,
 )
-from sparkforge.observability.store import SQLiteTraceStore
-from sparkforge.observability.tracer import ExecutionTrace, TraceSpan
+from sparkforge_aws.observability.store import SQLiteTraceStore
+from sparkforge_aws.observability.tracer import ExecutionTrace, TraceSpan
 
 
 def _trace(run_id: str, spans: list[TraceSpan]) -> ExecutionTrace:

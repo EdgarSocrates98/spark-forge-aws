@@ -60,7 +60,7 @@ salto por eles está pagando uma migração por algo que já tinha.
 Checagem automatizada: nenhuma para preço, nenhuma para performance. A separação entre
 feature da spec e suporte da engine é consultável como dado —
 `knowledge/storage/iceberg-feature-support.yaml`, carregado por
-`sparkforge/storage/feature_support.py`.
+`sparkforge_aws/storage/feature_support.py`.
 
 ## 3. O que eu arrisco?
 

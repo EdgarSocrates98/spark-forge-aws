@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.lakeformation_grants import (
+from sparkforge_aws.facts.lakeformation_grants import (
     EMITTED_KINDS,
     extract_lakeformation_path,
 )

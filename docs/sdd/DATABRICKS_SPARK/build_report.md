@@ -149,7 +149,7 @@ change_id: null
 - **T5, `test_rules_engine` não alarmou.** O alarme vigia `blocked_on` do catálogo,
   e SF-ENV-006 não tem; não houve decisão a registrar.
 - **T5, enum MCP de motivo de pulo.** `_JUDGE_SKIPPED_ITEM.reason` em
-  `sparkforge/adapters/tools.py` não conhece `databricks.photon.unresolved`; entra em
+  `sparkforge_aws/adapters/tools.py` não conhece `databricks.photon.unresolved`; entra em
   T9, junto da flag que o torna alcançável pelo MCP.
 - **T5, citação do comentário do engine.** O plano citava `runtime-matrix.md` seção 3
   para o fallback por operação, e ela não o diz; o comentário passou a citar a

@@ -17,9 +17,9 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
-from sparkforge.case.store import SCHEMA_VERSION, save_case
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "receipt"

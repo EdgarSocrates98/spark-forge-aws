@@ -2,12 +2,12 @@
 
 # Skill `iceberg-v3-readiness`
 
-Use quando alguém pergunta \"posso subir essa tabela para Iceberg format v3?\", \"o Athena lê v3?\", \"vale a pena o VARIANT / os deletion vectors / o row lineage?\" ou quando uma query em Athena passou a falhar com `Cannot read unsupported version 3` depois de uma migração de runtime. Use antes de qualquer recomendação de mudar `format-version`. Se você está prestes a responder de memória o que cada engine suporta, rode `sparkforge iceberg assess-upgrade dir --from 2 --to 3` — a matriz de suporte tem uma célula por par engine/feature, cada uma com fonte, e a maioria é `UNKNOWN`, que é o resultado honesto e não uma lacuna a preencher por inferência.
+Use quando alguém pergunta \"posso subir essa tabela para Iceberg format v3?\", \"o Athena lê v3?\", \"vale a pena o VARIANT / os deletion vectors / o row lineage?\" ou quando uma query em Athena passou a falhar com `Cannot read unsupported version 3` depois de uma migração de runtime. Use antes de qualquer recomendação de mudar `format-version`. Se você está prestes a responder de memória o que cada engine suporta, rode `sparkforge-aws iceberg assess-upgrade dir --from 2 --to 3` — a matriz de suporte tem uma célula por par engine/feature, cada uma com fonte, e a maioria é `UNKNOWN`, que é o resultado honesto e não uma lacuna a preencher por inferência.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/iceberg-v3-readiness/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/storage/iceberg-performance.md', '../../knowledge/storage/iceberg-catalog.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge iceberg assess-upgrade']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/storage/iceberg-performance.md', '../../knowledge/storage/iceberg-catalog.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws iceberg assess-upgrade']} |
 
 ## Procedimento (texto integral)
 
@@ -21,7 +21,7 @@ Subir o format version é **decisão de ida**. O modo de falha é perverso: o jo
 
 **Suporte da engine** é o que cada motor executa. Nunca se infere "o Iceberg suporta, logo o Athena suporta" — nem na direção negativa. A fonte que diz que o Athena não lê uma tabela v3 fala do **formato da tabela**, não de cada feature; estender a frase preencheria células a partir de uma fonte que não fala delas.
 
-`sparkforge/storage/feature_support.py` grava essa regra em código: célula afirmativa sem `source`, `source_type` e `retrieved` faz o carregador estourar na carga.
+`sparkforge_aws/storage/feature_support.py` grava essa regra em código: célula afirmativa sem `source`, `source_type` e `retrieved` faz o carregador estourar na carga.
 
 ### Procedimento
 
@@ -52,7 +52,7 @@ A resposta é **por família de release**. A fonte declara que `emr-7.7.0-java8-
 
 Lake Formation, S3, KMS e Glue Catalog são camadas **separadas**. Duas combinações estão confirmadas por fonte: FGAC não é suportado com coluna `VARIANT`, e Lake Formation **não gerencia permissão** para `VACUUM`, `MERGE`, `UPDATE` ou `OPTIMIZE` em tabela Iceberg. Duas ficam `UNKNOWN` e continuam `UNKNOWN`: `v3 × FGAC` e `REST Catalog × Lake Formation`. Permissão IAM concedida não é prova de que o dado chega.
 
-2. `sparkforge iceberg assess-upgrade <dir> --from 2 --to 3`
+2. `sparkforge-aws iceberg assess-upgrade <dir> --from 2 --to 3`
 
 3. Leia o veredito **e as células**. O veredito sem elas seria uma palavra que ninguém consegue conferir.
 
@@ -101,7 +101,7 @@ Esta skill trata **prontidão Iceberg v3 por runtime, engine e consumidores**. C
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge iceberg assess-upgrade`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws iceberg assess-upgrade`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

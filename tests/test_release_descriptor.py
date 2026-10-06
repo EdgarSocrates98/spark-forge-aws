@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.migration import release_descriptor as rd
+from sparkforge_aws.migration import release_descriptor as rd
 
 # Contagem MEDIDA das quatro matrizes em 2026-08-31. Nao e alvo: e o numero
 # que `knowledge/<plataforma>/runtime-matrix.yaml` carrega hoje, e ele muda
@@ -183,7 +183,7 @@ class TestChavesReservadasNaoSaoComponente:
 
 class TestVocabularioBateComOsDados:
     def test_o_publicado_por_plataforma_cobre_o_que_o_yaml_traz(self):
-        from sparkforge.facts import runtime_matrix as rm
+        from sparkforge_aws.facts import runtime_matrix as rm
 
         medido = {
             "glue": rm.load(),

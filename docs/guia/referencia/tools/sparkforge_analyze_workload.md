@@ -20,7 +20,7 @@ Extrai facts do inventario DECLARADO de workload (`workload.yaml`, versionado co
 
 ## Na CLI
 
-[`sparkforge analyze workload`](../cli/analyze.md)
+[`sparkforge-aws analyze workload`](../cli/analyze.md)
 
 ## Capacidade
 

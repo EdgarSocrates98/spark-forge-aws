@@ -23,7 +23,7 @@ proves: >
   `yarn-site` com as DUAS propriedades de node label no nivel cluster
   (`yarn.node-labels.enabled=true` e
   `yarn.node-labels.am.default-node-label-expression=CORE`), que faz
-  `sparkforge/facts/emr_cluster.py::_am_node_label_facts` emitir
+  `sparkforge_aws/facts/emr_cluster.py::_am_node_label_facts` emitir
   `emr.yarn.am_node_label` e o `absent:` da regra falhar. Sem esse fact a regra
   nao poderia existir: o motor so sabe `absent: <kind>`, sem `where` negado e
   sem `absent` filtrado por atributo, entao ela acusaria em P1 todo cluster

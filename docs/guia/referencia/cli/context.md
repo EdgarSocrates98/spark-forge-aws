@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge context`
+# `sparkforge-aws context`
 
 Descobre capabilities e empacota contexto deterministico sob limite explicito.
 
@@ -8,16 +8,16 @@ Descobre capabilities e empacota contexto deterministico sob limite explicito.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge context expand`](#sparkforge-context-expand) | Expande uma referencia ctx://v1 sob budget. |
-| [`sparkforge context inspect`](#sparkforge-context-inspect) | Inspeciona qualidade de contexto sem inferir tokens por bytes. |
-| [`sparkforge context start`](#sparkforge-context-start) | Inicia descoberta, selecao, reducao e materializacao de contexto. |
+| [`sparkforge-aws context expand`](#sparkforge-aws-context-expand) | Expande uma referencia ctx://v1 sob budget. |
+| [`sparkforge-aws context inspect`](#sparkforge-aws-context-inspect) | Inspeciona qualidade de contexto sem inferir tokens por bytes. |
+| [`sparkforge-aws context start`](#sparkforge-aws-context-start) | Inicia descoberta, selecao, reducao e materializacao de contexto. |
 
-## `sparkforge context expand`
+## `sparkforge-aws context expand`
 
 Expande uma referencia ctx://v1 sob budget.
 
 ```bash
-sparkforge context expand --help
+sparkforge-aws context expand --help
 ```
 
 ### Opções
@@ -32,12 +32,12 @@ sparkforge context expand --help
 
 [`sparkforge_context_expand`](../tools/sparkforge_context_expand.md), [`sparkforge_context_start`](../tools/sparkforge_context_start.md)
 
-## `sparkforge context inspect`
+## `sparkforge-aws context inspect`
 
 Inspeciona qualidade de contexto sem inferir tokens por bytes.
 
 ```bash
-sparkforge context inspect --help
+sparkforge-aws context inspect --help
 ```
 
 ### Opções
@@ -51,12 +51,12 @@ sparkforge context inspect --help
 
 [`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
-## `sparkforge context start`
+## `sparkforge-aws context start`
 
 Inicia descoberta, selecao, reducao e materializacao de contexto.
 
 ```bash
-sparkforge context start --help
+sparkforge-aws context start --help
 ```
 
 ### Opções

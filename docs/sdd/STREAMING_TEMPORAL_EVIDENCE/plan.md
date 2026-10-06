@@ -9,11 +9,11 @@ upstream:
   sha256: "d4eb9e8beba61a4ca8bf118bf8c2399fcd77e6885fb2bb1e572c73cca3f5556f"
 tasks:
   - id: T1
-    files: [tests/test_facts_streaming_temporal.py, sparkforge/facts/streaming_temporal.py]
+    files: [tests/test_facts_streaming_temporal.py, sparkforge_aws/facts/streaming_temporal.py]
     covers: [AC1, AC2]
     test: {path: tests/test_facts_streaming_temporal.py, name: test_temporal_pairing_preserves_source_ids_and_skew}
   - id: T2
-    files: [tests/test_facts_transport.py, sparkforge/facts/transport.py]
+    files: [tests/test_facts_transport.py, sparkforge_aws/facts/transport.py]
     covers: [AC3]
     test: {path: tests/test_facts_transport.py, name: test_transport_preserves_observed_timestamp}
   - id: T3
@@ -21,7 +21,7 @@ tasks:
     covers: [AC4]
     test: {path: tests/test_streaming_rules.py, name: test_temporal_rule_requires_paired_observations}
   - id: T4
-    files: [sparkforge/facts/streaming_composition.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_analyze_streaming_composition.py]
+    files: [sparkforge_aws/facts/streaming_composition.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_analyze_streaming_composition.py]
     covers: [AC6]
     test: {path: tests/test_analyze_streaming_composition.py, name: test_temporal_cli_and_mcp_envelopes_match}
   - id: T5

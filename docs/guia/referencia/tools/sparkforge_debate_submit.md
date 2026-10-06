@@ -18,7 +18,7 @@ Submete o turno do lado da vez, INLINE em `submission`, no schema que o brief pu
 
 ## Na CLI
 
-[`sparkforge debate next`](../cli/debate.md), [`sparkforge debate start`](../cli/debate.md), [`sparkforge debate submit`](../cli/debate.md)
+[`sparkforge-aws debate next`](../cli/debate.md), [`sparkforge-aws debate start`](../cli/debate.md), [`sparkforge-aws debate submit`](../cli/debate.md)
 
 ## Capacidade
 

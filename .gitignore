@@ -27,7 +27,7 @@ node_modules/
 # commitados: são o barramento de handoff entre Devin e Claude Code, e são pequenos
 # e derivados. Artefato bruto NÃO é commitado: pode ter dado de negócio e centenas
 # de MB. O manifest registra sha256, origem e comando de recoleta.
-# Ver docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md §8.1
+# Ver docs/superpowers/specs/2026-07-29-sparkforge-aws-fase0-design.md §8.1
 .sparkforge/artifacts/*
 !.sparkforge/artifacts/manifest.json
 
@@ -49,7 +49,7 @@ node_modules/
 # Pacotes do `change propose` (§15 L3): patch, corpo e recibo de um PR que o
 # host ainda vai abrir. Derivados do sandbox, e recriados a cada execucao.
 .sparkforge/proposal/
-# Quarentena da cauda cortada por uma queda (`sparkforge.durable.append_line`):
+# Quarentena da cauda cortada por uma queda (`sparkforge_aws.durable.append_line`):
 # evidencia local do que a queda interrompeu, nunca estado do case.
 **/.sparkforge/**/*.torn
 # Journal da raiz: num repositorio de operador ele e a trilha do case; aqui ele so

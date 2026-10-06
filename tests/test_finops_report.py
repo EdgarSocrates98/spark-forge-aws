@@ -1,8 +1,8 @@
 """Testes do relatorio financeiro."""
 from __future__ import annotations
 
-from sparkforge.findings.models import Fact
-from sparkforge.finops import build_finops_report
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.finops import build_finops_report
 
 
 def _run(run_id, segundos, workers, dpu, worker="G.2X", state="SUCCEEDED"):
@@ -189,7 +189,7 @@ class TestSintomas:
 
 class TestAlavanca:
     def _finding(self, rule_id):
-        from sparkforge.findings.models import Finding
+        from sparkforge_aws.findings.models import Finding
 
         return Finding(
             rule_id=rule_id,

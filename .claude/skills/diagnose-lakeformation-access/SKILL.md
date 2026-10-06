@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze terraform
-  - sparkforge judge
-  - sparkforge root-cause
+  - sparkforge-aws analyze terraform
+  - sparkforge-aws judge
+  - sparkforge-aws root-cause
 ---
 
 # Diagnosticar acesso sob Lake Formation
@@ -42,8 +42,8 @@ produz achados verdadeiros sobre a pergunta errada.
 ### Passo 1 — o que o JOB declara (sem AWS, sem credencial)
 
 ```bash
-sparkforge analyze terraform --path infra/ --out .sparkforge/facts_tf.json
-sparkforge judge --facts .sparkforge/facts_tf.json --show-skipped
+sparkforge-aws analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+sparkforge-aws judge --facts .sparkforge/facts_tf.json --show-skipped
 ```
 
 **`--show-skipped` não é opcional aqui.** Sem ele, "nenhum achado" e "não
@@ -56,7 +56,7 @@ chegam nos passos 2 e 3. O que a saída mostra:
 - `reason: runtime_scope` — a regra não se aplica a este runtime, e coletar mais
   não muda isso.
 
-Para ler as duas metades juntas, `sparkforge root-cause --facts
+Para ler as duas metades juntas, `sparkforge-aws root-cause --facts
 .sparkforge/facts_tf.json` ordena os achados por consequência declarada e
 publica a lacuna com **o módulo que emite cada kind que falta**.
 
@@ -77,10 +77,10 @@ Glue 4.0.
 ### Passo 2 — o que a TABELA e a CONTA respondem
 
 ```bash
-sparkforge collect lakeformation --repo . --database <db> --table <t> \
+sparkforge-aws collect lakeformation --repo . --database <db> --table <t> \
     --catalog-id <conta-dona-do-catalogo> \
     --resource-arn <localizacao-s3-da-tabela> --now <ISO8601>
-sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ \
+sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ \
     --out .sparkforge/facts_lf.json
 ```
 
@@ -98,10 +98,10 @@ contas diferentes, e sem ele as duas coletas se sobrescrevem no manifesto.
 ### Passo 3 — o que o IAM decide, **simulado**
 
 ```bash
-sparkforge collect iam-access --repo . --role-arn <runtime-role> \
+sparkforge-aws collect iam-access --repo . --role-arn <runtime-role> \
     --resource-arn <arn-do-alvo> \
     --action s3:PutObject --action kms:GenerateDataKey --now <ISO8601>
-sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/ \
+sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/ \
     --out .sparkforge/facts_iam.json
 ```
 
@@ -122,9 +122,9 @@ sobre `*` não é `allowed` naquele recurso.
 ### Passo 4 — a mensagem exata
 
 ```bash
-sparkforge collect cloudwatch-logs --repo . --job-name <job> --job-run <run> \
+sparkforge-aws collect cloudwatch-logs --repo . --job-name <job> --job-run <run> \
     --log-group /aws-glue/jobs/error --start <ISO8601> --end <ISO8601> --now <ISO8601>
-sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/
 ```
 
 | Assinatura | Regra |
@@ -137,18 +137,18 @@ sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/
 
 **Para `SF-LF-011` nomear a permissão que falta**, a assinatura precisa encontrar,
 na mesma fusão, a operação do código e a medida do lado dela. Colete
-`sparkforge collect lakeformation` (passo 2: grant e registro da localização) e,
-se a escrita é sob FGAC, `sparkforge collect iam-access --role-arn <runtime-role>
+`sparkforge-aws collect lakeformation` (passo 2: grant e registro da localização) e,
+se a escrita é sob FGAC, `sparkforge-aws collect iam-access --role-arn <runtime-role>
 --resource-arn <localizacao>/* --action s3:PutObject --action s3:DeleteObject`
 (append e overwrite exigem as duas: a fonte não separa um do outro; `s3:ListBucket`
 e KMS o fact não confere, e diz isso em `unchecked`). Depois:
 
 ```bash
-sparkforge analyze pyspark --path jobs/ --out .sparkforge/facts_code.json
-sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_logs.json
-sparkforge analyze error-signatures --facts .sparkforge/facts_logs.json     --out .sparkforge/facts_err.json
-sparkforge fuse --facts .sparkforge/facts_code.json --facts .sparkforge/facts_tf.json     --facts .sparkforge/facts_lf.json --facts .sparkforge/facts_iam.json     --facts .sparkforge/facts_err.json --out .sparkforge/facts_fused.json
-sparkforge judge --facts .sparkforge/facts_fused.json --show-skipped
+sparkforge-aws analyze pyspark --path jobs/ --out .sparkforge/facts_code.json
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_logs.json
+sparkforge-aws analyze error-signatures --facts .sparkforge/facts_logs.json     --out .sparkforge/facts_err.json
+sparkforge-aws fuse --facts .sparkforge/facts_code.json --facts .sparkforge/facts_tf.json     --facts .sparkforge/facts_lf.json --facts .sparkforge/facts_iam.json     --facts .sparkforge/facts_err.json --out .sparkforge/facts_fused.json
+sparkforge-aws judge --facts .sparkforge/facts_fused.json --show-skipped
 ```
 
 `facts_code.json` sai do primeiro comando (`--path` é o arquivo ou diretório do
@@ -207,12 +207,12 @@ sessão.
 
 | Pergunta | Comando |
 |---|---|
-| este runtime escreve sob FGAC? | `sparkforge lakeformation matrix --runtime 5.1 --axis fgac_spark_native_write` |
-| o que o job declara? | `sparkforge analyze terraform --path infra/ --out F && sparkforge judge --facts F --show-skipped` |
-| por onde começo, e o que falta coletar? | `sparkforge root-cause --facts F` |
-| qual permissão a tabela tem? | `sparkforge collect lakeformation --database D --table T --catalog-id A --resource-arn ARN --now ISO` |
-| qual camada do IAM negou? | `sparkforge collect iam-access --role-arn R --action A --resource-arn ARN --now ISO` |
-| qual é o limiar e a fonte desta regra? | `sparkforge rules_lookup --id SF-LF-009` |
+| este runtime escreve sob FGAC? | `sparkforge-aws lakeformation matrix --runtime 5.1 --axis fgac_spark_native_write` |
+| o que o job declara? | `sparkforge-aws analyze terraform --path infra/ --out F && sparkforge-aws judge --facts F --show-skipped` |
+| por onde começo, e o que falta coletar? | `sparkforge-aws root-cause --facts F` |
+| qual permissão a tabela tem? | `sparkforge-aws collect lakeformation --database D --table T --catalog-id A --resource-arn ARN --now ISO` |
+| qual camada do IAM negou? | `sparkforge-aws collect iam-access --role-arn R --action A --resource-arn ARN --now ISO` |
+| qual é o limiar e a fonte desta regra? | `sparkforge-aws rules_lookup --id SF-LF-009` |
 
 ### O runtime que o julgamento usou, e de onde ele veio
 
@@ -233,7 +233,7 @@ desta área:
 
 Sem `--glue` na linha de comando o contexto é inferido dos facts, e é por isso
 que os dois campos importam mais aqui que em outras áreas: o eixo de versão de
-Lake Formation (`sparkforge lakeformation matrix`) tem três colunas, e escolher
+Lake Formation (`sparkforge-aws lakeformation matrix`) tem três colunas, e escolher
 a errada produz um achado verdadeiro sobre o runtime errado.
 
 ## Quando NÃO usar
@@ -252,7 +252,7 @@ Esta skill trata **diagnóstico de autorização Lake Formation/IAM**. Contrato 
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze terraform`, `sparkforge judge`, `sparkforge root-cause`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze terraform`, `sparkforge-aws judge`, `sparkforge-aws root-cause`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

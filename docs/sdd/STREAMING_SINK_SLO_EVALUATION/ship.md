@@ -59,7 +59,7 @@ determinístico e fail-closed.
 - offline expansion, referências e surface: 16 passed.
 - aceitação CLI/MCP + cobertura sink: 2 passed.
 - checks de skills, referências, surface lock, status numbers e offline bundle: verdes.
-- `sparkforge sdd check --repo . --feature STREAMING_SINK_SLO_EVALUATION`: verde.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_SINK_SLO_EVALUATION`: verde.
 
 ## Limites e próximos desbloqueios
 

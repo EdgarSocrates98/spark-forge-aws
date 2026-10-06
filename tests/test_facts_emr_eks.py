@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts.emr_eks import (
+from sparkforge_aws.facts.emr_eks import (
     EMITTED_KINDS,
     extract_emr_eks,
     extract_emr_eks_path,

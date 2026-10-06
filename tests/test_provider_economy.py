@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.economy.provider_cost import provider_cost
+from sparkforge_aws.economy.provider_cost import provider_cost
 
 
 def _transcript(path: Path) -> None:

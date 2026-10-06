@@ -25,13 +25,13 @@ from typing import Any
 
 import pytest
 
-from sparkforge.agentic.executor.authority import load_authority_map
-from sparkforge.agentic.executor.claims import (
+from sparkforge_aws.agentic.executor.authority import load_authority_map
+from sparkforge_aws.agentic.executor.claims import (
     claims_from_findings,
     confidence_for,
     standing_for_finding,
 )
-from sparkforge.agentic.models import ClaimType, EvidenceAuthority
+from sparkforge_aws.agentic.models import ClaimType, EvidenceAuthority
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures" / "waste" / "folga_medida_sem_skew" / "expected"

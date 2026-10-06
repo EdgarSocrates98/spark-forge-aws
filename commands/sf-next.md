@@ -9,11 +9,11 @@ repositório.
 Rode:
 
 ```
-sparkforge next-step --repo <raiz-do-repo> [--findings <arquivo-de-findings.json>]
+sparkforge-aws next-step --repo <raiz-do-repo> [--findings <arquivo-de-findings.json>]
 ```
 
 Passe `--findings` se já existir um `findings.json` desta investigação (gerado por
-`sparkforge judge --out findings.json`) — a rota pode depender de quais achados já
+`sparkforge-aws judge --out findings.json`) — a rota pode depender de quais achados já
 existem (por exemplo, `SF-PY-004` presente muda a recomendação).
 
 ## Regras de leitura do resultado

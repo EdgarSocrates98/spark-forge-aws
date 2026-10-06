@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_schema_registry
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.collect import schema_registry
-from sparkforge.collect.base import load_manifest
+from sparkforge_aws.adapters._core import analyze_schema_registry
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.collect import schema_registry
+from sparkforge_aws.collect.base import load_manifest
 
 
 class FakeGlueSchemaRegistry:
@@ -124,7 +124,7 @@ def test_collector_cache_is_offline_and_manifested(monkeypatch, tmp_path):
     assert second == first
     manifest = load_manifest(tmp_path)
     assert manifest[0]["kind"] == "schema_registry"
-    assert manifest[0]["collect_command"].startswith("sparkforge collect schema-registry")
+    assert manifest[0]["collect_command"].startswith("sparkforge-aws collect schema-registry")
 
 
 def test_cli_and_mcp_schema_registry_collection_match(monkeypatch, tmp_path, capsys):

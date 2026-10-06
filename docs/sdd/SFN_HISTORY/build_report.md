@@ -61,7 +61,7 @@ subagentes relataram (`090139d3`, `94f361e7`, `e9d317c4`) não existem mais.
 
 | tarefa | commit | o que entregou |
 |---|---|---|
-| T1 | `199aeed5` | o extrator `sparkforge/facts/sfn_history.py` e os facts `sfn.*` |
+| T1 | `199aeed5` | o extrator `sparkforge_aws/facts/sfn_history.py` e os facts `sfn.*` |
 | T2 | `0f375285` | o verbo `analyze sfn-history`, a tool MCP e os registros de superfície |
 | T3 | `4669c422` | a área SF-SFNX, a derivação em `fuse`, a rota AGENT-088 e 10 fixtures |
 | T4 | `08e6a1bc` | o documento de conhecimento, o guia de uso e os números |
@@ -145,7 +145,7 @@ destrava.
 5. **Uma fixture a mais que o plano previa**: `task_timed_out_sem_submissao`, a negativa
    que a correção da SF-SFNX-002 exigiu. São 11 no corpus, não 10.
 6. **Três arquivos fora do manifesto**, todos pela renomeação de `read_event_count`:
-   `docs/guia/usos/step-functions.md`, `sparkforge/adapters/tools.py` (a description da
+   `docs/guia/usos/step-functions.md`, `sparkforge_aws/adapters/tools.py` (a description da
    tool) e a página gerada dela.
 7. **O `define.md` não foi editado**, e o AC1 dele ainda diz "contagem de eventos". Editar
    o frontmatter agora cascatearia o `sha256` de `upstream` para todas as fases abaixo.

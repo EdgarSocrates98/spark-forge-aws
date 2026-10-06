@@ -1,6 +1,6 @@
-from sparkforge.facts import migration
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts import migration
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 SPARK_4 = {"glue": "6.0", "spark": "4.1.1", "python": "3.13"}
 SPARK_35 = {"glue": "5.1", "spark": "3.5.6", "python": "3.11"}
@@ -51,7 +51,7 @@ class TestApiRemovidaNaoAcusaCodigoPythonComum:
         """A observacao nao some: o extrator viu um `.append(` e diz isso. Quem
         decide que aquilo nao e o problema e a regra, nao o extrator -- tirar o
         fact criaria falso negativo silencioso."""
-        from sparkforge.facts import migration
+        from sparkforge_aws.facts import migration
 
         (tmp_path / "job.py").write_text("acc = []\nacc.append(1)\n", encoding="utf-8")
         facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)

@@ -128,13 +128,13 @@ Tudo o que uma regra cobra, mais três coisas que só a área cobra:
 | `test_rule_scope_by_nature` | a área não pode sumir inteira de um runtime | ver a seção de `runtime_scope` acima: é o modo de falha específico da área nova, e não aparece em nenhuma das listas mantidas à mão |
 
 E a decisão que vem antes dos gates: **uma área ou várias?** O eixo do contrato de migração
-é derivado da área (`sparkforge/findings/models.py:area_of`), e um achado move um eixo só.
+é derivado da área (`sparkforge_aws/findings/models.py:area_of`), e um achado move um eixo só.
 Três eixos distintos numa área só os deixaria empatados no mesmo balde — foi por isso que
 `SF-KMS`, `SF-NET` e `SF-XACC` nasceram separadas em vez de uma `SF-PLAT`.
 
 ## Acrescentar ou alterar um EXTRATOR de facts
 
-`sparkforge/facts/*.py`
+`sparkforge_aws/facts/*.py`
 
 ```
 python -m pytest tests/test_rules_catalog_reachability.py \
@@ -150,8 +150,8 @@ kind declarado e nunca emitido torna inalcançável qualquer regra que dependa d
 os outros não têm: ele precisa ser **chamado por alguém**. Um módulo com `EMITTED_KINDS`
 correto e nenhuma chamada emite zero facts em produção e passa nos dois testes acima, porque
 os dois leem o módulo e não o pipeline. Os pontos de chamada existentes são `fuse()`
-(`sparkforge/facts/fusion.py`), um verbo próprio sob `analyze` em
-`sparkforge/adapters/_core.py`, e o `_extract`/`_derive` de cada
+(`sparkforge_aws/facts/fusion.py`), um verbo próprio sob `analyze` em
+`sparkforge_aws/adapters/_core.py`, e o `_extract`/`_derive` de cada
 `tests/test_fixtures_golden_*.py` com o `regen_*` correspondente em
 `scripts/regen_fixtures.py`. **O runner do golden e o `regen_*` são um par**: se um deriva e o
 outro não, o golden nunca fecha.
@@ -160,10 +160,10 @@ outro não, o golden nunca fecha.
 igualdade (`where`) e seis comparadores (`expr`) — sem `startswith`, sem `in`, sem chamada de
 função, e `ast.Call` levanta `ExprError` por desenho de segurança. Predicado que precise de
 mais do que isso — "o nome do catálogo dentro da chave de conf é o session catalog?" — se
-resolve **derivando um fact**, nunca afrouxando `sparkforge/rules/expr.py`. Precedente medido:
-`sparkforge/facts/lakeformation.py`, 2026-09-09.
+resolve **derivando um fact**, nunca afrouxando `sparkforge_aws/rules/expr.py`. Precedente medido:
+`sparkforge_aws/facts/lakeformation.py`, 2026-09-09.
 
-## Mexer no funil de contexto (`sparkforge/codeintel/context.py`, `ranking.py`, `budget.py`)
+## Mexer no funil de contexto (`sparkforge_aws/codeintel/context.py`, `ranking.py`, `budget.py`)
 
 ```
 python scripts/check_recall_economy.py
@@ -252,7 +252,7 @@ python scripts/verify_offline_bundle.py
 `knowledge/offline-manifest.json` guarda o `sha256` de cada documento. Editar o `.md`
 sem regravar o hash reprova o bundle inteiro.
 
-Para regravar, use `sparkforge.tools.offline._content_sha256` — a docstring dela pede
+Para regravar, use `sparkforge_aws.tools.offline._content_sha256` — a docstring dela pede
 isso explicitamente: *"hash calculado de um jeito e conferido de outro e o defeito que
 o gate existe para pegar."* Ela remove todo `CR` em vez de traduzir `CRLF`, porque um
 manifesto gravado no Windows já reprovou os 43 documentos no Linux.
@@ -325,7 +325,7 @@ componente em disputa tem que ser decisão consciente de quem editou a matriz.
 Registrados aqui porque uma regra nova que leia `default_arguments` herda os dois sem
 perceber, e o sintoma é silêncio.
 
-- **`non_overridable_arguments` é ignorado inteiro.** `sparkforge/facts/terraform.py` não
+- **`non_overridable_arguments` é ignorado inteiro.** `sparkforge_aws/facts/terraform.py` não
   emite fact nenhum para esse bloco. Um `aws_glue_job` que forneça argumento por ali é
   invisível para toda regra que lê `default_arguments` — hoje `SF-LF-001`, `SF-GLUE-002` e
   `SF-GLUE-003`. Medido ao escrever `SF-LF-001`.
@@ -335,7 +335,7 @@ perceber, e o sintoma é silêncio.
   kind de "desconhecido" no molde de `tf.observability.unknown`, que sinaliza a lacuna em
   vez de escondê-la.
 
-## Ler dado do disco em código de `sparkforge/`
+## Ler dado do disco em código de `sparkforge_aws/`
 
 ```
 python scripts/verify_wheel.py
@@ -347,7 +347,7 @@ o **caso instalado**. Teste em árvore passa dos dois jeitos.
 Na Task 1 da fase `SF-MIG` um módulo novo calculou `Path(__file__).resolve().parents[2]`
 para achar `knowledge/`, o que aponta um nível acima de onde o pacote a empacota. Em
 árvore funcionava; num wheel instalado, importar o módulo levantava `FileNotFoundError`.
-Existe resolvedor pronto para isso desde a Fase 3a: `sparkforge/knowledge_ref.py`, com
+Existe resolvedor pronto para isso desde a Fase 3a: `sparkforge_aws/knowledge_ref.py`, com
 teste do fallback para o diretório do pacote. **Procure antes de escrever.**
 
 ## Alterar dependência: `pyproject.toml`, `requirements.txt`, `locks/` ou os workflows

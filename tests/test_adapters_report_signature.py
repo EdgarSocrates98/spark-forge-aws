@@ -14,11 +14,11 @@ import json
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import main
-from sparkforge.adapters.tools import call_tool
-from sparkforge.findings import signature as sig
-from sparkforge.findings.signature import SIGNATURE_RE, SIGNATURE_VERSION
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import main
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.findings import signature as sig
+from sparkforge_aws.findings.signature import SIGNATURE_RE, SIGNATURE_VERSION
 
 BODY = """# Relatorio de Performance
 
@@ -62,14 +62,14 @@ class TestOBlocoFicaForaDoCorpoQueEleCobre:
         report = _report(tmp_path)
         _core.report_sign(report, _findings(tmp_path))
         text = (tmp_path / "relatorio.md").read_text(encoding="utf-8")
-        assert text.count("<!-- sparkforge:signature -->") == 1
-        assert text.rstrip().endswith("<!-- /sparkforge:signature -->")
-        assert text.index("## 6. Recomendacoes") < text.index("<!-- sparkforge:signature -->")
+        assert text.count("<!-- sparkforge-aws:signature -->") == 1
+        assert text.rstrip().endswith("<!-- /sparkforge-aws:signature -->")
+        assert text.index("## 6. Recomendacoes") < text.index("<!-- sparkforge-aws:signature -->")
 
     def test_a_assinatura_do_arquivo_e_a_do_corpo_sem_o_bloco(self, tmp_path):
         """O bloco nao entra no hash que ele mesmo carrega: a assinatura escrita
         no arquivo e exatamente a do corpo cru, calculada antes de existir."""
-        from sparkforge.findings.signature import compute_signature
+        from sparkforge_aws.findings.signature import compute_signature
 
         report = _report(tmp_path)
         payload = _core.report_sign(report, _findings(tmp_path))
@@ -119,11 +119,11 @@ class TestOBlocoFicaForaDoCorpoQueEleCobre:
         preenche-los, nunca duplica-los."""
         report = _report(
             tmp_path,
-            body=BODY + "\n<!-- sparkforge:signature -->\n<!-- /sparkforge:signature -->\n",
+            body=BODY + "\n<!-- sparkforge-aws:signature -->\n<!-- /sparkforge-aws:signature -->\n",
         )
         _core.report_sign(report, _findings(tmp_path))
         text = (tmp_path / "relatorio.md").read_text(encoding="utf-8")
-        assert text.count("<!-- sparkforge:signature -->") == 1
+        assert text.count("<!-- sparkforge-aws:signature -->") == 1
         assert _core.report_verify(report, _findings(tmp_path))["valid"]
 
 
@@ -148,7 +148,7 @@ class TestOTextoDoBlocoDeclaraOLimite:
         report = _report(tmp_path)
         _core.report_sign(report, _findings(tmp_path))
         text = (tmp_path / "relatorio.md").read_text(encoding="utf-8")
-        assert "sparkforge report verify" in text
+        assert "sparkforge-aws report verify" in text
 
     def test_o_payload_tambem_carrega_o_limite(self, tmp_path):
         """Quem consome pelo MCP nunca le o markdown: se o limite so estivesse no
@@ -280,16 +280,16 @@ class TestBlocoAusenteEBlocoMalformado:
         assert resultado["valid"] is False
         assert resultado["status"] == "missing_block"
         assert resultado["diverged"] == []
-        assert "sparkforge report sign" in resultado["reason"]
+        assert "sparkforge-aws report sign" in resultado["reason"]
 
     def test_delimitador_de_abertura_sem_fechamento(self, tmp_path):
-        report = _report(tmp_path, body=BODY + "\n<!-- sparkforge:signature -->\n")
+        report = _report(tmp_path, body=BODY + "\n<!-- sparkforge-aws:signature -->\n")
         resultado = _core.report_verify(report, _findings(tmp_path))
         assert resultado["status"] == "malformed_block"
         assert resultado["valid"] is False
 
     def test_dois_blocos_no_mesmo_arquivo(self, tmp_path):
-        bloco = "<!-- sparkforge:signature -->\n<!-- /sparkforge:signature -->\n"
+        bloco = "<!-- sparkforge-aws:signature -->\n<!-- /sparkforge-aws:signature -->\n"
         report = _report(tmp_path, body=BODY + bloco + bloco)
         assert _core.report_verify(report, _findings(tmp_path))["status"] == (
             "malformed_block"
@@ -298,7 +298,7 @@ class TestBlocoAusenteEBlocoMalformado:
     def test_fechamento_antes_da_abertura(self, tmp_path):
         report = _report(
             tmp_path,
-            body=BODY + "<!-- /sparkforge:signature -->\n<!-- sparkforge:signature -->\n",
+            body=BODY + "<!-- /sparkforge-aws:signature -->\n<!-- sparkforge-aws:signature -->\n",
         )
         assert _core.report_verify(report, _findings(tmp_path))["status"] == (
             "malformed_block"
@@ -308,8 +308,8 @@ class TestBlocoAusenteEBlocoMalformado:
         report = _report(
             tmp_path,
             body=BODY
-            + "<!-- sparkforge:signature -->\n- fact_ids: f_aaa111\n"
-            "<!-- /sparkforge:signature -->\n",
+            + "<!-- sparkforge-aws:signature -->\n- fact_ids: f_aaa111\n"
+            "<!-- /sparkforge-aws:signature -->\n",
         )
         resultado = _core.report_verify(report, _findings(tmp_path))
         assert resultado["status"] == "malformed_block"
@@ -377,7 +377,7 @@ class TestDeOndeVemOsDadosDaAssinatura:
         path.write_text("[]", encoding="utf-8")
         with pytest.raises(_core.AdapterError) as exc:
             _core.report_sign(_report(tmp_path), str(path))
-        assert "sparkforge judge" in str(exc.value)
+        assert "sparkforge-aws judge" in str(exc.value)
 
     def test_finding_sem_evidencia_e_recusado_nomeando_o_campo(self, tmp_path):
         with pytest.raises(_core.AdapterError) as exc:
@@ -415,7 +415,7 @@ class TestDeOndeVemOsDadosDaAssinatura:
     def test_findings_inexistente_manda_rodar_judge(self, tmp_path):
         with pytest.raises(_core.AdapterError) as exc:
             _core.report_sign(_report(tmp_path), str(tmp_path / "nao-existe.json"))
-        assert "sparkforge judge" in str(exc.value)
+        assert "sparkforge-aws judge" in str(exc.value)
 
     def test_relatorio_inexistente_manda_partir_do_template(self, tmp_path):
         with pytest.raises(_core.AdapterError) as exc:
@@ -457,7 +457,7 @@ class TestOsDoisVerbosNosTresAdaptadores:
             ]
         )
         assert code == 2
-        assert "sparkforge report sign" in capsys.readouterr().err
+        assert "sparkforge-aws report sign" in capsys.readouterr().err
 
     def test_a_tool_mcp_assina_e_verifica(self, tmp_path):
         args = {
@@ -474,7 +474,7 @@ class TestOsDoisVerbosNosTresAdaptadores:
             {"report_path": str(tmp_path / "x.md"), "findings_path": "y.json"},
         )
         assert resultado["exit_code"] == 2
-        assert "sparkforge" in resultado["error"]
+        assert "sparkforge-aws" in resultado["error"]
 
     def test_os_tres_adaptadores_produzem_a_mesma_assinatura(self, tmp_path):
         """CLI, `_core` e tool MCP so podem divergir se alguem duplicar logica --
@@ -631,14 +631,14 @@ class TestOOverrideAparecaNoRelatorio:
     def test_a_secao_diz_de_onde_vem_o_conteudo(self):
         """Sem o comando, a secao vira um cabecalho que ninguem sabe preencher."""
         texto = _template()
-        assert "sparkforge case get" in texto or "sparkforge resume" in texto
+        assert "sparkforge-aws case get" in texto or "sparkforge-aws resume" in texto
         assert "gate_overrides" in texto
 
     def test_a_secao_fica_dentro_do_corpo_assinado(self):
         """O corpo assinado e tudo que vem ANTES do delimitador de abertura."""
         texto = _template()
         assert texto.index("Gates com override") < texto.index(
-            "<!-- sparkforge:signature -->"
+            "<!-- sparkforge-aws:signature -->"
         )
 
     def test_editar_a_divulgacao_depois_de_assinar_invalida(self, tmp_path):
@@ -667,10 +667,10 @@ class TestOTemplateCarregaOBloco:
 
         root = Path(__file__).resolve().parents[1]
         texto = (root / "templates" / "performance-report.md").read_text(encoding="utf-8")
-        assert "<!-- sparkforge:signature -->" in texto
-        assert "<!-- /sparkforge:signature -->" in texto
-        assert "sparkforge report sign" in texto
-        assert texto.rstrip().endswith("<!-- /sparkforge:signature -->")
+        assert "<!-- sparkforge-aws:signature -->" in texto
+        assert "<!-- /sparkforge-aws:signature -->" in texto
+        assert "sparkforge-aws report sign" in texto
+        assert texto.rstrip().endswith("<!-- /sparkforge-aws:signature -->")
 
     def test_o_template_assina_como_esta(self, tmp_path):
         """O template e o ponto de partida real: se ele nao assinasse, o bloco

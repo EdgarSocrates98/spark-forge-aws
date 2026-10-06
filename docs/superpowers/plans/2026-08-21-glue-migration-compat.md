@@ -15,9 +15,9 @@
 ## Convenções deste repositório que valem para todas as tasks
 
 - Comentários e docstrings em português, explicando *por quê*, nunca *o quê*.
-- `python -m ruff check sparkforge scripts tests` não pode acusar nada novo nos arquivos tocados. Limite de linha 100.
+- `python -m ruff check sparkforge_aws scripts tests` não pode acusar nada novo nos arquivos tocados. Limite de linha 100.
 - Nenhum teste afirma contagem copiada (`len(rules) == 9`). Conte derivando, ou asserte estrutura.
-- `Fact` é observação ancorada e **nunca** contém juízo nem limiar (`sparkforge/findings/models.py:31`). Limiar mora na regra.
+- `Fact` é observação ancorada e **nunca** contém juízo nem limiar (`sparkforge_aws/findings/models.py:31`). Limiar mora na regra.
 - Todo extrator declara `EMITTED_KINDS` fechado — `tests/test_rules_catalog_reachability.py` usa a união deles para provar que nenhuma regra é inalcançável.
 - `runtime_scope` guarda **versão de runtime**. O que gateia por natureza do artefato é `requires_facts`. `rules/catalog/athena.yaml` registra o erro de camada oposto e por que ele apagaria uma área inteira em silêncio.
 
@@ -26,19 +26,19 @@
 | arquivo | responsabilidade |
 |---|---|
 | `knowledge/glue/runtime-matrix.yaml` | criar — matriz de versões com `sources` e `retrieved`. Dado, não código. |
-| `sparkforge/facts/runtime_matrix.py` | criar — carrega e valida o YAML. Fonte única da matriz. |
-| `sparkforge/facts/runtime_detect.py` | modificar — apagar `GLUE_MATRIX`, consumir o loader. |
-| `sparkforge/migration/version_path.py` | criar — expande `origem → alvo` em degraus. |
-| `sparkforge/facts/migration.py` | criar — extrator dos oito kinds `mig.*`. |
+| `sparkforge_aws/facts/runtime_matrix.py` | criar — carrega e valida o YAML. Fonte única da matriz. |
+| `sparkforge_aws/facts/runtime_detect.py` | modificar — apagar `GLUE_MATRIX`, consumir o loader. |
+| `sparkforge_aws/migration/version_path.py` | criar — expande `origem → alvo` em degraus. |
+| `sparkforge_aws/facts/migration.py` | criar — extrator dos oito kinds `mig.*`. |
 | `rules/catalog/glue-migration.yaml` | criar — área `SF-MIG`. |
-| `sparkforge/migration/assessment.py` | criar — agrega findings por degrau em `MigrationAssessment` com gates. |
+| `sparkforge_aws/migration/assessment.py` | criar — agrega findings por degrau em `MigrationAssessment` com gates. |
 | `fixtures/migration/<caso>/` | criar — golden por caso, no formato `meta.yaml` + `input/` + `expected/`. |
 | `tests/test_runtime_matrix.py` | criar — paridade YAML↔MD, ausência de versão hardcoded. |
 | `tests/test_version_path.py` | criar — degraus, par genérico, alvo desconhecido. |
 | `tests/test_facts_migration.py` | criar — um teste por kind. |
 | `tests/test_fixtures_golden_migration.py` | criar — runner golden do domínio. |
 | `tests/test_migration_assessment.py` | criar — gates e recomendação. |
-| `sparkforge/migration/glue/analyzer.py` | decidir na Task 11 — medir consumidor antes de apagar. |
+| `sparkforge_aws/migration/glue/analyzer.py` | decidir na Task 11 — medir consumidor antes de apagar. |
 
 Arquivos pequenos e por responsabilidade: matriz, caminho, extração, julgamento, agregação. O extrator não conhece versões; o resolvedor não conhece regras; o assessment não conhece código de job.
 
@@ -48,7 +48,7 @@ Arquivos pequenos e por responsabilidade: matriz, caminho, extração, julgament
 
 **Files:**
 - Create: `knowledge/glue/runtime-matrix.yaml`
-- Create: `sparkforge/facts/runtime_matrix.py`
+- Create: `sparkforge_aws/facts/runtime_matrix.py`
 - Create: `tests/test_runtime_matrix.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -57,7 +57,7 @@ Arquivos pequenos e por responsabilidade: matriz, caminho, extração, julgament
 # tests/test_runtime_matrix.py
 from pathlib import Path
 
-from sparkforge.facts import runtime_matrix
+from sparkforge_aws.facts import runtime_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -87,7 +87,7 @@ class TestMatrizDeVersoes:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_runtime_matrix.py -v`
-Expected: FAIL com `ImportError: cannot import name 'runtime_matrix' from 'sparkforge.facts'`
+Expected: FAIL com `ImportError: cannot import name 'runtime_matrix' from 'sparkforge_aws.facts'`
 
 - [ ] **Step 3: Write the data file**
 
@@ -97,7 +97,7 @@ Expected: FAIL com `ImportError: cannot import name 'runtime_matrix' from 'spark
 # Matriz de runtime do AWS Glue. Dado, nunca constante em Python.
 #
 # POR QUE ESTE ARQUIVO EXISTE: o fato de versao morava em dois lugares --
-# `GLUE_MATRIX` compilado em `sparkforge/facts/runtime_detect.py` e a prosa de
+# `GLUE_MATRIX` compilado em `sparkforge_aws/facts/runtime_detect.py` e a prosa de
 # `knowledge/glue/runtime-matrix.md` -- sem nada que forcasse os dois a
 # concordarem. Versao e fato externo: ela muda por decisao da AWS, nao do
 # repositorio, entao precisa carregar fonte e data de consulta como qualquer
@@ -135,7 +135,7 @@ Se nenhuma URL de release notes do Glue estiver no lock, acrescente-a ao lock pe
 - [ ] **Step 4: Write the loader**
 
 ```python
-# sparkforge/facts/runtime_matrix.py
+# sparkforge_aws/facts/runtime_matrix.py
 """Fonte unica da matriz de runtime do Glue.
 
 O dado mora em `knowledge/glue/runtime-matrix.yaml` porque versao e fato
@@ -185,7 +185,7 @@ Expected: PASS
 - [ ] **Step 6: Commit**
 
 ```bash
-git add knowledge/glue/runtime-matrix.yaml sparkforge/facts/runtime_matrix.py tests/test_runtime_matrix.py
+git add knowledge/glue/runtime-matrix.yaml sparkforge_aws/facts/runtime_matrix.py tests/test_runtime_matrix.py
 git commit -m "feat(migration): matriz de runtime do Glue como dado com procedencia"
 ```
 
@@ -196,7 +196,7 @@ Stage apenas esses três caminhos. A árvore tem alterações não commitadas de
 ### Task 2: Apagar `GLUE_MATRIX` do código
 
 **Files:**
-- Modify: `sparkforge/facts/runtime_detect.py:51`
+- Modify: `sparkforge_aws/facts/runtime_detect.py:51`
 - Modify: `tests/test_runtime_matrix.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -212,7 +212,7 @@ class TestSemVersaoNoCodigo:
         # Task 1 desfez.
         alvo = re.compile(r'"(?:3|4|5|6)\.\d+"\s*:\s*\{')
         ofensores = []
-        for arquivo in (ROOT / "sparkforge").rglob("*.py"):
+        for arquivo in (ROOT / "sparkforge_aws").rglob("*.py"):
             if arquivo.name == "runtime_matrix.py":
                 continue
             if alvo.search(arquivo.read_text(encoding="utf-8")):
@@ -223,20 +223,20 @@ class TestSemVersaoNoCodigo:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_runtime_matrix.py::TestSemVersaoNoCodigo -v`
-Expected: FAIL apontando `sparkforge/facts/runtime_detect.py`, e possivelmente as matrizes de EMR do mesmo arquivo.
+Expected: FAIL apontando `sparkforge_aws/facts/runtime_detect.py`, e possivelmente as matrizes de EMR do mesmo arquivo.
 
-Se o teste acusar as matrizes de EMR, **não as apague**: elas estão fora do escopo desta fase. Restrinja o padrão do teste ao dicionário de Glue nomeadamente, e escreva no comentário que EMR fica como dívida registrada, com a razão — a mesma disciplina que `sparkforge/facts/secrets.py` aplicou ao não migrar as três cópias existentes.
+Se o teste acusar as matrizes de EMR, **não as apague**: elas estão fora do escopo desta fase. Restrinja o padrão do teste ao dicionário de Glue nomeadamente, e escreva no comentário que EMR fica como dívida registrada, com a razão — a mesma disciplina que `sparkforge_aws/facts/secrets.py` aplicou ao não migrar as três cópias existentes.
 
 - [ ] **Step 3: Substituir a constante pelo loader**
 
-Em `sparkforge/facts/runtime_detect.py`, apague o bloco `GLUE_MATRIX = {...}` e troque cada leitura por uma consulta ao loader:
+Em `sparkforge_aws/facts/runtime_detect.py`, apague o bloco `GLUE_MATRIX = {...}` e troque cada leitura por uma consulta ao loader:
 
 ```python
-from sparkforge.facts import runtime_matrix
+from sparkforge_aws.facts import runtime_matrix
 
 # `GLUE_MATRIX` saiu daqui na fase SF-MIG: versao e fato externo e agora mora em
 # `knowledge/glue/runtime-matrix.yaml`, com fonte e data. Ver o docstring de
-# `sparkforge/facts/runtime_matrix.py`.
+# `sparkforge_aws/facts/runtime_matrix.py`.
 def _glue_row(versao: str) -> dict[str, str]:
     return runtime_matrix.load().get(versao, {})
 ```
@@ -254,7 +254,7 @@ Expected: PASS — os goldens gravados provam que o comportamento não mudou.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/facts/runtime_detect.py tests/test_runtime_matrix.py
+git add sparkforge_aws/facts/runtime_detect.py tests/test_runtime_matrix.py
 git commit -m "refactor(migration): runtime_detect le a matriz do dado, nao de constante"
 ```
 
@@ -263,7 +263,7 @@ git commit -m "refactor(migration): runtime_detect le a matriz do dado, nao de c
 ### Task 3: Resolvedor de caminho de versão
 
 **Files:**
-- Create: `sparkforge/migration/version_path.py`
+- Create: `sparkforge_aws/migration/version_path.py`
 - Create: `tests/test_version_path.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -272,7 +272,7 @@ git commit -m "refactor(migration): runtime_detect le a matriz do dado, nao de c
 # tests/test_version_path.py
 import pytest
 
-from sparkforge.migration import version_path
+from sparkforge_aws.migration import version_path
 
 
 class TestCaminhoDeVersao:
@@ -299,12 +299,12 @@ class TestCaminhoDeVersao:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_version_path.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.migration.version_path'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.migration.version_path'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# sparkforge/migration/version_path.py
+# sparkforge_aws/migration/version_path.py
 """Expande um par origem/alvo nos degraus intermediarios da matriz.
 
 POR QUE ISSO EXISTE SEPARADO DO PLANO DE EXECUCAO: o §6.2 do prompt de migracao
@@ -314,7 +314,7 @@ os breaking changes se acumulam degrau a degrau e um salto esconde os do meio.
 """
 from __future__ import annotations
 
-from sparkforge.facts import runtime_matrix
+from sparkforge_aws.facts import runtime_matrix
 
 
 def steps(source: str, target: str) -> list[tuple[str, str]]:
@@ -339,7 +339,7 @@ Expected: PASS, 5 testes
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/migration/version_path.py tests/test_version_path.py
+git add sparkforge_aws/migration/version_path.py tests/test_version_path.py
 git commit -m "feat(migration): resolvedor de caminho cumulativo entre versoes"
 ```
 
@@ -348,14 +348,14 @@ git commit -m "feat(migration): resolvedor de caminho cumulativo entre versoes"
 ### Task 4: Extrator de migração — primeiro kind, `mig.sdk_import`
 
 **Files:**
-- Create: `sparkforge/facts/migration.py`
+- Create: `sparkforge_aws/facts/migration.py`
 - Create: `tests/test_facts_migration.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_facts_migration.py
-from sparkforge.facts import migration
+from sparkforge_aws.facts import migration
 
 JOB_COM_SDK_V1 = '''
 from awsglue.context import GlueContext
@@ -405,12 +405,12 @@ class TestSdkImport:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_facts_migration.py -v`
-Expected: FAIL com `ImportError: cannot import name 'migration' from 'sparkforge.facts'`
+Expected: FAIL com `ImportError: cannot import name 'migration' from 'sparkforge_aws.facts'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# sparkforge/facts/migration.py
+# sparkforge_aws/facts/migration.py
 """Observacoes de migracao entre versoes de Glue.
 
 O extrator OBSERVA e nunca julga. Um import `com.amazonaws.*` e observacao; que
@@ -423,7 +423,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 EMITTED_KINDS = frozenset(
     {
@@ -482,7 +482,7 @@ Expected: PASS, 4 testes
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/facts/migration.py tests/test_facts_migration.py
+git add sparkforge_aws/facts/migration.py tests/test_facts_migration.py
 git commit -m "feat(migration): extrator de migracao com kind mig.sdk_import"
 ```
 
@@ -491,7 +491,7 @@ git commit -m "feat(migration): extrator de migracao com kind mig.sdk_import"
 ### Task 5: Kinds de configuração — `mig.emrfs_config`, `mig.legacy_conf`, `mig.deprecated_api`
 
 **Files:**
-- Modify: `sparkforge/facts/migration.py`
+- Modify: `sparkforge_aws/facts/migration.py`
 - Modify: `tests/test_facts_migration.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -539,7 +539,7 @@ Expected: FAIL — as listas saem vazias porque nenhum dos três kinds é emitid
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# acrescentar em sparkforge/facts/migration.py, antes de extract_migration_tree
+# acrescentar em sparkforge_aws/facts/migration.py, antes de extract_migration_tree
 
 # Prefixo exclusivo do EMRFS. O S3A do Glue 5+ nao le nenhuma destas chaves, entao
 # elas sobrevivem no codigo sem efeito -- silencio, que e pior que erro.
@@ -598,7 +598,7 @@ Expected: PASS — os 4 testes da Task 4 mais os 4 desta.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/facts/migration.py tests/test_facts_migration.py
+git add sparkforge_aws/facts/migration.py tests/test_facts_migration.py
 git commit -m "feat(migration): kinds de EMRFS, configuracao legada e API depreciada"
 ```
 
@@ -607,7 +607,7 @@ git commit -m "feat(migration): kinds de EMRFS, configuracao legada e API deprec
 ### Task 6: Kinds de dependência e formato — `mig.jar_binary`, `mig.python_dep`, `mig.table_format`, `mig.ansi_risk`
 
 **Files:**
-- Modify: `sparkforge/facts/migration.py`
+- Modify: `sparkforge_aws/facts/migration.py`
 - Modify: `tests/test_facts_migration.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -662,7 +662,7 @@ Expected: FAIL — nenhum dos quatro kinds é emitido ainda.
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# acrescentar em sparkforge/facts/migration.py
+# acrescentar em sparkforge_aws/facts/migration.py
 
 _JAR_SCALA_RE = re.compile(r"_(\d+\.\d+)-")
 _REQUIREMENT_RE = re.compile(r"^([A-Za-z0-9_.\-]+)==([^\s#]+)")
@@ -734,14 +734,14 @@ Expected: PASS, 12 testes
 
 - [ ] **Step 5: Verificar que todo kind declarado é emitido por algo**
 
-Run: `python -c "from sparkforge.facts import migration; print(sorted(migration.EMITTED_KINDS))"`
+Run: `python -c "from sparkforge_aws.facts import migration; print(sorted(migration.EMITTED_KINDS))"`
 
 Compare com os kinds que seus testes provaram emitir. Se algum kind do `EMITTED_KINDS` não tem teste que o produza, ou escreva o teste, ou remova o kind — kind declarado e nunca emitido torna inalcançável qualquer regra que dependa dele, e `tests/test_rules_catalog_reachability.py` vai acusar na Task 7.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add sparkforge/facts/migration.py tests/test_facts_migration.py
+git add sparkforge_aws/facts/migration.py tests/test_facts_migration.py
 git commit -m "feat(migration): kinds de JAR, dependencia Python, cast ANSI e formato de tabela"
 ```
 
@@ -762,7 +762,7 @@ Cabeçalho com a razão da área e a decisão de camada, no estilo dos catálogo
 # POR QUE ESTA AREA EXISTE: as demais areas julgam um runtime PARADO. Esta julga
 # a TRANSICAO entre dois. O que muda de mecanismo e so isto: `runtime_scope`
 # declara a faixa em que o breaking change vale, e o motor de migracao aplica o
-# catalogo uma vez por DEGRAU do caminho (ver `sparkforge/migration/version_path.py`).
+# catalogo uma vez por DEGRAU do caminho (ver `sparkforge_aws/migration/version_path.py`).
 #
 # CAMADA, como em `rules/catalog/athena.yaml`: `runtime_scope` guarda VERSAO.
 # O que gateia por natureza do artefato e `requires_facts`. Uma regra de migracao
@@ -870,7 +870,7 @@ Nas `sources`, use URLs que já estejam em `knowledge/sources.lock.json`. Se pre
 
 - [ ] **Step 2: Rodar os gates do catálogo**
 
-Run: `python -c "from sparkforge.rules.loader import load_catalog; print(len(load_catalog()), 'regras')"`
+Run: `python -c "from sparkforge_aws.rules.loader import load_catalog; print(len(load_catalog()), 'regras')"`
 Expected: o total cresce em relação a 116, e nenhuma exceção de schema.
 
 Run: `python -m pytest tests/test_rules_loader.py tests/test_rules_catalog_reachability.py tests/test_rules_result_axis.py -q`
@@ -888,7 +888,7 @@ git commit -m "feat(migration): area SF-MIG com as tres primeiras regras"
 ### Task 8: Motor — aplicar o catálogo por degrau
 
 **Files:**
-- Create: `sparkforge/migration/assessment.py`
+- Create: `sparkforge_aws/migration/assessment.py`
 - Create: `tests/test_migration_assessment.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -897,8 +897,8 @@ git commit -m "feat(migration): area SF-MIG com as tres primeiras regras"
 # tests/test_migration_assessment.py
 from pathlib import Path
 
-from sparkforge.facts import migration as facts_migration
-from sparkforge.migration import assessment
+from sparkforge_aws.facts import migration as facts_migration
+from sparkforge_aws.migration import assessment
 
 JOB = 'import com.amazonaws.services.s3.AmazonS3\nspark.conf.set("fs.s3.consistent", "true")\n'
 
@@ -933,12 +933,12 @@ class TestAvaliacaoPorDegrau:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_migration_assessment.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge.migration.assessment'`
+Expected: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.migration.assessment'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# sparkforge/migration/assessment.py
+# sparkforge_aws/migration/assessment.py
 """Aplica o catalogo uma vez por degrau e agrega o resultado.
 
 NAO bifurca o motor: chama o `judge` existente com o runtime de cada degrau. O
@@ -950,11 +950,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from sparkforge.facts import runtime_matrix
-from sparkforge.findings.models import Fact, Finding
-from sparkforge.migration import version_path
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts import runtime_matrix
+from sparkforge_aws.findings.models import Fact, Finding
+from sparkforge_aws.migration import version_path
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 # Gates que exigem execucao real. Sem job vivo e sem AWS nao existe evidencia
 # para eles, e gate sem evidencia e BLOCKED -- nunca PASS. Declarar PASS aqui
@@ -1029,7 +1029,7 @@ Se um mesmo finding aparecer duas vezes por nascer em dois degraus, isso é o co
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sparkforge/migration/assessment.py tests/test_migration_assessment.py
+git add sparkforge_aws/migration/assessment.py tests/test_migration_assessment.py
 git commit -m "feat(migration): avaliacao por degrau com gates fail-closed"
 ```
 
@@ -1086,9 +1086,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.migration import extract_migration_tree
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.migration import extract_migration_tree
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "migration"
 
@@ -1192,7 +1192,7 @@ class TestParGenerico:
         import re
         from pathlib import Path
 
-        raiz = Path(__file__).resolve().parents[1] / "sparkforge" / "migration"
+        raiz = Path(__file__).resolve().parents[1] / "sparkforge_aws" / "migration"
         proibido = re.compile(r'"[3-9]\.\d+"')
         ofensores = [
             str(p) for p in raiz.rglob("*.py") if proibido.search(p.read_text(encoding="utf-8"))
@@ -1212,7 +1212,7 @@ Se `test_nenhum_par_de_versao_aparece_no_codigo_do_motor` falhar, mova a constan
 
 - [ ] **Step 4: Run the full suite**
 
-Run: `python -m ruff check sparkforge tests`
+Run: `python -m ruff check sparkforge_aws tests`
 Expected: nada novo nos arquivos tocados.
 
 Run: `python -m pytest -q`
@@ -1232,7 +1232,7 @@ git commit -m "test(migration): prova que o motor e generico sobre pares de vers
 **Files:**
 - Modify: `knowledge/glue/runtime-matrix.yaml`
 - Modify: `rules/catalog/glue-migration.yaml`
-- Decide: `sparkforge/migration/glue/analyzer.py`
+- Decide: `sparkforge_aws/migration/glue/analyzer.py`
 
 - [ ] **Step 1: Pesquisar a linha do Glue 6.0**
 
@@ -1252,14 +1252,14 @@ Se não ganhou, deixe como está e diga por quê no relatório.
 
 Run: `TOKENSAVE_DISABLE_GREP_HOOK=1 grep -rn "migration.glue.analyzer\|analyze_script" --include=*.py --include=*.yaml --include=*.json . | grep -v "^./.git/"`
 
-Se ninguém o consome fora dos próprios testes, apague `sparkforge/migration/glue/analyzer.py` e o teste dele, e diga no commit que a área SF-MIG o substitui. Se houver consumidor, deixe-o e registre a dívida no `STATUS.md` com o consumidor nomeado — o padrão que `sparkforge/facts/secrets.py` já usa para dívida medida em vez de implícita.
+Se ninguém o consome fora dos próprios testes, apague `sparkforge_aws/migration/glue/analyzer.py` e o teste dele, e diga no commit que a área SF-MIG o substitui. Se houver consumidor, deixe-o e registre a dívida no `STATUS.md` com o consumidor nomeado — o padrão que `sparkforge_aws/facts/secrets.py` já usa para dívida medida em vez de implícita.
 
 - [ ] **Step 4: Fechar os critérios**
 
 Run: `python -m pytest -q`
 Expected: PASS.
 
-Run: `python -c "from sparkforge.rules.loader import load_catalog; c=load_catalog(); print(len(c), 'regras'); print(sum(1 for r in c if r.get('blocked_on')), 'bloqueadas')"`
+Run: `python -c "from sparkforge_aws.rules.loader import load_catalog; c=load_catalog(); print(len(c), 'regras'); print(sum(1 for r in c if r.get('blocked_on')), 'bloqueadas')"`
 
 Relate os dois números. Regra bloqueada não é falha: é a fase declarando o que não pode julgar ainda.
 

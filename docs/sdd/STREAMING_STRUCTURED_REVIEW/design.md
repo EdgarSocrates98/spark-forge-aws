@@ -13,7 +13,7 @@ files:
   - {path: skills/review-structured-streaming/references/README.md, action: create, reason: "ponte para knowledge local"}
   - {path: skills/review-structured-streaming/scripts/validate_evidence.py, action: create, reason: "validador mínimo de fact_id"}
   - {path: agents/streaming-realtime-architect.md, action: modify, reason: "declarar skill dedicada"}
-  - {path: sparkforge/integrate/render.py, action: modify, reason: "registrar skill como dispatchable"}
+  - {path: sparkforge_aws/integrate/render.py, action: modify, reason: "registrar skill como dispatchable"}
   - {path: tests/test_sync_render.py, action: modify, reason: "fixar coordenador único"}
 decisions:
   - id: D1

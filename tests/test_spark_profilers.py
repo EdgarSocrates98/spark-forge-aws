@@ -2,8 +2,8 @@
 
 import json
 
-from sparkforge.spark.eventlog_analyzer import SparkEventLogAnalyzer
-from sparkforge.spark.plan_profiler import SparkPlanProfiler
+from sparkforge_aws.spark.eventlog_analyzer import SparkEventLogAnalyzer
+from sparkforge_aws.spark.plan_profiler import SparkPlanProfiler
 
 
 def test_spark_eventlog_analyzer_skew_and_spill():

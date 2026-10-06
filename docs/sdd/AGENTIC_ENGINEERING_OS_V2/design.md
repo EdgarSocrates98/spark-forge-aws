@@ -9,19 +9,19 @@ upstream:
   sha256: "a4311141a3b1709fd8da8eff5bebb3ad41adbeee2e90735c8c78ffc2ef6058d2"
 files:
   - {path: tests/test_agentic_os_v2.py, action: create, reason: "contratos AC1-AC8 e paridade das superfícies"}
-  - {path: sparkforge/agentic/trust.py, action: create, reason: "TrustEnvelope, RoleContextPlan, sanitização e autoridade"}
-  - {path: sparkforge/agentic/memory.py, action: modify, reason: "DecisionMemoryRecord, candidate gate, retrieval híbrido e invalidação compatível"}
-  - {path: sparkforge/agentic/checkpoint.py, action: create, reason: "checkpoint semântico resumível e content-addressed"}
-  - {path: sparkforge/protocols/forge.py, action: create, reason: "contratos mínimos de interoperabilidade Forge/A2A"}
-  - {path: sparkforge/protocols/__init__.py, action: create, reason: "export público dos contratos Forge"}
-  - {path: sparkforge/context/quality.py, action: create, reason: "métricas de qualidade e minimum sufficient context"}
-  - {path: sparkforge/economy/ledger.py, action: create, reason: "ledger unificado e reconciliação sem inferir tokens/custo"}
-  - {path: sparkforge/economy/model_router.py, action: create, reason: "router independente com scorecard e modos gated"}
-  - {path: sparkforge/observability/agentops.py, action: create, reason: "inspect/compare/baseline e waste attribution"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "funções compartilhadas CLI/MCP para superfícies novas"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "verbos context inspect, agentops e doctor agentic"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "tools MCP equivalentes aos verbos novos"}
-  - {path: sparkforge/agentic/__init__.py, action: modify, reason: "exports dos contratos agentic novos"}
+  - {path: sparkforge_aws/agentic/trust.py, action: create, reason: "TrustEnvelope, RoleContextPlan, sanitização e autoridade"}
+  - {path: sparkforge_aws/agentic/memory.py, action: modify, reason: "DecisionMemoryRecord, candidate gate, retrieval híbrido e invalidação compatível"}
+  - {path: sparkforge_aws/agentic/checkpoint.py, action: create, reason: "checkpoint semântico resumível e content-addressed"}
+  - {path: sparkforge_aws/protocols/forge.py, action: create, reason: "contratos mínimos de interoperabilidade Forge/A2A"}
+  - {path: sparkforge_aws/protocols/__init__.py, action: create, reason: "export público dos contratos Forge"}
+  - {path: sparkforge_aws/context/quality.py, action: create, reason: "métricas de qualidade e minimum sufficient context"}
+  - {path: sparkforge_aws/economy/ledger.py, action: create, reason: "ledger unificado e reconciliação sem inferir tokens/custo"}
+  - {path: sparkforge_aws/economy/model_router.py, action: create, reason: "router independente com scorecard e modos gated"}
+  - {path: sparkforge_aws/observability/agentops.py, action: create, reason: "inspect/compare/baseline e waste attribution"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "funções compartilhadas CLI/MCP para superfícies novas"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "verbos context inspect, agentops e doctor agentic"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "tools MCP equivalentes aos verbos novos"}
+  - {path: sparkforge_aws/agentic/__init__.py, action: modify, reason: "exports dos contratos agentic novos"}
   - {path: README.md, action: modify, reason: "descrição de capabilities e comandos novos"}
   - {path: GUIA_DE_USO.md, action: modify, reason: "uso operacional local-first e limites de evidência"}
   - {path: docs/vnext/ARCHITECTURE.md, action: modify, reason: "arquitetura after alinhada com produção"}
@@ -66,9 +66,9 @@ desempenho, custo e qualidade só aparecem como métricas reproduzíveis ou
 
 ## Conhecimento consultado
 
-- `sparkforge sdd status --repo .`, `sparkforge agents list --repo .` e
-  `sparkforge playbook ...` para inventário e roteamento.
+- `sparkforge-aws sdd status --repo .`, `sparkforge-aws agents list --repo .` e
+  `sparkforge-aws playbook ...` para inventário e roteamento.
 - `docs/vnext/CURRENT-STATE.md`, `docs/vnext/ARCHITECTURE.md`,
-  `sparkforge/agentic/memory.py`, `sparkforge/agentic/security.py`,
-  `sparkforge/context/`, `sparkforge/economy/`, `sparkforge/observability/`.
-- `sparkforge/sdd/change_kinds.yaml` e `docs/gates-por-mudanca.md` para gates.
+  `sparkforge_aws/agentic/memory.py`, `sparkforge_aws/agentic/security.py`,
+  `sparkforge_aws/context/`, `sparkforge_aws/economy/`, `sparkforge_aws/observability/`.
+- `sparkforge_aws/sdd/change_kinds.yaml` e `docs/gates-por-mudanca.md` para gates.

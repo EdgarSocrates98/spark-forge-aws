@@ -3,7 +3,7 @@
 # `glue-cross-account.yaml` (`SF-XACC`); os três nasceram na mesma fase e
 # compartilham o cabeçalho abaixo.
 #
-# POR QUE ESTE ARQUIVO EXISTE. `sparkforge/migration/assessment.py` nomeia
+# POR QUE ESTE ARQUIVO EXISTE. `sparkforge_aws/migration/assessment.py` nomeia
 # `iam_kms`, `rede` e `cross_account` desde a fase H2, e os três nasciam
 # `BLOCKED` **sempre**, com a evidência que os preencheria escrita ao lado.
 # `BLOCKED` com motivo é honesto; `BLOCKED` que nunca muda de valor é decoração.
@@ -26,7 +26,7 @@
 # mais que calar, e vale muito mais que fingir um veredito.
 #
 # POR QUE TRÊS ÁREAS E NÃO UMA. O eixo do contrato é derivado da ÁREA do
-# `rule_id` (`sparkforge/findings/models.py:area_of`), e um achado move um eixo
+# `rule_id` (`sparkforge_aws/findings/models.py:area_of`), e um achado move um eixo
 # só. Uma área única `SF-PLAT` deixaria os três eixos empatados no mesmo balde e
 # a separação que a §32 pede voltaria a ser decorativa.
 

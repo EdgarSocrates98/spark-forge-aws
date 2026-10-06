@@ -39,16 +39,16 @@ termina com exit 0.
 
 ## Gates rodados
 
-- `python -m pytest -q -o cache_dir=E:/sparkforge-pytest-ship-final-2/cache` — exit 0; `13479 passed, 14 skipped` em `1:17:06`.
+- `python -m pytest -q -o cache_dir=E:/sparkforge_aws-pytest-ship-final-2/cache` — exit 0; `13479 passed, 14 skipped` em `1:17:06`.
 - `python scripts/check_surface_lock.py --update` — lock atualizado.
 - `python scripts/check_surface_lock.py` — `0 divergencia(s)`.
 - `python scripts/gen_reference_docs.py` — 238 páginas, 0 regravadas, 0 removidas.
 - `python -m pytest tests/test_reference_docs.py tests/test_vnext_claims.py tests/test_docs_coverage.py tests/test_installed_provenance.py -q` com TEMP/cache externos — `179 passed, 5 skipped`.
 - `python scripts/check_vnext_claims.py` — `0 divergencia(s)`.
 - `python scripts/check_status_numbers.py --strict` — `0 divergencia(s)`.
-- `ruff check sparkforge scripts tests` — limpo.
-- `python -m compileall -q sparkforge scripts tests` — exit 0.
-- `sparkforge sdd check --repo . --feature AGENTIC_ECONOMY_COMPLETION` — `ok: true`.
+- `ruff check sparkforge_aws scripts tests` — limpo.
+- `python -m compileall -q sparkforge-aws scripts tests` — exit 0.
+- `sparkforge-aws sdd check --repo . --feature AGENTIC_ECONOMY_COMPLETION` — `ok: true`.
 
 ## Comandos do define
 

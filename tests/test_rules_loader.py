@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import CatalogError, catalog_dir, load_catalog
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import CatalogError, catalog_dir, load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -393,7 +393,7 @@ class TestCatalogPathIsContained:
         assert ".." not in resolved.parts
 
     def test_traversal_out_of_the_catalog_is_refused(self, tmp_path):
-        from sparkforge.rules.loader import safe_catalog_file
+        from sparkforge_aws.rules.loader import safe_catalog_file
 
         base = tmp_path / "catalog"
         base.mkdir()
@@ -401,7 +401,7 @@ class TestCatalogPathIsContained:
             safe_catalog_file(base, "../../etc/passwd")
 
     def test_a_plain_name_inside_the_catalog_is_allowed(self, tmp_path):
-        from sparkforge.rules.loader import safe_catalog_file
+        from sparkforge_aws.rules.loader import safe_catalog_file
 
         base = tmp_path / "catalog"
         base.mkdir()

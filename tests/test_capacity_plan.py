@@ -1,8 +1,8 @@
 """Testes da escolha de capacidade sob restricao de SLA."""
 from __future__ import annotations
 
-from sparkforge.capacity import build_capacity_plan
-from sparkforge.findings.models import Fact
+from sparkforge_aws.capacity import build_capacity_plan
+from sparkforge_aws.findings.models import Fact
 
 
 def _run(run_id, segundos, worker="G.2X", workers=10, dpu=1000.0, autoscaling=False):
@@ -292,13 +292,13 @@ class TestFronteiraDaResolucao:
     """
 
     def test_resolution_exactly_at_the_boundary_is_supported(self):
-        from sparkforge.capacity.plan import resolution_supports
+        from sparkforge_aws.capacity.plan import resolution_supports
 
         # 1/10 contra 1 - 0.9. Iguais na matematica, diferentes no float.
         assert resolution_supports(1 / 10, 0.9) is True
 
     def test_resolution_one_run_coarser_is_not_supported(self):
-        from sparkforge.capacity.plan import resolution_supports
+        from sparkforge_aws.capacity.plan import resolution_supports
 
         assert resolution_supports(1 / 9, 0.9) is False
 

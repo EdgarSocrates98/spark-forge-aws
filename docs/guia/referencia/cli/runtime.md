@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge runtime`
+# `sparkforge-aws runtime`
 
 Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena.
 
@@ -8,14 +8,14 @@ Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge runtime detect`](#sparkforge-runtime-detect) | Deriva a matriz de runtime a partir de facts ja extraidos e de flags. |
+| [`sparkforge-aws runtime detect`](#sparkforge-aws-runtime-detect) | Deriva a matriz de runtime a partir de facts ja extraidos e de flags. |
 
-## `sparkforge runtime detect`
+## `sparkforge-aws runtime detect`
 
 Deriva a matriz de runtime a partir de facts ja extraidos e de flags.
 
 ```bash
-sparkforge runtime detect --help
+sparkforge-aws runtime detect --help
 ```
 
 ### Opções

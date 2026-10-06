@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sparkforge.tools import (
+from sparkforge_aws.tools import (
     OfflineKnowledgeIndex,
     compare_json_schemas,
     evaluate_golden_case,

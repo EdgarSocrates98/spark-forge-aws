@@ -1,6 +1,6 @@
 """Tests for SparkForge Context Funnel and Progressive Disclosure (Phase 5)."""
 
-from sparkforge.context import (
+from sparkforge_aws.context import (
     ContextChunk,
     ContextFunnel,
     KnowledgePackLoader,

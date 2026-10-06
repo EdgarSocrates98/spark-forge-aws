@@ -15,11 +15,11 @@
       "detail": "rode os seus testes sobre .sparkforge/sandbox/fc778c4f8222e1b0/after: o sandbox nao executa comando do repositorio"
     },
     {
-      "action": "sparkforge benchmark",
+      "action": "sparkforge-aws benchmark",
       "detail": "desempenho so se afirma com dois runs medidos, antes e depois; a diferenca de achados nao e ganho"
     },
     {
-      "action": "sparkforge funcval plan",
+      "action": "sparkforge-aws funcval plan",
       "detail": "confira que o resultado continua o mesmo: contagem, schema, chaves, agregados"
     }
   ],

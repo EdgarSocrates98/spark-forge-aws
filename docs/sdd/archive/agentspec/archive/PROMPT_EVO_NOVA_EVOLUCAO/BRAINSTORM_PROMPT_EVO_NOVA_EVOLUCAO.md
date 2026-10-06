@@ -18,7 +18,7 @@
 **Raw Input:** `prompt_evo_nova_evolucao.md` (1,032 linhas). O arquivo avalia a evolução recente da camada de prompts/agentes e propõe elevar a prova de L0, avaliação offline determinística, para L1, replay de transcripts registrados pelo host, com caminho live externo controlado. Também aponta a necessidade de vincular a `evaluation_policy` aos receipts, remover o `minimum_labeled_tasks` duplicado, executar cada candidate uma vez, selecionar o receipt mais recente por sequência verificável e suportar policies por tipo de candidate.
 
 **Context Gathered:**
-- `sparkforge/evals/evolution.py` já possui candidates content-addressed, lifecycle, replay baseline-versus-candidate, `EvaluationGatePolicy`, receipts locais e promoção com rollback.
+- `sparkforge_aws/evals/evolution.py` já possui candidates content-addressed, lifecycle, replay baseline-versus-candidate, `EvaluationGatePolicy`, receipts locais e promoção com rollback.
 - O gate atual ainda contém `50` diretamente em `CandidateEvaluation.gates_pass`; a policy carregada do registry é global e ainda não identifica o digest da policy no resultado.
 - `EvolutionService.evaluate()` cria reports separados, mas executa o runner de cada lado duas vezes para preservar o formato antigo; `latest_evaluation()` ordena receipts pelo nome do arquivo.
 - O protocolo host e os facts de transcript já existem, e o projeto mantém fixtures de replay, transcripts, comparação baseline/candidate e ground truth rotulado.
@@ -28,7 +28,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/evals/evolution.py`, `sparkforge/evals/decision_replay.py`, `sparkforge/decision/host.py`, `sparkforge/decision/receipts.py`, `config/evolution/prompt_agents.yaml` | Introduzir bundle/policy/adapter perto dos contratos existentes e preservar as fachadas atuais durante a migração |
+| Likely Location | `sparkforge_aws/evals/evolution.py`, `sparkforge_aws/evals/decision_replay.py`, `sparkforge_aws/decision/host.py`, `sparkforge_aws/decision/receipts.py`, `config/evolution/prompt_agents.yaml` | Introduzir bundle/policy/adapter perto dos contratos existentes e preservar as fachadas atuais durante a migração |
 | Relevant KB Domains | `genai`, `prompt-engineering`, `testing`, `python` | Usar avaliação estruturada, comparação pareada, evidência auditável, testes de integração e value objects tipados |
 | IaC Patterns | N/A | A mudança é local, de avaliação e governança; não requer infraestrutura |
 
@@ -61,7 +61,7 @@
 | Input files | `fixtures/host_transcript/` | 21 cenários; 18 JSONL | Inclui casos válidos, inválidos, ausência de uso, envelopes quebrados, ordem inválida e comparações baseline/candidate |
 | Output examples | `fixtures/host_transcript/**/expected/` | Presente nos cenários | Contém `facts.json`, `grade.json`, `compare.json` e `scorecard.json`, conforme o cenário |
 | Ground truth | `evals/token_efficient/fixtures/decision_control_plane_cases.yaml` e suites `evals/token_efficient/` | Corpus rotulado existente | Casos com status esperado, evidências, findings, rota, partição train/holdout, manifest e uso do provider quando disponível |
-| Related code | `sparkforge/evals/evolution.py`, `sparkforge/evals/decision_replay.py`, `sparkforge/decision/host.py`, `sparkforge/decision/receipts.py`, `sparkforge/facts/host_transcript.py`, `tests/test_decision_evolution.py` | 6 pontos principais | Contratos e testes existentes para candidate, replay, transcript, receipt, integridade e promoção |
+| Related code | `sparkforge_aws/evals/evolution.py`, `sparkforge_aws/evals/decision_replay.py`, `sparkforge_aws/decision/host.py`, `sparkforge_aws/decision/receipts.py`, `sparkforge_aws/facts/host_transcript.py`, `tests/test_decision_evolution.py` | 6 pontos principais | Contratos e testes existentes para candidate, replay, transcript, receipt, integridade e promoção |
 
 **How samples will be used:**
 
@@ -88,7 +88,7 @@
 - Exige versionar um novo envelope e definir migração dos receipts antigos.
 - A policy por family aumenta o contrato de configuração e o número de casos de teste.
 
-**Why Recommended:** O código já tem as fronteiras necessárias em `sparkforge/evals/evolution.py` e o corpus já contém transcripts e ground truth. O padrão KB de `genai` recomenda métricas estruturadas, comparação pareada e quality gates; o padrão de validation prompts reforça evidência e formato verificável. Confiança: **0,95**, por haver padrão KB e correspondência direta no códigobase.
+**Why Recommended:** O código já tem as fronteiras necessárias em `sparkforge_aws/evals/evolution.py` e o corpus já contém transcripts e ground truth. O padrão KB de `genai` recomenda métricas estruturadas, comparação pareada e quality gates; o padrão de validation prompts reforça evidência e formato verificável. Confiança: **0,95**, por haver padrão KB e correspondência direta no códigobase.
 
 ---
 

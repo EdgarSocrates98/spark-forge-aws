@@ -16,11 +16,11 @@ exporter sob demanda ou capacidade dependente de evidência externa.
 
 | Área | Estado | Fonte de verdade |
 |---|---|---|
-| Core de facts/rules/findings/case | Implementado e offline | `sparkforge/facts`, `sparkforge/rules`, `sparkforge/findings`, `sparkforge/case` |
-| Registry e exporters | Implementado; artefatos de plataforma são gerados sob demanda | `sparkforge/registry`, `sparkforge/adapters/platforms` |
-| Gateway/contexto e economia | Implementado com métricas separadas e router `shadow` | `sparkforge/context`, `sparkforge/economy` |
-| Agentic OS v2 | Implementado local-first | `sparkforge/agentic`, `sparkforge/protocols/forge.py` |
-| AgentOps | Implementado para traces locais | `sparkforge/observability/agentops.py` |
+| Core de facts/rules/findings/case | Implementado e offline | `sparkforge_aws/facts`, `sparkforge_aws/rules`, `sparkforge_aws/findings`, `sparkforge_aws/case` |
+| Registry e exporters | Implementado; artefatos de plataforma são gerados sob demanda | `sparkforge_aws/registry`, `sparkforge_aws/adapters/platforms` |
+| Gateway/contexto e economia | Implementado com métricas separadas e router `shadow` | `sparkforge_aws/context`, `sparkforge_aws/economy` |
+| Agentic OS v2 | Implementado local-first | `sparkforge_aws/agentic`, `sparkforge_aws/protocols/forge.py` |
+| AgentOps | Implementado para traces locais | `sparkforge_aws/observability/agentops.py` |
 | Providers, active routing e AWS mutation | Fora desta onda | ADR-012, `AGENTS.md`, `CLAUDE.md` |
 
 ```
@@ -52,8 +52,8 @@ exporter sob demanda ou capacidade dependente de evidência externa.
 │   TeamManifest, WorkflowManifest, PolicyManifest, KnowledgeManifest, Eval   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                    Layer 0: Deterministic Core (0 Tokens LLM)                │
-│   sparkforge.facts (extractors, fact kinds), sparkforge.rules (AST Engine)  │
-│   sparkforge.findings (Immutable Evidence Schema), sparkforge.case (Gates)  │
+│   sparkforge_aws.facts (extractors, fact kinds), sparkforge_aws.rules (AST Engine)  │
+│   sparkforge_aws.findings (Immutable Evidence Schema), sparkforge_aws.case (Gates)  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -69,12 +69,12 @@ exporter sob demanda ou capacidade dependente de evidência externa.
 #### Lane de arquitetura Lake Formation
 
 O núcleo determinístico mantém uma lane específica para arquitetura version-aware
-de Lake Formation. `sparkforge/lakeformation/capabilities.py` lê
+de Lake Formation. `sparkforge_aws/lakeformation/capabilities.py` lê
 `knowledge/lakeformation/capability-matrix.yaml`; `catalog_routing.py` mantém
 ownership de job, conta local, catálogo de origem e catálogo de destino sem
 colar `glue.id` a `glue.account-id`; `architecture.py` compõe capability,
 operação, credential vending e cross-account em `consistent`, `unresolved` ou
-`blocked`. A superfície é `sparkforge lakeformation architect` e
+`blocked`. A superfície é `sparkforge-aws lakeformation architect` e
 `sparkforge_lakeformation_architect`, ambos offline e sem mutação AWS.
 
 A mesma lane expõe `review`: operational review que compõe facts de PySpark/Terraform, detecta
@@ -108,7 +108,7 @@ carregar a referência específica de Glue; combinações não declaradas contin
   3. **Claude Code**: `CLAUDE.md` conciso como bootstrap, espelhos `.claude/agents/` e `.claude/skills/`.
   4. **Devin & Windsurf**: Mapeamento limpo e isolado sem vazar detalhes no core.
   5. **Generic / Open Standard**: `AGENTS.md`, especificação padrão de Agent Skills e schemas JSON abertos.
-- Comandos CLI: `sparkforge export --target <target>` e `sparkforge sync`.
+- Comandos CLI: `sparkforge-aws export --target <target>` e `sparkforge-aws sync`.
 
 ### Layer 3: Token Economy Engine & Model Router
 - **Cascata de 7 Tiers**:
@@ -126,7 +126,7 @@ carregar a referência específica de Glue; combinações não declaradas contin
   - `OFFLINE`: Zero chamadas externas, inferência local ou determinística.
   - `STRICT`: Revisões rigorosas de segurança, gates explícitos e evidência máxima.
 - **Model Router Baseado em Capacidade**: Seleção por `(complexidade × risco × capacidade_necessária × budget × privacidade)`.
-- **Token Waste Detector**: Análise automática de loops redundantes, retries idênticos e context over-provisioning via `sparkforge optimize`.
+- **Token Waste Detector**: Análise automática de loops redundantes, retries idênticos e context over-provisioning via `sparkforge-aws optimize`.
 
 ### Layer 4: Context Funnel & Scoped Memory
 - **Context Funnel**: `Repositório Completo` → `Arquivos Candidatos` → `Chunks Relevantes` → `Evidências Desduplicadas` → `Contexto Mínimo da Tarefa`.
@@ -165,7 +165,7 @@ carregar a referência específica de Glue; combinações não declaradas contin
 ## 3. Estrutura Modular de Pacotes vNext
 
 ```
-sparkforge/
+sparkforge_aws/
 ├── core/               # Tipos base, contratos e exceções fundamentais
 ├── registry/           # Manifests Pydantic, Schemas JSON e Registry Canônico
 ├── facts/              # Extratores determinísticos offline (Layer 0)
@@ -189,7 +189,7 @@ sparkforge/
 
 ## 4. Estratégia de Migração e Compatibilidade Inegociável
 
-1. **Retrocompatibilidade de CLI**: O comando `sparkforge` continuará aceitando todos os subcomandos existentes (`analyze`, `judge`, `case`, `report`, `benchmark`, `funcval`, `runtime`, `fuse`). Novos comandos (`export`, `doctor`, `inspect`, `optimize`, `workflow`, `eval`) serão introduzidos de forma aditiva.
+1. **Retrocompatibilidade de CLI**: O comando `sparkforge-aws` continuará aceitando todos os subcomandos existentes (`analyze`, `judge`, `case`, `report`, `benchmark`, `funcval`, `runtime`, `fuse`). Novos comandos (`export`, `doctor`, `inspect`, `optimize`, `workflow`, `eval`) serão introduzidos de forma aditiva.
 2. **Retrocompatibilidade de MCP**: As ferramentas MCP expostas continuam com as mesmas assinaturas e retornos JSON estruturados.
 3. **Preservação de Catálogos de Regras**: Os catálogos de regras YAML existentes em `rules/catalog/` continuam sendo a fonte canônica para julgamentos.
 4. **Autoridade separada de evidência**: trust, taint, `instruction_authority`,
@@ -217,7 +217,7 @@ mantém qualidade, rota, bytes, tokens e custo como eixos independentes. Custo r
 bytes nunca são convertidos em tokens.
 ## 6. Lake Formation FGAC/FTA — decision graph por perna
 
-O motor `sparkforge/lakeformation/architecture.py` agora compõe decisões
+O motor `sparkforge_aws/lakeformation/architecture.py` agora compõe decisões
 independentes para source e target, preservando formato e operação de cada lado.
 `not_supported` bloqueia; escrita em `read_only` bloqueia; `limited` e
 `version_dependent` exigem evidência específica; `unknown` permanece
@@ -238,12 +238,12 @@ O desenho acima agora tem uma camada de contratos implementada sem provider SDK:
 
 | Área | Contrato/código | Limite operacional |
 |---|---|---|
-| Memória institucional | `sparkforge.agentic.memory` | decisão sem evidência entra em quarantine; retrieval não confia nela por padrão |
-| Trust e handoff | `sparkforge.agentic.trust`, `sparkforge.protocols.forge` | confiança não concede autoridade de instrução; handoff é `DATA_ONLY` |
-| Contexto | `sparkforge.context.quality` | bytes, tokens observados e custo ficam em eixos separados |
-| Economia | `sparkforge.economy.ledger`, `model_router` | `cost_basis` obrigatório; router shadow por default |
-| Checkpoint | `sparkforge.agentic.checkpoint` | estado resumível é content-addressed e serializável |
-| AgentOps | `sparkforge.observability.agentops` | SQLite local; transcript, preço e qualidade ausentes saem `unresolved` |
+| Memória institucional | `sparkforge_aws.agentic.memory` | decisão sem evidência entra em quarantine; retrieval não confia nela por padrão |
+| Trust e handoff | `sparkforge_aws.agentic.trust`, `sparkforge_aws.protocols.forge` | confiança não concede autoridade de instrução; handoff é `DATA_ONLY` |
+| Contexto | `sparkforge_aws.context.quality` | bytes, tokens observados e custo ficam em eixos separados |
+| Economia | `sparkforge_aws.economy.ledger`, `model_router` | `cost_basis` obrigatório; router shadow por default |
+| Checkpoint | `sparkforge_aws.agentic.checkpoint` | estado resumível é content-addressed e serializável |
+| AgentOps | `sparkforge_aws.observability.agentops` | SQLite local; transcript, preço e qualidade ausentes saem `unresolved` |
 
 As operações públicas são aditivas: `context inspect`, `agentops
 inspect|compare|baseline` e `doctor agentic`. CLI e MCP chamam o mesmo `_core`; salvar

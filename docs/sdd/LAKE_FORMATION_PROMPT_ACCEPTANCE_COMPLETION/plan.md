@@ -9,11 +9,11 @@ upstream:
   sha256: "35e4d2d810ad9701794f3af1e5ea9b3b76ed624c7f02e40b65ff8a892218d58f"
 tasks:
   - id: T1
-    files: [tests/test_lakeformation_prompt_acceptance.py, sparkforge/lakeformation/architecture.py]
+    files: [tests/test_lakeformation_prompt_acceptance.py, sparkforge_aws/lakeformation/architecture.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_lakeformation_prompt_acceptance.py, name: test_migration_report_covers_declared_transition_families}
   - id: T2
-    files: [tests/test_lakeformation_prompt_acceptance.py, sparkforge/lakeformation/architecture.py]
+    files: [tests/test_lakeformation_prompt_acceptance.py, sparkforge_aws/lakeformation/architecture.py]
     covers: [AC4, AC5, AC6]
     test: {path: tests/test_lakeformation_prompt_acceptance.py, name: test_access_graph_and_cross_account_observability_are_explicit}
   - id: T3

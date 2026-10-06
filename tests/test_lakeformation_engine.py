@@ -1,6 +1,6 @@
 """Tests for Lake Formation Permission Graph and Doctor."""
-from sparkforge.lakeformation.doctor import LakeFormationDoctor
-from sparkforge.lakeformation.graph import LakeFormationPermissionGraph
+from sparkforge_aws.lakeformation.doctor import LakeFormationDoctor
+from sparkforge_aws.lakeformation.graph import LakeFormationPermissionGraph
 
 
 def test_permission_graph_accessible():

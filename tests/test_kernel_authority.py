@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.decision import (
+from sparkforge_aws.decision import (
     ActivePromotion,
     AuthorityPolicy,
     BoundedDecisionKernel,
@@ -12,9 +12,9 @@ from sparkforge.decision import (
     DecisionCache,
     DecisionStatus,
 )
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_kernel_bridge import build_kernel_contract, evaluate_active
-from sparkforge.economy.decision_models import DecisionInput
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_kernel_bridge import build_kernel_contract, evaluate_active
+from sparkforge_aws.economy.decision_models import DecisionInput
 
 ROOT = Path(__file__).resolve().parents[1]
 

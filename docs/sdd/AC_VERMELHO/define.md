@@ -10,7 +10,7 @@ upstream:
 hypothesis:
   claim: "Um criterio de kind test cujo teste nunca foi visto vermelho pode ser recusado pelo sdd check sem campo novo no build_report, derivando a ligacao do covers do plano e do red de cada tarefa; e a guarda de regressao legitima, que passa antes e depois por desenho, fica separada de 'ninguem testou' por uma declaracao explicita no define."
   prediction: "Sobre uma feature ainda nao entregue: um criterio de kind test sem tarefa que o cubra com red.exit diferente de zero rodando o node id dele -- ou o arquivo dele com exit 2 -- sai recusado com nome proprio, nomeando o criterio e o teste; o mesmo criterio declarado como guarda, com motivo, passa; guarda sem motivo e recusada; red com o arquivo e exit 1 nao conta; e as 12 features ja entregues continuam passando no sdd check do repositorio inteiro. Se um criterio sem vermelho passar, se a guarda declarada for recusada, se exit 1 no arquivo contar, ou se alguma feature entregue quebrar, a afirmacao esta errada."
-  experiment: "Rodar sparkforge sdd check sobre features sinteticas montadas em tmp_path, e sparkforge sdd check --repo . sobre a arvore inteira antes e depois."
+  experiment: "Rodar sparkforge-aws sdd check sobre features sinteticas montadas em tmp_path, e sparkforge-aws sdd check --repo . sobre a arvore inteira antes e depois."
 acceptance:
   - id: AC1
     statement: "Com o build_report em ready ou done e o ship ausente ou fora de done, todo acceptance de kind test precisa de ao menos uma tarefa do plan que o cubra (covers) e cujo red, no build_report, tenha exit diferente de zero e cite o node id do verified_by no comando. Sem isso sai a recusa acceptance_never_red, nomeando o criterio e o teste."
@@ -36,7 +36,7 @@ success:
     source: "script de medida do explore, rodado de novo no ship"
   - id: SC2
     metric: "Features entregues que passam no sdd check do repositorio, antes e depois"
-    source: "python -m sparkforge.adapters.cli sdd check --repo ."
+    source: "python -m sparkforge_aws.adapters.cli sdd check --repo ."
 out_of_scope:
   - "Mutacao por criterio (abordagem C do explore): provaria que o teste falharia se o criterio fosse violado, mas faz o sdd check executar codigo."
   - "Pegar teste que foi vermelho de verdade e cobre pouco (a classe do CONFIG_OCA:AC2): visto vermelho nao e cobre o criterio, e so a abordagem C chega la."
@@ -50,7 +50,7 @@ change_kinds: [agent_or_skill, claims]
 
 ## Problema
 
-O `sparkforge sdd check` confere que o `verified_by` de cada critério existe e tem forma.
+O `sparkforge-aws sdd check` confere que o `verified_by` de cada critério existe e tem forma.
 Ele não confere que o teste citado **alguma vez falhou** — e teste que nunca falhou não foi
 visto verificando nada. Na CONFIG_OCA isso deixou passar um crítico: o `AC4` apontava para
 um teste que não olhava o arquivo que o critério descrevia, e passou verde de ponta a ponta.

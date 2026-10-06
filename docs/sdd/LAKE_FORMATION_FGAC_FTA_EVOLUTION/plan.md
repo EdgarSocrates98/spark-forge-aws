@@ -9,19 +9,19 @@ upstream:
   sha256: "5a56d7f630428b9c03763a234a30e6fd79a67ff213fe0049b9893c14c7ac6cf5"
 tasks:
   - id: T1
-    files: [knowledge/lakeformation/capability-matrix.yaml, sparkforge/lakeformation/capabilities.py, tests/test_lakeformation_architecture.py]
+    files: [knowledge/lakeformation/capability-matrix.yaml, sparkforge_aws/lakeformation/capabilities.py, tests/test_lakeformation_architecture.py]
     covers: [AC3, AC4, AC5]
     test: {path: tests/test_lakeformation_architecture.py, name: test_capability_matrix_is_source_backed}
   - id: T2
-    files: [sparkforge/lakeformation/catalog_routing.py, sparkforge/lakeformation/architecture.py, tests/test_lakeformation_architecture.py]
+    files: [sparkforge_aws/lakeformation/catalog_routing.py, sparkforge_aws/lakeformation/architecture.py, tests/test_lakeformation_architecture.py]
     covers: [AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9, AC10]
     test: {path: tests/test_lakeformation_architecture.py, name: test_routing_preserves_account_ownership_dimensions}
   - id: T3
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_lakeformation_architecture.py, tests/test_adapters_mcp_compact.py, tests/test_host_surface_contracts.py, tests/test_fixtures_golden_mcp_parity.py, tests/test_harness_boundary.py, fixtures/knowledge_drift/lf_consideracoes/expected/result.json]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_lakeformation_architecture.py, tests/test_adapters_mcp_compact.py, tests/test_host_surface_contracts.py, tests/test_fixtures_golden_mcp_parity.py, tests/test_harness_boundary.py, fixtures/knowledge_drift/lf_consideracoes/expected/result.json]
     covers: [AC11]
     test: {path: tests/test_lakeformation_architecture.py, name: test_cli_and_mcp_architecture_parity}
   - id: T4
-    files: [knowledge/lakeformation/architecture.md, skills/lakeformation-architecture/SKILL.md, sparkforge/integrate/render.py, agents/sf-lake-formation-specialist.md, agents/sf-runtime-specialist.md, docs/guia/usos/lake-formation-e-acesso.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CAPABILITY-MATRIX.md, docs/vnext/KNOWLEDGE-MAP.md, docs/claims.lock.json, docs/surface.lock.json, manifest.json, tests/test_sync_render.py, tests/test_lakeformation_architecture.py]
+    files: [knowledge/lakeformation/architecture.md, skills/lakeformation-architecture/SKILL.md, sparkforge_aws/integrate/render.py, agents/sf-lake-formation-specialist.md, agents/sf-runtime-specialist.md, docs/guia/usos/lake-formation-e-acesso.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CAPABILITY-MATRIX.md, docs/vnext/KNOWLEDGE-MAP.md, docs/claims.lock.json, docs/surface.lock.json, manifest.json, tests/test_sync_render.py, tests/test_lakeformation_architecture.py]
     covers: [AC12]
     test: {path: tests/test_lakeformation_architecture.py, name: test_architecture_docs_and_vnext_are_anchored}
 ---
@@ -33,7 +33,7 @@ tasks:
 Teste primeiro, em \`tests/test_lakeformation_architecture.py\`:
 
 \`\`\`python
-from sparkforge.lakeformation.capabilities import capability, load_matrix
+from sparkforge_aws.lakeformation.capabilities import capability, load_matrix
 
 
 def test_capability_matrix_is_source_backed():
@@ -59,7 +59,7 @@ Rodar e ver falhar com \`ModuleNotFoundError\` da unidade nova:
 python -m pytest tests/test_lakeformation_architecture.py::test_capability_matrix_is_source_backed -q
 \`\`\`
 
-Código mínimo: criar \`knowledge/lakeformation/capability-matrix.yaml\` com fontes oficiais verificadas em 2026-09-30, células para Glue 4.0/5.0/5.1, EMR EC2 6.15/7.8/7.10/7.12 e EMR Serverless 7.2/7.9/7.12, e \`sparkforge/lakeformation/capabilities.py\` com loader \`safe_knowledge_file\`, vocabulário fechado, \`load_matrix()\`, \`capability()\` e unresolved para engine/release ausente.
+Código mínimo: criar \`knowledge/lakeformation/capability-matrix.yaml\` com fontes oficiais verificadas em 2026-09-30, células para Glue 4.0/5.0/5.1, EMR EC2 6.15/7.8/7.10/7.12 e EMR Serverless 7.2/7.9/7.12, e \`sparkforge_aws/lakeformation/capabilities.py\` com loader \`safe_knowledge_file\`, vocabulário fechado, \`load_matrix()\`, \`capability()\` e unresolved para engine/release ausente.
 
 Rodar o mesmo teste até exit 0. Gates vizinhos: knowledge offline bundle, sources lock e \`tests/test_lakeformation_architecture.py\`. Commit: \`feat(lakeformation): add version-aware capability matrix\`.
 
@@ -83,8 +83,8 @@ python -m pytest \
 
 Código mínimo:
 
-1. \`sparkforge/lakeformation/catalog_routing.py\`: validar e normalizar apenas shape, preservar seis account dimensions, comparar \`glue_id\` e \`glue_account_id\` separadamente, e retornar \`unresolved\` para ambiguidade/ausência.
-2. \`sparkforge/lakeformation/architecture.py\`: chamar \`capability()\`, classificar Glue/EMR/Serverless, decidir FGAC/FTA/migration_required, separar read/write, verificar \`GetDataAccess\`, application integration, filesystem, LF grants, RAM, links, registration e IAMAllowedPrincipals; nunca fabricar evidence.
+1. \`sparkforge_aws/lakeformation/catalog_routing.py\`: validar e normalizar apenas shape, preservar seis account dimensions, comparar \`glue_id\` e \`glue_account_id\` separadamente, e retornar \`unresolved\` para ambiguidade/ausência.
+2. \`sparkforge_aws/lakeformation/architecture.py\`: chamar \`capability()\`, classificar Glue/EMR/Serverless, decidir FGAC/FTA/migration_required, separar read/write, verificar \`GetDataAccess\`, application integration, filesystem, LF grants, RAM, links, registration e IAMAllowedPrincipals; nunca fabricar evidence.
 3. O output deve conter \`status\`, \`decision\`, \`routing\`, \`checks\`, \`observed\`, \`inferred\`, \`required_verification\`, \`risks\` e \`rollback\`.
 
 Rodar os mesmos testes até exit 0. Gates vizinhos: \`ruff\` nos três módulos e teste de imports offline. Commit: \`feat(lakeformation): add governed access architecture decision engine\`.
@@ -101,9 +101,9 @@ O vermelho esperado é \`AttributeError\`/\`KeyError\` porque o adapter ainda n�
 
 Código mínimo:
 
-- \`sparkforge/adapters/_core.py\`: \`lakeformation_architect(payload)\` delega somente ao módulo puro e mantém o envelope existente.
-- \`sparkforge/adapters/cli.py\`: registrar \`sparkforge lakeformation architect --input <json>\` e serializar o mesmo payload.
-- \`sparkforge/adapters/tools.py\`: registrar \`sparkforge_lakeformation_architect\`, schema do payload e handler sem leitura livre de disco ou chamada AWS.
+- \`sparkforge_aws/adapters/_core.py\`: \`lakeformation_architect(payload)\` delega somente ao módulo puro e mantém o envelope existente.
+- \`sparkforge_aws/adapters/cli.py\`: registrar \`sparkforge-aws lakeformation architect --input <json>\` e serializar o mesmo payload.
+- \`sparkforge_aws/adapters/tools.py\`: registrar \`sparkforge_lakeformation_architect\`, schema do payload e handler sem leitura livre de disco ou chamada AWS.
 - Teste chama a função core e os dois adapters sobre o mesmo fixture declarativo e compara \`status\`, \`decision\`, \`routing\` e \`checks\`.
 
 Rodar até exit 0. Gates vizinhos: \`python scripts/gen_reference_docs.py\`, \`python -m pytest tests/test_reference_docs.py tests/test_adapters_cli.py tests/test_adapters_tools.py -q\`, \`python scripts/check_surface_lock.py --update\` apenas se o crescimento estiver declarado no commit. Commit: \`feat(lakeformation): expose architecture analysis through cli and mcp\`.

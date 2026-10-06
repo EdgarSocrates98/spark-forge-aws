@@ -22,7 +22,7 @@ Branch `feat/otel-genai`, a partir da `main` (com #48, #49 e #50).
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | B1–B8 |
-| **Files Created** | `sparkforge/observability/otlp.py`, `fixtures/otel/` (4 casos), `tests/test_observability_otlp.py`, `tests/test_fixtures_golden_otel.py`, `tests/test_check_otel_collector.py`, `scripts/check_otel_collector.py`, `.github/otel-collector.yaml`, `docs/opentelemetry.md` |
+| **Files Created** | `sparkforge_aws/observability/otlp.py`, `fixtures/otel/` (4 casos), `tests/test_observability_otlp.py`, `tests/test_fixtures_golden_otel.py`, `tests/test_check_otel_collector.py`, `scripts/check_otel_collector.py`, `.github/otel-collector.yaml`, `docs/opentelemetry.md` |
 | **Files Modified** | `facts/host_transcript.py` (+ 15 goldens), `observability/context_ledger.py`, `adapters/{tools,mcp,_core,cli}.py`, `scripts/regen_fixtures.py`, `.github/workflows/ci.yml`, registros de tool nova (`tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `tests/test_fixtures_golden_mcp_parity.py`, `parity.yaml`, `manifest.json`, `config/agents.yaml`, `sf-synthesizer` + espelhos), `tests/test_context_ledger.py`, `tests/test_adapters_mcp.py`, `CLAUDE.md`, `AGENTS.md`, `GUIA_DE_USO.md`, `.devin/README.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + 4 docs de `docs/harness/` |
 | **Tests Passing** | Suite completa, um processo por arquivo: 265 arquivos, 12 154 passed, 0 failed, 9 skipped |
 | **Agents Used** | Nenhum delegado: o build foi direto |
@@ -57,7 +57,7 @@ Branch `feat/otel-genai`, a partir da `main` (com #48, #49 e #50).
 ### Lint Check
 
 ```text
-ruff check sparkforge scripts tests -> All checks passed!
+ruff check sparkforge_aws scripts tests -> All checks passed!
 ```
 
 **Status:** ✅ Pass
@@ -75,7 +75,7 @@ N/A — o repositorio nao configura mypy
 ```text
 Suite completa, um processo por arquivo: 265 arquivos, 12 154 passed, 0 failed, 9 skipped
 check_vnext_claims 0 | check_status_numbers --strict 0 | check_surface_lock 0 | check_evals 10/10
-Snyk Code (sparkforge/observability, sparkforge/adapters, scripts/check_otel_collector.py): 0
+Snyk Code (sparkforge_aws/observability, sparkforge_aws/adapters, scripts/check_otel_collector.py): 0
 ```
 
 **Status:** ✅ Pass

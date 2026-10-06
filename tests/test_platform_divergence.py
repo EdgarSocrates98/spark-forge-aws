@@ -19,9 +19,9 @@ pegava, e o unico que prova o criterio 12.
 """
 import pytest
 
-from sparkforge.facts.runtime_detect import EMITTED_KINDS, detect_runtime
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.runtime_detect import EMITTED_KINDS, detect_runtime
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 # Glue 4.0 deriva Spark 3.3.0 pela GLUE_MATRIX. O cluster EMR observado reporta
 # o mesmo 3.3.0 -- as versoes derivadas COINCIDEM, entao `distinct_versions` e 1
@@ -185,7 +185,7 @@ class TestTheContractAroundTheNewKind:
         assert "env.platform" in EMITTED_KINDS
 
     def test_the_fact_validates_against_the_schema(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         facts, _ = _fire(COINCIDENT)
         for fact in facts:
@@ -200,7 +200,7 @@ class TestTheContractAroundTheNewKind:
 
 class TestRuntimeContextKnowsEmr:
     def test_emr_is_a_field_with_an_empty_default(self):
-        from sparkforge.findings.models import RuntimeContext
+        from sparkforge_aws.findings.models import RuntimeContext
 
         assert RuntimeContext().emr == ""
         assert "emr" in RuntimeContext().to_dict()

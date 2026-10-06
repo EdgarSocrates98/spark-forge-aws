@@ -50,7 +50,7 @@ Gatilho: um consumidor fora deste repo importando um dos primitivos
 O que um orquestrador externo precisa continua possivel sobre Forge
 Protocol v1:
 
-- **capability discovery** — `sparkforge protocols`/`forge card` expoem
+- **capability discovery** — `sparkforge-aws protocols`/`forge card` expoem
   capacidades declaradas;
 - **task submission** — `ForgeTask` admissivel com id deterministico;
 - **result** — `ForgeResult` com estados do vocabulario v1;

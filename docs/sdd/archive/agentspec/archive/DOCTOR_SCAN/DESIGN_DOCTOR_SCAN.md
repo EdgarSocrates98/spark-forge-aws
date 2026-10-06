@@ -17,10 +17,10 @@
 ## Architecture Overview
 
 ```text
-                         sparkforge scan [raiz] [--dry-run] [--format json|sarif] [--fail-on P0|P1] [--glue ...]
+                         sparkforge-aws scan [raiz] [--dry-run] [--format json|sarif] [--fail-on P0|P1] [--glue ...]
                                               |
                                               v
-+------------------------- sparkforge/scan/plan.py (PURO) -------------------------+
++------------------------- sparkforge_aws/scan/plan.py (PURO) -------------------------+
 |  manifest.json --(kind, sha256 via collect.base.verify_artifact)--> Entrada        |
 |  varrer_source_files(raiz) --(.py .sql .tf .jsonl)--> Entrada                      |
 |  .json solto -> Recusa(sem_manifesto) ; sha divergente -> Recusa(sha256_divergente)|
@@ -39,14 +39,14 @@
                                                v
                           summary (stdout / tool)  ; exit 1 se --fail-on disparar
 
-                         sparkforge doctor [--repo .] [--online]
+                         sparkforge-aws doctor [--repo .] [--online]
                                               |
 +----------------------- _core.doctor (sonda as portas) -----------------------+
 | installed_version, find_spec, build_server, load_catalog, pack_list,          |
 | knowledge_path(freshness), code_status, collect_verify, boto3 (STS so online) |
 +----------------------------------+-------------------------------------------+
                                    v  saidas cruas das portas
-+-------------------- sparkforge/doctor.py (PURO) --------------------+
++-------------------- sparkforge_aws/doctor.py (PURO) --------------------+
 | avaliar_<id>(saida) -> Checagem{id,status,detail,unlock} ; resumo() |
 +---------------------------------------------------------------------+
 ```
@@ -57,10 +57,10 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/scan/plan.py` | Plano puro: manifesto + varredura -> entradas e recusas nomeadas | Python, `collect.base`, `facts.scan.varrer_source_files` |
-| `sparkforge/scan/summary.py` | Resumo puro do que rodou: contagem por analyze, findings por severidade, recusas, pulos | Python |
-| `sparkforge/doctor.py` | Avaliacao pura de cada checagem a partir da saida da porta; resumo e exit | Python |
-| `_core.scan`, `_core.doctor` | Orquestram as portas que ja existem; unica camada que importa `_core` | `sparkforge/adapters/_core.py` |
+| `sparkforge_aws/scan/plan.py` | Plano puro: manifesto + varredura -> entradas e recusas nomeadas | Python, `collect.base`, `facts.scan.varrer_source_files` |
+| `sparkforge_aws/scan/summary.py` | Resumo puro do que rodou: contagem por analyze, findings por severidade, recusas, pulos | Python |
+| `sparkforge_aws/doctor.py` | Avaliacao pura de cada checagem a partir da saida da porta; resumo e exit | Python |
+| `_core.scan`, `_core.doctor` | Orquestram as portas que ja existem; unica camada que importa `_core` | `sparkforge_aws/adapters/_core.py` |
 | CLI `scan`, `doctor` | Verbos de topo | `argparse` em `adapters/cli.py` |
 | Tools `sparkforge_scan`, `sparkforge_doctor` | Mesma funcao pelo MCP | `adapters/tools.py` |
 | `fixtures/scan/` | Repositorios sinteticos com `.sparkforge/artifacts/` commitado | JSON, `.py`, `.tf`, `.sql`, `.jsonl` copiados de fixtures existentes |
@@ -128,7 +128,7 @@ Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql
 
 **Consequences:**
 - Um repositorio com muitos `.json` de configuracao (ex.: `package.json`) gera muitas recusas `sem_manifesto`; o resumo as agrupa por razao com contagem e a lista completa fica no `summary.json`.
-- Mapa novo a manter junto dos `collect_*`: um teste cobra que todo `kind=` emitido em `sparkforge/collect/` esteja no mapa (analyze ou recusa declarada).
+- Mapa novo a manter junto dos `collect_*`: um teste cobra que todo `kind=` emitido em `sparkforge_aws/collect/` esteja no mapa (analyze ou recusa declarada).
 
 ---
 
@@ -141,7 +141,7 @@ Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql
 
 **Context:** Testar `warn`/`fail`/`skip` de nove checagens exigiria montar ambientes quebrados.
 
-**Choice:** `_core.doctor` chama as portas e entrega a saida crua; `sparkforge/doctor.py` tem `avaliar_<id>(saida) -> Checagem` puro, testavel com dicionarios. A tool nunca recebe `online`.
+**Choice:** `_core.doctor` chama as portas e entrega a saida crua; `sparkforge_aws/doctor.py` tem `avaliar_<id>(saida) -> Checagem` puro, testavel com dicionarios. A tool nunca recebe `online`.
 
 **Rationale:** Cada status vira teste de unidade de uma linha; so a sondagem toca o ambiente. Medido: `pack_list` devolve `active/refused/env`, `knowledge_path(source_freshness=True)` traz `freshness_policy.counts`, `code_status` sem indice devolve `initialized`/`fresh`, `collect_verify` devolve `total/ok/missing/mismatched`.
 
@@ -173,13 +173,13 @@ Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/scan/__init__.py` | Create | Exporta `plan`, `Plano`, `Entrada`, `Recusa`, `resumo` | (general) | None |
-| 2 | `sparkforge/scan/plan.py` | Create | Plano puro, `KIND_PARA_ANALYZE`, recusas | @python-developer | None |
-| 3 | `sparkforge/scan/summary.py` | Create | Resumo puro | @python-developer | 2 |
-| 4 | `sparkforge/doctor.py` | Create | `Checagem`, `avaliar_*`, `resumo` | @python-developer | None |
-| 5 | `sparkforge/adapters/_core.py` | Modify | `scan()`, `doctor()`, escrita em `.sparkforge/scan/` | @python-developer | 2, 3, 4 |
-| 6 | `sparkforge/adapters/cli.py` | Modify | Verbos `scan` e `doctor`, dispatch | @python-developer | 5 |
-| 7 | `sparkforge/adapters/tools.py` | Modify | Schemas, entradas, handlers, mapa | @python-developer | 5 |
+| 1 | `sparkforge_aws/scan/__init__.py` | Create | Exporta `plan`, `Plano`, `Entrada`, `Recusa`, `resumo` | (general) | None |
+| 2 | `sparkforge_aws/scan/plan.py` | Create | Plano puro, `KIND_PARA_ANALYZE`, recusas | @python-developer | None |
+| 3 | `sparkforge_aws/scan/summary.py` | Create | Resumo puro | @python-developer | 2 |
+| 4 | `sparkforge_aws/doctor.py` | Create | `Checagem`, `avaliar_*`, `resumo` | @python-developer | None |
+| 5 | `sparkforge_aws/adapters/_core.py` | Modify | `scan()`, `doctor()`, escrita em `.sparkforge/scan/` | @python-developer | 2, 3, 4 |
+| 6 | `sparkforge_aws/adapters/cli.py` | Modify | Verbos `scan` e `doctor`, dispatch | @python-developer | 5 |
+| 7 | `sparkforge_aws/adapters/tools.py` | Modify | Schemas, entradas, handlers, mapa | @python-developer | 5 |
 | 8 | `tests/test_scan_plan.py` | Create | Unidade do plano e do mapa contra os `kind=` dos coletores | @test-generator | 2 |
 | 9 | `tests/test_doctor.py` | Create | Cada status de cada checagem; exit; tool sem `online` | @test-generator | 4, 5 |
 | 10 | `fixtures/scan/<caso>/` | Create | `misto`, `json_solto`, `sha256_divergente`, `kind_sem_analyze`, `analyze_falhou`, `glue_job_run`, `sarif` | (general) | None |
@@ -215,8 +215,8 @@ Extensao, fora de `.sparkforge/`: `.py` -> `pyspark` e `sql` (literal `spark.sql
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from sparkforge.collect.base import load_manifest, verify_artifact
-from sparkforge.facts.scan import varrer_source_files
+from sparkforge_aws.collect.base import load_manifest, verify_artifact
+from sparkforge_aws.facts.scan import varrer_source_files
 
 KIND_PARA_ANALYZE: dict[str, str | None] = {
     "event_log": "event-log",
@@ -282,7 +282,7 @@ def avaliar_artefatos(verify: dict) -> Checagem:
     ruins = verify["missing_count"] + verify["mismatched_count"]
     if ruins:
         return Checagem("artefatos", WARN, f"{ruins} artefato(s) ausente(s) ou divergente(s)",
-                        "sparkforge collect verify --repo .")
+                        "sparkforge-aws collect verify --repo .")
     return Checagem("artefatos", OK, f"{verify['ok_count']} artefato(s) integro(s)")
 ```
 
@@ -330,7 +330,7 @@ def avaliar_artefatos(verify: dict) -> Checagem:
 
 | Test Type | Scope | Files | Tools | Coverage Goal |
 |-----------|-------|-------|-------|---------------|
-| Unit | Plano, mapa contra os `kind=` de `sparkforge/collect/`, recusas | `tests/test_scan_plan.py` | pytest | AT-003, AT-004, AT-005, AT-007 |
+| Unit | Plano, mapa contra os `kind=` de `sparkforge_aws/collect/`, recusas | `tests/test_scan_plan.py` | pytest | AT-003, AT-004, AT-005, AT-007 |
 | Unit | Cada status das 9 checagens; exit; tool sem `online` | `tests/test_doctor.py` | pytest | AT-009 a AT-013 |
 | Golden (CLI) | Repositorios de `fixtures/scan/` copiados para `tmp_path` | `tests/test_fixtures_golden_scan.py` | pytest | AT-001, AT-002, AT-006, AT-008 |
 | Igualdade | scan == analyze -> fuse -> judge a mao; SARIF == `report github` | idem | pytest | SC1, SC4 |

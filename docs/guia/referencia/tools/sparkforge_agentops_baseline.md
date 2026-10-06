@@ -20,7 +20,7 @@ Salva ou compara baseline AgentOps em arquivo local content-addressed por run de
 
 ## Na CLI
 
-[`sparkforge agentops baseline`](../cli/agentops.md), [`sparkforge agentops compare`](../cli/agentops.md), [`sparkforge agentops critical-path`](../cli/agentops.md), [`sparkforge agentops inspect`](../cli/agentops.md), [`sparkforge agentops timeline`](../cli/agentops.md), [`sparkforge context inspect`](../cli/context.md), [`sparkforge doctor agentic`](../cli/doctor.md)
+[`sparkforge-aws agentops baseline`](../cli/agentops.md), [`sparkforge-aws agentops compare`](../cli/agentops.md), [`sparkforge-aws agentops critical-path`](../cli/agentops.md), [`sparkforge-aws agentops inspect`](../cli/agentops.md), [`sparkforge-aws agentops timeline`](../cli/agentops.md), [`sparkforge-aws context inspect`](../cli/context.md), [`sparkforge-aws doctor agentic`](../cli/doctor.md)
 
 ## Capacidade
 

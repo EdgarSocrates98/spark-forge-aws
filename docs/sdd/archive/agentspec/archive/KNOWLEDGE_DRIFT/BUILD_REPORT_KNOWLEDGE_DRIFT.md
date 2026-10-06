@@ -31,7 +31,7 @@
 
 | # | Task | Agent | Status | Notes |
 |---|------|-------|--------|-------|
-| 1 | `sparkforge/knowledge_drift.py` | (direct) | ✅ Complete | `RepoIndex`, `build_index` (por `iter_source_files`), `drift` pura, `render_markdown` |
+| 1 | `sparkforge_aws/knowledge_drift.py` | (direct) | ✅ Complete | `RepoIndex`, `build_index` (por `iter_source_files`), `drift` pura, `render_markdown` |
 | 2 | `tests/test_knowledge_drift.py` | (direct) | ✅ Complete | 17 testes, inclusive ida e volta do indice contra os `expected/findings.json` reais |
 | 3 | `_core.knowledge_drift` | (direct) | ✅ Complete | Monta lock, catalogo, `por_doc` e indice; `--url` fora do lock sai 2 |
 | 4 | CLI e tool | (direct) | ✅ Complete | `knowledge drift`; `sparkforge_knowledge_drift` READ_ONLY sem caminho |

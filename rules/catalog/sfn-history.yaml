@@ -1,6 +1,6 @@
 # Catálogo de regras — o que ACONTECEU numa execução do AWS Step Functions
 #
-# Depende de `sparkforge/facts/sfn_history.py`, que lê a saída salva de
+# Depende de `sparkforge_aws/facts/sfn_history.py`, que lê a saída salva de
 # `aws stepfunctions get-execution-history` e, em `fuse`, confronta as tentativas
 # observadas com o retry que o ASL declara (`sfn.retry_observado`). As frases citadas
 # estão em `knowledge/stepfunctions/execution-history.md`; o desenho, em
@@ -53,7 +53,7 @@
 # A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado por
 # tentativa (`<estado>#<ordem>`) nas duas últimas, e um por estado na primeira.
 #
-# TRÊS PREDICADOS DERIVADOS no extrator (regra 33), porque `sparkforge/rules/expr.py`
+# TRÊS PREDICADOS DERIVADOS no extrator (regra 33), porque `sparkforge_aws/rules/expr.py`
 # tem seis comparadores e nenhuma função: `execution_outcome_class` (que junta
 # `ExecutionAborted` e `ExecutionTimedOut` num valor só, porque `in` não existe),
 # `terminal_present` e `job_run_outcome_observed`.
@@ -98,7 +98,7 @@ rules:
       documentada (`SF-SFN-004`, e a lacuna 1 de
       knowledge/stepfunctions/glue-integration.md). E não afirma custo nenhum: o
       `JobRunId` de cada tentativa está em `sfn.job_run`, e é por ele que
-      `sparkforge finops` responde custo com `dpu_seconds` medido.
+      `sparkforge-aws finops` responde custo com `dpu_seconds` medido.
       A contagem **não atravessa um redrive**. Com `ExecutionRedriven` no histórico, a
       execução foi RETOMADA e o Task é reagendado dentro da MESMA execução, sem que nada
       no arquivo separe as tentativas de antes das de depois: ali
@@ -134,9 +134,9 @@ rules:
     tradeoffs:
       - "Retry sobre o job inteiro compra resiliência ao custo de um JobRun completo por tentativa. Descobrir que o observado passa do declarado não diz qual dos dois está errado — diz que eles não batem."
     validation:
-      - "`sparkforge analyze sfn-history` sobre um histórico novo, depois da correção, mostra `tentativas_observadas` menor ou igual a `teto_declarado`, e `sparkforge judge` não produz mais SF-SFNX-001 para o estado."
+      - "`sparkforge-aws analyze sfn-history` sobre um histórico novo, depois da correção, mostra `tentativas_observadas` menor ou igual a `teto_declarado`, e `sparkforge-aws judge` não produz mais SF-SFNX-001 para o estado."
       - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: as tentativas extras não duplicaram nem perderam linha."
-      - "Os `JobRunId` de `sfn.job_run` do intervalo, conferidos em `sparkforge collect glue-job-runs`, são exatamente os que a camada de retry escolhida declara — nem mais, nem menos."
+      - "Os `JobRunId` de `sfn.job_run` do intervalo, conferidos em `sparkforge-aws collect glue-job-runs`, são exatamente os que a camada de retry escolhida declara — nem mais, nem menos."
     rollback:
       - "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`)."
     sources:
@@ -193,7 +193,7 @@ rules:
       executor perdido ao lado trocam uma falha rápida por uma falha cara.
     proposed_change:
       - "Ler o desfecho real daquele JobRun antes de tocar em qualquer limite: `aws glue get-job-run --job-name <nome> --run-id <JobRunId>` sobre o `JobRunId` que está em `sfn.job_run` diz se ele terminou, falhou, ou continuou depois do Task expirar."
-      - "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge analyze event-log`), e aumentar o limite só adia a mesma falha."
+      - "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge-aws analyze event-log`), e aumentar o limite só adia a mesma falha."
       - "Declarar o que acontece com o JobRun quando o Task expira: um estado de limpeza no `Catch` do timeout chamando `glue:batchStopJobRun` torna a resposta determinística, em vez de depender de comportamento não documentado."
     # `timeout.investigate_symptom_first` com `direction: investigate` e `moves: []` e a
     # regra 15 escrita em vocabulario fechado: ler a causa antes de mexer no limite. A
@@ -213,7 +213,7 @@ rules:
       - "Prazo curto falha rápido e deixa dúvida sobre o job; prazo longo resolve a dúvida e segura a execução da state machine pelo tempo inteiro do job."
     validation:
       - "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele: é a medida que falta, e ela existe."
-      - "Depois da correção, `sparkforge analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge judge` não produz mais SF-SFNX-002."
+      - "Depois da correção, `sparkforge-aws analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge-aws judge` não produz mais SF-SFNX-002."
       - "EIXO DE RESULTADO — o destino tem a mesma contagem total e por chave de negócio que uma execução de referência: um JobRun órfão que terminou sozinho pode ter escrito depois do Task expirar, e essa contagem é a única prova de que não houve duplicação."
     rollback:
       - "Reverter o commit da definição (o `TimeoutSeconds` anterior, ou o estado de limpeza acrescentado) e republicar a state machine."
@@ -276,7 +276,7 @@ rules:
       - "Parar o job junto com a execução torna o abort determinístico ao custo de perder trabalho que talvez terminasse sozinho; deixar o job seguir preserva o trabalho ao custo de ninguém saber que ele existe."
     validation:
       - "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele — é a medida que o histórico não tem."
-      - "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge judge` não produz mais SF-SFNX-003."
+      - "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge-aws judge` não produz mais SF-SFNX-003."
       - "EIXO DE RESULTADO — depois de um abort de teste, o destino tem a contagem por chave de negócio de antes do abort, ou a de uma execução completa: nunca uma terceira, que é o que escrita parcial produz."
     rollback:
       - "Reverter o commit da definição (o `Catch` ou o passo de encerramento acrescentado) e republicar a state machine."

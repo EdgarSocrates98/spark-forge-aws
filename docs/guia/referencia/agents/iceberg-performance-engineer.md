@@ -49,7 +49,7 @@ Mudar partition spec ou sort order reescreve o layout e muda qual linha cai em q
 Declare qual das três a sua recomendação é, porque as três se parecem no diff e só uma delas
 é reversível.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
 lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
@@ -97,4 +97,4 @@ decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
 Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
 
 Em plataforma sem despacho de subagente, a mesma decomposição sai por
-`sparkforge playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.

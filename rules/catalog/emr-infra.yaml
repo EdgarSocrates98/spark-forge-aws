@@ -1,6 +1,6 @@
 # Catálogo de regras — infraestrutura de cluster Amazon EMR on EC2
 #
-# Depende do extrator `sparkforge/facts/emr_cluster.py` (Fase 5b, Task 3), que lê
+# Depende do extrator `sparkforge_aws/facts/emr_cluster.py` (Fase 5b, Task 3), que lê
 # um dump já coletado dos seis subcomandos de `aws emr` (`describe-cluster`,
 # `list-instance-groups`, `list-instance-fleets`, `list-bootstrap-actions`,
 # `get-managed-scaling-policy`, `get-auto-termination-policy`).
@@ -13,7 +13,7 @@
 # `measures.release_major`/`release_minor`, lidos do `ReleaseLabel` do dump. Um
 # `runtime_scope: {emr: ...}` em cima disso seria um segundo guarda sobre o mesmo
 # dado — e como `in_scope` falha FECHADA, ele só poderia subtrair cobertura: num
-# `sparkforge judge` sem `--emr`, `RuntimeContext.emr` é vazio e a área inteira
+# `sparkforge-aws judge` sem `--emr`, `RuntimeContext.emr` é vazio e a área inteira
 # sumiria, que é exatamente o silêncio que a Fase 5a acabou. Quando a série da
 # release importa, a condição está no `when`, sobre `measures.release_major`, e
 # então ela só pode ser verdadeira se o dump PROVOU a release.
@@ -73,7 +73,7 @@
 #    só compara `kind` — não existe `where` negado, nem `absent` filtrado por
 #    atributo —, e o gatilho desta regra é a AUSÊNCIA de um par de propriedades de
 #    `yarn-site` com valores específicos, num nível específico. O que mudou é que
-#    `sparkforge/facts/emr_cluster.py::_am_node_label_facts` passou a DECIDIR essa
+#    `sparkforge_aws/facts/emr_cluster.py::_am_node_label_facts` passou a DECIDIR essa
 #    combinação e emitir `emr.yarn.am_node_label` quando o AM não está provadamente
 #    solto, para a regra poder usar `absent:` sobre um kind só.
 #
@@ -112,7 +112,7 @@
 # atributo descritivo transcrito de uma resposta que o extrator JÁ lê por outro
 # motivo, não é. `measures.idle_timeout_seconds` era do primeiro tipo, e por isso
 # virou SF-EMR-009: ele é a razão INTEIRA de `get-auto-termination-policy` estar
-# na lista de seis subcomandos que `sparkforge collect emr-cluster` dispara. Uma
+# na lista de seis subcomandos que `sparkforge-aws collect emr-cluster` dispara. Uma
 # chamada de API existindo só para produzir um dado que ninguém julga é mecanismo
 # sem garantia declarada. Os seis abaixo não são isso: todos caem de graça de
 # `describe-cluster`, `list-instance-groups` ou `list-instance-fleets`, que já são
@@ -160,7 +160,7 @@ rules:
   # nunca disparar. A consequência aceita é que um `analyze emr-cluster` sobre
   # uma ÁRVORE com dois dumps poderia cruzar o `InstanceCollectionType` de um
   # cluster com a propriedade do outro. Um dump descreve um cluster, e a coleta
-  # (`sparkforge collect emr-cluster`) produz um arquivo por cluster; quando
+  # (`sparkforge-aws collect emr-cluster`) produz um arquivo por cluster; quando
   # houver fusão que carregue `cluster_id` para dentro do fact de configuração,
   # esta regra ganha `same_subject`.
   - id: SF-EMR-001
@@ -657,7 +657,7 @@ rules:
 
   # A regra que a Task 4 não conseguiu escrever, destravada por fact derivado —
   # ver o item 5 do cabeçalho para o padrão, e a seção `emr.yarn.am_node_label`
-  # da docstring de `sparkforge/facts/emr_cluster.py` para as quatro decisões que
+  # da docstring de `sparkforge_aws/facts/emr_cluster.py` para as quatro decisões que
   # o extrator toma. Em resumo: o fact afirma "o AM NÃO está provadamente solto",
   # então `absent:` sobre ele significa "este dump PROVA que nada restringe onde o
   # AM roda". Meia configuração (só `enabled`, ou só a expressão) não produz o
@@ -757,7 +757,7 @@ rules:
   # AUSÊNCIA de política -- não pode ser esta regra nem um ramo dela.
   #
   # Sem `same_subject`, pela mesma razão de SF-EMR-006 e SF-EMR-007: a condição é
-  # uma só, sobre um kind só, e um dump descreve um cluster (`sparkforge collect
+  # uma só, sobre um kind só, e um dump descreve um cluster (`sparkforge-aws collect
   # emr-cluster` produz um arquivo por cluster). Não usa `absent:`, então não cai
   # na guarda de `TestAbsentSemSameSubjectSeJustifica`.
   #

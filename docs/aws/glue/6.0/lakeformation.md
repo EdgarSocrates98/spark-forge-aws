@@ -42,7 +42,7 @@ governança. Num Glue 5.0 a mesma configuração está correta, e é por isso qu
 
 ### O modelo de acesso virou fact
 
-`sparkforge/facts/lakeformation.py` deriva `lakeformation.access_model`,
+`sparkforge_aws/facts/lakeformation.py` deriva `lakeformation.access_model`,
 `lakeformation.iceberg_catalog`, `lakeformation.filesystem`, `lakeformation.fta_declared` e
 `lakeformation.unresolved` sobre
 a união dos facts, sem ler artefato. Ele existe porque o DSL de regra compara **igualdade**, e

@@ -11,7 +11,7 @@ hypothesis_outcome: confirmed
 registries: [rules_catalog_gates, manifest_rule_count, fixture_kind_coverage, runtime_scope_gates, reachability_lists, snippet_measure, fixture_corpus_gates, offline_manifest, sources_lock, sync_skills, agents_parity, surface_lock, generated_reference, status_numbers_gate]
 deviations:
   - "O corpus revelou e corrigiu um golden Kinesis já desatualizado: kinesis.shard já emitia stream_name, mas o expected não o carregava."
-  - "A superfície reutiliza sparkforge analyze transport e não cria collector live, tool ou verbo novo."
+  - "A superfície reutiliza sparkforge-aws analyze transport e não cria collector live, tool ou verbo novo."
   - "A suíte completa não foi executada; os gates ficaram restritos ao contrato Kafka e às registries afetadas."
 ---
 
@@ -42,7 +42,7 @@ causa, saúde live, throughput, SLO, custo ou capacidade.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0; zero divergências.
 - `python scripts/check_status_numbers.py --strict` — exit 0; zero divergências.
-- `sparkforge sdd check --repo . --feature STREAMING_KAFKA_TRANSPORT_EVIDENCE` — exit 0.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_KAFKA_TRANSPORT_EVIDENCE` — exit 0.
 - `git diff --check` — exit 0.
 
 ## Red real antes do green

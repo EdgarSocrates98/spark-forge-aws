@@ -1,4 +1,4 @@
-"""Golden de `sparkforge telemetry export` sobre o corpus `fixtures/otel/`.
+"""Golden de `sparkforge-aws telemetry export` sobre o corpus `fixtures/otel/`.
 
 Cada caso traz `input/spans.json` (os spans como `context_ledger.spans_of` os
 devolve, de chamadas REAIS de `call_tool`, com `span_id` e horario
@@ -32,7 +32,7 @@ SAIDAS = ("traces.jsonl", "metrics.jsonl", "result.json")
 
 def _regen() -> Any:
     """`scripts/regen_fixtures.py` pelo caminho, sem por a raiz no `sys.path`:
-    no gate de wheel isso faria o `sparkforge` do repositorio vencer o instalado."""
+    no gate de wheel isso faria o `sparkforge-aws` do repositorio vencer o instalado."""
     spec = importlib.util.spec_from_file_location(
         "regen_fixtures", ROOT / "scripts" / "regen_fixtures.py"
     )
@@ -139,10 +139,10 @@ class TestCaso:
             assert "gen_ai.client.token.usage" not in _texto(caso / "expected" / nome)
 
     def test_so_quem_veio_pelo_mcp_tem_mcp_method_name(self, caso):
-        from sparkforge.observability.otlp import id_hex
+        from sparkforge_aws.observability.otlp import id_hex
 
         por_id = {
-            id_hex("sparkforge:" + s["span_id"], 16): s
+            id_hex("sparkforge-aws:" + s["span_id"], 16): s
             for s in json.loads(_texto(caso / "input" / "spans.json"))
         }
         vistos = 0
@@ -159,10 +159,10 @@ class TestCaso:
     def test_a_cli_grava_como_o_golden(self, caso, tmp_path, monkeypatch, capsys):
         """A CLI de verdade, lendo os spans de um `traces.db` real (o caminho do
         disco, com `metadata_json`), e nao do `spans.json` direto."""
-        from sparkforge.adapters import _core, cli
-        from sparkforge.observability import context_ledger
-        from sparkforge.observability.store import SQLiteTraceStore
-        from sparkforge.observability.tracer import ExecutionTrace, TraceSpan
+        from sparkforge_aws.adapters import _core, cli
+        from sparkforge_aws.observability import context_ledger
+        from sparkforge_aws.observability.store import SQLiteTraceStore
+        from sparkforge_aws.observability.tracer import ExecutionTrace, TraceSpan
 
         regen = _regen()
         monkeypatch.setattr(_core, "_versao_sparkforge", lambda: regen.SARIF_GOLDEN_VERSION)
@@ -201,7 +201,7 @@ class TestCaso:
 
 def test_com_host_os_tokens_sao_os_do_host_usage():
     """SC6: os `gen_ai.usage.*` exportados sao os que o extrator mediu."""
-    from sparkforge.facts.host_transcript import extract_host_transcript_path
+    from sparkforge_aws.facts.host_transcript import extract_host_transcript_path
 
     caso = FIXTURES / "com_host"
     (uso,) = [
@@ -221,7 +221,7 @@ def test_todo_motivo_de_recusa_aparece_ou_esta_na_unidade():
     `tests/test_observability_otlp.py`: span de tool sem horario so aparece em
     linha estranha ao `record()`, e transcript sem horario nenhum nao e caso
     que o corpus de host tenha."""
-    from sparkforge.observability.otlp import MOTIVOS
+    from sparkforge_aws.observability.otlp import MOTIVOS
 
     vistos = set()
     for caso in _casos():

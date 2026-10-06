@@ -4,18 +4,18 @@
 
 ```bash
 # 1. A policy é válida? Quais regras ela tem?
-sparkforge policy check
+sparkforge-aws policy check
 
 # 2. O que ela decide para um comando, um caminho ou uma tool?
-sparkforge policy explain --bash "cd infra && terraform destroy -auto-approve"
-sparkforge policy explain --path rules/catalog/pyspark.yaml
-sparkforge policy explain --tool sparkforge_collect_glue_job
+sparkforge-aws policy explain --bash "cd infra && terraform destroy -auto-approve"
+sparkforge-aws policy explain --path rules/catalog/pyspark.yaml
+sparkforge-aws policy explain --tool sparkforge_collect_glue_job
 
 # 3. Depois de editar a policy, gere as regras de confirmação do Claude Code
-sparkforge policy sync-settings
+sparkforge-aws policy sync-settings
 
 # 4. No CI: falha se o .claude/settings.json ficou diferente da policy
-sparkforge policy sync-settings --check
+sparkforge-aws policy sync-settings --check
 ```
 
 ## Para que serve
@@ -82,11 +82,11 @@ paths:
 
 | Sintoma | Causa | Solução |
 |---|---|---|
-| Todo comando de shell é bloqueado com "policy invalida" | O `policy.yaml` não passa no schema | `sparkforge policy check` mostra o erro |
+| Todo comando de shell é bloqueado com "policy invalida" | O `policy.yaml` não passa no schema | `sparkforge-aws policy check` mostra o erro |
 | Toda tool MCP responde `POLICY_INVALID` | O mesmo, visto pelo servidor | Corrija o arquivo e reinicie o servidor MCP |
 | Uma tool responde "aponta para fora da raiz do case" | O caminho está fora do repositório | Mova o arquivo ou acrescente a pasta em `extra_roots` |
-| O hook não faz nada | O `sparkforge` não está instalado no Python do Claude Code | `pip install -e .` na raiz do repositório |
-| `sync-settings --check` sai 1 | Alguém editou `permissions.ask` à mão | `sparkforge policy sync-settings` |
+| O hook não faz nada | O `sparkforge-aws` não está instalado no Python do Claude Code | `pip install -e .` na raiz do repositório |
+| `sync-settings --check` sai 1 | Alguém editou `permissions.ask` à mão | `sparkforge-aws policy sync-settings` |
 
 ## O que ela não garante
 
@@ -94,5 +94,5 @@ Regra de shell compara o **texto** do comando, não o programa que roda. Um alia
 
 ## Próximos passos
 
-- Referência: [`sparkforge policy`](../referencia/cli/policy.md) e [`sparkforge_policy_explain`](../referencia/tools/sparkforge_policy_explain.md).
+- Referência: [`sparkforge-aws policy`](../referencia/cli/policy.md) e [`sparkforge_policy_explain`](../referencia/tools/sparkforge_policy_explain.md).
 - O modelo de ameaça que isto cobre: `docs/harness/THREAT-MODEL.md`, item T-024.

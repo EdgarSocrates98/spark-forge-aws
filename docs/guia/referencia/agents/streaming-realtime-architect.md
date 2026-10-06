@@ -80,7 +80,7 @@ para topologia de laboratório e dependências de evento, use
 continuam declarativas/read-only no host do agente.
 
 Quando a pergunta for reproduzir ou experimentar um incidente, use o Forge Lab
-CLI (`sparkforge lab verify`, `scenarios`, `plan`, `run`, `inspect`, `analyze`,
+CLI (`sparkforge-aws lab verify`, `scenarios`, `plan`, `run`, `inspect`, `analyze`,
 `compare`, `reproduce`) e preserve o receipt. `run`, `up`, `down`, `shell` e
 `gc` só podem receber `--execute --confirm` após confirmação explícita do
 operador; o agente não inicia laboratório por inferência.

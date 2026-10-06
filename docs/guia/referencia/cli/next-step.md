@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge next-step`
+# `sparkforge-aws next-step`
 
 Rota deterministica a partir de routing.yaml (nunca julgamento do agente).
 
 ```bash
-sparkforge next-step --help
+sparkforge-aws next-step --help
 ```
 
 ## Opções

@@ -17,7 +17,7 @@ Confere a assinatura de um relatorio e diz QUAL das tres partes divergiu -- evid
 
 ## Na CLI
 
-[`sparkforge report sign`](../cli/report.md), [`sparkforge report verify`](../cli/report.md)
+[`sparkforge-aws report sign`](../cli/report.md), [`sparkforge-aws report verify`](../cli/report.md)
 
 ## Capacidade
 

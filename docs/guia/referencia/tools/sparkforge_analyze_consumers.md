@@ -20,7 +20,7 @@ Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge/con
 
 ## Na CLI
 
-[`sparkforge analyze consumers`](../cli/analyze.md)
+[`sparkforge-aws analyze consumers`](../cli/analyze.md)
 
 ## Capacidade
 

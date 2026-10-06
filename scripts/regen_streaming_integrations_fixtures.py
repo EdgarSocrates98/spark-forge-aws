@@ -7,10 +7,10 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.facts.streaming_integrations import extract_streaming_integrations_path
-from sparkforge.findings.models import sort_facts
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.streaming_integrations import extract_streaming_integrations_path
+from sparkforge_aws.findings.models import sort_facts
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_integrations"

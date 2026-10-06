@@ -7,9 +7,9 @@ SparkForge.
 
 ```bash
 export SPARKFORGE_PACKS=/caminho/acme-platform        # vários: separados por os.pathsep
-sparkforge pack list                                  # ativos, recusados, prefixo -> pack
-sparkforge pack check /caminho/acme-platform          # exit 1 se uma regra não dispara
-sparkforge judge --facts terraform.json               # regras do core + do pack
+sparkforge-aws pack list                                  # ativos, recusados, prefixo -> pack
+sparkforge-aws pack check /caminho/acme-platform          # exit 1 se uma regra não dispara
+sparkforge-aws judge --facts terraform.json               # regras do core + do pack
 ```
 
 A tool MCP é `sparkforge_pack_list` (`READ_ONLY`, sem parâmetro). `pack check`

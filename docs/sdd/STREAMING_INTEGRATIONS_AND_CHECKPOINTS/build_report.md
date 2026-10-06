@@ -12,7 +12,7 @@ tasks:
   - {id: T2, status: done, red: {command: "python -m pytest tests/test_streaming_integrations.py::test_cli_and_mcp_envelopes_match -q", exit: 1}, green: {command: "python -m pytest tests/test_adapters_tools.py tests/test_adapters_mcp_compact.py -q", exit: 0}}
   - {id: T3, status: done, red: {command: "python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q", exit: 1}, green: {command: "python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q", exit: 0}}
   - {id: T4, status: done, red: {command: "python -m pytest tests/test_capability_parity.py -q", exit: 1}, green: {command: "python scripts/check_surface_lock.py; python scripts/verify_offline_bundle.py --check", exit: 0}}
-  - {id: T5, status: done, red: {command: "python -m sparkforge.adapters.cli sdd check --repo . --feature STREAMING_INTEGRATIONS_AND_CHECKPOINTS", exit: 1}, green: {command: "python -m sparkforge.adapters.cli sdd check --repo . --feature STREAMING_INTEGRATIONS_AND_CHECKPOINTS", exit: 0}}
+  - {id: T5, status: done, red: {command: "python -m sparkforge_aws.adapters.cli sdd check --repo . --feature STREAMING_INTEGRATIONS_AND_CHECKPOINTS", exit: 1}, green: {command: "python -m sparkforge_aws.adapters.cli sdd check --repo . --feature STREAMING_INTEGRATIONS_AND_CHECKPOINTS", exit: 0}}
 claims:
   - text: "Contrato completo produz facts para checkpoint, Kafka Connect, Kafka Streams e OpenLineage."
     evidence_ref: "tests/test_streaming_integrations.py::test_goldens_cover_checkpoint_connect_streams_and_openlineage"

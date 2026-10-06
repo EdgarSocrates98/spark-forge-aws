@@ -9,11 +9,11 @@ upstream:
   sha256: "2b1c5a1dac4929640b309954ebb6f9ed47d153c1ceddac8259b03569f5ed4d26"
 tasks:
   - id: T1
-    files: [tests/test_sfn_history.py, sparkforge/facts/sfn_history.py, rules/catalog/sfn-history.yaml, fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json, docs/guia/usos/step-functions.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_sfn_history.py, sparkforge_aws/facts/sfn_history.py, rules/catalog/sfn-history.yaml, fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json, docs/guia/usos/step-functions.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC1, AC2]
     test: {path: tests/test_sfn_history.py, name: test_redrive_sai_com_razao_propria_e_os_outros_dois_tipos_entram_calados}
   - id: T2
-    files: [tests/test_sfn_history.py, sparkforge/facts/sfn_history.py, docs/guia/usos/step-functions.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_sfn_history.py, sparkforge_aws/facts/sfn_history.py, docs/guia/usos/step-functions.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC3, AC4]
     test: {path: tests/test_sfn_history.py, name: test_estado_homonimo_em_ramos_diferentes_sai_recusado_sem_indice}
   - id: T3
@@ -53,7 +53,7 @@ o que sai é a afirmação que ela não sustenta.
   `tests/test_suite_batches.py::LOTES` ficam para o fim, e nunca com edição na árvore ao
   mesmo tempo.
 - **Edição por ferramenta (Edit/Write), nunca `sed -i`.** Fim de linha **LF**.
-  `line-length = 100` (ruff, `pyproject.toml`) — vale para `sparkforge/` e para `tests/`.
+  `line-length = 100` (ruff, `pyproject.toml`) — vale para `sparkforge_aws/` e para `tests/`.
 - **Arquivo novo entra no índice (`git add`) antes dos testes que conferem a árvore
   versionada.** Nesta feature nenhum `.py` nasce; nascem doze arquivos de fixture
   (`.json` e `.yaml`) em T3, e eles entram no `git add` antes de rodar
@@ -90,8 +90,8 @@ o que sai é a afirmação que ela não sustenta.
 
 | medida | antes | depois | como foi medida |
 |---|---|---|---|
-| `len(_TIPOS_CONHECIDOS)` | **59** | **62** | `python -c "from sparkforge.facts.sfn_history import _TIPOS_CONHECIDOS; print(len(_TIPOS_CONHECIDOS))"` |
-| Razões distintas de `sfn.unresolved` no módulo | **20** (15 do extrator, 5 da derivação) | **23** | as duas listas da docstring de `sparkforge/facts/sfn_history.py` |
+| `len(_TIPOS_CONHECIDOS)` | **59** | **62** | `python -c "from sparkforge_aws.facts.sfn_history import _TIPOS_CONHECIDOS; print(len(_TIPOS_CONHECIDOS))"` |
+| Razões distintas de `sfn.unresolved` no módulo | **20** (15 do extrator, 5 da derivação) | **23** | as duas listas da docstring de `sparkforge_aws/facts/sfn_history.py` |
 | Fixtures em `fixtures/sfn_history/` | **11** | **14** | `ls fixtures/sfn_history \| wc -l` |
 | Fixtures golden (`STATUS.md`) | **551** em **59** domínios | **554** em **59** domínios | `python scripts/check_status_numbers.py --strict` (hoje: `0 divergencia(s)`) |
 | Domínios de `fixtures/` com fixture | **58** (+ `mcp_parity`, que não tem fixture) | **58** | glob de `fixtures/*/*/` |
@@ -233,7 +233,7 @@ def test_redrive_sai_com_razao_propria_e_os_outros_dois_tipos_entram_calados():
     o Task foi agendado" significa -- o redrive reagenda o Task dentro da MESMA
     execucao, e nada no arquivo separa as tentativas de antes das de depois.
     """
-    from sparkforge.facts.sfn_history import _TIPOS_CONHECIDOS
+    from sparkforge_aws.facts.sfn_history import _TIPOS_CONHECIDOS
 
     assert {"EvaluationFailed", "ExecutionRedriven", "MapRunRedriven"} <= _TIPOS_CONHECIDOS
     assert len(_TIPOS_CONHECIDOS) == 62
@@ -280,8 +280,8 @@ def test_redrive_recusa_o_confronto_em_vez_de_comparar():
     `build_sfn_retry_observado` emite `sfn.unresolved: redrive_in_execution` no lugar
     do `sfn.retry_observado`, e a `SF-SFNX-001` fica sem ancora naquele artefato.
     """
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.stepfunctions import extract_stepfunctions
 
     historico = extract_sfn_history(HISTORICO_COM_REDRIVE, "redrive.json")
     definicao = extract_stepfunctions(ASL_COM_RETRY_DE_DUAS, "carga.asl.json")
@@ -338,7 +338,7 @@ Não é `ModuleNotFoundError`: o módulo existe, e o que falta é comportamento.
 
 ### 3. Código mínimo
 
-#### 3.1 `sparkforge/facts/sfn_history.py` — os três tipos e o comentário
+#### 3.1 `sparkforge_aws/facts/sfn_history.py` — os três tipos e o comentário
 
 Substitua o bloco de comentário que hoje precede `_TIPOS_CONHECIDOS` (as linhas que
 começam em `# https://docs.aws.amazon.com/...API_HistoryEvent.html` e terminam em
@@ -367,7 +367,7 @@ resto da lista está):
 - `"ExecutionRedriven",` entre `"ExecutionFailed",` e `"ExecutionStarted",`;
 - `"MapRunRedriven",` entre `"MapRunFailed",` e `"MapRunStarted",`.
 
-#### 3.2 `sparkforge/facts/sfn_history.py` — a recusa do extrator
+#### 3.2 `sparkforge_aws/facts/sfn_history.py` — a recusa do extrator
 
 Em `extract_sfn_history`, logo **depois** do bloco que emite `execution_terminal_absent`
 e **antes** do comentário `# 1. Um agendamento -> uma tentativa.`, acrescente:
@@ -390,7 +390,7 @@ e **antes** do comentário `# 1. Um agendamento -> uma tentativa.`, acrescente:
         )
 ```
 
-#### 3.3 `sparkforge/facts/sfn_history.py` — a recusa da derivação
+#### 3.3 `sparkforge_aws/facts/sfn_history.py` — a recusa da derivação
 
 Acrescente este helper **logo antes** de `def build_sfn_retry_observado(`:
 
@@ -437,7 +437,7 @@ que monta `subject` e `proveniencia` e **antes** do `if not ha_asl:`, acrescente
             continue
 ```
 
-#### 3.4 `sparkforge/facts/sfn_history.py` — a docstring do módulo
+#### 3.4 `sparkforge_aws/facts/sfn_history.py` — a docstring do módulo
 
 Na lista de razões de `sfn.unresolved` (a que hoje termina em
 `` `execution_data_absent` e `job_run_id_unrecognized` ``), passe a listar
@@ -561,7 +561,7 @@ Extrator e regra (seções *Acrescentar ou alterar um EXTRATOR de facts* e *Acre
 alterar uma REGRA no catálogo* de `docs/gates-por-mudanca.md`), **um comando por vez**:
 
 ```bash
-python -m ruff check sparkforge/facts/sfn_history.py tests/test_sfn_history.py
+python -m ruff check sparkforge_aws/facts/sfn_history.py tests/test_sfn_history.py
 python -m pytest tests/test_rules_loader.py tests/test_rules_catalog_reachability.py tests/test_rules_result_axis.py tests/test_rules_engine.py -q
 python -m pytest tests/test_rules_threshold_mutation.py tests/test_rules_action_field.py tests/test_rules_campos_de_lista.py -q
 python -m pytest tests/test_fixtures_kind_coverage.py tests/test_docs_coverage.py tests/test_refresh_knowledge.py -q
@@ -594,7 +594,7 @@ python scripts/check_vnext_claims.py
 ### 6. Commit
 
 ```bash
-git add tests/test_sfn_history.py sparkforge/facts/sfn_history.py rules/catalog/sfn-history.yaml fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json docs/guia/usos/step-functions.md docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
+git add tests/test_sfn_history.py sparkforge_aws/facts/sfn_history.py rules/catalog/sfn-history.yaml fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json docs/guia/usos/step-functions.md docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
 git commit -F "$TEMP/sfn_tentativa_t1.txt"
 ```
 
@@ -782,7 +782,7 @@ do passo 3, a correção comeu o caso que a `SF-SFNX-001` mede.
 
 ### 3. Código mínimo
 
-#### 3.1 `sparkforge/facts/sfn_history.py` — os dois helpers
+#### 3.1 `sparkforge_aws/facts/sfn_history.py` — os dois helpers
 
 Acrescente, **logo depois** da função `_ancestral` (e antes de `_job_run`):
 
@@ -859,7 +859,7 @@ def _nomes_em_ramos_concorrentes(
     return concorrentes
 ```
 
-#### 3.2 `sparkforge/facts/sfn_history.py` — guardar a entrada na tentativa
+#### 3.2 `sparkforge_aws/facts/sfn_history.py` — guardar a entrada na tentativa
 
 No passo 1 de `extract_sfn_history`, acrescente `"entry_id"` ao dicionário da tentativa.
 O bloco inteiro, depois da edição:
@@ -882,7 +882,7 @@ O bloco inteiro, depois da edição:
 (`entrada` nunca é `None` aqui: `nome` só deixa de ser `None` quando `entrada` existe e
 tem `stateEnteredEventDetails.name`.)
 
-#### 3.3 `sparkforge/facts/sfn_history.py` — a recusa, entre os passos 2 e 3
+#### 3.3 `sparkforge_aws/facts/sfn_history.py` — a recusa, entre os passos 2 e 3
 
 Acrescente, **depois** do laço do passo 2 (o que termina em
 `elif alvo["terminal"] is None: alvo["terminal"] = evento`) e **antes** do comentário
@@ -920,7 +920,7 @@ E, no passo 3, pule os nomes recusados:
         leitura.facts.extend(_fatos_da_tentativa(estado, status, classe, leitura))
 ```
 
-#### 3.4 `sparkforge/facts/sfn_history.py` — a docstring do módulo
+#### 3.4 `sparkforge_aws/facts/sfn_history.py` — a docstring do módulo
 
 Acrescente `` `state_name_in_concurrent_branches` `` à lista de razões do extrator,
 entre `` `state_unresolved` `` e `` `attempt_unanchored` ``.
@@ -996,7 +996,7 @@ medida contra este plano.
 ### 5. Gates vizinhos
 
 ```bash
-python -m ruff check sparkforge/facts/sfn_history.py tests/test_sfn_history.py
+python -m ruff check sparkforge_aws/facts/sfn_history.py tests/test_sfn_history.py
 python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q
 python -m pytest tests/test_facts_fusion.py tests/test_fixtures_golden_fusion.py -q
 python -m pytest tests/test_facts_scan.py tests/test_harness_untrusted.py -q
@@ -1016,7 +1016,7 @@ como em T1 — `text`, `context` **e** `proof.expect.value` de cada entrada.
 ### 6. Commit
 
 ```bash
-git add tests/test_sfn_history.py sparkforge/facts/sfn_history.py docs/guia/usos/step-functions.md docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
+git add tests/test_sfn_history.py sparkforge_aws/facts/sfn_history.py docs/guia/usos/step-functions.md docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
 git commit -F "$TEMP/sfn_tentativa_t2.txt"
 ```
 
@@ -1454,11 +1454,11 @@ Substitua o item **9** inteiro por:
 ### 3. Regravar os dois registros do documento
 
 ```bash
-python -c "import json; from pathlib import Path; from sparkforge.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); doc = 'knowledge/stepfunctions/execution-history.md'; m['documents'] = [d for d in m['documents'] if d['path'] != doc] + [{'path': doc, 'title': 'execution-history', 'sha256': _content_sha256(Path(doc))}]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
+python -c "import json; from pathlib import Path; from sparkforge_aws.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); doc = 'knowledge/stepfunctions/execution-history.md'; m['documents'] = [d for d in m['documents'] if d['path'] != doc] + [{'path': doc, 'title': 'execution-history', 'sha256': _content_sha256(Path(doc))}]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
 python scripts/check_surface_lock.py --update
 ```
 
-O hash tem de vir de `sparkforge.tools.offline._content_sha256` e de mais nada: a
+O hash tem de vir de `sparkforge_aws.tools.offline._content_sha256` e de mais nada: a
 docstring dela diz por quê — *"hash calculado de um jeito e conferido de outro e o
 defeito que o gate existe para pegar"* —, e ela remove todo `CR` em vez de traduzir
 `CRLF`, porque um manifesto gravado no Windows já reprovou os 43 documentos no Linux.
@@ -1526,8 +1526,8 @@ Claude-Session: https://claude.ai/code/session_01S1PcV3ZaVfpAsJGbj2mgUK
 ## Antes de fechar a feature
 
 ```bash
-python -m sparkforge.adapters.cli sdd stamp --repo . docs/sdd/SFN_TENTATIVA/plan.md
-python -m sparkforge.adapters.cli sdd check --repo . --feature SFN_TENTATIVA
+python -m sparkforge_aws.adapters.cli sdd stamp --repo . docs/sdd/SFN_TENTATIVA/plan.md
+python -m sparkforge_aws.adapters.cli sdd check --repo . --feature SFN_TENTATIVA
 ```
 
 (A sintaxe do `stamp` é `sdd stamp --repo . <artefato>`; não existe `--feature`/`--phase`
@@ -1554,7 +1554,7 @@ notícia, não ruído — leia o diff antes de tocar em nada.
 E o **SC3**: as razões distintas de `sfn.unresolved` do módulo, **20 → 23**
 (`execution_redriven` e `state_name_in_concurrent_branches` no extrator,
 `redrive_in_execution` na derivação), conferidas contra as duas listas da docstring de
-`sparkforge/facts/sfn_history.py`.
+`sparkforge_aws/facts/sfn_history.py`.
 
 ## Dúvidas
 

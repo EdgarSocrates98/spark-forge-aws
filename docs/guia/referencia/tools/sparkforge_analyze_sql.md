@@ -21,7 +21,7 @@ Extrai facts de texto SQL por regex/varredura de token (nunca uma gramatica SQL 
 
 ## Na CLI
 
-[`sparkforge analyze sql`](../cli/analyze.md)
+[`sparkforge-aws analyze sql`](../cli/analyze.md)
 
 ## Capacidade
 

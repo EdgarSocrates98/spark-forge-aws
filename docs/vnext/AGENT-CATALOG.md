@@ -30,8 +30,8 @@ os perfis ativos vivem em `agents/`, o diretório canônico (espelhado em
 cada um.
 
 O roteamento executável vem de `rules/catalog/routing.yaml` e dos playbooks
-`sparkforge playbook`; o motor de economia de tokens em
-`sparkforge/registry/models.py`, que define tiers de 0 a 6 (`ModelTier`)
+`sparkforge-aws playbook`; o motor de economia de tokens em
+`sparkforge_aws/registry/models.py`, que define tiers de 0 a 6 (`ModelTier`)
 usados para selecionar o perfil de execução de cada tarefa.
 
 ---
@@ -91,7 +91,7 @@ skills/<skill-name>/
 8. `design-incremental-processing`: Padrões latest-per-key e watermarking.
 
 `athena-query-optimizer` não é uma skill: é o **agent** listado na §3, e otimização de
-consultas Athena passa pelo verbo `sparkforge analyze athena-workgroup`, não por uma skill
+consultas Athena passa pelo verbo `sparkforge-aws analyze athena-workgroup`, não por uma skill
 lazy-loaded.
 
 ---
@@ -100,5 +100,5 @@ lazy-loaded.
 
 Nomes canônicos não devem ser inferidos deste documento: consulte `agents/`, `skills/`,
 `rules/catalog/routing.yaml` e `scripts/sync_skills.py`. Não há um resolvedor genérico
-de aliases em `sparkforge.registry`; compatibilidade legada precisa ser declarada e
+de aliases em `sparkforge_aws.registry`; compatibilidade legada precisa ser declarada e
 testada pelo adapter ou pelo gate correspondente.

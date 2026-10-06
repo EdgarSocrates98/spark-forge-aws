@@ -16,7 +16,7 @@ deviations:
   - "Dois bugs no TEXTO do plano, achados no build: um helper de teste produzia 03:00:91, que nao e ISO 8601, e outro chamava fuse([a, b]) quando fuse recebe uma Sequence plana. Os dois corrigidos pela forma do precedente, sem tocar asserção."
   - "As contagens do plano estavam defasadas (ele foi escrito antes de o #91 entrar na pilha). Os deltas bateram; publiquei o medido, nao o previsto."
   - "Uma fixture a mais que o plano previa: task_timed_out_sem_submissao, a negativa que a correcao da SF-SFNX-002 exigiu. Sao 11 no corpus, nao 10."
-  - "Tres arquivos fora do manifesto, todos pela renomeacao de read_event_count: docs/guia/usos/step-functions.md, sparkforge/adapters/tools.py e a pagina gerada da tool."
+  - "Tres arquivos fora do manifesto, todos pela renomeacao de read_event_count: docs/guia/usos/step-functions.md, sparkforge_aws/adapters/tools.py e a pagina gerada da tool."
   - "O define.md nao foi editado, e o AC1 dele ainda diz contagem de eventos. Editar o frontmatter agora cascatearia o sha256 de upstream para todas as fases abaixo; fica como desvio, que e o que o SDD manda fazer com spec que envelhece."
   - "A revisao em dois estagios por tarefa nao rodou; a revisao final do diff inteiro rodou, e e dela que vieram os 19 achados."
   - "O .claude/agents/README.md, untracked, sumiu durante as tarefas. Devolve-lo quebra dois gates (sync_skills --check o acusa ORFAO e test_agents_parity o apaga de novo). A copia esta no scratchpad da sessao, e a decisao e do operador."
@@ -50,7 +50,7 @@ confirmada sobre a árvore que entrega, não sobre a que o build fechou.**
 
 ## O que o domínio entrega
 
-- **Extrator.** `sparkforge analyze sfn-history --path` e a tool
+- **Extrator.** `sparkforge-aws analyze sfn-history --path` e a tool
   `sparkforge_analyze_sfn_history` leem o JSON salvo de
   `aws stepfunctions get-execution-history`. Saem `sfn.execution`, `sfn.attempt`,
   `sfn.job_run`, `sfn.unresolved` com razão própria e `sfn.analyzed`.
@@ -102,8 +102,8 @@ coordenador.
 | `python scripts/check_status_numbers.py --strict` (AC10) | 0 divergências |
 | `python scripts/check_surface_lock.py` | 0 divergências |
 | `python scripts/check_vnext_claims.py` | 0 divergências |
-| `python -m ruff check sparkforge scripts tests` | limpo |
-| `sparkforge sdd check --repo . --feature SFN_HISTORY` | `"ok": true`, 0 recusas, 0 lacunas |
+| `python -m ruff check sparkforge_aws scripts tests` | limpo |
+| `sparkforge-aws sdd check --repo . --feature SFN_HISTORY` | `"ok": true`, 0 recusas, 0 lacunas |
 
 Os dois `verified_by` de `kind: command` do define:
 
@@ -134,7 +134,7 @@ Os dois `verified_by` de `kind: command` do define:
 - **Estados homônimos em `Parallel`** fundem tentativas no extrator; a derivação recusa
   com `state_name_ambiguous`, mas o `attempt_index` já saiu errado antes disso.
 - **Módulo compartilhado:** `_glue_jobs_por_nome` e `_max_retries` seguem duplicados entre
-  `stepfunctions.py` e `airflow_dag.py`, de propósito. `sparkforge/facts/glue_terraform.py`
+  `stepfunctions.py` e `airflow_dag.py`, de propósito. `sparkforge_aws/facts/glue_terraform.py`
   é incremento separado.
 - **`.claude/agents/README.md`** está ausente e não pode voltar como está. Decisão do
   operador.

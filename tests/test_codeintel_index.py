@@ -8,7 +8,7 @@ repositorio que o extractor nao aguenta.
 import pathlib
 import sqlite3
 
-from sparkforge.codeintel.index import indexar
+from sparkforge_aws.codeintel.index import indexar
 
 
 def test_indexa_arvore_pequena(tmp_path):

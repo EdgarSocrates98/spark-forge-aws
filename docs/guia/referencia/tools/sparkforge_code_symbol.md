@@ -20,7 +20,7 @@ Tudo que o indice sabe sobre UM simbolo: metadado, assinatura normalizada, quem 
 
 ## Na CLI
 
-[`sparkforge code read`](../cli/code.md), [`sparkforge code symbol`](../cli/code.md)
+[`sparkforge-aws code read`](../cli/code.md), [`sparkforge-aws code symbol`](../cli/code.md)
 
 ## Capacidade
 

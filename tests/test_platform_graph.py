@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.tools import call_tool
-from sparkforge.platform.graph import analyze_platform_graph, load_platform_graph
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.platform.graph import analyze_platform_graph, load_platform_graph
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "platform" / "graph.yaml"
 
@@ -59,6 +59,6 @@ def test_platform_graph_cli_and_mcp_share_contract() -> None:
 
 
 def test_platform_graph_reference_is_registered() -> None:
-    from sparkforge.adapters.tools import TOOLS
+    from sparkforge_aws.adapters.tools import TOOLS
 
     assert "sparkforge_analyze_platform_graph" in TOOLS

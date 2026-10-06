@@ -40,7 +40,7 @@
       "Parar o job junto com a task economiza o resto do JobRun e arrisca saída parcial; deixar o job correr preserva a escrita e paga o run inteiro que ninguém vai usar."
     ],
     "validation": [
-      "`sparkforge analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge judge` não produz mais SF-AIRFLOW-002 para a task.",
+      "`sparkforge-aws analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge-aws judge` não produz mais SF-AIRFLOW-002 para a task.",
       "EIXO DE RESULTADO — numa execução de teste em que o prazo estoura, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que antes da execução: a interrupção não deixou linha parcial.",
       "`aws glue get-job-run --job-name <job> --run-id <id>` mostra o JobRun em `STOPPED` no mesmo minuto em que a task foi marcada como falha, e não `RUNNING` depois dela."
     ],

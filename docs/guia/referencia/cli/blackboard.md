@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge blackboard`
+# `sparkforge-aws blackboard`
 
 Lê o shared blackboard (.sparkforge/blackboard/).
 
@@ -8,15 +8,15 @@ Lê o shared blackboard (.sparkforge/blackboard/).
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge blackboard list`](#sparkforge-blackboard-list) | Lista entidades de um tipo. |
-| [`sparkforge blackboard summary`](#sparkforge-blackboard-summary) | Resumo contável do blackboard. |
+| [`sparkforge-aws blackboard list`](#sparkforge-aws-blackboard-list) | Lista entidades de um tipo. |
+| [`sparkforge-aws blackboard summary`](#sparkforge-aws-blackboard-summary) | Resumo contável do blackboard. |
 
-## `sparkforge blackboard list`
+## `sparkforge-aws blackboard list`
 
 Lista entidades de um tipo.
 
 ```bash
-sparkforge blackboard list --help
+sparkforge-aws blackboard list --help
 ```
 
 ### Opções
@@ -30,12 +30,12 @@ sparkforge blackboard list --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge blackboard summary`
+## `sparkforge-aws blackboard summary`
 
 Resumo contável do blackboard.
 
 ```bash
-sparkforge blackboard summary --help
+sparkforge-aws blackboard summary --help
 ```
 
 ### Opções

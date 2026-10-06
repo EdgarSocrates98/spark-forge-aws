@@ -57,7 +57,7 @@ out_of_scope:
 unknowns:
   - id: U1
     blocks: [AC5, AC8]
-    unlock: "22 arquivos fora de agents/ e skills/ citam os sete ou as cinco skills, entre eles config/agents.yaml (lido por sparkforge/registry/loader.py), fixtures/knowledge_drift/filtro_por_url/expected/result.json e knowledge/tool-specialization-matrix.md (lido por sparkforge/knowledge_drift.py). O design decide, arquivo por arquivo, consumidor real, documento vivo ou historico."
+    unlock: "22 arquivos fora de agents/ e skills/ citam os sete ou as cinco skills, entre eles config/agents.yaml (lido por sparkforge_aws/registry/loader.py), fixtures/knowledge_drift/filtro_por_url/expected/result.json e knowledge/tool-specialization-matrix.md (lido por sparkforge_aws/knowledge_drift.py). O design decide, arquivo por arquivo, consumidor real, documento vivo ou historico."
 change_kinds: [agent_or_skill, tool_or_verb, routing, status_numbers, knowledge_doc, claims]
 ---
 

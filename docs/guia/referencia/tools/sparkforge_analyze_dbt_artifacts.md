@@ -16,7 +16,7 @@ Normaliza manifest.json, catalog.json e run_results.json do dbt em recursos, dep
 
 ## Na CLI
 
-[`sparkforge analyze dbt-artifacts`](../cli/analyze.md)
+[`sparkforge-aws analyze dbt-artifacts`](../cli/analyze.md)
 
 ## Capacidade
 

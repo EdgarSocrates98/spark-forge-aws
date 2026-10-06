@@ -115,11 +115,11 @@
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/facts/parquet_footer.py` | Modify | `attrs.total_compressed_bytes` | @python-developer | None |
-| 2 | `sparkforge/facts/spark_plan.py` | Modify | `plan.join_side_stats` | @python-developer | None |
-| 3 | `sparkforge/facts/sql_metrics.py` | Modify | `spark.sql.broadcast_exchange` | @python-developer | None |
-| 4 | `sparkforge/tuning/spark_conf.py` | Modify | Quatro derivações, recusas, `headroom` | @python-developer | 1-3 |
-| 5 | `sparkforge/adapters/{_core,cli,tools}.py` | Modify | `--headroom` e o schema da tool `tune` | @python-developer | 4 |
+| 1 | `sparkforge_aws/facts/parquet_footer.py` | Modify | `attrs.total_compressed_bytes` | @python-developer | None |
+| 2 | `sparkforge_aws/facts/spark_plan.py` | Modify | `plan.join_side_stats` | @python-developer | None |
+| 3 | `sparkforge_aws/facts/sql_metrics.py` | Modify | `spark.sql.broadcast_exchange` | @python-developer | None |
+| 4 | `sparkforge_aws/tuning/spark_conf.py` | Modify | Quatro derivações, recusas, `headroom` | @python-developer | 1-3 |
+| 5 | `sparkforge_aws/adapters/{_core,cli,tools}.py` | Modify | `--headroom` e o schema da tool `tune` | @python-developer | 4 |
 | 6 | `fixtures/tuning/<casos novos>/` | Create | Goldens: overhead, sem ProcessTree, heap, split, duas fontes, sem footer, um join, dois joins, sem estatística, medido ao lado | @test-generator | 4 |
 | 7 | `fixtures/plan/explain_cost_join/`, `fixtures/sql_metrics/broadcast_exchange/` | Create | Goldens dos extratores | @test-generator | 2, 3 |
 | 8 | `tests/test_tuning_spark_conf.py`, `tests/test_fixtures_golden_tuning.py` (`REQUIRED_FIXTURES`), testes dos extratores | Modify | Unidade e golden | @test-generator | 1-6 |

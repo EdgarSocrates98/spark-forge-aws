@@ -17,19 +17,19 @@ usam arquivos sintéticos de `fixtures/airflow/`.
 mkdir -p /tmp/af
 
 # 1. Extrair os facts do DAG (arquivo .py ou a pasta de DAGs)
-sparkforge analyze airflow-dag \
+sparkforge-aws analyze airflow-dag \
   --path fixtures/airflow/sem_espera/input --out /tmp/af/facts_airflow.json
 
 # 2. Julgar: SF-AIRFLOW-001 a 003 leem so o DAG
-sparkforge judge --facts /tmp/af/facts_airflow.json
+sparkforge-aws judge --facts /tmp/af/facts_airflow.json
 
 # 3. Com o Terraform do job: extrair os dois lados, fundir e julgar
-sparkforge analyze airflow-dag \
+sparkforge-aws analyze airflow-dag \
   --path fixtures/airflow/retry_duas_camadas/input --out /tmp/af/af.json
-sparkforge analyze terraform \
+sparkforge-aws analyze terraform \
   --path fixtures/airflow/retry_duas_camadas/input --out /tmp/af/tf.json
-sparkforge fuse --facts /tmp/af/af.json --facts /tmp/af/tf.json --out /tmp/af/fundidos.json
-sparkforge judge --facts /tmp/af/fundidos.json
+sparkforge-aws fuse --facts /tmp/af/af.json --facts /tmp/af/tf.json --out /tmp/af/fundidos.json
+sparkforge-aws judge --facts /tmp/af/fundidos.json
 ```
 
 ## O que sai
@@ -60,7 +60,7 @@ vez de julgar um valor que ninguém leu.
 A `SF-AIRFLOW-004` afirma só que as duas camadas existem. **Quantas vezes o job roda
 numa falha não é documentado** — cada retentativa da task é um `StartJobRun` novo, e o
 retry do Glue é outro JobRun. Medir exige os JobRuns do intervalo de uma falha real
-(`sparkforge collect glue-job-runs`) ao lado do histórico da task.
+(`sparkforge-aws collect glue-job-runs`) ao lado do histórico da task.
 
 ## O que ele não faz
 

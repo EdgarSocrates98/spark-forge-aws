@@ -44,7 +44,7 @@
     "proposed_change": [
       "Ajustar `parquet.block.size` (escrita via Hadoop/Spark) para a faixa alvo, e reescrever os arquivos afetados — a propriedade vale para o que for escrito DEPOIS dela, e não reorganiza o que já existe.",
       "Para row group grande demais, conferir antes se ele é consequência de um arquivo único gigante; nesse caso o conserto é o número de arquivos, não o row group.",
-      "Medir de novo depois da reescrita — `sparkforge collect parquet-footer` sobre o prefixo, e comparar a distribuição."
+      "Medir de novo depois da reescrita — `sparkforge-aws collect parquet-footer` sobre o prefixo, e comparar a distribuição."
     ],
     "expected_effect": "",
     "benchmark_ref": "",

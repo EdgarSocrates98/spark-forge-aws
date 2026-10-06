@@ -9,7 +9,7 @@ upstream:
   sha256: "06e2da7dda01c6d346b2b2711e2b4c5b17793eae8a953759e8affcba72c7c522"
 files:
   - {path: tests/test_lakeformation_prompt_acceptance.py, action: modify, reason: "Adicionar provas executáveis para as combinações finais e os cinco gaps críticos."}
-  - {path: sparkforge/lakeformation/architecture.py, action: modify, reason: "Publicar seções estruturadas do migration report e referências de runtime no disclosure."}
+  - {path: sparkforge_aws/lakeformation/architecture.py, action: modify, reason: "Publicar seções estruturadas do migration report e referências de runtime no disclosure."}
   - {path: knowledge/lakeformation/operational-closure.md, action: modify, reason: "Documentar os runbooks que faltavam e a matriz final."}
   - {path: docs/guia/usos/lake-formation-operacional.md, action: modify, reason: "Expor leitura operacional dos novos casos e limites."}
   - {path: skills/lakeformation-architecture/SKILL.md, action: modify, reason: "Manter procedimento e progressive disclosure coerentes com o núcleo."}
@@ -45,8 +45,8 @@ necessário, `requires_verification`.
 
 ## Conhecimento consultado
 
-- `sparkforge lakeformation architect --help` e o núcleo em
-  `sparkforge/lakeformation/architecture.py`;
+- `sparkforge-aws lakeformation architect --help` e o núcleo em
+  `sparkforge_aws/lakeformation/architecture.py`;
 - `knowledge/lakeformation/capability-matrix.yaml`;
 - `knowledge/lakeformation/operational-closure.md`;
 - `prompt_evo_fgac_fta_espec.md`, seções 66–79;

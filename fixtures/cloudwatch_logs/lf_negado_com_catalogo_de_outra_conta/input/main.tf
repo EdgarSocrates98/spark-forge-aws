@@ -12,13 +12,13 @@ resource "aws_glue_job" "curated_dim" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/dim.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/dim.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"                  = "true"
-    "--spark-event-logs-path"            = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"            = "s3://sparkforge-aws-demo/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
     "--job-bookmark-option"              = "job-bookmark-disable"
     "--conf"                             = "spark.hadoop.hive.metastore.glue.catalogid=222222222222"

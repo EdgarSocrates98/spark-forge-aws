@@ -29,7 +29,7 @@ chosen: A
 ## Perfil
 
 `dev`: a mudança é no próprio SparkForge. (`operator` quando a mudança é no job
-de quem usa os agents; aí o build passa por `sparkforge change sandbox`.)
+de quem usa os agents; aí o build passa por `sparkforge-aws change sandbox`.)
 
 ## Perguntas feitas, uma por vez
 

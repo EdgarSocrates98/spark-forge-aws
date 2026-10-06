@@ -43,7 +43,7 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/observability/otlp.py` | Projecao pura de spans e facts `host.*` em `TracesData`/`MetricsData` (dicts prontos para `json.dumps`) | Python stdlib (`hashlib`, `datetime`) |
+| `sparkforge_aws/observability/otlp.py` | Projecao pura de spans e facts `host.*` em `TracesData`/`MetricsData` (dicts prontos para `json.dumps`) | Python stdlib (`hashlib`, `datetime`) |
 | `context_ledger.record(channel=, transport=)` | Grava o canal medido em `metadata` do span, dentro do try/except existente | — |
 | `tools.call_tool(..., channel="", transport="")` | Repassa o canal ao ledger; nenhum outro efeito | — |
 | `adapters/mcp.py` | Passa `functools.partial(call_tool, channel="mcp", transport=transport)` a `envelope_da_chamada` | — |
@@ -124,7 +124,7 @@
 | `mcp` | `tools/call {tool}` | `SERVER` (2) | `mcp.method.name=tools/call`, `network.transport` (`pipe` para stdio, `tcp` para http) |
 | ausente | `execute_tool {tool}` | `INTERNAL` (1) | — |
 
-Os atributos comuns sao `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function`, `sparkforge.outcome`, `sparkforge.payload_bytes`, `sparkforge.payload_basis`, e `sparkforge.detail_level` e `sparkforge.item_count` quando houver. Com `outcome` diferente de `ok`, entram `status.code=2` (ERROR) e `error.type=tool_error`; a nota do `mcp.md` manda `tool_error` para `CallToolResult.isError`, que e o que o envelope devolve nesses casos.
+Os atributos comuns sao `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function`, `sparkforge_aws.outcome`, `sparkforge_aws.payload_bytes`, `sparkforge_aws.payload_basis`, e `sparkforge_aws.detail_level` e `sparkforge_aws.item_count` quando houver. Com `outcome` diferente de `ok`, entram `status.code=2` (ERROR) e `error.type=tool_error`; a nota do `mcp.md` manda `tool_error` para `CallToolResult.isError`, que e o que o envelope devolve nesses casos.
 
 **Rationale:** uma chamada vinda do MCP e, pela semconv, um span de servidor MCP. A mesma chamada sem canal medido e so execucao de tool.
 
@@ -142,7 +142,7 @@ Os atributos comuns sao `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`
 | **Date** | 2026-09-11 |
 
 **Choice:**
-- **Trace do SparkForge:** `traceId = sha256("sparkforge:" + run_id)[:32]` e `spanId = sha256("sparkforge:" + span_id)[:16]`.
+- **Trace do SparkForge:** `traceId = sha256("sparkforge-aws:" + run_id)[:32]` e `spanId = sha256("sparkforge-aws:" + span_id)[:16]`.
 - **Trace do host:** `traceId = sha256("host:" + artifact_sha256)[:32]`. O `invoke_agent` e `sha256("host:" + artifact_sha256 + ":agent")[:16]`, e cada tool call e `sha256("host:" + artifact_sha256 + ":" + call_id)[:16]`.
 - Um id que der tudo zero (probabilidade desprezivel, mas invalido no OTLP) troca o ultimo hex para `1`.
 - **Tempo do SparkForge:** `int(round(t * 1_000_000)) * 1000`. Resolucao de microssegundo, porque o `float` de `time.time()` nao carrega mais que isso.
@@ -206,7 +206,7 @@ Todos os pontos usam `aggregationTemporality` DELTA (1), com `startTimeUnixNano`
 1. `gen_ai.client.operation.duration` para tool sem canal: e metrica de operacao de cliente GenAI, e o SparkForge nao e cliente de modelo.
 
 **Consequences:**
-- Nota no documento: a duracao do span MCP cobre `call_tool`, e nao validacao e serializacao do envelope. Fica menor que o intervalo "recebido ate respondido" da semconv, e `sparkforge.duration_scope=call_tool` vai no atributo do escopo.
+- Nota no documento: a duracao do span MCP cobre `call_tool`, e nao validacao e serializacao do envelope. Fica menor que o intervalo "recebido ate respondido" da semconv, e `sparkforge_aws.duration_scope=call_tool` vai no atributo do escopo.
 - A-005 (histograma de bucket unico) e provada pelo Collector (SC7).
 
 ---
@@ -222,7 +222,7 @@ Todos os pontos usam `aggregationTemporality` DELTA (1), com `startTimeUnixNano`
 
 | Origem | Motivo | Quando |
 |---|---|---|
-| `sparkforge` | `sem_horario` | Span com `start_time` ou `end_time` ausente |
+| `sparkforge-aws` | `sem_horario` | Span com `start_time` ou `end_time` ausente |
 | `host` | `host_sem_horario` | Tool call sem `started_at` ou `ended_at` |
 | `host` | `transcript_sem_horario` | Transcript sem `first_timestamp`/`last_timestamp`: o `invoke_agent` nao sai, e as tool calls saem sem pai |
 
@@ -254,14 +254,14 @@ Mais duas regras:
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/facts/host_transcript.py` | Modify | Horarios e `call_id` em `attrs`; `@0.2.0` | @agentspec:python:python-developer | None |
+| 1 | `sparkforge_aws/facts/host_transcript.py` | Modify | Horarios e `call_id` em `attrs`; `@0.2.0` | @agentspec:python:python-developer | None |
 | 2 | `fixtures/host_transcript/*/expected/*` | Regenerate | 21 goldens com os campos novos | (general) | 1 |
-| 3 | `sparkforge/observability/context_ledger.py` | Modify | `record(..., channel="", transport="")` grava em `metadata` | @agentspec:python:python-developer | None |
-| 4 | `sparkforge/adapters/tools.py` | Modify | `call_tool(..., channel="", transport="")`; schema e handler da tool nova | @agentspec:python:python-developer | 3, 6 |
-| 5 | `sparkforge/adapters/mcp.py` | Modify | `partial(call_tool, channel="mcp", transport=transport)` | (general) | 4 |
-| 6 | `sparkforge/observability/otlp.py` | Create | `projetar(...) -> Projecao`, helpers de id, tempo e atributo | @agentspec:python:python-developer | 1 |
-| 7 | `sparkforge/adapters/_core.py` | Modify | `telemetry_export(...)` e `telemetry_export_textos(...)` (as linhas JSON exatas, usadas pela CLI e pelo regen) | (general) | 6 |
-| 8 | `sparkforge/adapters/cli.py` | Modify | `telemetry export --run-id --host-transcript --provider --repo` | (general) | 7 |
+| 3 | `sparkforge_aws/observability/context_ledger.py` | Modify | `record(..., channel="", transport="")` grava em `metadata` | @agentspec:python:python-developer | None |
+| 4 | `sparkforge_aws/adapters/tools.py` | Modify | `call_tool(..., channel="", transport="")`; schema e handler da tool nova | @agentspec:python:python-developer | 3, 6 |
+| 5 | `sparkforge_aws/adapters/mcp.py` | Modify | `partial(call_tool, channel="mcp", transport=transport)` | (general) | 4 |
+| 6 | `sparkforge_aws/observability/otlp.py` | Create | `projetar(...) -> Projecao`, helpers de id, tempo e atributo | @agentspec:python:python-developer | 1 |
+| 7 | `sparkforge_aws/adapters/_core.py` | Modify | `telemetry_export(...)` e `telemetry_export_textos(...)` (as linhas JSON exatas, usadas pela CLI e pelo regen) | (general) | 6 |
+| 8 | `sparkforge_aws/adapters/cli.py` | Modify | `telemetry export --run-id --host-transcript --provider --repo` | (general) | 7 |
 | 9 | Registros de tool nova | Modify | `tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `parity.yaml`, `manifest.json`, executor que a declara (`sf-context-engineer` ou `sf-cost-reviewer`) + espelhos, `NOVAS_DEPOIS_DO_GOLDEN`, `test_mcp_modern_era` | (general) | 4 |
 | 10 | `tests/test_observability_otlp.py` | Create | Unidade: ids, tempo, canal, recusas, provider, metricas, forma OTLP | @agentspec:test:test-generator | 6 |
 | 11 | `tests/test_context_ledger.py`, `tests/test_adapters_mcp*.py` | Modify | Canal em `metadata`; `record` falhando nao derruba (SC8); `mcp.py` passa o canal | @agentspec:test:test-generator | 3, 5 |

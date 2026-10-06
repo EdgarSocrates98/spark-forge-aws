@@ -5,8 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_schema_registry
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters._core import analyze_schema_registry
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "fixtures" / "schema_registry" / "schema_compatible" / "input" / "contract.json"
@@ -24,7 +24,7 @@ def test_cli_and_mcp_schema_registry_envelopes_match():
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "schema-registry",
             "--path",

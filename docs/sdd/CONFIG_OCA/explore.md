@@ -56,7 +56,7 @@ não:**
 As sete que não existem: `sparkforge_offline_knowledge_verify`,
 `sparkforge_offline_knowledge_search`, `sparkforge_context_pack`,
 `sparkforge_schema_compare`, `sparkforge_lineage_extract`, `sparkforge_eval_golden_case` e
-`sparkforge_cost_estimate`. Nenhuma está em `sparkforge.adapters.tools.TOOLS`.
+`sparkforge_cost_estimate`. Nenhuma está em `sparkforge_aws.adapters.tools.TOOLS`.
 
 **O registro é apontado por outro registro:** `config/agents.yaml` traz
 `expansion_registry: config/agentic-expansion.yaml`. E `docs/agentic-expansion.md` promete,
@@ -64,11 +64,11 @@ em prosa, *"seis ferramentas locais deterministicas"* — um número que não ba
 sete declaradas nem com as zero existentes.
 
 **Os 16 subagents são o único registro declarado sem nenhum leitor.** Medido por varredura
-de `sparkforge/`, `scripts/` e `tests/`:
+de `sparkforge_aws/`, `scripts/` e `tests/`:
 
-- `skills/` é lida por `sparkforge/registry/loader.py`, `sparkforge/economy/report.py`,
+- `skills/` é lida por `sparkforge_aws/registry/loader.py`, `sparkforge_aws/economy/report.py`,
   `scripts/sync_skills.py` e outros;
-- `agents/` é lida por `sparkforge/adapters/cli.py`, `tools.py`, `case/playbook.py`,
+- `agents/` é lida por `sparkforge_aws/adapters/cli.py`, `tools.py`, `case/playbook.py`,
   `codeintel/` e outros;
 - `config/subagents.yaml` e `subagents/*.md`: **zero** referências em Python.
 

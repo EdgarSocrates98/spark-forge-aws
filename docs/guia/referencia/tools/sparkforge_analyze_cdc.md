@@ -21,7 +21,7 @@ Extrai facts determinísticos de dumps JSON/JSONL já salvos de eventos CDC, Deb
 
 ## Na CLI
 
-[`sparkforge analyze cdc`](../cli/analyze.md)
+[`sparkforge-aws analyze cdc`](../cli/analyze.md)
 
 ## Capacidade
 

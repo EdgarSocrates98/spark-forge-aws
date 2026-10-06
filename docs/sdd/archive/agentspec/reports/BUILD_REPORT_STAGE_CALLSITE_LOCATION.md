@@ -23,7 +23,7 @@ Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check`
 |--------|-------|
 | **Tasks Completed** | B1–B6 |
 | **Files Created** | `fixtures/sarif/{stage_python,stage_scala,stage_negativos}/` |
-| **Files Modified** | `sparkforge/reporting/{locate,github}.py`, `sparkforge/adapters/tools.py`, `tests/test_reporting_github.py`, `tests/test_fixtures_golden_sarif.py`, `.github/workflows/ci.yml`, `docs/github-code-scanning.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + docs remediados |
+| **Files Modified** | `sparkforge_aws/reporting/{locate,github}.py`, `sparkforge_aws/adapters/tools.py`, `tests/test_reporting_github.py`, `tests/test_fixtures_golden_sarif.py`, `.github/workflows/ci.yml`, `docs/github-code-scanning.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + docs remediados |
 | **Tests Passing** | Suite completa, um processo por arquivo: 262 arquivos, 12 100 passed, 0 failed, 9 skipped |
 | **Agents Used** | Nenhum delegado: o build foi direto |
 
@@ -55,7 +55,7 @@ Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check`
 ### Lint Check
 
 ```text
-ruff check sparkforge scripts tests -> All checks passed!
+ruff check sparkforge_aws scripts tests -> All checks passed!
 ```
 
 **Status:** ✅ Pass
@@ -73,7 +73,7 @@ N/A — o repositorio nao configura mypy
 ```text
 Suite completa, um processo por arquivo: 262 arquivos, 12 100 passed, 0 failed, 9 skipped
 check_vnext_claims 0 | check_status_numbers --strict 0 | check_surface_lock 0 | check_evals 10/10
-Snyk Code (sparkforge/reporting): 0
+Snyk Code (sparkforge_aws/reporting): 0
 ```
 
 **Status:** ✅ Pass

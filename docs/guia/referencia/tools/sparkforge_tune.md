@@ -17,7 +17,7 @@ Configuracao Spark DERIVADA da medida, com a procedencia de cada propriedade. Ve
 
 ## Na CLI
 
-[`sparkforge tune`](../cli/tune.md)
+[`sparkforge-aws tune`](../cli/tune.md)
 
 ## Capacidade
 

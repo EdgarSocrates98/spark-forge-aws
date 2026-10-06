@@ -14,8 +14,8 @@ score sozinho nao promove ninguem.
 
 from __future__ import annotations
 
-from sparkforge.adapters._core import agentic_doctor
-from sparkforge.economy.model_router import (
+from sparkforge_aws.adapters._core import agentic_doctor
+from sparkforge_aws.economy.model_router import (
     AdaptiveModelRouter,
     ModelCandidate,
     ModelRouteMode,

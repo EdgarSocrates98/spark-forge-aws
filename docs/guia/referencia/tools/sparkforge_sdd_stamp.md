@@ -18,7 +18,7 @@ Grava `upstream.sha256` no frontmatter de um artefato SDD, com o hash de texto d
 
 ## Na CLI
 
-[`sparkforge sdd stamp`](../cli/sdd.md)
+[`sparkforge-aws sdd stamp`](../cli/sdd.md)
 
 ## Capacidade
 

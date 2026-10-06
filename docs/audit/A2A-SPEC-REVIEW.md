@@ -2,14 +2,14 @@
 
 Revisao pendente do §113 do prompt de convergencia: avaliar a spec A2A
 vigente contra o vocabulario do adapter. Escopo desta revisao: a **forma**
-do que `sparkforge/protocols/a2a_adapter.py` produz/consome — nenhum
+do que `sparkforge_aws/protocols/a2a_adapter.py` produz/consome — nenhum
 comportamento novo, nenhum SDK, nenhum servidor.
 
 - Revisado em: 2026-10-06
 - Spec de referencia: A2A Protocol **v1.0.x**
   (`https://a2a-protocol.org/v1.0.0/specification/`,
   `github.com/a2aproject/A2A` tag v1.0.1)
-- Artefato avaliado: `sparkforge/protocols/a2a_adapter.py` (stdlib-puro,
+- Artefato avaliado: `sparkforge_aws/protocols/a2a_adapter.py` (stdlib-puro,
   `a2a-ready`, EXPERIMENTAL)
 - Data da escrita do adapter: vocabulario da era JSON-RPC v0.2.x
 

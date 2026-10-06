@@ -6,7 +6,7 @@ proves: >
   Ha capacidade pre-inicializada, exatamente como na fixture positiva; a unica
   diferenca e que ninguem declarou nada sobre auto-stop.
   O extrator NAO materializa o default (secao dedicada em
-  `sparkforge/facts/emr_serverless.py`): `auto_stop_enabled` e
+  `sparkforge_aws/facts/emr_serverless.py`): `auto_stop_enabled` e
   `idle_timeout_minutes` sao chaves OMITIDAS, e `auto_stop_declared: false`
   responde sobre o payload sem afirmar sobre a configuracao efetiva. Uma regra
   escrita com `absent:` ou com `auto_stop_declared == false` acusaria esta

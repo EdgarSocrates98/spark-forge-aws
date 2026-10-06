@@ -36,7 +36,7 @@ cross-artifact e validação funcional continuam dependentes das próximas waves
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0.
-- `sparkforge sdd check --repo . --feature STREAMING_CDC` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_CDC` — `ok: true`.
 
 ## Lições
 

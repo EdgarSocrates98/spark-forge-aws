@@ -15,7 +15,7 @@ em letras grandes:
 Hoje o catálogo **julga** configuração que já existe — `SF-UI` lê
 `spark.conf_effective`, `SF-PY` lê `pyspark.conf_set`, `SF-EMR` lê
 `emr.configuration`. Nada no repositório **deriva** um valor a partir de uma
-medida. Medido: a busca por `shuffle.partitions` em `sparkforge/` encontra um
+medida. Medido: a busca por `shuffle.partitions` em `sparkforge_aws/` encontra um
 único módulo, `facts/terraform.py`, e ele **lê** a propriedade de um `.tf` — não
 propõe nenhum valor.
 
@@ -158,7 +158,7 @@ fonte).
 
 ## 5. Superfície
 
-Verbo de topo `sparkforge tune` e tool `sparkforge_tune`, pela mesma razão de
+Verbo de topo `sparkforge-aws tune` e tool `sparkforge_tune`, pela mesma razão de
 `capacity` e `finops`: consome facts já extraídos e não lê artefato nenhum.
 
 ## 6. Testes

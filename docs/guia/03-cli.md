@@ -1,4 +1,4 @@
-# A CLI `sparkforge`
+# A CLI `sparkforge-aws`
 
 Este guia ensina a usar a linha de comando. Termos novos estão no
 [glossário](01-conceitos.md#glossário).
@@ -14,13 +14,13 @@ que já vem no repositório.
 export TMP=/tmp/sparkforge_guia && mkdir -p "$TMP"
 
 # 2. Extrair fatos do código (troque pelo caminho do seu job)
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
 
 # 3. Julgar os fatos, informando a versão do Glue
-sparkforge judge --facts "$TMP/facts.json" --glue 5.0 --out "$TMP/findings.json"
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --out "$TMP/findings.json"
 
 # 4. Conferir que os achados seguem o formato oficial
-sparkforge validate --findings "$TMP/findings.json"
+sparkforge-aws validate --findings "$TMP/findings.json"
 ```
 
 Resultado esperado: o passo 3 mostra `"total_count": 1` com o achado
@@ -29,7 +29,7 @@ Resultado esperado: o passo 3 mostra `"total_count": 1` com o achado
 explica cada campo.
 
 No seu projeto, troque o passo 2 por
-`sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json`.
+`sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json`.
 
 ## Para que serve
 
@@ -46,7 +46,7 @@ deixe que ele chame as tools. O resultado é o mesmo.
 ## Pré-requisitos
 
 - SparkForge instalado (veja [Instalação](02-instalacao.md)). Confira com
-  `sparkforge --version`.
+  `sparkforge-aws --version`.
 - Um artefato para analisar. Os exemplos usam `fixtures/`, que está no
   repositório clonado. Se instalou só pelo PyPI, clone o repositório para
   ter os fixtures.
@@ -68,7 +68,7 @@ deixe que ele chame as tools. O resultado é o mesmo.
 ## Anatomia de um comando
 
 ```text
-sparkforge <comando> [subcomando] --opções
+sparkforge-aws <comando> [subcomando] --opções
 ```
 
 - **comando**: o comando de topo, como `analyze`, `judge`, `case`.
@@ -81,13 +81,13 @@ sparkforge <comando> [subcomando] --opções
 Todo comando e todo subcomando têm `--help`:
 
 ```bash
-sparkforge --help
-sparkforge analyze --help
-sparkforge analyze pyspark --help
+sparkforge-aws --help
+sparkforge-aws analyze --help
+sparkforge-aws analyze pyspark --help
 ```
 
-Se o comando `sparkforge` não estiver no PATH, use
-`python -m sparkforge.adapters.cli` no lugar dele. Os argumentos são os
+Se o comando `sparkforge-aws` não estiver no PATH, use
+`python -m sparkforge_aws.adapters.cli` no lugar dele. Os argumentos são os
 mesmos.
 
 ## O que sai na tela
@@ -150,8 +150,8 @@ A tela mostra uma página por vez. O tamanho padrão da página aparece em
 repita o comando com `--cursor` igual ao `next_cursor` recebido:
 
 ```bash
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1 --cursor 1
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1 --cursor 1
 ```
 
 Paginação só vale para a tela. Para ter tudo de uma vez, use `--out`.
@@ -176,7 +176,7 @@ referenciada por `provenance_ref`. Detalhes no
 Disponível em `analyze ...`, `fuse` e `benchmark`. É repetível. Exemplo real:
 
 ```bash
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --kind pyspark.udf --detail-level normal
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --kind pyspark.udf --detail-level normal
 ```
 
 Saída encurtada: `total_count` passa a ser `1` e `items` traz só o fact de
@@ -190,7 +190,7 @@ No `judge`, o filtro equivalente é `--severity` (repetível), por exemplo
 
 O código de saída é o número que o processo devolve ao terminar. Em shell ele
 fica em `$?` (Bash) ou `$LASTEXITCODE` (PowerShell). Conferido em
-`sparkforge/adapters/cli.py`:
+`sparkforge_aws/adapters/cli.py`:
 
 | Código | Significado | Exemplos reais |
 |---|---|---|
@@ -201,13 +201,13 @@ fica em `$?` (Bash) ou `$LASTEXITCODE` (PowerShell). Conferido em
 Exemplo real de código 2, com a mensagem que já diz o que fazer:
 
 ```bash
-sparkforge analyze pyspark --path fixtures/nao_existe
+sparkforge-aws analyze pyspark --path fixtures/nao_existe
 ```
 
 ```text
 Caminho nao encontrado para analise: fixtures/nao_existe
   Aponte para o diretorio da biblioteca ou para um arquivo .py:
-    sparkforge analyze pyspark --path <dir-ou-arquivo> --out .sparkforge/facts.json
+    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> --out .sparkforge/facts.json
 ```
 
 Em CI, use o código de saída para decidir se o passo passa. Não use a
@@ -215,7 +215,7 @@ presença de texto na tela.
 
 ## Mapa dos comandos de topo
 
-A lista abaixo foi conferida com `sparkforge --help`. Cada linha resume o que
+A lista abaixo foi conferida com `sparkforge-aws --help`. Cada linha resume o que
 o próprio `--help` diz. As opções exatas estão na referência gerada de cada
 comando.
 
@@ -261,24 +261,24 @@ Extraia os contratos e as observações separadamente. O compositor preserva os
 
 ```bash
 # Progress Structured Streaming
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
 
 # Saída do sink Structured Streaming
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name output-rows --query-name orders-query \
   --sink-name orders-sink --out sink-slo.facts.json
 
 # Transporte Kafka/Kinesis
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out transport-slo.facts.json
 
-sparkforge judge --facts transport-slo.facts.json --show-skipped
+sparkforge-aws judge --facts transport-slo.facts.json --show-skipped
 ```
 
 Para sink, `query_name` identifica a query, `sink_name` desambigua o sink e
@@ -303,10 +303,10 @@ Extraia a definição efetiva do job e o módulo Terraform no mesmo pool de fact
 O `fuse` liga apenas um `aws_glue_job` cujo `name` seja literal e único:
 
 ```bash
-sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
-sparkforge analyze terraform --path infra/ --out terraform.facts.json
-sparkforge fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
-sparkforge judge --facts fused.facts.json --show-skipped
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge-aws analyze terraform --path infra/ --out terraform.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge-aws judge --facts fused.facts.json --show-skipped
 ```
 
 O fact `glue.streaming.terraform_link` compara versão Glue, RTM, linguagem e
@@ -321,9 +321,9 @@ Com um diretório de runs Glue já coletado, use o analyzer existente e o mesmo
 compositor:
 
 ```bash
-sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
-sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
-sparkforge judge --facts runtime.facts.json --show-skipped
+sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
 
 O link literal compara `glue_version`, `worker_type` e `worker_count`, mantém
@@ -337,7 +337,7 @@ interprete `execution_time_s` ou DPU como latência de evento.
 novo comando:
 
 ```bash
-sparkforge analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
 ```
 
 Leia `glue.streaming.source` e `glue.streaming.sink` para identidade,
@@ -353,8 +353,8 @@ declara. Não há novo comando: `--artifact managed_flink` continua selecionando
 o namespace do serviço gerenciado.
 
 ```bash
-sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
-sparkforge judge --facts flink.facts.json --show-skipped
+sparkforge-aws analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge-aws judge --facts flink.facts.json --show-skipped
 ```
 
 O resultado pode conter `flink.source` e `flink.sink`, com identidade,
@@ -440,7 +440,7 @@ Os dois saem 1 quando há recusa, do host ou da cópia em dobro (`conflict.refus
 Não há tool MCP de propósito: escrever no HOME é
 decisão do operador, e um agente não deve dispará-la sozinho. O detalhe (caminhos por
 host, manifesto, cópia em dobro e cada recusa) está em
-[Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate).
+[Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 
 ### Inteligência de código
 
@@ -460,7 +460,7 @@ repositório clonado.
 ### 1. Declarar o runtime
 
 ```bash
-sparkforge runtime detect --glue 5.0
+sparkforge-aws runtime detect --glue 5.0
 ```
 
 ```json
@@ -482,7 +482,7 @@ Glue 5.0 que o projeto mantém.
 ### 2. Extrair facts
 
 ```bash
-sparkforge analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
 ```
 
 Saída encurtada:
@@ -524,7 +524,7 @@ que a análise daquele módulo é parcial.
 ### 3. Julgar
 
 ```bash
-sparkforge judge --facts "$TMP/facts.json" --glue 5.0
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0
 ```
 
 Saída encurtada:
@@ -547,7 +547,7 @@ Saída encurtada:
     "contradictions": [],
     "unresolved": [],
     "persisted": false,
-    "note": "calculado, nao gravado. O registro auditavel e `sparkforge arbitrate`.",
+    "note": "calculado, nao gravado. O registro auditavel e `sparkforge-aws arbitrate`.",
     "...": "..."
   },
   "items": [
@@ -583,7 +583,7 @@ Leia nesta ordem:
 
 1. **`rule_id` e `title`**: qual regra disparou. `SF-PY-001`, "Python UDF em
    transformação expressável nativamente". Para ver a regra inteira:
-   `sparkforge rules lookup --id SF-PY-001`.
+   `sparkforge-aws rules lookup --id SF-PY-001`.
 2. **`subject`**: onde está. Arquivo `lib/job.py`, linha 5, função `trivial`.
 3. **`evidence`**: o fact que sustenta o achado, `f_726c0b`. Procure esse id no
    `facts.json` para ver a observação crua.
@@ -607,8 +607,8 @@ Leia nesta ordem:
 Grave os findings e valide contra o schema:
 
 ```bash
-sparkforge judge --facts "$TMP/facts.json" --glue 5.0 --out "$TMP/findings.json"
-sparkforge validate --findings "$TMP/findings.json"
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --out "$TMP/findings.json"
+sparkforge-aws validate --findings "$TMP/findings.json"
 ```
 
 ```json
@@ -622,8 +622,8 @@ Para acompanhar a investigação num case, abra um no diretório do projeto
 analisado (aqui, um diretório temporário de exemplo):
 
 ```bash
-sparkforge case open --repo "$TMP/repo_demo" --case-id demo-udf --now 2026-09-13T10:00:00Z --glue 5.0
-sparkforge next-step --repo "$TMP/repo_demo" --findings "$TMP/findings.json"
+sparkforge-aws case open --repo "$TMP/repo_demo" --case-id demo-udf --now 2026-09-13T10:00:00Z --glue 5.0
+sparkforge-aws next-step --repo "$TMP/repo_demo" --findings "$TMP/findings.json"
 ```
 
 Saída real do `next-step`:
@@ -636,7 +636,7 @@ Saída real do `next-step`:
   "evidence": ["case:facts_index.count count_eq=0"],
   "missing_artifacts": [],
   "collect_commands": [
-    "sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json"
+    "sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json"
   ],
   "blocked_by": [],
   "alternatives": [],
@@ -670,7 +670,7 @@ Nem todo comando termina com uma resposta completa, e isso é esperado.
 
 - **`refused` em `tune` e `capacity`**: propriedades para as quais não há
   medida que sustente um valor. Rode
-  `sparkforge tune --facts fixtures/tuning/sem_shuffle_medido/input/facts.json`
+  `sparkforge-aws tune --facts fixtures/tuning/sem_shuffle_medido/input/facts.json`
   e veja `properties: []` e uma lista `refused` em que cada item nomeia a
   medida que faltou.
 
@@ -701,8 +701,8 @@ regras que cruzam extratores diferentes (por exemplo, `SF-GLUE-004` cruza o
 Terraform com a escrita no PySpark). Exemplo real, com dois fixtures:
 
 ```bash
-sparkforge analyze pyspark --path fixtures/pyspark/coalesce_one/input --out "$TMP/facts_coalesce.json"
-sparkforge judge --facts "$TMP/facts.json" --facts "$TMP/facts_coalesce.json" --glue 5.0
+sparkforge-aws analyze pyspark --path fixtures/pyspark/coalesce_one/input --out "$TMP/facts_coalesce.json"
+sparkforge-aws judge --facts "$TMP/facts.json" --facts "$TMP/facts_coalesce.json" --glue 5.0
 ```
 
 Resultado resumido: `total_count: 2`, `by_severity: {"P0": 1, "P1": 1}`, com
@@ -722,13 +722,13 @@ on EKS, `--emr` é recusado com código 2.
 ### Filtre por severidade
 
 ```bash
-sparkforge judge --facts "$TMP/facts.json" --glue 5.0 --severity P0
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --severity P0
 ```
 
 ### Veja o estado das fontes
 
 ```bash
-sparkforge judge --facts "$TMP/facts.json" --glue 5.0 --source-freshness
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --source-freshness
 ```
 
 Acrescenta o estado de cada fonte citada, calculado sobre
@@ -740,9 +740,9 @@ use `--as-of AAAA-MM-DD`.
 No seu próprio projeto, a convenção é gravar em `.sparkforge/`:
 
 ```bash
-sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
-sparkforge next-step --repo . --findings .sparkforge/findings.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
+sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge/findings.json
 ```
 
 ### Comandos que falam com a AWS
@@ -751,7 +751,7 @@ Os comandos `collect ...` acessam a sua conta AWS e precisam de credenciais e
 do extra `aws`. Por exemplo, a skill `tune-glue-job` usa:
 
 ```bash
-sparkforge collect glue-job --repo . --job-name <nome> --now <ISO8601>
+sparkforge-aws collect glue-job --repo . --job-name <nome> --now <ISO8601>
 ```
 
 Ele baixa a definição real do job pela API do Glue, para comparar com o que o
@@ -762,9 +762,9 @@ Para Glue Schema Registry, a coleta é read-only e registra a versão mais recen
 observada junto com metadata e definição:
 
 ```bash
-sparkforge collect schema-registry --repo . --registry-name events \
+sparkforge-aws collect schema-registry --repo . --registry-name events \
   --max-schemas 100 --now <ISO8601>
-sparkforge analyze schema-registry \
+sparkforge-aws analyze schema-registry \
   --path .sparkforge/artifacts/schema_registry/events.json
 ```
 
@@ -778,11 +778,11 @@ duas pontas ISO 8601. O período padrão é 60 segundos e precisa ser múltiplo 
 60 entre 60 e 86400:
 
 ```bash
-sparkforge collect streaming-integrations --repo . --kinesis-stream orders \
+sparkforge-aws collect streaming-integrations --repo . --kinesis-stream orders \
   --metrics-start 2026-10-02T00:00:00Z \
   --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
   --now 2026-10-02T00:10:00Z
-sparkforge analyze transport \
+sparkforge-aws analyze transport \
   --artifact kinesis \
   --path .sparkforge/artifacts/streaming_integrations/kinesis_orders__metrics_*.json
 ```
@@ -797,9 +797,9 @@ coleta somente leitura abaixo. Ela não pede detalhes adicionais, portanto não
 baixa código nem job plan:
 
 ```bash
-sparkforge collect managed-flink --repo . --application-name orders \
+sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 --now <ISO8601>
-sparkforge analyze flink \
+sparkforge-aws analyze flink \
   --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
   --artifact managed_flink
 ```
@@ -808,7 +808,7 @@ O artifact preserva runtime, status, versão, checkpoint, paralelismo, VPC e
 logging observados. Para uma janela bounded de CloudWatch, use:
 
 ```bash
-sparkforge collect managed-flink --repo . --application-name orders \
+sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 \
   --metrics-start 2026-10-03T00:00:00Z \
   --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \

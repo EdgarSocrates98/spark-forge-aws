@@ -81,7 +81,7 @@ Consequência prática: **em qualquer runtime Glue de hoje, todo data file escri
 
 Mesmo em 1.11+ o campo só é gravado quando a ordem do job **casa com uma ordem já registrada** em `sort-orders`: um `rewrite_data_files` com `sort_order => 'col ASC'` ad-hoc, ou um `zorder`, produz 0 com um WARN no driver.
 
-Por isso `0` e coluna ausente são tratados como **a mesma coisa — desconhecido** — em `sparkforge/facts/iceberg_metadata.py`, e `SF-ICE-004` só dispara com evidência de ordem registrada anterior. Numa tabela escrita só por Glue, a regra fica calada por falta de evidência, não por ausência de passivo, e isso aparece como `iceberg.unresolved` com reason `sort_order_id_missing`.
+Por isso `0` e coluna ausente são tratados como **a mesma coisa — desconhecido** — em `sparkforge_aws/facts/iceberg_metadata.py`, e `SF-ICE-004` só dispara com evidência de ordem registrada anterior. Numa tabela escrita só por Glue, a regra fica calada por falta de evidência, não por ausência de passivo, e isso aparece como `iceberg.unresolved` com reason `sort_order_id_missing`.
 
 **Como medir o passivo mesmo assim, em Glue:** não pelo metadado. Meça bytes lidos por uma query de referência filtrando a coluna de sort, antes e depois do rewrite; ou compare a sobreposição de `lower_bounds`/`upper_bounds` daquela coluna entre os data files em `.files` — arquivos com faixas muito sobrepostas não estão agrupados, independentemente do que o `sort_order_id` diga.
 

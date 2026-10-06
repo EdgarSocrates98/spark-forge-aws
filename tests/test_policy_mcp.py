@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.adapters import mcp as mcp_adapter
-from sparkforge.adapters import tools
-from sparkforge.adapters.tools import call_tool
-from sparkforge.policy.load import Politica, carregar
-from sparkforge.policy.mcp import para_call_policy, tools_por_classe
+from sparkforge_aws.adapters import mcp as mcp_adapter
+from sparkforge_aws.adapters import tools
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.policy.load import Politica, carregar
+from sparkforge_aws.policy.mcp import para_call_policy, tools_por_classe
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PY = ROOT / "fixtures" / "pyspark" / "python_udf" / "input" / "lib" / "job.py"
@@ -55,7 +55,9 @@ def test_servidor_sem_policy_e_com_policy_invalida(tmp_path):
     policy, erro = mcp_adapter.carregar_policy_do_servidor(tmp_path)
     assert policy is None and "version" in erro
     recusa = mcp_adapter._recusa_por_policy_invalida(erro)("sparkforge_judge", {})
-    assert recusa["error_code"] == "POLICY_INVALID" and "sparkforge policy check" in recusa["error"]
+    assert recusa["error_code"] == "POLICY_INVALID" and (
+        "sparkforge-aws policy check" in recusa["error"]
+    )
 
 
 def test_servidor_com_a_policy_do_repositorio():

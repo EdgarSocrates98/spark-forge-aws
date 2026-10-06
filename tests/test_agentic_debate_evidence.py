@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.agentic.executor import debate_evidence as de
+from sparkforge_aws.agentic.executor import debate_evidence as de
 
 TF = (
     'resource "aws_glue_job" "etl_grafo" {\n'
@@ -47,7 +47,7 @@ class TestAllowlist:
         assert _recusa(raiz, pedido) == de.EXTRACTOR_NOT_ALLOWED
 
     def test_o_nome_nao_compoe_import(self, tmp_path):
-        """Nome de modulo real de `sparkforge.facts` fora da tabela tambem e recusado."""
+        """Nome de modulo real de `sparkforge_aws.facts` fora da tabela tambem e recusado."""
         raiz = _case(tmp_path)
         pedido = [{"extractor": "host_transcript", "path": "artifacts/job.tf"}]
         assert _recusa(raiz, pedido) == de.EXTRACTOR_NOT_ALLOWED

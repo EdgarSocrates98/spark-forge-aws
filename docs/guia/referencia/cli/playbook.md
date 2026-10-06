@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge playbook`
+# `sparkforge-aws playbook`
 
 Decomposicao de um coordenador em passos sequenciais -- o PISO de orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, e o caminho em Claude Code, Devin CLI e Devin Local agent quando o despacho de subagente esta desligado -- e, no Devin, tambem quando ele esta ligado, porque subagente nao gera subagente por default. Le agents/, nunca repete a lista de executores.
 
 ```bash
-sparkforge playbook --help
+sparkforge-aws playbook --help
 ```
 
 ## Opções

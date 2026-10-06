@@ -19,23 +19,23 @@ saídas.
 ```bash
 # 1. O que o Lake Formation concede sobre a tabela
 mkdir -p /tmp/sf
-sparkforge analyze lakeformation-grants \
+sparkforge-aws analyze lakeformation-grants \
   --path fixtures/lakeformation/grant_de_leitura_em_local_registrado/input \
   --out /tmp/sf/facts_lf.json
 
 # 2. O que o IAM decidiu (simulado) para o runtime role do job
-sparkforge analyze iam-access \
+sparkforge-aws analyze iam-access \
   --path fixtures/iam_access/escrita_negada_pelo_boundary/input \
   --out /tmp/sf/facts_iam.json
 
 # 3. Julgar os dois juntos contra o catálogo de regras
-sparkforge judge --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json --glue 5.1
+sparkforge-aws judge --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json --glue 5.1
 
 # 4. Ver o caminho de acesso como um grafo: o que libera, o que barra, o que não foi medido
-sparkforge lakeformation access-graph --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json
+sparkforge-aws lakeformation access-graph --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json
 
 # 5. Conferir o que a sua versão de Glue suporta
-sparkforge lakeformation matrix --runtime 5.1
+sparkforge-aws lakeformation matrix --runtime 5.1
 ```
 
 Nesse exemplo o resultado é: o Lake Formation concede `SELECT` ao role, mas o
@@ -136,11 +136,11 @@ As regras de Lake Formation (`SF-LF-*`) leem facts **derivados**. Quem os
 deriva é o `fuse`. Sem ele, o `judge` não vê o modelo de acesso.
 
 ```bash
-sparkforge analyze terraform \
+sparkforge-aws analyze terraform \
   --path fixtures/infra_code/fgac_com_fta_no_mesmo_job/input \
   --out /tmp/sf/facts_tf.json
-sparkforge fuse --facts /tmp/sf/facts_tf.json --out /tmp/sf/facts_tf_fused.json
-sparkforge judge --facts /tmp/sf/facts_tf_fused.json
+sparkforge-aws fuse --facts /tmp/sf/facts_tf.json --out /tmp/sf/facts_tf_fused.json
+sparkforge-aws judge --facts /tmp/sf/facts_tf_fused.json
 ```
 
 O `fuse` acrescenta os kinds de Lake Formation:
@@ -167,7 +167,7 @@ regra precisa.
 ### 2. O que o Lake Formation concede
 
 ```bash
-sparkforge analyze lakeformation-grants \
+sparkforge-aws analyze lakeformation-grants \
   --path fixtures/lakeformation/grant_de_leitura_em_local_registrado/input \
   --out /tmp/sf/facts_lf.json --detail-level summary
 ```
@@ -207,7 +207,7 @@ o resultado diz isso em vez de fingir que não há nada ali.
 ### 3. O que o IAM decide
 
 ```bash
-sparkforge analyze iam-access \
+sparkforge-aws analyze iam-access \
   --path fixtures/iam_access/escrita_negada_pelo_boundary/input \
   --out /tmp/sf/facts_iam.json
 ```
@@ -216,7 +216,7 @@ Cada `iam.access_decision` traz a ação, o recurso, a decisão da AWS e **quem*
 negou (trecho do `--out`):
 
 ```json
-{"action": "s3:PutObject", "resource": "arn:aws:s3:::sparkforge-demo/curated/*",
+{"action": "s3:PutObject", "resource": "arn:aws:s3:::sparkforge-aws-demo/curated/*",
  "decision": "implicitDeny", "allowed": false, "denied_by": "permissions_boundary",
  "scoped_to_resource": true}
 {"action": "s3:DeleteObject", "decision": "explicitDeny", "denied_by": "explicit_deny"}
@@ -230,7 +230,7 @@ real. Se fosse contra `*`, um "permitido" não valeria para o recurso.
 ### 4. Julgar tudo junto
 
 ```bash
-sparkforge judge --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json --glue 5.1
+sparkforge-aws judge --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json --glue 5.1
 ```
 
 Resumo real da saída (`total_count: 5`):
@@ -253,7 +253,7 @@ tem nenhuma das duas. O caminho em que ela dispara está em
 ### 5. O grafo de acesso
 
 ```bash
-sparkforge lakeformation access-graph --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json
+sparkforge-aws lakeformation access-graph --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_iam.json
 ```
 
 Saída (encurtada):
@@ -268,7 +268,7 @@ Saída (encurtada):
     { "target_node": "lakeformation:curated.fato_venda", "permission_type": "lf_grant",
       "status": "granted", "evidence": "grant medido com SELECT ou ALL" },
     { "target_node": "iam:s3:PutObject", "permission_type": "iam", "status": "blocking",
-      "evidence": "negado por permissions_boundary sobre arn:aws:s3:::sparkforge-demo/curated/*" },
+      "evidence": "negado por permissions_boundary sobre arn:aws:s3:::sparkforge-aws-demo/curated/*" },
     { "target_node": "ram:ResourceShare", "permission_type": "ram_share", "status": "unresolved",
       "evidence": "nenhum coletor produz o estado do compartilhamento AWS RAM; destravaria: `ram:GetResourceShares` num coletor novo" },
     ...
@@ -291,10 +291,10 @@ receber o arquivo fundido. O caminho completo está em
 ### 6. Resource link (outra conta)
 
 ```bash
-sparkforge analyze glue-resource-link \
+sparkforge-aws analyze glue-resource-link \
   --path fixtures/resource_link/link_de_tabela_com_nome_divergente/input \
   --out /tmp/sf/facts_rl.json
-sparkforge judge --facts /tmp/sf/facts_rl.json
+sparkforge-aws judge --facts /tmp/sf/facts_rl.json
 ```
 
 O fact `glue.resource_link` mostra o link `analytics.dim_cliente_prod` na conta
@@ -329,7 +329,7 @@ A versão do Glue muda o que vale. A matriz sai de um comando, com a frase da
 documentação por trás de cada célula:
 
 ```bash
-sparkforge lakeformation matrix --axis fgac_spark_native_write --detail-level summary
+sparkforge-aws lakeformation matrix --axis fgac_spark_native_write --detail-level summary
 ```
 
 ```json
@@ -360,7 +360,7 @@ Sem `--detail-level summary`, cada linha traz a frase citada. Exemplo real do
 Versão fora da matriz não vira palpite:
 
 ```bash
-sparkforge lakeformation matrix --runtime 9.9
+sparkforge-aws lakeformation matrix --runtime 9.9
 ```
 
 ```json
@@ -463,26 +463,26 @@ F=fixtures/cloudwatch_logs/lf_negado_fta_append_sem_all/input
 mkdir -p /tmp/sf
 
 # 1. A operação que o código faz sobre a tabela
-sparkforge analyze pyspark --path $F/job.py --out /tmp/sf/facts_code.json
+sparkforge-aws analyze pyspark --path $F/job.py --out /tmp/sf/facts_code.json
 
 # 2. O modelo de acesso (FTA ou FGAC) e a versão do Glue, do Terraform
-sparkforge analyze terraform --path $F/main.tf --out /tmp/sf/facts_tf.json
+sparkforge-aws analyze terraform --path $F/main.tf --out /tmp/sf/facts_tf.json
 
 # 3. O grant do role e o registro da localização
-sparkforge analyze lakeformation-grants --path $F/lf --out /tmp/sf/facts_lf.json
+sparkforge-aws analyze lakeformation-grants --path $F/lf --out /tmp/sf/facts_lf.json
 
 # 4. A mensagem do log, e a assinatura que ela casa
-sparkforge analyze cloudwatch-logs --path $F/logs --out /tmp/sf/facts_logs.json
-sparkforge analyze error-signatures --facts /tmp/sf/facts_logs.json --out /tmp/sf/facts_err.json
+sparkforge-aws analyze cloudwatch-logs --path $F/logs --out /tmp/sf/facts_logs.json
+sparkforge-aws analyze error-signatures --facts /tmp/sf/facts_logs.json --out /tmp/sf/facts_err.json
 
 # 5. Juntar tudo: é aqui que o lakeformation.missing_grant nasce
-sparkforge fuse --facts /tmp/sf/facts_code.json --facts /tmp/sf/facts_tf.json \
+sparkforge-aws fuse --facts /tmp/sf/facts_code.json --facts /tmp/sf/facts_tf.json \
   --facts /tmp/sf/facts_lf.json --facts /tmp/sf/facts_logs.json \
   --facts /tmp/sf/facts_err.json --out /tmp/sf/facts_case.json
 
 # 6. Julgar, e ver o caminho de acesso
-sparkforge judge --facts /tmp/sf/facts_case.json --glue 5.0
-sparkforge lakeformation access-graph --facts /tmp/sf/facts_case.json
+sparkforge-aws judge --facts /tmp/sf/facts_case.json --glue 5.0
+sparkforge-aws lakeformation access-graph --facts /tmp/sf/facts_case.json
 ```
 
 Sob FGAC, acrescente o arquivo de `analyze iam-access` ao `fuse`: é dele que sai
@@ -530,15 +530,15 @@ Os coletores gravam em `.sparkforge/artifacts/` (veja
 
 ```bash
 # A mensagem da falha
-sparkforge collect cloudwatch-logs --repo . --job-name <job> --job-run <job-run-id> \
+sparkforge-aws collect cloudwatch-logs --repo . --job-name <job> --job-run <job-run-id> \
   --log-group /aws-glue/jobs/error --start <inicio-iso> --end <fim-iso> --now <agora-iso>
 
 # O grant e o registro. --resource-arn é a localização da PRÓPRIA tabela, não o bucket
-sparkforge collect lakeformation --repo . --database <db> --table <tabela> \
+sparkforge-aws collect lakeformation --repo . --database <db> --table <tabela> \
   --resource-arn arn:aws:s3:::<bucket>/<prefixo-da-tabela> --now <agora-iso>
 
 # Só sob FGAC, na escrita: a decisão de IAM no prefixo de objetos da tabela
-sparkforge collect iam-access --repo . --role-arn <runtime-role-arn> \
+sparkforge-aws collect iam-access --repo . --role-arn <runtime-role-arn> \
   --action s3:PutObject --action s3:DeleteObject \
   --resource-arn 'arn:aws:s3:::<bucket>/<prefixo-da-tabela>/*' --now <agora-iso>
 ```
@@ -551,16 +551,16 @@ que diz qual é o role do job quando a tabela tem grant para mais de um principa
 Depois, analise cada diretório, junte tudo no `fuse` e julgue:
 
 ```bash
-sparkforge analyze pyspark --path <job.py> --out facts_code.json
-sparkforge analyze terraform --path <diretorio-do-terraform> --out facts_tf.json
-sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ --out facts_lf.json
-sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/ --out facts_iam.json
-sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/ --out facts_logs.json
-sparkforge analyze error-signatures --facts facts_logs.json --out facts_err.json
-sparkforge fuse --facts facts_code.json --facts facts_tf.json --facts facts_lf.json \
+sparkforge-aws analyze pyspark --path <job.py> --out facts_code.json
+sparkforge-aws analyze terraform --path <diretorio-do-terraform> --out facts_tf.json
+sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ --out facts_lf.json
+sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/ --out facts_iam.json
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/ --out facts_logs.json
+sparkforge-aws analyze error-signatures --facts facts_logs.json --out facts_err.json
+sparkforge-aws fuse --facts facts_code.json --facts facts_tf.json --facts facts_lf.json \
   --facts facts_iam.json --facts facts_logs.json --facts facts_err.json --out facts_case.json
-sparkforge judge --facts facts_case.json
-sparkforge lakeformation access-graph --facts facts_case.json
+sparkforge-aws judge --facts facts_case.json
+sparkforge-aws lakeformation access-graph --facts facts_case.json
 ```
 
 Por que a localização importa tanto: sob FGAC, o fact só aceita como prova sobre
@@ -689,7 +689,7 @@ os catálogos de origem e destino, seus owners, `glue_id` e `glue_account_id`, e
 as evidências já observadas:
 
 ```bash
-sparkforge lakeformation architect --input architecture.json
+sparkforge-aws lakeformation architect --input architecture.json
 ```
 
 O resultado separa `consistent`, `unresolved` e `blocked`. Ele não presume que

@@ -1,6 +1,6 @@
 ---
 name: design-incremental-processing
-description: "Use quando um job dito incremental continua lento mesmo com pouca entrada, faz scan global, recomputa estado histórico, ou você precisa projetar bootstrap, ciclos, backfill, late data, deletes e idempotência de forma que a entrada pequena realmente reduza bytes e arquivos lidos. Use também quando perguntarem \\\"por que o incremental demora igual ao full\\\", \\\"isso é realmente incremental\\\" ou \\\"como eu desenho o reprocessamento disso\\\", mesmo sem citar watermark ou bookmark. Se você está prestes a comparar full e incremental lendo os dois caminhos de código de cabeça, rode `sparkforge analyze pyspark` nos dois e compare os facts — mas saiba de antemão que o extrator mostra a forma do código, não se o volume lido caiu de fato: isso só o event log confirma."
+description: "Use quando um job dito incremental continua lento mesmo com pouca entrada, faz scan global, recomputa estado histórico, ou você precisa projetar bootstrap, ciclos, backfill, late data, deletes e idempotência de forma que a entrada pequena realmente reduza bytes e arquivos lidos. Use também quando perguntarem \\\"por que o incremental demora igual ao full\\\", \\\"isso é realmente incremental\\\" ou \\\"como eu desenho o reprocessamento disso\\\", mesmo sem citar watermark ou bookmark. Se você está prestes a comparar full e incremental lendo os dois caminhos de código de cabeça, rode `sparkforge-aws analyze pyspark` nos dois e compare os facts — mas saiba de antemão que o extrator mostra a forma do código, não se o volume lido caiu de fato: isso só o event log confirma."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze pyspark
-  - sparkforge judge
-  - sparkforge analyze terraform
+  - sparkforge-aws analyze pyspark
+  - sparkforge-aws judge
+  - sparkforge-aws analyze terraform
 ---
 
 # Design Incremental Processing
@@ -32,8 +32,8 @@ O que a comparação de facts **não** prova é se, em execução, a entrada peq
 ### 1. Extraia os facts dos dois caminhos
 
 ```bash
-sparkforge analyze pyspark --path <arquivo-ou-módulo-full> --out .sparkforge/facts_full.json
-sparkforge analyze pyspark --path <arquivo-ou-módulo-incremental> --out .sparkforge/facts_incremental.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-módulo-full> --out .sparkforge/facts_full.json
+sparkforge-aws analyze pyspark --path <arquivo-ou-módulo-incremental> --out .sparkforge/facts_incremental.json
 ```
 
 Se full e incremental são branches do mesmo módulo (um `if is_full: ... else: ...`), um único `analyze pyspark` já captura os dois; separe por linha/função na leitura, não rode duas vezes o mesmo arquivo esperando facts diferentes.
@@ -49,13 +49,13 @@ No caminho incremental, o filtro pela chave/janela de controle deveria aparecer 
 ### 4. Julgue cada caminho separadamente
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_incremental.json --show-skipped
-sparkforge judge --facts .sparkforge/facts_full.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_incremental.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_full.json --show-skipped
 ```
 
 Sem flag de versão: estes facts vêm de `analyze pyspark`, que lê AST e não observa runtime, e as regras `SF-PY-*` que julgam forma de código são estruturais, sem `runtime_scope`. O campo `runtime` da saída volta vazio com `detected_from: []` — leia-o mesmo assim, porque é ele que diz se o julgamento teve ou não contexto de versão. O que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, fora do escopo desta comparação.
 
-Declare `--glue 5.1` só quando souber a versão de fonte confiável. Melhor que declarar, quando o repositório tem o `.tf`: rode `sparkforge analyze terraform` e junte os facts na mesma chamada (`--facts` é repetível) — aí `runtime` passa a vir preenchido com `detected_from: ["terraform"]`, e a matriz de compatibilidade preenche `iceberg` junto, que é o que decide quais modos de escrita e operações de `MERGE` estão disponíveis para o desenho que você vai propor.
+Declare `--glue 5.1` só quando souber a versão de fonte confiável. Melhor que declarar, quando o repositório tem o `.tf`: rode `sparkforge-aws analyze terraform` e junte os facts na mesma chamada (`--facts` é repetível) — aí `runtime` passa a vir preenchido com `detected_from: ["terraform"]`, e a matriz de compatibilidade preenche `iceberg` junto, que é o que decide quais modos de escrita e operações de `MERGE` estão disponíveis para o desenho que você vai propor.
 
 Um `pyspark.window` sem `partitionBy` no cálculo de current-state, ou um `pyspark.loop` escrevendo por lote, dentro do caminho "incremental" são sinais de que ele herdou os mesmos problemas do full — combine com `optimize-latest-per-key`/`analyze-batch-loop` quando aparecerem.
 
@@ -100,7 +100,7 @@ incremental_design:
 
 ## Quando NÃO usar
 
-- A carga é sempre full/bootstrap homogênea, sem um caminho incremental separado: foque em `sparkforge-diagnose`/`tune-glue-job`.
+- A carga é sempre full/bootstrap homogênea, sem um caminho incremental separado: foque em `sparkforge-aws-diagnose`/`tune-glue-job`.
 - O gargalo é especificamente o cálculo do latest-per-key, não o desenho incremental ao redor: use `optimize-latest-per-key`.
 - O "incremental" é um loop de batches na aplicação, não uma estratégia de leitura: veja `analyze-batch-loop`.
 
@@ -128,9 +128,9 @@ data entra, `replay_strategy` e `backfill_strategy` decidem o que é reprocessad
 `deduplication` decide qual duplicata sobrevive. A skill já pedia "preservar late data e
 correções retroativas"; aqui essa exigência ganha o verbo que a produz.
 
-`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+`sparkforge-aws funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
-`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+`catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
 dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
 `sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
@@ -160,7 +160,7 @@ Esta skill trata **processamento incremental, latest-per-key e Iceberg**. Contra
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze pyspark`, `sparkforge judge`, `sparkforge analyze terraform`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze pyspark`, `sparkforge-aws judge`, `sparkforge-aws analyze terraform`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

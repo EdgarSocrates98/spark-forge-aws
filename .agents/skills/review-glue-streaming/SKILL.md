@@ -13,8 +13,8 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze glue-streaming
-  - sparkforge judge
+  - sparkforge-aws analyze glue-streaming
+  - sparkforge-aws judge
 subagent: true
 agent: streaming-realtime-architect
 ---
@@ -29,9 +29,9 @@ Real-Time Mode, declare o runtime observado e diferencie o job dos endpoints
 
 ## Procedimento
 
-1. Rode `sparkforge analyze glue-streaming --path <dump.json-ou-diretorio>`.
+1. Rode `sparkforge-aws analyze glue-streaming --path <dump.json-ou-diretorio>`.
 2. Preserve `glue.streaming.unresolved` e confirme o que falta antes de julgar.
-3. Rode `sparkforge judge --facts <facts.json> --show-skipped`.
+3. Rode `sparkforge-aws judge --facts <facts.json> --show-skipped`.
 4. Leia `glue.streaming.source` e `glue.streaming.sink` como observações do
    dump. Confirme identidade, connector, medidas, unidade e timestamp quando
    houver; ausência ou falta de medida permanece unresolved. Não derive
@@ -39,13 +39,13 @@ Real-Time Mode, declare o runtime observado e diferencie o job dos endpoints
 5. Para RTM, confira explicitamente Glue 6.0, Scala, Kafka, stateless, output
    Update, ausência de `foreachBatch`, ausência de auto scaling e capacidade de
    partições/task slots. Não derive uma medida da quantidade de workers.
-6. Se houver Terraform, rode também `sparkforge analyze terraform` e depois
-   `sparkforge fuse --facts <glue-facts> --facts <terraform-facts>`. Leia
+6. Se houver Terraform, rode também `sparkforge-aws analyze terraform` e depois
+   `sparkforge-aws fuse --facts <glue-facts> --facts <terraform-facts>`. Leia
    `glue.streaming.terraform_link`, `source_fact_ids`, `drifts` e
    `unresolved_fields`; `SF-GLUESTREAM-004` aponta drift e
    `SF-GLUESTREAM-005` aponta identidade/campo não resolvido.
-7. Se houver histórico terminal, rode `sparkforge analyze glue-job-runs` e
-   componha-o com a definição via `sparkforge fuse`. Leia
+7. Se houver histórico terminal, rode `sparkforge-aws analyze glue-job-runs` e
+   componha-o com a definição via `sparkforge-aws fuse`. Leia
    `glue.streaming.runtime_link`, `observed_run_ids`, `source_fact_ids`,
    `drifts` e `unresolved_fields`; `SF-GLUESTREAM-006` aponta drift de
    `glue_version`, `worker_type` ou `worker_count`, e `SF-GLUESTREAM-007`
@@ -99,7 +99,7 @@ risco, trade-off, validation e rollback.
 
 ## Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

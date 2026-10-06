@@ -19,7 +19,7 @@ Diz o que a policy de seguranca do repositorio (`.sparkforge/policy.yaml`) decid
 
 ## Na CLI
 
-[`sparkforge policy check`](../cli/policy.md), [`sparkforge policy explain`](../cli/policy.md), [`sparkforge policy sync-settings`](../cli/policy.md)
+[`sparkforge-aws policy check`](../cli/policy.md), [`sparkforge-aws policy explain`](../cli/policy.md), [`sparkforge-aws policy sync-settings`](../cli/policy.md)
 
 ## Capacidade
 

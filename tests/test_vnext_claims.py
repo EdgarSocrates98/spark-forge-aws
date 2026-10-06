@@ -402,8 +402,8 @@ RELATORIO_SINTETICO = """# Relatorio
 ## 4. Inventario de Arquivos Criados e Estrutura
 
 ### Novos Pacotes e Modulos:
-- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): registro
-- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): economia
+- [`sparkforge_aws/registry/`](file:///e:/p/sparkforge_aws/registry/): registro
+- [`sparkforge_aws/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge_aws/economy/): economia
 
 ## 5. Suporte a Plataformas
 
@@ -415,8 +415,8 @@ class TestExtracaoDeCapacidadeInventarioFinalReport:
     def test_item_dentro_da_secao_4_vira_alegacao_de_capacidade(self, tmp_path):
         (tmp_path / "FINAL-REPORT.md").write_text(RELATORIO_SINTETICO, encoding="utf-8")
         textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
-        assert any("sparkforge/registry" in t for t in textos)
-        assert any("sparkforge/economy" in t for t in textos)
+        assert any("sparkforge_aws/registry" in t for t in textos)
+        assert any("sparkforge_aws/economy" in t for t in textos)
         for claim in gate.extract_capabilities(tmp_path):
             assert claim["type"] == "capability"
 
@@ -512,7 +512,7 @@ Exemplo ilustrativo dentro de bloco cercado -- nao e alegacao real:
 - fantasma/dentro/da/cerca: nao deveria contar
 ```
 
-- sparkforge/registry/: entrega real
+- sparkforge_aws/registry/: entrega real
 
 ## 5. Suporte a Plataformas
 """
@@ -533,15 +533,15 @@ class TestExtracaoDeCapacidadeRespeitaBlocoCercado:
     def test_item_de_lista_dentro_de_cerca_na_secao_4_nao_vira_capacidade(self, tmp_path):
         (tmp_path / "FINAL-REPORT.md").write_text(RELATORIO_COM_LISTA_CERCADA, encoding="utf-8")
         textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
-        assert textos == ["sparkforge/registry/: entrega real"]
+        assert textos == ["sparkforge_aws/registry/: entrega real"]
 
 
 RELATORIO_SECAO_4_COM_LISTA_NUMERADA = """# Relatorio
 
 ## 4. Inventario de Arquivos Criados e Estrutura
 
-1. sparkforge/registry/: entrega do registro canonico
-2. sparkforge/economy/: motor de economia em 7 tiers
+1. sparkforge_aws/registry/: entrega do registro canonico
+2. sparkforge_aws/economy/: motor de economia em 7 tiers
 
 ## 5. Suporte a Plataformas
 """

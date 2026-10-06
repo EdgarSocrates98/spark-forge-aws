@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.observability.sre import analyze_data_observability
+from sparkforge_aws.observability.sre import analyze_data_observability
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "observability"

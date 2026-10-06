@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.context.gateway_budget import (
+from sparkforge_aws.context.gateway_budget import (
     BudgetRefusal,
     materialize_bounded,
     pack_payload,

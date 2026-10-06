@@ -8,14 +8,14 @@ A partir de `TestAComparacaoVemDoPlano` comeca a Task 3: o modo de comparacao ve
 do plano, o limiar vem do catalogo, os tres estados de cobertura ficam distintos,
 e a sentinela declara o limite dos proxies na SAIDA.
 """
-from sparkforge.facts.funcval import (
+from sparkforge_aws.facts.funcval import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     build_comparison,
     build_plan,
 )
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.validate import validate_fact
 
 
 def _write(target: str) -> Fact:
@@ -419,7 +419,7 @@ class TestOModuloSegueOPadraoDosDerivados:
 
     def test_o_modulo_nao_importa_pyspark_nem_boto(self):
         """Criterio 1 da §9: funcao pura sobre Facts."""
-        import sparkforge.facts.funcval as modulo
+        import sparkforge_aws.facts.funcval as modulo
         fonte = open(modulo.__file__, encoding="utf-8").read()
         for proibido in ("import pyspark", "import boto3", "open(", "subprocess"):
             assert proibido not in fonte, proibido

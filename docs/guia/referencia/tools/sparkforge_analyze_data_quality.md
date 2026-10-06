@@ -20,7 +20,7 @@ Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do repositori
 
 ## Na CLI
 
-[`sparkforge analyze data-quality`](../cli/analyze.md)
+[`sparkforge-aws analyze data-quality`](../cli/analyze.md)
 
 ## Capacidade
 

@@ -7,7 +7,7 @@ Use quando houver dump JSON/JSONL de job Apache Flink ou Managed Flink e for pre
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-flink-job/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/flink-streaming.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze flink', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/flink-streaming.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze flink', 'sparkforge-aws judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -27,7 +27,7 @@ capacidade, versão ou comportamento do outro.
 2. Extraia facts:
 
    ```bash
-   sparkforge analyze flink --path <dump.json-ou-diretorio> --artifact flink --out .sparkforge/facts_flink.json
+   sparkforge-aws analyze flink --path <dump.json-ou-diretorio> --artifact flink --out .sparkforge/facts_flink.json
    ```
 
    Para Amazon Managed Service for Apache Flink, use `--artifact managed_flink`.
@@ -51,7 +51,7 @@ capacidade, versão ou comportamento do outro.
 3. Julgue fatos observados:
 
    ```bash
-   sparkforge judge --facts .sparkforge/facts_flink.json --show-skipped
+   sparkforge-aws judge --facts .sparkforge/facts_flink.json --show-skipped
    ```
 
    Em MCP, a mesma extração é `sparkforge_analyze_flink`.
@@ -115,7 +115,7 @@ Separe facts, findings e unresolved; preserve `fact_id`, fonte, `validation` e
 
 ### Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sparkforge.decision.fingerprint import digest
-from sparkforge.decision.host import ReplayHostAdapter
-from sparkforge.evals.decision_replay import (
+from sparkforge_aws.decision.fingerprint import digest
+from sparkforge_aws.decision.host import ReplayHostAdapter
+from sparkforge_aws.evals.decision_replay import (
     load_replay_suite,
     run_replay_benchmark,
 )

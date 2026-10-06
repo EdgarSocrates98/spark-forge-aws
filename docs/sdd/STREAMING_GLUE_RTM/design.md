@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_GLUE_RTM/define.md
   sha256: "a2a5ecab700f0bd69f467b168a11ee238c5d8d975d926dde51cbd97d2d8c4ada"
 files:
-  - {path: sparkforge/facts/glue_streaming.py, action: create, reason: "extrator JSON/JSONL offline de jobs Glue Streaming/RTM"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "envelope comum para analyzer Glue Streaming"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze glue-streaming"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
+  - {path: sparkforge_aws/facts/glue_streaming.py, action: create, reason: "extrator JSON/JSONL offline de jobs Glue Streaming/RTM"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "envelope comum para analyzer Glue Streaming"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze glue-streaming"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
   - {path: rules/catalog/glue-streaming.yaml, action: create, reason: "rules de restrições RTM e capacidade ausente"}
   - {path: fixtures/glue_streaming, action: create, reason: "goldens válido, incompatível e unresolved"}
   - {path: skills/review-glue-streaming/SKILL.md, action: create, reason: "workflow evidence-first para Glue Streaming/RTM"}

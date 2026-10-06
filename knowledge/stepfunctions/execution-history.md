@@ -5,7 +5,7 @@
 > [`glue-integration.md`](glue-integration.md). **Relido em 2026-09-20**, com a página do
 > tipo `HistoryEvent` acrescentada: dela vêm o `id` sequencial (§1) e a descrição do
 > `previousEventId` que a lacuna 8 nomeia (§5). Quem consome: o extrator
-> `sparkforge/facts/sfn_history.py` e as três regras de
+> `sparkforge_aws/facts/sfn_history.py` e as três regras de
 > `rules/catalog/sfn-history.yaml`. Frase entre aspas é citação literal; o resto é
 > leitura nossa, e diz de qual frase veio.
 
@@ -40,7 +40,7 @@
   página.** O `status` da execução sai `unresolved` quando o evento terminal dela
   (`ExecutionSucceeded`, `ExecutionFailed`, `ExecutionAborted`, `ExecutionTimedOut`) não
   está na página salva — nunca um desfecho adivinhado —, e isso é outra condição: em
-  `sparkforge/facts/sfn_history.py`, `_desfecho_da_execucao` deriva o `status` dos
+  `sparkforge_aws/facts/sfn_history.py`, `_desfecho_da_execucao` deriva o `status` dos
   eventos **lidos** (percorrendo-os de trás para frente atrás de um dos quatro), e
   `extract_sfn_history` emite `truncated` e `execution_terminal_absent` em dois `if`
   separados, nenhum dos quais lê o outro. Uma página truncada que **contém**
@@ -108,7 +108,7 @@ lacuna 1 abaixo.
 **Nenhuma das três atribui custo, e a recusa é de desenho.** Dizer "você pagou por um
 JobRun órfão" exige o `dpu_seconds` de um run que ninguém leu, e é o que a regra 13 do
 `CLAUDE.md` proíbe; dizer o valor em dólar exige `cost_basis` (regra 25). O que o
-histórico entrega é o `JobRunId` — e é por ele que `sparkforge finops` responde custo
+histórico entrega é o `JobRunId` — e é por ele que `sparkforge-aws finops` responde custo
 com `dpu_seconds` medido.
 
 **A `SF-SFNX-001` não fala sobre execução retomada.** Com `ExecutionRedriven` no
@@ -139,7 +139,7 @@ lacuna 9.
    `MaxRetries` do próprio job é outra camada. Ver a lacuna 1 de
    [`glue-integration.md`](glue-integration.md). O que destrava: o par entre um
    histórico real com falha e os JobRuns do mesmo intervalo
-   (`sparkforge collect glue-job-runs`) — e o `sfn.job_run` desta feature é metade dele.
+   (`sparkforge-aws collect glue-job-runs`) — e o `sfn.job_run` desta feature é metade dele.
 4. **Histórico real não observado.** O corpus `fixtures/sfn_history/` é sintético,
    montado a partir da forma de evento publicada. Ele prova o **mecanismo**, não a
    resposta (U2 de `docs/sdd/SFN_HISTORY/define.md`).
@@ -149,7 +149,7 @@ lacuna 9.
    tipos conhecidos e não produzem fact: o extrator não segue as execuções filhas de um
    Distributed Map, e o que roda dentro delas fica fora do histórico da mãe.
 7. **`sfn.*` do histórico sai com `line: 0`.** O extrator lê JSON sem posição de linha, e
-   o `subject.symbol` é `<estado>#<ordem>`. `sparkforge report github` não ancora esses
+   o `subject.symbol` é `<estado>#<ordem>`. `sparkforge-aws report github` não ancora esses
    achados numa linha do arquivo.
 8. **O `previousEventId` por RAMO não está publicado, e é a premissa de todo o
    pareamento — inclusive da recusa nova.** Nas duas páginas da API relidas em

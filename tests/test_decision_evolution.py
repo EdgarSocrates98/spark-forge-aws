@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.decision.fingerprint import digest
-from sparkforge.evals.decision_replay import (
+from sparkforge_aws.decision.fingerprint import digest
+from sparkforge_aws.evals.decision_replay import (
     load_replay_suite,
     run_replay_benchmark,
     split_replay_benchmark,
 )
-from sparkforge.evals.evidence import EvaluationEvidenceBundle
-from sparkforge.evals.evolution import (
+from sparkforge_aws.evals.evidence import EvaluationEvidenceBundle
+from sparkforge_aws.evals.evolution import (
     CandidateEvaluation,
     CandidateRegistry,
     CandidateSpec,
@@ -24,7 +24,7 @@ from sparkforge.evals.evolution import (
     _candidate_runner,
     transition,
 )
-from sparkforge.evals.metric_compiler import compile_reports
+from sparkforge_aws.evals.metric_compiler import compile_reports
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -15,7 +15,7 @@ proves: >
   config renomeada no Spark 4.0), nenhuma P0 nem P1, entao o gate de
   compatibilidade fecha em PASS_WITH_RISK e a recomendacao e CONDITIONAL_GO --
   nunca GO, porque os quatro gates de execucao real seguem BLOCKED. A DECISAO
-  2 de `sparkforge/migration/assessment.py` -- gate por SEVERIDADE, nao por
+  2 de `sparkforge_aws/migration/assessment.py` -- gate por SEVERIDADE, nao por
   presenca -- so pode ser medida por um cenario que tenha achado sem ter
   achado grave, e nenhum dos tres de `fixtures/scenarios/` e assim.
   SF-SPARK4-001 tambem nao aparece em nenhum daqueles tres: um sistema

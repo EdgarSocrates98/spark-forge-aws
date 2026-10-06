@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge root-cause`
+# `sparkforge-aws root-cause`
 
 Ordena os achados por consequencia declarada e nomeia a lacuna. Nao calcula confianca e nao estima ganho.
 
 ```bash
-sparkforge root-cause --help
+sparkforge-aws root-cause --help
 ```
 
 ## Opções

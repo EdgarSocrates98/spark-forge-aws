@@ -18,7 +18,7 @@ acceptance:
     guard: "A implementação foi construída em fases anteriores sob a regra do plano de executar a suíte apenas após o fechamento do Forge Lab; não existe red histórico verificável para este teste e o gate não deve aceitar um exit inventado."
   - id: AC2
     statement: "O analisador retorna perfil offline, componentes, ordem topológica e cenários sem executar Docker ou sistemas externos."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml"}
 success:
   - id: SC1
     metric: "Componentes e cenários declarados aparecem na saída sem mutação externa"

@@ -35,14 +35,14 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 | Priority | Goal |
 |----------|------|
 | **MUST** | `.sparkforge/policy.yaml` com schema: `tools` (denied, approvals, ask por classe ou nome), `bash` e `paths` (regras na sintaxe do Claude Code com `decision: ask\|deny` e `reason`), `extra_roots` |
-| **MUST** | Hook `PreToolUse` (`python -m sparkforge.policy.hook`, matcher `Bash\|Edit\|Write`) aplica as regras `deny`: exit 2 com o motivo; quebra comando composto antes de casar |
-| **MUST** | `sparkforge policy sync-settings` gera `permissions.ask` no `.claude/settings.json` a partir das regras `ask` (Bash, Edit/Write e `mcp__sparkforge__<tool>`); `--check` falha quando diverge |
+| **MUST** | Hook `PreToolUse` (`python -m sparkforge_aws.policy.hook`, matcher `Bash\|Edit\|Write`) aplica as regras `deny`: exit 2 com o motivo; quebra comando composto antes de casar |
+| **MUST** | `sparkforge-aws policy sync-settings` gera `permissions.ask` no `.claude/settings.json` a partir das regras `ask` (Bash, Edit/Write e `mcp__sparkforge-aws__<tool>`); `--check` falha quando diverge |
 | **MUST** | O servidor MCP carrega a policy ao subir e a passa ao `call_tool`: `denied` recusa, classe sem aprovacao recusa, caminho fora do repositorio e das `extra_roots` recusa; sem arquivo, comportamento de hoje |
-| **MUST** | Policy invalida: hook sai 2 e o servidor MCP recusa as chamadas com o erro de schema; `sparkforge` nao importavel: hook sai com erro nao-bloqueante e aviso |
+| **MUST** | Policy invalida: hook sai 2 e o servidor MCP recusa as chamadas com o erro de schema; `sparkforge-aws` nao importavel: hook sai com erro nao-bloqueante e aviso |
 | **MUST** | Policy padrao commitada: `terraform destroy`/`apply`, `aws s3 rm`, `aws lakeformation revoke-permissions`, `expire_snapshots`, escrita em `rules/catalog/**` e `*.tf`, e tools `CLOUD_MUTATION` em `ask`; nada em `deny`; classes de mutacao pre-aprovadas para nao recusar o que o MCP faz hoje |
-| **SHOULD** | `sparkforge policy check` (valida e lista) e `sparkforge policy explain --bash\|--path\|--tool` (decisao e regra que casou), com a tool `sparkforge_policy_explain` READ_ONLY |
+| **SHOULD** | `sparkforge-aws policy check` (valida e lista) e `sparkforge-aws policy explain --bash\|--path\|--tool` (decisao e regra que casou), com a tool `sparkforge_policy_explain` READ_ONLY |
 | **SHOULD** | `THREAT-MODEL.md` (T-024), `AUTHORIZATION-CHAIN.md` e `CURRENT-HARNESS-GAP.md` atualizados, com o limite "regra casa texto, nao programa" declarado |
-| **COULD** | Aviso no `sparkforge doctor` quando `.claude/settings.json` diverge da policy |
+| **COULD** | Aviso no `sparkforge-aws doctor` quando `.claude/settings.json` diverge da policy |
 
 ---
 
@@ -50,7 +50,7 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 
 - [x] SC1: com a policy padrao, `policy explain --bash` devolve `ask` para os 5 padroes destrutivos inclusive compostos (`cd infra && terraform destroy -auto-approve`) e `allow` para `git status`; e as 7 regras `ask` (5 de Bash, 2 de caminho) mais as tools `CLOUD_MUTATION` aparecem em `permissions.ask` depois do `sync-settings`.
 - [x] SC2: uma regra `deny` faz o hook sair 2 com o motivo em 100% dos casos de `fixtures/policy/` que a casam, e sair 0 sem saida nos que nao casam.
-- [x] SC3: o hook responde em menos de 0,2 s por chamada (medido sobre os casos de fixture), sem importar `sparkforge.adapters.tools`.
+- [x] SC3: o hook responde em menos de 0,2 s por chamada (medido sobre os casos de fixture), sem importar `sparkforge_aws.adapters.tools`.
 - [x] SC4: policy invalida faz o hook sair 2 e o `call_tool` do servidor recusar; o handler nao roda.
 - [x] SC5: sem `.sparkforge/policy.yaml`, hook e servidor MCP se comportam como hoje (os testes atuais de `call_tool` passam sem mudanca).
 - [x] SC6: com a policy padrao carregada, nenhuma tool que o MCP chama hoje com caminho dentro do repositorio passa a ser recusada; uma chamada com caminho fora da raiz e das `extra_roots` e recusada.
@@ -104,7 +104,7 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/policy/` (novo), `sparkforge/adapters/{mcp,_core,cli,tools}.py`, `sparkforge/agents/autonomy.py` (raizes extras), `.sparkforge/policy.yaml`, `.claude/settings.json`, `fixtures/policy/`, `docs/harness/*.md` | O modulo de politica nao importa `adapters` |
+| **Deployment Location** | `sparkforge_aws/policy/` (novo), `sparkforge_aws/adapters/{mcp,_core,cli,tools}.py`, `sparkforge_aws/agents/autonomy.py` (raizes extras), `.sparkforge/policy.yaml`, `.claude/settings.json`, `fixtures/policy/`, `docs/harness/*.md` | O modulo de politica nao importa `adapters` |
 | **KB Domains** | Nenhum dominio do KB do agentspec; fontes: documentacao oficial de hooks e permissoes do Claude Code, `docs/harness/AUTHORIZATION-CHAIN.md`, `THREAT-MODEL.md` | Consultar no design |
 | **IaC Impact** | None | Regras sobre comandos de IaC, nada provisionado |
 
@@ -115,7 +115,7 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 | ID | Assumption | If Wrong, Impact | Validated? |
 |----|------------|------------------|------------|
 | A-001 | `PreToolUse` recebe `tool_name` e `tool_input.command` (Bash) / `tool_input.file_path` (Edit, Write) e respeita exit 2 como bloqueio | Hook nao morde | [x] documentacao oficial, 2026-09-13 (`file_path` a conferir no design) |
-| A-002 | `permissions.ask` com `Bash(...)`, `Edit(...)` e `mcp__sparkforge__<tool>` pede confirmacao ate em modo auto | O `ask` nao aparece ao operador | [x] para Bash e Edit na documentacao de permissoes; MCP a conferir |
+| A-002 | `permissions.ask` com `Bash(...)`, `Edit(...)` e `mcp__sparkforge-aws__<tool>` pede confirmacao ate em modo auto | O `ask` nao aparece ao operador | [x] para Bash e Edit na documentacao de permissoes; MCP a conferir |
 | A-003 | `authorize()` pode receber mais de uma raiz (repositorio + `extra_roots`) sem mudar a decisao de hoje com uma raiz | Refatorar o confinamento | [ ] conferir `_argumento_fora_da_raiz` no design |
 | A-004 | O servidor MCP sabe a raiz do projeto ao subir (cwd ou `CLAUDE_PROJECT_DIR`) | Policy carregada do lugar errado | [ ] |
 | A-005 | Gerar `permissions` no `.claude/settings.json` nao quebra `test_vendor_caveman` nem `test_execution_surface` | Gates vermelhos | [x] os dois so leem marketplace, plugins e hooks |

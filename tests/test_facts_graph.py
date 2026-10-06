@@ -1,4 +1,4 @@
-"""Testes do extrator de grafo (`sparkforge/facts/graph.py`).
+"""Testes do extrator de grafo (`sparkforge_aws/facts/graph.py`).
 
 Cada bloco prova uma decisao registrada no cabecalho do modulo ou um veto da
 pesquisa (`knowledge/graph/graphframes-api.md`). Onde o teste existe para
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.graph import (
+from sparkforge_aws.facts.graph import (
     EMITTED_KINDS,
     UNRESOLVED_REASONS,
     extract_graph,
@@ -637,14 +637,14 @@ def test_procedencia_carrega_extrator_e_sha():
 
 def test_o_modulo_nao_importa_pyspark_nem_boto3():
     """Criterio 1 do spec: le o `.py` e nada mais."""
-    fonte = Path("sparkforge/facts/graph.py").read_text(encoding="utf-8")
+    fonte = Path("sparkforge_aws/facts/graph.py").read_text(encoding="utf-8")
     importados = set()
     for node in ast.walk(ast.parse(fonte)):
         if isinstance(node, ast.Import):
             importados.update(a.name.split(".")[0] for a in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
             importados.add(node.module.split(".")[0])
-    assert importados == {"__future__", "ast", "hashlib", "pathlib", "typing", "sparkforge"}
+    assert importados == {"__future__", "ast", "hashlib", "pathlib", "typing", "sparkforge_aws"}
 
 
 # --------------------------------------------------------------------------

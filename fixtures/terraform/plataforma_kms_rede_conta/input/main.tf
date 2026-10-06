@@ -17,13 +17,13 @@ resource "aws_glue_job" "curated_vpc_kms" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/curated.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/curated.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"                  = "true"
-    "--spark-event-logs-path"            = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"            = "s3://sparkforge-aws-demo/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
     "--job-bookmark-option"              = "job-bookmark-disable"
     "--datalake-formats"                 = "iceberg"
@@ -51,13 +51,13 @@ resource "aws_glue_job" "sem_vpc" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/sem_vpc.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/sem_vpc.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"                  = "true"
-    "--spark-event-logs-path"            = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"            = "s3://sparkforge-aws-demo/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
     "--job-bookmark-option"              = "job-bookmark-disable"
   }
@@ -81,13 +81,13 @@ resource "aws_glue_job" "iceberg_local" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/local.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/local.py"
     python_version  = "3"
   }
 
   default_arguments = {
     "--enable-spark-ui"                  = "true"
-    "--spark-event-logs-path"            = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path"            = "s3://sparkforge-aws-demo/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
     "--job-bookmark-option"              = "job-bookmark-disable"
     "--datalake-formats"                 = "iceberg"

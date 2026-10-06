@@ -3,7 +3,7 @@
 > **Lido em 2026-09-19.** Três páginas oficiais do Apache Airflow — uma do provider
 > Amazon e duas do core — mais as duas páginas da API do AWS Glue já citadas em
 > `knowledge/stepfunctions/glue-integration.md`. Quem consome: o extrator
-> `sparkforge/facts/airflow_dag.py` (os defaults publicados moram lá, com a URL ao
+> `sparkforge_aws/facts/airflow_dag.py` (os defaults publicados moram lá, com a URL ao
 > lado) e as quatro regras de `rules/catalog/airflow.yaml`. Frase entre aspas é
 > citação literal; o resto é leitura nossa, e diz de qual frase veio.
 
@@ -62,7 +62,7 @@ saem em `af.unresolved` com a razão, nunca como vínculo.
    do Airflow compõe com o `MaxRetries` do Glue. Cada retentativa da task é um
    `StartJobRun` novo, e o retry do Glue é outro JobRun. O que destrava afirmar a
    contagem de tentativas: os JobRuns do intervalo de uma falha real
-   (`sparkforge collect glue-job-runs`) ao lado do histórico da task.
+   (`sparkforge-aws collect glue-job-runs`) ao lado do histórico da task.
 2. **JobRun quando a task é morta com `stop_job_run_on_kill` False.** A documentação do
    provider diz o que o parâmetro faz quando é `True`, e não descreve o que acontece
    com o JobRun quando é `False` e a task é morta (U3 de
@@ -86,7 +86,7 @@ saem em `af.unresolved` com a razão, nunca como vínculo.
    lidas aqui são as de Jobs e de Job runs, e nenhuma delas é a de permissões. Por isso
    a `SF-AIRFLOW-002` nomeia o risco sem nomear a ação. O que destrava: a página de
    permissões da API do Glue, ou a política que a role do ambiente usa hoje, lida com
-   `sparkforge analyze iam-access`.
+   `sparkforge-aws analyze iam-access`.
 
 ## Fontes
 

@@ -60,9 +60,9 @@ the host-provider import tests.
 
 | File | Purpose |
 |------|---------|
-| `sparkforge/evals/evidence.py` | Canonical bundle schema, digest, validation, tamper checks |
-| `sparkforge/evals/policy.py` | Exact policy key resolution and policy digest |
-| `sparkforge/evals/evidence_adapters.py` | Repo bundle and authorized command adapters |
+| `sparkforge_aws/evals/evidence.py` | Canonical bundle schema, digest, validation, tamper checks |
+| `sparkforge_aws/evals/policy.py` | Exact policy key resolution and policy digest |
+| `sparkforge_aws/evals/evidence_adapters.py` | Repo bundle and authorized command adapters |
 | `tests/test_evaluation_evidence.py` | Bundle canonicalization, validation, and tamper coverage |
 | `tests/test_evaluation_adapters.py` | Adapter contract and command-boundary coverage |
 | `evals/token_efficient/fixtures/evolution_evidence_bundles.yaml` | Deterministic labeled evidence fixture |
@@ -71,8 +71,8 @@ the host-provider import tests.
 
 | File | Purpose |
 |------|---------|
-| `sparkforge/evals/evolution.py` | Policy/bundle binding, fail-closed gates, chained receipts, promotion checks |
-| `sparkforge/evals/decision_replay.py` | Paired replay split and policy-controlled minimum corpus |
+| `sparkforge_aws/evals/evolution.py` | Policy/bundle binding, fail-closed gates, chained receipts, promotion checks |
+| `sparkforge_aws/evals/decision_replay.py` | Paired replay split and policy-controlled minimum corpus |
 | `config/evolution/prompt_agents.yaml` | Versioned explicit policy and command registry |
 | `tests/test_decision_evolution.py` | Bundle evaluation, receipt sequence, and promotion coverage |
 | `tests/test_decision_evolution_benchmark.py` | Paired report and one-call benchmark coverage |
@@ -100,7 +100,7 @@ the host-provider import tests.
 The golden extractor batches were not rerun because this change does not modify
 golden extraction or fixture generation. Pytest emitted only the repository's
 known cache-collision warnings (`WinError 183`); no product test failed after the
-targeted repairs. The repository `sparkforge sdd check` command was not applicable:
+targeted repairs. The repository `sparkforge-aws sdd check` command was not applicable:
 it only indexes `docs/sdd`, while this AgentSpec artifact is intentionally under
 `.claude/sdd/features`.
 

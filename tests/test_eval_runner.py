@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
-from sparkforge.evals import EvaluationRunner
+from sparkforge_aws.evals import EvaluationRunner
 
 
 def test_router_golden_eval_dataset():
     dataset_path = (
-        Path(__file__).parent.parent / "sparkforge" / "evals" / "datasets" / "router_dataset.json"
+        Path(__file__).parents[1] / "sparkforge_aws/evals/datasets/router_dataset.json"
     )
     assert dataset_path.is_file()
 

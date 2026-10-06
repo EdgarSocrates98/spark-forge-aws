@@ -32,7 +32,7 @@ Confronte com a página de EC2, que traz dezenas de linhas por release, incluind
 
 ## 2. Spark, release a release, contra `EMR_MATRIX`
 
-Coluna *EC2* copiada de [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md); coluna *Serverless* lida da página própria de cada release em 2026-08-04. *Comunidade bate* compara o EC2 **truncado no primeiro segmento com sufixo de vendor** — a mesma normalização que `sparkforge/rules/version_scope.py` aplica.
+Coluna *EC2* copiada de [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md); coluna *Serverless* lida da página própria de cada release em 2026-08-04. *Comunidade bate* compara o EC2 **truncado no primeiro segmento com sufixo de vendor** — a mesma normalização que `sparkforge_aws/rules/version_scope.py` aplica.
 
 | Release | Spark no EC2 | Spark no Serverless | Comunidade bate |
 |---|---|---|---|
@@ -129,7 +129,7 @@ O argumento não é que os números divirjam — nas 24 releases comparáveis a 
 
 A §6 responde **D-5**, que é uma pergunta sobre o **extrator**: o `releaseLabel` que um `get-application` traz não alimenta `RuntimeContext`. **Isso continua exatamente como está escrito acima.** Nada em `emrs.application` vira eixo de runtime.
 
-A dívida que fechou nesta data é **outra pergunta**, e foi medida no `STATUS.md`: com a flag `--emr` na mão, `sparkforge judge --facts <facts `emrs.*`> --emr 7.5.0` gravava `spark: "3.5.2-amzn-1"`, `python: "3.9"` e `iceberg: "1.6.1-amzn-1"` — **os quatro eixos derivados da `EMR_MATRIX` de EMR on EC2**, sobre um conjunto sem um único fact de EC2. Não derivar nada deixava três eixos inventados; **recusar a flag** — a saída que a fase de EMR on EKS tomou para `emrc.*` — deixaria o operador sem o eixo `spark`, que a §2 mede que **esta fonte publica**.
+A dívida que fechou nesta data é **outra pergunta**, e foi medida no `STATUS.md`: com a flag `--emr` na mão, `sparkforge-aws judge --facts <facts `emrs.*`> --emr 7.5.0` gravava `spark: "3.5.2-amzn-1"`, `python: "3.9"` e `iceberg: "1.6.1-amzn-1"` — **os quatro eixos derivados da `EMR_MATRIX` de EMR on EC2**, sobre um conjunto sem um único fact de EC2. Não derivar nada deixava três eixos inventados; **recusar a flag** — a saída que a fase de EMR on EKS tomou para `emrc.*` — deixaria o operador sem o eixo `spark`, que a §2 mede que **esta fonte publica**.
 
 A saída escolhida foi a terceira das três que a dívida listava: **dar o que a fonte publica, e deixar vazio o que ela não publica.**
 

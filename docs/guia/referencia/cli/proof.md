@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge proof`
+# `sparkforge-aws proof`
 
 Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra deixou de disparar no depois?) e um eixo por item de action.moves (funcval, benchmark ou sem comparador). Desfechos: refuted, not_refuted, inconclusive, unproven -- nunca provado.
 
 ```bash
-sparkforge proof --help
+sparkforge-aws proof --help
 ```
 
 ## Opções

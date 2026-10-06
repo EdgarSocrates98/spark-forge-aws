@@ -29,7 +29,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_sdd.py::test_relatorio_por_symlink_nao_escapa"}
   - id: AC7
     statement: "O perfil dev nao muda: ship dev sem evidence continua limpo, evidence no dev e schema_invalid, e o repositorio passa no check."
-    verified_by: {kind: command, ref: "python -c \"import sys;from sparkforge.adapters.cli import main;sys.exit(main(sys.argv[1:]))\" sdd check --repo ."}
+    verified_by: {kind: command, ref: "python -c \"import sys;from sparkforge_aws.adapters.cli import main;sys.exit(main(sys.argv[1:]))\" sdd check --repo ."}
   - id: AC8
     statement: "O fluxo operator ponta a ponta grava evidence com o sha do relatorio real e continua limpo depois do sandbox e da proposal limpos."
     verified_by: {kind: test, ref: "tests/test_sdd_operator.py::test_fluxo_operator_ponta_a_ponta"}

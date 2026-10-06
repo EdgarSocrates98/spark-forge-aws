@@ -14,11 +14,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.consumers import extract_consumers_path
-from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.consumers import extract_consumers_path
+from sparkforge_aws.facts.iceberg_metadata import extract_iceberg_metadata_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "consumers"

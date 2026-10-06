@@ -4,14 +4,14 @@
 
 **Goal:** Substituir o perfil por número de registros por um perfil de eixos independentes — scan, shuffle, memória, skew, arquivos, join — onde cada eixo carrega o valor, de onde ele veio, e o quanto se pode confiar nele.
 
-**Architecture:** Três camadas. A medição que falta entra em `facts/event_log.py` (`spark.stage.shuffle`). A declaração entra por `facts/workload.py`, lendo um `workload.yaml` versionado. E o julgamento — classificar `scan` como `extreme` — mora em `sparkforge/workload/`, mecanismo próprio, porque fact não aplica limiar. A escala de cada eixo de volume vem do histórico do próprio job, que o subprojeto B já coleta.
+**Architecture:** Três camadas. A medição que falta entra em `facts/event_log.py` (`spark.stage.shuffle`). A declaração entra por `facts/workload.py`, lendo um `workload.yaml` versionado. E o julgamento — classificar `scan` como `extreme` — mora em `sparkforge_aws/workload/`, mecanismo próprio, porque fact não aplica limiar. A escala de cada eixo de volume vem do histórico do próprio job, que o subprojeto B já coleta.
 
 **Tech Stack:** Python 3, `pytest`, `PyYAML`. Spec: [`../specs/2026-08-28-workload-fingerprint-design.md`](../specs/2026-08-28-workload-fingerprint-design.md).
 
 **Convenções do repositório que valem em toda tarefa:**
 
 - Fact nunca aplica limiar, nunca atribui severidade, nunca toca a rede. O `Fingerprint` **não é fact** — é onde o limiar mora.
-- Todo fact declara `subject.type` de um enum fechado (`sparkforge/findings/schemas/fact.schema.json`). Módulo golden novo **tem** que chamar `validate_fact`: foi a ausência disso que deixou oito kinds inválidos passarem na entrega de B.
+- Todo fact declara `subject.type` de um enum fechado (`sparkforge_aws/findings/schemas/fact.schema.json`). Módulo golden novo **tem** que chamar `validate_fact`: foi a ausência disso que deixou oito kinds inválidos passarem na entrega de B.
 - Lint ruff `E,F,I,UP,B,S`, linha máxima 100.
 - Todo comando roda com prefixo `rtk`. Commit em português, Conventional Commits, via `rtk git commit -F <arquivo>` — heredoc dentro de `$(...)` dispara prompt de permissão.
 - Não rode a suíte inteira sem alvo (17 minutos), exceto onde a tarefa pedir.
@@ -25,10 +25,10 @@
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/facts/workload.py` | Extrator do inventário declarado `workload.yaml` |
-| `sparkforge/workload/__init__.py` | Export de `Axis`, `WorkloadFingerprint`, `build_fingerprint` |
-| `sparkforge/workload/axis.py` | O `Axis`: valor, confiança, base, evidência, lacuna |
-| `sparkforge/workload/fingerprint.py` | A montagem dos eixos a partir dos facts |
+| `sparkforge_aws/facts/workload.py` | Extrator do inventário declarado `workload.yaml` |
+| `sparkforge_aws/workload/__init__.py` | Export de `Axis`, `WorkloadFingerprint`, `build_fingerprint` |
+| `sparkforge_aws/workload/axis.py` | O `Axis`: valor, confiança, base, evidência, lacuna |
+| `sparkforge_aws/workload/fingerprint.py` | A montagem dos eixos a partir dos facts |
 | `tests/test_facts_workload.py` | Testes do inventário |
 | `tests/test_workload_axis.py` | Testes do contrato do eixo |
 | `tests/test_workload_fingerprint.py` | Testes da montagem |
@@ -39,10 +39,10 @@
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/facts/event_log.py` | `spark.stage.shuffle` em `EMITTED_KINDS`, acumulador e fact |
-| `sparkforge/adapters/_core.py` | `workload_fingerprint` |
-| `sparkforge/adapters/cli.py` | Verbo de topo `workload` |
-| `sparkforge/adapters/tools.py` | `sparkforge_workload` |
+| `sparkforge_aws/facts/event_log.py` | `spark.stage.shuffle` em `EMITTED_KINDS`, acumulador e fact |
+| `sparkforge_aws/adapters/_core.py` | `workload_fingerprint` |
+| `sparkforge_aws/adapters/cli.py` | Verbo de topo `workload` |
+| `sparkforge_aws/adapters/tools.py` | `sparkforge_workload` |
 | `manifest.json`, `parity.yaml` | A tool nova |
 | `agents/` | Citar a tool, senão o gate de órfão reprova |
 | `tests/test_fixtures_kind_coverage.py`, `tests/test_rules_catalog_reachability.py` | Registrar `workload` nas DUAS listas |
@@ -53,7 +53,7 @@
 ## Task 1: Métrica de shuffle por stage
 
 **Files:**
-- Modify: `sparkforge/facts/event_log.py`
+- Modify: `sparkforge_aws/facts/event_log.py`
 - Test: `tests/test_facts_event_log.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -253,7 +253,7 @@ Se falhar, leia o diff, confirme que o fact novo é o único acréscimo, regrave
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/facts/event_log.py tests/test_facts_event_log.py fixtures/eventlog
+rtk git add sparkforge_aws/facts/event_log.py tests/test_facts_event_log.py fixtures/eventlog
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -264,7 +264,7 @@ Mensagem: `feat(facts): volume de shuffle por stage, que o event log ja publicav
 ## Task 2: O inventário declarado
 
 **Files:**
-- Create: `sparkforge/facts/workload.py`
+- Create: `sparkforge_aws/facts/workload.py`
 - Test: `tests/test_facts_workload.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -279,7 +279,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.facts.workload import extract_workload_path
+from sparkforge_aws.facts.workload import extract_workload_path
 
 
 def _inventario(tmp_path: Path, payload) -> Path:
@@ -384,13 +384,13 @@ class TestAbsent:
 rtk pytest tests/test_facts_workload.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.facts.workload'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.facts.workload'`.
 
 - [ ] **Step 3: Implementar**
 
-Leia `sparkforge/facts/consumers.py` primeiro — ele é o irmão direto: também lê inventário YAML versionado, também trata entrada malformada como `unresolved` em vez de exceção. Siga a forma dele.
+Leia `sparkforge_aws/facts/consumers.py` primeiro — ele é o irmão direto: também lê inventário YAML versionado, também trata entrada malformada como `unresolved` em vez de exceção. Siga a forma dele.
 
-`sparkforge/facts/workload.py`:
+`sparkforge_aws/facts/workload.py`:
 
 ```python
 """Extrator do inventario declarado de workload.
@@ -414,7 +414,7 @@ from typing import Any
 
 import yaml
 
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "workload@0.1.0"
 
@@ -563,7 +563,7 @@ Acrescente a `tests/test_facts_workload.py`:
 ```python
 class TestSchema:
     def test_every_emitted_fact_validates(self, tmp_path):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         alvo = _inventario(
             tmp_path,
@@ -591,7 +591,7 @@ Esperado: PASS, 10 testes.
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/facts/workload.py tests/test_facts_workload.py
+rtk git add sparkforge_aws/facts/workload.py tests/test_facts_workload.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -602,8 +602,8 @@ Mensagem: `feat(facts): inventario declarado de SLA e fonte principal`
 ## Task 3: O contrato do eixo
 
 **Files:**
-- Create: `sparkforge/workload/__init__.py`
-- Create: `sparkforge/workload/axis.py`
+- Create: `sparkforge_aws/workload/__init__.py`
+- Create: `sparkforge_aws/workload/axis.py`
 - Test: `tests/test_workload_axis.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -616,7 +616,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.workload.axis import Axis, unknown_axis
+from sparkforge_aws.workload.axis import Axis, unknown_axis
 
 
 class TestContrato:
@@ -636,7 +636,7 @@ class TestContrato:
             Axis(value="high", confidence="measured", basis="", evidence=["a1"])
 
     def test_unknown_axis_carries_what_is_missing(self):
-        eixo = unknown_axis("glue.job_run.distribution", "sparkforge collect glue-job-runs ...")
+        eixo = unknown_axis("glue.job_run.distribution", "sparkforge-aws collect glue-job-runs ...")
 
         assert eixo.value == "unknown"
         assert eixo.confidence == "unknown"
@@ -664,11 +664,11 @@ class TestContrato:
 rtk pytest tests/test_workload_axis.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.workload'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.workload'`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/workload/axis.py`:
+`sparkforge_aws/workload/axis.py`:
 
 ```python
 """O eixo do fingerprint: o valor, de onde ele veio, e quanto vale confiar.
@@ -749,7 +749,7 @@ def unknown_axis(missing: str, collect_command: str = "") -> Axis:
     )
 ```
 
-`sparkforge/workload/__init__.py`:
+`sparkforge_aws/workload/__init__.py`:
 
 ```python
 """Perfil de workload: os eixos, e a confianca de cada um.
@@ -759,7 +759,7 @@ NAO e um extrator. Extrator emite fact, e fact nunca aplica limiar -- dizer que
 proprio de julgamento, no molde de `MigrationAssessment` e do `benchmark`, que
 tambem nao cabem em regra do catalogo e tambem declaram o que garantem.
 """
-from sparkforge.workload.axis import Axis, unknown_axis
+from sparkforge_aws.workload.axis import Axis, unknown_axis
 
 __all__ = ["Axis", "unknown_axis"]
 ```
@@ -775,7 +775,7 @@ Esperado: PASS, 7 testes.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/workload tests/test_workload_axis.py
+rtk git add sparkforge_aws/workload tests/test_workload_axis.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -786,8 +786,8 @@ Mensagem: `feat(workload): o eixo, com a procedencia imposta na construcao`
 ## Task 4: A montagem do fingerprint
 
 **Files:**
-- Create: `sparkforge/workload/fingerprint.py`
-- Modify: `sparkforge/workload/__init__.py`
+- Create: `sparkforge_aws/workload/fingerprint.py`
+- Modify: `sparkforge_aws/workload/__init__.py`
 - Test: `tests/test_workload_fingerprint.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -798,8 +798,8 @@ Mensagem: `feat(workload): o eixo, com a procedencia imposta na construcao`
 """Testes da montagem do fingerprint a partir dos facts."""
 from __future__ import annotations
 
-from sparkforge.findings.models import Fact
-from sparkforge.workload.fingerprint import build_fingerprint
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.workload.fingerprint import build_fingerprint
 
 
 def _scan(bytes_read=1000, files_read=10, execution_id=0, node_id=1):
@@ -975,11 +975,11 @@ class TestSerializacao:
 rtk pytest tests/test_workload_fingerprint.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.workload.fingerprint'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.workload.fingerprint'`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/workload/fingerprint.py`:
+`sparkforge_aws/workload/fingerprint.py`:
 
 ```python
 """Montagem do fingerprint a partir de facts ja extraidos.
@@ -1012,21 +1012,21 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from sparkforge.findings.models import Fact
-from sparkforge.workload.axis import Axis, unknown_axis
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.workload.axis import Axis, unknown_axis
 
 # O historico de volume e produzido rodando o extrator sobre os event logs
 # anteriores, um arquivo por run. Nao ha comando unico que o produza de uma vez,
 # e dizer o contrario mandaria o operador a um caminho que nao existe.
 _PRODUZ_HISTORICO = (
-    "para cada run anterior: sparkforge analyze sql-metrics "
+    "para cada run anterior: sparkforge-aws analyze sql-metrics "
     "--path <event-log-do-run>.jsonl --out <dir-de-historico>/<run>.json"
 )
 
 # Menos de tres runs nao sustenta a afirmacao de um p99. Anunciar percentil
 # sobre dois pontos e teatro de precisao, e o eixo prefere recusar.
 _MINIMO_DE_RUNS = 3
-_ANALISA_SQL = "sparkforge analyze sql-metrics --path <event-log.jsonl> --out <facts.json>"
+_ANALISA_SQL = "sparkforge-aws analyze sql-metrics --path <event-log.jsonl> --out <facts.json>"
 
 # Razao p95/p50 de duracao de tarefa. Sao razoes, e nao volumes: comparar uma
 # razao com o historico dela seria uma segunda derivada sem consumidor.
@@ -1175,7 +1175,7 @@ def build_fingerprint(
     if not shuffles:
         eixos["shuffle_intensity"] = unknown_axis(
             "spark.stage.shuffle",
-            "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>",
+            "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>",
         )
     elif not anteriores_shuffle:
         eixos["shuffle_intensity"] = unknown_axis("history_absent", _PRODUZ_HISTORICO)
@@ -1207,7 +1207,7 @@ def build_fingerprint(
     else:
         eixos["skew_risk"] = unknown_axis(
             "spark.stage.task_duration",
-            "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>",
+            "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>",
         )
 
     # Memoria: spill contra input, razao interna.
@@ -1228,7 +1228,7 @@ def build_fingerprint(
     else:
         eixos["memory_pressure"] = unknown_axis(
             "spark.stage.spill",
-            "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>",
+            "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>",
         )
 
     # Join: estrutural. O `basis` diz isso -- CartesianProduct e fato do plano,
@@ -1246,7 +1246,7 @@ def build_fingerprint(
     else:
         eixos["join_intensity"] = unknown_axis(
             "plan.join",
-            "sparkforge analyze plan --path <explain.txt> --out <facts.json>",
+            "sparkforge-aws analyze plan --path <explain.txt> --out <facts.json>",
         )
 
     # Declarados: nunca promovidos a `measured`.
@@ -1297,10 +1297,10 @@ def build_fingerprint(
     )
 ```
 
-Acrescente a `sparkforge/workload/__init__.py`:
+Acrescente a `sparkforge_aws/workload/__init__.py`:
 
 ```python
-from sparkforge.workload.fingerprint import WorkloadFingerprint, build_fingerprint
+from sparkforge_aws.workload.fingerprint import WorkloadFingerprint, build_fingerprint
 
 __all__ = ["Axis", "WorkloadFingerprint", "build_fingerprint", "unknown_axis"]
 ```
@@ -1318,7 +1318,7 @@ Esperado: PASS. Reporte a contagem real.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/workload tests/test_workload_fingerprint.py
+rtk git add sparkforge_aws/workload tests/test_workload_fingerprint.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1329,7 +1329,7 @@ Mensagem: `feat(workload): fingerprint com a escala ancorada no historico do job
 ## Task 5: Superfície — verbo de topo e tool
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py`, `cli.py`, `tools.py`
+- Modify: `sparkforge_aws/adapters/_core.py`, `cli.py`, `tools.py`
 - Modify: `manifest.json`, `parity.yaml`, um arquivo de `agents/`
 - Test: `tests/test_adapters_cli.py`, `tests/test_adapters_tools.py`
 
@@ -1360,7 +1360,7 @@ class TestWorkloadCommand:
         return alvo
 
     def test_workload_is_a_top_level_verb(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         code = main(
             ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
@@ -1373,7 +1373,7 @@ class TestWorkloadCommand:
         assert payload["axes"]["skew_risk"]["confidence"] == "measured"
 
     def test_axes_without_evidence_are_listed_as_unknown(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         main(
             ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
@@ -1389,7 +1389,7 @@ E a `tests/test_adapters_tools.py`:
 ```python
 class TestWorkloadTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_workload" in tools.TOOLS
         assert "sparkforge_workload" in tools._HANDLERS
@@ -1408,10 +1408,10 @@ Esperado: FAIL — `SystemExit: 2` e `AssertionError`.
 Leia `benchmark_runs` primeiro: ele é o molde exato, inclusive no uso de `_load_facts_file` com um `producer` que diz qual comando produz o arquivo.
 
 ```python
-from sparkforge.workload import build_fingerprint
+from sparkforge_aws.workload import build_fingerprint
 
 _FACTS_FROM_SQL_METRICS = (
-    "sparkforge analyze sql-metrics --path <event-log.jsonl> --out {path}"
+    "sparkforge-aws analyze sql-metrics --path <event-log.jsonl> --out {path}"
 )
 
 
@@ -1432,7 +1432,7 @@ def workload_fingerprint(
         facts = list(facts) + list(
             _load_facts_file(
                 history_path,
-                "sparkforge analyze glue-job-runs --path <dir> --job-name <job> --out {path}",
+                "sparkforge-aws analyze glue-job-runs --path <dir> --job-name <job> --out {path}",
                 "--history",
             )
         )
@@ -1541,7 +1541,7 @@ Se `sparkforge_workload` cair no conjunto `SEM_CAMINHO`, isso é decisão consci
 - [ ] **Step 7: Commit**
 
 ```bash
-rtk git add sparkforge/adapters manifest.json parity.yaml tests/test_adapters_cli.py tests/test_adapters_tools.py tests/test_harness_authorization.py agents .claude .agents .github
+rtk git add sparkforge_aws/adapters manifest.json parity.yaml tests/test_adapters_cli.py tests/test_adapters_tools.py tests/test_harness_authorization.py agents .claude .agents .github
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1649,10 +1649,10 @@ Acrescente o verbo à seção onde `benchmark` e `fuse` aparecem (é verbo de to
 ```bash
 rtk python -c "
 import importlib, pkgutil
-import sparkforge.facts as F
+import sparkforge_aws.facts as F
 mods, kinds = [], set()
 for m in pkgutil.iter_modules(F.__path__):
-    mod = importlib.import_module(f'sparkforge.facts.{m.name}')
+    mod = importlib.import_module(f'sparkforge_aws.facts.{m.name}')
     ek = getattr(mod, 'EMITTED_KINDS', None)
     if ek:
         mods.append(m.name); kinds |= set(ek)
@@ -1662,7 +1662,7 @@ print(len(mods), 'extratores,', len(kinds), 'kinds')
 
 - [ ] **Step 3: STATUS**
 
-Registre a fase no formato das existentes: o verbo, a tool, os kinds novos (`spark.stage.shuffle` e os três de `workload.*`), o pacote `sparkforge/workload/`, o número de testes acrescentados (meça), a faixa de commits, a referência à spec, e:
+Registre a fase no formato das existentes: o verbo, a tool, os kinds novos (`spark.stage.shuffle` e os três de `workload.*`), o pacote `sparkforge_aws/workload/`, o número de testes acrescentados (meça), a faixa de commits, a referência à spec, e:
 
 - as três decisões (escala do histórico, `declared` nunca vira `measured`, shuffle medido antes de classificado);
 - o que ficou de fora: `cpu_pressure` e `metadata_pressure` (evidência parcial hoje), recomendação de capacidade (é D), custo (é E), grafo de joins (terceiro recorte de C), e nenhuma regra nova.
@@ -1699,7 +1699,7 @@ Esperado: 0 failed.
 |---|---|
 | §2 `spark.stage.shuffle` | 1 |
 | §2 extrator do inventário declarado | 2 |
-| §2 `sparkforge/workload/` | 3, 4 |
+| §2 `sparkforge_aws/workload/` | 3, 4 |
 | §3.1 mecanismo próprio, não extrator | 3 |
 | §3.2 escala do histórico do job | 4 |
 | §3.3 `declared` nunca vira `measured` | 3, 4, 6 |

@@ -5,8 +5,8 @@
 **Executor determinístico:** 2026-09-08, branch `feat/executor-agentico-spec`
 **Executor de debate:** 2026-09-11, branch `feat/debate-executor`
 **Branch:** `audit/fakes-de-coleta`
-**Spec:** `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
-**Spec do executor:** `docs/superpowers/specs/2026-09-08-sparkforge-executor-agentico-design.md`
+**Spec:** `docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md`
+**Spec do executor:** `docs/superpowers/specs/2026-09-08-sparkforge-aws-executor-agentico-design.md`
 
 > **Leitura corrente (2026-10-02):** este relatório mantém a evolução agêntica
 > como histórico técnico. O mapa de estado atual, incluindo Decision Plane,
@@ -16,21 +16,21 @@
 
 ## Resumo executivo
 
-O SparkForge ganhou uma **biblioteca agêntica** em `sparkforge/agentic/`: 13
+O SparkForge ganhou uma **biblioteca agêntica** em `sparkforge_aws/agentic/`: 13
 módulos, 9 entidades de primeira classe, protocolo de debate formal, arbitragem
 com detecção de falso consenso, desenho de experimentos, decisões auditáveis com
 ADR, memória institucional cross-case, budget unificado, threat model com 12
 tipos, níveis de autonomia L0-L5 e Agent Execution Graph.
 
 **Em 2026-09-08 a camada ganhou um produtor, e ele é determinístico.**
-`sparkforge/agentic/executor/` — 7 módulos, 163 testes — lê os findings que
+`sparkforge_aws/agentic/executor/` — 7 módulos, 163 testes — lê os findings que
 `judge` produziu e a UNIÃO dos facts do case, e escreve `Claim`, `Evidence`,
 `Contradiction`, `Unknown` e `Decision` no blackboard. Exposto por
-`sparkforge arbitrate` e pela tool `sparkforge_arbitrate`.
+`sparkforge-aws arbitrate` e pela tool `sparkforge_arbitrate`.
 
 **Em 2026-09-11 o `DebatePlan` passou a ter executor, e ele também é
 determinístico.** `executor/debate_run.py` é uma máquina de estados L0 sobre
-arquivos do case: `sparkforge debate start|next|submit` (tools
+arquivos do case: `sparkforge-aws debate start|next|submit` (tools
 `sparkforge_debate_start|next|submit`) congela o plano do par, diz de quem é a
 vez, recusa por nome a submissão que fere o protocolo e fecha **sempre** pelo
 `referee`. A geração do argumento fica fora do pacote, no host: a skill
@@ -44,9 +44,9 @@ arbitragem determinística, e por isso nenhuma afirmação de ganho (regra 30).
 Ver **Status por componente** abaixo.
 
 **Em 2026-09-13 o §15 do plano de evolução ganhou L1 e L2 — em OUTRA escala.**
-`sparkforge change plan` (L1, *produce change*) gera o diff e o diff de rollback
+`sparkforge-aws change plan` (L1, *produce change*) gera o diff e o diff de rollback
 de um valor de configuração pela procedência dos facts, sem aplicar;
-`sparkforge change sandbox` (L2, *sandbox execute*) aplica qualquer diff numa
+`sparkforge-aws change sandbox` (L2, *sandbox execute*) aplica qualquer diff numa
 cópia em `.sparkforge/sandbox/<id>/` e compara os achados do `scan` antes e
 depois. As duas saídas levam um campo `stage` próprio (`produce_change`,
 `sandbox_execute`) e **não** usam o enum `AutonomyLevel` desta biblioteca, onde
@@ -91,18 +91,18 @@ para iniciar containers ou tocar AWS sem confirmação explícita.
 ## Atualização corrente — 2026-09-28 — Decision Plane em shadow mode
 
 O repositório agora contém uma vertical declarativa de decisão, separada da
-decisão ADR/arbitragem de `sparkforge/agentic/decision.py`:
+decisão ADR/arbitragem de `sparkforge_aws/agentic/decision.py`:
 
 | Entrega | Caminho | Estado | Prova |
 |---|---|---|---|
 | Contrato de roteamento | `config/decisions/routing.data_domain.yaml` | IMPLEMENTED, `mode: shadow` | `tests/test_decision_contracts.py` |
-| Motor e comparação | `sparkforge/economy/decision_*.py` | IMPLEMENTED, determinístico e offline | `tests/test_decision_engine.py`, `tests/test_decision_compare.py` |
-| Observação no runtime | `sparkforge/agentic/shadow.py` | IMPLEMENTED, sem alterar dispatch | `tests/test_decision_runtime_integration.py` |
+| Motor e comparação | `sparkforge_aws/economy/decision_*.py` | IMPLEMENTED, determinístico e offline | `tests/test_decision_engine.py`, `tests/test_decision_compare.py` |
+| Observação no runtime | `sparkforge_aws/agentic/shadow.py` | IMPLEMENTED, sem alterar dispatch | `tests/test_decision_runtime_integration.py` |
 | Receipts | `.sparkforge/decision-receipts/` via `decision_receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_receipts.py` |
-| Avaliação seed | `sparkforge/evals/decision_plane.py` + fixture | IMPLEMENTED, 23/23 no run de 2026-09-28 | `tests/test_decision_evaluation.py` |
+| Avaliação seed | `sparkforge_aws/evals/decision_plane.py` + fixture | IMPLEMENTED, 23/23 no run de 2026-09-28 | `tests/test_decision_evaluation.py` |
 | Ativação | `decision_activation.py` | FAIL-CLOSED; não pronta | `tests/test_decision_activation.py` |
 
-Os cinco verbos `sparkforge decision validate|shadow|compare|benchmark|receipt`
+Os cinco verbos `sparkforge-aws decision validate|shadow|compare|benchmark|receipt`
 existem somente na CLI: nenhum tool MCP, provider ou chamada AWS foi adicionado.
 O seed cobre 15 casos de qualidade, 6 de grafo federado e 2 de transcript. `23/23`
 é uma prova de contrato e de mecânica determinística, não uma medida de qualidade
@@ -113,16 +113,16 @@ de qualidade e economia.
 ## Atualização corrente — 2026-09-28 — Forge Bounded Decision Kernel
 
 O Decision Plane legado agora é uma fachada de compatibilidade sobre um kernel genérico
-offline em `sparkforge/decision/`. O contrato v1 aceita somente seis primitivas fechadas
+offline em `sparkforge_aws/decision/`. O contrato v1 aceita somente seis primitivas fechadas
 (`choice`, `boolean`, `gate`, `score`, `route`, `threshold`), compila estado declarado,
 gera fingerprint de contrato/estado e retorna `accepted`, `abstain`, `unresolved` ou
 `refused` sem inferência.
 
 | Entrega | Caminho | Estado | Prova |
 |---|---|---|---|
-| Runtime e cache bounded | `sparkforge/decision/{runtime,cache,state,fingerprint}.py` | IMPLEMENTED, offline | `tests/test_decision_kernel_runtime.py`, `tests/test_decision_kernel_cache.py` |
-| Receipts compactos | `sparkforge/decision/receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_kernel_receipts.py` |
-| Compatibilidade legado | `sparkforge/economy/decision_kernel_bridge.py` | IMPLEMENTED, seed preservado | `tests/test_decision_engine.py`, `tests/test_decision_evaluation.py` |
+| Runtime e cache bounded | `sparkforge_aws/decision/{runtime,cache,state,fingerprint}.py` | IMPLEMENTED, offline | `tests/test_decision_kernel_runtime.py`, `tests/test_decision_kernel_cache.py` |
+| Receipts compactos | `sparkforge_aws/decision/receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_kernel_receipts.py` |
+| Compatibilidade legado | `sparkforge_aws/economy/decision_kernel_bridge.py` | IMPLEMENTED, seed preservado | `tests/test_decision_engine.py`, `tests/test_decision_evaluation.py` |
 | CLI/MCP parity | `decision evaluate`, `sparkforge_decision_evaluate` | IMPLEMENTED, read-only | `tests/test_decision_kernel_adapters.py` |
 | Baseline sintético | `evals/token_efficient/fixtures/decision_kernel_cases.yaml` | IMPLEMENTED, 10/10 casos | `scripts/benchmark_decision_kernel.py`, `tests/test_decision_kernel_baseline.py` |
 
@@ -140,12 +140,12 @@ SDK de provider, não chama rede e não transforma `payload_bytes` em `provider_
 
 | Entrega | Caminho | Estado | Prova |
 |---|---|---|---|
-| Host protocol + replay | `sparkforge/decision/host.py` | IMPLEMENTED, transcript-only | `tests/test_host_provider.py` |
-| Confidence calibration | `sparkforge/decision/calibration.py` | IMPLEMENTED, PAVA train/holdout; online update refused | `tests/test_confidence_calibration.py` |
-| Risk/profile Governor | `sparkforge/agentic/governor.py` | IMPLEMENTED, 27 células bounded | `tests/test_agent_governor.py` |
-| Bounded recovery | `sparkforge/agentic/recovery.py` | IMPLEMENTED, 8 classes e retry finito | `tests/test_recovery_policy.py` |
-| Cache ownership | `sparkforge/decision/cache.py` | IMPLEMENTED, `fact`/`decision`/`artifact` | `tests/test_cache_contracts.py` |
-| Replay economics | `sparkforge/evals/decision_replay.py` | IMPLEMENTED, 50 casos rotulados × 10 domínios × 3 profiles × old/new | `tests/test_decision_replay.py`, `tests/test_benchmark_quality_tokens_cost.py`, `scripts/benchmark_decision_control_plane.py` |
+| Host protocol + replay | `sparkforge_aws/decision/host.py` | IMPLEMENTED, transcript-only | `tests/test_host_provider.py` |
+| Confidence calibration | `sparkforge_aws/decision/calibration.py` | IMPLEMENTED, PAVA train/holdout; online update refused | `tests/test_confidence_calibration.py` |
+| Risk/profile Governor | `sparkforge_aws/agentic/governor.py` | IMPLEMENTED, 27 células bounded | `tests/test_agent_governor.py` |
+| Bounded recovery | `sparkforge_aws/agentic/recovery.py` | IMPLEMENTED, 8 classes e retry finito | `tests/test_recovery_policy.py` |
+| Cache ownership | `sparkforge_aws/decision/cache.py` | IMPLEMENTED, `fact`/`decision`/`artifact` | `tests/test_cache_contracts.py` |
+| Replay economics | `sparkforge_aws/evals/decision_replay.py` | IMPLEMENTED, 50 casos rotulados × 10 domínios × 3 profiles × old/new | `tests/test_decision_replay.py`, `tests/test_benchmark_quality_tokens_cost.py`, `scripts/benchmark_decision_control_plane.py` |
 
 Fixtures vivem em `evals/token_efficient/fixtures/` e são registrados no
 `evals/token_efficient/suite.yaml`. O relatório local produz 300 células, mantendo
@@ -161,8 +161,8 @@ O segundo gate usa `CacheKey` versionada para decisões: `contract_sha256`, stat
 `policy_version` e `calibration_version` formam identidade única. O runtime aplica o
 `cache_max_entries` do contrato por eviction bounded e receipts expõem a chave efetiva.
 
-`sparkforge.decision.cache.ArtifactCache` agora é a implementação única. A API antiga de
-`sparkforge.economy.cache` virou facade compatível para memória/disco, TTL, owner e namespace;
+`sparkforge_aws.decision.cache.ArtifactCache` agora é a implementação única. A API antiga de
+`sparkforge_aws.economy.cache` virou facade compatível para memória/disco, TTL, owner e namespace;
 não há segundo LRU/freshness implementation. Prova: `tests/test_decision_cache_versions.py`
 mais regressões de cache/economy/context (`19 passed`).
 
@@ -236,7 +236,7 @@ somente quando declarado e permite abertura apenas com `state.additional_propert
 O loader compara todas as referências das primitivas com o conjunto declarado e recusa
 `referenced_fields_undeclared` antes do evaluator.
 
-`sparkforge/decision/conditions.py` é a única validação estrutural para condições de Route e
+`sparkforge_aws/decision/conditions.py` é a única validação estrutural para condições de Route e
 Gate. Ela exige campo, exatamente um operador (`equals`, `in`, `contains` ou `truthy`) e tipos
 compatíveis. Confidences declaradas e thresholds de aceitação são validados no load dentro de
 `[0,1]`. Prova: `tests/test_decision_contract_hardening.py` e regressões do kernel (`18 passed`).
@@ -252,11 +252,11 @@ legado e grava recibo content-addressed com modo, fallback e razão de rollback.
 
 | Entrega | Caminho | Estado | Prova |
 |---|---|---|---|
-| Host bounded provider | `sparkforge/decision/host.py` | IMPLEMENTED, replay offline e transcript-only | `tests/test_host_provider.py`, `tests/test_jev_independent_path.py` |
-| Três caches formais | `sparkforge/decision/cache.py` | IMPLEMENTED, namespace/owner/freshness/invalidation | `tests/test_cache_contracts.py` |
-| Promoção e fallback | `sparkforge/economy/decision_plane.py` | IMPLEMENTED, active opt-in; shadow preservado | `tests/test_decision_plane.py`, `tests/test_jev_independent_path.py` |
-| Control plane agêntico | `sparkforge/agentic/control.py` | IMPLEMENTED, Governor + RecoveryPolicy bounded | `tests/test_decision_runtime_integration.py`, `tests/test_jev_independent_path.py` |
-| Receipts de controle | `sparkforge/economy/decision_receipts.py` | IMPLEMENTED, identidade preservada e `now` determinístico | `tests/test_decision_receipts.py` |
+| Host bounded provider | `sparkforge_aws/decision/host.py` | IMPLEMENTED, replay offline e transcript-only | `tests/test_host_provider.py`, `tests/test_jev_independent_path.py` |
+| Três caches formais | `sparkforge_aws/decision/cache.py` | IMPLEMENTED, namespace/owner/freshness/invalidation | `tests/test_cache_contracts.py` |
+| Promoção e fallback | `sparkforge_aws/economy/decision_plane.py` | IMPLEMENTED, active opt-in; shadow preservado | `tests/test_decision_plane.py`, `tests/test_jev_independent_path.py` |
+| Control plane agêntico | `sparkforge_aws/agentic/control.py` | IMPLEMENTED, Governor + RecoveryPolicy bounded | `tests/test_decision_runtime_integration.py`, `tests/test_jev_independent_path.py` |
+| Receipts de controle | `sparkforge_aws/economy/decision_receipts.py` | IMPLEMENTED, identidade preservada e `now` determinístico | `tests/test_decision_receipts.py` |
 
 O caminho não chama provider, AWS, MCP ou rede; não infere tokens de provider a partir
 de `payload_bytes` e não publica saving financeiro. A configuração produtiva permanece
@@ -318,7 +318,7 @@ fica como registro; `digest.py` (101 linhas) entrou depois dela e antes desta.
 | `executor/debate_evidence.py` | 263 | 41 | IMPLEMENTED | `debate_run.py` |
 
 Total do subpacote hoje: **4185 linhas em 11 arquivos**, **168 889 bytes**.
-Fora dele, na mesma entrega: `sparkforge/evals/debate_grade.py` (333 linhas,
+Fora dele, na mesma entrega: `sparkforge_aws/evals/debate_grade.py` (333 linhas,
 29 testes), `scripts/run_debate.py` (634 linhas, 13 testes) e a skill
 `skills/run-debate/`. A suíte `tests/test_debate_suite.py` (26) e
 `tests/test_cli_debate.py` (16) completam **196 testes novos**.
@@ -352,18 +352,18 @@ publicada na primeira versão desta página estava errada em todos os módulos
 
 ## CLI — 9 verbos, oito de leitura e UM que escreve
 
-- `sparkforge agents list` / `agents inspect <id>`
-- `sparkforge blackboard summary` / `blackboard list --type <tipo>`
-- `sparkforge decisions list` / `decisions explain <id>`
-- `sparkforge budget show` (+ `--template`)
-- `sparkforge autonomy show --level <L0-L5>`
-- **`sparkforge arbitrate --findings <path> --facts <path> --repo <dir>`** — o
+- `sparkforge-aws agents list` / `agents inspect <id>`
+- `sparkforge-aws blackboard summary` / `blackboard list --type <tipo>`
+- `sparkforge-aws decisions list` / `decisions explain <id>`
+- `sparkforge-aws budget show` (+ `--template`)
+- `sparkforge-aws autonomy show --level <L0-L5>`
+- **`sparkforge-aws arbitrate --findings <path> --facts <path> --repo <dir>`** — o
   único que escrevia até 2026-09-11
 
-Desde 2026-09-11, `sparkforge debate start|next|submit` também escrevem, em
+Desde 2026-09-11, `sparkforge-aws debate start|next|submit` também escrevem, em
 `.sparkforge/debate/<debate_id>/` e no blackboard. As tools correspondentes
 são `LOCAL_MUTATION`. O `next` também é mutação, porque grava a `Decision` no
-fechamento. `sparkforge debate referee` só lê.
+fechamento. `sparkforge-aws debate referee` só lê.
 
 `arbitrate` segue a forma dos verbos agênticos existentes (`--repo`, nunca
 `--case <id>`), porque o blackboard mora em `<repo>/.sparkforge/blackboard/`.
@@ -378,15 +378,15 @@ computado por `Fact.id`. O `budget` do plano de debate sai do bloco `budget:` do
 `budget show` lê o bloco `budget:` de `.sparkforge/case.yaml`. Sem esse bloco a
 resposta é `limits.status = "unresolved"` **nomeando a lacuna**; os defaults do
 código só saem sob `--template`, rotulados como template. Consumo sai
-`unresolved` e aponta `sparkforge economy report --run-id <id>`, que é onde ele
+`unresolved` e aponta `sparkforge-aws economy report --run-id <id>`, que é onde ele
 é medido — `tokens` exige transcript do host (regra 24) e `cost_usd` exige
 `cost_basis` (regra 25).
 
 ## O que NÃO foi implementado — declarado por nome
 
 - **RESOLVIDO em 2026-09-08 — produtor de entidades.** Era *a lacuna que governa
-  todas as outras*, e `sparkforge/agentic/executor/` a fechou:
-  `sparkforge arbitrate` escreve `Claim`, `Evidence`, `Contradiction`, `Unknown`
+  todas as outras*, e `sparkforge_aws/agentic/executor/` a fechou:
+  `sparkforge-aws arbitrate` escreve `Claim`, `Evidence`, `Contradiction`, `Unknown`
   e `Decision`. Fica registrado por ter governado o desenho desta página por
   cinco dias, não apagado.
 - **ENTREGUE em 2026-09-11 — executor de debate.** Até ali o executor
@@ -399,7 +399,7 @@ código só saem sob `--template`, rotulados como template. Consumo sai
     declarado no `case.yaml`, o `start` recusa com `budget_undeclared`;
   - **geração só no host.** Quem escreve claim, objeção e réplica é a sessão,
     pela skill `run-debate`, ou `claude -p`, por `scripts/run_debate.py`. Nada
-    disso mora em `sparkforge/`;
+    disso mora em `sparkforge_aws/`;
   - **fechamento sempre pelo `referee`.** Vence a regra do lado que não
     concedeu, quando exatamente um lado concedeu. `upheld: false` vira
     `Decision` `unresolved` com as violações citadas. Contagem de claim nunca
@@ -462,10 +462,10 @@ O que **é** mensurável hoje, e foi medido:
 
 | Medida | Valor | Como |
 |---|---|---|
-| Peso do pacote agêntico | 148 841 bytes, 4 210 linhas | `wc -c`/`wc -l` sobre `sparkforge/agentic/*.py` |
+| Peso do pacote agêntico | 148 841 bytes, 4 210 linhas | `wc -c`/`wc -l` sobre `sparkforge_aws/agentic/*.py` |
 | Custo em contexto para comando não-agêntico | 0 byte | import é lazy: só o handler do verbo agêntico importa o módulo |
 | Testes da camada | 441 | `pytest tests/test_agentic_*.py --collect-only` em 2026-09-08 — 261 antes do executor, mais 163 dele, 15 do verbo `arbitrate` e 2 em `test_agentic_models.py` |
-| Peso do subpacote `executor/` | 105 810 bytes, 2573 linhas | `wc -c`/`wc -l` sobre `sparkforge/agentic/executor/*.py` |
+| Peso do subpacote `executor/` | 105 810 bytes, 2573 linhas | `wc -c`/`wc -l` sobre `sparkforge_aws/agentic/executor/*.py` |
 | Crescimento da superfície de skills | 321 678 → 457 985 bytes (+42,4%) | `docs/surface.lock.json`, pelas 11 skills AWS |
 
 Enquanto não houver produtor, "a arquitetura nova é melhor" continua sem
@@ -524,7 +524,7 @@ como vistas-e-não-corrigidas na primeira versão desta página):
 |---|---|---|
 | Testes da suíte (coleta completa) | **9 952** | spec dizia 9486, relatório 9881, commit 9897 — três números para a mesma base |
 | Testes da camada agêntica | **261** (206 originais + 55 de regressão da auditoria) | 206 |
-| Módulos em `sparkforge/agentic/` | **13** (+ `__init__.py`) | `AGENTS.md` dizia 12 sobre uma tabela de 13 |
+| Módulos em `sparkforge_aws/agentic/` | **13** (+ `__init__.py`) | `AGENTS.md` dizia 12 sobre uma tabela de 13 |
 
 Gates verdes: `sync_skills.py --check`, `check_surface_lock.py` (0),
 `check_status_numbers.py --strict` (0), `ruff check`, `ruff format --check`.
@@ -539,9 +539,9 @@ o alvo parecer entregue.
 
 | Etapa | Módulo | Estado |
 |---|---|---|
-| CASE MANAGER | `sparkforge.case.store` | existente, em uso |
-| CONTEXT ENGINE | `sparkforge.context.funnel/progressive` | existente, em uso |
-| DOMAIN ROUTER | `sparkforge.case.router` + `routing.yaml` | existente, em uso |
+| CASE MANAGER | `sparkforge_aws.case.store` | existente, em uso |
+| CONTEXT ENGINE | `sparkforge_aws.context.funnel/progressive` | existente, em uso |
+| DOMAIN ROUTER | `sparkforge_aws.case.router` + `routing.yaml` | existente, em uso |
 | SPECIALIST TEAM | `agentic.runtime` | protocolo, sem adapter — nenhum `AgentRuntime` concreto no pacote |
 | SHARED BLACKBOARD | `agentic.blackboard` | biblioteca, leitura por CLI e **produtor** (`agentic.executor.run`) |
 | HYPOTHESIS ENGINE | `agentic.models.Hypothesis` | entidade, sem gerador — o executor produz `Unknown` e `Experiment`, não `Hypothesis` |
@@ -552,7 +552,7 @@ o alvo parecer entregue.
 | DECISION ENGINE | `agentic.decision` | biblioteca, consumida por `agentic.executor.run` (L0: propõe, nunca aplica) |
 | DECISION MEMORY | `agentic.memory` | biblioteca + leitura por CLI |
 | EXECUTION | CLI/MCP adapters | existente, em uso |
-| OBSERVABILITY | `sparkforge.observability` | existente, em uso; o `trace` da arbitragem passou a ter produtor |
+| OBSERVABILITY | `sparkforge_aws.observability` | existente, em uso; o `trace` da arbitragem passou a ter produtor |
 | LEARNING/EVALUATION | `agentic.memory` + waste detection | biblioteca |
 
 ## Princípios preservados
@@ -578,7 +578,7 @@ rota legacy.
 Também foram fechados cache ownership/capacidade por escopo, retry/replan independentes, proteção
 contra ciclos repetidos, hash canônico de transcripts e replay same-case com rota como eixo
 independente. Claude/Codex/Devin são translators de recordings; não há SDK ou rede em
-`sparkforge/decision`. A suíte de 50 casos mede evidência offline, não custo financeiro real nem
+`sparkforge_aws/decision`. A suíte de 50 casos mede evidência offline, não custo financeiro real nem
 token de provider inferido de bytes.
 
 ## Compatibilidade
@@ -593,7 +593,7 @@ token de provider inferido de bytes.
 
 1. ~~Decidir se existe produtor de entidades e qual é o tier de uma `Evidence`
    derivada de `Fact`/`Finding` determinístico.~~ **Feito em 2026-09-08.** O
-   produtor é `sparkforge arbitrate`, e o tier sai de
+   produtor é `sparkforge-aws arbitrate`, e o tier sai de
    `knowledge/source_authority.yaml` por host da fonte citada pela regra —
    nunca inventado. Medido sobre as 253 fixtures do corpus: T1 170, T4 20,
    T2 16; T3, T5 e T6 não aparecem, porque host não prova reprodutibilidade nem

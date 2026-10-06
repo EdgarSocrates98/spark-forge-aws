@@ -60,11 +60,11 @@ Razões que a fase reconhece: `NO_CANDIDATE`, `AMBIGUOUS`, `DYNAMIC_ATTRIBUTE`,
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/codeintel/db.py` | + tabelas `edges` e `unresolved_refs` |
-| `sparkforge/codeintel/refs.py` | **novo** — AST → referência bruta |
-| `sparkforge/codeintel/resolve.py` | **novo** — referência → aresta ou unresolved |
-| `sparkforge/codeintel/graph.py` | **novo** — `chamadores`, `chamados`, `impacto` |
-| `sparkforge/adapters/cli.py` | `code callers`, `code impact` |
+| `sparkforge_aws/codeintel/db.py` | + tabelas `edges` e `unresolved_refs` |
+| `sparkforge_aws/codeintel/refs.py` | **novo** — AST → referência bruta |
+| `sparkforge_aws/codeintel/resolve.py` | **novo** — referência → aresta ou unresolved |
+| `sparkforge_aws/codeintel/graph.py` | **novo** — `chamadores`, `chamados`, `impacto` |
+| `sparkforge_aws/adapters/cli.py` | `code callers`, `code impact` |
 | `tests/test_codeintel_refs.py` | extração de referência |
 | `tests/test_codeintel_resolve.py` | resolução, ambiguidade, unresolved |
 | `tests/test_codeintel_graph.py` | travessia, ciclo, profundidade |
@@ -73,7 +73,7 @@ Razões que a fase reconhece: `NO_CANDIDATE`, `AMBIGUOUS`, `DYNAMIC_ATTRIBUTE`,
 
 ## Task 1: schema de arestas
 
-**Arquivos:** `sparkforge/codeintel/db.py`, `tests/test_codeintel_db.py`
+**Arquivos:** `sparkforge_aws/codeintel/db.py`, `tests/test_codeintel_db.py`
 
 - [ ] **Passo 1: teste**
 
@@ -121,7 +121,7 @@ def test_apagar_no_apaga_as_arestas_dele(tmp_path):
 
 ## Task 2: referência bruta do AST
 
-**Arquivos:** `sparkforge/codeintel/refs.py`, `tests/test_codeintel_refs.py`
+**Arquivos:** `sparkforge_aws/codeintel/refs.py`, `tests/test_codeintel_refs.py`
 
 Uma `Referencia` é o que o AST vê, **antes** de saber a quem aponta:
 
@@ -191,7 +191,7 @@ def test_sintaxe_invalida_devolve_vazio():
 
 ## Task 3: resolver, ou declarar que não resolveu
 
-**Arquivos:** `sparkforge/codeintel/resolve.py`, `tests/test_codeintel_resolve.py`
+**Arquivos:** `sparkforge_aws/codeintel/resolve.py`, `tests/test_codeintel_resolve.py`
 
 - [ ] **Passo 1: teste**
 
@@ -234,7 +234,7 @@ def test_taxa_de_resolucao_e_medida_e_nao_estimada():
 
 ## Task 4: travessia
 
-**Arquivos:** `sparkforge/codeintel/graph.py`, `tests/test_codeintel_graph.py`
+**Arquivos:** `sparkforge_aws/codeintel/graph.py`, `tests/test_codeintel_graph.py`
 
 - [ ] **Passo 1: teste**
 
@@ -264,7 +264,7 @@ def test_ordem_e_deterministica():
 
 ## Task 5: CLI e a medição que decide a fase
 
-**Arquivos:** `sparkforge/adapters/cli.py`, `docs/harness/CODEINTEL-GAP.md`
+**Arquivos:** `sparkforge_aws/adapters/cli.py`, `docs/harness/CODEINTEL-GAP.md`
 
 - [ ] **Passo 1:** `code callers <nome>` e `code impact <nome> --depth N`.
 
@@ -296,7 +296,7 @@ confia.
 
 1. Teste da tarefa
 2. `python -m pytest tests/ -q` — base **6716 passed, 5 skipped**
-3. `ruff check sparkforge tests scripts` — **241**; `noqa` não é conserto
+3. `ruff check sparkforge_aws tests scripts` — **241**; `noqa` não é conserto
 4. `python scripts/check_vnext_claims.py` — **0**
 5. `git commit -F <arquivo>`. **Sem heredoc.**
 

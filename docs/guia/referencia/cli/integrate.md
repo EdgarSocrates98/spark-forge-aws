@@ -1,11 +1,11 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge integrate`
+# `sparkforge-aws integrate`
 
 Instala skills, agents e o MCP do SparkForge nos diretorios de USUARIO do host (Claude Code por marketplace local; Devin, Codex e Copilot CLI), a partir do pacote instalado. Nada e escrito no repositorio, exceto a remocao da copia vendorizada que o operador escolher.
 
 ```bash
-sparkforge integrate --help
+sparkforge-aws integrate --help
 ```
 
 ## Opções

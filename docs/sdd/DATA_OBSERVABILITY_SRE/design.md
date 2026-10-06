@@ -8,11 +8,11 @@ upstream:
   path: docs/sdd/DATA_OBSERVABILITY_SRE/define.md
   sha256: "5b81abcfca0a7b0ed88954f9e68eeb7bc0afb0bc4a18bed6a3d9ac9a6fc3f525"
 files:
-  - {path: sparkforge/observability/sre.py, action: create, reason: "SLO, error budget, incident e dependency evaluator."}
-  - {path: sparkforge/observability/__init__.py, action: modify, reason: "Exporta API da camada SRE."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Analisador comum."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze data-observability."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
+  - {path: sparkforge_aws/observability/sre.py, action: create, reason: "SLO, error budget, incident e dependency evaluator."}
+  - {path: sparkforge_aws/observability/__init__.py, action: modify, reason: "Exporta API da camada SRE."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Analisador comum."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbo analyze data-observability."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tool MCP read-only."}
   - {path: parity.yaml, action: modify, reason: "Paridade da observabilidade."}
   - {path: docs/surface.lock.json, action: modify, reason: "Registro exigido por nova tool MCP."}
   - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice gerado da referência."}

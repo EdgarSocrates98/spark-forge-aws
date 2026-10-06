@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.agentic.models import (
+from sparkforge_aws.agentic.models import (
     Claim,
     ClaimType,
     Contradiction,

@@ -17,11 +17,11 @@ class TestManifest:
         `pip install` entrega. A concordancia das quatro fontes esta em
         `tests/test_package_importable.py`.
         """
-        import sparkforge
+        import sparkforge_aws
 
         data = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         assert data["name"] == "sparkforge-aws"
-        assert data["version"] == sparkforge.__version__
+        assert data["version"] == sparkforge_aws.__version__
         assert data["description"]
 
     def test_component_dirs_are_at_root_not_inside_dot_directory(self):
@@ -35,7 +35,7 @@ class TestMcpConfig:
         return json.loads((ROOT / ".mcp.json").read_text(encoding="utf-8"))
 
     def test_declares_the_sparkforge_server(self):
-        assert "sparkforge" in self._config()["mcpServers"]
+        assert "sparkforge-aws" in self._config()["mcpServers"]
 
     def test_uses_plugin_root_variable_never_an_absolute_path(self):
         text = (ROOT / ".mcp.json").read_text(encoding="utf-8")
@@ -45,8 +45,8 @@ class TestMcpConfig:
         assert "E:/" not in text
 
     def test_invokes_the_mcp_module_over_stdio(self):
-        server = self._config()["mcpServers"]["sparkforge"]
-        assert server["args"][:2] == ["-m", "sparkforge.adapters.mcp"]
+        server = self._config()["mcpServers"]["sparkforge-aws"]
+        assert server["args"][:2] == ["-m", "sparkforge_aws.adapters.mcp"]
         assert "stdio" in server["args"]
 
 
@@ -65,5 +65,5 @@ class TestCommands:
     def test_commands_reference_the_cli_not_a_hardcoded_path(self):
         for name in COMMANDS:
             text = (ROOT / "commands" / f"{name}.md").read_text(encoding="utf-8")
-            assert "sparkforge " in text
+            assert "sparkforge-aws " in text
             assert "E:/" not in text

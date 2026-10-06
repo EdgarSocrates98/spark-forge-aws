@@ -35,8 +35,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.codeintel import extract, lineage
-from sparkforge.codeintel.lineage import (
+from sparkforge_aws.codeintel import extract, lineage
+from sparkforge_aws.codeintel.lineage import (
     DINAMICO,
     DYNAMIC_TABLE_IDENTIFIER,
     JUSANTE,
@@ -49,11 +49,11 @@ from sparkforge.codeintel.lineage import (
     mesclar,
     montante,
 )
-from sparkforge.facts.pyspark_ast import extract_source
+from sparkforge_aws.facts.pyspark_ast import extract_source
 
 RAIZ = Path(__file__).resolve().parents[1]
 FIXTURES = RAIZ / "fixtures" / "pyspark"
-MODULO = RAIZ / "sparkforge" / "codeintel" / "lineage.py"
+MODULO = RAIZ / "sparkforge_aws" / "codeintel" / "lineage.py"
 
 # O exemplo da SPEC 35, letra por letra. Nao e inventado: e o unico caso do qual
 # a SPEC desenha o grafo esperado, e por isso e o que se pode conferir sem

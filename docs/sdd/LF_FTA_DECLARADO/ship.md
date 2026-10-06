@@ -46,7 +46,7 @@ Sobre `3b1e1e40`, pytest com `-p no:cacheprovider --basetemp=E:/sfpt_fta`:
 | goldens | `pytest tests/test_fixtures_golden_cloudwatch_logs.py tests/test_fixtures_golden_infra_code.py tests/test_fixtures_golden_lakeformation.py tests/test_fixtures_kind_coverage.py` | 0 (439 passed, lakeformation rerodado depois do regen por nome: 28 passed) |
 | status_numbers_gate | `python scripts/check_status_numbers.py --strict` | 0 (0 divergências) |
 | claims_gate | `PYTHONIOENCODING=utf-8 python scripts/check_vnext_claims.py` | 0 (0 divergências) |
-| — | `ruff check sparkforge scripts tests` | 0 |
+| — | `ruff check sparkforge_aws scripts tests` | 0 |
 
 `knowledge/` não mudou; `verify_offline_bundle` não se aplica.
 
@@ -82,7 +82,7 @@ cada um estão no `build_report.md`, seção de mesmo nome.
 | goldens | `pytest tests/test_fixtures_golden*.py`, um arquivo por vez, depois de todas as correções | 0 nos 58 (3319 passed, 4 skipped) |
 | paridade | `pytest tests/test_agents_parity.py tests/test_sync_render.py tests/test_reference_docs.py` | 0 (149 passed) |
 | área | `pytest tests/test_lakeformation*.py tests/test_facts_lakeformation.py tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py tests/test_docs_coverage.py` | 0 (977 passed) |
-| — | `ruff check sparkforge scripts tests`; `python scripts/check_surface_lock.py`; `python scripts/check_status_numbers.py --strict` | 0 |
+| — | `ruff check sparkforge_aws scripts tests`; `python scripts/check_surface_lock.py`; `python scripts/check_status_numbers.py --strict` | 0 |
 | claims_gate | `PYTHONIOENCODING=utf-8 python scripts/check_vnext_claims.py` | 0, depois de reler VNX-674 à mão (251707 → 251825, o docstring de `_fta_declarados` cresceu) |
 
 Lição: o gate de golden de uma feature que acrescenta kind é o conjunto inteiro de goldens

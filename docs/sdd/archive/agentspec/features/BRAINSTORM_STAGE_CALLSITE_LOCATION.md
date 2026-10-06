@@ -18,7 +18,7 @@
 **Raw Input:** continuacao direta do `report github` (PR #50). Ele recusa como `runtime` todo finding de execucao sem linha no repositorio. A ponte codigo-execucao ja extrai `spark.stage.callsite` do nome do stage no event log (`collect at /opt/spark/work/job.py:99`). A ideia: usar o callsite para dar linha no PR a findings de stage.
 
 **Context Gathered:**
-- Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check` (PR #50), porque depende de `sparkforge/reporting/locate.py`.
+- Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check` (PR #50), porque depende de `sparkforge_aws/reporting/locate.py`.
 - Forma medida do fact (`fixtures/bridge/*/expected/facts.json`): `subject {type: stage, symbol: "collect at /opt/spark/work/job.py:99", stage_id}`, `measures.line` (so quando resolvido), `attrs {resolved, method, file: "job.py" (nome base), path: "/opt/spark/work/job.py"}` ou `{resolved: false, reason, file}`.
 - **Medido no corpus em 2026-09-11 (o denominador):**
   - dos **28** findings com `subject.type = stage`, **0** seriam localizados: **27** tem callsite nao resolvido e **1** nao tem callsite;
@@ -30,7 +30,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/reporting/locate.py` (resolucao), `sparkforge/reporting/github.py` (mensagem), `fixtures/sarif/` (3 casos novos), `.github/workflows/ci.yml` (matriz do `sarif-upload`) | Nenhum extrator muda |
+| Likely Location | `sparkforge_aws/reporting/locate.py` (resolucao), `sparkforge_aws/reporting/github.py` (mensagem), `fixtures/sarif/` (3 casos novos), `.github/workflows/ci.yml` (matriz do `sarif-upload`) | Nenhum extrator muda |
 | Relevant KB Domains | Spark event log (stage name/callsite), testing (golden em pares), static analysis reporting (SARIF) | Padrao dos pares de `fixtures/bridge/` |
 | IaC Patterns | GitHub Actions (`ci.yml`) | Um caso a mais na matriz |
 
@@ -55,7 +55,7 @@
 | Input files | `fixtures/bridge/*/input/eventlog.jsonl` + `job.py` | 3 | Formato do nome do stage com callsite Python |
 | Output examples | `fixtures/sarif/{stage_python,stage_scala,stage_negativos}/expected/` (a criar) | 3 casos | Golden |
 | Ground truth | Distribuicao medida dos callsites do corpus (16/15/3) | 31 facts | Denominador publicado |
-| Related code | `sparkforge/reporting/locate.py`, `sparkforge/facts/event_log.py` (callsite), `sparkforge/facts/bridge.py` | — | O extrator nao muda |
+| Related code | `sparkforge_aws/reporting/locate.py`, `sparkforge_aws/facts/event_log.py` (callsite), `sparkforge_aws/facts/bridge.py` | — | O extrator nao muda |
 
 **How samples will be used:**
 

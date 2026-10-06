@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.facts.workload import extract_workload_path
+from sparkforge_aws.facts.workload import extract_workload_path
 
 
 def _inventario(tmp_path: Path, payload) -> Path:
@@ -111,7 +111,7 @@ class TestAbsent:
 
 class TestSchema:
     def test_every_emitted_fact_validates(self, tmp_path):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         alvo = _inventario(
             tmp_path,

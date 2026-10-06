@@ -2,7 +2,7 @@
 
 Schema oficial do SARIF 2.1.0, publicado pela OASIS. E a fonte T1 contra a qual
 `tests/test_fixtures_golden_sarif.py` valida todo SARIF que
-`sparkforge report github` produz nos testes.
+`sparkforge-aws report github` produz nos testes.
 
 | Campo | Valor |
 |---|---|

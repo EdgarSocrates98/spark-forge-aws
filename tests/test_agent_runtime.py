@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sparkforge.agents import (
+from sparkforge_aws.agents import (
     ConversationRoom,
     select_context,
 )

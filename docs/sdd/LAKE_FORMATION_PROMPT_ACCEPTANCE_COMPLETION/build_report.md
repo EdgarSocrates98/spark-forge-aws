@@ -19,7 +19,7 @@ tasks:
   - id: T3
     status: done
     red: {command: "python -m pytest -p no:cacheprovider --basetemp E:\\pytest-prompt-red tests/test_lakeformation_prompt_acceptance.py::test_prompt_acceptance_audit_is_complete -q", exit: 1}
-    green: {command: "python -m ruff check sparkforge/lakeformation/architecture.py tests/test_lakeformation_prompt_acceptance.py; python -c structural claims gate", exit: 0}
+    green: {command: "python -m ruff check sparkforge_aws/lakeformation/architecture.py tests/test_lakeformation_prompt_acceptance.py; python -c structural claims gate", exit: 0}
 claims:
   - text: "Migration report names all declared transition families and preserves a test/rollback plan without cost claims."
     evidence_ref: "tests/test_lakeformation_prompt_acceptance.py::test_migration_report_covers_declared_transition_families"

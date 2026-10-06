@@ -39,7 +39,7 @@
       "A espera diferida devolve o slot e paga com uma peça a mais na infraestrutura; a espera síncrona é mais simples e paga com o slot ocupado pelo tempo do job."
     ],
     "validation": [
-      "`sparkforge analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-003 para a task.",
+      "`sparkforge-aws analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-003 para a task.",
       "EIXO DE RESULTADO — numa execução de teste, o destino tem a mesma contagem total e por chave de negócio que a execução síncrona equivalente: mudar a forma de esperar não muda o que o job escreve.",
       "Na execução de teste, a task passa pelo estado `deferred` e o slot fica livre no intervalo: o número de tarefas em execução no pool durante o job é menor do que era."
     ],

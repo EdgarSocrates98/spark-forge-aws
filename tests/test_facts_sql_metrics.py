@@ -4,7 +4,7 @@ from __future__ import annotations
 import itertools
 import json
 
-from sparkforge.facts.sql_metrics import extract_sql_metrics
+from sparkforge_aws.facts.sql_metrics import extract_sql_metrics
 
 SQL_START = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart"
 
@@ -310,7 +310,7 @@ class TestRefusals:
         assert len(lacunas) == 1
 
     def test_missing_file_becomes_a_fact_never_an_exception(self, tmp_path):
-        from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+        from sparkforge_aws.facts.sql_metrics import extract_sql_metrics_path
 
         facts = extract_sql_metrics_path(tmp_path / "nao-existe.jsonl")
         assert [f.attrs["reason"] for f in facts] == ["read_error"]
@@ -318,7 +318,7 @@ class TestRefusals:
 
 class TestSchema:
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         plano = {
             "nodeName": "Union",
@@ -342,7 +342,7 @@ class TestSchema:
             validate_fact(fact.to_dict())
 
     def test_every_emitted_kind_is_declared(self):
-        from sparkforge.facts.sql_metrics import EMITTED_KINDS
+        from sparkforge_aws.facts.sql_metrics import EMITTED_KINDS
 
         facts = extract_sql_metrics([_start(plan=_scan_node())], "log.jsonl")
         assert {f.kind for f in facts} <= EMITTED_KINDS
@@ -437,7 +437,7 @@ class TestEstruturaDaArvore:
         }
 
     def test_children_of_each_node_are_recorded(self):
-        from sparkforge.facts.sql_metrics import _estrutura
+        from sparkforge_aws.facts.sql_metrics import _estrutura
 
         filhos, profundidade = _estrutura(self._tres_niveis())
 
@@ -448,7 +448,7 @@ class TestEstruturaDaArvore:
         assert profundidade == 3
 
     def test_sources_below_a_node_carry_their_distance_in_joins(self):
-        from sparkforge.facts.sql_metrics import _fontes_abaixo
+        from sparkforge_aws.facts.sql_metrics import _fontes_abaixo
 
         arvore = self._tres_niveis()
         # a partir do filho esquerdo da raiz (o join interno, node_id 1)
@@ -460,7 +460,7 @@ class TestEstruturaDaArvore:
         ]
 
     def test_distance_counts_the_joins_in_between(self):
-        from sparkforge.facts.sql_metrics import _fontes_abaixo
+        from sparkforge_aws.facts.sql_metrics import _fontes_abaixo
 
         arvore = self._tres_niveis()
         fontes = _fontes_abaixo(arvore, 0)
@@ -472,7 +472,7 @@ class TestEstruturaDaArvore:
         ]
 
     def test_a_node_without_any_scan_below_reports_none(self):
-        from sparkforge.facts.sql_metrics import _fontes_abaixo
+        from sparkforge_aws.facts.sql_metrics import _fontes_abaixo
 
         arvore = {
             "nodeName": "Project",
@@ -663,7 +663,7 @@ class TestGrafoDeJoins:
         assert lacunas[0].attrs["position"] == "left"
 
     def test_a_plan_deeper_than_the_ceiling_is_a_named_gap(self):
-        from sparkforge.facts.sql_metrics import _TETO_DE_PROFUNDIDADE
+        from sparkforge_aws.facts.sql_metrics import _TETO_DE_PROFUNDIDADE
 
         no = _scan_node()
         for _ in range(_TETO_DE_PROFUNDIDADE + 5):
@@ -736,7 +736,7 @@ class TestCustoDaMontagemDoGrafo:
         return construir(level)
 
     def test_full_tree_passes_do_not_scale_with_join_count(self, monkeypatch):
-        import sparkforge.facts.sql_metrics as sql_metrics
+        import sparkforge_aws.facts.sql_metrics as sql_metrics
 
         contagem = {"fontes_abaixo": 0, "fonte_do_proprio_no": 0}
         original_fontes_abaixo = sql_metrics._fontes_abaixo

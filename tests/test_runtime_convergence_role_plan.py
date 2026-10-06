@@ -10,10 +10,10 @@ silencioso, porque o plano e politica e politica deixa recibo.
 
 from __future__ import annotations
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.agentic.trust import RoleContextPlan, TrustLabel
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.agentic.trust import RoleContextPlan, TrustLabel
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.context.gateway_models import GatewayProfile, GatewayRequest
 
 
 def _request(items, **kw):
@@ -144,7 +144,7 @@ class TestRolePlanNaSelecao:
 
 class TestRegistryDeRoles:
     def test_os_cinco_executores_tem_plano_declarado(self):
-        from sparkforge.agentic.role_plans import ROLE_PLANS
+        from sparkforge_aws.agentic.role_plans import ROLE_PLANS
 
         esperados = {
             "sf-inventory",
@@ -171,7 +171,7 @@ class TestRegistryDeRoles:
         assert {i["kind"] for i in result["context"]} == {"fact"}
 
     def test_plan_serializado_e_o_mesmo_da_role(self):
-        from sparkforge.agentic.role_plans import ROLE_PLANS
+        from sparkforge_aws.agentic.role_plans import ROLE_PLANS
 
         plan = ROLE_PLANS["sf-judge"]
         items = [{"fact_id": "f1", "kind": "fact"}]

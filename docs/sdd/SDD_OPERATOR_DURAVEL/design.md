@@ -8,9 +8,9 @@ upstream:
   path: docs/sdd/SDD_OPERATOR_DURAVEL/define.md
   sha256: "e8100f2f60f7d23d6658ce5ab55cb389967a4546eb9c34fecbefd51703d2b165"
 files:
-  - {path: sparkforge/sdd/checks.py, action: modify, reason: "change_id pelo sandbox ou pela proposal, referencia historica depois do ship done, seletor por kind, proof de tarefa e moved conferido no relatorio"}
-  - {path: sparkforge/sdd/schema/plan.json, action: modify, reason: "tasks[].proof fechado (kind, ref)"}
-  - {path: sparkforge/sdd/schema/build_report.json, action: modify, reason: "tasks[].moved fechado (change_id, resolved)"}
+  - {path: sparkforge_aws/sdd/checks.py, action: modify, reason: "change_id pelo sandbox ou pela proposal, referencia historica depois do ship done, seletor por kind, proof de tarefa e moved conferido no relatorio"}
+  - {path: sparkforge_aws/sdd/schema/plan.json, action: modify, reason: "tasks[].proof fechado (kind, ref)"}
+  - {path: sparkforge_aws/sdd/schema/build_report.json, action: modify, reason: "tasks[].moved fechado (change_id, resolved)"}
   - {path: tests/test_sdd.py, action: modify, reason: "AC2 a AC7"}
   - {path: tests/test_sdd_operator.py, action: modify, reason: "AC1 (ponta a ponta com raiz .sparkforge/sdd, proof, moved e change propose) e AC8"}
   - {path: skills/sdd-define/SKILL.md, action: modify, reason: "raiz do operador e seletor por kind"}
@@ -87,14 +87,14 @@ covers:
 
 Nada de Glue, Spark ou Iceberg: a mudança é no gate e no texto. Lido no código:
 
-- `sparkforge/change/sandbox.py`: `SANDBOX_DIR`, `executar` grava
+- `sparkforge_aws/change/sandbox.py`: `SANDBOX_DIR`, `executar` grava
   `report.json` com `new` e `resolved` (cada item com `rule_id` e `subject`),
   e `inventariar` poda `.sparkforge` (só `.sparkforge/artifacts/` entra).
-- `sparkforge/change/proposal.py`: `PROPOSAL_DIR`, `montar` grava em
+- `sparkforge_aws/change/proposal.py`: `PROPOSAL_DIR`, `montar` grava em
   `PROPOSAL_DIR/<ident>` com o mesmo id e copia o relatório para
   `evidence/sandbox_report.json`; `desatualizados` recusa a proposta quando a
   árvore difere de `before/`.
-- `sparkforge/facts/scan.py::varrer_source_files` só poda subpastas; a raiz
+- `sparkforge_aws/facts/scan.py::varrer_source_files` só poda subpastas; a raiz
   passada nunca é podada.
 - `.gitignore` deste repositório ignora `.sparkforge/sandbox/` e
   `.sparkforge/proposal/`, e não ignora `.sparkforge/sdd/`. O repositório do

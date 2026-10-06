@@ -10,7 +10,7 @@
     "measures": {},
     "attrs": {
       "reason": "utilization_not_observed",
-      "detail": "Sem `glue.driver.workerUtilization` nao da para dizer se havia folga: utilizacao e o eixo da pergunta, e as outras medidas sozinhas nao a substituem. sparkforge collect cloudwatch traz glue.driver.workerUtilization, e sparkforge analyze cloudwatch o transforma em glue.metric."
+      "detail": "Sem `glue.driver.workerUtilization` nao da para dizer se havia folga: utilizacao e o eixo da pergunta, e as outras medidas sozinhas nao a substituem. sparkforge-aws collect cloudwatch traz glue.driver.workerUtilization, e sparkforge-aws analyze cloudwatch o transforma em glue.metric."
     },
     "provenance": {
       "extractor": "utilization@0.1.0",

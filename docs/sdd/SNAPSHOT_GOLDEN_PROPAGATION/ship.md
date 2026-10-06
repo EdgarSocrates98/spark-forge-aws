@@ -26,7 +26,7 @@ kinds e findings estão novamente alinhados ao comportamento observado.
 - `python -m pytest tests/test_fixtures_golden_cloudwatch_logs.py::TestGolden::test_declared_kinds_all_present tests/test_fixtures_golden_consumers.py::TestGolden::test_declared_kinds_all_present -q -p no:cacheprovider` — `35 passed`.
 - `python -m pytest tests/test_fixtures_golden_cloudwatch_logs.py tests/test_fixtures_golden_consumers.py -q -p no:cacheprovider` — `332 passed`.
 - `python -m pytest tests/test_fixtures_kind_coverage.py tests/test_verify_wheel.py -q -p no:cacheprovider --basetemp .pytest-tmp-snapshot-propagation-corpus-gate` — `116 passed`.
-- `sparkforge sdd check --repo . --feature SNAPSHOT_GOLDEN_PROPAGATION` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature SNAPSHOT_GOLDEN_PROPAGATION` — `ok: true`.
 
 ## Limites
 

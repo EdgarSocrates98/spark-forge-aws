@@ -17,7 +17,7 @@
 ## Architecture Overview
 
 ```text
- CLI  sparkforge proof            MCP  sparkforge_proof (READ_ONLY)
+ CLI  sparkforge-aws proof            MCP  sparkforge_proof (READ_ONLY)
             └──────────────┬──────────────┘
                            v
  adapters/_core.py  proof_change(findings_path, facts_path[], after_facts_path[], applied[])
@@ -27,7 +27,7 @@
    - load_catalog(), build_runtime_context()  (as mesmas chamadas de root_cause)
                            │  dados ja lidos
                            v
- sparkforge/proof/  (modulo puro; nao importa adapters nem provider)
+ sparkforge_aws/proof/  (modulo puro; nao importa adapters nem provider)
    axes.py        load_policy() le rules/catalog/proof_axes.yaml e valida a forma
    keys.py        stable_key(subject, policy) -> dict | None
    resolution.py  resolve(applied, after_findings, after_skipped, policy) -> obrigacao
@@ -45,11 +45,11 @@
 | Component | Purpose | Technology |
 |-----------|---------|------------|
 | `rules/catalog/proof_axes.yaml` | Politica versionada: fonte, medida, `improves_when`, `proxy`, `refuted_by` e `unlock` de cada um dos 23 eixos; chave estavel por tipo de subject; convencao do sinal do delta com a razao | YAML sem chave `rules:` (o loader so pega regra dessa chave) |
-| `sparkforge/proof/axes.py` | Carrega a politica por `safe_catalog_file` e recusa forma invalida | `yaml`, stdlib |
-| `sparkforge/proof/keys.py` | Chave estavel do subject | stdlib |
-| `sparkforge/proof/resolution.py` | Desfecho da resolucao | stdlib |
-| `sparkforge/proof/axis.py` | Desfecho de um eixo (funcval, bench, none) | stdlib |
-| `sparkforge/proof/prove.py` | Monta o resultado por finding aplicado, `refused`, `unresolved`, `policy` | stdlib |
+| `sparkforge_aws/proof/axes.py` | Carrega a politica por `safe_catalog_file` e recusa forma invalida | `yaml`, stdlib |
+| `sparkforge_aws/proof/keys.py` | Chave estavel do subject | stdlib |
+| `sparkforge_aws/proof/resolution.py` | Desfecho da resolucao | stdlib |
+| `sparkforge_aws/proof/axis.py` | Desfecho de um eixo (funcval, bench, none) | stdlib |
+| `sparkforge_aws/proof/prove.py` | Monta o resultado por finding aplicado, `refused`, `unresolved`, `policy` | stdlib |
 | `adapters/_core.py` | `proof_change`: le arquivos, roda o `judge` duas vezes | — |
 | `adapters/cli.py`, `adapters/tools.py` | Verbo `proof` e tool `sparkforge_proof` | argparse |
 | `agents/executors/sf-verifier.md` (+ espelhos) | Checagem 7 | — |
@@ -173,7 +173,7 @@ Reduzir bytes lidos e exatamente o que as regras de `scan.bytes_read` recomendam
 4. Uma regra de `refuted_by` do eixo nos veredictos -> `refuted`.
 5. Sinal do `<medida>_delta_pct` contra `improves_when`, pela convencao declarada -> `refuted`; a favor -> `not_refuted`.
 6. Mais de um finding em `--applied` -> passos 4 e 5 viram `inconclusive` (`attribution_shared`); 1 a 3 continuam valendo.
-7. Sem `bench.analyzed` na uniao -> `unproven` (`unlock: sparkforge benchmark --before <facts> --after <facts>`).
+7. Sem `bench.analyzed` na uniao -> `unproven` (`unlock: sparkforge-aws benchmark --before <facts> --after <facts>`).
 
 **Rationale:** a comparacao invalida vence qualquer leitura de delta; a regra que ja julga o eixo vence a convencao; e o que o benchmark nao consegue separar sai dito.
 
@@ -236,7 +236,7 @@ Reduzir bytes lidos e exatamente o que as regras de `scan.bytes_read` recomendam
 | **Date** | 2026-09-12 |
 
 **Choice:**
-- CLI `sparkforge proof --findings F --facts U [--facts ...] --after-facts A [--after-facts ...] --applied R[:symbol] [--applied ...]`, com as flags de runtime do `judge` (`--glue`, `--spark` etc.).
+- CLI `sparkforge-aws proof --findings F --facts U [--facts ...] --after-facts A [--after-facts ...] --applied R[:symbol] [--applied ...]`, com as flags de runtime do `judge` (`--glue`, `--spark` etc.).
 - Tool `sparkforge_proof`: `_READ_ONLY`, declara `findings_path`, `facts_path` e `after_facts_path` (fica fora de `SEM_CAMINHO`; a contagem de tools com caminho vai de 84 para 85; o catalogo de 90 para 91).
 - Dono `sf-verifier`, checagem 7; `parity.yaml` com "prove what an applied change did and did not break".
 - Registros: lista literal, amostra real, formas de erro, contagem de caminhos, `NOVAS_DEPOIS_DO_GOLDEN`, `manifest.json`, `parity.yaml`, executor e espelhos, surface lock, claims por ids. O conjunto de escritoras nao muda.
@@ -248,12 +248,12 @@ Reduzir bytes lidos e exatamente o que as regras de `scan.bytes_read` recomendam
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
 | 1 | `rules/catalog/proof_axes.yaml` | Create | Politica dos 23 eixos, chaves estaveis, convencao | (general) | None |
-| 2 | `sparkforge/proof/{__init__,axes,keys}.py` | Create | Carga da politica e chave estavel | @agentspec:python:python-developer | 1 |
-| 3 | `sparkforge/proof/{resolution,axis,prove}.py` | Create | Desfechos e montagem | @agentspec:python:python-developer | 2 |
+| 2 | `sparkforge_aws/proof/{__init__,axes,keys}.py` | Create | Carga da politica e chave estavel | @agentspec:python:python-developer | 1 |
+| 3 | `sparkforge_aws/proof/{resolution,axis,prove}.py` | Create | Desfechos e montagem | @agentspec:python:python-developer | 2 |
 | 4 | `tests/test_proof_policy.py` | Create | Teste do mapa (G11): 23 eixos, fontes em `EMITTED_KINDS`, regras citadas existem | @agentspec:test:test-generator | 1, 2 |
 | 5 | `tests/test_proof_outcomes.py` | Create | Unidade: resolucao (5 ramos), eixo funcval (3), eixo bench (7 passos), chave estavel, `attribution_shared` | @agentspec:test:test-generator | 3 |
-| 6 | `sparkforge/adapters/_core.py` | Modify | `proof_change` | (general) | 3 |
-| 7 | `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py` | Modify | Verbo e tool | (general) | 6 |
+| 6 | `sparkforge_aws/adapters/_core.py` | Modify | `proof_change` | (general) | 3 |
+| 7 | `sparkforge_aws/adapters/cli.py`, `sparkforge_aws/adapters/tools.py` | Modify | Verbo e tool | (general) | 6 |
 | 8 | `fixtures/proof/` + `tests/test_fixtures_golden_proof.py` | Create | Casos montados a partir de `pyspark/collect_unbounded`, `bench/*` e `funcval/*`, com `FIXTURES = ROOT / "fixtures" / "proof"` | @agentspec:test:test-generator | 6, 7 |
 | 9 | Registros de teste (`test_adapters_tools`, `test_harness_authorization`, `test_fixtures_golden_mcp_parity`) | Modify | Tool nova | (general) | 7 |
 | 10 | `parity.yaml`, `manifest.json`, `agents/executors/sf-verifier.md` + espelhos | Modify | Capacidade, chave `tools`, checagem 7 | (general) | 7 |
@@ -324,7 +324,7 @@ def bench_outcome(axis: str, spec: dict, verdicts: set[str], run_delta: dict | N
                   unresolved_measures: set[str], shared: bool) -> dict:
     base = {"kind": "axis", "axis": axis, "source": "bench", **({"proxy": spec["proxy"]} if spec.get("proxy") else {})}
     if run_delta is None:
-        return {**base, "outcome": "unproven", "unlock": "sparkforge benchmark --before <facts> --after <facts>"}
+        return {**base, "outcome": "unproven", "unlock": "sparkforge-aws benchmark --before <facts> --after <facts>"}
     if "SF-BENCH-004" in verdicts:
         return {**base, "outcome": "inconclusive", "reason": "stages_nao_casados"}
     if "SF-BENCH-001" in verdicts:

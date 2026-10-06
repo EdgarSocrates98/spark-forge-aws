@@ -33,14 +33,14 @@ from typing import Any
 import pytest
 import yaml
 
-from sparkforge.agentic.blackboard import (
+from sparkforge_aws.agentic.blackboard import (
     read_claims,
     read_decisions,
     read_objections,
     read_rebuttals,
 )
-from sparkforge.agentic.executor.debate_run import next_step, start, submit
-from sparkforge.case.store import SCHEMA_VERSION, save_case
+from sparkforge_aws.agentic.executor.debate_run import next_step, start, submit
+from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "debate"

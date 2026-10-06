@@ -3,7 +3,7 @@
 A primeira metade deste arquivo veio ANTES de qualquer schema, de proposito: e
 ela que mede o comportamento do SQLite que o schema depois tem que honrar. A
 segunda metade -- de `test_schema_cria_as_tabelas_declaradas` em diante --
-exercita `sparkforge/codeintel/db.py`, e existe aqui e nao em arquivo proprio
+exercita `sparkforge_aws/codeintel/db.py`, e existe aqui e nao em arquivo proprio
 porque as duas afirmam o MESMO contrato de pragma: separa-las deixaria a
 medicao de um lado e o codigo que depende dela do outro.
 
@@ -26,8 +26,8 @@ import sqlite3
 
 import pytest
 
-from sparkforge.codeintel.db import PRAGMAS_DE_ABERTURA as PRAGMAS_DO_MODULO
-from sparkforge.codeintel.db import (
+from sparkforge_aws.codeintel.db import PRAGMAS_DE_ABERTURA as PRAGMAS_DO_MODULO
+from sparkforge_aws.codeintel.db import (
     SCHEMA_VERSION,
     abrir,
     criar_schema,
@@ -276,7 +276,7 @@ def test_autocommit_permite_pragma_depois_da_escrita(tmp_path):
 
 
 # --------------------------------------------------------------------------
-# Daqui em diante: `sparkforge/codeintel/db.py`, o schema construido sobre as
+# Daqui em diante: `sparkforge_aws/codeintel/db.py`, o schema construido sobre as
 # medicoes acima.
 # --------------------------------------------------------------------------
 

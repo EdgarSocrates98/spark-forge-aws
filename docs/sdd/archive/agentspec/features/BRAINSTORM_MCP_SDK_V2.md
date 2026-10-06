@@ -15,7 +15,7 @@
 
 ## Initial Idea
 
-**Raw Input:** Frente de `prompt_new_evo.md`: migrar o servidor MCP do SparkForge do SDK `mcp` 1.x (o `pyproject.toml` fixa `mcp>=1.0,<2`; `sparkforge/adapters/mcp.py` usa `@server.list_tools()`/`@server.call_tool()`) para o SDK v2 / spec 2026-07-28, se existirem em fonte T1. O harness de eval agêntico e o baseline Haiku estão disponíveis para medir regressão.
+**Raw Input:** Frente de `prompt_new_evo.md`: migrar o servidor MCP do SparkForge do SDK `mcp` 1.x (o `pyproject.toml` fixa `mcp>=1.0,<2`; `sparkforge_aws/adapters/mcp.py` usa `@server.list_tools()`/`@server.call_tool()`) para o SDK v2 / spec 2026-07-28, se existirem em fonte T1. O harness de eval agêntico e o baseline Haiku estão disponíveis para medir regressão.
 
 **Context Gathered:**
 - **T1/T2 conferido.** O PyPI lista `mcp` 2.2.0 (a mais recente), 2.0.0–2.1.1 e 1.30.0; a versão instalada localmente é a 1.29.0. O wheel 2.2.0 baixado mostra:
@@ -30,14 +30,14 @@
 
   O servidor 2.x não importa `jsonschema` em lugar nenhum (só `client/session.py` importa), e `on_call_tool` devolve um `CallToolResult | InputRequiredResult` pronto. Migrar só a API manteria as 86 tools funcionando e perderia as duas validações sem nenhum aviso.
 - **O que não muda:** `StreamableHTTPSessionManager(app, json_response, stateless)`, `.run()` e `.handle_request()` existem no 2.x com as mesmas assinaturas. `build_http_app` conserva a forma.
-- O adapter nunca validou nada por conta própria: `sparkforge/adapters/` não tem `jsonschema`. A dependência `jsonschema>=4.0` já está no núcleo do `pyproject.toml`.
-- A docstring do topo de `sparkforge/adapters/mcp.py` já registra por que o pin `<2` existe: o 2.x quebraria o servidor no import.
+- O adapter nunca validou nada por conta própria: `sparkforge_aws/adapters/` não tem `jsonschema`. A dependência `jsonschema>=4.0` já está no núcleo do `pyproject.toml`.
+- A docstring do topo de `sparkforge_aws/adapters/mcp.py` já registra por que o pin `<2` existe: o 2.x quebraria o servidor no import.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/adapters/mcp.py` + novo `sparkforge/adapters/mcp_envelope.py`; `scripts/` para o snapshot; `fixtures/mcp_parity/` para o golden | O runtime continua sem importar o SDK no topo do módulo |
+| Likely Location | `sparkforge_aws/adapters/mcp.py` + novo `sparkforge_aws/adapters/mcp_envelope.py`; `scripts/` para o snapshot; `fixtures/mcp_parity/` para o golden | O runtime continua sem importar o SDK no topo do módulo |
 | Relevant KB Domains | MCP (servidor, transportes), testing (golden/snapshot), Python packaging (extras) | Padrões de golden já usados em `fixtures/` |
 | IaC Patterns | N/A | Sem infraestrutura |
 
@@ -61,12 +61,12 @@
 | Input files | `fixtures/` (casos por extrator) | 1 por família de tool | Entradas offline para `tools/call` |
 | Output examples | `fixtures/mcp_parity/` (a criar, sob o SDK 1.29) | `tools/list` × 2 transportes + amostra de `tools/call` | Golden congelado |
 | Ground truth | `evals/agentic/fase0/baselines/2026-09-11-haiku-4-5/r{1,2,3}.json` | 3 execuções × 13 perguntas | Lado "antes" do `compare` |
-| Related code | `sparkforge/adapters/mcp.py`, `sparkforge/adapters/tools.py`, `tests/test_adapters_mcp.py` | 3 | `TOOLS` e schemas escritos à mão continuam como fonte da verdade |
+| Related code | `sparkforge_aws/adapters/mcp.py`, `sparkforge_aws/adapters/tools.py`, `tests/test_adapters_mcp.py` | 3 | `TOOLS` e schemas escritos à mão continuam como fonte da verdade |
 
 **How samples will be used:**
 
 - O golden de `tools/list` e `tools/call` é gerado **uma vez** sob o 1.x e passa a ser a referência do teste sob o 2.x.
-- O baseline Haiku é o lado de referência de `python -m sparkforge.evals compare`.
+- O baseline Haiku é o lado de referência de `python -m sparkforge_aws.evals compare`.
 
 ---
 
@@ -74,7 +74,7 @@
 
 ### Approach A: `Server` de baixo nível do 2.x + garantias explícitas no adapter ⭐ Recommended
 
-**Description:** `Server("sparkforge", version=..., description=..., instructions=..., cache_hints=..., on_list_tools=_list, on_call_tool=_call)`. O adapter passa a fazer ele mesmo, em funções puras de `mcp_envelope.py`:
+**Description:** `Server("sparkforge-aws", version=..., description=..., instructions=..., cache_hints=..., on_list_tools=_list, on_call_tool=_call)`. O adapter passa a fazer ele mesmo, em funções puras de `mcp_envelope.py`:
 - a validação de entrada;
 - a validação de saída;
 - o envelope `CallToolResult(structuredContent=result, content=[TextContent(json.dumps(result, indent=2))])`.
@@ -190,7 +190,7 @@ O servidor MCP está preso ao SDK 1.x (`mcp<2`) porque o 2.x removeu os decorado
 - [ ] `check_surface_lock.py --update` com o crescimento declarado no commit; os gates de lastro, de status e de evals verdes.
 
 ### Constraints Identified
-- Regra 23: nada de provider nem subprocess em `sparkforge/`; o eval roda fora do pacote.
+- Regra 23: nada de provider nem subprocess em `sparkforge_aws/`; o eval roda fora do pacote.
 - Regra 26: o `instructions` e os metadados movem a superfície e têm de declarar quanto.
 - Regra 30: o eval só afirma "não regrediu"; nenhum ganho.
 - SPEC 71: `sparkforge_code_read` continua fora do catálogo HTTP, e a porta de `tools/call` continua recusando nome fora do catálogo.

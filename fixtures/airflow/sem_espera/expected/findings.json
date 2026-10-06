@@ -39,7 +39,7 @@
       "Esperar o job custa tempo de execução da task; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
     ],
     "validation": [
-      "`sparkforge analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-001 para a task.",
+      "`sparkforge-aws analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-001 para a task.",
       "EIXO DE RESULTADO — numa execução de teste, a tarefa seguinte lê a saída completa do job: a contagem de linhas que ela lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun.",
       "Uma execução de teste em que o job falha marca a task como `failed` e não segue para a tarefa a jusante."
     ],

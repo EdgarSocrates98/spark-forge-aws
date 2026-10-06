@@ -9,7 +9,7 @@ upstream:
   sha256: "216c9db9f4342aeb4b8997ecd00b66e31d0155db72a73907d90f3f96f634f09a"
 files:
   - {path: tests/test_lakeformation_prompt_acceptance.py, action: create, reason: "Testes acceptance para os requisitos ainda não cobertos do prompt, sem chamada AWS."}
-  - {path: sparkforge/lakeformation/architecture.py, action: modify, reason: "Estender migration, access graph, preflight, observabilidade e performance sobre o núcleo offline existente."}
+  - {path: sparkforge_aws/lakeformation/architecture.py, action: modify, reason: "Estender migration, access graph, preflight, observabilidade e performance sobre o núcleo offline existente."}
   - {path: knowledge/lakeformation/operational-closure.md, action: modify, reason: "Documentar transições, CloudTrail consumidor/produtor, Iceberg path e limites de medição."}
   - {path: docs/guia/usos/lake-formation-operacional.md, action: modify, reason: "Atualizar runbook e explicar como ler as novas seções do review."}
   - {path: skills/lakeformation-architecture/SKILL.md, action: modify, reason: "Ensinar progressive disclosure, decisão de migração e observabilidade sem duplicar o código."}
@@ -61,8 +61,8 @@ quando o artefato correspondente não foi coletado.
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category lakeformation-fgac` e `--category cross-account`;
-- `sparkforge knowledge path --file knowledge/lakeformation/capability-matrix.yaml`;
-- `sparkforge knowledge path --file knowledge/lakeformation/operational-closure.md`;
+- `sparkforge-aws rules lookup --category lakeformation-fgac` e `--category cross-account`;
+- `sparkforge-aws knowledge path --file knowledge/lakeformation/capability-matrix.yaml`;
+- `sparkforge-aws knowledge path --file knowledge/lakeformation/operational-closure.md`;
 - fontes AWS Glue/Lake Formation/EMR e Apache Iceberg já presentes nos locks do
   repositório, com runtime e data de verificação declarados.

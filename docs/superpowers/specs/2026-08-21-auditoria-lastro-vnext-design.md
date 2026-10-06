@@ -17,8 +17,8 @@ fixou o padrão de lock file de fontes.
 ## 1. Contexto: o relatório afirma, o repositório não prova
 
 `a5b9e96` acrescentou 140 arquivos, 5731 linhas. Parte é código real — os
-compiladores de plataforma em `sparkforge/adapters/` somam 7813 linhas e têm gate de
-paridade que roda. Parte é esqueleto: `sparkforge/migration` tem 150 linhas,
+compiladores de plataforma em `sparkforge_aws/adapters/` somam 7813 linhas e têm gate de
+paridade que roda. Parte é esqueleto: `sparkforge_aws/migration` tem 150 linhas,
 `lakeformation` 218, `iceberg` 179, `errors` 77, `databases` 127, `streaming` 116,
 `terraform` 144. Cada um desses módulos ganhou um teste, entre 17 e 58 linhas.
 
@@ -60,7 +60,7 @@ capacidade com artefato entra; julgamento sem mecanismo não entra disfarçado d
 - **Auditar `README.md`, `AGENTS.md`, `GUIA_DE_USO.md`.** Medido: não contêm alegação
   vNext. Auditar o que não está sob suspeita gasta e não decide nada.
 - **Auditar o comportamento dos módulos de domínio.** Saber se
-  `sparkforge/lakeformation` faz o que `ARCHITECTURE.md` diz é auditoria funcional,
+  `sparkforge_aws/lakeformation` faz o que `ARCHITECTURE.md` diz é auditoria funcional,
   outro projeto. Aqui a pergunta é se a afirmação tem artefato apontado, não se o
   artefato está correto.
 - **Cobrir as 132 seções do prompt mestre da vNext** (documento de entrada, local, não versionado neste repositório).** Matriz de conformidade é outro projeto,
@@ -87,7 +87,7 @@ Três espécies de prova:
 
 E duas restrições que são a razão de existir do tipo:
 
-- `artifact` é **inválido** para `type: number`. Apontar `sparkforge/economy/cache.py`
+- `artifact` é **inválido** para `type: number`. Apontar `sparkforge_aws/economy/cache.py`
   não prova `94,5% de cache hit`. Sem essa restrição o manifesto aceita gesto no lugar
   de prova, que é exatamente o defeito que ele existe para pegar.
 - `source` é o **único** aceito para `type: external_fact`. Versão de Glue e feature de

@@ -20,7 +20,7 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_platform_ecosystem.py::test_ecosystem_preserves_unresolved_and_optional_radar"}
   - id: AC3
     statement: "CLI e MCP retornam o mesmo inventário estruturado."
-    verified_by: {kind: command, ref: "python -m sparkforge.adapters.cli analyze platform-ecosystem --path fixtures/platform/ecosystem.yaml"}
+    verified_by: {kind: command, ref: "python -m sparkforge_aws.adapters.cli analyze platform-ecosystem --path fixtures/platform/ecosystem.yaml"}
 success:
   - id: SC1
     metric: "Todos os sistemas possuem category, kind, owner e source_ref ou unresolved correspondente"

@@ -20,7 +20,7 @@ Extrai facts da definicao de uma state machine do AWS Step Functions em Amazon S
 
 ## Na CLI
 
-[`sparkforge analyze step-functions`](../cli/analyze.md)
+[`sparkforge-aws analyze step-functions`](../cli/analyze.md)
 
 ## Capacidade
 

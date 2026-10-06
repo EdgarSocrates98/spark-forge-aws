@@ -38,10 +38,10 @@ from typing import Any
 
 import yaml
 
-from sparkforge.adapters._core import _facts_from_dicts
-from sparkforge.findings.models import Fact
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters._core import _facts_from_dicts
+from sparkforge_aws.findings.models import Fact
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FATORES = (0.9, 1.1)

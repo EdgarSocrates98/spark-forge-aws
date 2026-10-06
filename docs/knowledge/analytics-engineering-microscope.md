@@ -2,7 +2,7 @@
 
 ## dbt
 
-Use `sparkforge analyze dbt-artifacts --path <project-or-manifest>` after dbt
+Use `sparkforge-aws analyze dbt-artifacts --path <project-or-manifest>` after dbt
 has produced `manifest.json`, `catalog.json` and `run_results.json`. The output
 normalizes models, sources, tests, exposures, metrics and semantic models,
 preserves `depends_on.nodes`, selected materialization settings, columns and
@@ -14,7 +14,7 @@ source guessed from SQL.
 
 ## DuckDB microscope
 
-Use `sparkforge analyze duckdb-microscope --path <bundle.yaml>` for a versioned
+Use `sparkforge-aws analyze duckdb-microscope --path <bundle.yaml>` for a versioned
 read-only bundle. It can carry table/view/Parquet/Iceberg objects, columns,
 statistics, manifests, snapshots, EXPLAIN/SELECT observations and declared SQL
 equivalence comparisons. Mutating SQL is refused. The analyzer does not install

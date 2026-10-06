@@ -23,14 +23,14 @@ Você vai querer perguntar estas coisas. A resposta hoje é trabalho manual.
   tabela. O diagnóstico devolve o `format_version` corrente; prontidão para v3 não faz parte
   do relatório.
 - **"Algum consumidor desta tabela quebra se eu migrar?"** *Respondida em parte pela fase H3.*
-  O inventário de consumidores emite `env.consumer`, e `sparkforge iceberg assess-upgrade`
+  O inventário de consumidores emite `env.consumer`, e `sparkforge-aws iceberg assess-upgrade`
   cruza esse inventário contra a matriz de suporte antes de recomendar um upgrade de formato;
   o eixo `consumidor` do assessment bloqueia quando um consumidor declarado não suporta o
   formato-alvo. **O que continua sem resposta** é o cruzamento para as *outras* features de
   Iceberg: a armadilha judicável segue sendo a de formato v3 contra Athena (`SF-ENV-002`).
 - **"Minhas dependências Python aguentam?"** O observador de dependência declarada existe, e
   há regra sobre um piso específico. *A auditoria como comando chegou na fase H4*:
-  `sparkforge glue dependency-audit --glue <versão> <path>`. **O que continua sem existir** é
+  `sparkforge-aws glue dependency-audit --glue <versão> <path>`. **O que continua sem existir** é
   julgamento de **wheel binária, extensão nativa ou risco de ABI** — o comando audita o que
   está declarado, não o que está compilado dentro do artefato.
 - **"Este JAR carrega no runtime novo?"** Existe a regra que acusa o sufixo de Scala no nome

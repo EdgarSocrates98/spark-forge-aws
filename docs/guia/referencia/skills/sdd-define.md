@@ -7,20 +7,20 @@ Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fi
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-define/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge sdd check', 'sparkforge sdd status', 'sparkforge funcval compare']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd status', 'sparkforge-aws funcval compare']} |
 
 ## Procedimento (texto integral)
 
 ## SDD Define
 
 Fase 1 do SDD próprio. Fixa **o que** a feature entrega e **como se prova** que
-entregou, antes de qualquer arquivo ser desenhado. O `sparkforge sdd check`
+entregou, antes de qualquer arquivo ser desenhado. O `sparkforge-aws sdd check`
 confere que cada campo tem a forma certa e aponta para algo real; ele não julga
 se o requisito é bom. Isso é do operador.
 
 ### Antes de começar
 
-1. `sparkforge sdd status --repo .` e, se existir, `docs/sdd/<FEATURE>/explore.md`
+1. `sparkforge-aws sdd status --repo .` e, se existir, `docs/sdd/<FEATURE>/explore.md`
    com `status: ready`. A abordagem escolhida lá é a premissa daqui.
 2. Copie `docs/sdd/templates/define.md` para `docs/sdd/<FEATURE>/define.md` e
    ponha `status: draft`.
@@ -42,7 +42,7 @@ um `verified_by`:
 |---|---|---|
 | `test` | node id do pytest, `tests/arquivo.py::test_nome` | antes do build, teste ausente é lacuna `test_not_written`; com o build `ready` ou `done`, é recusa `verified_by_dangling` |
 | `command` | o comando cujo exit 0 prova o critério | registra; quem roda é o ship |
-| `funcval` | o arquivo de `sparkforge funcval compare --out` | lacuna `funcval_not_run` até existir; sem `funcval.check_delta`, recusa `funcval_not_comparison`; cada `funcval.unresolved`, lacuna `funcval_blind_spot` |
+| `funcval` | o arquivo de `sparkforge-aws funcval compare --out` | lacuna `funcval_not_run` até existir; sem `funcval.check_delta`, recusa `funcval_not_comparison`; cada `funcval.unresolved`, lacuna `funcval_blind_spot` |
 | `fact` | `arquivo.json#fact_id` ou `arquivo.json#kind:<kind>` | lacuna `fact_not_collected` até a coleta |
 
 Prefira `test`. Critério que nada verifica é desejo, e não entra.
@@ -64,7 +64,7 @@ provider só com transcript do host; dólar só com `cost_basis` nomeado.
 **`unknowns`** — `id` `U<n>`, os critérios que a lacuna `blocks`, e o `unlock`:
 a leitura ou medida que a resolve. Lacuna com nome vale mais que suposição.
 
-**`change_kinds`** — as chaves de `sparkforge/sdd/change_kinds.yaml` que a
+**`change_kinds`** — as chaves de `sparkforge_aws/sdd/change_kinds.yaml` que a
 mudança toca. É delas que o ship deriva os gates. Guia rápido:
 
 | a mudança... | chave |
@@ -88,8 +88,8 @@ Critério sobre Glue, Spark ou Iceberg cita a fonte, com a versão:
 ### O laço
 
 O de `docs/sdd/README.md#o-laço-de-cada-fase`. Aqui: com `explore.md`
-presente, `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md`; sempre
-`sparkforge sdd check --repo . --feature <F>`. `status: ready` exige zero
+presente, `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/define.md`; sempre
+`sparkforge-aws sdd check --repo . --feature <F>`. `status: ready` exige zero
 recusa **e** a leitura do operador: mostre o define inteiro e espere o "pode
 seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
 `sdd-design`.
@@ -99,14 +99,14 @@ seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
 - **A spec mora em `.sparkforge/sdd/<F>/`** no repositório do operador, nunca
   em `docs/sdd/`: a cópia do `change sandbox` poda `.sparkforge`, e escrever
   fora dele deixa o sandbox desatualizado para `change propose`. Todo verbo do
-  SDD leva a raiz: `sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+  SDD leva a raiz: `sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>`.
   Não ponha `.sparkforge/sdd/` no `.gitignore`.
-- Abra o case antes: `sparkforge case open --repo . --case-id <id> --now <ISO 8601>`,
+- Abra o case antes: `sparkforge-aws case open --repo . --case-id <id> --now <ISO 8601>`,
   e copie o `case_id` para o define (ele fica em `.sparkforge/case.yaml`). Sem
   ele, ou com outro, sai `case_missing` — até o ship ficar `done`; dali em
   diante o case citado é histórico.
 - Preservar a semântica é critério, não detalhe: um `AC` com `kind: funcval`,
-  planejado por `sparkforge funcval plan` com a chave de negócio **declarada**
+  planejado por `sparkforge-aws funcval plan` com a chave de negócio **declarada**
   (o caminho inteiro: `docs/sdd/README.md#caminho-da-mudança-do-operador`).
 - O aceite do operador raramente é pytest: `{kind: funcval, ref: <arquivo do
   compare --out>}` para o resultado e `{kind: fact, ref: <facts.json>#kind:<kind>}`
@@ -114,27 +114,27 @@ seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
   hash de conteúdo e só existe depois da coleta; `#<fact_id>` continua valendo.
   Grave os dois arquivos dentro de `.sparkforge/sdd/<F>/`. O gate confere a
   forma; o veredito é do `judge`.
-- Métrica de desempenho vem de `sparkforge benchmark` entre dois runs medidos;
+- Métrica de desempenho vem de `sparkforge-aws benchmark` entre dois runs medidos;
   custo, de `dpu_seconds` medido. Economia estimada não é métrica.
 
 ### Quando NÃO usar
 
 - A ideia ainda está aberta, com mais de uma abordagem viva: `sdd-explore`.
 - Para decidir arquivos e arquitetura: `sdd-design`.
-- Para escolher valor de configuração: `sparkforge tune`, com a medida.
+- Para escolher valor de configuração: `sparkforge-aws tune`, com a medida.
 - Para reescrever a hipótese depois do resultado: a hipótese se fecha no ship.
 
 ### Referência rápida
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| estado das features | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
-| carimbar o upstream | `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md` | `sparkforge_sdd_stamp` |
-| conferir | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| regra citada | `sparkforge rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
-| documento citado | `sparkforge knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| case (operator) | `sparkforge case open --repo . --case-id <id> --now <ISO>` | `sparkforge_case_open` |
-| semântica (operator) | `sparkforge funcval plan --facts <f> --key <k> --out <p>` | `sparkforge_funcval_plan` |
+| estado das features | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
+| carimbar o upstream | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/define.md` | `sparkforge_sdd_stamp` |
+| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
+| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
+| case (operator) | `sparkforge-aws case open --repo . --case-id <id> --now <ISO>` | `sparkforge_case_open` |
+| semântica (operator) | `sparkforge-aws funcval plan --facts <f> --key <k> --out <p>` | `sparkforge_funcval_plan` |
 
 Recusas desta fase: `schema_invalid`, `success_without_source`, `case_missing`,
 `funcval_not_comparison`, `upstream_missing`, `upstream_stale`. Template: `docs/sdd/templates/define.md`.
@@ -157,7 +157,7 @@ Esta skill trata **critérios de aceite, hipótese e métricas do SDD**. Contrat
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge sdd check`, `sparkforge sdd status`, `sparkforge funcval compare`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws sdd status`, `sparkforge-aws funcval compare`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

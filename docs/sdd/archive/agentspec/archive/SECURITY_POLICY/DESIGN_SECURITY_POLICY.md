@@ -19,7 +19,7 @@
 ```text
                      .sparkforge/policy.yaml  (schema, commitado)
                                  |
-            sparkforge/policy/load.py: carregar() -> Politica | PolicyError
+            sparkforge_aws/policy/load.py: carregar() -> Politica | PolicyError
                  |                         |                          |
                  v                         v                          v
    hook.py (PreToolUse,             adapters/mcp.py main()      settings.py
@@ -28,7 +28,7 @@
    decidir_bash, decidir_caminho    -> call_tool(policy=...)        permissions.ask
    deny: exit 2 + motivo            -> authorize(): denied,       (Bash(...), Edit(...),
    senao: exit 0 sem saida             classe/aprovacao,           Write(...),
-   (importa so policy/ + yaml)         raizes [repo+extra_roots])  mcp__sparkforge__<tool>)
+   (importa so policy/ + yaml)         raizes [repo+extra_roots])  mcp__sparkforge-aws__<tool>)
                                    policy invalida: toda chamada
                                    recusada (POLICY_INVALID)
 
@@ -42,12 +42,12 @@
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/policy/schema.py` | Schema da policy (dict JSON Schema) e validacao | `jsonschema` (dependencia ja declarada) |
-| `sparkforge/policy/load.py` | `carregar(raiz)`: acha `.sparkforge/policy.yaml`, valida, devolve `Politica` ou levanta `PolicyError`; `None` sem arquivo | `yaml` |
-| `sparkforge/policy/decide.py` | Puro: `dividir_comando`, `decidir_bash`, `decidir_caminho`, `decidir_tool` -> `Decisao(decision, rule, reason)` | `fnmatch`, `re` |
-| `sparkforge/policy/hook.py` | `python -m sparkforge.policy.hook`: le o stdin do Claude Code, decide, sai 2 com motivo em `deny` | stdlib + os dois acima |
-| `sparkforge/policy/settings.py` | Gera `permissions.ask` a partir das regras `ask`; `--check` compara | `json` |
-| `sparkforge/policy/mcp.py` | `para_call_policy(politica, raiz)`: `CallPolicy` com allowlist = catalogo menos `denied`, aprovacoes da policy, raizes | importa `adapters.tools` (so no servidor, nunca no hook) |
+| `sparkforge_aws/policy/schema.py` | Schema da policy (dict JSON Schema) e validacao | `jsonschema` (dependencia ja declarada) |
+| `sparkforge_aws/policy/load.py` | `carregar(raiz)`: acha `.sparkforge/policy.yaml`, valida, devolve `Politica` ou levanta `PolicyError`; `None` sem arquivo | `yaml` |
+| `sparkforge_aws/policy/decide.py` | Puro: `dividir_comando`, `decidir_bash`, `decidir_caminho`, `decidir_tool` -> `Decisao(decision, rule, reason)` | `fnmatch`, `re` |
+| `sparkforge_aws/policy/hook.py` | `python -m sparkforge_aws.policy.hook`: le o stdin do Claude Code, decide, sai 2 com motivo em `deny` | stdlib + os dois acima |
+| `sparkforge_aws/policy/settings.py` | Gera `permissions.ask` a partir das regras `ask`; `--check` compara | `json` |
+| `sparkforge_aws/policy/mcp.py` | `para_call_policy(politica, raiz)`: `CallPolicy` com allowlist = catalogo menos `denied`, aprovacoes da policy, raizes | importa `adapters.tools` (so no servidor, nunca no hook) |
 | `agents/autonomy.py` | `root` passa a aceitar uma sequencia de raizes | mudanca local em `_argumento_fora_da_raiz` |
 | `adapters/mcp.py` | `build_server(transport, policy=None)`; `main()` carrega a policy | `functools.partial(call_tool, policy=...)` |
 | `adapters/{_core,cli,tools}.py` | Verbos `policy check|explain|sync-settings`, tool `sparkforge_policy_explain` | padrao dos verbos existentes |
@@ -157,7 +157,7 @@ paths:
   - {rule: "**/*.tf", decision: ask, reason: "muda infraestrutura declarada"}
 ```
 
-**Rationale:** `authorize()` exige aprovacao para LOCAL_MUTATION, CLOUD_READ, CLOUD_MUTATION e DESTRUCTIVE; pre-aprovar as tres que o catalogo usa mantem o MCP de hoje (AT-012). DESTRUCTIVE fica sem aprovacao de proposito (classe sem membro hoje). `ask` de CLOUD_MUTATION vira `mcp__sparkforge__<tool>` em `permissions.ask`, e o Claude Code pergunta.
+**Rationale:** `authorize()` exige aprovacao para LOCAL_MUTATION, CLOUD_READ, CLOUD_MUTATION e DESTRUCTIVE; pre-aprovar as tres que o catalogo usa mantem o MCP de hoje (AT-012). DESTRUCTIVE fica sem aprovacao de proposito (classe sem membro hoje). `ask` de CLOUD_MUTATION vira `mcp__sparkforge-aws__<tool>` em `permissions.ask`, e o Claude Code pergunta.
 
 ---
 
@@ -165,14 +165,14 @@ paths:
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/policy/__init__.py`, `schema.py`, `load.py` | Create | Schema, carga, `Politica`, `PolicyError` | @python-developer | None |
-| 2 | `sparkforge/policy/decide.py` | Create | Decisao pura e quebra de comando | @python-developer | 1 |
-| 3 | `sparkforge/policy/hook.py` | Create | Entrada do `PreToolUse` | @python-developer | 1, 2 |
-| 4 | `sparkforge/policy/settings.py` | Create | Geracao e conferencia de `permissions.ask` | @python-developer | 1 |
-| 5 | `sparkforge/policy/mcp.py` | Create | `para_call_policy` | @python-developer | 1 |
-| 6 | `sparkforge/agents/autonomy.py` | Modify | Varias raizes | @python-developer | None |
-| 7 | `sparkforge/adapters/mcp.py` | Modify | `build_server(policy=)`, carga no `main()`, `POLICY_INVALID` | @python-developer | 5 |
-| 8 | `sparkforge/adapters/{_core,cli,tools}.py` | Modify | Verbos e tool `sparkforge_policy_explain` | @python-developer | 2, 4 |
+| 1 | `sparkforge_aws/policy/__init__.py`, `schema.py`, `load.py` | Create | Schema, carga, `Politica`, `PolicyError` | @python-developer | None |
+| 2 | `sparkforge_aws/policy/decide.py` | Create | Decisao pura e quebra de comando | @python-developer | 1 |
+| 3 | `sparkforge_aws/policy/hook.py` | Create | Entrada do `PreToolUse` | @python-developer | 1, 2 |
+| 4 | `sparkforge_aws/policy/settings.py` | Create | Geracao e conferencia de `permissions.ask` | @python-developer | 1 |
+| 5 | `sparkforge_aws/policy/mcp.py` | Create | `para_call_policy` | @python-developer | 1 |
+| 6 | `sparkforge_aws/agents/autonomy.py` | Modify | Varias raizes | @python-developer | None |
+| 7 | `sparkforge_aws/adapters/mcp.py` | Modify | `build_server(policy=)`, carga no `main()`, `POLICY_INVALID` | @python-developer | 5 |
+| 8 | `sparkforge_aws/adapters/{_core,cli,tools}.py` | Modify | Verbos e tool `sparkforge_policy_explain` | @python-developer | 2, 4 |
 | 9 | `.sparkforge/policy.yaml` | Create | Policy padrao | (general) | 1 |
 | 10 | `.claude/settings.json` | Modify | Hook `PreToolUse` e `permissions.ask` gerado | (general) | 3, 4, 9 |
 | 11 | `fixtures/policy/<caso>/` + `tests/test_fixtures_golden_policy.py` | Create | Stdin do hook, policy e decisao esperada; hook por subprocess | @test-generator | 3 |
@@ -240,15 +240,15 @@ from pathlib import Path
 
 
 def main() -> int:
-    from sparkforge.policy.decide import DENY, decidir_entrada
-    from sparkforge.policy.load import PolicyError, carregar
+    from sparkforge_aws.policy.decide import DENY, decidir_entrada
+    from sparkforge_aws.policy.load import PolicyError, carregar
 
     entrada = json.load(sys.stdin)
     raiz = Path(os.environ.get("CLAUDE_PROJECT_DIR") or entrada.get("cwd") or ".")
     try:
         politica = carregar(raiz)
     except PolicyError as exc:
-        print(f"sparkforge policy invalida: {exc}", file=sys.stderr)
+        print(f"sparkforge-aws policy invalida: {exc}", file=sys.stderr)
         return 2
     if politica is None:
         return 0
@@ -265,8 +265,8 @@ def main() -> int:
 {
   "matcher": "Bash|Edit|Write",
   "hooks": [
-    {"type": "command", "command": "python -m sparkforge.policy.hook", "timeout": 10,
-     "statusMessage": "sparkforge: conferindo a policy..."}
+    {"type": "command", "command": "python -m sparkforge_aws.policy.hook", "timeout": 10,
+     "statusMessage": "sparkforge-aws: conferindo a policy..."}
   ]
 }
 ```
@@ -306,7 +306,7 @@ MCP: main() -> carregar -> para_call_policy -> build_server(policy) -> call_tool
 | Test Type | Scope | Files | Tools | Coverage Goal |
 |-----------|-------|-------|-------|---------------|
 | Unit | Quebra de comando, casamento, schema, geracao de `ask`, varias raizes | `tests/test_policy_decide.py` | pytest | AT-001 a AT-003, AT-009 |
-| Golden (subprocess) | `python -m sparkforge.policy.hook` com stdin de fixture e `CLAUDE_PROJECT_DIR` no caso | `tests/test_fixtures_golden_policy.py` | pytest | AT-004 a AT-008, AT-013 |
+| Golden (subprocess) | `python -m sparkforge_aws.policy.hook` com stdin de fixture e `CLAUDE_PROJECT_DIR` no caso | `tests/test_fixtures_golden_policy.py` | pytest | AT-004 a AT-008, AT-013 |
 | Integracao MCP | `build_server(policy)`/`call_tool(policy)` com policy padrao, deny, invalida, caminho fora | `tests/test_policy_mcp.py` | pytest | AT-010 a AT-012 |
 | Registros | Tool nova, hook na lista fechada, settings em dia | suites existentes | pytest | SC7 |
 
@@ -317,7 +317,7 @@ MCP: main() -> carregar -> para_call_policy -> build_server(policy) -> call_tool
 | Error Type | Handling Strategy | Retry? |
 |------------|-------------------|--------|
 | Policy invalida (schema/YAML) | Hook exit 2 com a mensagem; servidor `POLICY_INVALID` por chamada; `policy check` exit 2 | No |
-| `sparkforge` nao importavel no Python do hook | `ModuleNotFoundError` -> exit 1 (nao-bloqueante no Claude Code), stderr aparece | No |
+| `sparkforge-aws` nao importavel no Python do hook | `ModuleNotFoundError` -> exit 1 (nao-bloqueante no Claude Code), stderr aparece | No |
 | stdin sem JSON | exit 2 (nao ha como decidir) | No |
 | `file_path` fora da raiz | decidido pelo caminho absoluto contra as regras; nunca lido | No |
 
@@ -329,7 +329,7 @@ MCP: main() -> carregar -> para_call_policy -> build_server(policy) -> call_tool
 |------------|------|---------|-------------|
 | `tools.denied` | list | `[]` | Tools recusadas no servidor |
 | `tools.approvals` | list de classes | `[]` sem arquivo; padrao commitado: 3 classes | Classes pre-aprovadas |
-| `tools.ask.classes` / `tools.ask.names` | list | `[]` | Viram `mcp__sparkforge__<tool>` em `permissions.ask` |
+| `tools.ask.classes` / `tools.ask.names` | list | `[]` | Viram `mcp__sparkforge-aws__<tool>` em `permissions.ask` |
 | `extra_roots` | list | `[]` | Raizes alem do repositorio |
 | `bash[]`, `paths[]` | regras | padrao commitado | `rule`, `decision`, `reason` |
 

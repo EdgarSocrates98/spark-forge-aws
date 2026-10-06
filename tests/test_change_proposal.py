@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters._core import AdapterError
-from sparkforge.change import apply_patches, parse_unified_diff
-from sparkforge.change.proposal import classificar
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters._core import AdapterError
+from sparkforge_aws.change import apply_patches, parse_unified_diff
+from sparkforge_aws.change.proposal import classificar
 
 ROOT = Path(__file__).resolve().parents[1]
 CASO = ROOT / "fixtures" / "change" / "plano_pelo_sandbox" / "input"
@@ -227,7 +227,7 @@ class TestSemGit:
     def test_o_modulo_nao_importa_subprocess_nem_chama_o_sistema(self):
         """O pacote monta e o host executa: nenhum caminho do modulo roda comando."""
         arvore = ast.parse(
-            (ROOT / "sparkforge" / "change" / "proposal.py").read_text(encoding="utf-8")
+            (ROOT / "sparkforge_aws" / "change" / "proposal.py").read_text(encoding="utf-8")
         )
         importados = set()
         for no in ast.walk(arvore):

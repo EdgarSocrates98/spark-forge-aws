@@ -20,7 +20,7 @@ Extrai facts determinísticos de dumps JSON/JSONL salvos de AWS Glue Schema Regi
 
 ## Na CLI
 
-[`sparkforge analyze schema-registry`](../cli/analyze.md)
+[`sparkforge-aws analyze schema-registry`](../cli/analyze.md)
 
 ## Capacidade
 

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 
 def _rules() -> list[dict]:

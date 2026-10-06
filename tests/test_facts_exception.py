@@ -6,8 +6,8 @@ O artefato nao falta: `attrs.reason` E a excecao com a pilha, ja redigida por
 
 from __future__ import annotations
 
-from sparkforge.facts.exception import build_exceptions
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.exception import build_exceptions
+from sparkforge_aws.findings.models import Fact
 
 _PILHA = (
     "org.apache.spark.SparkException: Job aborted due to stage failure\n"

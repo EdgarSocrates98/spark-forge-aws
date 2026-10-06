@@ -9,7 +9,7 @@
       "basis": "",
       "evidence": [],
       "missing": "history_absent",
-      "collect_command": "sparkforge collect glue-job-runs --job-name <job>; depois, para cada run anterior: sparkforge analyze sql-metrics --path <event-log-do-run>.jsonl --out <dir-de-historico>/<run>.json"
+      "collect_command": "sparkforge-aws collect glue-job-runs --job-name <job>; depois, para cada run anterior: sparkforge-aws analyze sql-metrics --path <event-log-do-run>.jsonl --out <dir-de-historico>/<run>.json"
     },
     "file_pressure": {
       "value": "medium",
@@ -25,7 +25,7 @@
       "basis": "",
       "evidence": [],
       "missing": "spark.stage.shuffle",
-      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+      "collect_command": "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>"
     },
     "skew_risk": {
       "value": "unknown",
@@ -33,7 +33,7 @@
       "basis": "",
       "evidence": [],
       "missing": "spark.stage.task_duration",
-      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+      "collect_command": "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>"
     },
     "memory_pressure": {
       "value": "unknown",
@@ -41,7 +41,7 @@
       "basis": "",
       "evidence": [],
       "missing": "spark.stage.spill",
-      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+      "collect_command": "sparkforge-aws analyze event-log --path <event-log.jsonl> --out <facts.json>"
     },
     "join_intensity": {
       "value": "unknown",
@@ -49,7 +49,7 @@
       "basis": "",
       "evidence": [],
       "missing": "plan.join",
-      "collect_command": "sparkforge analyze plan --path <explain.txt> --out <facts.json>"
+      "collect_command": "sparkforge-aws analyze plan --path <explain.txt> --out <facts.json>"
     },
     "sla_class": {
       "value": "critical",

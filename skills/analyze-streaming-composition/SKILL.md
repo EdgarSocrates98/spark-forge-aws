@@ -13,8 +13,8 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze streaming-composition
-  - sparkforge judge
+  - sparkforge-aws analyze streaming-composition
+  - sparkforge-aws judge
 subagent: true
 ---
 
@@ -28,9 +28,9 @@ ou Iceberg e não substitui a extração dos artefatos.
 1. Extraia os lados separadamente e grave os Facts:
 
 ```bash
-sparkforge analyze streaming --path progress.jsonl --artifact progress --out progress.facts.json
-sparkforge analyze iceberg --path iceberg.json --out iceberg.facts.json
-sparkforge analyze transport --path kafka.json --artifact kafka --out transport.facts.json
+sparkforge-aws analyze streaming --path progress.jsonl --artifact progress --out progress.facts.json
+sparkforge-aws analyze iceberg --path iceberg.json --out iceberg.facts.json
+sparkforge-aws analyze transport --path kafka.json --artifact kafka --out transport.facts.json
 ```
 
 2. Declare a identidade que prova que os artefatos pertencem ao mesmo caminho.
@@ -38,37 +38,37 @@ Para streaming→Iceberg, informe tabela e query. Para progresso→transporte,
 informe grupo/topic Kafka ou stream Kinesis:
 
 ```bash
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts progress.facts.json --facts iceberg.facts.json \
   --mode iceberg --table db.events --query-name orders-query \
   --out composed.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts progress.facts.json --facts transport.facts.json \
   --mode observability --query-name orders-query --transport-key orders-group \
   --out composed.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts progress.facts.json --facts transport.facts.json \
   --mode temporal --query-name orders-query --transport-key orders-group \
   --max-skew-seconds 3 --out temporal.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts progress.facts.json --facts iceberg.facts.json \
   --mode iceberg_temporal --table db.events --query-name orders-query \
   --max-skew-seconds 3 --out iceberg-temporal.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts kafka.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out transport-slo.facts.json
 
-sparkforge analyze streaming-composition \
+sparkforge-aws analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name sink-output --query-name orders-query \
   --out sink-slo.facts.json
@@ -104,7 +104,7 @@ CloudWatch/Kafka live.
 5. Julgue o arquivo composto:
 
 ```bash
-sparkforge judge --facts composed.facts.json --show-skipped
+sparkforge-aws judge --facts composed.facts.json --show-skipped
 ```
 
 ## Interpretação
@@ -192,7 +192,7 @@ mutação ao operador.
 
 ## Runtime e escopo
 
-Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+Rode `sparkforge-aws judge --facts <facts.json> --show-skipped` e leia `runtime`,
 `detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
 facts reextraídos ou de versão concreta declarada; não invente versão. Regras
 fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

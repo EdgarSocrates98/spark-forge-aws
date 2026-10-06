@@ -22,7 +22,7 @@ Coleta a descrição de uma aplicação do Managed Service for Apache Flink via 
 
 ## Na CLI
 
-[`sparkforge collect managed-flink`](../cli/collect.md)
+[`sparkforge-aws collect managed-flink`](../cli/collect.md)
 
 ## Capacidade
 

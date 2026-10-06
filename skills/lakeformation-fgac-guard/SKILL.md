@@ -1,6 +1,6 @@
 ---
 name: lakeformation-fgac-guard
-description: "Use quando um job Glue declara `--enable-lakeformation-fine-grained-access` ou configuração de Full Table Access e alguém pergunta \\\"posso passar um JAR extra?\\\", \\\"por que meu conector parou de funcionar sob FGAC?\\\", \\\"por que a leitura funciona e a escrita não?\\\", \\\"troquei `writeTo` por `INSERT INTO` e continua dando erro de Lake Formation\\\", \\\"dá para usar UDF Java / HiveUDF / data source customizado com controle de acesso fino?\\\" ou quando é preciso decidir entre FGAC e Full Table Access, ou entre manter FGAC e manter uma dependência. Use antes de recomendar `--extra-jars` em qualquer job com FGAC ligado, e antes de trocar a API de escrita de um job que falha sob Lake Formation. Se você está prestes a ler o Terraform no olho procurando os argumentos, rode `sparkforge migrate glue dir --from 5.1 --to 6.0` — a área `SF-LF` correlaciona o que precisa ser correlacionado, e é isso que separa a regra de um gerador de acusação falsa."
+description: "Use quando um job Glue declara `--enable-lakeformation-fine-grained-access` ou configuração de Full Table Access e alguém pergunta \\\"posso passar um JAR extra?\\\", \\\"por que meu conector parou de funcionar sob FGAC?\\\", \\\"por que a leitura funciona e a escrita não?\\\", \\\"troquei `writeTo` por `INSERT INTO` e continua dando erro de Lake Formation\\\", \\\"dá para usar UDF Java / HiveUDF / data source customizado com controle de acesso fino?\\\" ou quando é preciso decidir entre FGAC e Full Table Access, ou entre manter FGAC e manter uma dependência. Use antes de recomendar `--extra-jars` em qualquer job com FGAC ligado, e antes de trocar a API de escrita de um job que falha sob Lake Formation. Se você está prestes a ler o Terraform no olho procurando os argumentos, rode `sparkforge-aws migrate glue dir --from 5.1 --to 6.0` — a área `SF-LF` correlaciona o que precisa ser correlacionado, e é isso que separa a regra de um gerador de acusação falsa."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge migrate glue
-  - sparkforge rules lookup
-  - sparkforge collect lakeformation
+  - sparkforge-aws migrate glue
+  - sparkforge-aws rules lookup
+  - sparkforge-aws collect lakeformation
 ---
 
 # Lake Formation FGAC Guard
@@ -58,7 +58,7 @@ Quando `writeTo`, `insertInto` e `spark.sql INSERT INTO` **falham todas juntas**
 
 1. Aponte a análise para o diretório que contém os `.tf` do job. Sem Terraform, o eixo `lakeformation` nasce `BLOCKED`: a topologia de FGAC é declarada nos `default_arguments` do job, nunca no código Python.
 
-2. `sparkforge migrate glue <dir> --from 5.1 --to 6.0`
+2. `sparkforge-aws migrate glue <dir> --from 5.1 --to 6.0`
 
 3. Leia `gates["lakeformation"]`. Um `SF-LF-001` em P0 fecha esse eixo — e **só** esse. Um achado move um eixo, nunca dois.
 
@@ -107,11 +107,11 @@ A AWS declara que FGAC **não** é suportado com coluna VARIANT no Glue 6.0. Se 
 
 **Procedência, e ela é declarada:** a página de troubleshooting do AWS Glue **não publica string de erro literal** — publica título de sintoma. Das quatro assinaturas de `SF-ERR-014` a `SF-ERR-017`, só `Security validation exception` é frase que a AWS escreve; as outras três casam por **nome de ação IAM ou de API**, que é a parte publicada. Casar por nome de ação é o mais forte que a fonte sustenta, e é por isso que nenhuma das quatro dispara sem o companheiro.
 
-Severidade, escopo de versão e o texto completo: `sparkforge rules lookup --id SF-LF-003` (e assim por diante).
+Severidade, escopo de versão e o texto completo: `sparkforge-aws rules lookup --id SF-LF-003` (e assim por diante).
 
 ## Os facts que o motor deriva, e o que eles não afirmam
 
-`sparkforge/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts, sem ler artefato:
+`sparkforge_aws/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts, sem ler artefato:
 
 | kind | o que carrega |
 |---|---|
@@ -130,8 +130,8 @@ Severidade, escopo de versão e o texto completo: `sparkforge rules lookup --id 
 **Dois dos três já são coletáveis**, e é isso que separa "em qual plano parou" de "qual permissão falta":
 
 ```
-sparkforge collect lakeformation --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela>
-sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
+sparkforge-aws collect lakeformation --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela>
+sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
 ```
 
 Três chamadas, e cada uma responde uma pergunta que nenhum artefato do job responde:
@@ -155,8 +155,8 @@ As tools MCP de mesmo nome são `sparkforge_collect_lakeformation` e `sparkforge
 ### O terceiro artefato: a decisão de IAM, simulada
 
 ```
-sparkforge collect iam-access --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey
-sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/
+sparkforge-aws collect iam-access --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey
+sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/
 ```
 
 Tools MCP: `sparkforge_collect_iam_access` e `sparkforge_analyze_iam_access`.
@@ -179,8 +179,8 @@ Colapsar as quatro num booleano faz *"adicione a permissão"* virar o conselho �
 ### O quarto artefato: a topologia do catálogo — resource link
 
 ```
-sparkforge collect glue-resource-link --database <banco-na-conta-consumidora> --table <link>     --catalog-id <conta-consumidora>
-sparkforge analyze glue-resource-link --path .sparkforge/artifacts/glue_resource_link/
+sparkforge-aws collect glue-resource-link --database <banco-na-conta-consumidora> --table <link>     --catalog-id <conta-consumidora>
+sparkforge-aws analyze glue-resource-link --path .sparkforge/artifacts/glue_resource_link/
 ```
 
 Tools MCP: `sparkforge_collect_glue_resource_link` e `sparkforge_analyze_glue_resource_link`.
@@ -234,7 +234,7 @@ Esta skill trata **guarda de migração FGAC/FTA e evidência de acesso**. Contr
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge migrate glue`, `sparkforge rules lookup`, `sparkforge collect lakeformation`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws migrate glue`, `sparkforge-aws rules lookup`, `sparkforge-aws collect lakeformation`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

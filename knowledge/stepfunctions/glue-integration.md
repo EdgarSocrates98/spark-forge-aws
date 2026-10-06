@@ -2,7 +2,7 @@
 
 > **Lido em 2026-09-19.** Nove páginas oficiais da AWS: cinco do guia do AWS Step
 > Functions, duas da API do AWS Step Functions e duas da API do AWS Glue. Quem consome: o extrator
-> `sparkforge/facts/stepfunctions.py` (os dois defaults publicados moram lá, com a URL
+> `sparkforge_aws/facts/stepfunctions.py` (os dois defaults publicados moram lá, com a URL
 > ao lado) e as quatro regras de `rules/catalog/stepfunctions.yaml`. Frase entre aspas é
 > citação literal; o resto é leitura nossa, e diz de qual frase veio.
 
@@ -111,7 +111,7 @@ Terraform saem em `sfn.unresolved` com a razão, nunca como vínculo.
    `.sync` dentro desse Map sai com o `state_machine_type` da mãe, e a SF-SFN-003 não o
    vê.
 6. **`sfn.*` sai com `line: 0`.** O extrator lê JSON sem posição de linha, e o
-   `subject.symbol` é o caminho do estado. `sparkforge report github` não ancora esses
+   `subject.symbol` é o caminho do estado. `sparkforge-aws report github` não ancora esses
    achados numa linha do arquivo.
 
 ## Fontes

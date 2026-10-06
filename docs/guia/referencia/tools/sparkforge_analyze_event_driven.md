@@ -20,7 +20,7 @@ Extrai facts determinísticos de dumps JSON salvos de EventBridge rules/Pipes, S
 
 ## Na CLI
 
-[`sparkforge analyze event-driven`](../cli/analyze.md)
+[`sparkforge-aws analyze event-driven`](../cli/analyze.md)
 
 ## Capacidade
 

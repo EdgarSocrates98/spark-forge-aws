@@ -27,11 +27,11 @@ O que executa hoje, na íntegra (relido dos três arquivos em 2026-09-18):
 
 | Superfície | Comando |
 |---|---|
-| `.claude/settings.json`, `PreToolUse` (`Bash\|Edit\|Write\|MultiEdit\|NotebookEdit`) | `python -m sparkforge.policy.hook` |
+| `.claude/settings.json`, `PreToolUse` (`Bash\|Edit\|Write\|MultiEdit\|NotebookEdit`) | `python -m sparkforge_aws.policy.hook` |
 | `.claude/settings.json`, `SessionStart` | `command -v node >/dev/null 2>&1 \|\| { echo '...'; cat "$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md"; }` |
 | `vendor/caveman` plugin, `SessionStart` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-activate.js"` |
 | `vendor/caveman` plugin, `UserPromptSubmit` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-mode-tracker.js"` |
-| `.mcp.json` | `python -m sparkforge.adapters.mcp --transport stdio` |
+| `.mcp.json` | `python -m sparkforge_aws.adapters.mcp --transport stdio` |
 
 O `PreToolUse` é o hook da policy de `.sparkforge/policy.yaml`: ele bloqueia as regras
 `deny` antes de o comando rodar. O que ele cobre e o que fica em `permissions.ask` está

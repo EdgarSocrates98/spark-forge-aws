@@ -6,7 +6,7 @@ existente ja mede e onde a medicao ainda depende de fora do core.
 
 - Escrito em: 2026-10-06
 - BASE_SHA da onda de closure: `a1bf2ad`
-- Regra permanente: o runtime nunca importa `sparkforge.evals`;
+- Regra permanente: o runtime nunca importa `sparkforge_aws.evals`;
   a fronteira esta em `docs/harness/RUNTIME-VS-EVALUATION.md` e e
   defendida por `tests/test_harness_boundary.py`.
 
@@ -14,15 +14,15 @@ existente ja mede e onde a medicao ainda depende de fora do core.
 
 | metrica | origem | coletavel hoje? |
 |---|---|---|
-| context bytes | `payload_bytes` gravado por `call_tool` no ledger de contexto (`sparkforge/observability/context_ledger.py`) | sim — medido por chamada, recusas incluidas |
+| context bytes | `payload_bytes` gravado por `call_tool` no ledger de contexto (`sparkforge_aws/observability/context_ledger.py`) | sim — medido por chamada, recusas incluidas |
 | context utilization | selecao do Context Gateway expoe `context_tree`/`execution_plan` + budget por profile (`economy`/`balanced`/`deep`) | sim — uso vs budget sai do resultado do gateway |
 | evidence recall | `scripts/check_recall_economy.py` (piso de 100% por nome) + `match_rate` de `evaluate_golden_case` | sim — gate ja existe |
 | provider token coverage | `tokens_status` por span (`agentops`), `provider_tokens` no ledger e nos decision receipts | **parcial** — so `measured` quando um transcript do host alimenta; caso contrario `tokens_unresolved`/`unresolved`, nunca zero |
 | tool calls | ledger grava cada `call_tool` | sim |
-| agent calls | spans/runs do AgentOps (`sparkforge/observability/agentops.py`) | sim — quando o host registra spans do run |
+| agent calls | spans/runs do AgentOps (`sparkforge_aws/observability/agentops.py`) | sim — quando o host registra spans do run |
 | review count | reviews/debates do executor agentic | parcial — contam quando o run e registrado no ledger AgentOps |
-| debate count | `sparkforge/agentic/executor/debate_run.py` + spans | parcial — idem; o executor registra, a contagem sai dos spans gravados |
-| recovery attempts | `RecoveryPolicy.next` / `RecoveryDecision.attempt` (`sparkforge/agentic/recovery.py`) | parcial — a decisao carrega `attempt`; uma serie temporal exige o run registrar as tentativas |
+| debate count | `sparkforge_aws/agentic/executor/debate_run.py` + spans | parcial — idem; o executor registra, a contagem sai dos spans gravados |
+| recovery attempts | `RecoveryPolicy.next` / `RecoveryDecision.attempt` (`sparkforge_aws/agentic/recovery.py`) | parcial — a decisao carrega `attempt`; uma serie temporal exige o run registrar as tentativas |
 | recovery success | desfecho do span/run com recovery | parcial — derivavel quando o run registra outcome por tentativa |
 | latency | `duration_seconds` por span; waiting entre spans em `agentops_critical_path` | sim — medido, nunca inferido |
 | cost when observed | `cost_status` no AgentOps; `finops` exige `dpu_seconds` observado | sim — `when observed`; sem observacao volta `unresolved` |

@@ -4,15 +4,15 @@ import json
 from functools import partial
 from pathlib import Path
 
-from sparkforge.adapters.mcp import tools_do_transporte
-from sparkforge.adapters.mcp_compact import (
+from sparkforge_aws.adapters.mcp import tools_do_transporte
+from sparkforge_aws.adapters.mcp_compact import (
     COMPACT_TOOL_NAMES,
     CompactRouter,
     compact_catalog,
 )
-from sparkforge.adapters.mcp_envelope import envelope_da_chamada
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.economy.cache import ArtifactCache
+from sparkforge_aws.adapters.mcp_envelope import envelope_da_chamada
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.economy.cache import ArtifactCache
 
 ROOT = Path(__file__).resolve().parents[1]
 

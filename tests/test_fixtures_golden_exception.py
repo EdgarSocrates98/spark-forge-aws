@@ -1,8 +1,8 @@
 """Golden do corpus da excecao: o `Failure Reason` estruturado, e o que ele casa.
 
 Arquivo dedicado, mesma razao dos demais `test_fixtures_golden_*.py`: o golden
-guarda os facts de `sparkforge/facts/exception.py` (T1) e
-`sparkforge/errors/matcher.py::build_signature_matches` (T2), mais os findings
+guarda os facts de `sparkforge_aws/facts/exception.py` (T1) e
+`sparkforge_aws/errors/matcher.py::build_signature_matches` (T2), mais os findings
 de `rules/catalog/errors.yaml` (T3). Os dois modulos so entraram em
 `tests/test_fixtures_kind_coverage.py::EXTRACTORS` no MESMO commit deste corpus,
 e o comentario que os mantinha fora ate aqui era a divida nomeada que esta Task
@@ -52,15 +52,15 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.errors.matcher import build_signature_matches
-from sparkforge.facts.event_log import extract_event_log_path
-from sparkforge.facts.exception import EMITTED_KINDS as EXCEPTION_KINDS
-from sparkforge.facts.exception import build_exceptions
-from sparkforge.facts.migration import extract_migration_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.errors.matcher import build_signature_matches
+from sparkforge_aws.facts.event_log import extract_event_log_path
+from sparkforge_aws.facts.exception import EMITTED_KINDS as EXCEPTION_KINDS
+from sparkforge_aws.facts.exception import build_exceptions
+from sparkforge_aws.facts.migration import extract_migration_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "exception"
@@ -465,7 +465,7 @@ class TestAdversarial:
         assert set(EXCEPTION_KINDS) - vistos == set()
 
     def test_os_dois_kinds_do_matcher_aparecem_neste_corpus(self):
-        from sparkforge.errors.matcher import EMITTED_KINDS as MATCHER_KINDS
+        from sparkforge_aws.errors.matcher import EMITTED_KINDS as MATCHER_KINDS
 
         vistos: set[str] = set()
         for directory in fixture_dirs():

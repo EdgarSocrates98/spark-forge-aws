@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.workspace import (
+from sparkforge_aws.workspace import (
     SemanticEdge,
     SemanticGraph,
     SemanticNode,
@@ -8,7 +8,7 @@ from sparkforge.workspace import (
     semantic_graph_fragment,
     transcript_evidence_fragment,
 )
-from sparkforge.workspace.freshness import FreshnessAssessment
+from sparkforge_aws.workspace.freshness import FreshnessAssessment
 
 
 def test_semantic_adapter_preserves_records_metadata_and_freshness() -> None:

@@ -49,7 +49,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sparkforge.observability.surface import (  # noqa: E402 -- depois do sys.path
+from sparkforge_aws.observability.surface import (  # noqa: E402 -- depois do sys.path
     SERIALIZATION_BASIS,
     measure_surface,
 )

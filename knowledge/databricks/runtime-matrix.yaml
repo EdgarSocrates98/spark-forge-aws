@@ -9,7 +9,7 @@
 # CHAVE: o numero da versao como a pagina o escreve ("15.4", "18"), sem
 # "LTS". O rotulo que a Clusters API e a Jobs API carregam
 # ("15.4.x-scala2.12") e normalizado para a chave em
-# `sparkforge/facts/runtime_detect.py::_databricks_key`; ver
+# `sparkforge_aws/facts/runtime_detect.py::_databricks_key`; ver
 # `runtime-matrix.md` secao 2.
 #
 # Pagina atualizada em 2026-09-11 e lida em 2026-09-17.

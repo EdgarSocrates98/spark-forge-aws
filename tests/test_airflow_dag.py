@@ -5,7 +5,7 @@ DAG real foi observado (U2 de `docs/sdd/AIRFLOW_DAG/define.md`).
 """
 import json
 
-from sparkforge.facts.airflow_dag import (
+from sparkforge_aws.facts.airflow_dag import (
     DEFAULT_DEFERRABLE,
     DEFAULT_STOP_JOB_RUN_ON_KILL,
     DEFAULT_TASK_RETRIES,
@@ -148,7 +148,7 @@ def test_dag_vira_fact_com_operador_e_argumentos_literais():
 def test_o_subject_da_task_nao_afirma_simbolo_de_codigo():
     """`task_id` e variavel de modulo, e `subject.symbol` promete SIMBOLO indexado.
 
-    O gold set de recuperacao (`sparkforge/economy/goldset.py`) segue a cadeia
+    O gold set de recuperacao (`sparkforge_aws/economy/goldset.py`) segue a cadeia
     `finding.evidence -> fact.subject.{file, symbol}` e exige que o simbolo
     exista no indice de codigo daquele arquivo `.py`. Um `task_id` ali dentro
     pede do pack um `def`/`class` que nunca existiu, e a ancora nao fecha.
@@ -268,7 +268,7 @@ carga = GlueJobOperator(task_id="carga", job_name="carga-diaria", dag=primeiro)
 
 
 def test_o_teto_de_tamanho_e_o_erro_de_leitura_saem_nomeados(tmp_path):
-    from sparkforge.facts import scan
+    from sparkforge_aws.facts import scan
 
     grande = tmp_path / "gigante.py"
     teto = scan._teto_para(grande)
@@ -288,8 +288,8 @@ def test_o_teto_de_tamanho_e_o_erro_de_leitura_saem_nomeados(tmp_path):
 
 
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     entrada = tmp_path / "dags"
     entrada.mkdir()
@@ -310,7 +310,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["unresolved"] == 1
 
     erro = call_tool("sparkforge_analyze_airflow_dag", {"path": str(tmp_path / "nao-existe")})
-    assert "sparkforge analyze airflow-dag" in erro["error"]
+    assert "sparkforge-aws analyze airflow-dag" in erro["error"]
 
 
 TF_CARGA_DIARIA = """resource "aws_glue_job" "carga_diaria" {
@@ -347,10 +347,10 @@ with DAG(
 
 
 def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.terraform import extract_terraform_tree
-    from sparkforge.rules.engine import judge
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.rules.engine import judge
+    from sparkforge_aws.rules.loader import load_catalog
 
     (tmp_path / "cargas.py").write_text(DAG_PAREADO, encoding="utf-8")
     (tmp_path / "main.tf").write_text(TF_CARGA_DIARIA, encoding="utf-8")
@@ -470,8 +470,8 @@ def test_o_que_a_leitura_estatica_nao_alcanca_sai_com_razao_PROPRIA():
 
 def test_a_derivacao_nomeia_o_terraform_ambiguo_e_o_max_retries_nao_literal(tmp_path):
     """Os dois ramos de `build_af_glue_link` que nenhuma fixture exercita."""
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
 
     (tmp_path / "cargas.py").write_text(DAG_PAREADO, encoding="utf-8")
     (tmp_path / "main.tf").write_text(

@@ -20,7 +20,7 @@ A tool PRINCIPAL do Code Intelligence: monta o ContextPack de uma tarefa a parti
 
 ## Na CLI
 
-[`sparkforge code context`](../cli/code.md)
+[`sparkforge-aws code context`](../cli/code.md)
 
 ## Capacidade
 

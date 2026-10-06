@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 
-from sparkforge.adapters import cli
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters import cli
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 
 def test_cli_and_mcp_start_share_same_contract(capsys) -> None:

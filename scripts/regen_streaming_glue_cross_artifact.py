@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts.fusion import fuse
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.fusion import fuse
+from sparkforge_aws.findings.models import Fact, sort_facts
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_glue_cross_artifact"

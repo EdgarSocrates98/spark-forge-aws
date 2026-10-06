@@ -29,9 +29,9 @@ spark.stage.spill        measures {memory_spill_bytes, disk_spill_bytes, input_b
 spark.stage.task_duration measures {p50_ms, p95_ms, task_count}
 spark.stage.gc           measures {gc_time_ms, task_time_ms}
 
-sparkforge.facts.secrets.redact(key, value) -> (value, redacted: bool)
-sparkforge.findings.models.Fact, sort_facts
-sparkforge.rules.loader.load_catalog()  -- 130 regras hoje, nenhuma com "timeout"
+sparkforge_aws.facts.secrets.redact(key, value) -> (value, redacted: bool)
+sparkforge_aws.findings.models.Fact, sort_facts
+sparkforge_aws.rules.loader.load_catalog()  -- 130 regras hoje, nenhuma com "timeout"
 ```
 
 ---
@@ -42,7 +42,7 @@ sparkforge.rules.loader.load_catalog()  -- 130 regras hoje, nenhuma com "timeout
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/facts/timeout_diagnosis.py` | `spark.timeout.diagnosis` e `spark.timeout.unresolved` |
+| `sparkforge_aws/facts/timeout_diagnosis.py` | `spark.timeout.diagnosis` e `spark.timeout.unresolved` |
 | `tests/test_facts_timeout_diagnosis.py` | Testes do módulo |
 | `tests/test_fixtures_golden_timeout.py` | Módulo golden do domínio novo |
 | `fixtures/timeout/` | Oito cenários |
@@ -52,7 +52,7 @@ sparkforge.rules.loader.load_catalog()  -- 130 regras hoje, nenhuma com "timeout
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/facts/event_log.py` | `spark.stage.failure` a partir de `Stage Info["Failure Reason"]` |
+| `sparkforge_aws/facts/event_log.py` | `spark.stage.failure` a partir de `Stage Info["Failure Reason"]` |
 | `tests/test_facts_event_log.py` | O fact novo |
 | `tests/test_harness_untrusted.py` | `timeout_diagnosis` em `_derivados_de_facts` |
 | `tests/test_fixtures_kind_coverage.py`, `tests/test_rules_catalog_reachability.py` | Registrar o extrator nas DUAS listas |
@@ -64,7 +64,7 @@ sparkforge.rules.loader.load_catalog()  -- 130 regras hoje, nenhuma com "timeout
 ## Task 1: A razão da stage que falhou
 
 **Files:**
-- Modify: `sparkforge/facts/event_log.py`
+- Modify: `sparkforge_aws/facts/event_log.py`
 - Test: `tests/test_facts_event_log.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -106,7 +106,7 @@ Mensagem: `feat(facts): a razao da stage que falhou entra no barramento`
 ## Task 2: As quatro categorias, e a precedência declarada
 
 **Files:**
-- Create: `sparkforge/facts/timeout_diagnosis.py`
+- Create: `sparkforge_aws/facts/timeout_diagnosis.py`
 - Test: `tests/test_facts_timeout_diagnosis.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -147,7 +147,7 @@ Esperado: `ModuleNotFoundError`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/facts/timeout_diagnosis.py`, no molde de `run_cost.py`: recebe um
+`sparkforge_aws/facts/timeout_diagnosis.py`, no molde de `run_cost.py`: recebe um
 pool de facts e um `path`, devolve `sort_facts(...)`. `EXTRACTOR_ID`,
 `EMITTED_KINDS`, e a precedência como constante nomeada:
 
@@ -173,7 +173,7 @@ Mensagem: `feat(facts): as quatro categorias de timeout, e a precedencia entre e
 ## Task 3: As três recusas, cada uma com o seu nome
 
 **Files:**
-- Modify: `sparkforge/facts/timeout_diagnosis.py`
+- Modify: `sparkforge_aws/facts/timeout_diagnosis.py`
 - Test: `tests/test_facts_timeout_diagnosis.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -197,7 +197,7 @@ class TestRecusas:
         assert "collect event-log" in lacunas[0].attrs["detail"]
 
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
         ...
 ```
 

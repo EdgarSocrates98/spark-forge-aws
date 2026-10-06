@@ -13,7 +13,7 @@ próprio GitHub.
 ```bash
 # 1. Copie o workflow de exemplo para o repositório do seu job
 mkdir -p .github/workflows
-cp examples/github/sparkforge.yml .github/workflows/sparkforge.yml
+cp examples/github/sparkforge-aws.yml .github/workflows/sparkforge-aws.yml
 
 # 2. Edite o arquivo: troque `jobs` e `infra` pelos seus diretórios e `--glue 5.0` pela sua versão
 
@@ -22,14 +22,14 @@ echo ".sparkforge/report/" >> .gitignore
 
 # 4. Teste o passo principal na sua máquina, sobre uma fixture, numa pasta temporária
 cp -r fixtures/sarif/misto/input/repo /tmp/sf_repo
-sparkforge report github \
+sparkforge-aws report github \
   --findings fixtures/sarif/misto/input/findings.json \
   --facts fixtures/sarif/misto/input/facts.json \
   --repo /tmp/sf_repo --source-root a --source-root b \
   --fail-on P0 --category fixture-misto
 ```
 
-O passo 1 é feito no repositório do **seu job**, onde `examples/github/sparkforge.yml`
+O passo 1 é feito no repositório do **seu job**, onde `examples/github/sparkforge-aws.yml`
 foi copiado do SparkForge. Os passos 4 e seguintes rodam na raiz do repositório
 do SparkForge, porque usam as fixtures.
 
@@ -82,7 +82,7 @@ repositório.
 Ele pega os findings do `judge` e grava dois arquivos, com nomes fixos, em
 `<repo>/.sparkforge/report/`:
 
-- `sparkforge.sarif`: para o Code Scanning;
+- `sparkforge-aws.sarif`: para o Code Scanning;
 - `summary.md`: o resumo com **todos** os findings.
 
 E imprime uma anotação por finding que tem linha no repositório.
@@ -90,7 +90,7 @@ E imprime uma anotação por finding que tem linha no repositório.
 Rodando o passo 4 da receita, a saída real é:
 
 ```text
-sparkforge report github: 1 no SARIF, 5 sem localizacao, gate P0: disparou (.sparkforge/report/sparkforge.sarif, .sparkforge/report/summary.md)
+sparkforge-aws report github: 1 no SARIF, 5 sem localizacao, gate P0: disparou (.sparkforge/report/sparkforge-aws.sarif, .sparkforge/report/summary.md)
 ::error file=a/main.tf,line=24,title=SF-ERR-006 P0::Permissão do Lake Formation negada em runtime, num job que lê o Data Catalog de outra conta
 ```
 
@@ -161,7 +161,7 @@ precisa receber `--source-root jobs` para achar `jobs/lib/job.py`.
 ### 4. Fontes que pedem releitura
 
 ```bash
-sparkforge report github \
+sparkforge-aws report github \
   --findings fixtures/sarif/misto/input/findings.json \
   --facts fixtures/sarif/misto/input/facts.json \
   --repo /tmp/sf_repo --source-root a --source-root b \
@@ -187,7 +187,7 @@ dizer que a fonte mudou depois que a regra foi validada. Detalhes em
 
 ### 5. O workflow
 
-O arquivo [`examples/github/sparkforge.yml`](../../../examples/github/sparkforge.yml)
+O arquivo [`examples/github/sparkforge-aws.yml`](../../../examples/github/sparkforge-aws.yml)
 é o ponto de partida. O miolo dele:
 
 ```yaml
@@ -196,7 +196,7 @@ permissions:
   security-events: write
 
 jobs:
-  sparkforge:
+  sparkforge-aws:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -208,32 +208,32 @@ jobs:
       - name: Extrair facts
         run: |
           mkdir -p .sparkforge
-          sparkforge analyze pyspark --path jobs --out .sparkforge/facts-pyspark.json
-          sparkforge analyze terraform --path infra --out .sparkforge/facts-terraform.json
+          sparkforge-aws analyze pyspark --path jobs --out .sparkforge/facts-pyspark.json
+          sparkforge-aws analyze terraform --path infra --out .sparkforge/facts-terraform.json
       - name: Julgar
         run: |
-          sparkforge judge \
+          sparkforge-aws judge \
             --facts .sparkforge/facts-pyspark.json \
             --facts .sparkforge/facts-terraform.json \
             --glue 5.0 \
             --out .sparkforge/findings.json
       - name: Projetar para o GitHub
         run: |
-          sparkforge report github \
+          sparkforge-aws report github \
             --findings .sparkforge/findings.json \
             --facts .sparkforge/facts-pyspark.json \
             --facts .sparkforge/facts-terraform.json \
             --repo . --source-root jobs --source-root infra \
-            --category sparkforge --fail-on P0 --source-freshness
+            --category sparkforge-aws --fail-on P0 --source-freshness
       - name: Resumo do PR
         if: always() && hashFiles('.sparkforge/report/summary.md') != ''
         run: cat .sparkforge/report/summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Enviar ao Code Scanning
-        if: always() && hashFiles('.sparkforge/report/sparkforge.sarif') != ''
+        if: always() && hashFiles('.sparkforge/report/sparkforge-aws.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: .sparkforge/report/sparkforge.sarif
-          category: sparkforge
+          sarif_file: .sparkforge/report/sparkforge-aws.sarif
+          category: sparkforge-aws
 ```
 
 Repare no `if: always()`: o SARIF sobe mesmo quando o gate deixa o check
@@ -257,7 +257,7 @@ export SPARKFORGE_RUN_ID=run_sessao_42
 # ... use as tools (servidor MCP ou qualquer chamada a call_tool) ...
 
 # depois, no mesmo diretório
-sparkforge telemetry export --run-id run_sessao_42 --repo .
+sparkforge-aws telemetry export --run-id run_sessao_42 --repo .
 ```
 
 A saída tem nome fixo: `.sparkforge/telemetry/<run_id>.traces.jsonl` e
@@ -267,7 +267,7 @@ Se o run não tem spans, o verbo avisa e sai com código 2. Saída real num
 diretório vazio:
 
 ```text
-run 'run_exemplo' sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo que chamou as tools e rode, no diretorio onde ele gravou .sparkforge/traces.db: sparkforge telemetry export --run-id <run_id>
+run 'run_exemplo' sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo que chamou as tools e rode, no diretorio onde ele gravou .sparkforge/traces.db: sparkforge-aws telemetry export --run-id <run_id>
 ```
 
 Duas opções mudam o que sai:
@@ -306,7 +306,7 @@ diz, para cada fonte que mudou, quais regras, documentos, fixtures, evals,
 agents e skills a leram antes da mudança. Não acessa a rede.
 
 ```bash
-sparkforge knowledge drift --as-of 2026-09-13
+sparkforge-aws knowledge drift --as-of 2026-09-13
 ```
 
 Saída real hoje (nenhuma fonte com mudança registrada no lock):
@@ -332,7 +332,7 @@ Um job agendado de exemplo (monte a partir dele; ele usa só comandos
 conferidos acima):
 
 ```yaml
-name: sparkforge-drift
+name: sparkforge-aws-drift
 on:
   workflow_dispatch:
   schedule:
@@ -349,7 +349,7 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install -e .
       - name: Knowledge drift
-        run: sparkforge knowledge drift > drift.json
+        run: sparkforge-aws knowledge drift > drift.json
       - uses: actions/upload-artifact@v4
         with:
           name: knowledge-drift

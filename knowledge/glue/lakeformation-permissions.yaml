@@ -1,6 +1,6 @@
 # Operacao do job Glue Spark -> permissao que ela exige, por modelo de acesso.
 #
-# Lido por `sparkforge/facts/lakeformation_missing_grant.py::load_table`. Cada linha
+# Lido por `sparkforge_aws/facts/lakeformation_missing_grant.py::load_table`. Cada linha
 # cita a fonte pela chave de `fontes` e traz a frase literal em `quote`. Linha sem
 # fonte ou sem frase reprova a carga: a tabela nao e escrita de memoria.
 #

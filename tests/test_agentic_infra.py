@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.agentic.autonomy import (
+from sparkforge_aws.agentic.autonomy import (
     AutonomyLevel,
     can_perform_action,
     validate_autonomy_boundary,
 )
-from sparkforge.agentic.budget import (
+from sparkforge_aws.agentic.budget import (
     AgentBudget,
     BudgetActual,
     BudgetEstimate,
@@ -21,7 +21,7 @@ from sparkforge.agentic.budget import (
     compare_budget,
     detect_waste,
 )
-from sparkforge.agentic.graph import (
+from sparkforge_aws.agentic.graph import (
     EdgeType,
     ExecutionGraph,
     GraphEdge,
@@ -29,15 +29,15 @@ from sparkforge.agentic.graph import (
     NodeType,
     build_graph_from_case,
 )
-from sparkforge.agentic.memory import (
+from sparkforge_aws.agentic.memory import (
     find_similar_decisions,
     get_decision_history,
     memory_stats,
     record_decision,
     update_outcome,
 )
-from sparkforge.agentic.models import Decision
-from sparkforge.agentic.security import (
+from sparkforge_aws.agentic.models import Decision
+from sparkforge_aws.agentic.security import (
     RiskLevel,
     detect_prompt_injection,
     requires_human_approval,
@@ -339,7 +339,7 @@ class TestAutonomy:
         assert "human_approval" in reason
 
     def test_l5_high_risk_com_todos_os_guardrails_comprovados_passa(self):
-        from sparkforge.agentic.autonomy import get_profile
+        from sparkforge_aws.agentic.autonomy import get_profile
 
         exigidos = get_profile(AutonomyLevel.L5_AUTONOMOUS).required_validation
         allowed, reason = validate_autonomy_boundary(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.facts.cdc import extract_cdc_path
+from sparkforge_aws.facts.cdc import extract_cdc_path
 
 ROOT = Path(__file__).resolve().parents[1]
 

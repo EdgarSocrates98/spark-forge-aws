@@ -123,7 +123,7 @@ def _section(text: str) -> str:
     """Do inicio de [project] ate antes de [project.scripts].
 
     Recortar antes de `[project.scripts]` evita capturar o entry point
-    `sparkforge = "sparkforge.adapters.cli:main"`, que nao e requisito.
+    `sparkforge-aws = "sparkforge_aws.adapters.cli:main"`, que nao e requisito.
     """
     start = text.find("[project]")
     end = text.find("[project.scripts]")

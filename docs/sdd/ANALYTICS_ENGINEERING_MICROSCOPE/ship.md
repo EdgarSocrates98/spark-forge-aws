@@ -35,14 +35,14 @@ explicitamente unresolved/refused.
 ## Gates rodados
 
 - `python -m pytest tests/test_analytics_microscope.py tests/test_fixtures_golden_analytics.py -q --basetemp .sparkforge/local/pytest-analytics-microscope` — `5 passed`, exit 0.
-- `python -m sparkforge.adapters.cli analyze dbt-artifacts --path fixtures/analytics/dbt` — exit 0.
-- `python -m sparkforge.adapters.cli analyze duckdb-microscope --path fixtures/analytics/duckdb/microscope.yaml` — exit 0.
+- `python -m sparkforge_aws.adapters.cli analyze dbt-artifacts --path fixtures/analytics/dbt` — exit 0.
+- `python -m sparkforge_aws.adapters.cli analyze duckdb-microscope --path fixtures/analytics/duckdb/microscope.yaml` — exit 0.
 - `python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge/local/pytest-analytics-gates` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0.
-- `sparkforge sdd check --repo . --feature ANALYTICS_ENGINEERING_MICROSCOPE` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature ANALYTICS_ENGINEERING_MICROSCOPE` — `ok: true`.
 
 ## Limites e rollback
 

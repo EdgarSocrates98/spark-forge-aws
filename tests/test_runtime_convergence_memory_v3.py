@@ -17,7 +17,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from sparkforge.agentic.memory import (
+from sparkforge_aws.agentic.memory import (
     DECISIONS_FILE,
     QUARANTINE_FILE,
     DecisionMemoryRecord,

@@ -19,7 +19,7 @@ Avalia contrato de decisão bounded, versionado e local através do kernel deter
 
 ## Na CLI
 
-[`sparkforge decision evaluate`](../cli/decision.md)
+[`sparkforge-aws decision evaluate`](../cli/decision.md)
 
 ## Capacidade
 

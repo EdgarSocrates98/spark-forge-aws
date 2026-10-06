@@ -126,13 +126,13 @@
     }
   },
   {
-    "id": "f_207888",
+    "id": "f_9b6643",
     "schema_version": 1,
     "kind": "iam.access_decision",
     "subject": {
       "type": "job_run",
       "file": "111111111111_glue-curated.json",
-      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:DeleteObject@arn:aws:s3:::sparkforge-demo/curated/*"
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:DeleteObject@arn:aws:s3:::sparkforge-aws-demo/curated/*"
     },
     "measures": {
       "matched_statements": 1
@@ -140,7 +140,7 @@
     "attrs": {
       "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
       "action": "s3:DeleteObject",
-      "resource": "arn:aws:s3:::sparkforge-demo/curated/*",
+      "resource": "arn:aws:s3:::sparkforge-aws-demo/curated/*",
       "decision": "explicitDeny",
       "allowed": false,
       "denied_by": "explicit_deny",
@@ -154,13 +154,13 @@
     }
   },
   {
-    "id": "f_b148aa",
+    "id": "f_35c3cd",
     "schema_version": 1,
     "kind": "iam.access_decision",
     "subject": {
       "type": "job_run",
       "file": "111111111111_glue-curated.json",
-      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:PutObject@arn:aws:s3:::sparkforge-demo/curated/*"
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:PutObject@arn:aws:s3:::sparkforge-aws-demo/curated/*"
     },
     "measures": {
       "matched_statements": 0
@@ -168,7 +168,7 @@
     "attrs": {
       "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
       "action": "s3:PutObject",
-      "resource": "arn:aws:s3:::sparkforge-demo/curated/*",
+      "resource": "arn:aws:s3:::sparkforge-aws-demo/curated/*",
       "decision": "implicitDeny",
       "allowed": false,
       "denied_by": "permissions_boundary",

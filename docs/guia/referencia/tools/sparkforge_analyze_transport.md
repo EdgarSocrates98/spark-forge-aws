@@ -21,7 +21,7 @@ Extrai facts determinísticos de dumps JSON/JSONL já salvos de Kafka, MSK ou Ki
 
 ## Na CLI
 
-[`sparkforge analyze transport`](../cli/analyze.md)
+[`sparkforge-aws analyze transport`](../cli/analyze.md)
 
 ## Capacidade
 

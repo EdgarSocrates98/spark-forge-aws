@@ -49,14 +49,14 @@ entre coleta e execução neste commit.
 
 | O quê | Valor | Comando |
 |---|---|---|
-| Regras no catálogo | 119 | `python -c "from sparkforge.rules.loader import load_catalog; c=load_catalog(); print(len(c))"` |
+| Regras no catálogo | 119 | `python -c "from sparkforge_aws.rules.loader import load_catalog; c=load_catalog(); print(len(c))"` |
 | Regras bloqueadas (`blocked_on` presente) | 0 | mesmo catálogo, contando `r.get('blocked_on')` truthy |
 | Áreas de regra (`category`, derivado do catálogo) | 17 | contagem de `r.get('category')` distintos no catálogo carregado |
-| Arquivos em `sparkforge/facts/` (exceto `__init__.py`) | 22 | `ls sparkforge/facts/` |
+| Arquivos em `sparkforge_aws/facts/` (exceto `__init__.py`) | 22 | `ls sparkforge_aws/facts/` |
 | **Extratores de fatos** (modulo com `EMITTED_KINDS`) | **20** | import de cada modulo, contagem dos que declaram `EMITTED_KINDS` |
-| Arquivos que NAO sao extratores | 2 (`runtime_matrix.py` e `secrets.py`, que nao emitem kind) | import de cada módulo em `sparkforge/facts/`, leitura do atributo `EMITTED_KINDS` |
+| Arquivos que NAO sao extratores | 2 (`runtime_matrix.py` e `secrets.py`, que nao emitem kind) | import de cada módulo em `sparkforge_aws/facts/`, leitura do atributo `EMITTED_KINDS` |
 | Kinds de fato únicos (união de todo `EMITTED_KINDS`) | 129 | mesmo script, união dos conjuntos |
-| Ferramentas MCP | 41 | `python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))"` |
+| Ferramentas MCP | 41 | `python -c "from sparkforge_aws.adapters.tools import TOOLS; print(len(TOOLS))"` |
 | Rotas no catálogo de roteamento | 92 | `yaml.safe_load(open('rules/catalog/routing.yaml'))['rules']`, contagem da lista |
 | Coordenadores (`agents/*.md`, fora de `executors/`) | 38 | `ls agents/*.md \| wc -l` |
 | Executores (`agents/executors/*.md`) | 5 | `ls agents/executors/*.md \| wc -l` |
@@ -104,7 +104,7 @@ diretório fora dos 22 domínios listados.
 
 ## Pacotes que o Harness vai governar
 
-Para cada pacote-alvo do harness (`sparkforge/{workflows,economy,context,
+Para cada pacote-alvo do harness (`sparkforge_aws/{workflows,economy,context,
 registry,evals,observability,providers,cloud,adapters}`): arquivos `.py`
 (excluindo `__init__.py`), linhas totais somando **todos** os `.py` do
 diretório (`__init__.py` incluso), e se existe teste — nomeado, não apenas
@@ -123,17 +123,17 @@ afirmado.
 | `adapters` | 10 | 7813 | 16 arquivos de teste, entre eles `tests/test_adapters_cli.py`, `tests/test_adapters_mcp.py`, `tests/test_adapters_tools.py`, `tests/test_capability_parity.py` |
 
 Comandos usados: contagem de arquivo com
-`find sparkforge/<pacote> -name "*.py" ! -name "__init__.py" | wc -l`;
-contagem de linhas com `find sparkforge/<pacote> -name "*.py" -exec cat {} + | wc -l`;
+`find sparkforge_aws/<pacote> -name "*.py" ! -name "__init__.py" | wc -l`;
+contagem de linhas com `find sparkforge_aws/<pacote> -name "*.py" -exec cat {} + | wc -l`;
 teste localizado com
-`grep -rl "sparkforge\.<pacote>\b" tests/*.py` e confirmado lendo o arquivo
+`grep -rl "sparkforge-aws\.<pacote>\b" tests/*.py` e confirmado lendo o arquivo
 listado.
 
 **`providers` e `cloud` não têm nenhum teste.** Busca por `providers` e por
 `cloud` em `tests/*.py` (`grep -rln "providers" tests/*.py` e
 `grep -rln "\bcloud\b" tests/*.py`) não retornou nenhum arquivo. O conteúdo
-desses dois pacotes é pequeno (`sparkforge/providers/mock.py`, 22 linhas;
-`sparkforge/cloud/worker.py` + `__init__.py`, 58 linhas) mas está,
+desses dois pacotes é pequeno (`sparkforge_aws/providers/mock.py`, 22 linhas;
+`sparkforge_aws/cloud/worker.py` + `__init__.py`, 58 linhas) mas está,
 hoje, sem cobertura — se o harness vier a depender deles, isso é dívida a
 resolver antes, não depois.
 
@@ -141,31 +141,31 @@ resolver antes, não depois.
 
 `prompt_evo_harness.md` §4 pede baseline de "tokens estimados/reais quando
 disponíveis". A resposta honesta, depois de ler
-`sparkforge/economy/` e `sparkforge/observability/`, é que **este
+`sparkforge_aws/economy/` e `sparkforge_aws/observability/`, é que **este
 repositório não produz nenhum número real de token ou custo hoje** — só
 infraestrutura para um dia produzir, ainda não conectada a uma execução real.
 
 Evidência lida diretamente do código (não de docstring, do corpo das
 funções):
 
-- `sparkforge/economy/budget.py` define `TIER_PRICING`, uma tabela de preço
+- `sparkforge_aws/economy/budget.py` define `TIER_PRICING`, uma tabela de preço
   por milhão de tokens digitada à mão (`tier_3_cheap_local`: US$0,10/US$0,40;
   `tier_5_premium`: US$3,00/US$15,00; etc.) e `TokenUsage.estimate_cost_usd()`,
   que multiplica essa tabela por contagens de token que **alguém precisa
   fornecer** — a classe não mede nada sozinha.
-- `sparkforge/economy/router.py` (`CapabilityModelRouter.route_task`) devolve
+- `sparkforge_aws/economy/router.py` (`CapabilityModelRouter.route_task`) devolve
   `estimated_cost_usd` como constante fixa por branch de decisão (`0.0`,
   `0.001`, `0.005`, `0.05`) — não é uma leitura de custo real, é um palpite
   embutido no código-fonte.
-- `sparkforge/economy/waste_detector.py` (`TokenWasteDetector.analyze_trace`)
+- `sparkforge_aws/economy/waste_detector.py` (`TokenWasteDetector.analyze_trace`)
   opera sobre uma lista de `trace_events` que precisa ser passada por quem
   chama — nada no repositório hoje produz essa lista a partir de uma execução
-  real. `grep -rln "AgentOpsTracker\|SQLiteTraceStore\|TokenUsage(" sparkforge/ agents/ skills/ scripts/`
-  só encontrou o próprio pacote `sparkforge/observability/` como usuário
+  real. `grep -rln "AgentOpsTracker\|SQLiteTraceStore\|TokenUsage(" sparkforge_aws/ agents/ skills/ scripts/`
+  só encontrou o próprio pacote `sparkforge_aws/observability/` como usuário
   dessas classes — nenhum outro lugar do código as invoca com dados de um
   agente de verdade.
-- `sparkforge/observability/tracer.py` (`AgentOpsTracker`, `TraceSpan`,
-  `ExecutionTrace`) e `sparkforge/observability/store.py`
+- `sparkforge_aws/observability/tracer.py` (`AgentOpsTracker`, `TraceSpan`,
+  `ExecutionTrace`) e `sparkforge_aws/observability/store.py`
   (`SQLiteTraceStore`) são um esquema de tracing completo, com uma tabela
   SQLite pronta para `input_tokens`, `output_tokens`, `estimated_cost_usd`
   por span — mas `end_span()` recebe esses valores como argumento; nada os
@@ -194,7 +194,7 @@ documento cobriu testes, golden fixtures, comportamento offline (via
 estrutural. O resto, e por quê:
 
 - **Comportamento de CLI em execução real**: não executei nenhum comando
-  `sparkforge <verbo>` fim a fim nesta sessão — só contei ferramentas e rotas
+  `sparkforge-aws <verbo>` fim a fim nesta sessão — só contei ferramentas e rotas
   estaticamente. Não há, portanto, medição de "a CLI roda X caminhos e
   produz Y saída" — só de "a CLI declara X caminhos".
 - **Latência**: nenhum comando medido aqui reporta tempo de execução exceto
@@ -209,7 +209,7 @@ estrutural. O resto, e por quê:
 - **Chamadas de ferramenta em execução real**: contei quantas ferramentas
   MCP existem (41) e quantas rotas o catálogo declara (92), não quantas
   chamadas uma tarefa real dispara nem em que ordem.
-- **Tamanho de contexto**: `sparkforge/context/` tem teste
+- **Tamanho de contexto**: `sparkforge_aws/context/` tem teste
   (`test_context_funnel_deduplication`, `test_progressive_disclosure_levels`,
   `test_knowledge_pack_stale_detection`), mas nenhum desses testes reporta um
   número de tokens ou bytes de contexto que sirva de baseline comparável —

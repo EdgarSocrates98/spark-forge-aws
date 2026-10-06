@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.context.host_usage import HostTokenState
+from sparkforge_aws.context.host_usage import HostTokenState
 
 
 def test_host_usage_resolves_only_from_valid_transcript_values() -> None:

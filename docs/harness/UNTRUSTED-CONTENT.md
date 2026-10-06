@@ -27,7 +27,7 @@ terceiro: é uma lista de hashes. Quem ler "o texto do artefato chega ao
 tocado em nada.
 
 E `attrs` não sumir no `Finding` não quer dizer que ele não chega ao modelo. As
-tools `analyze_*` devolvem **Facts**, não Findings (`sparkforge/adapters/_core.py`
+tools `analyze_*` devolvem **Facts**, não Findings (`sparkforge_aws/adapters/_core.py`
 serializa `f.to_dict()` em `items`), e `Fact.to_dict()` inclui `attrs` inteiro.
 É por aí que `attrs.target` (um `s3://...` escrito por um terceiro) chega ao
 modelo — pelo payload do próprio `Fact`, não pelo `Finding`.
@@ -39,7 +39,7 @@ não têm a chave.
 
 Esse número foi medido errado uma vez, e a forma do erro importa. `terraform`
 entrou na lista por contagem de `"snippet"` no fonte — mas
-`sparkforge/facts/terraform.py` tem `_line_subject(path, line, snippet="")` e
+`sparkforge_aws/facts/terraform.py` tem `_line_subject(path, line, snippet="")` e
 **nenhum** dos 14 call sites alimenta o parâmetro. O módulo parece produzir
 snippet para quem lê o fonte, e não produz nenhum. Por isso a contagem agora é
 derivada **executando** os extratores sobre o corpus de `fixtures/`
@@ -97,7 +97,7 @@ que é exatamente a situação que o invariante descreve.
 A mesma separação vale para o outro sentido do fio: não só o que entra num
 `Finding`, mas o que uma tool devolve ao modelo. Todo resultado de
 `call_tool` — sucesso ou recusa — carrega `_trust` = `{label, authority,
-taint}` de `sparkforge/agentic/trust.py:tool_result_envelope()`, e o bloco
+taint}` de `sparkforge_aws/agentic/trust.py:tool_result_envelope()`, e o bloco
 aterrissa no `metadata` do span em `adapters/tools.py`.
 
 - `label` = `TOOL_OUTPUT` para saída de ferramenta: proveniência observada,
@@ -122,8 +122,8 @@ fingir cobertura.
 ## O handoff entre agentes: `admit_handoff`
 
 O outro sentido da fronteira é mensagem entre agentes. `AgentHandoff`
-(`sparkforge/agentic/trust.py`) é o envelope data-only que um agente escreve
-para outro; `admit_handoff` (`sparkforge/agentic/handoff.py`) é o portão que
+(`sparkforge_aws/agentic/trust.py`) é o envelope data-only que um agente escreve
+para outro; `admit_handoff` (`sparkforge_aws/agentic/handoff.py`) é o portão que
 aplica o `RoleContextPlan` do **receptor** antes de o conteúdo entrar no
 contexto dele:
 

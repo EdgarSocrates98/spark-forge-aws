@@ -1,7 +1,7 @@
 import pytest
 
-from sparkforge.facts import migration as facts_migration
-from sparkforge.migration import assessment, version_path
+from sparkforge_aws.facts import migration as facts_migration
+from sparkforge_aws.migration import assessment, version_path
 
 JOB = (
     "import com.amazonaws.services.s3.AmazonS3\n"
@@ -114,7 +114,7 @@ class TestPropagaErroDoCaminho:
 
 class TestDuplicataEntreDegraus:
     def test_finding_cuja_faixa_cobre_dois_degraus_nasce_nos_dois(self, tmp_path):
-        # DECISAO 1 (docstring de sparkforge/migration/assessment.py): duplicata
+        # DECISAO 1 (docstring de sparkforge_aws/migration/assessment.py): duplicata
         # entre degraus e o comportamento pretendido, nao um bug a esconder.
         # SF-MIG-001 tem `runtime_scope: {glue: ">=5.0"}`, e o caminho 4.0->5.1
         # cruza dois degraus cujo ALVO satisfaz esse escopo (5.0 e 5.1): a
@@ -150,7 +150,7 @@ class TestParGenerico:
         import re
         from pathlib import Path
 
-        raiz = Path(__file__).resolve().parents[1] / "sparkforge" / "migration"
+        raiz = Path(__file__).resolve().parents[1] / "sparkforge_aws" / "migration"
         proibido = re.compile(r'"[3-9]\.\d+"')
         # Sem excecao: `glue/analyzer.py` foi apagado na fase H1, e com ele o
         # unico arquivo do pacote que carregava par de versao no codigo
@@ -222,7 +222,7 @@ class TestRelatorioDeduplica:
         se fixa aqui e a chave, e amarra-la a uma regra especifica faria o teste
         morrer quando aquela regra mudasse de forma.
         """
-        from sparkforge.findings.models import Finding
+        from sparkforge_aws.findings.models import Finding
 
         def _finding(linha: int, fact_id: str) -> Finding:
             return Finding(
@@ -281,7 +281,7 @@ class TestRelatorioMantemAPiorSeveridade:
         amarra-lo a uma regra especifica faria o teste morrer no dia em que
         aquela regra mudasse de forma, sem que nada aqui tivesse quebrado.
         """
-        from sparkforge.findings.models import Finding
+        from sparkforge_aws.findings.models import Finding
 
         def _finding(severidade: str) -> Finding:
             return Finding(
@@ -362,7 +362,7 @@ class TestEixoNomeadoNaoSomaDuasVezes:
 
     @staticmethod
     def _facts_com_fgac_e_jar(tmp_path):
-        from sparkforge.migration import collect as collect_mod
+        from sparkforge_aws.migration import collect as collect_mod
 
         (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
         (tmp_path / "infra.tf").write_text(
@@ -409,8 +409,8 @@ class TestBloqueioPorConsumidorIncompativel:
 
     @staticmethod
     def _facts_v3_com(servico: str, tmp_path):
-        from sparkforge.facts import consumers as facts_consumers
-        from sparkforge.migration import collect as collect_mod
+        from sparkforge_aws.facts import consumers as facts_consumers
+        from sparkforge_aws.migration import collect as collect_mod
 
         (tmp_path / "job.py").write_text(
             "spark.sql(\"CREATE TABLE db.t ... TBLPROPERTIES ('format-version'='3')\")\n",
@@ -451,7 +451,7 @@ class TestBloqueioPorConsumidorIncompativel:
         )
 
     def test_job_que_nao_escreve_v3_nao_bloqueia_por_consumidor(self, tmp_path):
-        from sparkforge.migration import collect as collect_mod
+        from sparkforge_aws.migration import collect as collect_mod
 
         (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
         pasta = tmp_path / ".sparkforge"
@@ -476,7 +476,7 @@ class TestConsumidorPorTabela:
 
     @staticmethod
     def _facts(tmp_path, tabela_no_codigo: str, tabela_no_inventario: str):
-        from sparkforge.migration import collect as collect_mod
+        from sparkforge_aws.migration import collect as collect_mod
 
         (tmp_path / "job.py").write_text(
             f"spark.sql(\"CREATE TABLE {tabela_no_codigo} (id INT) USING iceberg "
@@ -519,7 +519,7 @@ class TestEixosDePlataformaDeixamDeSerDecorativos:
 
     @staticmethod
     def _facts_com_tf(tmp_path, corpo_tf: str):
-        from sparkforge.migration import collect as collect_mod
+        from sparkforge_aws.migration import collect as collect_mod
 
         (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
         (tmp_path / "infra.tf").write_text(corpo_tf, encoding="utf-8")
@@ -610,7 +610,7 @@ class TestAsQuatroPlataformasNoMesmoMotor:
         as paginas, ele deixa de ter caso e diz isso, em vez de passar a medir
         outra coisa em silencio.
         """
-        from sparkforge.facts import runtime_matrix as rm
+        from sparkforge_aws.facts import runtime_matrix as rm
 
         ec2, eks = rm.load_emr(), rm.load_emr_eks()
         divergentes = [
@@ -700,7 +700,7 @@ class TestCoberturaDeclarada:
     def test_a_contagem_por_eixo_bate_com_o_catalogo(self, tmp_path):
         """A frase e derivada dos numeros, e os numeros sao contados no
         catalogo -- nao escritos a mao em lugar nenhum."""
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         catalogo = load_catalog()
         esperado: dict[str, int] = {}
@@ -754,7 +754,7 @@ class TestDiffDeComponentePorDegrau:
         assert [e.step for e in resultado.component_diff] == resultado.steps
 
     def test_o_que_muda_bate_com_o_release_diff_daquele_par(self, tmp_path):
-        from sparkforge.migration import release_descriptor, release_diff
+        from sparkforge_aws.migration import release_descriptor, release_diff
 
         resultado = assessment.assess(
             _facts(tmp_path), source="6.15.0", target="7.0.0", platform="emr_ec2"
@@ -774,7 +774,7 @@ class TestDiffDeComponentePorDegrau:
         """Repetir os cinco textos por degrau seria payload sem informacao
         nova; omiti-los faria o operador ler lista vazia como "nao mudou
         nada"."""
-        from sparkforge.migration import release_diff
+        from sparkforge_aws.migration import release_diff
 
         resultado = assessment.assess(
             _facts(tmp_path), source="6.15.0", target="7.5.0", platform="emr_ec2"
@@ -804,7 +804,7 @@ class TestZeroRegressaoNoAssessmentDeGlue:
     """
 
     def test_o_runtime_derivado_de_glue_e_o_da_matriz(self):
-        from sparkforge.facts import runtime_matrix as rm
+        from sparkforge_aws.facts import runtime_matrix as rm
 
         for versao, linha in rm.load().items():
             runtime = assessment._runtime_for(versao)

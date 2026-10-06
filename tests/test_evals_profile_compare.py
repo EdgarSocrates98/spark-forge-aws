@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.evals.compare import compare_profile_benchmarks
+from sparkforge_aws.evals.compare import compare_profile_benchmarks
 
 
 def test_profile_compare_lists_transitions_without_claiming_improvement() -> None:

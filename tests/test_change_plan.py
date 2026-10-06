@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.change.plan import plan_change, trocar_py, trocar_tf
-from sparkforge.change.refusals import (
+from sparkforge_aws.change.plan import plan_change, trocar_py, trocar_tf
+from sparkforge_aws.change.refusals import (
     CAMINHO_FORA_DA_RAIZ,
     LINHA_NAO_CONFERE,
     VALOR_INVALIDO,
@@ -17,7 +17,7 @@ from sparkforge.change.refusals import (
     VALOR_REDIGIDO,
     ChangeError,
 )
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 ROOT = Path(__file__).resolve().parents[1]
 CHAVE = "spark.sql.shuffle.partitions"
@@ -119,7 +119,7 @@ def test_plano_nao_escreve_nada(tmp_path):
 
 def test_modulo_nao_usa_subprocess_git_nem_provider():
     proibidos = {"subprocess", "anthropic", "openai", "litellm", "bedrock", "boto3", "git"}
-    for arquivo in sorted((ROOT / "sparkforge" / "change").glob("*.py")):
+    for arquivo in sorted((ROOT / "sparkforge_aws" / "change").glob("*.py")):
         arvore = ast.parse(arquivo.read_text(encoding="utf-8"))
         for no in ast.walk(arvore):
             if isinstance(no, ast.Import):

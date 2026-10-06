@@ -10,8 +10,8 @@ upstream:
 hypothesis_outcome: confirmed
 registries: [claims_gate]
 deviations:
-  - "A feature substituiu TOOLS_ORFAS, abandonada antes do explore: medida de novo, a premissa era falsa (o __init__ reexporta e o pyproject publica o console script sparkforge-tools)."
-  - "A revisao achou regressao de API publica: o alias fazia sparkforge.tools.estimate_tokens levantar TypeError onde antes devolvia numero. Corrigido em 0839755c."
+  - "A feature substituiu TOOLS_ORFAS, abandonada antes do explore: medida de novo, a premissa era falsa (o __init__ reexporta e o pyproject publica o console script sparkforge-aws-tools)."
+  - "A revisao achou regressao de API publica: o alias fazia sparkforge_aws.tools.estimate_tokens levantar TypeError onde antes devolvia numero. Corrigido em 0839755c."
   - "A selecao do funnel muda em 20.553 de 59.040 casos pequenos medidos; o prefixo vale em todos. E o custo aceito pela abordagem A."
   - "Plano e build numa rodada so, por pressao de contexto."
   - "O scan Snyk nao concluiu: MCP sem conexao, CLI autenticado travando ate em 6 arquivos. Feita revisao manual da superficie."
@@ -40,12 +40,12 @@ mais, nunca estoura o orcamento.
 | `pytest tests/test_fixtures_golden*.py` (AC4) | 3299 passed, 4 skipped |
 | `python scripts/check_vnext_claims.py` (AC5) | 0 divergencias |
 | `ruff` | limpo |
-| `sparkforge sdd check --feature TOKEN_ESTIMATE_UNICO` | ok |
+| `sparkforge-aws sdd check --feature TOKEN_ESTIMATE_UNICO` | ok |
 | scan Snyk | **nao concluiu** |
 
 ## Pendencias
 
-- `sparkforge/codeintel/budget.py` (`utf8_bytes / 3`) segue separado, de proposito.
+- `sparkforge_aws/codeintel/budget.py` (`utf8_bytes / 3`) segue separado, de proposito.
 - A docstring de `tools/cost.py` diz `is_estimate: True` "em todo retorno"; so
   `budget_report` devolve dict. Anterior a esta feature.
 - Rodar o scan Snyk quando o motor do Snyk Code subir nesta maquina.

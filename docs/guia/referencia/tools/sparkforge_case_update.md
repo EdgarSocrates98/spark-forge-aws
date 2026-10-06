@@ -31,7 +31,7 @@ Atualiza a fase, um gate booleano, ou registra o uso de uma skill no case atual.
 
 ## Na CLI
 
-[`sparkforge case get`](../cli/case.md), [`sparkforge case open`](../cli/case.md), [`sparkforge case update`](../cli/case.md)
+[`sparkforge-aws case get`](../cli/case.md), [`sparkforge-aws case open`](../cli/case.md), [`sparkforge-aws case update`](../cli/case.md)
 
 ## Capacidade
 

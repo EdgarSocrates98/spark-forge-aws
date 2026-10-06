@@ -40,17 +40,17 @@ removida, não reescrita.
 ## 4. Inventário de Arquivos Criados e Estrutura
 
 ### Novos Pacotes e Módulos:
-- [`sparkforge/registry/`](../../sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`
-- [`sparkforge/economy/`](../../sparkforge/economy/): ledger, router, Decision Plane, reports e receipts
-- [`sparkforge/context/`](../../sparkforge/context/): Gateway, funnel, progressive disclosure, quality e knowledge packs
-- [`sparkforge/adapters/platforms/`](../../sparkforge/adapters/platforms/): exporters, compiler e targets declarados
-- [`sparkforge/workflows/`](../../sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`
-- [`sparkforge/evals/`](../../sparkforge/evals/): runner, suites, grading, replay e token benchmark
-- [`sparkforge/agentic/`](../../sparkforge/agentic/): trust, memória, checkpoints, debate, executor e recovery
-- [`sparkforge/protocols/forge.py`](../../sparkforge/protocols/forge.py): envelopes Forge serializáveis
-- [`sparkforge/observability/`](../../sparkforge/observability/): tracer, SQLite store e AgentOps local
+- [`sparkforge_aws/registry/`](../../sparkforge_aws/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`
+- [`sparkforge_aws/economy/`](../../sparkforge_aws/economy/): ledger, router, Decision Plane, reports e receipts
+- [`sparkforge_aws/context/`](../../sparkforge_aws/context/): Gateway, funnel, progressive disclosure, quality e knowledge packs
+- [`sparkforge_aws/adapters/platforms/`](../../sparkforge_aws/adapters/platforms/): exporters, compiler e targets declarados
+- [`sparkforge_aws/workflows/`](../../sparkforge_aws/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`
+- [`sparkforge_aws/evals/`](../../sparkforge_aws/evals/): runner, suites, grading, replay e token benchmark
+- [`sparkforge_aws/agentic/`](../../sparkforge_aws/agentic/): trust, memória, checkpoints, debate, executor e recovery
+- [`sparkforge_aws/protocols/forge.py`](../../sparkforge_aws/protocols/forge.py): envelopes Forge serializáveis
+- [`sparkforge_aws/observability/`](../../sparkforge_aws/observability/): tracer, SQLite store e AgentOps local
 
-`sparkforge/providers/mock.py` e `sparkforge/cloud/worker.py` também existem no
+`sparkforge_aws/providers/mock.py` e `sparkforge_aws/cloud/worker.py` também existem no
 repositório, mas nenhum teste os importa ou chama — não estão listados acima
 por isso (ver `docs/claims.lock.json`).
 
@@ -74,8 +74,8 @@ e `docs/vnext/adrs/`; `docs/vnext/DEMOS.md` documenta 5 demonstrações interati
 
 Esses artefatos são targets gerados sob demanda; a ausência de um arquivo exportado
 no checkout não significa ausência do exporter. O registro vivo é
-`sparkforge.registry.PlatformTarget` e a implementação está em
-`sparkforge.adapters.platforms`.
+`sparkforge_aws.registry.PlatformTarget` e a implementação está em
+`sparkforge_aws.adapters.platforms`.
 
 ---
 
@@ -103,7 +103,7 @@ vertical local-first sobre contratos que faltavam:
 | Memória e trust | `DecisionMemoryRecord` separa evidência e outcome; quarantine impede retrieval confiável sem evidência; `TrustEnvelope` mantém dados externos como `DATA_ONLY`. |
 | Contexto | `ContextQualityReport` mede precisão, recall declarado, densidade, stale, duplicação, reuse e cache hit; tokens só entram quando observados. |
 | Economia e routing | `TokenLedger` reconcilia estimated/observed; custo exige `cost_basis`; `AdaptiveModelRouter` permanece shadow por default. |
-| Continuidade e protocolo | `SemanticCheckpoint` e `sparkforge.protocols.forge` são serializáveis e content-addressed. |
+| Continuidade e protocolo | `SemanticCheckpoint` e `sparkforge_aws.protocols.forge` são serializáveis e content-addressed. |
 | AgentOps | inspect, compare, baseline e waste attribution leem traces SQLite locais e preservam `unresolved`. |
 | Superfícies | CLI e MCP compartilham `_core`; `doctor agentic` declara readiness sem rede. |
 

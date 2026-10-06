@@ -13,7 +13,7 @@ tasks:
     covers: [AC1, AC2, AC4]
     test: {path: tests/test_lakeformation_prompt_acceptance.py, name: test_prompt_final_knowledge_matrix_is_executable}
   - id: T2
-    files: [sparkforge/lakeformation/architecture.py, tests/test_lakeformation_prompt_acceptance.py]
+    files: [sparkforge_aws/lakeformation/architecture.py, tests/test_lakeformation_prompt_acceptance.py]
     covers: [AC3]
     test: {path: tests/test_lakeformation_prompt_acceptance.py, name: test_migration_report_has_prompt_sections}
   - id: T3

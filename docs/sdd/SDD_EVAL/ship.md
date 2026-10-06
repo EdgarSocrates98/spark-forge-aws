@@ -32,7 +32,7 @@ A previsão tinha duas partes, e as duas foram medidas:
 1. **O baseline registra k/N de acerto e de uso das tools exigidas.**
    `evals/agentic/sdd/baselines/2026-09-17-haiku-4-5/` tem `r1.json` e
    `r2.json` (N=2), pontuados contra o sha256 da suite
-   (`test_suite_carrega_e_exige_as_tools`). `python -m sparkforge.evals
+   (`test_suite_carrega_e_exige_as_tools`). `python -m sparkforge_aws.evals
    compare` dá acerto 2/2 nas seis perguntas e tools 2/2 em cinco delas.
 2. **A comparação com superpowers e AgentSpec sai recusada por nome.**
    `evals/agentic/sdd/README.md`, seção *O que ela NÃO mede*, com o que a
@@ -40,7 +40,7 @@ A previsão tinha duas partes, e as duas foram medidas:
 
 A afirmação ("usa `sdd_check`/`sdd_status`, e não lê o YAML no olho") foi
 observada em 11 de 12 respostas. Em `r2`, `sdd-03` respondeu certo **lendo o
-YAML**, depois de tentar `python -m sparkforge.cli`. A previsão não fixou
+YAML**, depois de tentar `python -m sparkforge_aws.cli`. A previsão não fixou
 limiar, então o desfecho não esconde esse caso: ele está aqui e no README da
 suite. Nenhuma chamada foi pelo MCP; todas as que contaram foram pela CLI.
 
@@ -80,7 +80,7 @@ Bateria de 19 arquivos: 1453 verdes. A suíte inteira em lotes não rodou.
 `SDD_SKILLS/ship.md` fechou `confirmed` com "as features seguintes fecham sem
 recusa" ainda por medir. Medido agora: `SDD_OPERATOR`, `SDD_OPERATOR_DURAVEL`,
 `SDD_SKILLS_REVISAO`, `SDD_MIGRATION` e esta feature fecham com
-`sparkforge sdd check` em zero recusa e zero lacuna. O caso operator real
+`sparkforge-aws sdd check` em zero recusa e zero lacuna. O caso operator real
 continua sem medida: as fixtures são sintéticas.
 
 ## Lições

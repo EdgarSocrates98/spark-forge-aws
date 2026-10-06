@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge budget`
+# `sparkforge-aws budget`
 
 Mostra estado do budget do case.
 
@@ -8,14 +8,14 @@ Mostra estado do budget do case.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge budget show`](#sparkforge-budget-show) | Mostra budget do case. |
+| [`sparkforge-aws budget show`](#sparkforge-aws-budget-show) | Mostra budget do case. |
 
-## `sparkforge budget show`
+## `sparkforge-aws budget show`
 
 Mostra budget do case.
 
 ```bash
-sparkforge budget show --help
+sparkforge-aws budget show --help
 ```
 
 ### Opções

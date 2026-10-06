@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.decision import DecisionStatus, ReplayHostAdapter, replay_host_mapping
+from sparkforge_aws.decision import DecisionStatus, ReplayHostAdapter, replay_host_mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,7 +59,7 @@ def test_usage_transcript_hash_mismatch_never_attributes_provider_tokens() -> No
 def test_decision_core_has_no_provider_or_mcp_sdk_imports() -> None:
     source = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in (ROOT / "sparkforge/decision").glob("*.py")
+        for path in (ROOT / "sparkforge_aws/decision").glob("*.py")
     ).lower()
     for forbidden in ("anthropic", "openai", "bedrock", "litellm", "mcp"):
         assert forbidden not in source
@@ -69,7 +69,7 @@ def test_evaluation_core_has_no_provider_or_mcp_sdk_imports() -> None:
     import ast
 
     modules = []
-    for path in (ROOT / "sparkforge/evals").glob("*.py"):
+    for path in (ROOT / "sparkforge_aws/evals").glob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         modules.extend(
             node.module or node.names[0].name
@@ -88,7 +88,7 @@ def test_evaluation_core_has_no_provider_or_mcp_sdk_imports() -> None:
 
 
 def test_evaluation_adapters_keep_external_execution_explicit() -> None:
-    source = (ROOT / "sparkforge/evals/evidence_adapters.py").read_text(encoding="utf-8")
+    source = (ROOT / "sparkforge_aws/evals/evidence_adapters.py").read_text(encoding="utf-8")
     assert "shell=False" in source
     assert "capture_output=True" not in source
 

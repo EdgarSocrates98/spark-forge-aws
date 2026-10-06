@@ -21,7 +21,7 @@ claims:
     evidence_ref: "tests/test_tools_ok_rule.py::test_claude_md_abre_com_a_regra_de_prova"
   - text: "O AGENTS.md carrega o bloco equivalente em inglês, antes de 'This repository contains', com o mesmo conjunto de tools que o bloco do CLAUDE.md."
     evidence_ref: "tests/test_tools_ok_rule.py::test_agents_md_carrega_a_mesma_regra"
-  - text: "Toda tool sparkforge_* citada no bloco existe em sparkforge.adapters.tools.TOOLS, e o conjunto citado cobre required_tools de toda pergunta de evals/agentic/fase0/suite.yaml."
+  - text: "Toda tool sparkforge_* citada no bloco existe em sparkforge_aws.adapters.tools.TOOLS, e o conjunto citado cobre required_tools de toda pergunta de evals/agentic/fase0/suite.yaml."
     evidence_ref: "tests/test_tools_ok_rule.py::test_verbos_da_regra_existem_e_cobrem_a_suite"
   - text: "CLAUDE.md (24 440 bytes) e AGENTS.md (23 043 bytes) continuam dentro do teto de 26 000 bytes de tests/test_bootstrap_budget.py depois do bloco novo."
     evidence_ref: "tests/test_bootstrap_budget.py"
@@ -82,7 +82,7 @@ próprio nas duas, conforme o desvio acima):
   `python -m pytest tests/test_bootstrap_budget.py tests/test_docs_coverage.py -q`
   (AC4) e `python scripts/check_vnext_claims.py`,
   `python scripts/check_status_numbers.py --strict`,
-  `python -m ruff check sparkforge scripts tests` — todos verdes depois da
+  `python -m ruff check sparkforge_aws scripts tests` — todos verdes depois da
   remediação por id em `docs/claims.lock.json`.
 - **T2.** O teste (D4) confere que existe um diretório
   `evals/agentic/fase0/baselines/*-tools-ok` com três ou mais `r*.json`, cada

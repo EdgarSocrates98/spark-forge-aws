@@ -8,9 +8,9 @@ upstream:
   path: docs/sdd/STREAMING_SLO_LATENCY_FRESHNESS/define.md
   sha256: "fb6cb695fbdd8d2a5c5fcda63f644675038c0559ff2fefb88c5692fdbf7abf8c"
 files:
-  - {path: sparkforge/facts/streaming_ops.py, action: modify, reason: "preservar statistic seguro na declaração SLO"}
-  - {path: sparkforge/facts/streaming.py, action: modify, reason: "emitir freshness_ms somente de timestamp/eventTime.max ou campo explícito"}
-  - {path: sparkforge/facts/streaming_slo.py, action: modify, reason: "aceitar métricas de latência, statistic=p95 e cálculo nearest-rank"}
+  - {path: sparkforge_aws/facts/streaming_ops.py, action: modify, reason: "preservar statistic seguro na declaração SLO"}
+  - {path: sparkforge_aws/facts/streaming.py, action: modify, reason: "emitir freshness_ms somente de timestamp/eventTime.max ou campo explícito"}
+  - {path: sparkforge_aws/facts/streaming_slo.py, action: modify, reason: "aceitar métricas de latência, statistic=p95 e cálculo nearest-rank"}
   - {path: tests/test_facts_streaming_ops.py, action: modify, reason: "provar contrato seguro de statistic"}
   - {path: tests/test_facts_streaming.py, action: modify, reason: "provar freshness temporal e unresolved"}
   - {path: tests/test_facts_streaming_slo.py, action: modify, reason: "provar p95, freshness e end-to-end explícito"}
@@ -44,9 +44,9 @@ covers:
 
 ## Conhecimento consultado
 
-- `sparkforge/facts/streaming.py`: `StreamingQueryProgress` público já traz
+- `sparkforge_aws/facts/streaming.py`: `StreamingQueryProgress` público já traz
   `timestamp` e `eventTime`; o extractor preserva ambos como facts.
-- `sparkforge/facts/streaming_slo.py`: seleção por identidade, unidade,
+- `sparkforge_aws/facts/streaming_slo.py`: seleção por identidade, unidade,
   timestamp, cobertura de janela e proveniência já são contratos estáveis.
 - `knowledge/streaming-operations.md`: SLO não escolhe target e não confunde
   ausência de evidência com atendimento.

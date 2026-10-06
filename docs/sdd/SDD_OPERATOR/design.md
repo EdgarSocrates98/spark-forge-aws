@@ -8,7 +8,7 @@ upstream:
   path: docs/sdd/SDD_OPERATOR/define.md
   sha256: "81590210f2d3e517fbe2b5ad59c544877becd1dee22ab34ba7b9eb1c73a6df04"
 files:
-  - {path: sparkforge/sdd/checks.py, action: modify, reason: "funcval_not_comparison e funcval_blind_spot no gate de verified_by"}
+  - {path: sparkforge_aws/sdd/checks.py, action: modify, reason: "funcval_not_comparison e funcval_blind_spot no gate de verified_by"}
   - {path: tests/test_sdd.py, action: modify, reason: "AC2 e AC3"}
   - {path: tests/test_sdd_operator.py, action: create, reason: "AC1 e AC4"}
   - {path: agents/spark-performance-architect.md, action: modify, reason: "paragrafo que cita sdd-define e sdd-build e diz quando abrir a spec"}
@@ -49,7 +49,7 @@ covers:
 - le como lista de facts (lista crua ou `{"items": [...]}`, o mesmo leitor de
   `_ids_de_fact`);
 - nenhum `kind == "funcval.check_delta"` → recusa `funcval_not_comparison`, com
-  unlock `sparkforge funcval compare --plan ... --before ... --after ... --out <ref>`;
+  unlock `sparkforge-aws funcval compare --plan ... --before ... --after ... --out <ref>`;
 - cada `funcval.unresolved` → lacuna `funcval_blind_spot` nomeando o `subject`
   do fact.
 
@@ -60,7 +60,7 @@ covers:
    linha; `call_tool("sparkforge_change_sandbox", {"repo", "diff_path"})` e o id
    devolvido vira `change_id`.
 3. Arquivo de comparacao sintetico com um `funcval.check_delta` (a forma exata
-   sai de `sparkforge/facts/funcval.py::_check_delta`).
+   sai de `sparkforge_aws/facts/funcval.py::_check_delta`).
 4. Feature operator (define com `case_id`, `verified_by` funcval; build_report
    com `change_id`), carimbada em ordem; `check` sai sem recusa.
 5. Negativos: sem o sandbox → `change_missing`; comparacao sem delta →

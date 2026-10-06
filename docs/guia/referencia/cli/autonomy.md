@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge autonomy`
+# `sparkforge-aws autonomy`
 
 Mostra níveis de autonomia L0-L5.
 
@@ -8,14 +8,14 @@ Mostra níveis de autonomia L0-L5.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge autonomy show`](#sparkforge-autonomy-show) | Mostra perfil de um nível. |
+| [`sparkforge-aws autonomy show`](#sparkforge-aws-autonomy-show) | Mostra perfil de um nível. |
 
-## `sparkforge autonomy show`
+## `sparkforge-aws autonomy show`
 
 Mostra perfil de um nível.
 
 ```bash
-sparkforge autonomy show --help
+sparkforge-aws autonomy show --help
 ```
 
 ### Opções

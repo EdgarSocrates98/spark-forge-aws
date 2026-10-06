@@ -1,4 +1,4 @@
-"""Unidade de `sparkforge/observability/otlp.py`: o export OTLP/JSON.
+"""Unidade de `sparkforge_aws/observability/otlp.py`: o export OTLP/JSON.
 
 Cada teste prende uma decisao do DESIGN (`DESIGN_OTEL_GENAI_EXPORT.md`): ids e
 tempo deterministicos, canal medido, recusa nomeada, provider declarado e
@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from sparkforge.observability.otlp import (
+from sparkforge_aws.observability.otlp import (
     AGENT_DURATION_BOUNDS,
     KIND_INTERNAL,
     KIND_SERVER,
@@ -199,12 +199,12 @@ class TestSpanDoSparkForge:
         (s,) = _todos_spans(_projetar([_span("a", outcome=desfecho)]))
         assert s["status"] == {"code": STATUS_ERROR, "message": desfecho}
         assert _attrs(s)["error.type"] == "tool_error"
-        assert _attrs(s)["sparkforge.outcome"] == desfecho
+        assert _attrs(s)["sparkforge_aws.outcome"] == desfecho
 
     def test_bytes_saem_como_bytes_e_nunca_como_token(self):
         p = _projetar([_span("a")])
         texto, _ = linhas_jsonl(p)
-        assert _attrs(_todos_spans(p)[0])["sparkforge.payload_bytes"] == "10"
+        assert _attrs(_todos_spans(p)[0])["sparkforge_aws.payload_bytes"] == "10"
         assert "gen_ai.usage" not in texto
 
     def test_spans_ordenados_por_inicio(self):
@@ -218,13 +218,13 @@ class TestRecusa:
     @pytest.mark.parametrize(("inicio", "fim"), [(None, T0), (T0, None)])
     def test_span_sem_horario_vira_recusa_nomeada(self, inicio, fim):
         p = _projetar([_span("a"), _span("z", inicio=inicio, fim=fim)])
-        assert p.recusados == ({"origin": "sparkforge", "id": "z", "reason": "sem_horario"},)
+        assert p.recusados == ({"origin": "sparkforge-aws", "id": "z", "reason": "sem_horario"},)
         assert p.counts["exported"] + p.counts["refused"] == 2
 
     def test_span_que_nao_e_de_tool_nao_vira_execute_tool(self):
         p = _projetar([_span("a"), _span("t", component_type="task")])
         assert p.recusados == (
-            {"origin": "sparkforge", "id": "t", "reason": "componente_nao_tool"},
+            {"origin": "sparkforge-aws", "id": "t", "reason": "componente_nao_tool"},
         )
         assert len(_todos_spans(p)) == 1
 

@@ -11,12 +11,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.agentic.shadow import observe_adaptive_route, route_with_mode
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_models import DecisionInput
-from sparkforge.economy.decision_plane import DecisionPlaneService
-from sparkforge.economy.decision_receipts import DecisionReceiptStore
-from sparkforge.economy.model_router import (
+from sparkforge_aws.agentic.shadow import observe_adaptive_route, route_with_mode
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_models import DecisionInput
+from sparkforge_aws.economy.decision_plane import DecisionPlaneService
+from sparkforge_aws.economy.decision_receipts import DecisionReceiptStore
+from sparkforge_aws.economy.model_router import (
     AdaptiveModelRouter,
     ModelCandidate,
     ModelRoutingInput,

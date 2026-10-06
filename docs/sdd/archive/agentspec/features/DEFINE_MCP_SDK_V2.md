@@ -16,7 +16,7 @@
 
 ## Problem Statement
 
-O servidor MCP (`sparkforge/adapters/mcp.py`, 86 tools, stdio e streamable HTTP) está preso ao `mcp>=1.0,<2`. O 2.x removeu os decoradores `@server.list_tools()`/`@server.call_tool()`, e — o que o pin não registra — também deixou de fazer três coisas que o adapter recebia do 1.x sem declarar: validar `arguments` contra o `inputSchema`, validar o resultado contra o `outputSchema`, e transformar o dict devolvido em `structuredContent` com o texto `json.dumps(indent=2)`. Uma troca só de API manteria as tools respondendo e perderia as duas validações em silêncio. Por isso a migração precisa reescrever essas garantias e provar que nenhum byte servido mudou.
+O servidor MCP (`sparkforge_aws/adapters/mcp.py`, 86 tools, stdio e streamable HTTP) está preso ao `mcp>=1.0,<2`. O 2.x removeu os decoradores `@server.list_tools()`/`@server.call_tool()`, e — o que o pin não registra — também deixou de fazer três coisas que o adapter recebia do 1.x sem declarar: validar `arguments` contra o `inputSchema`, validar o resultado contra o `outputSchema`, e transformar o dict devolvido em `structuredContent` com o texto `json.dumps(indent=2)`. Uma troca só de API manteria as tools respondendo e perderia as duas validações em silêncio. Por isso a migração precisa reescrever essas garantias e provar que nenhum byte servido mudou.
 
 ---
 
@@ -35,7 +35,7 @@ O servidor MCP (`sparkforge/adapters/mcp.py`, 86 tools, stdio e streamable HTTP)
 | Priority | Goal |
 |----------|------|
 | **MUST** | G1: o servidor roda sob `mcp>=2,<3` (extras `mcp` e `dev`), com `Server` de baixo nível do 2.x registrado por `on_list_tools`/`on_call_tool`, nos dois transportes |
-| **MUST** | G2: as três garantias do 1.x (validação de entrada, validação de saída, envelope `structuredContent` + `json.dumps(indent=2)`) viram funções puras em `sparkforge/adapters/mcp_envelope.py`, testáveis sem o SDK instalado, com as mensagens de erro copiadas do texto do 1.x |
+| **MUST** | G2: as três garantias do 1.x (validação de entrada, validação de saída, envelope `structuredContent` + `json.dumps(indent=2)`) viram funções puras em `sparkforge_aws/adapters/mcp_envelope.py`, testáveis sem o SDK instalado, com as mensagens de erro copiadas do texto do 1.x |
 | **MUST** | G3: golden de paridade gerado **uma vez** sob o 1.x e congelado em `fixtures/mcp_parity/`; sob o 2.x, diff vazio exceto campos em allowlist com motivo escrito |
 | **MUST** | G4: SPEC 71 intacta — `sparkforge_code_read` fora de `tools/list` em HTTP, e `tools/call` recusando nome fora do catálogo do transporte |
 | **MUST** | G5: locks reproduzíveis (`locks/py3.10.txt`, `locks/py3.11.txt`) regenerados por `scripts/gen_lock.py` com o 2.x e as transitivas novas, e o scan de SCA verde |
@@ -73,7 +73,7 @@ O servidor MCP (`sparkforge/adapters/mcp.py`, 86 tools, stdio e streamable HTTP)
 | AT-009 | Envelope sem SDK | Ambiente sem `mcp` instalado | Testes de `mcp_envelope.py` | Passam; nenhum import de `mcp` no módulo |
 | AT-010 | Era moderna | Cliente 2.x no protocolo `2026-07-28` | `server/discover` e depois `tools/list` | Resposta válida, com o mesmo catálogo de AT-001 |
 | AT-011 | SDK ausente | Sem o extra `mcp` | `build_server()` | `SystemExit` com `_INSTALL_HINT`, como hoje |
-| AT-012 | Eval agêntico | Baseline `2026-09-11-haiku-4-5` + candidato 2.x, N = 3 | `python -m sparkforge.evals compare` | 0 transições pass→fail/mixed |
+| AT-012 | Eval agêntico | Baseline `2026-09-11-haiku-4-5` + candidato 2.x, N = 3 | `python -m sparkforge_aws.evals compare` | 0 transições pass→fail/mixed |
 
 ---
 
@@ -94,7 +94,7 @@ O servidor MCP (`sparkforge/adapters/mcp.py`, 86 tools, stdio e streamable HTTP)
 
 | Type | Constraint | Impact |
 |------|------------|--------|
-| Technical | Regra 23: nada de provider nem subprocess em `sparkforge/` | O eval roda fora do pacote (`scripts/run_agentic_eval.py`); o adapter segue sem chamar modelo |
+| Technical | Regra 23: nada de provider nem subprocess em `sparkforge_aws/` | O eval roda fora do pacote (`scripts/run_agentic_eval.py`); o adapter segue sem chamar modelo |
 | Technical | Import do SDK sempre tardio; o pacote funciona sem o extra `mcp` | `mcp_envelope.py` não importa `mcp`; `build_server` mantém o `try/except ImportError` |
 | Technical | Regra 26: `instructions`, `description` e `cache_hints` movem a superfície | `check_surface_lock.py --update` com o crescimento declarado no commit |
 | Technical | Regra 30: o eval só afirma "não regrediu" | Nenhum número de ganho publicado |
@@ -110,7 +110,7 @@ O servidor MCP (`sparkforge/adapters/mcp.py`, 86 tools, stdio e streamable HTTP)
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/adapters/mcp.py`, novo `sparkforge/adapters/mcp_envelope.py`, `scripts/` (gerador e comparador do golden), `fixtures/mcp_parity/`, `tests/`, `pyproject.toml`, `requirements.txt`, `locks/` | O adapter continua como casca fina sobre `tools.py` |
+| **Deployment Location** | `sparkforge_aws/adapters/mcp.py`, novo `sparkforge_aws/adapters/mcp_envelope.py`, `scripts/` (gerador e comparador do golden), `fixtures/mcp_parity/`, `tests/`, `pyproject.toml`, `requirements.txt`, `locks/` | O adapter continua como casca fina sobre `tools.py` |
 | **KB Domains** | MCP (servidor lowlevel, transportes stdio/streamable HTTP), testing (golden/snapshot, testes sem dependência opcional), Python packaging (extras, lock com hash) | Padrão de golden já usado em `fixtures/*/expected/` |
 | **IaC Impact** | None | Sem infraestrutura; o CI muda só pelos locks |
 
@@ -123,7 +123,7 @@ O servidor MCP (`sparkforge/adapters/mcp.py`, 86 tools, stdio e streamable HTTP)
 | A-001 | Com `on_call_tool` devolvendo `CallToolResult` montado por nós, o 2.x não reescreve `content`/`structuredContent` no fio | A paridade byte a byte cai; teria de comparar depois da desserialização | [ ] |
 | A-002 | O `serve_dual_era_loop` atende clientes do protocolo `2025-06-18` sem mudar o `tools/list` | Clientes antigos quebram; seria preciso negociar versão | [ ] |
 | A-003 | `StreamableHTTPSessionManager(app, json_response, stateless)`, `.run()` e `.handle_request()` do 2.x se comportam como no 1.x para `stateless=True` | `build_http_app` precisa de reescrita, não só de manutenção | [ ] (assinaturas conferidas no wheel; comportamento não) |
-| A-004 | `mcp.shared.memory.create_client_server_memory_streams` basta para dirigir o servidor em processo no gerador do golden e nos testes | O golden precisaria de subprocesso com stdio real — o que fica em `scripts/`, nunca em `sparkforge/` | [ ] |
+| A-004 | `mcp.shared.memory.create_client_server_memory_streams` basta para dirigir o servidor em processo no gerador do golden e nos testes | O golden precisaria de subprocesso com stdio real — o que fica em `scripts/`, nunca em `sparkforge_aws/` | [ ] |
 | A-005 | O texto de erro de validação do 1.x é reproduzível só a partir da mensagem do `jsonschema.ValidationError` | Paridade de erro exige copiar a formatação exata do 1.x; se depender de versão do `jsonschema`, o golden fixa a versão | [ ] |
 | A-006 | As transitivas novas do 2.2.0 resolvem nas duas versões de Python do lock e passam no SCA | Travaria no G5; alternativa seria fixar um 2.x anterior | [ ] |
 | A-007 | Nenhum cliente em uso (Claude Code, Devin CLI/Desktop) depende de comportamento que só o 1.x tinha | O eval (G6) e o teste manual de conexão acusariam | [ ] |

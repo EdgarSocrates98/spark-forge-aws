@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge decision`
+# `sparkforge-aws decision`
 
 Valida e observa decisões declarativas sem alterar o dispatch atual.
 
@@ -8,19 +8,19 @@ Valida e observa decisões declarativas sem alterar o dispatch atual.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge decision benchmark`](#sparkforge-decision-benchmark) | Executa a suíte seed offline do Decision Plane. |
-| [`sparkforge decision compare`](#sparkforge-decision-compare) | Compara uma decisão shadow persistida com uma rota atual. |
-| [`sparkforge decision evaluate`](#sparkforge-decision-evaluate) | Avalia contrato bounded genérico em modo offline. |
-| [`sparkforge decision receipt`](#sparkforge-decision-receipt) | Verifica receipt content-addressed de decisão shadow. |
-| [`sparkforge decision shadow`](#sparkforge-decision-shadow) | Avalia estado normalizado e compara com a rota atual. |
-| [`sparkforge decision validate`](#sparkforge-decision-validate) | Valida um contrato Decision Plane versionado. |
+| [`sparkforge-aws decision benchmark`](#sparkforge-aws-decision-benchmark) | Executa a suíte seed offline do Decision Plane. |
+| [`sparkforge-aws decision compare`](#sparkforge-aws-decision-compare) | Compara uma decisão shadow persistida com uma rota atual. |
+| [`sparkforge-aws decision evaluate`](#sparkforge-aws-decision-evaluate) | Avalia contrato bounded genérico em modo offline. |
+| [`sparkforge-aws decision receipt`](#sparkforge-aws-decision-receipt) | Verifica receipt content-addressed de decisão shadow. |
+| [`sparkforge-aws decision shadow`](#sparkforge-aws-decision-shadow) | Avalia estado normalizado e compara com a rota atual. |
+| [`sparkforge-aws decision validate`](#sparkforge-aws-decision-validate) | Valida um contrato Decision Plane versionado. |
 
-## `sparkforge decision benchmark`
+## `sparkforge-aws decision benchmark`
 
 Executa a suíte seed offline do Decision Plane.
 
 ```bash
-sparkforge decision benchmark --help
+sparkforge-aws decision benchmark --help
 ```
 
 ### Opções
@@ -35,12 +35,12 @@ sparkforge decision benchmark --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge decision compare`
+## `sparkforge-aws decision compare`
 
 Compara uma decisão shadow persistida com uma rota atual.
 
 ```bash
-sparkforge decision compare --help
+sparkforge-aws decision compare --help
 ```
 
 ### Opções
@@ -55,12 +55,12 @@ sparkforge decision compare --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge decision evaluate`
+## `sparkforge-aws decision evaluate`
 
 Avalia contrato bounded genérico em modo offline.
 
 ```bash
-sparkforge decision evaluate --help
+sparkforge-aws decision evaluate --help
 ```
 
 ### Opções
@@ -77,12 +77,12 @@ sparkforge decision evaluate --help
 
 [`sparkforge_decision_evaluate`](../tools/sparkforge_decision_evaluate.md)
 
-## `sparkforge decision receipt`
+## `sparkforge-aws decision receipt`
 
 Verifica receipt content-addressed de decisão shadow.
 
 ```bash
-sparkforge decision receipt --help
+sparkforge-aws decision receipt --help
 ```
 
 ### Opções
@@ -96,12 +96,12 @@ sparkforge decision receipt --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge decision shadow`
+## `sparkforge-aws decision shadow`
 
 Avalia estado normalizado e compara com a rota atual.
 
 ```bash
-sparkforge decision shadow --help
+sparkforge-aws decision shadow --help
 ```
 
 ### Opções
@@ -118,12 +118,12 @@ sparkforge decision shadow --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge decision validate`
+## `sparkforge-aws decision validate`
 
 Valida um contrato Decision Plane versionado.
 
 ```bash
-sparkforge decision validate --help
+sparkforge-aws decision validate --help
 ```
 
 ### Opções

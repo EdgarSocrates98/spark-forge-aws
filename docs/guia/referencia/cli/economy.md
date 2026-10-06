@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge economy`
+# `sparkforge-aws economy`
 
 O que a execucao poe na janela de contexto: byte medido, nunca token estimado.
 
@@ -8,15 +8,15 @@ O que a execucao poe na janela de contexto: byte medido, nunca token estimado.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge economy provider-cost`](#sparkforge-economy-provider-cost) | Calcula custo observado do transcript com pricing e cost_basis declarados. |
-| [`sparkforge economy report`](#sparkforge-economy-report) | Agrupa os spans de um run e poe a superficie ao lado. |
+| [`sparkforge-aws economy provider-cost`](#sparkforge-aws-economy-provider-cost) | Calcula custo observado do transcript com pricing e cost_basis declarados. |
+| [`sparkforge-aws economy report`](#sparkforge-aws-economy-report) | Agrupa os spans de um run e poe a superficie ao lado. |
 
-## `sparkforge economy provider-cost`
+## `sparkforge-aws economy provider-cost`
 
 Calcula custo observado do transcript com pricing e cost_basis declarados.
 
 ```bash
-sparkforge economy provider-cost --help
+sparkforge-aws economy provider-cost --help
 ```
 
 ### Opções
@@ -31,12 +31,12 @@ sparkforge economy provider-cost --help
 
 Nenhuma: este verbo existe só na CLI.
 
-## `sparkforge economy report`
+## `sparkforge-aws economy report`
 
 Agrupa os spans de um run e poe a superficie ao lado.
 
 ```bash
-sparkforge economy report --help
+sparkforge-aws economy report --help
 ```
 
 ### Opções

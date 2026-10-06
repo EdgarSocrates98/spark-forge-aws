@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.catalog_schema import extract_catalog_schema_tree
-from sparkforge.facts.s3_listing import extract_s3_listing_path
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.catalog_schema import extract_catalog_schema_tree
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "s3"

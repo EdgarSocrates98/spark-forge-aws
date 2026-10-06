@@ -7,7 +7,7 @@ gatilho; todo o resto ja tem teto ou pagina.
 
 - Auditado em: 2026-10-06
 - Mecanismo existente: `paginate_items` / `next_cursor` / `page_size` em
-  `sparkforge/adapters/_core.py` (call sites ~1016, 1078, 1385, 1443,
+  `sparkforge_aws/adapters/_core.py` (call sites ~1016, 1078, 1385, 1443,
   3935, 5436, 6075) — usado pelos verbos `analyze_*` e fatias de facts.
 
 ## Pagina (cursor real)

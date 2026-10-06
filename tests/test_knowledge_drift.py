@@ -6,7 +6,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from sparkforge.knowledge_drift import RepoIndex, build_index, drift, render_markdown, repo_root
+from sparkforge_aws.knowledge_drift import RepoIndex, build_index, drift, render_markdown, repo_root
 
 ROOT = Path(__file__).resolve().parents[1]
 URL = "https://exemplo.invalid/doc"

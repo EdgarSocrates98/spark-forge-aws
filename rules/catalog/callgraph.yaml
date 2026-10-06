@@ -1,5 +1,5 @@
 # Catálogo de regras — grafo de chamadas da biblioteca
-# Consome os facts de sparkforge/facts/call_graph.py, que são derivados de outros
+# Consome os facts de sparkforge_aws/facts/call_graph.py, que são derivados de outros
 # facts (pyspark.callgraph_edge e os kinds de trabalho Spark), não de artefato bruto.
 #
 # Estas regras respondem à pergunta que nenhuma outra área responde: onde, na
@@ -20,9 +20,9 @@
 #
 # O EFEITO MEDIDO: `RuntimeContext.spark` só vem de event log, de `GLUE_MATRIX`
 # (via `glue_version`) ou da flag `--spark`. Ler um `.py` não traz nenhum dos
-# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge
+# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge-aws
 # judge` -- o contexto sai com `spark: ""`, `in_scope` falha fechada
-# (`sparkforge/rules/version_scope.py`), e a ÁREA SF-CG INTEIRA sumia. Área de
+# (`sparkforge_aws/rules/version_scope.py`), e a ÁREA SF-CG INTEIRA sumia. Área de
 # uma regra só: o guarda apagava 100% dela, e como não havia segunda regra para
 # sobrar, o relatório perdia o eixo inteiro em silêncio.
 

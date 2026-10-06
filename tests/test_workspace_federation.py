@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sparkforge.workspace import (
+from sparkforge_aws.workspace import (
     SemanticEdge,
     SemanticGraph,
     SemanticNode,

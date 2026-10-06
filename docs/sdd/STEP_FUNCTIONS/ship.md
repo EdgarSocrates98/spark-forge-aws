@@ -37,14 +37,14 @@ deviations:
 - **Nenhum golden de achado existente mudou.**
   - `python -m pytest tests/test_fixtures_golden*.py -q` na árvore final deu 3242
     passed e 4 skipped, sem regeneração.
-  - Houve 1 error de teardown, causado por um `sparkforge sdd` rodado durante a suíte. O
+  - Houve 1 error de teardown, causado por um `sparkforge-aws sdd` rodado durante a suíte. O
     arquivo, rodado sozinho, deu 34 passed.
   - Os cinco goldens de assessment mudaram só na contagem do catálogo (157 para 161).
   - O `brief.json` de debate mudou numa linha. Ele não é golden de achado.
 
 ## O que o domínio entrega
 
-- **Extrator.** `sparkforge analyze step-functions --path` lê o `.asl.json` ou a saída de
+- **Extrator.** `sparkforge-aws analyze step-functions --path` lê o `.asl.json` ou a saída de
   `describe-state-machine`, e a tool `sparkforge_analyze_step_functions` faz o mesmo. Os
   dois emitem `sfn.task` por estado Task com:
   - o padrão de integração;
@@ -89,7 +89,7 @@ deviations:
 | números | `python scripts/check_status_numbers.py --strict` (AC10) | exit 0 |
 | lastro | `python scripts/check_vnext_claims.py` | 0 divergências |
 | goldens | `python -m pytest tests/test_fixtures_golden*.py -q` | 3242 passed, 4 skipped, 1 error de teardown (acima) |
-| estilo | `python -m ruff check sparkforge scripts tests` | limpo |
+| estilo | `python -m ruff check sparkforge_aws scripts tests` | limpo |
 
 ## Pendências
 
@@ -110,7 +110,7 @@ deviations:
   texto ou de padrão fora do caminho feliz: polling, `End` de ramo, Request Response com
   retry. Em domínio novo, a revisão do texto da regra contra as frases citadas precisa de
   um passo próprio.
-- Rodar a CLI `sparkforge` com a suíte rodando derruba um teste por teardown. Nada de
+- Rodar a CLI `sparkforge-aws` com a suíte rodando derruba um teste por teardown. Nada de
   `sdd stamp` nem `check` enquanto os goldens rodam.
 - Plano escrito por subagente trouxe números que o build corrigiu: `state_count`, as
   alegações e os links. O build publica o que o gate mede, e o plano fica como registro.

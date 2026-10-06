@@ -5,8 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sparkforge.adapters._core import analyze_flink
-from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.adapters._core import analyze_flink
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
 ROOT = Path(__file__).resolve().parents[1]
 FLINK = ROOT / "fixtures" / "flink" / "flink_positive" / "input" / "dump.json"
@@ -27,7 +27,7 @@ def test_cli_and_mcp_flink_envelopes_match():
         [
             sys.executable,
             "-m",
-            "sparkforge.adapters.cli",
+            "sparkforge_aws.adapters.cli",
             "analyze",
             "flink",
             "--path",

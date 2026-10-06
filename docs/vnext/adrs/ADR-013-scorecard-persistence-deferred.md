@@ -6,11 +6,11 @@ Deferred — reabre quando existir consumidor real do arquivo.
 
 ## Context
 
-`ModelScorecard` (`sparkforge/economy/model_router.py`) agrega observacoes de
+`ModelScorecard` (`sparkforge_aws/economy/model_router.py`) agrega observacoes de
 qualidade por recorte (provider, model, task_type) e alimenta o
 `AdaptiveModelRouter` **em memoria** — os scorecards entram por construcao.
 
-`agentic_doctor` (`sparkforge/adapters/_core.py`) confere a existencia de
+`agentic_doctor` (`sparkforge_aws/adapters/_core.py`) confere a existencia de
 `.sparkforge/model-scorecards.json` como readiness check, mas **nenhum caminho
 le ou escreve esse arquivo**: o check existe para declarar `unresolved`
 honesto quando a fonte nao existe, e e isso que ele reporta hoje.

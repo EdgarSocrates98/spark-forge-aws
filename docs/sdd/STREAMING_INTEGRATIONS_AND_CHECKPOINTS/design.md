@@ -8,10 +8,10 @@ upstream:
   path: docs/sdd/STREAMING_INTEGRATIONS_AND_CHECKPOINTS/define.md
   sha256: "4151e2dd6a853a6fcf51a75e01389062a46ed2666d40b13d4985782c8fada5f9"
 files:
-  - {path: sparkforge/facts/streaming_integrations.py, action: create, reason: "extrair quatro domínios offline e redigir campos sensíveis"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "publicar analyzer determinístico"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze streaming-integrations"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar MCP read-only"}
+  - {path: sparkforge_aws/facts/streaming_integrations.py, action: create, reason: "extrair quatro domínios offline e redigir campos sensíveis"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "publicar analyzer determinístico"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze streaming-integrations"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar MCP read-only"}
   - {path: rules/catalog/streaming-integrations.yaml, action: create, reason: "julgar quatro famílias de lacunas"}
   - {path: fixtures/streaming_integrations, action: create, reason: "goldens completo e incompleto"}
   - {path: knowledge/streaming-integrations.md, action: create, reason: "modelo e fronteira de coleta"}

@@ -8,7 +8,7 @@ fazer UMA regra disparar, sobre UM artefato, num runtime UNICO escrito a mao no
 `meta.yaml` e passado direto para `judge()`. Isso prova a regra. Nao prova o
 produto: ninguem opera este repositorio perguntando "o que `mig.sdk_import`
 vira" -- pergunta-se "o que acontece com ESTE job se eu sair do Glue 4.0 para o
-6.0". A resposta atravessa `sparkforge/migration/assessment.py`, que expande o
+6.0". A resposta atravessa `sparkforge_aws/migration/assessment.py`, que expande o
 par em degraus, julga cada degrau com o runtime derivado da MATRIZ (nao do
 `meta.yaml`) e agrega o resultado em tres visoes com cardinalidades diferentes
 (`findings`, `by_step`, `report()`).
@@ -51,9 +51,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.migration import extract_migration_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.migration.assessment import assess
+from sparkforge_aws.facts.migration import extract_migration_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.migration.assessment import assess
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "scenarios"
@@ -181,7 +181,7 @@ class TestAcumulacaoPorDegrau:
         assert resultado.steps == [("4.0", "5.0"), ("5.0", "5.1"), ("5.1", "6.0")]
 
     def test_o_mesmo_problema_nasce_em_mais_de_um_degrau(self):
-        """DECISAO 1 de `sparkforge/migration/assessment.py`, medida num job
+        """DECISAO 1 de `sparkforge_aws/migration/assessment.py`, medida num job
         realista em vez de num fact sintetico: SF-MIG-001 e SF-MIG-002 tem
         `runtime_scope` de Glue 5.0 para cima, e os TRES degraus deste caminho
         tem alvo que satisfaz esse escopo -- entao as duas nascem tres vezes.
@@ -306,7 +306,7 @@ class TestAdversarial:
     def test_o_golden_nao_carrega_par_de_versoes_que_a_matriz_desconhece(self):
         """Guarda contra golden regenerado a partir de um `meta.yaml` editado a
         mao: todo degrau do golden precisa ser um degrau que a matriz produz."""
-        from sparkforge.migration import version_path
+        from sparkforge_aws.migration import version_path
 
         for directory in fixture_dirs():
             dado = golden(directory)

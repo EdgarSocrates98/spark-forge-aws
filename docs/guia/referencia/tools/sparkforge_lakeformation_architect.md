@@ -16,7 +16,7 @@ Avalia uma arquitetura declarada de Lake Formation de forma offline e determiní
 
 ## Na CLI
 
-[`sparkforge lakeformation architect`](../cli/lakeformation.md)
+[`sparkforge-aws lakeformation architect`](../cli/lakeformation.md)
 
 ## Capacidade
 

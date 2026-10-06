@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.run_cost import extract_run_cost
-from sparkforge.findings.models import Fact
+from sparkforge_aws.facts.run_cost import extract_run_cost
+from sparkforge_aws.findings.models import Fact
 
 
 def _run(run_id="jr_1", dpu=3600.0, dpu_source="derived"):
@@ -89,10 +89,10 @@ class TestRecusas:
         assert lacunas[0].attrs["reason"] == "dpu_seconds_unavailable"
 
     def test_a_price_table_that_does_not_load_is_a_gap(self, monkeypatch):
-        from sparkforge.facts import run_cost
+        from sparkforge_aws.facts import run_cost
 
         def boom(*_args, **_kwargs):
-            from sparkforge.facts.pricing import PricingError
+            from sparkforge_aws.facts.pricing import PricingError
 
             raise PricingError("tabela ausente")
 
@@ -102,7 +102,7 @@ class TestRecusas:
         assert [f.attrs["reason"] for f in facts] == ["price_unavailable"]
 
     def test_two_prices_without_an_axis_is_ambiguous_not_a_guess(self, monkeypatch):
-        from sparkforge.facts import run_cost
+        from sparkforge_aws.facts import run_cost
 
         entrada = {
             "value": "0.44",
@@ -126,7 +126,7 @@ class TestRecusas:
 
 class TestSchema:
     def test_every_emitted_fact_validates(self):
-        from sparkforge.findings.validate import validate_fact
+        from sparkforge_aws.findings.validate import validate_fact
 
         facts = extract_run_cost([_run(), _run("jr_2", dpu=None)], "facts.json")
 

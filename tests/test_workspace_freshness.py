@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from sparkforge.workspace.freshness import (
+from sparkforge_aws.workspace.freshness import (
     assess_codeintel_freshness,
     assess_freshness,
     read_codeintel_metadata,

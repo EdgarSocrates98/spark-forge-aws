@@ -46,7 +46,7 @@ import pathlib
 
 import pytest
 
-from sparkforge.facts.secrets import (
+from sparkforge_aws.facts.secrets import (
     _PADROES_POR_VALOR,
     REDACTED,
     detectores,
@@ -411,7 +411,7 @@ def test_existe_um_unico_detector_de_segredo_no_pacote():
     antes de a quinta divergir -- que e o unico momento em que a divergencia
     ainda e barata de consertar.
     """
-    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge"
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge_aws"
     definidores = []
     for arquivo in sorted(raiz.rglob("*.py")):
         if "__pycache__" in arquivo.parts:

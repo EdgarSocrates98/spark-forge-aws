@@ -1,4 +1,4 @@
-from sparkforge.facts.runtime_detect import GLUE_MATRIX, detect_runtime
+from sparkforge_aws.facts.runtime_detect import GLUE_MATRIX, detect_runtime
 
 
 class TestMatrix:
@@ -60,8 +60,8 @@ class TestDivergence:
 
 class TestSfEnv001FiresOnDivergence:
     def test_divergence_produces_sf_env_001(self):
-        from sparkforge.rules.engine import judge
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.engine import judge
+        from sparkforge_aws.rules.loader import load_catalog
 
         sources = {
             "terraform": {"glue_version": "5.0"},

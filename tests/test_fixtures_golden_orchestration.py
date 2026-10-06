@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.orchestration.topology import analyze_orchestration
+from sparkforge_aws.orchestration.topology import analyze_orchestration
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "orchestration"

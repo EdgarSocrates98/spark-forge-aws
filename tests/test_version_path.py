@@ -1,7 +1,7 @@
 import pytest
 
-from sparkforge.facts import runtime_matrix
-from sparkforge.migration import release_descriptor, version_path
+from sparkforge_aws.facts import runtime_matrix
+from sparkforge_aws.migration import release_descriptor, version_path
 
 
 class TestCaminhoDeVersao:

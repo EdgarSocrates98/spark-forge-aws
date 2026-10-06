@@ -2,7 +2,7 @@
 
 ## O defeito que estes testes impedem de voltar
 
-Ate 2026-09-03 `sparkforge budget show` imprimia `CaseBudget()` de fabrica --
+Ate 2026-09-03 `sparkforge-aws budget show` imprimia `CaseBudget()` de fabrica --
 `max_total_tokens: 50000`, `max_debates: 2` -- sem nenhuma marca de que o numero
 era template e nao estado do case. Quem lesse a saida concluiria que o case
 declarava aqueles tetos.
@@ -31,8 +31,8 @@ from typing import Any
 
 import pytest
 
-from sparkforge.agentic.budget import CaseBudget
-from sparkforge.agentic.executor.plan import agent_for_area, area_of, debate_plan
+from sparkforge_aws.agentic.budget import CaseBudget
+from sparkforge_aws.agentic.executor.plan import agent_for_area, area_of, debate_plan
 
 
 def _texto(plano: dict[str, Any]) -> str:
@@ -152,8 +152,8 @@ def test_toda_area_executavel_do_catalogo_resolve_participante() -> None:
     (declaracao de coordenacao, sem `action`) nao entra, porque ela nao propoe
     mudanca e portanto nao entra em contradicao com ninguem.
     """
-    from sparkforge.findings.models import area_of
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.findings.models import area_of
+    from sparkforge_aws.rules.loader import load_catalog
 
     regras = [r for r in load_catalog() if r.get("action")]
     por_area: dict[str, str] = {}

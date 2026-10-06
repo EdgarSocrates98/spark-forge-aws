@@ -16,7 +16,7 @@ import json
 
 import pytest
 
-from sparkforge.facts.athena_workgroup import (
+from sparkforge_aws.facts.athena_workgroup import (
     EMITTED_KINDS,
     extract_athena_workgroup,
     extract_athena_workgroup_path,

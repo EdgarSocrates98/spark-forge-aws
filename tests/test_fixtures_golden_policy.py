@@ -24,7 +24,7 @@ def _rodar(caso: str) -> tuple[subprocess.CompletedProcess, float]:
     env = {**os.environ, "CLAUDE_PROJECT_DIR": str(FIXTURES / caso)}
     inicio = time.perf_counter()
     proc = subprocess.run(
-        [sys.executable, "-m", "sparkforge.policy.hook"],
+        [sys.executable, "-m", "sparkforge_aws.policy.hook"],
         input=(FIXTURES / caso / "input.json").read_text(encoding="utf-8"),
         capture_output=True, text=True, env=env, cwd=str(FIXTURES / caso), timeout=60,
     )
@@ -44,11 +44,11 @@ def test_golden(caso):
 
 
 def test_hook_nao_importa_o_catalogo_de_tools():
-    """O hook roda em todo Bash; importar `sparkforge.adapters` custa ~0,5 s."""
+    """O hook roda em todo Bash; importar `sparkforge_aws.adapters` custa ~0,5 s."""
     proc = subprocess.run(
         [sys.executable, "-c",
-         "import sys, sparkforge.policy.hook as h, sparkforge.policy.decide, "
-         "sparkforge.policy.load; print(any(m.startswith('sparkforge.adapters') "
+         "import sys, sparkforge_aws.policy.hook as h, sparkforge_aws.policy.decide, "
+         "sparkforge_aws.policy.load; print(any(m.startswith('sparkforge_aws.adapters') "
          "for m in sys.modules))"],
         capture_output=True, text=True, timeout=60,
     )

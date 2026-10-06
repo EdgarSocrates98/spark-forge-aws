@@ -21,10 +21,10 @@ decisions:
     rejected: ["collector implícito dentro de analyze", "tool separada por serviço nesta onda"]
     rollback: "Reverter o commit dos adapters e remover a entrada de surface regenerada."
 files:
-  - {path: sparkforge/facts/transport.py, action: create, reason: "extrator JSON/JSONL offline"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "envelope do analyzer"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "verbo analyze transport"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "tool MCP"}
+  - {path: sparkforge_aws/facts/transport.py, action: create, reason: "extrator JSON/JSONL offline"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "envelope do analyzer"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "verbo analyze transport"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "tool MCP"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "nenhuma regra nova; verificar que a rota existente permanece inalterada"}
   - {path: fixtures/transport, action: create, reason: "corpus golden"}
   - {path: knowledge/transport-diagnostics.md, action: create, reason: "limites e fontes oficiais"}

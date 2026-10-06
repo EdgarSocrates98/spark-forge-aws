@@ -137,7 +137,7 @@ PYTHON_VERSIONS = ("3.10", "3.11", "3.12")
 # `--only-binary :all:`, o alvo antigo tornava a versao segura irresolvivel:
 # `uv` recusa com "pyarrow>=23.0.1 has no usable wheels".
 #
-# O CVE incide no caminho que `sparkforge/collect/parquet_footer.py` exercita --
+# O CVE incide no caminho que `sparkforge_aws/collect/parquet_footer.py` exercita --
 # ele le o rodape de arquivos que o operador aponta, e um prefixo de dado de
 # terceiro E a "fonte nao confiavel" que o aviso descreve. Ficar no alvo antigo
 # era escolher entre um lock que nao resolve e um lock com RCE conhecida.
@@ -192,11 +192,11 @@ HEADER = """\
 # Confira com:  python scripts/gen_lock.py --check             (offline)
 """
 
-# `# sparkforge-lock: scope=... license=...` na linha imediatamente anterior a
+# `# sparkforge-aws-lock: scope=... license=...` na linha imediatamente anterior a
 # cada pin. Comentario porque pip ignora; estruturado porque
 # `scripts/gen_sbom.py` le: licenca e escopo sao dois campos que o SBOM precisa
 # carregar e que nao cabem na sintaxe de um requirements.txt.
-META_RE = re.compile(r"^# sparkforge-lock: scope=(?P<scope>\S+) license=(?P<license>.+)$")
+META_RE = re.compile(r"^# sparkforge-aws-lock: scope=(?P<scope>\S+) license=(?P<license>.+)$")
 PIN_RE = re.compile(r"^(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)==(?P<version>[^\s\\]+) \\$")
 HASH_RE = re.compile(r"^    --hash=sha256:(?P<digest>[0-9a-f]{64})(?P<cont> \\)?$")
 
@@ -216,7 +216,7 @@ class LockedPackage:
         self.scope = scope
 
     def render(self) -> str:
-        lines = [f"# sparkforge-lock: scope={self.scope} license={self.license}"]
+        lines = [f"# sparkforge-aws-lock: scope={self.scope} license={self.license}"]
         lines.append(f"{self.name}=={self.version} \\")
         for index, digest in enumerate(self.hashes):
             last = index == len(self.hashes) - 1
@@ -344,7 +344,7 @@ def _uv_compile(requirements: list[str], python_version: str) -> list[tuple[str,
     requisitos sao lidos de `pyproject.toml`, versao de Python e plataforma sao
     constantes deste modulo, e o arquivo de entrada e temporario escrito aqui.
     """
-    with tempfile.TemporaryDirectory(prefix="sparkforge-lock-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="sparkforge-aws-lock-") as tmp:
         entrada = Path(tmp) / "requirements.in"
         entrada.write_text("\n".join(requirements) + "\n", encoding="utf-8")
         argv = [
@@ -543,7 +543,7 @@ def parse(text: str) -> list[LockedPackage]:
         candidate_pin = PIN_RE.match(line)
         if candidate_pin:
             if meta is None:
-                raise ValueError(f"linha {number}: pin sem linha `# sparkforge-lock:` antes")
+                raise ValueError(f"linha {number}: pin sem linha `# sparkforge-aws-lock:` antes")
             if pin is not None:
                 raise ValueError(f"linha {number}: pin sem nenhum hash antes do proximo")
             pin = candidate_pin

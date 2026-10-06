@@ -9,7 +9,7 @@ upstream:
   sha256: "29de989529b2eda32a53280bd3d3f55a981d12f4844e853dadd54a5ec02af1aa"
 tasks:
   - id: T1
-    files: [tests/test_facts_glue_streaming.py, sparkforge/facts/glue_streaming.py]
+    files: [tests/test_facts_glue_streaming.py, sparkforge_aws/facts/glue_streaming.py]
     covers: [AC1, AC2, AC3]
     test: {path: tests/test_facts_glue_streaming.py, name: test_stream_endpoints_emit_explicit_facts}
   - id: T2

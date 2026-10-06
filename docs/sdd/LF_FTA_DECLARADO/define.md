@@ -59,7 +59,7 @@ change_kinds: [extractor, rule, status_numbers, claims]
 `SF-LF-010` dispara com `lakeformation.registered_location` (`registered: true`) e
 `absent: lakeformation.access_model`, e diz que o job "não declara nem FGAC nem Full Table
 Access". Um job só de FTA não produz `access_model` por desenho (docstring de
-`_access_models` em `sparkforge/facts/lakeformation.py`): FTA não tem argumento que o
+`_access_models` em `sparkforge_aws/facts/lakeformation.py`): FTA não tem argumento que o
 ligue, e a superfície dele é `lakeformation.filesystem`. A regra acusa falsamente o job
 que declara FTA. Medido nas fixtures `fixtures/cloudwatch_logs/lf_negado_fta_append_sem_all`
 e `lf_negado_fta_grant_all`, cujo `proves:` nomeia a lacuna e cujo `expects_rules` prende

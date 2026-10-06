@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.facts.schema_registry import extract_schema_registry_path
+from sparkforge_aws.facts.schema_registry import extract_schema_registry_path
 
 ROOT = Path(__file__).resolve().parents[1]
 

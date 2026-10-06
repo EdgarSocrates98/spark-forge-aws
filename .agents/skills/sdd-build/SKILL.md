@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge sdd check
-  - sparkforge sdd stamp
-  - sparkforge code symbol
+  - sparkforge-aws sdd check
+  - sparkforge-aws sdd stamp
+  - sparkforge-aws code symbol
 ---
 
 # SDD Build
@@ -44,7 +44,7 @@ auxiliar, um fixture, um typo), o teste está quebrado, não vermelho.
 
 ## Antes de começar
 
-1. `sparkforge sdd check --repo . --feature <F>` com o plan em `ready`.
+1. `sparkforge-aws sdd check --repo . --feature <F>` com o plan em `ready`.
 2. Branch de trabalho, nunca a principal.
 3. Leia o plano **com olho crítico**, uma vez, e extraia cada tarefa com o texto
    inteiro. Tarefa ambígua, comando que não existe, arquivo fora do manifesto
@@ -166,13 +166,13 @@ build; o resultado entra no corpo do relatório.
   **precisa existir**: o que faltar sai `verified_by_dangling`.
 
 Feche pelo laço de `docs/sdd/README.md#o-laço-de-cada-fase`:
-`sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` e
-`sparkforge sdd check --repo . --feature <F>`. Zero recusa e zero lacuna →
+`sparkforge-aws sdd stamp --repo . docs/sdd/<F>/build_report.md` e
+`sparkforge-aws sdd check --repo . --feature <F>`. Zero recusa e zero lacuna →
 `status: done`.
 
 ## Conhecimento durante o build
 
-Antes de mexer num símbolo, `sparkforge code symbol <node_id>` diz quem o chama.
+Antes de mexer num símbolo, `sparkforge-aws code symbol <node_id>` diz quem o chama.
 O resto: `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 
 ## Perfil operator
@@ -182,7 +182,7 @@ A sessão **nunca** escreve na árvore do operador. Spec e evidências moram em
 `docs/sdd/README.md#caminho-da-mudança-do-operador`; os três passos que mais
 erram:
 
-- `sparkforge change sandbox --repo . --diff d.patch`: o `id` vai para
+- `sparkforge-aws change sandbox --repo . --diff d.patch`: o `id` vai para
   `change_id`. Id fora de `.sparkforge/sandbox/` e de `.sparkforge/proposal/`
   sai `change_missing`. Achado novo P0 ou P1: pare e volte ao design.
 - `funcval compare ... --out <ref do AC>` e `benchmark ... --out bench.json`:
@@ -202,8 +202,8 @@ Registro por tarefa:
   regra em `resolved` e fora de `new`; senão, `moved_not_observed`. No dev,
   `moved` é `schema_invalid`.
 
-Feche com `sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>`.
-O `case_id` é o de `sparkforge case open` (`.sparkforge/case.yaml`).
+Feche com `sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+O `case_id` é o de `sparkforge-aws case open` (`.sparkforge/case.yaml`).
 
 ## Verificação antes de fechar
 
@@ -225,14 +225,14 @@ exit 0. A suíte inteira roda em lotes, um por vez
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o plan | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| quem chama | `sparkforge code symbol <node_id>` | `sparkforge_code_symbol` |
-| carimbar o relatório | `sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` | `sparkforge_sdd_stamp` |
-| diff (operator) | `sparkforge change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
-| sandbox (operator) | `sparkforge change sandbox --repo . --diff d.patch` | `sparkforge_change_sandbox` |
-| semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
-| desempenho (operator) | `sparkforge benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
-| pacote do PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
+| conferir o plan | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| quem chama | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
+| carimbar o relatório | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/build_report.md` | `sparkforge_sdd_stamp` |
+| diff (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
+| sandbox (operator) | `sparkforge-aws change sandbox --repo . --diff d.patch` | `sparkforge_change_sandbox` |
+| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
+| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
+| pacote do PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Recusas desta fase: `red_not_declared`, `acceptance_never_red`, `claim_without_evidence`,
 `change_missing`, `moved_not_observed`, `moved_change_mismatch`,
@@ -258,7 +258,7 @@ Esta skill trata **execução rastreável das tarefas de build SDD**. Contrato c
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge sdd check`, `sparkforge sdd stamp`, `sparkforge code symbol`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws sdd stamp`, `sparkforge-aws code symbol`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

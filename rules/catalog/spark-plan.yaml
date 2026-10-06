@@ -1,5 +1,5 @@
 # Catálogo de regras — plano físico do Spark (`df.explain()` / `EXPLAIN`)
-# Consome os facts de sparkforge/facts/spark_plan.py.
+# Consome os facts de sparkforge_aws/facts/spark_plan.py.
 #
 # Estas regras julgam o que SOBREVIVEU à otimização do Catalyst, não o que está
 # escrito no código. Essa é a diferença que justifica a área existir ao lado de
@@ -31,9 +31,9 @@
 #
 # O EFEITO MEDIDO: `RuntimeContext.spark` vem de event log, de `GLUE_MATRIX` (via
 # `glue_version`) ou da flag `--spark` -- e nenhum deles acompanha um arquivo de
-# plano. Com `build_runtime_context()` sem flags, que é o padrão de `sparkforge
+# plano. Com `build_runtime_context()` sem flags, que é o padrão de `sparkforge-aws
 # judge`, o contexto sai com `spark: ""`, `in_scope` falha fechada
-# (`sparkforge/rules/version_scope.py`), e a ÁREA SF-PLAN INTEIRA sumia: 4
+# (`sparkforge_aws/rules/version_scope.py`), e a ÁREA SF-PLAN INTEIRA sumia: 4
 # puladas, 0 avaliadas. Julgar um plano físico não precisa de Spark detectado
 # para valer -- o plano É a detecção.
 #

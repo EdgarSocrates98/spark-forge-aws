@@ -27,7 +27,7 @@
   - `sf-synthesizer.md` ja fecha a sessao com `report_sign` (passo 4) e `telemetry_export`. A capacidade vizinha em `parity.yaml:679` e "prove a report corresponds to its evidence and catalog".
 - **O que nao existe:**
   - Nenhum artefato amarra, num so lugar, o case, a uniao de facts, os findings, o report, as decisoes agenticas, as tools chamadas e o host.
-  - Os spans **nao carregam `case_id`** (zero ocorrencias em `sparkforge/observability/`). So o `run_id` liga uma sessao de tools a um case.
+  - Os spans **nao carregam `case_id`** (zero ocorrencias em `sparkforge_aws/observability/`). So o `run_id` liga uma sessao de tools a um case.
   - O span **nao guarda hash** de entrada nem de saida da tool (zero `sha256`/`hashlib` em `context_ledger.py`).
 - **Medido em 2026-09-12:**
   - Seis helpers de JSON canonico e digest ja duplicados: `_canonical` em `findings/models.py:21` e `agentic/models.py:77`, `_canonico` em `adapters/_core.py:235` e `agentic/executor/debate_run.py:1073`, `_digest` em `agentic/models.py:82` e `adapters/_core.py:7036`.
@@ -37,7 +37,7 @@
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/receipt/` (modulo puro: `build`, `verify`); `adapters/_core.py`, `adapters/cli.py`, `adapters/tools.py`; `agents/executors/sf-synthesizer.md`; `parity.yaml`; `fixtures/receipt/` | Compoe sobre artefatos que outros verbos ja gravaram; nao le artefato de job |
+| Likely Location | `sparkforge_aws/receipt/` (modulo puro: `build`, `verify`); `adapters/_core.py`, `adapters/cli.py`, `adapters/tools.py`; `agents/executors/sf-synthesizer.md`; `parity.yaml`; `fixtures/receipt/` | Compoe sobre artefatos que outros verbos ja gravaram; nao le artefato de job |
 | Relevant KB Domains | Proveniencia e integridade (content addressing), testing (golden byte a byte, adulteracao por parte), observabilidade (spans do `traces.db`) | Mesmo contrato do `report sign`/`verify` |
 | IaC Patterns | Nenhum recurso novo | So codigo e registros manuais |
 

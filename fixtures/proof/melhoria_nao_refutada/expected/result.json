@@ -50,7 +50,7 @@
           "outcome": "unproven",
           "reason": "sem_funcval",
           "source": "funcval",
-          "unlock": "sparkforge funcval plan ... --out <plano> e sparkforge funcval compare --plan <plano> --before <resultado-antes> --after <resultado-depois>"
+          "unlock": "sparkforge-aws funcval plan ... --out <plano> e sparkforge-aws funcval compare --plan <plano> --before <resultado-antes> --after <resultado-depois>"
         }
       ],
       "rule_id": "SF-PY-004",

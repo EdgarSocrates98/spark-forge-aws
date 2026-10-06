@@ -40,7 +40,7 @@ success:
 out_of_scope:
   - "Hook PreToolUse que recusa Read (abordagem C do explore): feature seguinte se tools_ok nao subir."
   - "Descricoes de tools e skills (abordagem B)."
-  - "Grader conferir se a resposta cita fact_id ou rule_id: o grader atual confere tools; medir a citacao e mudanca propria em sparkforge/evals."
+  - "Grader conferir se a resposta cita fact_id ou rule_id: o grader atual confere tools; medir a citacao e mudanca propria em sparkforge_aws/evals."
   - "Mudar a suite fase0 ou o answer_protocol: a medida so vale com a suite constante."
   - "Outros modelos alem do Haiku 4.5."
 unknowns:

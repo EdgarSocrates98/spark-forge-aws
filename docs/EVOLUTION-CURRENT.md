@@ -3,7 +3,7 @@
 **Atualizado em:** 2026-10-05
 **Base técnica de referência:** `STREAMING_END_TO_END_PIPELINE`; fechamento
 técnico corrente: `GOLDEN_DRIFT_CLOSURE`
-**Fonte operacional:** `sparkforge sdd status --repo .`
+**Fonte operacional:** `sparkforge-aws sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
 `prompt_evo_streaming.md` e `prompt_evo_forge_lab.md`. Documentos de fase e
@@ -35,7 +35,7 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **76 features** após este fechamento:
+`sparkforge-aws sdd status --repo .` encontrou **76 features** após este fechamento:
 **75 `ship/done`** e uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
@@ -125,7 +125,7 @@ alterações em findings esperados.
 
 Provas: node de kinds **14 passed**, corpus Iceberg **94 passed**, gate de corpus
 (`tests/test_fixtures_kind_coverage.py` + `tests/test_verify_wheel.py`) **116
-passed** e `sparkforge sdd check` verde. `snapshot_churn` preserva 604
+passed** e `sparkforge-aws sdd check` verde. `snapshot_churn` preserva 604
 observações temporais; o diff grande é consequência do dump, não claim de ganho.
 
 `SNAPSHOT_GOLDEN_PROPAGATION` passou o lote completo de CloudWatch/consumers com
@@ -169,7 +169,7 @@ O produto entregue é CLI-first e plan-only por padrão:
 O contrato topológico adicional é analisado por:
 
 ```bash
-sparkforge analyze forge-lab --path labs/forge-lab/lab.yaml
+sparkforge-aws analyze forge-lab --path labs/forge-lab/lab.yaml
 ```
 
 Ele retorna nove componentes, ordem topológica determinística, sete cenários,
@@ -177,7 +177,7 @@ fingerprint e `unresolved` sem iniciar Docker. As ações têm
 `requires_confirmation: true`; imagens são fornecidas pelo operador e não são
 inventadas pelo repositório.
 
-Prova de contrato: `sparkforge lab verify --repo .` retornou `valid: true` e
+Prova de contrato: `sparkforge-aws lab verify --repo .` retornou `valid: true` e
 `analyze forge-lab` retornou exit 0; `tests/test_forge_lab.py` passou com 3 testes.
 Execução mutável local exige `--execute --confirm`; verificação offline não inicia
 Docker e não prova performance, custo, capacidade cloud ou semântica AWS.
@@ -240,7 +240,7 @@ gerenciado sem o artefato correspondente.
 Depois de uma entrega, atualizar nesta ordem:
 
 ```powershell
-sparkforge sdd status --repo .
+sparkforge-aws sdd status --repo .
 python scripts/gen_reference_docs.py --check
 python scripts/sync_skills.py --check
 python scripts/check_surface_lock.py

@@ -1,12 +1,12 @@
 """O runtime sai dos FACTS, nao so das flags que alguem digitou.
 
-A maquina de deteccao (`sparkforge/facts/runtime_detect.py`) sempre soube
+A maquina de deteccao (`sparkforge_aws/facts/runtime_detect.py`) sempre soube
 resolver precedencia, derivar `GLUE_MATRIX` e reportar divergencia. Ela so
 nunca era alimentada: `build_runtime_context` montava `{"cli": ...}` e nada
 mais. Como `in_scope` falha fechada -- chave ausente ou vazia reprova a regra
 --, as 8 regras que ainda guardam versao (`SF-ENV-002`, `SF-ENV-003`,
 `SF-GLUE-001..006`) so avaliavam se o operador soubesse e digitasse a versao do
-Glue. Um `sparkforge judge` sobre um repositorio Terraform inteiro, sem flag,
+Glue. Um `sparkforge-aws judge` sobre um repositorio Terraform inteiro, sem flag,
 pulava as 8 em silencio -- e para um agente autonomo silencio le como "nada
 encontrado".
 
@@ -20,8 +20,8 @@ import json
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.facts.runtime_detect import GLUE_MATRIX
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.facts.runtime_detect import GLUE_MATRIX
 
 # As 10 regras que ainda declaram `runtime_scope` nao-vazio, todas guardadas por
 # `glue`. Lista literal de proposito: derivar do catalogo faria o teste
@@ -240,7 +240,7 @@ def _facts_file(tmp_path, name: str, facts) -> str:
 
 
 def _terraform_facts(tmp_path, body: str = GLUE_JOB_TF):
-    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
 
     infra = tmp_path / "infra"
     _write(infra, "glue.tf", body)
@@ -248,14 +248,14 @@ def _terraform_facts(tmp_path, body: str = GLUE_JOB_TF):
 
 
 def _event_log_facts(tmp_path, text: str = EVENT_LOG_JSONL):
-    from sparkforge.facts.event_log import extract_event_log_path
+    from sparkforge_aws.facts.event_log import extract_event_log_path
 
     log = _write(tmp_path, "logs/app.jsonl", text)
     return extract_event_log_path(log, repo_root=tmp_path)
 
 
 def _pyspark_facts(tmp_path):
-    from sparkforge.facts.pyspark_ast import extract_tree
+    from sparkforge_aws.facts.pyspark_ast import extract_tree
 
     src = tmp_path / "src"
     _write(src, "job.py", PYSPARK_NO_VERSION)
@@ -263,7 +263,7 @@ def _pyspark_facts(tmp_path):
 
 
 def _emr_serverless_facts(tmp_path):
-    from sparkforge.facts.emr_serverless import extract_emr_serverless_path
+    from sparkforge_aws.facts.emr_serverless import extract_emr_serverless_path
 
     dump = _write(tmp_path, "emrs/application.json", EMR_SERVERLESS_APPLICATION)
     return extract_emr_serverless_path(dump, repo_root=tmp_path)
@@ -319,7 +319,7 @@ def test_the_catalog_still_guards_exactly_the_rules_this_file_names(tmp_path):
     as duas familias tem cobertura, em arquivos diferentes, e a igualdade aqui e
     o que impede uma terceira nascer sem nenhuma.
     """
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.rules.loader import load_catalog
 
     guarded = {r["id"] for r in load_catalog() if r.get("runtime_scope")}
     assert guarded == set(VERSION_GUARDED_RULES)
@@ -420,7 +420,7 @@ def test_two_modules_with_different_glue_version_diverge_instead_of_one_winning(
     Colapsar num dict escolheria um em silencio. Viram duas observacoes, com a
     origem qualificada pelo arquivo, e a divergencia aparece.
     """
-    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
 
     infra = tmp_path / "infra"
     _write(infra, "a/glue.tf", GLUE_JOB_TF)
@@ -441,7 +441,7 @@ def test_two_modules_with_different_glue_version_diverge_instead_of_one_winning(
 
 def test_repeating_the_same_glue_version_is_one_observation_not_a_divergence(tmp_path):
     """Tres modulos com a MESMA versao nao sao tres fontes discordantes."""
-    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
 
     infra = tmp_path / "infra"
     for name in ("a", "b", "c"):
@@ -599,9 +599,9 @@ def test_the_cli_judge_payload_carries_the_runtime_too(tmp_path, capsys):
     """A CLI remonta o payload campo a campo -- `_core` devolver `runtime` nao
     basta, o verbo tem que repassar. Este teste existe porque a primeira versao
     da mudanca esqueceu exatamente isso, e a prova de ponta a ponta foi quem
-    pegou: a saida de `sparkforge judge` saiu sem `runtime`.
+    pegou: a saida de `sparkforge-aws judge` saiu sem `runtime`.
     """
-    from sparkforge.adapters import cli
+    from sparkforge_aws.adapters import cli
 
     facts_path = _facts_file(tmp_path, "facts.json", _terraform_facts(tmp_path))
     assert cli.main(["judge", "--facts", facts_path, "--limit", "0"]) == 0
@@ -661,7 +661,7 @@ EMR_CLUSTER_DUMP = {
 
 
 def _emr_facts(tmp_path, dump=None):
-    from sparkforge.facts.emr_cluster import extract_emr_cluster_path
+    from sparkforge_aws.facts.emr_cluster import extract_emr_cluster_path
 
     path = _write(
         tmp_path,
@@ -676,7 +676,7 @@ def test_emr_release_from_the_cluster_dump_fills_the_platform_and_the_matrix(tmp
     entrada da EMR_MATRIX. Sem esta leitura, `RuntimeContext.emr` fica vazio
     num cluster que o dump descreve inteiro, e toda regra com `emr` em
     `runtime_scope` e pulada por ausencia."""
-    from sparkforge.facts.runtime_detect import EMR_MATRIX
+    from sparkforge_aws.facts.runtime_detect import EMR_MATRIX
 
     context = _core.build_runtime_context(facts=_emr_facts(tmp_path))
 
@@ -845,7 +845,7 @@ def _with_pyspark_python(value, *, level="cluster", release="emr-6.15.0"):
 def test_pyspark_python_resolves_the_python_the_matrix_refuses_to_guess(tmp_path):
     """6.15.0 nao declara `python` na matriz. Com `PYSPARK_PYTHON` no dump, o
     valor deixa de ser desconhecido -- e passa a ser LIDO, nao escolhido."""
-    from sparkforge.facts.runtime_detect import EMR_MATRIX
+    from sparkforge_aws.facts.runtime_detect import EMR_MATRIX
 
     assert "python" not in EMR_MATRIX["6.15.0"]
 
@@ -870,7 +870,7 @@ def test_an_ambiguous_interpreter_path_emits_nothing(tmp_path, caminho):
     matriz e da flag em `_PRECEDENCE` -- versao errada com precedencia alta
     alimentando `runtime_scope`. Vazio e falha fechada, que e a semantica do
     projeto para `nao detectada`; chute e versao errada com cara de fato."""
-    from sparkforge.rules.version_scope import in_scope
+    from sparkforge_aws.rules.version_scope import in_scope
 
     context = _core.build_runtime_context(facts=_emr_facts(tmp_path, _with_pyspark_python(caminho)))
 
@@ -935,7 +935,7 @@ def test_another_configuration_key_never_becomes_a_python_reading(tmp_path):
 
 
 def _athena_facts(tmp_path, workgroups, name: str = "artifacts/workgroups.json"):
-    from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path
+    from sparkforge_aws.facts.athena_workgroup import extract_athena_workgroup_path
 
     path = _write(tmp_path, name, json.dumps({"workgroups": workgroups}))
     return extract_athena_workgroup_path(path, repo_root=tmp_path)
@@ -967,7 +967,7 @@ def test_athena_is_an_integer_generation_never_a_dotted_version(tmp_path):
     """A AWS publica "Athena engine version 2" e "version 3", e nada entre elas.
     `"3.0"` afirmaria um segmento que a API nao diz -- e nao compraria
     comparacao nenhuma, porque `_compare` ja preenche com zeros."""
-    from sparkforge.rules.version_scope import in_scope
+    from sparkforge_aws.rules.version_scope import in_scope
 
     context = _core.build_runtime_context(
         facts=_athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")])
@@ -1004,7 +1004,7 @@ def test_workgroups_on_different_engines_are_not_a_divergence_and_not_a_pick(tmp
     resolucao arbitraria com cara de fato. Sobra a unica saida honesta: nao ha
     "a" engine version desta conta, o campo fica vazio, e a regra com `athena` em
     `runtime_scope` e pulada por ausencia."""
-    from sparkforge.rules.version_scope import in_scope
+    from sparkforge_aws.rules.version_scope import in_scope
 
     facts = _athena_facts(
         tmp_path,

@@ -27,7 +27,7 @@ avaliados separadamente e em modo fail-closed.
 - `python -m pytest tests/test_lakeformation_fgac_fta_improvements.py -q` — `8 passed`.
 - `python -m pytest tests/test_dq_ai_unit.py tests/test_dq_ai_security.py tests/test_dq_ai_report.py tests/test_fixtures_golden_dq_ai.py tests/test_lakeformation_fgac_fta_improvements.py -q` — `19 passed`.
 - Mirrors, referências, surface, bundle offline, claims e números correntes — registrados no build e sem provider call.
-- `sparkforge sdd check --repo . --feature LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` — `ok: true`.
 
 ## Entrega e limites
 

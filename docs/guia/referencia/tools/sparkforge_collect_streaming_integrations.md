@@ -28,7 +28,7 @@ Coleta snapshots read-only para o contrato streaming_integrations: prefixo de ch
 
 ## Na CLI
 
-[`sparkforge collect streaming-integrations`](../cli/collect.md)
+[`sparkforge-aws collect streaming-integrations`](../cli/collect.md)
 
 ## Capacidade
 

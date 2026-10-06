@@ -9,15 +9,15 @@ upstream:
   sha256: "cab63e877c117ac89954b53077f1fdb212bb12555e135ca62d4de9761cedca0e"
 tasks:
   - id: T1
-    files: [sparkforge/facts/airflow_dag.py, tests/test_airflow_dag.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [sparkforge_aws/facts/airflow_dag.py, tests/test_airflow_dag.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC1, AC2]
     test: {path: tests/test_airflow_dag.py, name: test_dag_vira_fact_com_operador_e_argumentos_literais}
   - id: T2
-    files: [tests/test_airflow_dag.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_adapters_tools.py, tests/test_harness_authorization.py, tests/test_fixtures_golden_mcp_parity.py, parity.yaml, manifest.json, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, docs/surface.lock.json, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_airflow_dag.md, docs/guia/referencia/cli/analyze.md, docs/guia/referencia/agents/glue-infra-reviewer.md, docs/guia/06-extrair-julgar-compor.md, docs/superpowers/STATUS.md, README.md, CLAUDE.md, AGENTS.md, GUIA_DE_USO.md, .devin/README.md, docs/harness/AUTHORIZATION-CHAIN.md, docs/harness/CURRENT-HARNESS-GAP.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_airflow_dag.py, sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, tests/test_adapters_tools.py, tests/test_harness_authorization.py, tests/test_fixtures_golden_mcp_parity.py, parity.yaml, manifest.json, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, docs/surface.lock.json, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_airflow_dag.md, docs/guia/referencia/cli/analyze.md, docs/guia/referencia/agents/glue-infra-reviewer.md, docs/guia/06-extrair-julgar-compor.md, docs/superpowers/STATUS.md, README.md, CLAUDE.md, AGENTS.md, GUIA_DE_USO.md, .devin/README.md, docs/harness/AUTHORIZATION-CHAIN.md, docs/harness/CURRENT-HARNESS-GAP.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC7]
     test: {path: tests/test_airflow_dag.py, name: test_cli_e_tool_devolvem_os_mesmos_facts}
   - id: T3
-    files: [tests/test_airflow_dag.py, sparkforge/facts/airflow_dag.py, sparkforge/facts/fusion.py, rules/catalog/airflow.yaml, rules/catalog/routing.yaml, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, fixtures/airflow, tests/test_fixtures_golden_airflow.py, scripts/regen_fixtures.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py, tests/test_databricks_rule_audit.py, sparkforge/agentic/executor/debate_evidence.py, docs/agentic-evolution-report.md, manifest.json, knowledge/sources.lock.json, docs/guia/referencia/agents/glue-infra-reviewer.md, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json, fixtures/scenarios/glue_60_fgac_com_jar/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, evals/holdout/lote_misto_iceberg_parquet/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/guia/07-conhecimento-e-catalogo.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
+    files: [tests/test_airflow_dag.py, sparkforge_aws/facts/airflow_dag.py, sparkforge_aws/facts/fusion.py, rules/catalog/airflow.yaml, rules/catalog/routing.yaml, agents/glue-infra-reviewer.md, .claude/agents/glue-infra-reviewer.md, .agents/agents/glue-infra-reviewer.md, .github/agents/glue-infra-reviewer.agent.md, .codex/agents/glue-infra-reviewer.toml, fixtures/airflow, tests/test_fixtures_golden_airflow.py, scripts/regen_fixtures.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py, tests/test_databricks_rule_audit.py, sparkforge_aws/agentic/executor/debate_evidence.py, docs/agentic-evolution-report.md, manifest.json, knowledge/sources.lock.json, docs/guia/referencia/agents/glue-infra-reviewer.md, fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json, fixtures/scenarios/glue_60_fgac_com_jar/expected/assessment.json, evals/holdout/config_por_caminho_indireto/expected/assessment.json, evals/holdout/lote_misto_iceberg_parquet/expected/assessment.json, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/guia/07-conhecimento-e-catalogo.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
     covers: [AC3, AC4, AC5, AC6, AC8]
     test: {path: tests/test_fixtures_golden_airflow.py, name: test_golden}
   - id: T4
@@ -41,7 +41,7 @@ tasks:
 - Edição por ferramenta (Edit/Write), fim de linha LF. `rules/catalog/routing.yaml` tem
   BOM: edite com Edit, nunca reescreva o arquivo inteiro.
 - Arquivo `.py` novo do pacote entra no índice (`git add <arquivo>`) **antes** de
-  qualquer teste: `tests/test_arvore_versionada.py` reprova `.py` de `sparkforge/**`
+  qualquer teste: `tests/test_arvore_versionada.py` reprova `.py` de `sparkforge_aws/**`
   fora do git.
 - **`python scripts/sync_skills.py` e `tests/test_agents_parity.py` apagam o
   `.claude/agents/README.md` não rastreado.** Antes de cada um:
@@ -146,7 +146,7 @@ DAG real foi observado (U2 de `docs/sdd/AIRFLOW_DAG/define.md`).
 """
 import json
 
-from sparkforge.facts.airflow_dag import (
+from sparkforge_aws.facts.airflow_dag import (
     DEFAULT_DEFERRABLE,
     DEFAULT_STOP_JOB_RUN_ON_KILL,
     DEFAULT_TASK_RETRIES,
@@ -369,7 +369,7 @@ carga = GlueJobOperator(task_id="carga", job_name="carga-diaria", dag=primeiro)
 
 
 def test_o_teto_de_tamanho_e_o_erro_de_leitura_saem_nomeados(tmp_path):
-    from sparkforge.facts import scan
+    from sparkforge_aws.facts import scan
 
     grande = tmp_path / "gigante.py"
     teto = scan._teto_para(grande)
@@ -395,12 +395,12 @@ git add tests/test_airflow_dag.py
 python -m pytest tests/test_airflow_dag.py -q
 ```
 
-Falha esperada: `ModuleNotFoundError: No module named 'sparkforge.facts.airflow_dag'` na
+Falha esperada: `ModuleNotFoundError: No module named 'sparkforge_aws.facts.airflow_dag'` na
 coleta — o módulo ausente é a unidade sob teste.
 
 ### 3. Código mínimo
 
-`sparkforge/facts/airflow_dag.py` (arquivo novo, inteiro):
+`sparkforge_aws/facts/airflow_dag.py` (arquivo novo, inteiro):
 
 ```python
 """Extrator de Facts a partir do arquivo `.py` de um DAG do Apache Airflow.
@@ -408,8 +408,8 @@ coleta — o módulo ausente é a unidade sob teste.
 Le o DAG com `ast.parse` e NUNCA o importa nem o executa: importar um modulo de DAG
 executa o codigo do operador e do que ele importa, e este repositorio nao executa
 artefato analisado (D1 de `docs/sdd/AIRFLOW_DAG/design.md`). Molde de leitura de
-Python: `sparkforge/facts/pyspark_ast.py`. Molde de dominio novo inteiro:
-`sparkforge/facts/stepfunctions.py`.
+Python: `sparkforge_aws/facts/pyspark_ast.py`. Molde de dominio novo inteiro:
+`sparkforge_aws/facts/stepfunctions.py`.
 
 Como `stepfunctions.py`, NAO coleta nada e NUNCA levanta excecao por arquivo
 malformado: o que nao consegue ler vira `af.unresolved` com `attrs.reason`, e a
@@ -453,7 +453,7 @@ TaskFlow esta fora de escopo no `define`).
 `GlueJobOperator` e o legado `AwsGlueJobOperator` recebem `attrs.operator_family:
 glue_job`; qualquer outro operador entra com familia vazia. A familia e o predicado
 que as regras leem -- derivar aqui e o que a regra 33 exige, porque
-`sparkforge/rules/expr.py` nao tem funcao e `where` so compara por igualdade.
+`sparkforge_aws/rules/expr.py` nao tem funcao e `where` so compara por igualdade.
 
 ## Os defaults publicados moram AQUI, com a fonte ao lado
 
@@ -479,9 +479,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sparkforge.facts import scan
-from sparkforge.facts.scan import iter_source_files
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge_aws.facts import scan
+from sparkforge_aws.facts.scan import iter_source_files
+from sparkforge_aws.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "airflow_dag@0.1.0"
 
@@ -1317,7 +1317,7 @@ de `isinstance` existe desde a 3.10, e `datetime.UTC` não aparece aqui.
 ### 4. Rodar e ver passar
 
 ```bash
-git add sparkforge/facts/airflow_dag.py
+git add sparkforge_aws/facts/airflow_dag.py
 python -m pytest tests/test_airflow_dag.py -q
 ```
 
@@ -1330,7 +1330,7 @@ o módulo ainda **não** entra nas duas listas manuais: entra em T3, no mesmo co
 golden e da área. Um comando por vez:
 
 ```bash
-python -m ruff check sparkforge/facts/airflow_dag.py tests/test_airflow_dag.py
+python -m ruff check sparkforge_aws/facts/airflow_dag.py tests/test_airflow_dag.py
 python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q
 python -m pytest tests/test_facts_scan.py tests/test_harness_untrusted.py tests/test_databricks_rule_audit.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py -q
@@ -1380,7 +1380,7 @@ de novo até `exit 0`. Nunca por varredura.
 
 `feat(facts): read Airflow DAG files into af.* facts, by AST and never by import`
 
-Arquivos: `sparkforge/facts/airflow_dag.py`, `tests/test_airflow_dag.py`,
+Arquivos: `sparkforge_aws/facts/airflow_dag.py`, `tests/test_airflow_dag.py`,
 `docs/superpowers/STATUS.md`, `README.md`, `docs/guia/06-extrair-julgar-compor.md`,
 `docs/harness/CODEINTEL-GAP.md`, `docs/claims.lock.json`.
 
@@ -1392,8 +1392,8 @@ Acrescente ao fim de `tests/test_airflow_dag.py`:
 
 ```python
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
-    from sparkforge.adapters.cli import main
-    from sparkforge.adapters.tools import call_tool
+    from sparkforge_aws.adapters.cli import main
+    from sparkforge_aws.adapters.tools import call_tool
 
     entrada = tmp_path / "dags"
     entrada.mkdir()
@@ -1414,7 +1414,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["unresolved"] == 1
 
     erro = call_tool("sparkforge_analyze_airflow_dag", {"path": str(tmp_path / "nao-existe")})
-    assert "sparkforge analyze airflow-dag" in erro["error"]
+    assert "sparkforge-aws analyze airflow-dag" in erro["error"]
 ```
 
 ### 2. Rodar e ver falhar
@@ -1427,22 +1427,22 @@ Falha esperada: `SystemExit: 2` do argparse (`invalid choice: 'airflow-dag'`).
 
 ### 3. Código mínimo
 
-**`sparkforge/adapters/_core.py`** — import. Troque
+**`sparkforge_aws/adapters/_core.py`** — import. Troque
 
 ```python
-from sparkforge.facts import lakeformation_matrix as _lf_matrix
-from sparkforge.facts.athena_workgroup import (
+from sparkforge_aws.facts import lakeformation_matrix as _lf_matrix
+from sparkforge_aws.facts.athena_workgroup import (
 ```
 
 por
 
 ```python
-from sparkforge.facts import lakeformation_matrix as _lf_matrix
-from sparkforge.facts.airflow_dag import (
+from sparkforge_aws.facts import lakeformation_matrix as _lf_matrix
+from sparkforge_aws.facts.airflow_dag import (
     extract_airflow_dag_path,
     extract_airflow_dag_tree,
 )
-from sparkforge.facts.athena_workgroup import (
+from sparkforge_aws.facts.athena_workgroup import (
 ```
 
 E a função pública, logo depois de `analyze_step_functions`. Troque
@@ -1479,7 +1479,7 @@ def _extract_airflow_dag_facts(path: str) -> list[Fact]:
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o arquivo .py do DAG ou para a pasta de DAGs:\n"
-            f"    sparkforge analyze airflow-dag --path dags/ "
+            f"    sparkforge-aws analyze airflow-dag --path dags/ "
             f"--out .sparkforge/facts_airflow.json",
             exit_code=2,
         )
@@ -1503,7 +1503,7 @@ def analyze_airflow_dag(
 # benchmark
 ```
 
-**`sparkforge/adapters/cli.py`** — subcomando. Troque
+**`sparkforge_aws/adapters/cli.py`** — subcomando. Troque
 
 ```python
     _add_detail_level(sfn_analyze_p)
@@ -1570,7 +1570,7 @@ por
     ("analyze", "airflow-dag"): _cmd_analyze_airflow_dag,
 ```
 
-**`sparkforge/adapters/tools.py`** — declaração. Troque
+**`sparkforge_aws/adapters/tools.py`** — declaração. Troque
 
 ```python
     "sparkforge_analyze_data_quality": {
@@ -1856,7 +1856,7 @@ python scripts/sync_skills.py --check
 python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/test_agent_coverage.py tests/test_docs_coverage.py -q
 python -m pytest tests/test_harness_authorization.py tests/test_capability_parity.py tests/test_adapters_code_surface.py tests/test_mcp_modern_era.py -q
 python -m pytest tests/test_fixtures_golden_mcp_parity.py -q
-python -m ruff check sparkforge/adapters tests/test_airflow_dag.py tests/test_adapters_tools.py tests/test_harness_authorization.py
+python -m ruff check sparkforge_aws/adapters tests/test_airflow_dag.py tests/test_adapters_tools.py tests/test_harness_authorization.py
 ```
 
 (backup e devolução do `.claude/agents/README.md` em volta do sync e de
@@ -1941,10 +1941,10 @@ with DAG(
 
 
 def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
-    from sparkforge.facts.fusion import fuse
-    from sparkforge.facts.terraform import extract_terraform_tree
-    from sparkforge.rules.engine import judge
-    from sparkforge.rules.loader import load_catalog
+    from sparkforge_aws.facts.fusion import fuse
+    from sparkforge_aws.facts.terraform import extract_terraform_tree
+    from sparkforge_aws.rules.engine import judge
+    from sparkforge_aws.rules.loader import load_catalog
 
     (tmp_path / "cargas.py").write_text(DAG_PAREADO, encoding="utf-8")
     (tmp_path / "main.tf").write_text(TF_CARGA_DIARIA, encoding="utf-8")
@@ -2007,12 +2007,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.airflow_dag import build_af_glue_link, extract_airflow_dag_tree
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.models import sort_facts
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.airflow_dag import build_af_glue_link, extract_airflow_dag_tree
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.models import sort_facts
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "airflow"
@@ -2677,7 +2677,7 @@ em `[link] = ...` no teste do `fuse`.
 
 ### 3. Código mínimo
 
-**3a. A derivação, em `sparkforge/facts/airflow_dag.py`** (D5).
+**3a. A derivação, em `sparkforge_aws/facts/airflow_dag.py`** (D5).
 
 No docstring do módulo, troque
 
@@ -2859,7 +2859,7 @@ def build_af_glue_link(facts: Sequence[Fact]) -> list[Fact]:
                     proveniencia,
                     job_name=nome,
                     resources=[simbolo for _, simbolo, _ in candidatos],
-                    unblocked_by="sparkforge analyze terraform no aws_glue_job, e fuse",
+                    unblocked_by="sparkforge-aws analyze terraform no aws_glue_job, e fuse",
                 )
             )
             continue
@@ -2910,19 +2910,19 @@ E no `__all__`, troque `    "EXTRACTOR_ID",` por
     "build_af_glue_link",
 ```
 
-**3b. `sparkforge/facts/fusion.py`.** Imports: troque
+**3b. `sparkforge_aws/facts/fusion.py`.** Imports: troque
 
 ```python
-from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
+from sparkforge_aws.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
 ```
 
 por
 
 ```python
-from sparkforge.facts.airflow_dag import EMITTED_KINDS as AF_EMITTED_KINDS
-from sparkforge.facts.airflow_dag import SOURCE_KINDS as AF_SOURCE_KINDS
-from sparkforge.facts.airflow_dag import build_af_glue_link
-from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
+from sparkforge_aws.facts.airflow_dag import EMITTED_KINDS as AF_EMITTED_KINDS
+from sparkforge_aws.facts.airflow_dag import SOURCE_KINDS as AF_SOURCE_KINDS
+from sparkforge_aws.facts.airflow_dag import build_af_glue_link
+from sparkforge_aws.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
 ```
 
 (O `ruff`/isort quer `airflow_dag` antes de `stepfunctions`; se ele reordenar, aceite o
@@ -2965,7 +2965,7 @@ por
 ```yaml
 # Catálogo de regras — como o DAG do Apache Airflow dispara o job Glue
 #
-# Depende de `sparkforge/facts/airflow_dag.py`, que lê o arquivo `.py` do DAG por AST
+# Depende de `sparkforge_aws/facts/airflow_dag.py`, que lê o arquivo `.py` do DAG por AST
 # (nunca o executa) e, em `fuse`, liga a task ao `aws_glue_job` de mesmo `name`
 # (`af.glue_job_link`). As frases citadas estão em
 # `knowledge/airflow/glue-operator.md`; o desenho, em `docs/sdd/AIRFLOW_DAG/design.md`.
@@ -2991,7 +2991,7 @@ por
 # A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado por
 # task, nunca um por arquivo. O `subject.symbol` é o `task_id` literal quando há um.
 #
-# POR QUE `attrs.operator_family` e não o nome da classe: `sparkforge/rules/expr.py` tem
+# POR QUE `attrs.operator_family` e não o nome da classe: `sparkforge_aws/rules/expr.py` tem
 # seis comparadores e nenhuma função, e `where` só compara por igualdade (regra 33). O
 # predicado "é um operador de job Glue" -- que precisa aceitar `GlueJobOperator` e o
 # legado `AwsGlueJobOperator` -- é derivado no extrator e chega aqui como valor.
@@ -3054,7 +3054,7 @@ rules:
     tradeoffs:
       - "Esperar o job custa tempo de execução da task; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
     validation:
-      - "`sparkforge analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-001 para a task."
+      - "`sparkforge-aws analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-001 para a task."
       - "EIXO DE RESULTADO — numa execução de teste, a tarefa seguinte lê a saída completa do job: a contagem de linhas que ela lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun."
       - "Uma execução de teste em que o job falha marca a task como `failed` e não segue para a tarefa a jusante."
     rollback:
@@ -3109,7 +3109,7 @@ rules:
     tradeoffs:
       - "Parar o job junto com a task economiza o resto do JobRun e arrisca saída parcial; deixar o job correr preserva a escrita e paga o run inteiro que ninguém vai usar."
     validation:
-      - "`sparkforge analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge judge` não produz mais SF-AIRFLOW-002 para a task."
+      - "`sparkforge-aws analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge-aws judge` não produz mais SF-AIRFLOW-002 para a task."
       - "EIXO DE RESULTADO — numa execução de teste em que o prazo estoura, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que antes da execução: a interrupção não deixou linha parcial."
       - "`aws glue get-job-run --job-name <job> --run-id <id>` mostra o JobRun em `STOPPED` no mesmo minuto em que a task foi marcada como falha, e não `RUNNING` depois dela."
     rollback:
@@ -3166,7 +3166,7 @@ rules:
     tradeoffs:
       - "A espera diferida devolve o slot e paga com uma peça a mais na infraestrutura; a espera síncrona é mais simples e paga com o slot ocupado pelo tempo do job."
     validation:
-      - "`sparkforge analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-003 para a task."
+      - "`sparkforge-aws analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-003 para a task."
       - "EIXO DE RESULTADO — numa execução de teste, o destino tem a mesma contagem total e por chave de negócio que a execução síncrona equivalente: mudar a forma de esperar não muda o que o job escreve."
       - "Na execução de teste, a task passa pelo estado `deferred` e o slot fica livre no intervalo: o número de tarefas em execução no pool durante o job é menor do que era."
     rollback:
@@ -3207,7 +3207,7 @@ rules:
       knowledge/airflow/glue-operator.md, lacuna 1.
     proposed_change:
       - "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Airflow (onde `retries` e `retry_delay` são explícitos e aparecem no histórico da task), ou `retries = 0` na task e o retry no próprio Glue."
-      - "Antes de escolher, medir: os JobRuns do job no intervalo de uma falha real (`sparkforge collect glue-job-runs`) ao lado das tentativas da task no Airflow mostram quantos JobRuns uma falha produziu de fato."
+      - "Antes de escolher, medir: os JobRuns do job no intervalo de uma falha real (`sparkforge-aws collect glue-job-runs`) ao lado das tentativas da task no Airflow mostram quantos JobRuns uma falha produziu de fato."
       - "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um JobRun que escreve de novo (SF-GLUE-004)."
     action:
       kind: orchestration.restrict_run_policy
@@ -3224,7 +3224,7 @@ rules:
     tradeoffs:
       - "Retry no Airflow é visível no histórico da task e configurável por DAG; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
     validation:
-      - "`sparkforge fuse` sobre os facts de `analyze airflow-dag` e `analyze terraform` mostra o `af.glue_job_link` com `glue_max_retries: 0` ou `airflow_retries_effective: 0`, e `sparkforge judge` não produz mais SF-AIRFLOW-004."
+      - "`sparkforge-aws fuse` sobre os facts de `analyze airflow-dag` e `analyze terraform` mostra o `af.glue_job_link` com `glue_max_retries: 0` ou `airflow_retries_effective: 0`, e `sparkforge-aws judge` não produz mais SF-AIRFLOW-004."
       - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
       - "O histórico da task no Airflow mostra, para a falha, no máximo 1 + `retries` tentativas, e `get-job-runs` mostra o número de JobRuns que a camada escolhida justifica."
     rollback:
@@ -3247,7 +3247,7 @@ arquivo inteiro). Troque
 
 ```yaml
 fallback:
-  recommended_skill: sparkforge-diagnose
+  recommended_skill: sparkforge-aws-diagnose
 ```
 
 por
@@ -3278,7 +3278,7 @@ por
       coordenador ja le --, e nao no codigo do job.
 
 fallback:
-  recommended_skill: sparkforge-diagnose
+  recommended_skill: sparkforge-aws-diagnose
 ```
 
 **3e. Coordenador — `agents/glue-infra-reviewer.md`.** Troque
@@ -3317,14 +3317,14 @@ depois da linha equivalente do `developer_instructions`.
 `EXTRACTORS`). No import, troque
 
 ```python
-from sparkforge.facts import (
+from sparkforge_aws.facts import (
     athena_workgroup,
 ```
 
 por
 
 ```python
-from sparkforge.facts import (
+from sparkforge_aws.facts import (
     airflow_dag,
     athena_workgroup,
 ```
@@ -3350,14 +3350,14 @@ EXTRACTORS = (
 `tests/test_fixtures_kind_coverage.py` — import: troque
 
 ```python
-from sparkforge.facts import (
+from sparkforge_aws.facts import (
     athena_workgroup,
 ```
 
 por
 
 ```python
-from sparkforge.facts import (
+from sparkforge_aws.facts import (
     airflow_dag,
     athena_workgroup,
 ```
@@ -3386,21 +3386,21 @@ EXTRACTORS = {
 Imports: troque
 
 ```python
-from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge_aws.facts.sql_literal import extract_sql_path  # noqa: E402
 ```
 
 por
 
 ```python
-from sparkforge.facts.airflow_dag import (  # noqa: E402
+from sparkforge_aws.facts.airflow_dag import (  # noqa: E402
     build_af_glue_link,
     extract_airflow_dag_tree,
 )
-from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge_aws.facts.sql_literal import extract_sql_path  # noqa: E402
 ```
 
 (Se o `ruff`/isort quiser o bloco do `airflow_dag` mais acima na lista de imports de
-`sparkforge.facts.*`, aceite o que ele escrever.)
+`sparkforge_aws.facts.*`, aceite o que ele escrever.)
 
 Constante: troque
 
@@ -3484,7 +3484,7 @@ por
 **3h. Regenerar e LER o golden.**
 
 ```bash
-git add sparkforge/facts/airflow_dag.py tests/test_fixtures_golden_airflow.py
+git add sparkforge_aws/facts/airflow_dag.py tests/test_fixtures_golden_airflow.py
 python scripts/regen_fixtures.py sem_espera timeout_sem_stop espera_sincrona retry_duas_camadas dag_limpo retry_so_no_glue retry_so_no_airflow job_name_nao_literal dag_dinamico python_invalido taskflow_decorador
 ```
 
@@ -3542,7 +3542,7 @@ em `dag_limpo`, `retry_so_no_glue`, `retry_so_no_airflow`, `job_name_nao_literal
       ),
   ```
 
-- `sparkforge/agentic/executor/debate_evidence.py`, em `EVIDENCE_EXTRACTORS`: troque
+- `sparkforge_aws/agentic/executor/debate_evidence.py`, em `EVIDENCE_EXTRACTORS`: troque
 
   ```python
       "athena-workgroup": ("athena_workgroup", "extract_athena_workgroup_path"),
@@ -3652,7 +3652,7 @@ python -m pytest tests/test_fixtures_scenarios.py tests/test_evals_holdout.py -q
 python scripts/sync_skills.py --check
 python -m pytest tests/test_agents_parity.py tests/test_sync_render.py tests/test_reference_docs.py -q
 python -m pytest tests/test_codeintel_security.py tests/test_arvore_versionada.py tests/test_facts_scan.py -q
-python -m ruff check sparkforge scripts tests
+python -m ruff check sparkforge_aws scripts tests
 python scripts/check_status_numbers.py --strict
 python scripts/check_vnext_claims.py
 ```
@@ -3694,7 +3694,7 @@ Escreva `knowledge/airflow/glue-operator.md` (arquivo novo, inteiro):
 > **Lido em 2026-09-20.** Três páginas oficiais do Apache Airflow — uma do provider
 > Amazon e duas do core — mais as duas páginas da API do AWS Glue já citadas em
 > `knowledge/stepfunctions/glue-integration.md`. Quem consome: o extrator
-> `sparkforge/facts/airflow_dag.py` (os defaults publicados moram lá, com a URL ao
+> `sparkforge_aws/facts/airflow_dag.py` (os defaults publicados moram lá, com a URL ao
 > lado) e as quatro regras de `rules/catalog/airflow.yaml`. Frase entre aspas é
 > citação literal; o resto é leitura nossa, e diz de qual frase veio.
 
@@ -3753,7 +3753,7 @@ saem em `af.unresolved` com a razão, nunca como vínculo.
    do Airflow compõe com o `MaxRetries` do Glue. Cada retentativa da task é um
    `StartJobRun` novo, e o retry do Glue é outro JobRun. O que destrava afirmar a
    contagem de tentativas: os JobRuns do intervalo de uma falha real
-   (`sparkforge collect glue-job-runs`) ao lado do histórico da task.
+   (`sparkforge-aws collect glue-job-runs`) ao lado do histórico da task.
 2. **JobRun quando a task é morta com `stop_job_run_on_kill` False.** A documentação do
    provider diz o que o parâmetro faz quando é `True`, e não descreve o que acontece
    com o JobRun quando é `False` e a task é morta (U3 de
@@ -3818,7 +3818,7 @@ python scripts/refresh_knowledge.py --offline --update
 Manifesto offline — o `sha256` pela função que o gate confere, nunca por outro hash:
 
 ```bash
-python -c "import json; from pathlib import Path; from sparkforge.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); doc = 'knowledge/airflow/glue-operator.md'; m['documents'] = [d for d in m['documents'] if d['path'] != doc] + [{'path': doc, 'title': 'glue-operator', 'sha256': _content_sha256(Path(doc))}]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
+python -c "import json; from pathlib import Path; from sparkforge_aws.tools.offline import _content_sha256; p = Path('knowledge/offline-manifest.json'); m = json.loads(p.read_text(encoding='utf-8')); doc = 'knowledge/airflow/glue-operator.md'; m['documents'] = [d for d in m['documents'] if d['path'] != doc] + [{'path': doc, 'title': 'glue-operator', 'sha256': _content_sha256(Path(doc))}]; m['documents'].sort(key=lambda d: d['path']); p.write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + '\n').encode('utf-8'))"
 ```
 
 (O manifesto está ordenado por `path` e gravado como `json.dumps(indent=2)` mais `\n` —
@@ -3866,19 +3866,19 @@ usam arquivos sintéticos de `fixtures/airflow/`.
 mkdir -p /tmp/af
 
 # 1. Extrair os facts do DAG (arquivo .py ou a pasta de DAGs)
-sparkforge analyze airflow-dag \
+sparkforge-aws analyze airflow-dag \
   --path fixtures/airflow/sem_espera/input --out /tmp/af/facts_airflow.json
 
 # 2. Julgar: SF-AIRFLOW-001 a 003 leem so o DAG
-sparkforge judge --facts /tmp/af/facts_airflow.json
+sparkforge-aws judge --facts /tmp/af/facts_airflow.json
 
 # 3. Com o Terraform do job: extrair os dois lados, fundir e julgar
-sparkforge analyze airflow-dag \
+sparkforge-aws analyze airflow-dag \
   --path fixtures/airflow/retry_duas_camadas/input --out /tmp/af/af.json
-sparkforge analyze terraform \
+sparkforge-aws analyze terraform \
   --path fixtures/airflow/retry_duas_camadas/input --out /tmp/af/tf.json
-sparkforge fuse --facts /tmp/af/af.json --facts /tmp/af/tf.json --out /tmp/af/fundidos.json
-sparkforge judge --facts /tmp/af/fundidos.json
+sparkforge-aws fuse --facts /tmp/af/af.json --facts /tmp/af/tf.json --out /tmp/af/fundidos.json
+sparkforge-aws judge --facts /tmp/af/fundidos.json
 ```
 
 ## O que sai
@@ -3909,7 +3909,7 @@ vez de julgar um valor que ninguém leu.
 A `SF-AIRFLOW-004` afirma só que as duas camadas existem. **Quantas vezes o job roda
 numa falha não é documentado** — cada retentativa da task é um `StartJobRun` novo, e o
 retry do Glue é outro JobRun. Medir exige os JobRuns do intervalo de uma falha real
-(`sparkforge collect glue-job-runs`) ao lado do histórico da task.
+(`sparkforge-aws collect glue-job-runs`) ao lado do histórico da task.
 
 ## O que ele não faz
 
@@ -4001,8 +4001,8 @@ com o crescimento da superfície em bytes no corpo.
 ## Antes de fechar a feature
 
 ```bash
-sparkforge sdd stamp --repo . --feature AIRFLOW_DAG --phase plan
-sparkforge sdd check --repo . --feature AIRFLOW_DAG --phase plan
+sparkforge-aws sdd stamp --repo . --feature AIRFLOW_DAG --phase plan
+sparkforge-aws sdd check --repo . --feature AIRFLOW_DAG --phase plan
 ```
 
 E, quando os quatro commits estiverem de pé, a suíte **em lotes, um por vez**, pela
@@ -4034,10 +4034,10 @@ manifesto. As cinco precisam de confirmação; nenhuma bloqueia a execução.
    fixture que mata uma delas. São 11 fixtures, e a contagem publicada vira 539 em 58
    domínios.
 4. **Duplicação declarada: `_glue_jobs_por_nome` e `_max_retries`.** As duas são gêmeas
-   das de `sparkforge/facts/stepfunctions.py`, e o plano as duplica em
+   das de `sparkforge_aws/facts/stepfunctions.py`, e o plano as duplica em
    `airflow_dag.py` com o comentário dizendo por quê (um leitor de DAG não deveria
    importar um leitor de ASL para ler Terraform). O lugar certo delas é um módulo
-   próprio — `sparkforge/facts/glue_terraform.py` —, que **não está no manifesto deste
+   próprio — `sparkforge_aws/facts/glue_terraform.py` —, que **não está no manifesto deste
    desenho** e custaria refatorar um arquivo recém-mesclado. Proposta: incremento
    separado, depois desta feature. Confirme ou mande unificar agora.
 5. **Páginas geradas e espelhos que o manifesto lista, e os cinco goldens de

@@ -12,38 +12,38 @@ locais, inspeção econômica e observabilidade sem provider SDK ou mutação AW
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.facts (Extratores)         │ ──> Fact Kinds Determinísticos
+│  sparkforge_aws.facts (Extratores)         │ ──> Fact Kinds Determinísticos
 └────────────────────────────────────────┘
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.rules (Motor AST Seguro)   │ <── rules/catalog/*.yaml (Catálogos)
+│  sparkforge_aws.rules (Motor AST Seguro)   │ <── rules/catalog/*.yaml (Catálogos)
 └────────────────────────────────────────┘
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.findings (Modelos/Sign)    │ ──> Findings com Evidência Ancorada
+│  sparkforge_aws.findings (Modelos/Sign)    │ ──> Findings com Evidência Ancorada
 └────────────────────────────────────────┘
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.case (Ciclo de Vida)       │ ──> Gates, Overrides, Playbook, Router
+│  sparkforge_aws.case (Ciclo de Vida)       │ ──> Gates, Overrides, Playbook, Router
 └────────────────────────────────────────┘
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.adapters (CLI / MCP)       │ ──> Consoles, IDEs, Claude, Devin, MCP
+│  sparkforge_aws.adapters (CLI / MCP)       │ ──> Consoles, IDEs, Claude, Devin, MCP
 └────────────────────────────────────────┘
 ```
 
 ### Componentes Principais
 
-1. **`sparkforge.facts`**: extratores offline (AST de PySpark, physical plans formatados, JSONL Spark event logs, Iceberg metadata dumps, Glue Data Catalog, Terraform HCL, SQL literals, Athena workgroups, EMR clusters, EMR Serverless, Data Quality checks, Graph/GraphFrames, Call Graphs, S3 listings, Table consumers, Terraform diffs, Benchmarks, Functional validation, Runtime detection, Fusion).
-2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e escopos de versão (Glue e EMR).
-3. **`sparkforge.findings`**: Estrutura imutável e assinável de achados técnicos com rastreabilidade obrigatória de `fact_id` e `rule_id`.
-4. **`sparkforge.case`**: Gerenciador durável de casos de investigação com 4 gates (`baseline_captured`, `flows_mapped`, `functional_validation_defined`, `dominant_bottleneck_identified`) com bloqueio fail-closed e trilha de override auditada.
-5. **`sparkforge.agents`**: Supervisores, políticas de modelo, observabilidade básica e controle de autonomia.
-6. **`sparkforge.adapters`**: Interface CLI (`sparkforge`, `sparkforge-tools`) e servidor MCP (`sparkforge/adapters/mcp.py`).
+1. **`sparkforge_aws.facts`**: extratores offline (AST de PySpark, physical plans formatados, JSONL Spark event logs, Iceberg metadata dumps, Glue Data Catalog, Terraform HCL, SQL literals, Athena workgroups, EMR clusters, EMR Serverless, Data Quality checks, Graph/GraphFrames, Call Graphs, S3 listings, Table consumers, Terraform diffs, Benchmarks, Functional validation, Runtime detection, Fusion).
+2. **`sparkforge_aws.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e escopos de versão (Glue e EMR).
+3. **`sparkforge_aws.findings`**: Estrutura imutável e assinável de achados técnicos com rastreabilidade obrigatória de `fact_id` e `rule_id`.
+4. **`sparkforge_aws.case`**: Gerenciador durável de casos de investigação com 4 gates (`baseline_captured`, `flows_mapped`, `functional_validation_defined`, `dominant_bottleneck_identified`) com bloqueio fail-closed e trilha de override auditada.
+5. **`sparkforge_aws.agents`**: Supervisores, políticas de modelo, observabilidade básica e controle de autonomia.
+6. **`sparkforge_aws.adapters`**: Interface CLI (`sparkforge-aws`, `sparkforge-aws-tools`) e servidor MCP (`sparkforge_aws/adapters/mcp.py`).
 
 ---
 
@@ -53,9 +53,9 @@ locais, inspeção econômica e observabilidade sem provider SDK ou mutação AW
 |---|---|---|---|
 | **Agents** | Perfis canônicos de coordenadores e executores | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase; lista viva em `agents/` |
 | **Skills** | Diretório canônico | `skills/*/SKILL.md` | Habilidades especializadas; contagem viva verificada por `scripts/sync_skills.py` |
-| **Subagents** | 0 | — (o registro e os contratos saíram em `docs/sdd/CONFIG_OCA/`) | Não há mais contrato efêmero: nenhum módulo de `sparkforge/`, `scripts/` ou `tests/` os lia |
+| **Subagents** | 0 | — (o registro e os contratos saíram em `docs/sdd/CONFIG_OCA/`) | Não há mais contrato efêmero: nenhum módulo de `sparkforge_aws/`, `scripts/` ou `tests/` os lia |
 | **Teams** | 1 | `config/teams-expansion.yaml` | Composições de times (governance-security) |
-| **Extratores de Fatos** | — | `sparkforge/facts/*.py` | Fatos determinísticos extraídos localmente |
+| **Extratores de Fatos** | — | `sparkforge_aws/facts/*.py` | Fatos determinísticos extraídos localmente |
 | **Catálogos de Regras** | — | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |
 | **Knowledge Base** | — | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns, lockfiles |
 | **Testes Automatizados** | — | `tests/test_*.py` | Cobertura unitária, contratos, golden cases e paridade |
@@ -110,8 +110,8 @@ artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 
 - **D-1**: Manter camada determinística pura (Layer 0) com 0 chamadas de LLM para extração de fatos e avaliação de regras.
 - **D-2**: Preservar schema canônico e imutável de `Finding` com lista obrigatória de `evidence` (`fact_id`).
-- **D-3**: Preservar gates do caso (`sparkforge.case`) com trilha de override rastreável e assinatura de relatório.
-- **D-4**: Preservar contratos de CLI existentes (`sparkforge analyze ...`, `sparkforge judge ...`, `sparkforge case ...`, `sparkforge report ...`) e MCP tools.
+- **D-3**: Preservar gates do caso (`sparkforge_aws.case`) com trilha de override rastreável e assinatura de relatório.
+- **D-4**: Preservar contratos de CLI existentes (`sparkforge-aws analyze ...`, `sparkforge-aws judge ...`, `sparkforge-aws case ...`, `sparkforge-aws report ...`) e MCP tools.
 - **D-5**: Manter o princípio Local-First / Offline-First sem exigir infraestrutura cloud ou banco pago.
 - **D-6**: Manter trust, taint, autoridade de instrução, `unresolved`, `cost_basis` e
   evidência de promoção como contratos independentes; nenhum scorecard concede autoridade sozinho.
@@ -133,7 +133,7 @@ repositório após `AGENTIC_ENGINEERING_OS_V2`, leia este overlay:
 - Economia tem `TokenLedger`, reconciliação estimated/observed e `cost_basis` obrigatório.
   `AdaptiveModelRouter` é independente do roteamento de caso e permanece shadow por
   default; active exige autoridade e evidência de promoção.
-- Checkpoints semânticos são content-addressed. `sparkforge.protocols.forge` publica
+- Checkpoints semânticos são content-addressed. `sparkforge_aws.protocols.forge` publica
   envelopes mínimos de task, capability, evidence, handoff, result e health.
 - AgentOps lê o SQLite de traces e oferece inspect, compare e baseline local. Waste é
   classificado como observado ou hipótese; ausência de provider transcript, contrato de

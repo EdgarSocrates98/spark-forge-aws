@@ -16,7 +16,7 @@ Analisa topologia declarada de Glue, Iceberg REST, Polaris, S3 Tables, Lake Form
 
 ## Na CLI
 
-[`sparkforge analyze lakehouse-catalog`](../cli/analyze.md)
+[`sparkforge-aws analyze lakehouse-catalog`](../cli/analyze.md)
 
 ## Capacidade
 

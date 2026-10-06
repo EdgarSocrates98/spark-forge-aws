@@ -1,4 +1,4 @@
-"""Testes do parser de plano fisico (`sparkforge.facts.spark_plan`).
+"""Testes do parser de plano fisico (`sparkforge_aws.facts.spark_plan`).
 
 Ordem dos blocos: primeiro o divisor consciente de profundidade (a peca que
 um split ingenuo por virgula corrompe), depois o reconhecimento de modo,
@@ -14,7 +14,7 @@ import textwrap
 
 import pytest
 
-from sparkforge.facts.spark_plan import (
+from sparkforge_aws.facts.spark_plan import (
     EMITTED_KINDS,
     bytes_da_estatistica,
     extract_plan,

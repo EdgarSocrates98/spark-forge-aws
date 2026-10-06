@@ -7,7 +7,7 @@
   "likely_causes": ["Memory skew in join", "Insufficient executor memory overhead", "Broadcast join of oversized table"],
   "evidence_required": ["pyspark.skew_join", "eventlog.executor_oom", "spark.plan.cartesian_product"],
   "diagnostic_steps": [
-    "Run `sparkforge analyze event-log` on executor event log",
+    "Run `sparkforge-aws analyze event-log` on executor event log",
     "Inspect physical plan for broadcast vs sort-merge join",
     "Check partition byte size distribution"
   ],

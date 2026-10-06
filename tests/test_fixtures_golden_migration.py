@@ -1,9 +1,9 @@
 """Golden test do corpus de compatibilidade de migracao entre versoes de Glue.
 
 Arquivo dedicado, mesma razao dos demais `test_fixtures_golden_*.py`: o golden
-guarda os facts `mig.*` (extrator `sparkforge/facts/migration.py`, Tasks 4-6
+guarda os facts `mig.*` (extrator `sparkforge_aws/facts/migration.py`, Tasks 4-6
 desta fase) e os findings de `rules/catalog/glue-migration.yaml` (`SF-MIG`,
-Task 7). `sparkforge/facts/migration.py` documenta por que `migration` so
+Task 7). `sparkforge_aws/facts/migration.py` documenta por que `migration` so
 entrou em `tests/test_fixtures_kind_coverage.py::EXTRACTORS` no MESMO commit
 em que ganhou catalogo -- e essa entrada e o que deixava
 `test_every_kind_of_every_extractor_appears_in_some_golden[migration]`
@@ -91,10 +91,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.facts.migration import EMITTED_KINDS, extract_migration_tree
-from sparkforge.findings.validate import validate_fact, validate_finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.facts.migration import EMITTED_KINDS, extract_migration_tree
+from sparkforge_aws.findings.validate import validate_fact, validate_finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "migration"
@@ -280,7 +280,7 @@ class TestAdversarial:
     def test_jar_binary_reads_scala_from_the_file_name_not_the_content(self):
         """`.jar` e observacao de ARQUIVO INTEIRO, ancorada em `line: 0`: nao
         ha linha de fonte para apontar, so o arquivo (docstring de
-        `_jar_facts` em `sparkforge/facts/migration.py`)."""
+        `_jar_facts` em `sparkforge_aws/facts/migration.py`)."""
         _, facts, _, _ = run_fixture(FIXTURES / "jar_binary")
         jar = _by_kind(facts, "mig.jar_binary")
         assert len(jar) == 1

@@ -9,7 +9,7 @@ upstream:
   sha256: "b8ff0d024da686a29c94395821c6cdd058196ae92de3e8d0b1ef097456ec9f39"
 tasks:
   - id: T1
-    files: [tests/test_lakeformation_operational_closure.py, sparkforge/lakeformation/architecture.py]
+    files: [tests/test_lakeformation_operational_closure.py, sparkforge_aws/lakeformation/architecture.py]
     covers: [AC1, AC2]
     test: {path: tests/test_lakeformation_operational_closure.py, name: test_review_composes_code_iac_and_late_configuration}
   - id: T2
@@ -17,11 +17,11 @@ tasks:
     covers: [AC3, AC6]
     test: {path: tests/test_lakeformation_operational_closure.py, name: test_review_builds_version_aware_migration_report}
   - id: T3
-    files: [tests/test_lakeformation_operational_closure.py, sparkforge/lakeformation/architecture.py]
+    files: [tests/test_lakeformation_operational_closure.py, sparkforge_aws/lakeformation/architecture.py]
     covers: [AC4, AC5]
     test: {path: tests/test_lakeformation_operational_closure.py, name: test_review_preflight_is_least_privilege_and_cross_reviewed}
   - id: T4
-    files: [tests/test_lakeformation_operational_closure.py, sparkforge/adapters/tools.py, skills/lakeformation-architecture/SKILL.md, agents/sf-lake-formation-specialist.md, agents/sf-terraform-specialist.md, knowledge/lakeformation/operational-closure.md, docs/guia/usos/lake-formation-operacional.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CAPABILITY-MATRIX.md, docs/vnext/KNOWLEDGE-MAP.md]
+    files: [tests/test_lakeformation_operational_closure.py, sparkforge_aws/adapters/tools.py, skills/lakeformation-architecture/SKILL.md, agents/sf-lake-formation-specialist.md, agents/sf-terraform-specialist.md, knowledge/lakeformation/operational-closure.md, docs/guia/usos/lake-formation-operacional.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CAPABILITY-MATRIX.md, docs/vnext/KNOWLEDGE-MAP.md]
     covers: [AC7, AC8]
     test: {path: tests/test_lakeformation_operational_closure.py, name: test_cli_and_mcp_operational_review_parity}
 ---
@@ -34,7 +34,7 @@ Escrever `tests/test_lakeformation_operational_closure.py` com payload declarati
 que contenha facts `pyspark.glue_context_init`, `pyspark.conf_set`,
 `pyspark.read`, `tf.spark_conf`, `tf.attribute` e `spark.conf_effective`.
 O teste deve falhar porque `review` ainda não existe. Implementar em
-`sparkforge/lakeformation/architecture.py` helpers puros que ancorem kind/source/line,
+`sparkforge_aws/lakeformation/architecture.py` helpers puros que ancorem kind/source/line,
 classifiquem DynamicFrame/direct S3, comparem a primeira operação com a linha da
 configuração e mantenham fatos ausentes em `required_verification`.
 

@@ -26,7 +26,7 @@ lineage completo sem evidência correspondente.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.
 - `python scripts/verify_offline_bundle.py --repo .` — exit 0.
-- `sparkforge sdd check --repo . --feature STREAMING_INTEGRATIONS_AND_CHECKPOINTS` — `ok: true`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_INTEGRATIONS_AND_CHECKPOINTS` — `ok: true`.
 
 ## Lições
 

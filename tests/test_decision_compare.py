@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.economy.decision_compare import compare_decisions, comparison_is_resolved
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_engine import DeterministicDecisionEngine
-from sparkforge.economy.decision_models import (
+from sparkforge_aws.economy.decision_compare import compare_decisions, comparison_is_resolved
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_engine import DeterministicDecisionEngine
+from sparkforge_aws.economy.decision_models import (
     ComparisonState,
     DecisionInput,
     DecisionResult,

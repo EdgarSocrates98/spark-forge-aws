@@ -1,6 +1,6 @@
 # DEFINE: OpenTelemetry GenAI export
 
-> Um verbo `sparkforge telemetry export` que projeta os spans de tool ja gravados em `.sparkforge/traces.db` e, quando houver, o transcript do host em OTLP/JSON Lines com as convencoes `gen_ai.*` e `mcp.*`. A saida e deterministica, sem rede, sem dependencia nova e sem nenhum numero que a fonte nao mediu. A prova e um Collector real que le o arquivo.
+> Um verbo `sparkforge-aws telemetry export` que projeta os spans de tool ja gravados em `.sparkforge/traces.db` e, quando houver, o transcript do host em OTLP/JSON Lines com as convencoes `gen_ai.*` e `mcp.*`. A saida e deterministica, sem rede, sem dependencia nova e sem nenhum numero que a fonte nao mediu. A prova e um Collector real que le o arquivo.
 
 ## Metadata
 
@@ -34,9 +34,9 @@ O SparkForge mede cada chamada de tool (duracao, bytes e desfecho), e o extrator
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1: `sparkforge telemetry export --run-id <id> [--host-transcript <path>] [--provider <nome>] --repo .` compoe sobre o `traces.db` e sobre os facts `host.*` extraidos do transcript (a mesma flag do `economy report`), sem rede |
-| **MUST** | G2: cada span de tool do run vira um span OTLP `execute_tool {tool}` (ou `tools/call {tool}`, kind SERVER, quando o canal medido for MCP: DESIGN Decision 3) com `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function`, inicio e fim medidos, e status ERROR quando `outcome` for `error` ou `unauthorized`. O desfecho sai em `sparkforge.outcome` |
-| **MUST** | G3: os bytes saem em `sparkforge.payload_bytes`, com `sparkforge.payload_basis` e `sparkforge.detail_level` quando houver. **Nunca** saem em `gen_ai.usage.*` (regra 22) |
+| **MUST** | G1: `sparkforge-aws telemetry export --run-id <id> [--host-transcript <path>] [--provider <nome>] --repo .` compoe sobre o `traces.db` e sobre os facts `host.*` extraidos do transcript (a mesma flag do `economy report`), sem rede |
+| **MUST** | G2: cada span de tool do run vira um span OTLP `execute_tool {tool}` (ou `tools/call {tool}`, kind SERVER, quando o canal medido for MCP: DESIGN Decision 3) com `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, `gen_ai.tool.type=function`, inicio e fim medidos, e status ERROR quando `outcome` for `error` ou `unauthorized`. O desfecho sai em `sparkforge_aws.outcome` |
+| **MUST** | G3: os bytes saem em `sparkforge_aws.payload_bytes`, com `sparkforge_aws.payload_basis` e `sparkforge_aws.detail_level` quando houver. **Nunca** saem em `gen_ai.usage.*` (regra 22) |
 | **MUST** | G4: ids deterministicos: `traceId` = primeiros 32 hex de `sha256(run_id)` e `spanId` = primeiros 16 hex de `sha256(span_id)`. Exportar o mesmo run duas vezes da o mesmo arquivo, byte a byte |
 | **MUST** | G5: a saida segue o encoding JSON do OTLP 1.11.0 (ids em hex, `*UnixNano` como string decimal, enum inteiro, chaves lowerCamelCase), em JSON Lines, gravada sob `.sparkforge/telemetry/` em dois arquivos com nome fixo derivado do `run_id` validado: `<run_id>.traces.jsonl` e `<run_id>.metrics.jsonl` |
 | **MUST** | G6: nenhum span some. Span sem horario medido nao e exportado: vira recusa nomeada, e `exportados + recusados = total` sai no resultado |
@@ -69,8 +69,8 @@ O SparkForge mede cada chamada de tool (duracao, bytes e desfecho), e o extrator
 
 | ID | Scenario | Given | When | Then |
 |----|----------|-------|------|------|
-| AT-001 | Tools do SparkForge | Run com 3 chamadas `ok` no `traces.db` | `telemetry export --run-id` | 3 spans `execute_tool {tool}` num trace, com `gen_ai.tool.name` e `sparkforge.payload_bytes`; nenhum `gen_ai.usage.*` |
-| AT-002 | Desfecho | Um span `unauthorized` e um `error` | export | Os dois com status ERROR, e `sparkforge.outcome` distinguindo um do outro |
+| AT-001 | Tools do SparkForge | Run com 3 chamadas `ok` no `traces.db` | `telemetry export --run-id` | 3 spans `execute_tool {tool}` num trace, com `gen_ai.tool.name` e `sparkforge_aws.payload_bytes`; nenhum `gen_ai.usage.*` |
+| AT-002 | Desfecho | Um span `unauthorized` e um `error` | export | Os dois com status ERROR, e `sparkforge_aws.outcome` distinguindo um do outro |
 | AT-003 | Determinismo | O mesmo run | export duas vezes | Arquivos byte a byte iguais |
 | AT-004 | Canal MCP | Chamada vinda de `adapters/mcp.py` | export | Span com `mcp.method.name=tools/call`; chamada sem canal fica sem o atributo |
 | AT-005 | Host com usage | Transcript de `fixtures/host_transcript/correct_mcp` e `--provider anthropic` | export com `--host-transcript` | Trace do host com `invoke_agent`, modelo, os quatro `gen_ai.usage.*` iguais ao `host.usage`, e spans filhos das tool calls com horario |
@@ -118,7 +118,7 @@ O SparkForge mede cada chamada de tool (duracao, bytes e desfecho), e o extrator
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | Projecao em `sparkforge/observability/otlp.py` (pura, sem importar adapter); verbo em `adapters/_core.py`, `adapters/cli.py` e `adapters/tools.py`; canal em `adapters/mcp.py` e `observability/context_ledger.py`; horarios em `facts/host_transcript.py`; `fixtures/otel/`; `docs/opentelemetry.md`; um job em `.github/workflows/ci.yml` | Mesmo molde de `economy report` e `report github` |
+| **Deployment Location** | Projecao em `sparkforge_aws/observability/otlp.py` (pura, sem importar adapter); verbo em `adapters/_core.py`, `adapters/cli.py` e `adapters/tools.py`; canal em `adapters/mcp.py` e `observability/context_ledger.py`; horarios em `facts/host_transcript.py`; `fixtures/otel/`; `docs/opentelemetry.md`; um job em `.github/workflows/ci.yml` | Mesmo molde de `economy report` e `report github` |
 | **KB Domains** | Observability (OpenTelemetry, OTLP, semconv GenAI e MCP), testing (golden e teste de forma), CI/CD (GitHub Actions com container) | — |
 | **IaC Impact** | Modify existing (`ci.yml`, um job) | Nenhum recurso de nuvem |
 

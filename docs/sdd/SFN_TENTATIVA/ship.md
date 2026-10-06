@@ -87,9 +87,9 @@ extrator existente afirma, não o que o catálogo cobre.
 | `python scripts/check_surface_lock.py` | 0 divergências |
 | `python scripts/check_status_numbers.py --strict` (AC7) | 0 divergências |
 | `python scripts/check_vnext_claims.py` | 0 divergências |
-| `python -m ruff check sparkforge scripts tests` | limpo |
+| `python -m ruff check sparkforge_aws scripts tests` | limpo |
 | `python -m pytest tests/test_fixtures_golden*.py -q` | 3299 passed, 4 skipped |
-| `sparkforge sdd check --repo . --feature SFN_TENTATIVA` | `ok: true`, 0 recusas, 0 lacunas |
+| `sparkforge-aws sdd check --repo . --feature SFN_TENTATIVA` | `ok: true`, 0 recusas, 0 lacunas |
 
 Os dois `verified_by` de `kind: command` do define:
 
@@ -115,7 +115,7 @@ Os dois `verified_by` de `kind: command` do define:
 ## Lições
 
 - **A revisão final achou o crítico num caso construído, não num teste vermelho** — pela
-  terceira feature seguida. Ela mediu em memória, importando só `sparkforge.facts.*`, e
+  terceira feature seguida. Ela mediu em memória, importando só `sparkforge_aws.facts.*`, e
   montou o que o corpus não tem: `Map` de 400 iterações, ciclo na cadeia, redrive junto com
   `Parallel` homônimo. É essa a técnica que pega o defeito, e vale repeti-la por padrão.
 - **Guarda de regressão cobre o caso que ela constrói, e nada além.** O AC4 existia para

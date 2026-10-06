@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.knowledge_drift import (
+from sparkforge_aws.knowledge_drift import (
     IMPACTO,
     SALTOS_DO_REPOSITORIO,
     build_index,

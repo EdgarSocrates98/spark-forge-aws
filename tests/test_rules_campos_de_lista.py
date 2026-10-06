@@ -25,7 +25,7 @@ pessoa edita; e la que a forma precisa estar certa.
 
 `proposed_change`, `risks`, `tradeoffs`, `validation` e `rollback` sao os campos
 que o schema de `recommendation:` declara como lista (ver `rules/catalog/README.md`
-e `sparkforge/findings/models.py`). `sources` tambem e lista, mas de mapa, e tem
+e `sparkforge_aws/findings/models.py`). `sources` tambem e lista, mas de mapa, e tem
 guarda propria em `tests/test_rules_loader.py`.
 """
 
@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.rules.loader import load_catalog
 
 # Campos que o consumidor itera. String aqui vira iteracao de caracteres.
 CAMPOS_DE_LISTA = ("proposed_change", "risks", "tradeoffs", "validation", "rollback")

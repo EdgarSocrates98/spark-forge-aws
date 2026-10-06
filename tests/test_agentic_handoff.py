@@ -25,17 +25,17 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.agentic.handoff import HandoffDecision, admit_handoff
-from sparkforge.agentic.role_plans import ROLE_PLANS
-from sparkforge.agentic.trust import (
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.agentic.handoff import HandoffDecision, admit_handoff
+from sparkforge_aws.agentic.role_plans import ROLE_PLANS
+from sparkforge_aws.agentic.trust import (
     AgentHandoff,
     RoleContextPlan,
     Taint,
     TrustLabel,
 )
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.context.gateway_models import GatewayProfile, GatewayRequest
 
 JUDGE = ROLE_PLANS["sf-judge"]
 VERIFIER = ROLE_PLANS["sf-verifier"]

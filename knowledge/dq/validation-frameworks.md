@@ -1,7 +1,7 @@
 # Frameworks de validação de dados em PySpark — o que a fonte oficial diz
 
 Esta página existe por um motivo único: a §4.3 do
-[spec da Fase 5c](../../docs/superpowers/specs/2026-08-03-sparkforge-fase5c-dq-design.md)
+[spec da Fase 5c](../../docs/superpowers/specs/2026-08-03-sparkforge-aws-fase5c-dq-design.md)
 marcou **três premissas como não verificadas**, e a Fase 5b provou que essa etapa
 mata candidatos. Cada afirmação abaixo tem URL e `retrieved:`. Onde a fonte
 contrariou o spec, a conclusão está escrita como **veto**, com o motivo — a §4 é
@@ -174,7 +174,7 @@ conhecem (3.1.1 a 3.5.6). Quem exclui é o Python:
 | EMR 7.0.0–7.12.0 | 3.9 (default) | **não no default**; 3.11 está instalado, então alcança se `PYSPARK_PYTHON` apontar para ele |
 | EMR 7.13.0 | 3.11 | sim |
 
-> Colunas de Python conforme [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md) §4.1 e `GLUE_MATRIX` em `sparkforge/facts/runtime_detect.py`.
+> Colunas de Python conforme [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md) §4.1 e `GLUE_MATRIX` em `sparkforge_aws/facts/runtime_detect.py`.
 
 ### 1.5 Vetos de Great Expectations
 
@@ -506,7 +506,7 @@ contrariou uma premissa; apagá-los é convidar a reinvenção da premissa morta
 **Matrizes deste repositório, usadas nas comparações de alcance**
 
 - [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md) — `EMR_MATRIX`, incluindo a coluna "Python do PySpark" e a nota de que a AWS não a documenta para a série 6.x.
-- `GLUE_MATRIX` em [`../../sparkforge/facts/runtime_detect.py`](../../sparkforge/facts/runtime_detect.py) — Glue 3.0/4.0/5.0/5.1.
+- `GLUE_MATRIX` em [`../../sparkforge_aws/facts/runtime_detect.py`](../../sparkforge_aws/facts/runtime_detect.py) — Glue 3.0/4.0/5.0/5.1.
 
 **Não encontrado, e registrado como tal**
 

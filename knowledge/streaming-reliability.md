@@ -28,8 +28,8 @@ interpretations live in `attrs`; numeric quantities and their units live in
 Use:
 
 ```text
-sparkforge analyze streaming --artifact source --path <job.py-or-dir>
-sparkforge analyze streaming --artifact progress --path <progress.jsonl-or-dir>
+sparkforge-aws analyze streaming --artifact source --path <job.py-or-dir>
+sparkforge-aws analyze streaming --artifact progress --path <progress.jsonl-or-dir>
 ```
 
 The MCP equivalent is `sparkforge_analyze_streaming` with the same `path`,

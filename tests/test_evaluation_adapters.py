@@ -7,12 +7,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from sparkforge.evals.evidence import EvaluationEvidenceBundle
-from sparkforge.evals.evidence_adapters import (
+from sparkforge_aws.evals.evidence import EvaluationEvidenceBundle
+from sparkforge_aws.evals.evidence_adapters import (
     AuthorizedCommandAdapter,
     EvidenceAdapterError,
 )
-from sparkforge.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
+from sparkforge_aws.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
 
 HASH = "0" * 64
 
@@ -252,5 +252,5 @@ def test_authorized_command_allows_self_contained_executable(tmp_path: Path) -> 
 
 
 def test_imported_adapter_has_no_provider_sdk_dependency() -> None:
-    source = Path("sparkforge/evals/evidence_adapters.py").read_text(encoding="utf-8")
+    source = Path("sparkforge_aws/evals/evidence_adapters.py").read_text(encoding="utf-8")
     assert all(name not in source for name in ("anthropic", "openai", "bedrock", "litellm"))

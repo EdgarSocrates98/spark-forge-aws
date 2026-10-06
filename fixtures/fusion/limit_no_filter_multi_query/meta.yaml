@@ -6,7 +6,7 @@ proves: >
   `dt`) no mesmo corpus -- uma com WHERE real sobre a coluna de particao
   (`ok_partition_filter.sql`) e duas so com LIMIT, sem filtro nenhum
   (`unfiltered_limit_a.sql`, `unfiltered_limit_b.sql`). Cada arquivo `.sql` e
-  uma query independente (`sparkforge/facts/sql_literal.py::extract_sql_path`
+  uma query independente (`sparkforge_aws/facts/sql_literal.py::extract_sql_path`
   so reconhece o primeiro SELECT...FROM por arquivo, entao "uma query por
   arquivo" e a unica forma de ter multiplas queries num unico corpus de
   fusao). Antes do conserto em `649856f`, a query filtrada fazia

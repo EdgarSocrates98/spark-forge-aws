@@ -19,20 +19,20 @@
 
 **Context Gathered:**
 - Hoje o pacote inteiro é L0: `applied_changes` sai fixo em `false` em `_ARBITRATE_SUCCESS_SCHEMA`, `_DEBATE_DONE_SCHEMA`, `_RECEIPT_EMIT_SCHEMA` e em `agentic/executor/debate_run.py`. Nenhum verbo produz um diff.
-- `sparkforge/agentic/autonomy.py` já tem um enum `AutonomyLevel` L0..L5 com **outra semântica**: L1 = Specialist (análise de domínio único), L2 = Cooperative (vários agentes), e `modify_code` está em `forbidden_actions`. A CLI `autonomy show --level` o expõe, e `tests/test_agentic_infra.py` o trava.
+- `sparkforge_aws/agentic/autonomy.py` já tem um enum `AutonomyLevel` L0..L5 com **outra semântica**: L1 = Specialist (análise de domínio único), L2 = Cooperative (vários agentes), e `modify_code` está em `forbidden_actions`. A CLI `autonomy show --level` o expõe, e `tests/test_agentic_infra.py` o trava.
 - `_core.tune_conf(facts_path)` já deriva o valor de configuração com procedência por chave: `current{value, provenance, evidence[fact ids]}` e `derived{value, formula, basis}`.
 - Os facts de procedência trazem arquivo e linha: `tf.spark_conf` com `subject {"file":"main.tf","line":30,"symbol":"job#spark.sql.shuffle.partitions"}` e `pyspark.conf_set` com `subject {"file":"job.py","line":12}`. Isso basta para um diff determinístico de VALOR.
-- `sparkforge/simulate/patch.py` (`parse_sets`, `Mudanca(camada, chave, valor)`, sintaxe `camada:chave=valor`) age sobre facts, não sobre arquivos.
+- `sparkforge_aws/simulate/patch.py` (`parse_sets`, `Mudanca(camada, chave, valor)`, sintaxe `camada:chave=valor`) age sobre facts, não sobre arquivos.
 - `_core.scan(repo)` (§22) roda plano por manifesto, `analyze`, `fuse` e `judge` em processo e grava em `<repo>/.sparkforge/scan/`. Serve de "antes" e "depois" dentro da cópia.
-- `sparkforge/facts/scan.py::varrer_source_files` já tem a varredura que pula `.git`, `.venv`, credenciais e diretórios de estado.
-- Nenhum `subprocess.run(` em `sparkforge/` fora do hook da policy. O §16 declara `.sparkforge/policy.yaml` com LOCAL_MUTATION pré-aprovada.
+- `sparkforge_aws/facts/scan.py::varrer_source_files` já tem a varredura que pula `.git`, `.venv`, credenciais e diretórios de estado.
+- Nenhum `subprocess.run(` em `sparkforge_aws/` fora do hook da policy. O §16 declara `.sparkforge/policy.yaml` com LOCAL_MUTATION pré-aprovada.
 - Catálogo: 155 regras com `action` {kind, target, direction, …}. `validation` e `rollback` são listas de prosa por regra, e são elas que viram obrigações de prova no relatório do sandbox.
 
 **Technical Context Observed (for Define):**
 
 | Aspect | Observation | Implication |
 |--------|-------------|-------------|
-| Likely Location | `sparkforge/change/` (novo) + `_core.change_plan/change_sandbox` + CLI `change plan\|sandbox` + tools MCP | Um módulo puro, com borda fina em `_core` e adapters, como `policy/` e `scan/` |
+| Likely Location | `sparkforge_aws/change/` (novo) + `_core.change_plan/change_sandbox` + CLI `change plan\|sandbox` + tools MCP | Um módulo puro, com borda fina em `_core` e adapters, como `policy/` e `scan/` |
 | Relevant KB Domains | `knowledge/` de Spark conf (shuffle partitions, AQE), regras 11/18/19/20/23 do CLAUDE.md | Procedência (regra 19) decide QUAL arquivo mudar; recusa tem nome (regra 20) |
 | IaC Patterns | Terraform como fonte de `tf.spark_conf` (fixture sintética) | O diff edita `main.tf` lido, nunca roda `terraform` |
 
@@ -46,7 +46,7 @@
 | 2 | O que o sandbox executa depois de aplicar? | **Só verbos do SparkForge** | `scan` (analyze+fuse+judge) antes e depois, diferença de achados e obrigações de prova. Nenhum comando arbitrário; o teste do usuário vira próximo passo nomeado |
 | 3 | Como o sandbox isola a mudança? | **Cópia em diretório temporário** | Cópia da árvore para `.sparkforge/sandbox/<id>/`, aplicada em Python, sem git. Inclui o que não foi commitado e funciona fora de repositório git |
 | 4 | De onde vêm as amostras? | **Domínio novo `fixtures/change/`** | Repo sintético (main.tf, job.py) + facts + `expected.json` com diff, rollback e recusas |
-| 5 | Qual abordagem? | **Módulo novo `sparkforge/change`** | `plan.py` puro + `sandbox.py` com aplicador estrito próprio |
+| 5 | Qual abordagem? | **Módulo novo `sparkforge_aws/change`** | `plan.py` puro + `sandbox.py` com aplicador estrito próprio |
 | 6 | O que fica fora? | L3/L4, migration e benchmark real, security scan externo, mudança de código gerada | Ver YAGNI |
 
 ---
@@ -58,7 +58,7 @@
 | Input files | `fixtures/tuning/*/input/facts.json` | 7 | Só facts, sem o arquivo que o diff edita. Base para os facts dos casos novos |
 | Output examples | `fixtures/change/<caso>/expected.json` (novo) | ~8 | Diff, rollback, `changes[]`, `refused[]`, e para o sandbox os achados novos/resolvidos/mantidos |
 | Ground truth | `fixtures/change/<caso>/input/repo/` (novo) | ~8 | Repo sintético; o golden prova ida-e-volta byte a byte |
-| Related code | `sparkforge/adapters/_core.py::tune_conf`, `::scan`; `sparkforge/simulate/patch.py`; `sparkforge/facts/scan.py::varrer_source_files`; `sparkforge/policy/load.py` (`resolve_within`) | 5 | Padrões a reusar: procedência, varredura, confinamento de caminho |
+| Related code | `sparkforge_aws/adapters/_core.py::tune_conf`, `::scan`; `sparkforge_aws/simulate/patch.py`; `sparkforge_aws/facts/scan.py::varrer_source_files`; `sparkforge_aws/policy/load.py` (`resolve_within`) | 5 | Padrões a reusar: procedência, varredura, confinamento de caminho |
 
 **How samples will be used:**
 
@@ -71,7 +71,7 @@
 
 ## Approaches Explored
 
-### Approach A: Módulo novo `sparkforge/change` ⭐ Recommended
+### Approach A: Módulo novo `sparkforge_aws/change` ⭐ Recommended
 
 **Description:** `change/plan.py` é puro: recebe facts e valores, acha arquivo e linha pela procedência (`tf.spark_conf`/`pyspark.conf_set`), confere que o valor atual do fact está naquela linha, troca só o literal e gera diff unificado e diff de rollback com `difflib`. `change/sandbox.py` copia a árvore, roda `scan` na cópia pristina, aplica o diff com um aplicador próprio estrito (contexto tem que bater), roda `scan` de novo e compara achados por (`rule_id`, subject).
 
@@ -185,7 +185,7 @@ Hoje o SparkForge só diagnostica (L0): o `tune` diz qual valor a medida sustent
 - [ ] `change sandbox` nunca altera um byte fora de `.sparkforge/sandbox/` (teste compara hash da árvore antes e depois).
 - [ ] Diff que não aplica, que escapa da raiz ou que passa do teto sai recusado por nome, sem aplicação parcial.
 - [ ] O caso "diff que resolve um achado" mostra o `rule_id` em `resolved` e as obrigações de prova da regra.
-- [ ] Nenhum `subprocess` e nenhum import de provider em `sparkforge/change/`.
+- [ ] Nenhum `subprocess` e nenhum import de provider em `sparkforge_aws/change/`.
 - [ ] Registros de tool nova, surface lock, claims, referência gerada e manual `docs/guia/usos/change.md` em dia; suíte em lotes verde.
 
 ### Constraints Identified
@@ -194,8 +194,8 @@ Hoje o SparkForge só diagnostica (L0): o `tune` diz qual valor a medida sustent
 - Regra 20: recusa tem nome.
 - Regra 26: tool nova move o surface lock, declarado no commit.
 - INV-007/INV-009: nenhum parâmetro de tool chamado command/cmd/shell/exec/script/argv nem com `url` no nome.
-- Mensagem de erro de tool FAILABLE contém "sparkforge".
-- Glob cru proibido em `sparkforge/`; confinamento por `resolve_within`.
+- Mensagem de erro de tool FAILABLE contém "sparkforge-aws".
+- Glob cru proibido em `sparkforge_aws/`; confinamento por `resolve_within`.
 - Repo público: fixtures sintéticas.
 
 ### Out of Scope (Confirmed)

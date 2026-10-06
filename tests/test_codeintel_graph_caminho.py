@@ -13,13 +13,13 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.codeintel.graph import (
+from sparkforge_aws.codeintel.graph import (
     _PROFUNDIDADE_DE_CAMINHO,
     caminho,
     estatisticas,
 )
-from sparkforge.codeintel.index import indexar
-from sparkforge.codeintel.search import buscar
+from sparkforge_aws.codeintel.index import indexar
+from sparkforge_aws.codeintel.search import buscar
 
 
 def _arvore(tmp_path: Path, fonte: str) -> Path:
@@ -274,7 +274,7 @@ def test_a_taxa_de_resolucao_de_um_indice_vazio_e_zero_e_nao_um(tmp_path):
 def test_a_taxa_sai_junto_com_a_contagem_de_nao_resolvidas(tmp_path):
     """Publicar arestas sem as nao resolvidas faria o indice parecer completo.
 
-    Medido sobre `sparkforge/codeintel/` em 2026-09-02: 299 arestas contra 517
+    Medido sobre `sparkforge_aws/codeintel/` em 2026-09-02: 299 arestas contra 517
     referencias nao resolvidas -- taxa de 0.366. Um relatorio que citasse so as
     299 sugeriria cobertura que nao ha.
     """

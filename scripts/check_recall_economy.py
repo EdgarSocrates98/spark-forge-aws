@@ -49,8 +49,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sparkforge.economy.goldset import derivar_goldset, fora_do_alcance  # noqa: E402
-from sparkforge.economy.recall import medir  # noqa: E402
+from sparkforge_aws.economy.goldset import derivar_goldset, fora_do_alcance  # noqa: E402
+from sparkforge_aws.economy.recall import medir  # noqa: E402
 
 # Piso de perguntas derivadas. E PISO e nao igualdade: cair significa que alguma
 # regra perdeu ancoragem e e defeito; subir significa que uma regra nova ganhou

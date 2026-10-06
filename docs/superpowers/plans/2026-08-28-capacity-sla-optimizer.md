@@ -4,13 +4,13 @@
 
 **Goal:** Escolher, entre as capacidades que o job realmente rodou, a mais barata que cumpre o SLA — contando só os runs comparáveis ao de hoje, e recusando quando a evidência não sustenta a afirmação.
 
-**Architecture:** Mecanismo próprio em `sparkforge/capacity/`, no molde do `WorkloadFingerprint`: escolher capacidade é juízo, e fact não julga. Consome facts já extraídos — `glue.job_run` (duração, capacidade e DPU por run), `spark.sql.scan` (volume por run) e `workload.declared` (SLA e alvo). Verbo de topo `sparkforge capacity`, pela mesma regra de `benchmark`, `fuse` e `workload`.
+**Architecture:** Mecanismo próprio em `sparkforge_aws/capacity/`, no molde do `WorkloadFingerprint`: escolher capacidade é juízo, e fact não julga. Consome facts já extraídos — `glue.job_run` (duração, capacidade e DPU por run), `spark.sql.scan` (volume por run) e `workload.declared` (SLA e alvo). Verbo de topo `sparkforge-aws capacity`, pela mesma regra de `benchmark`, `fuse` e `workload`.
 
 **Tech Stack:** Python 3, `pytest`, `PyYAML`. Spec: [`../specs/2026-08-28-capacity-sla-optimizer-design.md`](../specs/2026-08-28-capacity-sla-optimizer-design.md).
 
 **Convenções do repositório que valem em toda tarefa:**
 
-- O `CapacityPlan` **não é fact** — é onde o limiar mora. Nada aqui entra em `sparkforge/facts/`.
+- O `CapacityPlan` **não é fact** — é onde o limiar mora. Nada aqui entra em `sparkforge_aws/facts/`.
 - Nenhum caminho do código aplica a mudança. §34 do documento de origem classifica troca de worker como `REVIEW`.
 - Lint ruff `E,F,I,UP,B,S`, linha máxima 100.
 - Todo comando com prefixo `rtk`. Commit em português, Conventional Commits, via `rtk git commit -F <arquivo>`. **Escreva a mensagem com heredoc para um arquivo** (`cat > /tmp/msg.txt <<'EOF' … EOF`), nunca com `printf` de string longa — `printf` com escapes produziu byte NUL e o commit foi recusado.
@@ -44,8 +44,8 @@ workload.declared
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `sparkforge/capacity/__init__.py` | Export de `Candidate`, `CapacityPlan`, `build_capacity_plan` |
-| `sparkforge/capacity/plan.py` | O modelo e a escolha |
+| `sparkforge_aws/capacity/__init__.py` | Export de `Candidate`, `CapacityPlan`, `build_capacity_plan` |
+| `sparkforge_aws/capacity/plan.py` | O modelo e a escolha |
 | `tests/test_capacity_plan.py` | Testes do modelo e da escolha |
 | `tests/test_fixtures_golden_capacity.py` | Módulo golden do domínio novo |
 | `fixtures/capacity/` | Seis cenários sintéticos |
@@ -54,11 +54,11 @@ workload.declared
 
 | Arquivo | Mudança |
 |---|---|
-| `sparkforge/facts/workload.py` | `reliability_target` e `volume_tolerance` no inventário |
+| `sparkforge_aws/facts/workload.py` | `reliability_target` e `volume_tolerance` no inventário |
 | `tests/test_facts_workload.py` | Casos dos dois campos novos |
-| `sparkforge/adapters/_core.py` | `capacity_plan` |
-| `sparkforge/adapters/cli.py` | Verbo de topo `capacity` |
-| `sparkforge/adapters/tools.py` | `sparkforge_capacity` |
+| `sparkforge_aws/adapters/_core.py` | `capacity_plan` |
+| `sparkforge_aws/adapters/cli.py` | Verbo de topo `capacity` |
+| `sparkforge_aws/adapters/tools.py` | `sparkforge_capacity` |
 | `manifest.json`, `parity.yaml` | A tool nova |
 | `agents/` | Citar a tool, senão o gate de órfão reprova |
 | `README.md`, `docs/superpowers/STATUS.md` | O verbo, a fase, e os números medidos |
@@ -68,7 +68,7 @@ workload.declared
 ## Task 1: O inventário ganha o alvo e a tolerância
 
 **Files:**
-- Modify: `sparkforge/facts/workload.py`
+- Modify: `sparkforge_aws/facts/workload.py`
 - Test: `tests/test_facts_workload.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -225,7 +225,7 @@ Se algum `workload.yaml` de fixture ganhar campo, o golden muda — mas esta tar
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add sparkforge/facts/workload.py tests/test_facts_workload.py
+rtk git add sparkforge_aws/facts/workload.py tests/test_facts_workload.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -236,7 +236,7 @@ Mensagem: `feat(facts): alvo de confiabilidade e tolerancia de volume no inventa
 ## Task 2: O candidato e a escolha
 
 **Files:**
-- Create: `sparkforge/capacity/__init__.py`, `sparkforge/capacity/plan.py`
+- Create: `sparkforge_aws/capacity/__init__.py`, `sparkforge_aws/capacity/plan.py`
 - Test: `tests/test_capacity_plan.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -247,8 +247,8 @@ Mensagem: `feat(facts): alvo de confiabilidade e tolerancia de volume no inventa
 """Testes da escolha de capacidade sob restricao de SLA."""
 from __future__ import annotations
 
-from sparkforge.capacity import build_capacity_plan
-from sparkforge.findings.models import Fact
+from sparkforge_aws.capacity import build_capacity_plan
+from sparkforge_aws.findings.models import Fact
 
 
 def _run(run_id, segundos, worker="G.2X", workers=10, dpu=1000.0, autoscaling=False):
@@ -533,11 +533,11 @@ class TestSeguranca:
 rtk pytest tests/test_capacity_plan.py -v
 ```
 
-Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge.capacity'`.
+Esperado: FAIL com `ModuleNotFoundError: No module named 'sparkforge_aws.capacity'`.
 
 - [ ] **Step 3: Implementar**
 
-`sparkforge/capacity/plan.py`:
+`sparkforge_aws/capacity/plan.py`:
 
 ```python
 """Escolha de capacidade sob restricao de SLA.
@@ -569,7 +569,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from sparkforge.findings.models import Fact
+from sparkforge_aws.findings.models import Fact
 
 # `worker change` e REVIEW na secao 34 do documento de origem, que diz para
 # nunca aplicar REVIEW automaticamente em producao. Nao ha caminho neste
@@ -852,16 +852,16 @@ def build_capacity_plan(
     )
 ```
 
-`sparkforge/capacity/__init__.py`:
+`sparkforge_aws/capacity/__init__.py`:
 
 ```python
 """Escolha de capacidade sob restricao de SLA.
 
 NAO e um extrator. Escolher capacidade e juizo, e fact nao julga -- mesmo
-molde de `sparkforge/workload/`. Toda recomendacao nasce `REVIEW`, e nada
+molde de `sparkforge_aws/workload/`. Toda recomendacao nasce `REVIEW`, e nada
 neste pacote aplica mudanca nenhuma.
 """
-from sparkforge.capacity.plan import Candidate, CapacityPlan, build_capacity_plan
+from sparkforge_aws.capacity.plan import Candidate, CapacityPlan, build_capacity_plan
 
 __all__ = ["Candidate", "CapacityPlan", "build_capacity_plan"]
 ```
@@ -879,7 +879,7 @@ Esperado: PASS. Reporte a contagem real.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/capacity tests/test_capacity_plan.py
+rtk git add sparkforge_aws/capacity tests/test_capacity_plan.py
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -890,7 +890,7 @@ Mensagem: `feat(capacity): a mais barata que cabe, entre as capacidades observad
 ## Task 3: Superfície — verbo de topo e tool
 
 **Files:**
-- Modify: `sparkforge/adapters/_core.py`, `cli.py`, `tools.py`, `manifest.json`, `parity.yaml`, um arquivo de `agents/`
+- Modify: `sparkforge_aws/adapters/_core.py`, `cli.py`, `tools.py`, `manifest.json`, `parity.yaml`, um arquivo de `agents/`
 - Test: `tests/test_adapters_cli.py`, `tests/test_adapters_tools.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -978,7 +978,7 @@ class TestCapacityCommand:
         return facts, historico
 
     def test_capacity_is_a_top_level_verb(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts, historico = self._monta(tmp_path)
         code = main(
@@ -1003,7 +1003,7 @@ class TestCapacityCommand:
         assert payload["chosen"]["safety"] == "REVIEW"
 
     def test_out_file_carries_the_whole_plan(self, tmp_path, capsys):
-        from sparkforge.adapters.cli import main
+        from sparkforge_aws.adapters.cli import main
 
         facts, historico = self._monta(tmp_path)
         out = tmp_path / "plan.json"
@@ -1034,7 +1034,7 @@ E a `tests/test_adapters_tools.py`:
 ```python
 class TestCapacityTool:
     def test_the_tool_is_declared_and_dispatchable(self):
-        from sparkforge.adapters import tools
+        from sparkforge_aws.adapters import tools
 
         assert "sparkforge_capacity" in tools.TOOLS
         assert "sparkforge_capacity" in tools._HANDLERS
@@ -1053,12 +1053,12 @@ Esperado: FAIL — `SystemExit: 2` e `AssertionError`.
 Leia `_core.workload_fingerprint` — ele é o molde exato, inclusive no carregamento do diretório de histórico (um `_load_facts_file` por arquivo `*.json`, cada arquivo virando um elemento de `history`).
 
 ```python
-from sparkforge.capacity import build_capacity_plan
+from sparkforge_aws.capacity import build_capacity_plan
 
 _FACTS_FROM_RUN_AND_SCAN = (
-    "por run anterior: sparkforge analyze glue-job-runs --path <dir> --job-name <job> "
+    "por run anterior: sparkforge-aws analyze glue-job-runs --path <dir> --job-name <job> "
     "--out {path}\n"
-    "    e sparkforge analyze sql-metrics --path <event-log-do-run>.jsonl --out {path}"
+    "    e sparkforge-aws analyze sql-metrics --path <event-log-do-run>.jsonl --out {path}"
 )
 
 
@@ -1102,7 +1102,7 @@ A contagem fixa de tools com caminho sobe em um. Atualize e relate.
 - [ ] **Step 5: Commit**
 
 ```bash
-rtk git add sparkforge/adapters manifest.json parity.yaml tests agents .claude .agents .github
+rtk git add sparkforge_aws/adapters manifest.json parity.yaml tests agents .claude .agents .github
 rtk git commit -F <arquivo com a mensagem>
 ```
 
@@ -1214,7 +1214,7 @@ O verbo novo junto de `benchmark`, `fuse` e `workload`. Atualize os números de 
 
 - [ ] **Step 3: STATUS**
 
-A fase, com: o pacote `sparkforge/capacity/`, o verbo e a tool, os dois campos novos do inventário, o número de testes acrescentados (meça), a faixa de commits, a referência à spec, e:
+A fase, com: o pacote `sparkforge_aws/capacity/`, o verbo e a tool, os dois campos novos do inventário, o número de testes acrescentados (meça), a faixa de commits, a referência à spec, e:
 
 - as quatro decisões (só observadas, DPU-segundos e não moeda, resolução declarada, só runs comparáveis);
 - que **nenhum caminho do código aplica a mudança**, e que todo candidato nasce `REVIEW` por §34;

@@ -3,12 +3,12 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from sparkforge.decision import PromotionEvidence
-from sparkforge.economy.decision_activation import ActivationEvidence, guard_activation
-from sparkforge.economy.decision_contracts import ContractRegistry
-from sparkforge.economy.decision_models import AuthorityMode, DecisionInput
-from sparkforge.economy.decision_plane import DecisionPlaneService
-from sparkforge.economy.decision_receipts import DecisionReceiptStore
+from sparkforge_aws.decision import PromotionEvidence
+from sparkforge_aws.economy.decision_activation import ActivationEvidence, guard_activation
+from sparkforge_aws.economy.decision_contracts import ContractRegistry
+from sparkforge_aws.economy.decision_models import AuthorityMode, DecisionInput
+from sparkforge_aws.economy.decision_plane import DecisionPlaneService
+from sparkforge_aws.economy.decision_receipts import DecisionReceiptStore
 
 ROOT = Path(__file__).resolve().parents[1]
 

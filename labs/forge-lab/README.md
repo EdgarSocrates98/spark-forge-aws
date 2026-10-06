@@ -15,7 +15,7 @@ The product contract lives in `lab/versions.yaml` and
 ## Inspect topology
 
 ```bash
-sparkforge analyze forge-lab --path labs/forge-lab/lab.yaml
+sparkforge-aws analyze forge-lab --path labs/forge-lab/lab.yaml
 ```
 
 The output includes component dependency order, a deterministic fingerprint,
@@ -31,15 +31,15 @@ offline readiness, unresolved declarations and seven topological scenario plans:
 
 Those seven scenarios describe the topology blueprint in `lab.yaml`. The
 versioned executable corpus is the Golden 20 in `lab/scenarios/golden.yaml`,
-which is compiled and checked by `sparkforge lab verify`.
+which is compiled and checked by `sparkforge-aws lab verify`.
 
 ## Run locally
 
 1. Choose pinned images in a private `.env` file; do not commit credentials.
 2. Review the scenario and its expected evidence.
 3. Inspect and compile the scenario first:
-   `sparkforge lab verify --repo .` and
-   `sparkforge lab plan <scenario> --backend compose --repo .`.
+   `sparkforge-aws lab verify --repo .` and
+   `sparkforge-aws lab plan <scenario> --backend compose --repo .`.
 4. Start only the requested profile with `docker compose --profile <profile>
    -f labs/forge-lab/compose.yaml up` or let the CLI plan it.
 5. Capture metrics, logs, checkpoints and table metadata.
@@ -52,15 +52,15 @@ the operator validates them on the host.
 ## Product lifecycle
 
 ```bash
-sparkforge lab doctor
-sparkforge lab verify --repo .
-sparkforge lab scenarios --json --repo .
-sparkforge lab plan iceberg-small-files --backend compose --seed 42
-sparkforge lab run iceberg-small-files --backend compose --seed 42
-sparkforge lab inspect .sparkforge/lab/runs/<run-id>
-sparkforge lab analyze .sparkforge/lab/runs/<run-id>
-sparkforge lab compare <run-a> <run-b>
-sparkforge lab reproduce .sparkforge/lab/runs/<run-id>/receipt.json
+sparkforge-aws lab doctor
+sparkforge-aws lab verify --repo .
+sparkforge-aws lab scenarios --json --repo .
+sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42
+sparkforge-aws lab run iceberg-small-files --backend compose --seed 42
+sparkforge-aws lab inspect .sparkforge/lab/runs/<run-id>
+sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id>
+sparkforge-aws lab compare <run-a> <run-b>
+sparkforge-aws lab reproduce .sparkforge/lab/runs/<run-id>/receipt.json
 ```
 
 Doctor, verify, profiles, scenarios, describe, plan, inspect, analyze, compare

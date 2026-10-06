@@ -9,15 +9,15 @@ upstream:
   sha256: "1d7c509019d63beef8709d8dcf920142e99f82e4987037576b2e0b9124180952"
 tasks:
   - id: T1
-    files: [tests/test_collect_managed_flink.py, sparkforge/collect/managed_flink.py, sparkforge/collect/base.py]
+    files: [tests/test_collect_managed_flink.py, sparkforge_aws/collect/managed_flink.py, sparkforge_aws/collect/base.py]
     covers: [AC1, AC2]
     test: {path: tests/test_collect_managed_flink.py, name: test_collector_normalizes_describe_response}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml, manifest.json, tests/test_collect_managed_flink.py]
+    files: [sparkforge_aws/adapters/_core.py, sparkforge_aws/adapters/cli.py, sparkforge_aws/adapters/tools.py, parity.yaml, manifest.json, tests/test_collect_managed_flink.py]
     covers: [AC3]
     test: {path: tests/test_collect_managed_flink.py, name: test_cli_and_mcp_managed_flink_collection_match}
   - id: T3
-    files: [tests/test_collect_managed_flink.py, sparkforge/adapters/_core.py]
+    files: [tests/test_collect_managed_flink.py, sparkforge_aws/adapters/_core.py]
     covers: [AC4]
     test: {path: tests/test_collect_managed_flink.py, name: test_collected_artifact_feeds_managed_flink_analyzer}
   - id: T4
@@ -43,7 +43,7 @@ parallelism/VPC/logging, limites e cache. Rodar:
 python -m pytest tests/test_collect_managed_flink.py::test_collector_normalizes_describe_response tests/test_collect_managed_flink.py::test_collector_cache_is_offline_and_manifested -q
 ```
 
-Esperar vermelho antes de `sparkforge/collect/managed_flink.py`; implementar
+Esperar vermelho antes de `sparkforge_aws/collect/managed_flink.py`; implementar
 kind, path determinístico, `IncludeAdditionalDetails=False`, `_offline_hit` e
 `_write_and_register`; repetir comando verde. Commit: `feat(flink): add managed flink read-only collector`.
 

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.context.gateway_budget import serialized_bytes
-from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.context.gateway_budget import serialized_bytes
+from sparkforge_aws.context.gateway_models import GatewayProfile, GatewayRequest
 
 
 def test_gateway_discovers_bounded_capabilities_and_preserves_budget() -> None:

@@ -56,7 +56,7 @@ assisted nunca recebe autoridade de execução.
 ## Gate five evidence
 
 tests/test_host_adapters.py cobre os três adapters sobre mappings gravados, com usage observado
-e ausência de usage unresolved. O import graph de sparkforge/decision continua sem SDK/provider,
+e ausência de usage unresolved. O import graph de sparkforge_aws/decision continua sem SDK/provider,
 MCP ou chamada de rede.
 
 ## Gate three evidence
@@ -86,7 +86,7 @@ alterar o caminho legacy. Receipts preservam o registro de promoção.
 
 ## Completion update — 2026-09-28
 
-O build substituiu guards locais por `sparkforge.decision.authority.AuthorityPolicy`. O motivo
+O build substituiu guards locais por `sparkforge_aws.decision.authority.AuthorityPolicy`. O motivo
 `active_disabled_by_policy` vence qualquer tentativa quando a flag está desligada; ausência de
 caller authority e evidência incompleta têm códigos próprios. `assisted` não é autoridade de
 execução. O kernel genérico continua sem autoridade ativa por default.

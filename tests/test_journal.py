@@ -9,12 +9,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.cli import _tool_da_cli, build_parser, main
-from sparkforge.adapters.tools import TOOLS, call_tool
-from sparkforge.journal import journal_path, journaled
-from sparkforge.journal.read import verify
-from sparkforge.journal.record import (
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.cli import _tool_da_cli, build_parser, main
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.journal import journal_path, journaled
+from sparkforge_aws.journal.read import verify
+from sparkforge_aws.journal.record import (
     SEM_RAIZ_DE_CASE,
     UNRECORDED,
     Registro,

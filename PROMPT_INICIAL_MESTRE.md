@@ -31,11 +31,11 @@ Não trate este trabalho como uma simples revisão de código. Conduza uma inves
 
 Nesta ordem, sempre:
 
-1. **Detecte o runtime primeiro** (`sparkforge runtime detect` ou
+1. **Detecte o runtime primeiro** (`sparkforge-aws runtime detect` ou
    `sparkforge_runtime_detect`). Divergência entre fontes é `SF-ENV-001` em
    P0 e invalida qualquer limiar citado depois — não cite API nem
    propriedade de versão antes de resolver a divergência.
-2. **Abra o case** (`sparkforge case open` ou `sparkforge_case_open`) com um
+2. **Abra o case** (`sparkforge-aws case open` ou `sparkforge_case_open`) com um
    timestamp ISO 8601 explícito. Investigação sem `.sparkforge/case.yaml`
    não é retomável em outra ferramenta ou sessão.
 3. **Leia `AGENT_PROTOCOL.md`.** Skills e agentes apenas APONTAM para ele;
@@ -51,7 +51,7 @@ Nesta ordem, sempre:
    ligado). Nas três, o coordenador despacha os cinco executores
    (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`)
    como subagentes — no Devin, pelos perfis que este repositório publica em
-   `.agents/agents/` e `.claude/agents/`. **`sparkforge playbook <coordenador>`
+   `.agents/agents/` e `.claude/agents/`. **`sparkforge-aws playbook <coordenador>`
    (CLI) ou a tool MCP `sparkforge_playbook` é o piso das cinco**: é o único
    caminho em Codex e Copilot CI, onde nenhuma pesquisa de fontes mediu
    despacho, e é o caminho nas três quando o despacho está desligado
@@ -68,7 +68,7 @@ validação para apresentar um número que ainda não foi medido.
 
 Desde a Fase 4a a segunda regra tem forma: `benchmark_ref` **não é texto livre**.
 Ele cita o `fact_id` de um `bench.run_delta` — `f_` + 6 dígitos hex minúsculos —,
-que sai de `sparkforge benchmark --before <facts-antes> --after <facts-depois>`
+que sai de `sparkforge-aws benchmark --before <facts-antes> --after <facts-depois>`
 sobre dois conjuntos de facts de `analyze event-log --out`. Caminho de arquivo ou
 descrição em prosa é rejeitado. Se a medição não existe, o efeito sai
 **qualitativo e rotulado como hipótese**, que passa sem `benchmark_ref` nenhum.
@@ -78,7 +78,7 @@ descrição em prosa é rejeitado. Se a medição não existe, o efeito sai
 Comece com:
 
 1. `glue-incremental-performance-architect`
-2. `sparkforge-diagnose`
+2. `sparkforge-aws-diagnose`
 
 Depois acione, conforme as evidências:
 

@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/SFN_HISTORY/define.md
   sha256: "3bf9ee33edd322694a301a5e7be794ab9e831c94d1110c12db3fc5f98ffef818"
 files:
-  - {path: sparkforge/facts/sfn_history.py, action: create, reason: "extrator do historico (sfn.execution, sfn.attempt, sfn.job_run, sfn.unresolved, sfn.analyzed) e a derivacao pura sfn.retry_observado (D1, D2, D5)"}
+  - {path: sparkforge_aws/facts/sfn_history.py, action: create, reason: "extrator do historico (sfn.execution, sfn.attempt, sfn.job_run, sfn.unresolved, sfn.analyzed) e a derivacao pura sfn.retry_observado (D1, D2, D5)"}
   - {path: tests/test_sfn_history.py, action: create, reason: "AC1, AC2, AC3 e AC7"}
-  - {path: sparkforge/facts/fusion.py, action: modify, reason: "fuse() chama build_sfn_retry_observado, como ja chama build_sfn_glue_link e build_af_glue_link (D5)"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "funcao publica de analyze sfn-history (D3)"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "subcomando analyze sfn-history --path (D3)"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "tool sparkforge_analyze_sfn_history, READ_ONLY (D3)"}
+  - {path: sparkforge_aws/facts/fusion.py, action: modify, reason: "fuse() chama build_sfn_retry_observado, como ja chama build_sfn_glue_link e build_af_glue_link (D5)"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "funcao publica de analyze sfn-history (D3)"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "subcomando analyze sfn-history --path (D3)"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "tool sparkforge_analyze_sfn_history, READ_ONLY (D3)"}
   - {path: rules/catalog/sfn-history.yaml, action: create, reason: "area SF-SFNX, SF-SFNX-001 a 003 (D4)"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "rota AGENT-088 por findings_area SF-SFNX para glue-infra-reviewer (D6)"}
   - {path: agents/glue-infra-reviewer.md, action: modify, reason: "declara SF-SFNX, cita a tool nova e a description acompanha (D6)"}
@@ -35,7 +35,7 @@ files:
   - {path: tests/test_harness_authorization.py, action: modify, reason: "contagem de tools que declaram caminho"}
   - {path: tests/test_fixtures_golden_mcp_parity.py, action: modify, reason: "tool nova depois do golden entra em NOVAS_DEPOIS_DO_GOLDEN"}
   - {path: tests/test_databricks_rule_audit.py, action: modify, reason: "sfn_history entra em SO_AWS (D4)"}
-  - {path: sparkforge/agentic/executor/debate_evidence.py, action: modify, reason: "sfn-history na allowlist de extratores de evidencia"}
+  - {path: sparkforge_aws/agentic/executor/debate_evidence.py, action: modify, reason: "sfn-history na allowlist de extratores de evidencia"}
   - {path: docs/agentic-evolution-report.md, action: modify, reason: "a contagem da allowlist"}
   - {path: fixtures/debate/retomada/expected/brief.json, action: modify, reason: "o brief lista a allowlist; regenerado pelo caminho do proprio teste"}
   - {path: parity.yaml, action: modify, reason: "capacidade com tools, cli e knowledge"}
@@ -63,7 +63,7 @@ files:
   - {path: docs/claims.lock.json, action: modify, reason: "arquivo .py novo e contagens movem alegacoes"}
 decisions:
   - id: D1
-    choice: "Modulo sparkforge/facts/sfn_history.py, prefixo sfn. (o mesmo do ASL: e o mesmo dominio, e o kind diz a natureza -- sfn.task e declaracao, sfn.attempt e medida). Le o JSON salvo de get-execution-history, no formato da resposta da API (objeto com events[] e nextToken opcional) e tambem a forma de lista crua de eventos. Kinds: sfn.execution, sfn.attempt, sfn.job_run, sfn.unresolved, sfn.analyzed. Uma tentativa e o par entre um TaskScheduled e o proximo evento terminal do mesmo estado (TaskSucceeded, TaskFailed, TaskTimedOut, TaskStartFailed, TaskSubmitFailed); o estado vem do TaskStateEntered mais recente, pelo encadeamento de previousEventId."
+    choice: "Modulo sparkforge_aws/facts/sfn_history.py, prefixo sfn. (o mesmo do ASL: e o mesmo dominio, e o kind diz a natureza -- sfn.task e declaracao, sfn.attempt e medida). Le o JSON salvo de get-execution-history, no formato da resposta da API (objeto com events[] e nextToken opcional) e tambem a forma de lista crua de eventos. Kinds: sfn.execution, sfn.attempt, sfn.job_run, sfn.unresolved, sfn.analyzed. Uma tentativa e o par entre um TaskScheduled e o proximo evento terminal do mesmo estado (TaskSucceeded, TaskFailed, TaskTimedOut, TaskStartFailed, TaskSubmitFailed); o estado vem do TaskStateEntered mais recente, pelo encadeamento de previousEventId."
     rejected: ["prefixo proprio hist.: separaria em dois dominios o que o operador ve como um", "parsear o CloudWatch Logs do EXPRESS: formato diferente, e o define poe fora de escopo"]
     rollback: "git revert dos commits da feature"
   - id: D2
@@ -71,7 +71,7 @@ decisions:
     rejected: ["estimar DPU-segundos do JobRun a partir da duracao do Task: o Task mede espera, nao consumo"]
     rollback: "git revert do commit"
   - id: D3
-    choice: "Verbo sparkforge analyze sfn-history --path e tool MCP sparkforge_analyze_sfn_history (path, detail_level), READ_ONLY, no molde de analyze step-functions. Teto de tamanho pelo _teto_para do scan: historico de execucao longa chega a megabytes."
+    choice: "Verbo sparkforge-aws analyze sfn-history --path e tool MCP sparkforge_analyze_sfn_history (path, detail_level), READ_ONLY, no molde de analyze step-functions. Teto de tamanho pelo _teto_para do scan: historico de execucao longa chega a megabytes."
     rejected: ["coletor com credencial (abordagem C do explore)"]
     rollback: "git revert do commit"
   - id: D4
@@ -108,7 +108,7 @@ covers:
 
 | parte | arquivos | critério |
 |---|---|---|
-| extrator | `sparkforge/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC1–AC3 |
+| extrator | `sparkforge_aws/facts/sfn_history.py`, `tests/test_sfn_history.py` | AC1–AC3 |
 | verbo e tool | `_core.py`, `cli.py`, `tools.py`, `parity.yaml`, testes de superfície | AC7 |
 | regras e área | `rules/catalog/sfn-history.yaml`, `routing.yaml`, coordenador, corpus e golden | AC5, AC6, AC8 |
 | confronto | `build_sfn_retry_observado` e `fusion.py` | AC4 |
@@ -117,7 +117,7 @@ covers:
 ## Medidas que sustentam o desenho
 
 - Precedente inteiro, duas vezes: `docs/sdd/STEP_FUNCTIONS/` e `docs/sdd/AIRFLOW_DAG/`.
-- Precedente do confronto entre declarado e medido: `sparkforge/facts/bridge.py`.
-- Precedente de artefato de execução salvo: `sparkforge/facts/event_log.py`.
+- Precedente do confronto entre declarado e medido: `sparkforge_aws/facts/bridge.py`.
+- Precedente de artefato de execução salvo: `sparkforge_aws/facts/event_log.py`.
 - Armadilhas já pagas: `description` de agente sem `: `; o golden do debate muda quando a
   allowlist de extratores muda, e precisa ser regenerado na mesma tarefa.

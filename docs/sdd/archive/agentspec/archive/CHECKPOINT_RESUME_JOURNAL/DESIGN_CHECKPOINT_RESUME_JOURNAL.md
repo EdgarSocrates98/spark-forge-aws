@@ -24,14 +24,14 @@ tools.call_tool(name, args)                 cli._dispatch(args)
           │                                           │
           └──────────────┬────────────────────────────┘
                          ▼
-        sparkforge/journal/record.py :: recording(tool, port, args, now)
+        sparkforge_aws/journal/record.py :: recording(tool, port, args, now)
           ├─ raiz = raiz_do_journal(tool, args)      (repo | ancestral com case.yaml | None)
           ├─ started  -> durable.append_line(journal.jsonl)   (sob trava, seq/prev lidos na trava)
           ├─ handler(args)                            (o verbo, intocado)
           └─ finished -> started_seq, outcome, outputs | outputs_unresolved
              falha do journal -> resultado["journal"] = "unrecorded" + motivo (regra 27)
 
-sparkforge/durable.py
+sparkforge_aws/durable.py
   write_atomic(path, text)   tmp no mesmo dir -> fsync -> os.replace (retry em PermissionError no Windows)
   append_line(path, line)    trava do proprio arquivo; cauda sem "\n" -> <arquivo>.torn; append
   read_jsonl(path)           (registros, torn_tail); linha ruim no meio -> DurableError(linha)
@@ -42,7 +42,7 @@ sparkforge/durable.py
 leitura
   journal/read.py :: estado(raiz) -> {last_seq, open_calls, chain, torn_tail}
   _core.resume_case -> case/resume.resume(..., journal=estado) -> in_flight / in_flight_source
-  _core.journal_verify -> CLI `sparkforge journal verify --repo` (exit 1 em broken)
+  _core.journal_verify -> CLI `sparkforge-aws journal verify --repo` (exit 1 em broken)
 ```
 
 ---
@@ -51,10 +51,10 @@ leitura
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| `sparkforge/durable.py` | Escrita atômica, append sob trava com quarentena da cauda, leitura JSONL que tolera só a cauda | stdlib (`os`, `tempfile`, `msvcrt`/`fcntl`, `json`) |
-| `sparkforge/journal/__init__.py` | Constantes: `JOURNAL_FILE`, `LITERAL_KEYS`, `JOURNALED` (derivado de `TOOLS` sob demanda) | stdlib |
-| `sparkforge/journal/record.py` | `recording()`, forma canônica dos eventos, raiz, `outputs` por verbo | stdlib + `durable` |
-| `sparkforge/journal/read.py` | `estado(raiz)` e `verify(raiz)`: cadeia, `open_calls`, cauda | stdlib + `durable` |
+| `sparkforge_aws/durable.py` | Escrita atômica, append sob trava com quarentena da cauda, leitura JSONL que tolera só a cauda | stdlib (`os`, `tempfile`, `msvcrt`/`fcntl`, `json`) |
+| `sparkforge_aws/journal/__init__.py` | Constantes: `JOURNAL_FILE`, `LITERAL_KEYS`, `JOURNALED` (derivado de `TOOLS` sob demanda) | stdlib |
+| `sparkforge_aws/journal/record.py` | `recording()`, forma canônica dos eventos, raiz, `outputs` por verbo | stdlib + `durable` |
+| `sparkforge_aws/journal/read.py` | `estado(raiz)` e `verify(raiz)`: cadeia, `open_calls`, cauda | stdlib + `durable` |
 | `adapters/tools.py::call_tool` | Gancho MCP depois da policy, em volta do handler | chamada a `recording` |
 | `adapters/cli.py::_dispatch` | Gancho CLI em volta do handler; verbo `journal verify` | chamada a `recording` |
 | `adapters/_core.py` | `resume_case` lê `estado`; `journal_verify` | chamadas puras |
@@ -199,7 +199,7 @@ Caminho fora da raiz ou arquivo ausente entra como `null` com o caminho, não co
 - `_core.resume_case` chama `estado(repo)` e passa `journal=` para `resume()`; `resume()` continua puro. `in_flight` = texto do chamador se não vazio (`in_flight_source: caller`); senão, se há `open_calls`, `"<tool> (<port>, seq <n>) sem finished"` para cada um (`journal`); senão `none`.
 - `_RESUME_SCHEMA` ganha `journal` e `in_flight_source` em `properties`, fora de `required` (diferença só aditiva); `sparkforge_resume` entra em `ALTERADAS_DEPOIS_DO_GOLDEN`.
 - `handoff.md`: a seção "Em voo na interrupcao" lista cada `open_call` com "sem finished (caiu ou ainda roda)".
-- `verify(raiz)` recalcula `seq` e `prev` linha a linha: salto de `seq` ou `prev` que não confere → `broken` com `broken_at`; só cauda cortada → `torn_tail`; arquivo ausente → `absent`. CLI `sparkforge journal verify --repo <raiz>`, exit 1 em `broken`, exit 0 nos outros. Entra em `ALLOWED_CLI_ONLY` de `tests/test_capability_parity.py` com a razão (auditoria; o `resume` já leva o estado pela tool existente).
+- `verify(raiz)` recalcula `seq` e `prev` linha a linha: salto de `seq` ou `prev` que não confere → `broken` com `broken_at`; só cauda cortada → `torn_tail`; arquivo ausente → `absent`. CLI `sparkforge-aws journal verify --repo <raiz>`, exit 1 em `broken`, exit 0 nos outros. Entra em `ALLOWED_CLI_ONLY` de `tests/test_capability_parity.py` com a razão (auditoria; o `resume` já leva o estado pela tool existente).
 
 **Rationale:** Dado no lugar do texto livre, sem quebrar quem já passa texto; paridade MCP só aditiva.
 
@@ -237,13 +237,13 @@ Caminho fora da raiz ou arquivo ausente entra como `null` com o caminho, não co
 
 | # | File | Action | Purpose | Agent | Dependencies |
 |---|------|--------|---------|-------|--------------|
-| 1 | `sparkforge/durable.py` | Create | `write_atomic`, `append_line`, `read_jsonl`, `DurableError` | @python-developer | None |
-| 2 | `sparkforge/journal/__init__.py`, `record.py`, `read.py` | Create | Evento, raiz, `outputs`, `recording`, `estado`, `verify` | @python-developer | 1 |
-| 3 | `sparkforge/case/store.py` | Modify | `save_case` por `write_atomic` | @python-developer | 1 |
-| 4 | `sparkforge/agentic/blackboard.py`, `agentic/executor/debate_run.py`, `agentic/executor/debate_evidence.py` | Modify | Appenders e leitores pelo `durable` | @python-developer | 1 |
-| 5 | `sparkforge/adapters/tools.py` | Modify | Gancho em `call_tool`; `_RESUME_SCHEMA` com `journal`/`in_flight_source` | @python-developer | 2 |
-| 6 | `sparkforge/adapters/cli.py` | Modify | Gancho em `_dispatch`; subcomando `journal verify` | @python-developer | 2 |
-| 7 | `sparkforge/adapters/_core.py`, `sparkforge/case/resume.py` | Modify | `resume_case` com `estado`; `journal_verify`; bloco no payload e no `handoff.md` | @python-developer | 2 |
+| 1 | `sparkforge_aws/durable.py` | Create | `write_atomic`, `append_line`, `read_jsonl`, `DurableError` | @python-developer | None |
+| 2 | `sparkforge_aws/journal/__init__.py`, `record.py`, `read.py` | Create | Evento, raiz, `outputs`, `recording`, `estado`, `verify` | @python-developer | 1 |
+| 3 | `sparkforge_aws/case/store.py` | Modify | `save_case` por `write_atomic` | @python-developer | 1 |
+| 4 | `sparkforge_aws/agentic/blackboard.py`, `agentic/executor/debate_run.py`, `agentic/executor/debate_evidence.py` | Modify | Appenders e leitores pelo `durable` | @python-developer | 1 |
+| 5 | `sparkforge_aws/adapters/tools.py` | Modify | Gancho em `call_tool`; `_RESUME_SCHEMA` com `journal`/`in_flight_source` | @python-developer | 2 |
+| 6 | `sparkforge_aws/adapters/cli.py` | Modify | Gancho em `_dispatch`; subcomando `journal verify` | @python-developer | 2 |
+| 7 | `sparkforge_aws/adapters/_core.py`, `sparkforge_aws/case/resume.py` | Modify | `resume_case` com `estado`; `journal_verify`; bloco no payload e no `handoff.md` | @python-developer | 2 |
 | 8 | `.gitignore` | Modify | `.sparkforge/**/*.torn` | (general) | None |
 | 9 | `tests/test_durable.py`, `tests/test_journal.py` | Create | Unidade: atomicidade com `os.replace` sabotado, cauda, linha ruim no meio, trava, conjunto = anotações, duas portas, sem literal, regra 27, recusa da policy, `sem_raiz_de_case` | @test-generator | 1-7 |
 | 10 | `fixtures/journal/<6 casos>/` + `tests/test_fixtures_golden_journal.py` | Create | Goldens de queda com `FIXTURES = ROOT / "fixtures" / "journal"` literal; `.gitattributes` `fixtures/journal/** -text` | @test-generator | 2, 7 |
@@ -361,7 +361,7 @@ def recording(tool: str, port: str, args: Mapping[str, Any], now: Any = None):
 5. outra sessao: resume -> estado(raiz) -> open_calls -> in_flight_source: journal
    │
    ▼
-6. revisor: sparkforge journal verify -> intact | broken(seq) | torn_tail | absent
+6. revisor: sparkforge-aws journal verify -> intact | broken(seq) | torn_tail | absent
 ```
 
 ---
@@ -416,7 +416,7 @@ def recording(tool: str, port: str, args: Mapping[str, Any], now: Any = None):
 
 - Argumento só como sha256, salvo lista fechada de chaves com valor não absoluto (repo público).
 - Caminhos de `outputs` sempre relativos à raiz; fora dela, `null` com o caminho relativo recusado.
-- Raiz vinda de argumento passa por `sparkforge.paths.resolve_within` antes de abrir arquivo (lição do Snyk em §16).
+- Raiz vinda de argumento passa por `sparkforge_aws.paths.resolve_within` antes de abrir arquivo (lição do Snyk em §16).
 - Nada chama provider nem rede (regra 23).
 
 ---

@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/STREAMING_CDC/define.md
   sha256: "5b117652ff46a1e2bce4591bbe73468c77b23b3c7071e85dc9675a0e983025c2"
 files:
-  - {path: sparkforge/facts/cdc.py, action: create, reason: "extrator JSON/JSONL offline CDC, Debezium e DMS"}
+  - {path: sparkforge_aws/facts/cdc.py, action: create, reason: "extrator JSON/JSONL offline CDC, Debezium e DMS"}
   - {path: rules/catalog/cdc.yaml, action: create, reason: "regras de posição, chave, tombstone, seam, schema history e mappings"}
   - {path: fixtures/cdc, action: create, reason: "goldens positivos, negativos e unresolved por vocabulário"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "envelope comum para analyze cdc"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "adicionar analyze cdc"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "envelope comum para analyze cdc"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "adicionar analyze cdc"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "adicionar tool MCP read-only"}
   - {path: skills/review-cdc-replication/SKILL.md, action: create, reason: "workflow evidence-first"}
   - {path: agents/cdc-contract-reviewer.md, action: create, reason: "especialista e rule areas CDC/Debezium/DMS/Schema"}
   - {path: rules/catalog/routing.yaml, action: modify, reason: "roteamento determinístico para especialista CDC"}

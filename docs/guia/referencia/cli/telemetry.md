@@ -1,6 +1,6 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge telemetry`
+# `sparkforge-aws telemetry`
 
 Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector.
 
@@ -8,14 +8,14 @@ Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector.
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge telemetry export`](#sparkforge-telemetry-export) | Grava .sparkforge/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le com o receiver otlp_json_file. Nao chama rede; token so com transcript do host. |
+| [`sparkforge-aws telemetry export`](#sparkforge-aws-telemetry-export) | Grava .sparkforge/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le com o receiver otlp_json_file. Nao chama rede; token so com transcript do host. |
 
-## `sparkforge telemetry export`
+## `sparkforge-aws telemetry export`
 
 Grava .sparkforge/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le com o receiver otlp_json_file. Nao chama rede; token so com transcript do host.
 
 ```bash
-sparkforge telemetry export --help
+sparkforge-aws telemetry export --help
 ```
 
 ### Opções

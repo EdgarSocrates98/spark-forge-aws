@@ -18,7 +18,7 @@ claims:
   - text: "O contrato offline valida a topologia, dependências e os sete cenários declarados, preservando o modo offline e a confirmação obrigatória."
     evidence_ref: "tests/test_forge_lab.py::test_forge_lab_validates_topology_and_scenarios"
   - text: "A análise CLI retorna componentes, ordem topológica, cenários e fingerprint sem iniciar Docker ou acessar sistemas externos."
-    evidence_ref: "python -m sparkforge.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml"
+    evidence_ref: "python -m sparkforge_aws.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml"
   - text: "A documentação operacional cobre todos os cenários declarados e os limites de segurança do blueprint."
     evidence_ref: "tests/test_forge_lab.py::test_forge_lab_docs_match_declared_scenarios"
 change_id: null
@@ -43,7 +43,7 @@ testes e verbos abaixo.
 ## Evidência atual
 
 - `python -m pytest tests/test_forge_lab.py -q -p no:cacheprovider --basetemp .pytest-tmp-forge-digital-twin` — `3 passed`.
-- `python -m sparkforge.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml` — exit 0; nove componentes, sete cenários, ordem topológica e `unresolved: []`.
+- `python -m sparkforge_aws.adapters.cli analyze forge-lab --path labs/forge-lab/lab.yaml` — exit 0; nove componentes, sete cenários, ordem topológica e `unresolved: []`.
 - O resultado preserva `mode: offline_spec_only` e `readiness: unresolved_until_operator_validates_images_and_runtime`.
 
 ## Desvios e limites

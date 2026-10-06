@@ -7,7 +7,7 @@ resource "aws_glue_job" "etl_secret" {
 
   command {
     name            = "glueetl"
-    script_location = "s3://sparkforge-demo/scripts/etl.py"
+    script_location = "s3://sparkforge-aws-demo/scripts/etl.py"
     python_version  = "3"
   }
 
@@ -17,7 +17,7 @@ resource "aws_glue_job" "etl_secret" {
   # nao uma credencial real.
   default_arguments = {
     "--enable-spark-ui"       = "true"
-    "--spark-event-logs-path" = "s3://sparkforge-demo/spark-logs/"
+    "--spark-event-logs-path" = "s3://sparkforge-aws-demo/spark-logs/"
     "--aws-access-key-id"     = "AKIAIOSFODNN7EXAMPLE"
   }
 }

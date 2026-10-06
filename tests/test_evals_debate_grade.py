@@ -1,4 +1,4 @@
-"""`sparkforge.evals.debate_grade` sobre desfechos SINTETICOS (AT-013).
+"""`sparkforge_aws.evals.debate_grade` sobre desfechos SINTETICOS (AT-013).
 
 O grader so le arquivo: o `result.json` que `scripts/run_debate.py` grava por
 caso, o `debate_facts.jsonl` copiado do estado do debate e os transcripts
@@ -16,8 +16,8 @@ from typing import Any
 import pytest
 import yaml
 
-from sparkforge.evals import cli
-from sparkforge.evals.debate_grade import (
+from sparkforge_aws.evals import cli
+from sparkforge_aws.evals.debate_grade import (
     DEBATE_FACTS_FILE,
     GRADE_FILE,
     OUTCOMES,
@@ -308,7 +308,7 @@ def test_placar_nao_soma_byte_com_token_nem_publica_nota(tmp_path):
 
 
 # --------------------------------------------------------------------------
-# CLI: `python -m sparkforge.evals debate --run <nome>`
+# CLI: `python -m sparkforge_aws.evals debate --run <nome>`
 # --------------------------------------------------------------------------
 
 

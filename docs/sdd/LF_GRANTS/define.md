@@ -118,7 +118,7 @@ quando a operação que falhou é escrita.
 | `both` ou ausente | qualquer | — | `unresolved`, razão própria |
 
 O eixo de versão vem de `knowledge/glue/lakeformation-matrix.yaml` (`fgac_spark_native_write`),
-lido por `sparkforge/facts/lakeformation_matrix.py`. A versão não é suposta.
+lido por `sparkforge_aws/facts/lakeformation_matrix.py`. A versão não é suposta.
 
 ## Fixtures
 
@@ -149,6 +149,6 @@ registro histórico, e a correção vale a partir deste define.
   registrado usa `s3:PutObject` e `s3:DeleteObject` do runtime role. Ação que o operador
   não simulou em `collect iam-access` sai `unresolved`, nomeando a ação a simular.
 - **U3:** no caminho de log, `error.signature_match` carrega `attrs.matched_line`, com no
-  máximo 200 caracteres (`sparkforge/errors/matcher.py`). O recurso sai do trecho
+  máximo 200 caracteres (`sparkforge_aws/errors/matcher.py`). O recurso sai do trecho
   `on <recurso>` quando cabe nesse limite. Quando não cabe, vem do case como candidato
   único, e com mais de um candidato sai `unresolved`.

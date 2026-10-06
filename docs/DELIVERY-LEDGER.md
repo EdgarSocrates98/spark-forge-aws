@@ -1,7 +1,7 @@
 # SparkForge AWS — ledger de entrega das evoluções
 
 **Atualizado em:** 2026-10-05
-**Fonte de estado:** `sparkforge sdd status --repo .`  
+**Fonte de estado:** `sparkforge-aws sdd status --repo .`  
 **Escopo:** `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md`,
 `prompt_evo_forge_lab.md` e `prompt_evo_new_step1.md`
 
@@ -309,7 +309,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 
 | Prova | Resultado |
 |---|---|
-| `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
+| `sparkforge-aws lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
 | Suíte integral atual | **14538 passed, 14 skipped** em 2026-10-05; registrada no ship do Agentic OS v2 |
 | Corpus e gates de domínio | pipeline end-to-end: 5 goldens, 967 testes de fixtures/reachability/kinds e gates focados; Forge Lab Digital Twin: 3 testes focados; Flink temporal: 11 unitários, 7 goldens, 69 kinds |
 | Docs e cobertura | **145 passed** em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
@@ -343,7 +343,7 @@ AWS ou eficácia de uma recomendação em produção.
 Após cada fase, atualizar este arquivo e os documentos de domínio, então executar:
 
 ```powershell
-sparkforge sdd status --repo .
+sparkforge-aws sdd status --repo .
 python scripts/gen_reference_docs.py --check
 python scripts/sync_skills.py --check
 python scripts/check_surface_lock.py

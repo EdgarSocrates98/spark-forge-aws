@@ -14,7 +14,7 @@
   ],
   "evidence_required": ["mig.jar_binary", "tf.attribute"],
   "diagnostic_steps": [
-    "Read mig.jar_binary.scala_minor for every JAR under the job directory: sparkforge glue dependency-audit <dir> --glue 6.0",
+    "Read mig.jar_binary.scala_minor for every JAR under the job directory: sparkforge-aws glue dependency-audit <dir> --glue 6.0",
     "Check the artifact suffix of each JAR name and of its transitive dependencies (_2.12 vs _2.13)",
     "Confirm the job's GlueVersion in the Terraform or job definition"
   ],

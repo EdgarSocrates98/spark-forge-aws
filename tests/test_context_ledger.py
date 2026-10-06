@@ -10,8 +10,8 @@ import sqlite3
 
 import pytest
 
-from sparkforge.observability.store import SQLiteTraceStore
-from sparkforge.observability.tracer import AgentOpsTracker, TraceSpan
+from sparkforge_aws.observability.store import SQLiteTraceStore
+from sparkforge_aws.observability.tracer import AgentOpsTracker, TraceSpan
 
 
 class TestOsCamposNovos:
@@ -164,8 +164,8 @@ class TestOSpanDaChamada:
     def test_a_successful_call_records_the_exact_bytes(self, tmp_path, monkeypatch):
         import json
 
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -186,8 +186,8 @@ class TestOSpanDaChamada:
         assert spans[0]["outcome"] == "ok"
 
     def test_the_declared_item_count_is_carried_not_guessed(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -203,8 +203,8 @@ class TestOSpanDaChamada:
         assert span["item_count"] == resultado["returned_count"]
 
     def test_the_requested_detail_level_is_recorded(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -224,8 +224,8 @@ class TestOSpanDaChamada:
     def test_a_tool_span_never_carries_provider_tokens_or_cost(
         self, tmp_path, monkeypatch
     ):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -249,8 +249,8 @@ class TestOsTresCaminhosDeErro:
     barata se elas nao fossem contadas."""
 
     def test_an_adapter_error_records_a_span(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -267,10 +267,10 @@ class TestOsTresCaminhosDeErro:
         assert span["payload_bytes"] > 0
 
     def test_an_unauthorized_call_records_a_span(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.agents.autonomy import CallPolicy
-        from sparkforge.observability import context_ledger
-        from sparkforge.registry.models import ExecutionProfile
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.agents.autonomy import CallPolicy
+        from sparkforge_aws.observability import context_ledger
+        from sparkforge_aws.registry.models import ExecutionProfile
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -295,8 +295,8 @@ class TestOsTresCaminhosDeErro:
         ANTES do despacho: nao houve payload nenhum para medir."""
         import pytest
 
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(
             db_path=tmp_path / "traces.db", run_id="run_teste"
@@ -316,8 +316,8 @@ class TestLedgerQuebradoNaoQuebraATool:
     def test_an_unwritable_ledger_does_not_change_the_result(
         self, tmp_path, monkeypatch
     ):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         impossivel = tmp_path / "arquivo_no_lugar_do_diretorio"
         impossivel.write_text("nao sou diretorio", encoding="utf-8")
@@ -340,7 +340,7 @@ class TestLedgerQuebradoNaoQuebraATool:
         assim pode propagar."""
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         impossivel = tmp_path / "arquivo_no_lugar_do_diretorio"
         impossivel.write_text("nao sou diretorio", encoding="utf-8")
@@ -369,7 +369,7 @@ class TestPayloadNaoSerializavelNaoDerrubaAChamada:
         import datetime
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
 
@@ -386,7 +386,7 @@ class TestPayloadNaoSerializavelNaoDerrubaAChamada:
 
 class TestImportarToolsNaoTocaDisco:
     """Achado do revisor: `_LEDGER = ContextLedger()` no corpo do modulo fazia
-    `import sparkforge.adapters.tools` sozinho criar `.sparkforge/traces.db`
+    `import sparkforge_aws.adapters.tools` sozinho criar `.sparkforge/traces.db`
     onde quer que o processo estivesse rodando."""
 
     def test_importar_tools_nao_cria_arquivo_nenhum(self, tmp_path):
@@ -394,7 +394,7 @@ class TestImportarToolsNaoTocaDisco:
         import sys
 
         resultado = subprocess.run(
-            [sys.executable, "-c", "import sparkforge.adapters.tools"],
+            [sys.executable, "-c", "import sparkforge_aws.adapters.tools"],
             cwd=tmp_path,
             capture_output=True,
             text=True,
@@ -411,7 +411,7 @@ class TestBufferEFlush:
     def test_spans_of_enxerga_span_ainda_no_buffer(self, tmp_path):
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         ledger.record(
@@ -432,7 +432,7 @@ class TestBufferEFlush:
         import sqlite3
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         primeiro = time.time()
@@ -478,7 +478,7 @@ class TestBufferEFlush:
         import sqlite3
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
 
@@ -510,7 +510,7 @@ class TestBufferEFlush:
         import sqlite3
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
 
@@ -548,7 +548,7 @@ class TestBufferEFlush:
         import sqlite3
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=str(tmp_path / "traces.db"), run_id="run_teste")
         ledger.record(
@@ -572,8 +572,8 @@ class TestBufferEFlush:
         import sqlite3
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
-        from sparkforge.observability.store import SQLiteTraceStore
+        from sparkforge_aws.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.store import SQLiteTraceStore
 
         def _save_trace_que_falha(self, trace):
             raise sqlite3.OperationalError("disco cheio (simulado)")
@@ -604,8 +604,8 @@ class TestSuiteNaoEscreveNoRepositorioReal:
     ):
         from pathlib import Path
 
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         raiz_do_repo = Path(__file__).resolve().parents[1]
         traces_do_repo = raiz_do_repo / ".sparkforge" / "traces.db"
@@ -638,7 +638,7 @@ class TestIdaEVoltaEntreInstancias:
     ):
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         db_path = tmp_path / "traces.db"
 
@@ -669,7 +669,7 @@ class TestIdaEVoltaEntreInstancias:
         inventar dado: consultar um `run_id` que nunca foi gravado continua
         devolvendo `[]`, so que agora por TER CONSULTADO o disco, e nao por
         ter pulado a consulta."""
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
 
@@ -681,8 +681,8 @@ class TestOCanalMedido:
     so da `mcp.method.name` a chamada que entrou por `adapters/mcp.py`."""
 
     def test_call_tool_sem_canal_nao_grava_metadata(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
@@ -697,8 +697,8 @@ class TestOCanalMedido:
         assert meta["label"] == "TOOL_OUTPUT"
 
     def test_call_tool_com_canal_grava_canal_e_transporte(self, tmp_path, monkeypatch):
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger
 
         ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
@@ -718,7 +718,7 @@ class TestOCanalMedido:
         import json
         import time
 
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge_aws.observability.context_ledger import ContextLedger
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         ledger.record(
@@ -737,8 +737,8 @@ class TestOCanalMedido:
 
     def test_gravar_o_canal_falhando_nao_derruba_a_chamada(self, tmp_path, monkeypatch):
         """Regra 27: a montagem do span, canal incluido, fica no mesmo try/except."""
-        from sparkforge.adapters import tools
-        from sparkforge.observability import context_ledger, tracer
+        from sparkforge_aws.adapters import tools
+        from sparkforge_aws.observability import context_ledger, tracer
 
         ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)

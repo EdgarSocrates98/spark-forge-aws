@@ -108,7 +108,7 @@ próprio, ainda que aponte para o lugar certo, está fora do que a AWS declara
 suportado.
 
 Desde 2026-09-10 esta afirmação tem **fact medido** e não vive mais só nesta
-página: `sparkforge collect glue-resource-link` lê o objeto na conta consumidora
+página: `sparkforge-aws collect glue-resource-link` lê o objeto na conta consumidora
 com `glue:GetTable` (ou `glue:GetDatabase`), guarda os dois nomes verbatim, e
 `glue.resource_link.attrs.name_matches_source` os compara. `SF-XACC-002` julga
 sobre isso — e o achado é sobre o **limite de suporte declarado**, não sobre uma

@@ -15,7 +15,7 @@
   },
   "handoff_em_voo": [
     "- `sparkforge_case_open` (cli, seq 1) sem finished (caiu ou ainda roda)",
-    "- journal: cadeia quebrada no seq 2 — confira com `sparkforge journal verify`"
+    "- journal: cadeia quebrada no seq 2 — confira com `sparkforge-aws journal verify`"
   ],
   "resume": {
     "in_flight": "sparkforge_case_open (cli, seq 1) sem finished",

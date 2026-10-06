@@ -8,13 +8,13 @@ upstream:
   path: docs/sdd/STREAMING_SLO_TRANSPORT_EVALUATION/define.md
   sha256: "e310787a557e53029756f082fab89239b0a2b432f95d4a0fc8283dc6a0ed1e05"
 files:
-  - {path: sparkforge/facts/streaming_slo.py, action: modify, reason: "comparar observações diretas de kafka.lag e kinesis.shard com unidade e janela"}
-  - {path: sparkforge/facts/streaming.py, action: modify, reason: "preservar identidade temporal da progress existente sem regressão"}
-  - {path: sparkforge/facts/transport.py, action: modify, reason: "preservar timestamp textual de métricas Kinesis e identidade de stream quando necessário"}
-  - {path: sparkforge/facts/streaming_composition.py, action: modify, reason: "encaminhar transport_key ao avaliador SLO"}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "manter core único e read-only"}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "documentar source/transport no modo existente sem novo verbo"}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "descrever SLO de transporte no schema MCP existente"}
+  - {path: sparkforge_aws/facts/streaming_slo.py, action: modify, reason: "comparar observações diretas de kafka.lag e kinesis.shard com unidade e janela"}
+  - {path: sparkforge_aws/facts/streaming.py, action: modify, reason: "preservar identidade temporal da progress existente sem regressão"}
+  - {path: sparkforge_aws/facts/transport.py, action: modify, reason: "preservar timestamp textual de métricas Kinesis e identidade de stream quando necessário"}
+  - {path: sparkforge_aws/facts/streaming_composition.py, action: modify, reason: "encaminhar transport_key ao avaliador SLO"}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "manter core único e read-only"}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "documentar source/transport no modo existente sem novo verbo"}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "descrever SLO de transporte no schema MCP existente"}
   - {path: tests/test_facts_streaming_slo.py, action: modify, reason: "testes vermelhos e verdes para Kafka/Kinesis"}
   - {path: tests/test_analyze_streaming_composition.py, action: modify, reason: "paridade CLI/MCP do transport_key"}
   - {path: tests/test_fixtures_golden_streaming_composition.py, action: modify, reason: "registrar goldens SLO transport"}
@@ -45,7 +45,7 @@ covers:
 
 ## Conhecimento consultado
 
-- `sparkforge rules lookup --category streaming_slo`: `SF-STREAM-004`,
+- `sparkforge-aws rules lookup --category streaming_slo`: `SF-STREAM-004`,
   `SF-STREAM-011` e `SF-STREAM-012`, consultado em 2026-10-02.
 - `knowledge/transport-diagnostics.md`: namespaces `kafka.lag` e
   `kinesis.shard`, limites de timestamp, identidade e ausência de inferência.

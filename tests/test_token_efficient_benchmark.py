@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 
-from sparkforge.adapters.tools import TOOLS
-from sparkforge.context.gateway import ContextGateway
-from sparkforge.evals.token_benchmark import (
+from sparkforge_aws.adapters.tools import TOOLS
+from sparkforge_aws.context.gateway import ContextGateway
+from sparkforge_aws.evals.token_benchmark import (
     compare_benchmark_matrix,
     load_benchmark_suite,
     run_benchmark_matrix,

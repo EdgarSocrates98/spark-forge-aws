@@ -35,14 +35,14 @@ from typing import Any
 import pytest
 import yaml
 
-from sparkforge.agentic.blackboard import (
+from sparkforge_aws.agentic.blackboard import (
     read_claims,
     read_contradictions,
     read_decisions,
     read_objections,
 )
-from sparkforge.agentic.executor import run_executor
-from sparkforge.findings.models import Fact
+from sparkforge_aws.agentic.executor import run_executor
+from sparkforge_aws.findings.models import Fact
 
 RAIZ = Path(__file__).resolve().parents[1]
 CASO_DE_FIXTURE = RAIZ / "fixtures" / "timeout" / "timeout_com_spill_e_skew"
@@ -633,7 +633,7 @@ class TestJudgeEArbitrateNaoDivergem:
         O teste vale contra a divergencia FUTURA: hoje as duas leituras
         concordam, e e a concordancia que ele trava.
         """
-        from sparkforge.agentic.executor.digest import plan_digest
+        from sparkforge_aws.agentic.executor.digest import plan_digest
 
         findings = _carrega(CASO_DE_FIXTURE / "expected" / "findings.json", "findings")
         facts = uniao_de_facts(CASO_DE_FIXTURE)
@@ -654,7 +654,7 @@ class TestJudgeEArbitrateNaoDivergem:
         O unico par direto do catalogo (`SF-GRAPH-005` contra `SF-LF-001`) da o
         lado nao vazio: o `judge` nomeia o mesmo par que o `arbitrate` grava.
         """
-        from sparkforge.agentic.executor.digest import plan_digest
+        from sparkforge_aws.agentic.executor.digest import plan_digest
 
         findings, facts = _par_de_contradicao()
 

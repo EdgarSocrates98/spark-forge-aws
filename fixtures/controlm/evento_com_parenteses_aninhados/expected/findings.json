@@ -47,7 +47,7 @@
       "EIXO DE RESULTADO — o job espera pelo mesmo conjunto de eventos. A lista de `WaitForEvents` do job, antes e depois, tem os mesmos nomes de evento e as mesmas datas, item a item: achatar parênteses é mudança de AGRUPAMENTO, e não pode acrescentar nem remover evento esperado.",
       "EIXO DE RESULTADO — a ordem efetiva de execução não mudou. Uma ordenação (`run order`) do fluxo no ambiente alvo termina em OK e a sequência de horários de início dos jobs é a mesma da última execução boa — é isso que prova que a condição de espera continua sendo satisfeita nos mesmos pontos.",
       "EIXO DE RESULTADO — o efeito do job é o mesmo. O artefato que ele produz confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job que passa a rodar antes da hora roda sobre dado incompleto e termina em OK — é essa falha que este eixo existe para pegar.",
-      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-005, e `ctm.event_logic` mostra `max_paren_depth` igual a 1 — com `dependency_count` inalterado na sentinela, porque regra que cala por o extrator ter parado de ler os eventos é verde falso."
+      "`sparkforge-aws analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-005, e `ctm.event_logic` mostra `max_paren_depth` igual a 1 — com `dependency_count` inalterado na sentinela, porque regra que cala por o extrator ter parado de ler os eventos é verde falso."
     ],
     "rollback": [
       "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um evento intermediário, o rollback precisa também remover o job que o adiciona — deixá-lo publicado faz o Control-M acumular um evento que ninguém mais consome."

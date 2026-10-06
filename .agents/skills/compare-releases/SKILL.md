@@ -1,6 +1,6 @@
 ---
 name: compare-releases
-description: "Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — \\\"vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter\\\", \\\"o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?\\\", \\\"que versão de Python o Glue 5.1 publica\\\" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge release describe` e `sparkforge release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge migrate glue` e `sparkforge migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`."
+description: "Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — \\\"vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter\\\", \\\"o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?\\\", \\\"que versão de Python o Glue 5.1 publica\\\" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge-aws release describe` e `sparkforge-aws release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge-aws migrate glue` e `sparkforge-aws migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -12,9 +12,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge release describe
-  - sparkforge release diff
-  - sparkforge migrate glue
+  - sparkforge-aws release describe
+  - sparkforge-aws release diff
+  - sparkforge-aws migrate glue
 subagent: true
 agent: sf-runtime-specialist
 ---
@@ -26,8 +26,8 @@ agent: sf-runtime-specialist
 **Esta skill não responde "isso quebra".** Ela lê matriz de versão e devolve números com
 fonte. Um diff que diga *"Iceberg foi de 1.6.1 para 1.7.1"* não afirma nada sobre o seu job:
 não sabe que API você chama, não leu o seu código, não consultou regra nenhuma. A pergunta
-"o que quebra" é do `MigrationAssessment` — `sparkforge migrate glue` e
-`sparkforge migrate emr`, tool `sparkforge_migration_assess` com `platform` —, que julga o
+"o que quebra" é do `MigrationAssessment` — `sparkforge-aws migrate glue` e
+`sparkforge-aws migrate emr`, tool `sparkforge_migration_assess` com `platform` —, que julga o
 caminho degrau a degrau contra o catálogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`). Ele
 cobre as **quatro** plataformas desde 2026-09-01, e cobre com a cobertura DECLARADA: para
 EMR o catálogo tem **zero** regras guardadas por versão de plataforma, e o campo
@@ -73,8 +73,8 @@ Por isso o diff carrega o **eixo** e o declara: `platform`, `release`, ou os doi
 ### 1. Descreva cada lado, e leia o `unresolved` antes dos números
 
 ```bash
-sparkforge release describe --platform emr_ec2 --release 7.7.0
-sparkforge release describe --platform emr_eks --release emr-7.7.0
+sparkforge-aws release describe --platform emr_ec2 --release 7.7.0
+sparkforge-aws release describe --platform emr_eks --release emr-7.7.0
 ```
 
 Tool MCP equivalente: `sparkforge_release_describe`, com `platform` e `release`.
@@ -98,7 +98,7 @@ EC2" — é exatamente o que a divergência acima proíbe.
 ### 2. Rode o diff, e leia o `axis` antes do `changed`
 
 ```bash
-sparkforge release diff \
+sparkforge-aws release diff \
   --left-platform emr_ec2 --left-release 7.7.0 \
   --right-platform emr_eks --right-release 7.7.0
 ```
@@ -127,10 +127,10 @@ verbos irmãos, porque esses nomes prometem que o eixo é o tempo. Aqui o eixo �
 Onde ele existe — Glue —, a pergunta seguinte é do assessment:
 
 ```bash
-sparkforge migrate glue ./meu-job --from 4.0 --to 6.0
+sparkforge-aws migrate glue ./meu-job --from 4.0 --to 6.0
 ```
 
-Para EMR não existe equivalente hoje. O que existe é `sparkforge runtime detect`, que diz em
+Para EMR não existe equivalente hoje. O que existe é `sparkforge-aws runtime detect`, que diz em
 que runtime um artefato **rodou** — outra pergunta, e a fonte dela é o artefato, não a
 matriz. O diff alimenta o rótulo que você declara ao julgar; ele não substitui a extração, e
 esta skill não chama o motor de regras.
@@ -148,21 +148,21 @@ esta skill não chama o motor de regras.
 | `unresolved["attribution"]` | os dois eixos variam ao mesmo tempo, e a atribuição por nome está recusada | — |
 | as cinco dimensões sem lastro | a recusa, com a medida que a destravaria | — |
 
-`sparkforge rules lookup` continua sendo a lista autoritativa de limiar e escopo de versão.
+`sparkforge-aws rules lookup` continua sendo a lista autoritativa de limiar e escopo de versão.
 Esta skill não consulta o catálogo, e nenhum `Finding` nasce dela.
 
 ## Quando NÃO usar
 
 - A pergunta é **"o que quebra se eu migrar"**: isso é `migrate-glue-6` e
-  `sparkforge migrate glue` (Glue), `sparkforge migrate emr --platform ...` (as três de EMR),
+  `sparkforge-aws migrate glue` (Glue), `sparkforge-aws migrate emr --platform ...` (as três de EMR),
   ou `spark4-compatibility` para a fronteira do Spark 4.
   Diff de versão não é avaliação de compatibilidade.
-- A pergunta é **em que runtime este job rodou**: `sparkforge runtime detect` sobre facts já
+- A pergunta é **em que runtime este job rodou**: `sparkforge-aws runtime detect` sobre facts já
   extraídos. O diff não lê artefato nenhum do operador.
 - A pergunta é **ficou mais rápido depois de mudar**: isso é medida, não documento —
   `benchmark-pyspark-job` sobre dois conjuntos de facts de event log.
 - A pergunta é sobre **subir o `format-version` de uma tabela Iceberg**: `iceberg-v3-readiness`
-  e `sparkforge iceberg assess-upgrade`, que cruzam o inventário de consumidores com a matriz
+  e `sparkforge-aws iceberg assess-upgrade`, que cruzam o inventário de consumidores com a matriz
   de suporte de feature. Versão de biblioteca Iceberg não é versão de spec da tabela.
 - A pergunta é sobre a **configuração** do job — worker, escala, log, segredo: as skills são
   `review-glue-terraform`, `review-emr-cluster` e `review-emr-eks`.
@@ -195,8 +195,8 @@ Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_ste
 escolher skill; nenhum número sem `fact_id` ou sem a fonte que o descritor traz;
 `rules_lookup` em vez de memória para limiar e versão; `validate_output` antes de apresentar;
 reporte `unresolved` — aqui ele é metade da resposta, e inclui as cinco dimensões que este
-verbo recusa por nome. Feche assinando com `sparkforge report sign` e conferindo com
-`sparkforge report verify`.
+verbo recusa por nome. Feche assinando com `sparkforge-aws report sign` e conferindo com
+`sparkforge-aws report verify`.
 
 Manutenção destrutiva você **não executa**, e nesta área ela não nasce do verbo: `describe` e
 `diff` só leem `knowledge/` e não tocam dado, tabela nem infraestrutura. Ela nasce do que vem
@@ -215,7 +215,7 @@ Esta skill trata **compatibilidade e diferenças entre releases e runtimes**. Co
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge release describe`, `sparkforge release diff`, `sparkforge migrate glue`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws release describe`, `sparkforge-aws release diff`, `sparkforge-aws migrate glue`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

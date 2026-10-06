@@ -16,7 +16,7 @@ Lê bundle offline de microscópio DuckDB com objetos Parquet/Iceberg, colunas, 
 
 ## Na CLI
 
-[`sparkforge analyze duckdb-microscope`](../cli/analyze.md)
+[`sparkforge-aws analyze duckdb-microscope`](../cli/analyze.md)
 
 ## Capacidade
 

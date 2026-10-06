@@ -37,7 +37,7 @@ tem envelope equivalente na CLI e no MCP.
 - `python scripts/check_status_numbers.py --strict`.
 - `python scripts/verify_offline_bundle.py --check`.
 - `python scripts/refresh_knowledge.py --check --offline`.
-- `sparkforge sdd check --repo . --feature STREAMING_SCHEMA_REGISTRY_COLLECTOR`.
+- `sparkforge-aws sdd check --repo . --feature STREAMING_SCHEMA_REGISTRY_COLLECTOR`.
 - Suíte completa não executada; permanece para fase explicitamente solicitada.
 
 ## Limites

@@ -1,6 +1,6 @@
 # Orchestration Control Plane
 
-`sparkforge analyze orchestration --path <inventory.yaml>` normalizes an
+`sparkforge-aws analyze orchestration --path <inventory.yaml>` normalizes an
 explicit inventory of Airflow, Dagster, Step Functions and Control-M. The
 report preserves source platform, schedule, sensors, retry/backoff, pools and
 concurrency, backfill policy, idempotency and workflow dependencies.

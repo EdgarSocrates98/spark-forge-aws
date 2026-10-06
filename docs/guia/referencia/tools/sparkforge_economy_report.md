@@ -17,7 +17,7 @@ O que a execucao poe na janela de contexto: bytes MEDIDOS por tool, o efeito med
 
 ## Na CLI
 
-[`sparkforge economy report`](../cli/economy.md)
+[`sparkforge-aws economy report`](../cli/economy.md)
 
 ## Capacidade
 

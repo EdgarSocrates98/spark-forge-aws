@@ -1,7 +1,7 @@
 """`--emr` sobre facts de EMR Serverless: o que a fonte publica, e so isso.
 
 O `STATUS.md` registrava, na primeira linha da tabela de dividas, que
-`sparkforge judge --facts <facts de EMR Serverless> --emr 7.5.0` gravava
+`sparkforge-aws judge --facts <facts de EMR Serverless> --emr 7.5.0` gravava
 `{"spark": "3.5.2-amzn-1", "python": "3.9", "iceberg": "1.6.1-amzn-1"}` --
 tudo derivado da `EMR_MATRIX`, que e a matriz de EMR on EC2 -- sobre um
 conjunto de facts que nao tem um unico fact de EC2. Tres eixos inventados
@@ -39,9 +39,9 @@ from pathlib import Path
 import pytest
 from test_runtime_matrix_drift import PLATAFORMAS, tabela_do_documento
 
-from sparkforge.adapters._core import AdapterError, judge_findings
-from sparkforge.facts import runtime_matrix
-from sparkforge.facts.runtime_detect import EMR_MATRIX, EMR_SERVERLESS_MATRIX
+from sparkforge_aws.adapters._core import AdapterError, judge_findings
+from sparkforge_aws.facts import runtime_matrix
+from sparkforge_aws.facts.runtime_detect import EMR_MATRIX, EMR_SERVERLESS_MATRIX
 
 _SERVERLESS = next(p for p in PLATAFORMAS if p.nome == "emr-serverless")
 

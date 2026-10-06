@@ -20,7 +20,7 @@ Extrai facts de um dump JSON das cinco metadata tables Iceberg (`.files`, `.dele
 
 ## Na CLI
 
-[`sparkforge analyze iceberg`](../cli/analyze.md)
+[`sparkforge-aws analyze iceberg`](../cli/analyze.md)
 
 ## Capacidade
 

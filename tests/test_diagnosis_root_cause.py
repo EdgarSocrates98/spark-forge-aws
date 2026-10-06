@@ -23,13 +23,13 @@ import pathlib
 
 import pytest
 
-from sparkforge.adapters import _core
-from sparkforge.diagnosis import ORDEM_DE_SEVERIDADE, rank_root_causes
-from sparkforge.facts.lakeformation import build_lakeformation
-from sparkforge.facts.terraform import extract_terraform_tree
-from sparkforge.findings.models import Fact, Finding
-from sparkforge.rules.engine import judge
-from sparkforge.rules.loader import load_catalog
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.diagnosis import ORDEM_DE_SEVERIDADE, rank_root_causes
+from sparkforge_aws.facts.lakeformation import build_lakeformation
+from sparkforge_aws.facts.terraform import extract_terraform_tree
+from sparkforge_aws.findings.models import Fact, Finding
+from sparkforge_aws.rules.engine import judge
+from sparkforge_aws.rules.loader import load_catalog
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 RUNTIME = {"glue": "5.1", "spark": "3.5.6", "python": "3.11", "iceberg": "1.10.0"}
@@ -159,7 +159,7 @@ class TestAOrdemEDeclaradaEDeterministica:
         `SEVERITY_ORDER`, o mesmo objeto. Este teste trava a identidade, entao
         uma copia nova reintroduzida derruba aqui.
         """
-        from sparkforge.findings.models import SEVERITY_ORDER
+        from sparkforge_aws.findings.models import SEVERITY_ORDER
 
         assert ORDEM_DE_SEVERIDADE is SEVERITY_ORDER
         assert "P4" in ORDEM_DE_SEVERIDADE
@@ -173,7 +173,7 @@ class TestAOrdemEDeclaradaEDeterministica:
         comeco. Ordenar desconhecido como o mais grave faria a saida mentir na
         PRIMEIRA linha, que e a que alguem le.
         """
-        from sparkforge.diagnosis.root_cause import _ordem
+        from sparkforge_aws.diagnosis.root_cause import _ordem
 
         conhecida = _finding("SF-B-001", "P4", ["f_2"])
         desconhecida = _finding("SF-A-001", "P0", ["f_1"])
@@ -225,13 +225,13 @@ class TestALacunaNomeada:
         """`lakeformation.grant` e emitido por `lakeformation_grants`, e nenhuma
         lista escrita a mao neste teste diz isso -- a varredura de
         `EMITTED_KINDS` diz."""
-        from sparkforge.diagnosis.root_cause import _modulo_por_kind
+        from sparkforge_aws.diagnosis.root_cause import _modulo_por_kind
 
         mapa = _modulo_por_kind()
         assert mapa["lakeformation.grant"] == "lakeformation_grants"
         assert mapa["lakeformation.access_model"] == "lakeformation"
         assert mapa["sql.write_statement"] == "sql_literal"
-        # `matcher` mora fora de `sparkforge/facts/` e entra nomeado.
+        # `matcher` mora fora de `sparkforge_aws/facts/` e entra nomeado.
         assert mapa["error.signature_match"] == "errors.matcher"
 
     def test_o_recorte_por_area_publica_o_total_ao_lado_da_lista(self):
@@ -267,7 +267,7 @@ class TestALacunaNomeada:
     def test_area_e_o_prefixo_ate_o_ultimo_hifen(self):
         """`SF-EMR` e prefixo de `SF-EMRS`: comparar por `startswith` mediria a
         fronteira ao contrario."""
-        from sparkforge.diagnosis.root_cause import _area
+        from sparkforge_aws.diagnosis.root_cause import _area
 
         assert _area("SF-LF-003") == "SF-LF"
         assert _area("SF-EMRS-001") == "SF-EMRS"

@@ -16,7 +16,7 @@ Arbitra o PROTOCOLO de debate do case e diz se o fechamento declarado pode ser p
 
 ## Na CLI
 
-[`sparkforge debate referee`](../cli/debate.md)
+[`sparkforge-aws debate referee`](../cli/debate.md)
 
 ## Capacidade
 

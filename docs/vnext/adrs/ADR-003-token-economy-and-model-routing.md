@@ -16,7 +16,7 @@ Adotamos uma cascata de execução rigorosa em 7 Tiers:
 - **Tier 5**: Raciocínio premium sob alta complexidade/risco
 - **Tier 6**: Decomposição multi-agente apenas sob ganho comprovado
 
-Adicionalmente, implementamos um `ModelRouter` desacoplado que seleciona a rota com base em capacidade (`complexidade × risco × capacidade × budget × privacidade`), perfis de execução (`ECO` como padrão, `BALANCED`, `QUALITY`, `OFFLINE`, `STRICT`) e detecção automática de desperdício (`sparkforge optimize`).
+Adicionalmente, implementamos um `ModelRouter` desacoplado que seleciona a rota com base em capacidade (`complexidade × risco × capacidade × budget × privacidade`), perfis de execução (`ECO` como padrão, `BALANCED`, `QUALITY`, `OFFLINE`, `STRICT`) e detecção automática de desperdício (`sparkforge-aws optimize`).
 
 ## Consequences
 - **Positivas**: Redução drástica de custos em tarefas determinísticas e simples; previsibilidade orçamentária; controle fino de execução.

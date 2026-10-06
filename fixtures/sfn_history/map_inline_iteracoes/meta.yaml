@@ -11,7 +11,7 @@ proves: >
   sequencial no relogio e concorrente na cadeia.
   O `sfn.job_run` de cada iteracao CONTINUA saindo: o `JobRunId` e um valor lido
   literalmente do `output` do `TaskSubmitted`, nao uma ordem, e e a unica ponte para
-  `sparkforge finops`. O `subject.symbol` sai sem o `#<n>` e nao ha `attempt_index` nas
+  `sparkforge-aws finops`. O `subject.symbol` sai sem o `#<n>` e nao ha `attempt_index` nas
   medidas -- o discriminador e `submitted_event_id`, que e o `id` do evento que publicou
   o valor, e sem ele os dois facts colidiriam no mesmo `Fact.id`. Sem ASL no case, e sem
   `sfn.attempt` nenhum, a derivacao do confronto nao roda e as tres regras da area ficam

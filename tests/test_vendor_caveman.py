@@ -156,14 +156,14 @@ class TestAtivacao:
     def test_o_marketplace_local_esta_declarado_por_caminho_relativo(self):
         """Caminho absoluto é o que o `claude plugin marketplace add` escreve, e
         é exatamente o que não sobrevive ao clone de outra pessoa."""
-        source = self._settings()["extraKnownMarketplaces"]["sparkforge-caveman"]["source"]
+        source = self._settings()["extraKnownMarketplaces"]["sparkforge-aws-caveman"]["source"]
         assert source["source"] == "directory"
         assert source["path"] == "./vendor"
 
     def test_os_dois_plugins_vendorizados_estao_habilitados(self):
         enabled = self._settings()["enabledPlugins"]
-        assert enabled["caveman@sparkforge-caveman"] is True
-        assert enabled["ck@sparkforge-caveman"] is True
+        assert enabled["caveman@sparkforge-aws-caveman"] is True
+        assert enabled["ck@sparkforge-aws-caveman"] is True
 
     def test_as_copias_upstream_estao_desligadas_dentro_do_projeto(self):
         """Dois caveman ligados injetam o ruleset duas vezes por sessão.

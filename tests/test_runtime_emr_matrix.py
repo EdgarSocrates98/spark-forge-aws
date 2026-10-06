@@ -18,12 +18,12 @@ conjunto e nao valor, Iceberg ausente antes de 6.5.0, e Hadoop fora do
 """
 import pytest
 
-from sparkforge.facts.runtime_detect import (
+from sparkforge_aws.facts.runtime_detect import (
     EMR_MATRIX,
     _apache_version,
     detect_runtime,
 )
-from sparkforge.rules.version_scope import _parse, in_scope
+from sparkforge_aws.rules.version_scope import _parse, in_scope
 
 
 class TestAmznSuffixIsKeptAndStillCompares:
@@ -135,7 +135,7 @@ class TestHadoopStaysInTheMatrixAndOutOfTheContext:
         assert "hadoop" not in context.to_dict()
 
     def test_no_catalog_rule_scopes_on_hadoop(self):
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.loader import load_catalog
 
         assert not [
             r["id"] for r in load_catalog() if "hadoop" in (r.get("runtime_scope") or {})
@@ -144,7 +144,7 @@ class TestHadoopStaysInTheMatrixAndOutOfTheContext:
 
 class TestObservationBeatsTheMatrix:
     def test_describe_cluster_is_declared_in_the_precedence(self):
-        from sparkforge.facts.runtime_detect import _PRECEDENCE
+        from sparkforge_aws.facts.runtime_detect import _PRECEDENCE
 
         assert "describe_cluster" in _PRECEDENCE
         assert _PRECEDENCE.index("event_log") < _PRECEDENCE.index("describe_cluster")
@@ -247,13 +247,13 @@ class TestTwoPlatformsDoNotProduceAVersionDivergence:
     }
 
     def test_the_two_matrices_really_do_disagree_on_iceberg(self):
-        from sparkforge.facts.runtime_detect import GLUE_MATRIX
+        from sparkforge_aws.facts.runtime_detect import GLUE_MATRIX
 
         assert GLUE_MATRIX["4.0"]["iceberg"] != EMR_MATRIX["6.9.0"]["iceberg"]
 
     def test_and_it_does_not_become_sf_env_001(self):
-        from sparkforge.rules.engine import judge
-        from sparkforge.rules.loader import load_catalog
+        from sparkforge_aws.rules.engine import judge
+        from sparkforge_aws.rules.loader import load_catalog
 
         context, facts = detect_runtime(self.SOURCES)
         findings = judge(facts, load_catalog(), context.to_dict())

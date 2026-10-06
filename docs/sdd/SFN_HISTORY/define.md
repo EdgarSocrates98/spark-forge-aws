@@ -10,7 +10,7 @@ upstream:
 hypothesis:
   claim: "O JSON salvo de get-execution-history basta para medir o que a definicao so declara: quantas vezes um Task foi agendado, quantos JobRun do Glue cada tentativa produziu, quanto durou cada uma e como a execucao terminou; e confrontado com o sfn.task do ASL do mesmo state machine, ele mostra divergencia entre o retry declarado e o observado."
   prediction: "Sobre fixtures sinteticas construidas a partir da forma de evento publicada, o extrator conta as tentativas por estado e le o JobRunId de cada TaskSubmitted; a regra de divergencia dispara quando as tentativas observadas nao cabem no retry declarado, e fica calada quando cabem; historico sem includeExecutionData sai sfn.unresolved nomeado, nunca com JobRun inventado; e nenhum golden de achado existente muda. Se a contagem de tentativas sair errada numa fixture, se a regra disparar no caso que cabe, ou se algum golden de achado existente mudar, a afirmacao esta errada."
-  experiment: "Rodar sparkforge analyze sfn-history e judge sobre as fixtures novas, fuse sobre a fixture pareada ASL + historico, e python -m pytest tests/test_fixtures_golden*.py -q sem regenerar."
+  experiment: "Rodar sparkforge-aws analyze sfn-history e judge sobre as fixtures novas, fuse sobre a fixture pareada ASL + historico, e python -m pytest tests/test_fixtures_golden*.py -q sem regenerar."
 acceptance:
   - id: AC1
     statement: "Um JSON de get-execution-history vira sfn.execution (arn quando presente, status pelo evento terminal, duracao entre o primeiro e o ultimo evento, contagem de eventos) e um sfn.attempt por tentativa de Task (nome do estado, ordem da tentativa, resource, resourceType, resultado, duracao, error e cause quando houver); mais sfn.analyzed sempre."
@@ -31,7 +31,7 @@ acceptance:
     statement: "SF-SFNX-003 dispara quando uma execucao terminou em ExecutionAborted ou ExecutionTimedOut com um Task .sync agendado e sem evento terminal proprio: a execucao parou com o job possivelmente em voo."
     verified_by: {kind: test, ref: "tests/test_fixtures_golden_sfn_history.py::test_golden"}
   - id: AC7
-    statement: "sparkforge analyze sfn-history --path le arquivo ou diretorio e devolve os facts, e a tool MCP sparkforge_analyze_sfn_history faz o mesmo."
+    statement: "sparkforge-aws analyze sfn-history --path le arquivo ou diretorio e devolve os facts, e a tool MCP sparkforge_analyze_sfn_history faz o mesmo."
     verified_by: {kind: test, ref: "tests/test_sfn_history.py::test_cli_e_tool_devolvem_os_mesmos_facts"}
   - id: AC8
     statement: "A area SF-SFNX passa pelo criterio de dominio: regra que julga, coordenador que a declara (o teste que fica vermelho sem a area) e rota por findings_area."
@@ -51,7 +51,7 @@ success:
     source: "python -m pytest tests/test_fixtures_golden*.py -q sem regeneracao"
   - id: SC3
     metric: "Regras, tools, extratores e rotas antes e depois"
-    source: "load_catalog(), TOOLS, sparkforge/facts/*.py e routing.yaml"
+    source: "load_catalog(), TOOLS, sparkforge_aws/facts/*.py e routing.yaml"
 out_of_scope:
   - "Coletor que chama a API com credencial: o operador salva a saida de aws stepfunctions get-execution-history e o analyze le."
   - "EXPRESS: a API nao suporta, e o historico dele vai para o CloudWatch Logs."

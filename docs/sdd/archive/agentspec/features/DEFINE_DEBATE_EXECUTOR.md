@@ -1,6 +1,6 @@
 # DEFINE: Debate Executor
 
-> Conduzir até o fim, sem chamar provider dentro de `sparkforge/`, o debate que a arbitragem determinística hoje só planeja — por uma máquina de estados pura e dois drivers de host — e medir o desfecho contra um gabarito.
+> Conduzir até o fim, sem chamar provider dentro de `sparkforge_aws/`, o debate que a arbitragem determinística hoje só planeja — por uma máquina de estados pura e dois drivers de host — e medir o desfecho contra um gabarito.
 
 ## Metadata
 
@@ -18,7 +18,7 @@
 
 ## Problem Statement
 
-Quando a arbitragem não fecha uma contradição, `sparkforge arbitrate` emite um `DebatePlan` e para em `debate.unresolved`. Nada gera as rodadas, e o `debate referee`, que já verifica o protocolo, só tem o que verificar se um humano preencher o debate à mão. Isso vale tanto numa sessão de host quanto em lote, onde a contradição fica aberta de vez.
+Quando a arbitragem não fecha uma contradição, `sparkforge-aws arbitrate` emite um `DebatePlan` e para em `debate.unresolved`. Nada gera as rodadas, e o `debate referee`, que já verifica o protocolo, só tem o que verificar se um humano preencher o debate à mão. Isso vale tanto numa sessão de host quanto em lote, onde a contradição fica aberta de vez.
 
 ---
 
@@ -36,14 +36,14 @@ Quando a arbitragem não fecha uma contradição, `sparkforge arbitrate` emite u
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | G1 — Máquina de estados pura em `sparkforge/agentic/executor/`: `start` (a partir de um `DebatePlan` do case), `next` (o brief do próximo lado, ou `done`/`budget_exhausted`) e `submit` (valida, grava `Claim`/`Objection`/`Rebuttal` no blackboard, avança) |
+| **MUST** | G1 — Máquina de estados pura em `sparkforge_aws/agentic/executor/`: `start` (a partir de um `DebatePlan` do case), `next` (o brief do próximo lado, ou `done`/`budget_exhausted`) e `submit` (valida, grava `Claim`/`Objection`/`Rebuttal` no blackboard, avança) |
 | **MUST** | G2 — `submit` recusa por nome e não avança o estado: `dangling_evidence_ref`, claim sem `evidence_refs`, `hypothesis` fechando causa raiz, lado ou rodada fora de vez, schema inválido |
 | **MUST** | G3 — Fechamento sempre pelo `referee_over_blackboard`, que já existe. `upheld: true` grava `Decision` com a claim vencedora; `upheld: false` grava `Decision` `unresolved`; nunca vencedor por maioria |
 | **MUST** | G4 — Parada por consenso (uma rodada inteira sem objeção nova) ou pelo `DebateBudget` declarado no `case.yaml`; sem bloco `budget:`, `start` recusa com `budget_undeclared` |
 | **MUST** | G5 — Estado só no blackboard e no diretório do debate no case; `next` recalcula tudo dele, então o driver pode morrer e recomeçar |
-| **MUST** | G6 — Regra 23 intacta: 0 SDK de provider e 0 `subprocess` em `sparkforge/`, conferido por `tests/test_evals_invariants.py`, estendido aos módulos novos |
+| **MUST** | G6 — Regra 23 intacta: 0 SDK de provider e 0 `subprocess` em `sparkforge_aws/`, conferido por `tests/test_evals_invariants.py`, estendido aos módulos novos |
 | **MUST** | G7 — Driver headless `scripts/run_debate.py`: um `claude -p` por vez de lado, no workspace de prova, com transcripts gravados fora do repositório |
-| **MUST** | G8 — Suíte `evals/agentic/debate/` com ≥ 3 casos sintéticos e gabarito (`winner: <rule_id>` ou `unresolved`), e grader `sparkforge/evals/debate_grade.py` |
+| **MUST** | G8 — Suíte `evals/agentic/debate/` com ≥ 3 casos sintéticos e gabarito (`winner: <rule_id>` ou `unresolved`), e grader `sparkforge_aws/evals/debate_grade.py` |
 | **SHOULD** | G9 — `debate start/next/submit` como tools MCP `LOCAL_MUTATION`, com os sete registros manuais e o `surface.lock` atualizados, e o crescimento declarado no commit |
 | **SHOULD** | G10 — Skill `run-debate` que conduz os subagentes do host pelo mesmo `next`/`submit` |
 | **COULD** | G11 — Baseline da suíte de debate (Haiku, N ≥ 3) em `evals/agentic/debate/baselines/<data>/` |
@@ -80,7 +80,7 @@ Quando a arbitragem não fecha uma contradição, `sparkforge arbitrate` emite u
 | AT-011 | Evidência nova | O lado coleta um fact novo com tool do SparkForge | `submit` citando o novo `fact_id` | Aceito somente se o fact está na união de facts do case |
 | AT-012 | Headless | Caso sintético da suíte | `scripts/run_debate.py` | Transcripts por lado fora do repositório; `Decision` gravada; workspace sem gabarito |
 | AT-013 | Grader | `Decision` e gabarito do caso | `debate_grade` | `winner` correto / errado / `unresolved` correto, com custo dos transcripts em colunas separadas |
-| AT-014 | Regra 23 | Módulos novos | Testes de invariante | 0 SDK de provider, 0 `subprocess` em `sparkforge/` |
+| AT-014 | Regra 23 | Módulos novos | Testes de invariante | 0 SDK de provider, 0 `subprocess` em `sparkforge_aws/` |
 
 ---
 
@@ -102,10 +102,10 @@ Quando a arbitragem não fecha uma contradição, `sparkforge arbitrate` emite u
 
 | Type | Constraint | Impact |
 |------|------------|--------|
-| Technical | Regra 23: nenhuma chamada de modelo em `sparkforge/` | A geração só por host disparado de fora do pacote |
+| Technical | Regra 23: nenhuma chamada de modelo em `sparkforge_aws/` | A geração só por host disparado de fora do pacote |
 | Technical | Regra 29: o executor é L0 (`applied_changes: false`) | O debate decide e grava `Decision`; não aplica mudança |
 | Technical | Regra 30: nenhum ganho afirmado | O baseline da suíte é o primeiro lado, e mais nada |
-| Technical | `tests/test_harness_boundary.py` | O grader fica em `sparkforge/evals/`; a máquina de estados, em `sparkforge/agentic/executor/`; runtime não importa avaliação |
+| Technical | `tests/test_harness_boundary.py` | O grader fica em `sparkforge_aws/evals/`; a máquina de estados, em `sparkforge_aws/agentic/executor/`; runtime não importa avaliação |
 | Technical | `debate_plan` sem `budget:` sai `unresolved` | `start` herda a recusa, sem default de código |
 | Technical | Três tools MCP novas | Os sete registros manuais, `surface.lock --update` e alegações em `docs/harness/` |
 | Security / Privacy | Workspace de prova no driver headless; caso real nunca entra em arquivo | Casos sintéticos; transcripts fora do repositório |
@@ -117,8 +117,8 @@ Quando a arbitragem não fecha uma contradição, `sparkforge arbitrate` emite u
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge/agentic/executor/` (máquina de estados), `sparkforge/adapters/{cli,_core,tools}.py` (verbos, ao lado de `debate referee`), `sparkforge/evals/debate_grade.py`, `scripts/run_debate.py`, `skills/run-debate/`, `evals/agentic/debate/`, `fixtures/debate/` | Segue o padrão `arbitrate`/`referee` |
-| **KB Domains** | agentspec: `genai`, `testing`, `python`, `pydantic`. Repo: `sparkforge/agentic/{debate,referee,blackboard,budget}.py`, `sparkforge/agentic/executor/{plan,run,conflict}.py`, `docs/agentic-evolution-report.md`, spec de 2026-09-03 | O protocolo concreto é o do repositório |
+| **Deployment Location** | `sparkforge_aws/agentic/executor/` (máquina de estados), `sparkforge_aws/adapters/{cli,_core,tools}.py` (verbos, ao lado de `debate referee`), `sparkforge_aws/evals/debate_grade.py`, `scripts/run_debate.py`, `skills/run-debate/`, `evals/agentic/debate/`, `fixtures/debate/` | Segue o padrão `arbitrate`/`referee` |
+| **KB Domains** | agentspec: `genai`, `testing`, `python`, `pydantic`. Repo: `sparkforge_aws/agentic/{debate,referee,blackboard,budget}.py`, `sparkforge_aws/agentic/executor/{plan,run,conflict}.py`, `docs/agentic-evolution-report.md`, spec de 2026-09-03 | O protocolo concreto é o do repositório |
 | **IaC Impact** | None | — |
 
 ---
@@ -133,9 +133,9 @@ N/A.
 
 | ID | Assumption | If Wrong, Impact | Validated? |
 |----|------------|------------------|------------|
-| A-001 | `debate_plan` sem `budget:` sai `unresolved`, e o critério de parada vem só dos tetos declarados | O `start` precisaria de outra fonte de budget | [x] Lido em `sparkforge/agentic/executor/plan.py::_limites`/`_criterio_de_parada` |
+| A-001 | `debate_plan` sem `budget:` sai `unresolved`, e o critério de parada vem só dos tetos declarados | O `start` precisaria de outra fonte de budget | [x] Lido em `sparkforge_aws/agentic/executor/plan.py::_limites`/`_criterio_de_parada` |
 | A-002 | Os participantes do `DebatePlan` são agentes por área de regra, e a contradição é binária (regra A × regra B); "proponente/cético" vira "cada lado defende a sua regra e objeta a outra" | Contradição de 3+ regras exigiria rodízio de lados | [ ] Contar, no Design, os tamanhos de contradição que `conflict.py` produz sobre o corpus |
-| A-003 | `referee_over_blackboard` trata a `Decision` gravada como fechamento e aplica as quatro recusas | Seria preciso um fechamento próprio | [x] Lido em `sparkforge/agentic/referee.py:317` |
+| A-003 | `referee_over_blackboard` trata a `Decision` gravada como fechamento e aplica as quatro recusas | Seria preciso um fechamento próprio | [x] Lido em `sparkforge_aws/agentic/referee.py:317` |
 | A-004 | Uma sessão `claude -p` no workspace de prova recebe o brief, usa tools do SparkForge e termina com um bloco JSON parseável | O driver precisaria de pós-processamento ou de outro formato | [ ] Smoke no build (como o B1 do eval harness) |
 | A-005 | Dá para construir casos sintéticos em que a resolução depende de um fact que o lado precisa coletar | SC6 não fecha | [ ] Design lista os candidatos entre os `*.unresolved` do corpus |
 | A-006 | O subagente do host segue a skill `run-debate` até o fim | Driver interativo pouco confiável | [ ] Verificação manual no build |

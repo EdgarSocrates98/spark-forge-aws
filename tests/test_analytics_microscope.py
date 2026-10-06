@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.adapters import _core
-from sparkforge.adapters.tools import call_tool
-from sparkforge.analytics.dbt import load_dbt_artifacts
-from sparkforge.analytics.duckdb import load_duckdb_microscope
+from sparkforge_aws.adapters import _core
+from sparkforge_aws.adapters.tools import call_tool
+from sparkforge_aws.analytics.dbt import load_dbt_artifacts
+from sparkforge_aws.analytics.duckdb import load_duckdb_microscope
 
 DBT_FIXTURE = Path(__file__).parents[1] / "fixtures" / "analytics" / "dbt"
 DUCKDB_FIXTURE = Path(__file__).parents[1] / "fixtures" / "analytics" / "duckdb" / "microscope.yaml"

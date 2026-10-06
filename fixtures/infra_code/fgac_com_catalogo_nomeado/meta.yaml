@@ -1,7 +1,7 @@
 name: fgac_com_catalogo_nomeado
 proves: >
   O POSITIVO de `SF-LF-003`, e a primeira fixture do repositorio que exercita
-  `sparkforge/facts/lakeformation.py`.
+  `sparkforge_aws/facts/lakeformation.py`.
 
   Um `aws_glue_job` em Glue 5.1 declara
   `--enable-lakeformation-fine-grained-access = "true"` e, no mesmo

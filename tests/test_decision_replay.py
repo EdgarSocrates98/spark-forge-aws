@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.evals.decision_replay import (
+from sparkforge_aws.evals.decision_replay import (
     PROFILES,
     compare_replay_benchmark,
     load_replay_suite,
     run_replay_benchmark,
     split_replay_benchmark,
 )
-from sparkforge.evals.metric_compiler import compile_reports
+from sparkforge_aws.evals.metric_compiler import compile_reports
 
 ROOT = Path(__file__).resolve().parents[1]
 

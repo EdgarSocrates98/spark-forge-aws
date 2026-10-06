@@ -1,7 +1,7 @@
 # Arquitetura version-aware de Lake Formation
 
 Este documento descreve o contrato offline usado por
-`sparkforge lakeformation architect` e por
+`sparkforge-aws lakeformation architect` e por
 `sparkforge_lakeformation_architect`. Ele não substitui facts coletados nem
 simula uma chamada AWS: organiza declarações e evidências disponíveis, preserva
 lacunas e recusa recomendações genéricas de S3.

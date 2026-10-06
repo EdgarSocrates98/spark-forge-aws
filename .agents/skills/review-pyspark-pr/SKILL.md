@@ -1,6 +1,6 @@
 ---
 name: review-pyspark-pr
-description: "Use quando revisar um Pull Request PySpark/AWS Glue e precisar classificar risco de regressão de performance, custo e escala antes de aprovar — novas actions, shuffles, joins com cardinalidade, UDFs, collect, loops de DataFrame, mudança de write mode, particionamento ou operações Iceberg/Parquet introduzidas pelo diff. Use também quando pedirem \\\"dá uma olhada nesse PR\\\", \\\"isso é seguro de mergear\\\", \\\"o que mudou de performance aqui\\\" ou \\\"aprova esse diff\\\", mesmo sem falar em code review formal. Se você está prestes a ler o diff e apontar problema de cabeça, rode `sparkforge analyze pyspark` nos arquivos alterados e compare contra a versão base em vez de confiar em leitura visual — e valide sua própria recomendação com `sparkforge validate` antes de postar, porque um ganho quantificado sem `benchmark_ref` é rejeitado pelo schema."
+description: "Use quando revisar um Pull Request PySpark/AWS Glue e precisar classificar risco de regressão de performance, custo e escala antes de aprovar — novas actions, shuffles, joins com cardinalidade, UDFs, collect, loops de DataFrame, mudança de write mode, particionamento ou operações Iceberg/Parquet introduzidas pelo diff. Use também quando pedirem \\\"dá uma olhada nesse PR\\\", \\\"isso é seguro de mergear\\\", \\\"o que mudou de performance aqui\\\" ou \\\"aprova esse diff\\\", mesmo sem falar em code review formal. Se você está prestes a ler o diff e apontar problema de cabeça, rode `sparkforge-aws analyze pyspark` nos arquivos alterados e compare contra a versão base em vez de confiar em leitura visual — e valide sua própria recomendação com `sparkforge-aws validate` antes de postar, porque um ganho quantificado sem `benchmark_ref` é rejeitado pelo schema."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -14,9 +14,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge analyze pyspark
-  - sparkforge validate
-  - sparkforge judge
+  - sparkforge-aws analyze pyspark
+  - sparkforge-aws validate
+  - sparkforge-aws judge
 subagent: true
 ---
 
@@ -35,7 +35,7 @@ Analise impactos introduzidos ou alterados pelo PR. Considere contexto suficient
 Para cada arquivo `.py` alterado pelo PR:
 
 ```bash
-sparkforge analyze pyspark --path <arquivo_alterado.py> --out .sparkforge/facts_head_<n>.json
+sparkforge-aws analyze pyspark --path <arquivo_alterado.py> --out .sparkforge/facts_head_<n>.json
 ```
 
 `--path` recebe um arquivo ou diretório por chamada — não uma lista de caminhos. Se as mudanças estão concentradas num diretório, aponte para ele; senão, uma chamada por arquivo alterado.
@@ -44,14 +44,14 @@ sparkforge analyze pyspark --path <arquivo_alterado.py> --out .sparkforge/facts_
 
 ```bash
 git show <base-ref>:<caminho_do_arquivo> > .sparkforge/base/<arquivo>.py
-sparkforge analyze pyspark --path .sparkforge/base/<arquivo>.py --out .sparkforge/facts_base_<n>.json
+sparkforge-aws analyze pyspark --path .sparkforge/base/<arquivo>.py --out .sparkforge/facts_base_<n>.json
 ```
 
 ### 3. Julgue as duas versões
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_head_<n>.json --show-skipped
-sparkforge judge --facts .sparkforge/facts_base_<n>.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_head_<n>.json --show-skipped
+sparkforge-aws judge --facts .sparkforge/facts_base_<n>.json --show-skipped
 ```
 
 As duas chamadas precisam do **mesmo** contexto de runtime, ou a comparação HEAD-contra-base compara duas coisas diferentes e você reporta como regressão do PR uma regra que só passou a ser avaliada. Omitir a flag nas duas é a forma mais segura de garantir isso: os facts vêm de `analyze pyspark`, que não observa runtime, então as duas saídas trazem o mesmo `runtime` vazio com `detected_from: []`, e nenhuma regra `SF-PY-*` guarda versão. Se você passar a versão, passe idêntica nas duas — e confira o campo `runtime` de cada saída antes de comparar, em vez de confiar que digitou igual.
@@ -71,7 +71,7 @@ Um finding por comentário, citando `rule_id` e o `fact_id` da evidência (nunca
 ### 5. Valide antes de postar
 
 ```bash
-sparkforge validate --findings .sparkforge/review_findings.json
+sparkforge-aws validate --findings .sparkforge/review_findings.json
 ```
 
 Isso pega exatamente o erro mais comum de review sob pressão: afirmar "isso deve reduzir o runtime em ~30%" para soar convincente, sem ter medido nada. O schema rejeita qualquer `expected_effect` com número (`%`, `x`, "vezes") que não venha acompanhado de `benchmark_ref`. Se `validate` falhar, ou você mede antes (`benchmark-pyspark-job`) ou reformula a frase como hipótese, sem número.
@@ -81,14 +81,14 @@ Isso pega exatamente o erro mais comum de review sob pressão: afirmar "isso dev
 A red flag "aprovar mudança de write mode ou operação Iceberg sem plano de teste de correção" era prosa sem produtor até a Fase 4c. Agora tem um, e ele deriva o plano dos facts que você já extraiu no passo 1:
 
 ```bash
-sparkforge funcval plan \
+sparkforge-aws funcval plan \
   --facts .sparkforge/facts_head_1.json \
   --facts .sparkforge/facts_catalog.json \
   --key pedido_id,dt \
   --out .sparkforge/facts_funcval_plan.json
 ```
 
-Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório** — o plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob `--strict-gates`, e é a entrada de `sparkforge funcval compare` / `sparkforge_funcval_compare`, que compara os dois resultados **depois** que alguém os mediu. O motor não executa consulta em nenhum dos dois verbos.
+Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório** — o plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob `--strict-gates`, e é a entrada de `sparkforge-aws funcval compare` / `sparkforge_funcval_compare`, que compara os dois resultados **depois** que alguém os mediu. O motor não executa consulta em nenhum dos dois verbos.
 
 Num review, o que cabe aqui é o **plano**, não a comparação: `compare` precisa do lado `--before` medido antes de a mudança tocar o alvo, e num PR ainda não mergeado esse lado não existe. Anexar o plano ao review é o que transforma "teste a correção" em pedido verificável — `benchmark-pyspark-job` tem o procedimento completo dos dois verbos, para quando houver as duas execuções.
 
@@ -117,14 +117,14 @@ O extrator de AST não substitui julgamento sobre: estratégia de merge/delete I
 | P3 | melhoria incremental |
 | P4 | sugestão experimental |
 
-A severidade default de cada regra vem do catálogo (`sparkforge rules lookup --id <rule_id>`); ajuste apenas com justificativa registrada no comentário, nunca em silêncio.
+A severidade default de cada regra vem do catálogo (`sparkforge-aws rules lookup --id <rule_id>`); ajuste apenas com justificativa registrada no comentário, nunca em silêncio.
 
 ## Red flags
 
 - Aprovar mudança de write mode ou operação Iceberg (merge/delete) sem plano de teste de correção (contagem, schema, chaves) — o plano tem produtor desde a Fase 4c, e pedi-lo de boca é o que o passo 6 substitui.
 - Comentário genérico ("otimize isso") sem correção concreta e sem como validar.
 - Repetir como "achado do PR" um finding que já existia na versão base — sempre compare HEAD contra base antes de comentar.
-- Postar `expected_effect` quantificado sem rodar `sparkforge validate` primeiro.
+- Postar `expected_effect` quantificado sem rodar `sparkforge-aws validate` primeiro.
 
 ## Protocolo
 
@@ -150,7 +150,7 @@ Esta skill trata **revisão de PR PySpark com fatos, plano e call graph**. Contr
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge analyze pyspark`, `sparkforge validate`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws analyze pyspark`, `sparkforge-aws validate`, `sparkforge-aws judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

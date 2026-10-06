@@ -89,27 +89,27 @@ axes:
   cost.provisioned_capacity_time:
     source: none
     unlock: >-
-      `glue.run_cost` das duas execucoes lado a lado em `sparkforge finops`,
+      `glue.run_cost` das duas execucoes lado a lado em `sparkforge-aws finops`,
       sem interpolar entre capacidades (regra 12)
   cost.dpu_seconds:
     source: none
     unlock: >-
-      `glue.run_cost` das duas execucoes lado a lado em `sparkforge finops`
+      `glue.run_cost` das duas execucoes lado a lado em `sparkforge-aws finops`
       (regras 12 e 13)
   storage.file_layout:
     source: none
     unlock: >-
-      `sparkforge analyze s3-listing` antes e depois; nao ha comparador entre
+      `sparkforge-aws analyze s3-listing` antes e depois; nao ha comparador entre
       duas listagens
   storage.delete_file_count:
     source: none
     unlock: >-
-      `sparkforge analyze iceberg` sobre o metadata de antes e de depois; nao ha
+      `sparkforge-aws analyze iceberg` sobre o metadata de antes e de depois; nao ha
       comparador entre dois dumps
   storage.snapshot_count:
     source: none
     unlock: >-
-      `sparkforge analyze iceberg` sobre o metadata de antes e de depois; nao ha
+      `sparkforge-aws analyze iceberg` sobre o metadata de antes e de depois; nao ha
       comparador entre dois dumps
   storage.snapshot_history:
     source: none
@@ -119,7 +119,7 @@ axes:
   runtime.engine_version:
     source: none
     unlock: >-
-      `sparkforge runtime detect` sobre os artefatos do depois; a resolucao
+      `sparkforge-aws runtime detect` sobre os artefatos do depois; a resolucao
       confirma a regra de versao
   capacity.executor_footprint:
     source: none
@@ -129,7 +129,7 @@ axes:
   capacity.worker_count:
     source: none
     unlock: >-
-      `sparkforge capacity` sobre as capacidades que o job ja rodou, lado a
+      `sparkforge-aws capacity` sobre as capacidades que o job ja rodou, lado a
       lado (regra 12)
   shuffle.partition_count:
     source: none

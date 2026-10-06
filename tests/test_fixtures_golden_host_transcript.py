@@ -23,16 +23,16 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sparkforge.evals.cli import eval_compare, eval_grade
-from sparkforge.evals.grade import grade_question
-from sparkforge.evals.suite import load_suite
-from sparkforge.facts.host_transcript import (
+from sparkforge_aws.evals.cli import eval_compare, eval_grade
+from sparkforge_aws.evals.grade import grade_question
+from sparkforge_aws.evals.suite import load_suite
+from sparkforge_aws.facts.host_transcript import (
     ANSWER_MAX_CHARS,
     EMITTED_KINDS,
     UNRESOLVED_REASONS,
     extract_host_transcript_path,
 )
-from sparkforge.findings.validate import validate_fact
+from sparkforge_aws.findings.validate import validate_fact
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "host_transcript"

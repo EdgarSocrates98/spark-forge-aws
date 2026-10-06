@@ -72,7 +72,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -98,7 +98,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -122,7 +122,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -139,14 +139,14 @@
     "measures": {},
     "attrs": {
       "key": "script_location",
-      "value": "s3://sparkforge-demo/scripts/dim.py",
+      "value": "s3://sparkforge-aws-demo/scripts/dim.py",
       "present": true,
       "literal": true,
       "block": "command"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -170,7 +170,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -194,7 +194,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -211,14 +211,14 @@
     "measures": {},
     "attrs": {
       "key": "--spark-event-logs-path",
-      "value": "s3://sparkforge-demo/spark-logs/",
+      "value": "s3://sparkforge-aws-demo/spark-logs/",
       "present": true,
       "literal": true,
       "block": "default_arguments"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -242,7 +242,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -266,7 +266,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -290,7 +290,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -314,7 +314,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -338,7 +338,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -362,7 +362,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -386,7 +386,7 @@
     "attrs": {},
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -404,7 +404,7 @@
     "attrs": {},
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -427,7 +427,7 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "536c04c4daa46814b546c963923f723d54dff9271d623feaf06d4191bedcabcd",
+      "artifact_sha256": "a16d0ba7148539737cd3ca9a4195a99abf7374b4a9eafa004fead5fcab3f375c",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -469,7 +469,7 @@
       "reason": "operacao_nao_medida",
       "resource": "default.dim_cliente",
       "signature_id": "ERR-LF-001",
-      "unblocked_by": "nenhum fact de operacao sobre o recurso; rode `sparkforge analyze pyspark` sobre o codigo do job e junte a saida ao case",
+      "unblocked_by": "nenhum fact de operacao sobre o recurso; rode `sparkforge-aws analyze pyspark` sobre o codigo do job e junte a saida ao case",
       "extractor": "lakeformation_missing_grant@0.1.0"
     },
     "provenance": {

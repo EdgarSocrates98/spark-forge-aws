@@ -1,6 +1,6 @@
 ---
 name: migrate-glue-6
-description: "Use quando alguém pergunta \\\"dá para subir esse job para o Glue 6.0?\\\", \\\"o que quebra se eu migrar de 4.0/5.0/5.1 para 6.0?\\\", \\\"vale a pena migrar por causa dos 30% mais barato?\\\" ou precisa de um plano de migração entre versões de runtime do AWS Glue. Use também quando o job já foi migrado e passou a falhar com `NoSuchMethodError`, `NoSuchFieldError` ou erro de ANSI mode. Se você está prestes a ler o guia de migração da AWS e comparar com o código no olho, rode `sparkforge migrate glue dir --from X --to Y` em vez disso — o motor expande o par em degraus, julga cada um com o catálogo versionado e devolve os eixos que **não** foram avaliados em vez de deixá-los passar como aprovados."
+description: "Use quando alguém pergunta \\\"dá para subir esse job para o Glue 6.0?\\\", \\\"o que quebra se eu migrar de 4.0/5.0/5.1 para 6.0?\\\", \\\"vale a pena migrar por causa dos 30% mais barato?\\\" ou precisa de um plano de migração entre versões de runtime do AWS Glue. Use também quando o job já foi migrado e passou a falhar com `NoSuchMethodError`, `NoSuchFieldError` ou erro de ANSI mode. Se você está prestes a ler o guia de migração da AWS e comparar com o código no olho, rode `sparkforge-aws migrate glue dir --from X --to Y` em vez disso — o motor expande o par em degraus, julga cada um com o catálogo versionado e devolve os eixos que **não** foram avaliados em vez de deixá-los passar como aprovados."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
@@ -12,9 +12,9 @@ metadata:
   scripts:
   - scripts/validate_evidence.py
   primary_verbs:
-  - sparkforge migrate glue
-  - sparkforge glue dependency-audit
-  - sparkforge benchmark
+  - sparkforge-aws migrate glue
+  - sparkforge-aws glue dependency-audit
+  - sparkforge-aws benchmark
 subagent: true
 agent: sf-runtime-specialist
 ---
@@ -25,7 +25,7 @@ Migração de runtime não é uma pergunta sobre a versão de destino — é uma
 
 ## Procedimento
 
-1. `sparkforge migrate glue <dir-do-job> --from 5.1 --to 6.0`
+1. `sparkforge-aws migrate glue <dir-do-job> --from 5.1 --to 6.0`
 
    **Diretório, não arquivo.** Um pin de `requirements.txt` e um `.jar` de Scala 2.12 sobrevivem à troca de runtime e não têm linha de fonte Python. O comando compõe código, `.jar`, `requirements*.txt`, os `.tf` quando existem e o inventário de consumidores em `.sparkforge/consumers.yaml`.
 
@@ -35,7 +35,7 @@ Migração de runtime não é uma pergunta sobre a versão de destino — é uma
 
 3. Leia `gates` e `missing_evidence` **juntos**. `BLOCKED` não é falha do comando: é o eixo dizendo que não foi avaliado, com a evidência que o destravaria escrita ao lado.
 
-4. `sparkforge glue dependency-audit <dir> --glue 6.0` para a lista de pins e binários com o achado que cada um produziu.
+4. `sparkforge-aws glue dependency-audit <dir> --glue 6.0` para a lista de pins e binários com o achado que cada um produziu.
 
 ## O que esta análise nunca pode aprovar
 
@@ -47,7 +47,7 @@ Outros três — `iam_kms`, `rede`, `cross_account` — são nomeados pelo contr
 
 A AWS anunciou 30% de redução no Glue 6.0 ([`knowledge/glue/pricing.yaml`](../../knowledge/glue/pricing.yaml)). O anúncio não nomeia a versão de comparação, não recorta por região nem por tipo de worker, e a página de pricing publica um preço único que **não** diferencia por versão de runtime. Nada aqui permite calcular o custo do seu job em 6.0 contra 5.1.
 
-E preço 30% menor não é performance 30% maior. Para medir performance entre runtimes é preciso executar nos dois: `sparkforge benchmark --before <facts> --after <facts> --before-runtime 5.1 --after-runtime 6.0`. Sem os dois rótulos, o eixo de runtime volta como `missing_runtime_label`; com rótulos iguais, `same_runtime_label`, porque comparar um runtime consigo mesmo não prova nada sobre trocar de runtime.
+E preço 30% menor não é performance 30% maior. Para medir performance entre runtimes é preciso executar nos dois: `sparkforge-aws benchmark --before <facts> --after <facts> --before-runtime 5.1 --after-runtime 6.0`. Sem os dois rótulos, o eixo de runtime volta como `missing_runtime_label`; com rótulos iguais, `same_runtime_label`, porque comparar um runtime consigo mesmo não prova nada sobre trocar de runtime.
 
 ## Referência rápida
 
@@ -58,7 +58,7 @@ E preço 30% menor não é performance 30% maior. Para medir performance entre r
 | `SF-LF` | Lake Formation FGAC contra o resto da configuração do job |
 | `SF-ENV` | Ambiente e consumidor — inclui a armadilha de format v3 lido por Athena |
 
-Limiares, severidade e `runtime_scope` vêm de `sparkforge rules lookup --id <ID>`, nunca de memória.
+Limiares, severidade e `runtime_scope` vêm de `sparkforge-aws rules lookup --id <ID>`, nunca de memória.
 
 Aprofundamento sob demanda, não aqui: [`docs/aws/glue/6.0/README.md`](../../docs/aws/glue/6.0/README.md) é a porta de entrada, [`docs/aws/glue/6.0/decision-guide.md`](../../docs/aws/glue/6.0/decision-guide.md) sustenta "ficar na versão anterior" como resposta legítima, e [`docs/aws/glue/6.0/known-unknowns.md`](../../docs/aws/glue/6.0/known-unknowns.md) reúne o que ninguém mediu.
 
@@ -96,7 +96,7 @@ Esta skill trata **migração Glue 6, dependências e compatibilidade**. Contrat
 
 - **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
 - **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
-- **Verbos primários:** `sparkforge migrate glue`, `sparkforge glue dependency-audit`, `sparkforge benchmark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Verbos primários:** `sparkforge-aws migrate glue`, `sparkforge-aws glue dependency-audit`, `sparkforge-aws benchmark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
 - **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
 - **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
 - **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.

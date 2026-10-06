@@ -8,12 +8,12 @@ upstream:
   path: docs/sdd/ANALYTICS_ENGINEERING_MICROSCOPE/define.md
   sha256: "78a5a45d5180d173eb775b3db31a6aac9a806c63960c328f62bb9483f17f62a6"
 files:
-  - {path: sparkforge/analytics/__init__.py, action: create, reason: "API analytics engineering."}
-  - {path: sparkforge/analytics/dbt.py, action: create, reason: "Loader determinístico de dbt artifacts."}
-  - {path: sparkforge/analytics/duckdb.py, action: create, reason: "Contrato read-only de microscópio DuckDB."}
-  - {path: sparkforge/adapters/_core.py, action: modify, reason: "Analisadores CLI/MCP compartilhados."}
-  - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbos analyze dbt-artifacts e duckdb-microscope."}
-  - {path: sparkforge/adapters/tools.py, action: modify, reason: "Tools MCP estruturadas."}
+  - {path: sparkforge_aws/analytics/__init__.py, action: create, reason: "API analytics engineering."}
+  - {path: sparkforge_aws/analytics/dbt.py, action: create, reason: "Loader determinístico de dbt artifacts."}
+  - {path: sparkforge_aws/analytics/duckdb.py, action: create, reason: "Contrato read-only de microscópio DuckDB."}
+  - {path: sparkforge_aws/adapters/_core.py, action: modify, reason: "Analisadores CLI/MCP compartilhados."}
+  - {path: sparkforge_aws/adapters/cli.py, action: modify, reason: "Verbos analyze dbt-artifacts e duckdb-microscope."}
+  - {path: sparkforge_aws/adapters/tools.py, action: modify, reason: "Tools MCP estruturadas."}
   - {path: parity.yaml, action: modify, reason: "Registro de paridade."}
   - {path: docs/surface.lock.json, action: modify, reason: "Registro exigido por duas novas tools."}
   - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice gerado da referência."}

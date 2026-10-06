@@ -17,7 +17,7 @@ Valida um finding proposto contra o JSON Schema e contra a regra de ganho sem be
 
 ## Na CLI
 
-[`sparkforge validate`](../cli/validate.md)
+[`sparkforge-aws validate`](../cli/validate.md)
 
 ## Capacidade
 

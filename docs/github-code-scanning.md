@@ -1,9 +1,9 @@
 # SparkForge no GitHub: Code Scanning e resumo de PR
 
-`sparkforge report github` pega os findings que `judge` produziu e os mostra
+`sparkforge-aws report github` pega os findings que `judge` produziu e os mostra
 onde o PR e revisado:
 
-- **SARIF 2.1.0** (`.sparkforge/report/sparkforge.sarif`) para o GitHub Code
+- **SARIF 2.1.0** (`.sparkforge/report/sparkforge-aws.sarif`) para o GitHub Code
   Scanning: alerta na aba Security e no diff do PR, deduplicado entre commits;
 - **resumo em Markdown** (`.sparkforge/report/summary.md`) para o
   `$GITHUB_STEP_SUMMARY`, com **todos** os findings;
@@ -76,12 +76,12 @@ de Scala. Em event log real de PySpark o nome do stage costuma ter a forma
 precisa das mesmas raizes, na mesma ordem dos `analyze`:
 
 ```bash
-sparkforge analyze pyspark   --path jobs  --out .sparkforge/facts-pyspark.json
-sparkforge analyze terraform --path infra --out .sparkforge/facts-terraform.json
-sparkforge judge --facts .sparkforge/facts-pyspark.json \
+sparkforge-aws analyze pyspark   --path jobs  --out .sparkforge/facts-pyspark.json
+sparkforge-aws analyze terraform --path infra --out .sparkforge/facts-terraform.json
+sparkforge-aws judge --facts .sparkforge/facts-pyspark.json \
                  --facts .sparkforge/facts-terraform.json \
                  --glue 5.0 --out .sparkforge/findings.json
-sparkforge report github --findings .sparkforge/findings.json \
+sparkforge-aws report github --findings .sparkforge/findings.json \
                          --facts .sparkforge/facts-pyspark.json \
                          --facts .sparkforge/facts-terraform.json \
                          --repo . --source-root jobs --source-root infra \
@@ -110,7 +110,7 @@ sai 2.
 ## Workflow
 
 O exemplo completo esta em
-[`examples/github/sparkforge.yml`](../examples/github/sparkforge.yml): copie para
+[`examples/github/sparkforge-aws.yml`](../examples/github/sparkforge-aws.yml): copie para
 `.github/workflows/` no repositorio de dados e ajuste os diretorios e a versao
 do Glue. Ele precisa de `security-events: write` para o upload e sobe o SARIF
 mesmo quando o gate deixa o check vermelho, para que o alerta chegue a aba
