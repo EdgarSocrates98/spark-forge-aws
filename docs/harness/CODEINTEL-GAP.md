@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1289** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1291** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening: 1289 -> 1291 com `sparkforge/agentic/handoff.py` e `tests/test_agentic_handoff.py`).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -214,9 +214,9 @@ lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` e
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 405056 | 2204 | 52 |
 | `tool_class` | 1 | 187 | 429754 | 3529 | 73 |
-| `authorize` | 3 | 599 | 566880 | 4427 | 115 |
+| `authorize` | 3 | 599 | 566940 | 4427 | 115 |
 
-Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2496518**;
+Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2496578**;
 a saída do `grep` pelo nome, **26854**; a saída do `grep` pela definição, **427**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
