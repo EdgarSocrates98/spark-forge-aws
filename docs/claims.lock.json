@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "d55923d4491734ce934a18c41a1cdca3099bc41f",
+  "extracted_from": "6eb12220eadc53bcb39a9575a1fa97dc262bbe38",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3603,7 +3603,7 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 248,
       "text": "380015",
-      "context": "no mesmo corpus, tem **380015** bytes (remedido em 2026-10-09 após o `_trust` entrar em",
+      "context": "no mesmo corpus, tem **380015** bytes (remedido em 2026-10-06 após o `_trust` entrar em",
       "type": "number",
       "id": "VNX-827",
       "state": "PROVADA",
