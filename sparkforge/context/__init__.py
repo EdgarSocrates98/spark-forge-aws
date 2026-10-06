@@ -17,6 +17,7 @@ from sparkforge.context.progressive import (
 from sparkforge.context.quality import (
     ContextObservation,
     ContextQualityReport,
+    CounterfactualContextBenchmark,
     MinimumSufficientContextBenchmark,
 )
 
@@ -41,5 +42,6 @@ __all__ = [
     "build_context_tree",
     "ContextObservation",
     "ContextQualityReport",
+    "CounterfactualContextBenchmark",
     "MinimumSufficientContextBenchmark",
 ]
