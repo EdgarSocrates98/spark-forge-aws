@@ -689,7 +689,12 @@ class TestOCanalMedido:
 
         tools.call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
 
-        assert ledger.spans_of("run_teste")[0]["metadata"] == {}
+        meta = ledger.spans_of("run_teste")[0]["metadata"]
+        # Sem canal declarado, nenhuma chave de transporte aparece -- vazio
+        # significa "nao declarado". `label`/`taint` sao outro eixo: o envelope
+        # de confianca que `call_tool` anexa a TODO resultado.
+        assert "channel" not in meta and "transport" not in meta
+        assert meta["label"] == "TOOL_OUTPUT"
 
     def test_call_tool_com_canal_grava_canal_e_transporte(self, tmp_path, monkeypatch):
         from sparkforge.adapters import tools
@@ -703,6 +708,8 @@ class TestOCanalMedido:
         )
 
         assert ledger.spans_of("run_teste")[0]["metadata"] == {
+            "label": "TOOL_OUTPUT",
+            "taint": "external",
             "channel": "mcp",
             "transport": "stdio",
         }

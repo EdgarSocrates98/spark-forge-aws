@@ -1045,7 +1045,11 @@ class TestAImposicaoNoDespacho:
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         resultado = call_tool(UMA_LEITURA_LOCAL, {"path": "../../etc/passwd"})
-        assert resultado == {"rodou": True}
+        # `rodou` intacto: a adicao de `_trust` (envelope de confianca que
+        # todo resultado de tool carrega desde a fase do trust plane) nao mexe
+        # no que o handler devolveu -- so marca a proveniencia ao lado.
+        assert resultado["rodou"] is True
+        assert resultado["_trust"]["authority"] == "data_only"
         assert chamadas == [{"path": "../../etc/passwd"}]
 
     def test_politica_que_recusa_impede_o_handler_de_rodar(self, monkeypatch, tmp_path):
@@ -1123,7 +1127,7 @@ class TestAImposicaoNoDespacho:
             root=tmp_path,
         )
         resultado = call_tool(UMA_LEITURA_LOCAL, {"path": str(alvo)}, policy=politica)
-        assert resultado == {"rodou": True}
+        assert resultado["rodou"] is True
         assert chamadas == [{"path": str(alvo)}]
 
     def test_a_politica_sai_do_manifesto_do_agente(self, monkeypatch, tmp_path):

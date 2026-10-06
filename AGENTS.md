@@ -279,6 +279,13 @@ otherwise `tokens_unresolved`; cost in dollars requires `cost_basis`; measuremen
 breaks the call; the surface lock requires growth to be **declared** (`CLAUDE.md` rules
 22 to 27).
 
+Every `call_tool` result also carries `_trust` — `{label, authority, taint}` from
+`agentic/trust.py`. Tool output is `TOOL_OUTPUT` with `data_only` authority by
+construction: it can become a verified fact through deterministic extraction later,
+never an instruction because it crossed the dispatch. Instruction-shaped text inside
+a result flips `taint` to `suspicious` and the span metadata records it — provenance
+is observed, not obeyed.
+
 ### Three states, never two
 
 **Absence of evidence is not evidence of absence.** When an artifact does not answer a

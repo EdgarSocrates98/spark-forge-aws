@@ -33,7 +33,7 @@ Vocabulário de estado:
 | Governor | `sparkforge/agentic/governor.py` | PARTIAL | só `DecisionPlaneService.active` resolve governor (`decision_plane.py:230`) |
 | Recovery policy | `sparkforge/agentic/recovery.py` | PARTIAL | `RecoveryPolicy` completa (8 classes de falha); nenhuma chamada no caminho de execução |
 | Segurança determinística | `sparkforge/agentic/security.py` | PARTIAL | validações existem; não são invocadas por `call_tool` |
-| Trust plane | `sparkforge/agentic/trust.py` | PARTIAL | `TrustEnvelope`, `RoleContextPlan`, `AgentHandoff`, `sanitize_tool_output` referenciados apenas no próprio módulo e em `__init__` |
+| Trust plane | `sparkforge/agentic/trust.py` | PARTIAL | **FASE 3:** `call_tool` anexa `_trust` (`TOOL_OUTPUT`/`data_only`/`taint`) a todo resultado, recusa incluída; `taint` aterrissa em `metadata` do span; `TRUST_RANK` explícito substitui posição do enum em `RoleContextPlan.allows`. Falta: `RoleContextPlan` governando seleção de contexto (fase 4) e `AgentHandoff` no executor |
 | Debate | `sparkforge/agentic/debate.py` + `executor/debate_run.py` | INTEGRATED | verbos `debate_*` em `_core.py` |
 | Arbitragem | `sparkforge/agentic/arbitration.py` | INTEGRATED | chamado por `run_executor` |
 | Blackboard | `sparkforge/agentic/blackboard.py` | INTEGRATED | append/read por executor |
@@ -148,3 +148,19 @@ complexidade), tudo com `unresolved` quando a evidência não existe.
   de outra forma. Não é claim exaustivo sobre todos os 141 tools.
 - Números citados são os medidos nesta leitura; a tabela *Números correntes* do
   `docs/superpowers/STATUS.md` continua a fonte de verdade operacional.
+
+## 6. Estado das fases (atualização incremental)
+
+| Fase | Commit | Evidência |
+|---|---|---|
+| 0 — auditoria | `639a236` | este documento |
+| 1 — P0 | `a26fcd7` | `tokens_status` no span/trace/store; `models.tokens`/`cost` estruturados em `inspect_run`; `cost_basis` escopado a eventos com custo; `risk`/`required_reasoning`/`complexity` operacionais no router |
+| 2 — economia | `fb19355` | `economy/reconcile.py` (autoridades canônicas, conflitos nomeados); `inspect_run` ganha `reconciliation`; `TokenWasteDetector` sem preço inventado |
+| 3 — trust no despacho | _este_ | `_trust` em todo resultado de `call_tool` (inclui recusa); `taint` no metadata do span; `TRUST_RANK` explícito; `tool_result_envelope()` em `trust.py` |
+
+Nota de ambiente registrada na fase 3: a suíte com `--basetemp` dentro do
+repositório faz `_ancestral_com_case` (`journal/record.py`) escalar até a raiz
+do projeto e gravar em `.sparkforge/journal.jsonl` — o backstop do
+`conftest.py` reprova por desenho. A suíte roda com `--basetemp` fora da árvore
+(`E:\projetos\.tmp_pytest_sf`) até que o tempdir do Windows volte a aceitar
+escrita.

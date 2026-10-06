@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1269** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-05 após a evolução do Agentic OS v2 e dos registries de plataforma).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1272** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-09 após os testes da onda de convergência do runtime entrarem no corpus).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -214,9 +214,9 @@ lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` e
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 404019 | 2204 | 52 |
 | `tool_class` | 1 | 187 | 428717 | 3529 | 73 |
-| `authorize` | 3 | 599 | 561740 | 4427 | 115 |
+| `authorize` | 3 | 599 | 563264 | 4427 | 115 |
 
-Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2489304**;
+Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2490828**;
 a saída do `grep` pelo nome, **26635**; a saída do `grep` pela definição, **427**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1302.6 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1303.4 vezes.** Contra a saída de um `grep`
 pelo nome, **13.9** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.5** vezes o que aquele `grep` custaria.
 
@@ -244,9 +244,10 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-`buscar(banco, "source")` devolve **50** símbolos em **11444** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **378600** bytes (remedido em 2026-10-05 após a evolução do Agentic OS v2 e dos registries de plataforma). O `grep` pela definição contendo o fragmento continua menor
-(**15804** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+`buscar(banco, "source")` devolve **50** símbolos em **11479** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **379452** bytes (remedido em 2026-10-09 após o `_trust` entrar em
+  `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
+(**15910** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.

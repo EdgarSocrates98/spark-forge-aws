@@ -29,10 +29,12 @@ read-only. A lista literal correspondente vive em
 
 from __future__ import annotations
 
+import json
 import time
 from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
+from sparkforge.agentic.trust import tool_result_envelope
 from sparkforge.change.refusals import (
     RECUSAS_DA_PROPOSTA,
     RECUSAS_DO_PLANO,
@@ -12477,6 +12479,37 @@ _HANDLERS = {
 }
 
 
+def _attach_trust(name: str, resultado: dict[str, Any]) -> dict[str, Any]:
+    """Carimba o resultado com o envelope de confianca que viaja COM o payload.
+
+    Saida de tool e `TOOL_OUTPUT`/`data_only` por construcao: pode virar fato
+    verificado depois de extracao deterministica, nunca instrucao por ter sido
+    devolvida aqui. O scan de injecao corre sobre a MESMA serializacao canonica
+    que `payload_bytes` mede -- o texto que o host vai ler e o texto que foi
+    inspecionado. So os metadados entram em `_trust` (label/authority/taint):
+    duplicar `content` dentro do resultado dobraria o payload que este projeto
+    mede por byte.
+
+    BEST-EFFORT como o resto da instrumentacao: um resultado nao serializavel
+    (defeito de handler) ou qualquer falha da montagem deixa a resposta sem
+    `_trust`, nunca sem resultado.
+    """
+    try:
+        texto = json.dumps(resultado, ensure_ascii=False)
+        envelope = tool_result_envelope(texto, origin=f"tool:{name}")
+        resultado = {
+            **resultado,
+            "_trust": {
+                "label": envelope.trust.value,
+                "authority": envelope.instruction_authority.value,
+                "taint": envelope.taint.value,
+            },
+        }
+    except Exception:  # noqa: BLE001,S110 -- confianca quebrada nao derruba a tool
+        pass
+    return resultado
+
+
 def call_tool(
     name: str,
     arguments: dict[str, Any],
@@ -12546,6 +12579,7 @@ def call_tool(
             }
             if decisao.required_approval is not None:
                 recusa["required_approval"] = decisao.required_approval.value
+            recusa = _attach_trust(name, recusa)
             shared_ledger().record(
                 name=name,
                 resultado=recusa,
@@ -12578,6 +12612,7 @@ def call_tool(
             desfecho = "error"
         resultado = registro.finish(resultado, desfecho)
 
+    resultado = _attach_trust(name, resultado)
     shared_ledger().record(
         name=name,
         resultado=resultado,
