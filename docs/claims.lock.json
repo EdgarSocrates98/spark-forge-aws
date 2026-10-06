@@ -3349,8 +3349,18 @@
    "context": "| `authorize` | 3 | 611 | 567224 | 4479 | 123 |",
    "type": "number",
    "id": "VNX-844",
-   "state": "SEM_LASTRO",
-   "note": "classificacao pendente"
+   "state": "PROVADA",
+   "note": "classificacao pendente Prova re-lida no rename sparkforge_aws (2026-10): mesmo comando do antecessor VNX-663, valor re-medido.",
+   "proof": {
+    "cmd": "python -c 'import re, pathlib; from sparkforge_aws.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+    "expect": {
+     "kind": "number",
+     "pattern": "^(-?[0-9]+)",
+     "value": 567224
+    },
+    "kind": "command",
+    "tier": "fast"
+   }
   },
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
@@ -3419,8 +3429,18 @@
    "context": "Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2500556**;",
    "type": "number",
    "id": "VNX-845",
-   "state": "SEM_LASTRO",
-   "note": "classificacao pendente"
+   "state": "PROVADA",
+   "note": "classificacao pendente Prova re-lida no rename sparkforge_aws (2026-10): mesmo comando do antecessor VNX-825, valor re-medido.",
+   "proof": {
+    "cmd": "python -c 'import re, pathlib; from sparkforge_aws.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+    "expect": {
+     "kind": "number",
+     "pattern": "^(-?[0-9]+)",
+     "value": 2500556
+    },
+    "kind": "command",
+    "tier": "fast"
+   }
   },
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
