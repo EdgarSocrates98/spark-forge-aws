@@ -15,6 +15,10 @@ CONTRACT = ROOT / "fixtures" / "schema_registry" / "schema_compatible" / "input"
 def test_cli_and_mcp_schema_registry_envelopes_match():
     expected = analyze_schema_registry(str(CONTRACT), limit=4)
     actual = call_tool("sparkforge_analyze_schema_registry", {"path": str(CONTRACT), "limit": 4})
+    # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
+    # do envelope e comparado sem ele, e o formato e travado em
+    # tests/test_runtime_convergence_trust.py.
+    actual.pop("_trust", None)
     assert actual == expected
     completed = subprocess.run(
         [

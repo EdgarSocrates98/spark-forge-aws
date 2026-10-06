@@ -52,6 +52,8 @@ class GatewayRequest:
     answer_status: AnswerStatus | None = None
     answer_reasons: tuple[str, ...] = ()
     triggers: tuple[str, ...] = ()
+    role: str | None = None
+    role_plan: Mapping[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if not self.intent.strip():
@@ -73,6 +75,8 @@ class GatewayRequest:
         object.__setattr__(self, "items", tuple(dict(item) for item in self.items))
         object.__setattr__(self, "answer_reasons", tuple(str(item) for item in self.answer_reasons))
         object.__setattr__(self, "triggers", tuple(str(item) for item in self.triggers))
+        if self.role_plan is not None and not isinstance(self.role_plan, Mapping):
+            raise ValueError("role_plan must be a serialized RoleContextPlan mapping")
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> GatewayRequest:
@@ -89,6 +93,8 @@ class GatewayRequest:
             answer_status=raw.get("answer_status"),
             answer_reasons=tuple(raw.get("answer_reasons", ())),
             triggers=tuple(raw.get("triggers", ())),
+            role=raw.get("role"),
+            role_plan=raw.get("role_plan"),
         )
 
 

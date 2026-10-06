@@ -549,6 +549,9 @@ class TestControlmDescribeDetailLevel:
         mcp_payload = call_tool(
             "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
     @pytest.mark.parametrize("nivel", ["minimal", "compact", "full"])

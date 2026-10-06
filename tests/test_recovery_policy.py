@@ -5,13 +5,13 @@ import pytest
 from sparkforge.agentic.recovery import FailureClass, RecoveryPolicy
 
 
-def test_recovery_covers_all_eight_failure_classes_with_one_action() -> None:
+def test_recovery_covers_every_failure_class_with_one_action() -> None:
     policy = RecoveryPolicy()
     decisions = {
         failure: policy.next(failure, attempt=0, strategy_fingerprint=f"strategy-{failure.value}")
         for failure in FailureClass
     }
-    assert len(decisions) == 8
+    assert len(decisions) == len(FailureClass)
     assert all(item.action for item in decisions.values())
     assert decisions[FailureClass.INVALID_INPUT].action == "refuse"
     assert decisions[FailureClass.MISSING_EVIDENCE].action == "abstain"

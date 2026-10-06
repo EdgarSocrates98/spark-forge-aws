@@ -999,7 +999,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # já selecionadas e entra no conjunto explícito sem caminho.
         # The platform and Forge Lab analyzers add path-bearing read-only
         # capabilities; the exception set remains explicit and unchanged.
-        assert len(TOOLS) - len(sem_caminho) == 131
+        # 131 -> 133 com `agentops_timeline` e `agentops_critical_path`
+        # (2026-10-06, FASE 10): ambas `_READ_ONLY` e declaram `db_path`,
+        # o banco de spans que leem -- entram no lado que declara caminho
+        # sem mover o conjunto de excecao.
+        assert len(TOOLS) - len(sem_caminho) == 133
 
 
 class TestAImposicaoNoDespacho:
@@ -1045,7 +1049,11 @@ class TestAImposicaoNoDespacho:
 
         chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
         resultado = call_tool(UMA_LEITURA_LOCAL, {"path": "../../etc/passwd"})
-        assert resultado == {"rodou": True}
+        # `rodou` intacto: a adicao de `_trust` (envelope de confianca que
+        # todo resultado de tool carrega desde a fase do trust plane) nao mexe
+        # no que o handler devolveu -- so marca a proveniencia ao lado.
+        assert resultado["rodou"] is True
+        assert resultado["_trust"]["authority"] == "data_only"
         assert chamadas == [{"path": "../../etc/passwd"}]
 
     def test_politica_que_recusa_impede_o_handler_de_rodar(self, monkeypatch, tmp_path):
@@ -1123,7 +1131,7 @@ class TestAImposicaoNoDespacho:
             root=tmp_path,
         )
         resultado = call_tool(UMA_LEITURA_LOCAL, {"path": str(alvo)}, policy=politica)
-        assert resultado == {"rodou": True}
+        assert resultado["rodou"] is True
         assert chamadas == [{"path": str(alvo)}]
 
     def test_a_politica_sai_do_manifesto_do_agente(self, monkeypatch, tmp_path):

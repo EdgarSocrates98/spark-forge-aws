@@ -97,8 +97,11 @@ def test_compact_catalog_matches_its_golden_fixture():
 
 
 def test_full_catalog_remains_declared_and_http_compact_has_no_source_tool():
-    assert len(tools_do_transporte("stdio", "full")) == 141
-    assert len(tools_do_transporte("http", "full")) == 140
+    # 141 -> 143 com `agentops_timeline` e `agentops_critical_path`
+    # (2026-10-06, FASE 10); http/full exclui so `code_read`, que depende do
+    # indice local -- por isso o gap de 2 entre os transportes se mantem.
+    assert len(tools_do_transporte("stdio", "full")) == 143
+    assert len(tools_do_transporte("http", "full")) == 142
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
     assert "sparkforge_code_read" not in tools_do_transporte("http", "compact")

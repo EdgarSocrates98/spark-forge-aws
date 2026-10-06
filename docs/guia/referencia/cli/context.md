@@ -49,7 +49,7 @@ sparkforge context inspect --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
+[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
 
 ## `sparkforge context start`
 
@@ -67,6 +67,8 @@ sparkforge context start --help
 | `--profile` | não | `economy`, `balanced`, `deep` |  | `balanced` |  |
 | `--max-bytes` | não | texto |  |  | Teto de bytes serializados; omitido usa default do profile. |
 | `--items` | não | texto |  |  | JSON com lista de facts/findings/knowledge/codigo ja extraidos. |
+| `--role` | não | texto |  |  | Role com plano declarado (sf-inventory/sf-extractor/sf-judge/sf-verifier/sf-synthesizer); desconhecida nega contexto. |
+| `--role-plan` | não | texto |  |  | Arquivo JSON com RoleContextPlan serializado (vence --role). |
 | `--repo` | não | texto |  | `.` |  |
 | `--case-id` | não | texto |  |  |  |
 

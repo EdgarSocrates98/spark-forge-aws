@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1269** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-05 após a evolução do Agentic OS v2 e dos registries de plataforma).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1289** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-09 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -210,14 +210,14 @@ lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` e
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 2 | 466 | 896097 | 13753 | 102 |
+| `iter_source_files` | 2 | 466 | 896097 | 13972 | 102 |
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
-| `project_items` | 1 | 193 | 404019 | 2204 | 52 |
-| `tool_class` | 1 | 187 | 428717 | 3529 | 73 |
-| `authorize` | 3 | 599 | 561740 | 4427 | 115 |
+| `project_items` | 1 | 193 | 405056 | 2204 | 52 |
+| `tool_class` | 1 | 187 | 429754 | 3529 | 73 |
+| `authorize` | 3 | 599 | 566880 | 4427 | 115 |
 
-Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2489304**;
-a saída do `grep` pelo nome, **26635**; a saída do `grep` pela definição, **427**.
+Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2496518**;
+a saída do `grep` pelo nome, **26854**; a saída do `grep` pela definição, **427**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
 `scripts/check_vnext_claims.py` não auditava: quatro dígitos entre 1900 e 2099 estão na lista de
@@ -226,8 +226,8 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1302.6 vezes.** Contra a saída de um `grep`
-pelo nome, **13.9** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
+**Contra o denominador do plano, o índice economiza 1306.4 vezes.** Contra a saída de um `grep`
+pelo nome, **14.1** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.5** vezes o que aquele `grep` custaria.
 
 **Esse último número é o resultado honesto desta medição, e ele não agrada.** Medido em bytes de
@@ -244,9 +244,10 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-`buscar(banco, "source")` devolve **50** símbolos em **11444** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **378600** bytes (remedido em 2026-10-05 após a evolução do Agentic OS v2 e dos registries de plataforma). O `grep` pela definição contendo o fragmento continua menor
-(**15804** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+`buscar(banco, "source")` devolve **50** símbolos em **11479** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **380015** bytes (remedido em 2026-10-09 após o `_trust` entrar em
+  `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
+(**15910** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
@@ -254,7 +255,7 @@ economia seria mentir sobre o que foi medido.
 
 **Filtrar por correspondência exata não salva o número.** Metade do que o índice devolve nas
 cinco perguntas é símbolo cujo nome apenas *contém* o termo. Descartando esses e ficando só com
-`name == termo`, a resposta encolhe para **964** bytes — e continua custando **2.3** vezes o
+`name == termo`, a resposta encolhe para **963** bytes — e continua custando **2.3** vezes o
 `grep` pela definição. O recall explica metade da diferença; a outra metade é que um `Achado`
 carrega `node_id`, `qualified_name` e `kind`, que uma linha de `grep` não carrega e que a
 pergunta "onde está X" não pediu.
@@ -302,7 +303,7 @@ que omite o símbolo necessário é falha, não sucesso.
 | Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as tools de coleta são de mundo aberto, e toda tool de mundo aberto também escreve localmente | `tests/test_adapters_tools.py` |
 | Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma usa objeto nu | `tests/test_adapters_tools.py` |
 | Entrada fechada a propriedade desconhecida | NÃO EXISTE | Nenhum dos schemas de entrada declara `additionalProperties: false`, que é uma constraint explícita da tool principal da SPEC. Argumento não previsto entra sem erro | — |
-| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **141** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
+| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **143** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
 | Projeção de campo na resposta | NÃO EXISTE | Medido no catálogo carregado, e não por leitura: `fields` aparece em **zero** das tools. A fase J1 entregou `detail_level`, que é a linha **acima** desta e é outra coisa — ele escolhe entre três formas fixas de item, e projeção é pedir os campos que interessam. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
 | As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |

@@ -36,3 +36,10 @@ recovery:
     deterministic_conflict: escalate
     strategy_rejected: replan
     timeout: retry
+    provider_unavailable: retry
+    tool_failure: replan
+    policy_conflict: escalate
+    security_refusal: refuse
+    context_insufficient: replan
+    loop: stop
+    dependency_failure: escalate

@@ -2030,6 +2030,9 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool("sparkforge_analyze_terraform", {"path": str(tf_path)})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
     def test_analyze_athena_workgroup_matches(self, repo, capsys):
@@ -2040,6 +2043,9 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool("sparkforge_analyze_athena_workgroup", {"path": str(wg_path)})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
     def test_analyze_sql_matches(self, repo, capsys):
@@ -2050,6 +2056,9 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool("sparkforge_analyze_sql", {"path": str(sql_path)})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
     def test_rules_lookup_matches(self, repo, capsys):
@@ -2057,6 +2066,9 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool("sparkforge_rules_lookup", {"id": ["SF-ENV-001"]})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
         # Trava especifica da Task 5: os dois caminhos precisam concordar tambem
         # no campo novo `knowledge_refs`, nao so no restante do payload.
@@ -2071,6 +2083,9 @@ class TestCliMcpEquivalence:
         mcp_payload = call_tool(
             "sparkforge_playbook", {"coordinator": "glue-infra-reviewer", "repo": str(repo)}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
         assert cli_payload["steps"][0]["executor"] == "sf-inventory"
 
@@ -2091,6 +2106,9 @@ class TestCliMcpEquivalence:
         mcp_payload = call_tool(
             "sparkforge_knowledge_path", {"file": "glue/runtime-matrix.md"}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
     def test_release_describe_matches(self, repo, capsys):
@@ -2103,6 +2121,9 @@ class TestCliMcpEquivalence:
         mcp_payload = call_tool(
             "sparkforge_release_describe", {"platform": "emr_eks", "release": "emr-7.7.0"}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
         # As duas superficies precisam concordar tambem na NORMALIZACAO do rotulo:
         # `emr-7.7.0` entra e `7.7.0` sai, nas duas.
@@ -2117,6 +2138,9 @@ class TestCliMcpEquivalence:
         mcp_payload = call_tool(
             "sparkforge_controlm_describe", {"version": "9.0.22.010"}
         )
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
         # O CONTRAFACTUAL DA FRONTEIRA, nas duas superficies de uma vez: o job
         # type `Job:DetachedEmbeddedScript` entra em `9.0.22.005`, entao ele
@@ -2176,6 +2200,9 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool("sparkforge_release_diff", argumentos)
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
         # O contrafactual do sub-projeto 1, nas duas superficies de uma vez: o
         # MESMO rotulo publica Iceberg minor diferente no EC2 e no EKS, e o eixo
@@ -2226,6 +2253,9 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool("sparkforge_collect_verify", {"repo": str(repo)})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp_payload.pop("_trust", None)
         assert cli_payload == mcp_payload
 
 
@@ -2266,7 +2296,11 @@ class TestEmrFlag:
 
     def test_cli_and_mcp_agree(self, capsys):
         _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
-        assert json.loads(output) == call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})
+        mcp = call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        mcp.pop("_trust", None)
+        assert json.loads(output) == mcp
 
 
 class TestGlueJobRunsCommands:

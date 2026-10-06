@@ -7,6 +7,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from sparkforge.agentic.role_plans import role_plan
+from sparkforge.agentic.trust import RoleContextPlan, TrustLabel
 from sparkforge.codeintel.query_expansion import expand_query
 from sparkforge.context.context_tree import build_context_tree
 from sparkforge.context.gateway_budget import (
@@ -59,6 +61,68 @@ def _item_kind(item: Mapping[str, Any]) -> str:
     return str(raw).split(".", 1)[0].lower()
 
 
+def _item_trust(item: Mapping[str, Any]) -> TrustLabel:
+    """A etiqueta `trust` do item; ausente ou invalida resolve UNKNOWN.
+
+    UNKNOWN e rank 0 -- item sem proveniencia declarada reprova qualquer floor
+    acima dele. Isso e deliberado: silencio de etiqueta nunca passa por
+    confianca.
+    """
+    try:
+        return TrustLabel(str(item.get("trust", "UNKNOWN")))
+    except ValueError:
+        return TrustLabel.UNKNOWN
+
+
+def _resolve_role_plan(request: GatewayRequest) -> RoleContextPlan | None:
+    """O plano que governa esta selecao, ou `None` quando nada foi declarado.
+
+    `role_plan` explicito vence `role` nominal. Os dois fracassos -- plano
+    malformado e role sem registro -- NAO abrem contexto: viram
+    `unresolved` nomeado e um plano sentinela que nega qualquer kind, porque
+    "pedi um plano e ele nao resolveu" nao pode ler-se como "sem plano".
+    """
+    if request.role_plan is not None:
+        try:
+            return RoleContextPlan.from_dict(request.role_plan)
+        except (TypeError, ValueError, KeyError) as exc:
+            return _DenyAll(role="<invalid>", reason="role_plan_invalid", detail=str(exc))
+    if request.role:
+        plano = role_plan(request.role)
+        if plano is not None:
+            return plano
+        return _DenyAll(
+            role=request.role,
+            reason="role_plan_unknown",
+            detail=f"role {request.role!r} sem plano declarado em ROLE_PLANS",
+        )
+    return None
+
+
+class _DenyAll:
+    """Sentinela fail-closed: nega todo kind e registra o porque.
+
+    Shape compativel com `RoleContextPlan` para o que o gateway consulta
+    (`allows`, `context_share`, `required_context`, `tool_access`, `role`).
+    `context_share=0` forcaria teto 0 bytes -- em vez disso negamos item a
+    item, porque a negacao nomeada vale mais que uma recusa de orcamento.
+    """
+
+    def __init__(self, *, role: str, reason: str, detail: str) -> None:
+        self.role = role
+        self.reason = reason
+        self.detail = detail
+        self.required_context: tuple[str, ...] = ()
+        self.tool_access: tuple[str, ...] = ()
+
+    @property
+    def context_share(self) -> float:
+        return 1.0
+
+    def allows(self, kind: str, *, trust: TrustLabel = TrustLabel.UNKNOWN) -> bool:
+        return False
+
+
 def _is_critical(item: Mapping[str, Any], kind: str) -> bool:
     critical_kinds = {"fact", "finding", "rule", "error", "risk", "unresolved"}
     critical_keys = ("fact_id", "rule_id", "evidence_refs", "risks", "unresolved")
@@ -104,6 +168,23 @@ class ContextGateway:
             request.answer_reasons or ("answer_state_not_declared",),
             active_triggers,
         )
+
+        # O plano de role governa a selecao: least-context por kind, trust
+        # floor, cota de bytes e required_context. Toda negacao vira
+        # `unresolved` nomeado -- politica deixa recibo, nunca sumico.
+        plan = _resolve_role_plan(request)
+        if isinstance(plan, _DenyAll):
+            unresolved.append(
+                Unresolved(
+                    plan.reason,
+                    plan.detail,
+                    "passe role_plan explicito ou registre a role em ROLE_PLANS",
+                )
+            )
+        budget_max = request.max_bytes
+        if plan is not None and plan.context_share < 1:
+            budget_max = max(1, int(request.max_bytes * plan.context_share))
+
         try:
             capabilities, policy = discover_capabilities(
                 request.intent,
@@ -116,6 +197,10 @@ class ContextGateway:
             )
         except (KeyError, ValueError) as exc:
             raise GatewayError(f"capability discovery failed: {exc}") from exc
+        if plan is not None and plan.tool_access:
+            capabilities = tuple(
+                c for c in capabilities if c.name in plan.tool_access
+            )
 
         context: list[ContextItem] = []
         refs = []
@@ -126,6 +211,18 @@ class ContextGateway:
         for ordinal, raw in ordered_items:
             kind = _item_kind(raw)
             item_id = _item_id(raw, ordinal)
+            if plan is not None:
+                trust = _item_trust(raw)
+                if not plan.allows(kind, trust=trust):
+                    unresolved.append(
+                        Unresolved(
+                            "context_denied_by_role_plan",
+                            f"item {item_id} ({kind}, trust={trust.value}) "
+                            f"fora do plano de {plan.role}",
+                            "declare o kind em allowed_context ou suba o trust do item",
+                        )
+                    )
+                    continue
             critical = _is_critical(raw, kind)
             relevance = int(raw.get("relevance", 100 if critical else 50))
             payload = dict(raw)
@@ -147,6 +244,19 @@ class ContextGateway:
                 )
             )
 
+        if plan is not None and plan.required_context:
+            presentes = {item.kind for item in context}
+            for faltando in (
+                k for k in plan.required_context if k not in presentes
+            ):
+                unresolved.append(
+                    Unresolved(
+                        "required_context_missing",
+                        f"{faltando} exigido pelo plano de {plan.role} e ausente da selecao",
+                        "inclua um item desse kind ou revise o plano",
+                    )
+                )
+
         base = {
             "schema_version": 1,
             "status": "ok",
@@ -157,7 +267,7 @@ class ContextGateway:
             "context": [item.to_dict() for item in context],
             "refs": [item.to_dict() for item in refs],
             "budget": {
-                "max_bytes": request.max_bytes,
+                "max_bytes": budget_max,
                 "payload_bytes": 0,
                 "status": "pending",
                 "reductions": [],
@@ -196,7 +306,7 @@ class ContextGateway:
                 budget = dict(payload.get("budget", {}))
                 budget.update(
                     {
-                        "max_bytes": request.max_bytes,
+                        "max_bytes": budget_max,
                         "payload_bytes": serialized_bytes(payload),
                         "status": "ok",
                         "reductions": list(payload.get("reductions", [])),
@@ -211,7 +321,7 @@ class ContextGateway:
                 )
 
         try:
-            materialized = materialize_bounded(base, request.max_bytes, rebuild_derived)
+            materialized = materialize_bounded(base, budget_max, rebuild_derived)
         except BudgetRefusal as exc:
             refusal = GatewayResponse(
                 status="refused",
@@ -222,7 +332,7 @@ class ContextGateway:
                 context=(),
                 refs=(),
                 budget=BudgetReport(
-                    request.max_bytes,
+                    budget_max,
                     exc.required_bytes,
                     "refused",
                     ("critical_overflow",),

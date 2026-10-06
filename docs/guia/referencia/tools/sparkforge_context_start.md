@@ -20,6 +20,8 @@ Context Gateway deterministico: descobre capabilities relevantes, seleciona cont
 | `items` | array de object | não |  |
 | `max_bytes` | integer | não |  |
 | `repo` | string | não |  |
+| `role` | string | não | Role com plano declarado em ROLE_PLANS (sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer). Role desconhecida nega contexto (fail-closed). |
+| `role_plan` | object | não | RoleContextPlan serializado (to_dict). Vence `role`. Invalido nega contexto com unresolved role_plan_invalid. |
 | `triggers` | array de string | não |  |
 
 ## Na CLI

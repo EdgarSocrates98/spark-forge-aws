@@ -123,7 +123,12 @@ class TokenLedger:
             if (
                 name == "cost_usd"
                 and observed is not None
-                and any(not event.cost_basis for event in self._events)
+                and any(
+                    not event.cost_basis
+                    for event in self._events
+                    if event.estimated_cost_usd is not None
+                    or event.observed_cost_usd is not None
+                )
             ):
                 status = "cost_basis_unresolved"
             output["metrics"][name] = Reconciliation(

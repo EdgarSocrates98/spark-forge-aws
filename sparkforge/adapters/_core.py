@@ -9534,6 +9534,8 @@ def context_gateway_start(
     answer_status: AnswerStatus | None = None,
     answer_reasons: list[str] | None = None,
     triggers: list[str] | None = None,
+    role: str | None = None,
+    role_plan: dict[str, Any] | None = None,
     repo: str = ".",
 ) -> dict[str, Any]:
     """Start Gateway flow over already extracted local inputs."""
@@ -9552,6 +9554,8 @@ def context_gateway_start(
             answer_status=answer_status,
             answer_reasons=tuple(answer_reasons or ()),
             triggers=tuple(triggers or ()),
+            role=role,
+            role_plan=role_plan,
         )
         response = ContextGateway(
             catalog,
@@ -9623,6 +9627,24 @@ def agentops_compare(
     return _agentops_compare_runs(path, run_a, run_b)
 
 
+def agentops_timeline(
+    repo: str = ".", *, run_id: str, db_path: str | None = None
+) -> dict[str, Any]:
+    from sparkforge.observability.agentops import run_timeline
+
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    return run_timeline(path, run_id)
+
+
+def agentops_critical_path(
+    repo: str = ".", *, run_id: str, db_path: str | None = None
+) -> dict[str, Any]:
+    from sparkforge.observability.agentops import critical_path
+
+    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    return critical_path(path, run_id)
+
+
 def agentops_baseline(
     repo: str = ".", *, action: str, run_id: str, baseline_path: str, db_path: str | None = None
 ) -> dict[str, Any]:
@@ -9643,6 +9665,10 @@ def agentic_doctor(repo: str = ".") -> dict[str, Any]:
         "context_profiles": (root / "sparkforge" / "context" / "gateway_profiles.yaml").exists(),
         "protocols": (root / "sparkforge" / "protocols" / "forge.py").exists(),
         "offline_core": True,
+        # Scorecards de modelo sao em-memoria hoje (AdaptiveModelRouter os
+        # recebe por construcao); sem fonte persistida o eixo de maturidade
+        # fica unresolved em vez de fingir leitura.
+        "scorecard_maturity": (root / ".sparkforge" / "model-scorecards.json").exists(),
     }
     return {
         "status": "ok" if all(checks.values()) else "unresolved",

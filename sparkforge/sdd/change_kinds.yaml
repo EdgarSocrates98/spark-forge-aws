@@ -56,3 +56,6 @@ status_numbers:
 claims:
   section: "Alterar `scripts/check_vnext_claims.py`, `docs/claims.lock.json`, ou alegação em `docs/vnext/` ou `docs/harness/`"
   registries: [claims_gate]
+call_tool_envelope:
+  section: "Alterar o resultado de `call_tool` — campo aditivo no envelope"
+  registries: [tool_result_parity]

@@ -92,6 +92,33 @@ tools `analyze_*` que devolvem `subject.snippet` não vazio, na de
 que o `snippet` do artefato aparece **ao lado** do `explanation` do catálogo,
 que é exatamente a situação que o invariante descreve.
 
+## O envelope `_trust` no resultado de `call_tool`
+
+A mesma separação vale para o outro sentido do fio: não só o que entra num
+`Finding`, mas o que uma tool devolve ao modelo. Todo resultado de
+`call_tool` — sucesso ou recusa — carrega `_trust` = `{label, authority,
+taint}` de `sparkforge/agentic/trust.py:tool_result_envelope()`, e o bloco
+aterrissa no `metadata` do span em `adapters/tools.py`.
+
+- `label` = `TOOL_OUTPUT` para saída de ferramenta: proveniência observada,
+  não confundida com fato verificado nem com instrução.
+- `authority` = `data_only` por construção: o conteúdo pode virar *verified
+  fact* depois, por extração determinística — nunca por ter atravessado o
+  despacho. `as_verified_fact()` promove só o trust factual e mantém
+  `DATA_ONLY`; `TrustEnvelope.__post_init__` levanta se um envelope externo
+  declarar autoridade `SYSTEM`/`POLICY` — autoridade de sistema não entra por
+  payload.
+- `taint` = `SUSPICIOUS` quando o payload carrega marcador lexical de
+  instrução (`detect_prompt_injection`); o marcador fica registrado no span,
+  a proveniência continua `TOOL_OUTPUT` — taint não apaga origem.
+- `TRUST_RANK` é ranking explícito (`TRUST_RANK[label]`), não posição de enum —
+  o `allows` do `RoleContextPlan` compara contra o rank declarado.
+
+Limite declarado (T-A01 do THREAT-MODEL): o guardrail é lexical — instrução
+escrita sem os marcadores passa sem `taint`, e a suíte red-team nomeia esse
+caso (`test_injeccao_disfarcada_sem_marcador_passa_e_fica_nomeada`) em vez de
+fingir cobertura.
+
 ## O que este documento NÃO cobre
 
 - **Conteúdo que chega ao modelo por fora do `Finding`** — um agente que lê um

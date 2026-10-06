@@ -302,8 +302,8 @@ service:
 
 As regras citam páginas oficiais (AWS, Apache). O lock
 `knowledge/sources.lock.json` guarda o estado de cada uma. O `knowledge drift`
-diz, para cada fonte que mudou, quais regras, documentos, fixtures, evals e
-agents a leram antes da mudança. Não acessa a rede.
+diz, para cada fonte que mudou, quais regras, documentos, fixtures, evals,
+agents e skills a leram antes da mudança. Não acessa a rede.
 
 ```bash
 sparkforge knowledge drift --as-of 2026-09-13
@@ -316,7 +316,7 @@ Saída real hoje (nenhuma fonte com mudança registrada no lock):
   "as_of": "2026-09-13",
   "lock": {"sources": 247, "checked": 21, "pinned": 15, "changed": 0},
   "changed_sources": [],
-  "totals": {"rules": 0, "docs": 0, "goldens": 0, "evals": 0, "agents": 0},
+  "totals": {"rules": 0, "docs": 0, "goldens": 0, "evals": 0, "agents": 0, "skills": 0},
   "unresolved": [],
   "refused": [
     {"field": "conteudo_da_mudanca", "reason": "exige_leitura_humana_da_fonte"}

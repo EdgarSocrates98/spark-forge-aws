@@ -29,10 +29,12 @@ read-only. A lista literal correspondente vive em
 
 from __future__ import annotations
 
+import json
 import time
 from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
+from sparkforge.agentic.trust import tool_result_envelope
 from sparkforge.change.refusals import (
     RECUSAS_DA_PROPOSTA,
     RECUSAS_DO_PLANO,
@@ -5440,6 +5442,21 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "intent": {"type": "string", "minLength": 1},
                 "profile": {"type": "string", "enum": ["economy", "balanced", "deep"]},
                 "max_bytes": {"type": "integer", "minimum": 1},
+                "role": {
+                    "type": "string",
+                    "description": (
+                        "Role com plano declarado em ROLE_PLANS (sf-inventory, "
+                        "sf-extractor, sf-judge, sf-verifier, sf-synthesizer). "
+                        "Role desconhecida nega contexto (fail-closed)."
+                    ),
+                },
+                "role_plan": {
+                    "type": "object",
+                    "description": (
+                        "RoleContextPlan serializado (to_dict). Vence `role`. "
+                        "Invalido nega contexto com unresolved role_plan_invalid."
+                    ),
+                },
                 "case_id": {"type": "string"},
                 "items": {"type": "array", "items": {"type": "object"}},
                 "answer_status": {
@@ -10967,6 +10984,69 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_IDEMPOTENT,
     },
+    "sparkforge_agentops_timeline": {
+        "description": (
+            "Linha do tempo de um run local: eventos por lane "
+            "(task/context/routing/agent/model/tool/review/debate/checkpoint)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["run_id"],
+            "properties": {
+                "run_id": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "events": {"type": "array"},
+                    "count": {"type": "integer"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Timeline do run indisponivel.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_agentops_critical_path": {
+        "description": (
+            "Caminho critico medido do run: maiores duracoes, retries e "
+            "waiting entre spans consecutivos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["run_id"],
+            "properties": {
+                "run_id": {"type": "string", "minLength": 1},
+                "repo": {"type": "string"},
+                "db_path": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "top": {"type": "array"},
+                    "retries": {"type": "object"},
+                    "waiting_seconds": {"type": "number"},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Caminho critico do run indisponivel.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_doctor_agentic": {
         "description": "Confere readiness local do plano agêntico sem rede ou provider.",
         "inputSchema": {
@@ -11360,6 +11440,8 @@ def _h_context_start(args: dict[str, Any]) -> dict[str, Any]:
         answer_status=args.get("answer_status"),
         answer_reasons=args.get("answer_reasons"),
         triggers=args.get("triggers"),
+        role=args.get("role"),
+        role_plan=args.get("role_plan"),
         repo=args.get("repo", "."),
         catalog=TOOLS,
     )
@@ -11402,6 +11484,22 @@ def _h_agentops_baseline(args: dict[str, Any]) -> dict[str, Any]:
         action=args["action"],
         run_id=args["run_id"],
         baseline_path=args["baseline_path"],
+        db_path=args.get("db_path"),
+    )
+
+
+def _h_agentops_timeline(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_timeline(
+        args.get("repo", "."),
+        run_id=args["run_id"],
+        db_path=args.get("db_path"),
+    )
+
+
+def _h_agentops_critical_path(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.agentops_critical_path(
+        args.get("repo", "."),
+        run_id=args["run_id"],
         db_path=args.get("db_path"),
     )
 
@@ -12339,6 +12437,8 @@ _HANDLERS = {
     "sparkforge_agentops_inspect": _h_agentops_inspect,
     "sparkforge_agentops_compare": _h_agentops_compare,
     "sparkforge_agentops_baseline": _h_agentops_baseline,
+    "sparkforge_agentops_timeline": _h_agentops_timeline,
+    "sparkforge_agentops_critical_path": _h_agentops_critical_path,
     "sparkforge_doctor_agentic": _h_doctor_agentic,
     "sparkforge_case_open": _h_case_open,
     "sparkforge_case_get": _h_case_get,
@@ -12477,6 +12577,37 @@ _HANDLERS = {
 }
 
 
+def _attach_trust(name: str, resultado: dict[str, Any]) -> dict[str, Any]:
+    """Carimba o resultado com o envelope de confianca que viaja COM o payload.
+
+    Saida de tool e `TOOL_OUTPUT`/`data_only` por construcao: pode virar fato
+    verificado depois de extracao deterministica, nunca instrucao por ter sido
+    devolvida aqui. O scan de injecao corre sobre a MESMA serializacao canonica
+    que `payload_bytes` mede -- o texto que o host vai ler e o texto que foi
+    inspecionado. So os metadados entram em `_trust` (label/authority/taint):
+    duplicar `content` dentro do resultado dobraria o payload que este projeto
+    mede por byte.
+
+    BEST-EFFORT como o resto da instrumentacao: um resultado nao serializavel
+    (defeito de handler) ou qualquer falha da montagem deixa a resposta sem
+    `_trust`, nunca sem resultado.
+    """
+    try:
+        texto = json.dumps(resultado, ensure_ascii=False)
+        envelope = tool_result_envelope(texto, origin=f"tool:{name}")
+        resultado = {
+            **resultado,
+            "_trust": {
+                "label": envelope.trust.value,
+                "authority": envelope.instruction_authority.value,
+                "taint": envelope.taint.value,
+            },
+        }
+    except Exception:  # noqa: BLE001,S110 -- confianca quebrada nao derruba a tool
+        pass
+    return resultado
+
+
 def call_tool(
     name: str,
     arguments: dict[str, Any],
@@ -12546,6 +12677,7 @@ def call_tool(
             }
             if decisao.required_approval is not None:
                 recusa["required_approval"] = decisao.required_approval.value
+            recusa = _attach_trust(name, recusa)
             shared_ledger().record(
                 name=name,
                 resultado=recusa,
@@ -12578,6 +12710,7 @@ def call_tool(
             desfecho = "error"
         resultado = registro.finish(resultado, desfecho)
 
+    resultado = _attach_trust(name, resultado)
     shared_ledger().record(
         name=name,
         resultado=resultado,

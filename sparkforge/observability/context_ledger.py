@@ -197,6 +197,15 @@ class ContextLedger:
         if self._run_start is None:
             self._run_start = start_time
         try:
+            # O `_trust` que `call_tool` anexa viaja no payload E vira
+            # metadata do span: uma saida `suspicious` fica visivel na
+            # observabilidade sem precisar reabrir o payload inteiro.
+            trust = resultado.get("_trust") if isinstance(resultado, dict) else None
+            trust_meta = {
+                chave: trust[chave]
+                for chave in ("label", "taint")
+                if isinstance(trust, dict) and trust.get(chave)
+            }
             span = TraceSpan(
                 span_id=f"span_{uuid.uuid4().hex[:8]}",
                 run_id=self.run_id,
@@ -212,9 +221,15 @@ class ContextLedger:
                 item_count=declared_item_count(resultado),
                 outcome=outcome,
                 metadata={
-                    chave: valor
-                    for chave, valor in (("channel", channel), ("transport", transport))
-                    if valor
+                    **trust_meta,
+                    **{
+                        chave: valor
+                        for chave, valor in (
+                            ("channel", channel),
+                            ("transport", transport),
+                        )
+                        if valor
+                    },
                 },
             )
             self._buffer.append(span)

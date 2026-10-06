@@ -140,3 +140,18 @@ produtor pode ser fail-closed: `baseline_captured` (`bench.run_delta`),
 `flows_mapped` (`callgraph.reachable_spark_work`) e `functional_validation_defined`
 (`funcval.plan`). `dominant_bottleneck_identified` fica advisory, porque endurecer um
 gate sem produtor é o impasse que o design da Fase 0 recusou.
+
+### A nota do CONFIG_OCA no `AGENTS.md`
+
+Texto que morava em "Agentic Expansion Inventory" até 2026-10-09, removido na
+onda de convergência do runtime porque o teto de bytes do arquivo de instrução
+estourou e a passagem é histórico, não regra:
+
+> The sixteen ephemeral contracts and the seven declared tool names left in
+> `docs/sdd/CONFIG_OCA/` (2026-09-20): the contracts had no reader in
+> `sparkforge/`, `scripts/` or `tests/`, and none of the seven names existed in
+> `sparkforge.adapters.tools.TOOLS`. The six modules under `sparkforge/tools/`
+> behind them are code and still exist.
+
+A regra vigente que ficou no lugar: "Tools declared in this registry: none";
+os módulos `sparkforge/tools/` continuam existindo como código.

@@ -28,7 +28,7 @@ Os dois arquivos ao lado já fazem o resto:
 
 | Arquivo | O que faz |
 |---|---|
-| `mcp_config.json` | expõe as **141 tools** por stdio (recontado em 2026-10-04). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
+| `mcp_config.json` | expõe as **143 tools** por stdio (recontado em 2026-10-04). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
 As **60 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
@@ -149,7 +149,7 @@ trazer o artefato economiza a investigação inteira.
 
 ## Economia: o que medir antes de dizer que economizou
 
-**141 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
+**143 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
 quando so precisa do veredito.
 
 **Leia o numero antes de afirmar reducao.** Medido em 2026-09-02 sobre o gold set

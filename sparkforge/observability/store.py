@@ -33,6 +33,7 @@ class SQLiteTraceStore:
         ("item_count", "INTEGER"),
         ("outcome", "TEXT"),
         ("cost_basis", "TEXT"),
+        ("tokens_status", "TEXT"),
     )
 
     def _init_db(self) -> None:
@@ -92,6 +93,7 @@ class SQLiteTraceStore:
                     item_count INTEGER,
                     outcome TEXT,
                     cost_basis TEXT,
+                    tokens_status TEXT,
                     FOREIGN KEY(run_id) REFERENCES traces(run_id)
                 )
             """)
@@ -148,8 +150,8 @@ class SQLiteTraceStore:
                     trace.end_time,
                     trace.profile,
                     trace.status,
-                    trace.total_tokens(),
-                    trace.total_cost_usd(),
+                    trace.measured_total_tokens(),
+                    trace.measured_total_cost_usd(),
                 ),
             )
 
@@ -161,8 +163,8 @@ class SQLiteTraceStore:
                         start_time, end_time, duration_seconds, input_tokens, output_tokens,
                         cached_tokens, estimated_cost_usd, status, metadata_json,
                         payload_bytes, payload_basis, detail_level, item_count,
-                        outcome, cost_basis
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        outcome, cost_basis, tokens_status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         span.span_id,
@@ -185,6 +187,7 @@ class SQLiteTraceStore:
                         span.item_count,
                         span.outcome,
                         span.cost_basis,
+                        span.resolved_tokens_status(),
                     ),
                 )
             conn.commit()

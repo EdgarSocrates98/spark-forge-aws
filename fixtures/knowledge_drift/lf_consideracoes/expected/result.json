@@ -133,6 +133,10 @@
         "rules": [
           "SF-LF-001",
           "SF-LF-002"
+        ],
+        "skills": [
+          "skills/diagnose-lakeformation-access/SKILL.md",
+          "skills/lakeformation-fgac-guard/SKILL.md"
         ]
       },
       "revalidated": [
@@ -168,7 +172,8 @@
     "docs": 2,
     "evals": 5,
     "goldens": 2,
-    "rules": 2
+    "rules": 2,
+    "skills": 2
   },
   "unresolved": []
 }

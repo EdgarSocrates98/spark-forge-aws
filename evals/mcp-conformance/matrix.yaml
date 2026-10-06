@@ -1,0 +1,135 @@
+# Matriz de conformidade MCP — requisito do protocolo -> evidencia versionada.
+#
+# Cada linha declara um requisito da especificacao MCP (schema/base protocol,
+# server features, transports) e o status desta implementacao:
+#
+#   covered          — o comportamento e deste repo e um teste nomeado o prova
+#   delegated_to_sdk — o comportamento e implementado pelo SDK `mcp`; o repo
+#                      so o consome. Nomear o teste local seria fingir cobertura
+#                      que nao existe — a linha declara o ponto de delegacao.
+#   unresolved       — lacuna reconhecida: nem repo nem cobertura a provam.
+#   not_applicable   — o requisito nao se aplica a um servidor tools-only.
+#
+# `evidence` lista `arquivo::teste` existentes sob tests/ — o gate
+# `tests/test_mcp_conformance_matrix.py` falha se uma evidencia apontar teste
+# inexistente ou se o status sair do vocabulario.
+schema_version: 1
+protocol_eras: ["legacy", "2026-07-28"]
+requirements:
+  - id: initialize-handshake-legacy
+    requirement: "servidor atende o handshake `initialize` da era legada"
+    status: covered
+    evidence:
+      - tests/test_mcp_modern_era.py::test_handshake_legado_continua_atendido
+  - id: discover-2026-07-28
+    requirement: "servidor negocia a era 2026-07-28 via `server/discover`"
+    status: covered
+    evidence:
+      - tests/test_mcp_modern_era.py::test_negocia_2026_07_28_por_discover
+  - id: server-identity
+    requirement: "identidade (name/version/instructions) declarada nas duas eras"
+    status: covered
+    evidence:
+      - tests/test_mcp_modern_era.py::test_identidade_declarada
+  - id: tools-list
+    requirement: "`tools/list` devolve o catalogo com inputSchema e outputSchema"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestBuildServer::test_lists_every_tool_of_the_surface
+      - tests/test_adapters_mcp.py::TestBuildServer::test_every_listed_tool_carries_both_schemas
+  - id: tools-call-structured
+    requirement: "`tools/call` devolve CallToolResult com structuredContent"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCallTool::test_a_successful_call_returns_structured_content
+  - id: output-schema-validation
+    requirement: "structuredContent valida contra o outputSchema declarado"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCallTool::test_structured_content_validates_against_the_declared_output_schema
+  - id: input-schema-validation
+    requirement: "argumentos invalidos sao recusados antes de a tool rodar"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCallTool::test_invalid_arguments_are_refused_before_the_tool_runs
+      - tests/test_adapters_mcp_envelope.py::TestEntrada::test_obrigatorio_ausente_nao_executa
+      - tests/test_adapters_mcp_envelope.py::TestEntrada::test_tipo_errado
+  - id: unknown-tool-error
+    requirement: "tool desconhecida vira erro (isError), nunca excecao"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCallTool::test_unknown_tool_is_an_error_not_a_crash
+      - tests/test_adapters_mcp_envelope.py::TestEntrada::test_fora_do_catalogo_recusa_antes_de_validar
+  - id: error-actionability
+    requirement: "erros carregam mensagem acionavel e exit_code"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCallTool::test_adapter_error_keeps_its_actionable_message
+      - tests/test_adapters_mcp_envelope.py::TestErros::test_erro_de_fronteira_sai_compacto
+  - id: content-text-channel
+    requirement: "content[] carrega o JSON serializado (compatibilidade 1x)"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCallTool::test_text_content_still_carries_the_json
+      - tests/test_adapters_mcp_envelope.py::TestSucesso::test_texto_escapa_nao_ascii_como_o_1x
+  - id: transport-stdio
+    requirement: "transporte stdio serve o catalogo inteiro"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestSpec71OTransporteHttpNaoServeFonte::test_stdio_serve_o_catalogo_inteiro
+  - id: transport-http
+    requirement: "transporte streamable HTTP atende /mcp com e sem barra"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestBuildHttpApp::test_serves_mcp_with_and_without_the_trailing_slash
+      - tests/test_adapters_mcp.py::TestBuildHttpApp::test_lifespan_starts_and_stops_the_session_manager
+      - tests/test_adapters_mcp.py::TestBuildHttpApp::test_json_response_mode_also_serves
+  - id: http-source-tools-disabled
+    requirement: "sob http+offline-strict, tools que devolvem fonte sao desabilitadas"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestSpec71OTransporteHttpNaoServeFonte::test_http_nao_serve_a_tool_de_leitura_de_fonte
+      - tests/test_adapters_mcp.py::TestSpec71OTransporteHttpNaoServeFonte::test_a_tool_escondida_tambem_recusa_a_chamada
+  - id: compact-mode
+    requirement: "modo compact publica exatamente as sete operacoes e roteia"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::TestCompactSurface::test_lists_exactly_the_seven_compact_operations
+      - tests/test_adapters_mcp.py::TestCompactSurface::test_routes_execute_read_through_the_existing_tool_dispatcher
+      - tests/test_adapters_mcp.py::TestCompactSurface::test_full_tool_names_are_not_published_or_callable
+  - id: policy-gate
+    requirement: "policy invalida ou ausente nao executa nenhuma tool"
+    status: covered
+    evidence:
+      - tests/test_policy_mcp.py::test_servidor_sem_policy_e_com_policy_invalida
+      - tests/test_policy_mcp.py::test_tool_negada_nao_roda_o_handler
+  - id: observability-channel
+    requirement: "a chamada via MCP grava o canal no span"
+    status: covered
+    evidence:
+      - tests/test_adapters_mcp.py::test_a_chamada_pelo_servidor_mcp_grava_o_canal_no_span
+  - id: notifications-cancel
+    requirement: "notifications/cancelled e requests/cancelled respeitam cancelamento"
+    status: delegated_to_sdk
+    evidence: []
+    note: "o SDK 2.x implementa o ciclo de cancelamento na session; este repo nao intervem"
+  - id: ping
+    requirement: "`ping` responde durante a sessao"
+    status: delegated_to_sdk
+    evidence: []
+    note: "atendido pelo loop de sessao do SDK, fora dos handlers registrados"
+  - id: pagination
+    requirement: "listagens paginadas por cursor"
+    status: unresolved
+    evidence: []
+    note: "o catalogo cabe numa pagina hoje (143 tools); se crescer alem do limite do cliente o comportamento e lacuna"
+  - id: resources-prompts
+    requirement: "recursos `resources/*` e `prompts/*`"
+    status: not_applicable
+    evidence: []
+    note: "servidor tools-only por decisao; nenhum recurso ou prompt e publicado"
+  - id: roots-elicitation-sampling
+    requirement: "capacidades de cliente (roots, elicitation, sampling)"
+    status: not_applicable
+    evidence: []
+    note: "sao capacidades do CLIENTE que o servidor poderia pedir; este servidor nao pede"

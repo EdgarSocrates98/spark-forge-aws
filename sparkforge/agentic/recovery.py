@@ -17,6 +17,13 @@ class FailureClass(str, Enum):
     DETERMINISTIC_CONFLICT = "deterministic_conflict"
     STRATEGY_REJECTED = "strategy_rejected"
     TIMEOUT = "timeout"
+    PROVIDER_UNAVAILABLE = "provider_unavailable"
+    TOOL_FAILURE = "tool_failure"
+    POLICY_CONFLICT = "policy_conflict"
+    SECURITY_REFUSAL = "security_refusal"
+    CONTEXT_INSUFFICIENT = "context_insufficient"
+    LOOP = "loop"
+    DEPENDENCY_FAILURE = "dependency_failure"
 
 
 class RecoveryAction(str, Enum):
@@ -62,7 +69,10 @@ class RecoveryPolicy:
         values = dict(self.actions or _DEFAULT_ACTIONS)
         expected = {item.value for item in FailureClass}
         if set(values) != expected:
-            raise ValueError("recovery policy must declare exactly eight failure classes")
+            raise ValueError(
+                "recovery policy must declare exactly "
+                f"{len(expected)} failure classes"
+            )
         allowed = {item.value for item in RecoveryAction}
         if any(value not in allowed for value in values.values()):
             raise ValueError("recovery policy contains unsupported action")
@@ -133,6 +143,13 @@ _DEFAULT_ACTIONS = {
     "deterministic_conflict": "escalate",
     "strategy_rejected": "replan",
     "timeout": "retry",
+    "provider_unavailable": "retry",
+    "tool_failure": "replan",
+    "policy_conflict": "escalate",
+    "security_refusal": "refuse",
+    "context_insufficient": "replan",
+    "loop": "stop",
+    "dependency_failure": "escalate",
 }
 
 

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterable
-from dataclasses import asdict, dataclass
+from collections.abc import Iterable, Mapping
+from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from typing import Any
 
@@ -43,6 +43,24 @@ class Taint(str, Enum):
     SUSPICIOUS = "suspicious"
     POISONED = "poisoned"
 
+
+# A ordem do enum e ordem de DECLARACAO, nao politica: mover um label para o
+# fim da lista nao pode rebaixar um artefato verificado abaixo de dado cru.
+# O rank e escrito aqui, explicito, e `RoleContextPlan.allows` so compara ele.
+TRUST_RANK: dict[TrustLabel, int] = {
+    TrustLabel.SYSTEM: 110,
+    TrustLabel.POLICY: 100,
+    TrustLabel.VERIFIED_FACT: 90,
+    TrustLabel.VERIFIED_FINDING: 80,
+    TrustLabel.KNOWLEDGE: 70,
+    TrustLabel.MEMORY: 60,
+    TrustLabel.TOOL_OUTPUT: 50,
+    TrustLabel.MODEL_OUTPUT: 40,
+    TrustLabel.USER_INPUT: 30,
+    TrustLabel.EXTERNAL_DATA: 20,
+    TrustLabel.EXTERNAL_UNTRUSTED: 10,
+    TrustLabel.UNKNOWN: 0,
+}
 
 _INJECTION_MARKERS = (
     "ignore previous instructions",
@@ -152,9 +170,7 @@ class RoleContextPlan:
 
     def allows(self, kind: str, *, trust: TrustLabel = TrustLabel.UNKNOWN) -> bool:
         allowed = not self.allowed_context or kind in self.allowed_context
-        floor = list(TrustLabel).index(self.trust_floor)
-        current = list(TrustLabel).index(trust)
-        return allowed and current <= floor
+        return allowed and TRUST_RANK[trust] >= TRUST_RANK[self.trust_floor]
 
     def to_dict(self) -> dict[str, Any]:
         result = asdict(self)
@@ -169,6 +185,28 @@ class RoleContextPlan:
             result[key] = list(result[key])
         result["trust_floor"] = self.trust_floor.value
         return result
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> RoleContextPlan:
+        """Reconstroi o plano serializado (fronteira MCP/CLI viaja como dict).
+
+        Valores invalidos levantam `ValueError`/`KeyError` -- quem chama
+        (`ContextGateway`) converte em `role_plan_invalid` nomeado, porque um
+        plano malformado NAO pode ser lido como "sem plano" (fail-open).
+        """
+        if not isinstance(raw, Mapping):
+            raise ValueError("role_plan must be a mapping")
+        return cls(
+            role=str(raw.get("role", "")),
+            allowed_context=tuple(str(k) for k in raw.get("allowed_context", ())),
+            required_context=tuple(str(k) for k in raw.get("required_context", ())),
+            context_share=float(raw.get("context_share", 1.0)),
+            artifact_access=tuple(str(k) for k in raw.get("artifact_access", ())),
+            memory_access=tuple(str(k) for k in raw.get("memory_access", ())),
+            knowledge_access=tuple(str(k) for k in raw.get("knowledge_access", ())),
+            tool_access=tuple(str(k) for k in raw.get("tool_access", ())),
+            trust_floor=TrustLabel(str(raw.get("trust_floor", "UNKNOWN"))),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,12 +250,27 @@ def sanitize_tool_output(content: str, *, origin: str) -> TrustEnvelope:
     return TrustEnvelope.external(content, origin=origin)
 
 
+def tool_result_envelope(content: str, *, origin: str) -> TrustEnvelope:
+    """Tool output is `TOOL_OUTPUT` even when its text looks like an instruction.
+
+    `TrustEnvelope.external` rotula proveniencia generica (`EXTERNAL_DATA`);
+    resultado de tool tem proveniencia propria. A suspeicao mora em `taint`,
+    nao no label -- dizer "isto veio de uma tool" continua verdade quando o
+    conteudo e hostil.
+    """
+    return replace(
+        TrustEnvelope.external(content, origin=origin), trust=TrustLabel.TOOL_OUTPUT
+    )
+
+
 __all__ = [
     "AgentHandoff",
     "InstructionAuthority",
     "RoleContextPlan",
     "Taint",
+    "TRUST_RANK",
     "TrustEnvelope",
     "TrustLabel",
     "sanitize_tool_output",
+    "tool_result_envelope",
 ]

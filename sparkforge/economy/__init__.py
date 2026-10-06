@@ -38,6 +38,7 @@ from sparkforge.economy.decision_models import (
     ShadowEvaluation,
 )
 from sparkforge.economy.decision_plane import DecisionPlaneService
+from sparkforge.economy.reconcile import reconcile_run_economy
 from sparkforge.economy.router import CapabilityModelRouter, RoutingDecision
 from sparkforge.economy.waste_detector import TokenWasteDetector, WasteFinding
 from sparkforge.registry.models import ExecutionProfile, ModelPolicy, ModelTier, RiskLevel
@@ -70,6 +71,7 @@ __all__ = [
     "TokenLedger",
     "TokenWasteDetector",
     "WasteFinding",
+    "reconcile_run_economy",
     "ExecutionProfile",
     "ModelPolicy",
     "ModelTier",

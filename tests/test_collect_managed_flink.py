@@ -305,6 +305,9 @@ def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsy
         payload.pop("path")
         payload.pop("journal", None)
         payload.pop("journal_reason", None)
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        payload.pop("_trust", None)
     assert cli == mcp
 
 
@@ -358,6 +361,9 @@ def test_cli_and_mcp_managed_flink_temporal_collection_match(monkeypatch, tmp_pa
         payload.pop("path")
         payload.pop("journal", None)
         payload.pop("journal_reason", None)
+        # `_trust` e aditivo de call_tool (FASE 3); formato travado em
+        # tests/test_runtime_convergence_trust.py
+        payload.pop("_trust", None)
     assert cli == mcp
 
 

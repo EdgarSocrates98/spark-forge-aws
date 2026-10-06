@@ -17,7 +17,7 @@ Inspeciona qualidade de contexto fornecido pelo chamador. Mede bytes, relevancia
 
 ## Na CLI
 
-[`sparkforge agentops baseline`](../cli/agentops.md), [`sparkforge agentops compare`](../cli/agentops.md), [`sparkforge agentops inspect`](../cli/agentops.md), [`sparkforge context inspect`](../cli/context.md), [`sparkforge doctor agentic`](../cli/doctor.md)
+[`sparkforge agentops baseline`](../cli/agentops.md), [`sparkforge agentops compare`](../cli/agentops.md), [`sparkforge agentops critical-path`](../cli/agentops.md), [`sparkforge agentops inspect`](../cli/agentops.md), [`sparkforge agentops timeline`](../cli/agentops.md), [`sparkforge context inspect`](../cli/context.md), [`sparkforge doctor agentic`](../cli/doctor.md)
 
 ## Capacidade
 

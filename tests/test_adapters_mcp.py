@@ -324,4 +324,11 @@ def test_a_chamada_pelo_servidor_mcp_grava_o_canal_no_span(server, tmp_path, mon
     _call(server, "sparkforge_case_get", {"repo": str(tmp_path)})
 
     spans = ledger.spans_of("run_mcp")
-    assert [s["metadata"] for s in spans] == [{"channel": "mcp", "transport": "stdio"}]
+    assert [s["metadata"] for s in spans] == [
+        {
+            "label": "TOOL_OUTPUT",
+            "taint": "external",
+            "channel": "mcp",
+            "transport": "stdio",
+        }
+    ]
