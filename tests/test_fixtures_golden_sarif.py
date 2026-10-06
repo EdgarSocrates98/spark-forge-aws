@@ -123,7 +123,7 @@ class TestCaso:
         esperado = json.loads(_texto(caso / "expected" / "result.json"))
         assert codigo == esperado["exit_code"]
         assert saida.out.replace("\r\n", "\n") == _texto(caso / "expected" / "annotations.txt")
-        gravado = repo / ".sparkforge" / "report"
+        gravado = repo / ".sparkforge_aws" / "report"
         for nome in ("sparkforge-aws.sarif", "summary.md"):
             assert _texto(gravado / nome) == _texto(caso / "expected" / nome), nome
 

@@ -3,13 +3,13 @@
 Os verbos `analyze` leem arquivos locais. Os verbos `collect` são os que buscam
 esses arquivos na sua conta AWS: event log, definição do job, métricas,
 permissões, dumps de EMR. Cada coleta grava um arquivo em
-`.sparkforge/artifacts/<tipo>/` e registra no manifesto um sha256 e o comando
+`.sparkforge_aws/artifacts/<tipo>/` e registra no manifesto um sha256 e o comando
 exato para coletar de novo.
 
 > **Atenção: coleta lê a sua conta AWS real.** Use uma credencial **só de
 > leitura**. Os coletores só leem (nenhum grava em S3, muda job ou mexe em
 > tabela), mas o artefato pode conter dado de negócio. Nunca faça commit de
-> `.sparkforge/artifacts/`, exceto do `manifest.json`.
+> `.sparkforge_aws/artifacts/`, exceto do `manifest.json`.
 
 ## Receita rápida
 
@@ -30,8 +30,8 @@ sparkforge-aws collect lakeformation --repo . --database curated --table fato_ve
 sparkforge-aws collect verify --repo .
 
 # 5. Extraia os facts do artefato coletado
-sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ \
-  --out .sparkforge/facts_lf.json
+sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lakeformation/ \
+  --out .sparkforge_aws/facts_lf.json
 ```
 
 Os nomes de banco, tabela, conta e bucket acima são exemplos: troque pelos
@@ -41,7 +41,7 @@ aqui. O passo 4 tem exemplo real mais abaixo.
 ## Palavras que aparecem aqui
 
 - **Artefato**: o arquivo bruto que veio da AWS (um JSON, um event log).
-- **Manifesto**: o arquivo `.sparkforge/artifacts/manifest.json`. Ele lista cada
+- **Manifesto**: o arquivo `.sparkforge_aws/artifacts/manifest.json`. Ele lista cada
   artefato com o hash e o comando para recoletar.
 - **sha256**: uma "impressão digital" do arquivo. Se um byte mudar, o sha256
   muda.
@@ -85,19 +85,19 @@ Lista conferida em `sparkforge-aws collect --help`. Todos exigem `--repo` e `--n
 
 | Verbo | O que lê na AWS (chamadas da API) | Onde grava | Próximo passo |
 |---|---|---|---|
-| `collect event-log` | S3: `list_objects_v2`, `get_object` | `.sparkforge/artifacts/eventlog/<job_run>.jsonl` | `analyze event-log --path <arquivo>` |
-| `collect glue-job` | Glue: `get_job` | `.sparkforge/artifacts/glue_job/<job>.json` | nenhum extrator: serve para comparar a definição real com o Terraform |
-| `collect glue-job-runs` | Glue: `get_job_runs` | `.sparkforge/artifacts/glue_job_run/<job>_<run>.json` | `analyze glue-job-runs --path <dir> --job-name <job>` |
-| `collect cloudwatch` | CloudWatch: `get_metric_data` | `.sparkforge/artifacts/cloudwatch/<job>_<run>.json` | `analyze cloudwatch --path <arquivo>` |
-| `collect cloudwatch-logs` | CloudWatch Logs: `filter_log_events` | `.sparkforge/artifacts/cloudwatch_logs/<job>_<run>_<grupo>.json` | `analyze cloudwatch-logs --path <arquivo-ou-dir>` |
-| `collect iceberg-metadata` | Athena: `start_query_execution`, `get_query_execution`, `get_query_results` | `.sparkforge/artifacts/iceberg/<db>_<tabela>.json` | `analyze iceberg --path <arquivo-ou-dir>` |
-| `collect athena-workgroup` | Athena: `get_work_group` | `.sparkforge/artifacts/athena/<workgroup>.json` | `analyze athena-workgroup --path <arquivo-ou-dir>` |
-| `collect lakeformation` | Lake Formation: `list_permissions`, `describe_resource`, `get_data_lake_settings` | `.sparkforge/artifacts/lakeformation/<conta>_<db>_<tabela>.json` | `analyze lakeformation-grants --path <arquivo-ou-dir>` |
-| `collect iam-access` | IAM: `simulate_principal_policy` | `.sparkforge/artifacts/iam_access/<conta>_<role>.json` | `analyze iam-access --path <arquivo-ou-dir>` |
-| `collect glue-resource-link` | Glue: `get_table` ou `get_database` (no link e na origem) | `.sparkforge/artifacts/glue_resource_link/<conta>_<db>[_<tabela>].json` | `analyze glue-resource-link --path <arquivo-ou-dir>` |
-| `collect emr-cluster` | EMR: `describe_cluster`, `list_instance_groups`, `list_instance_fleets`, `list_bootstrap_actions`, `get_managed_scaling_policy`, `get_auto_termination_policy` | `.sparkforge/artifacts/emr/<cluster_id>.json` | `analyze emr-cluster --path <arquivo-ou-dir>` |
-| `collect emr-serverless` | EMR Serverless: `get_application` | `.sparkforge/artifacts/emr_serverless/<application_id>.json` | `analyze emr-serverless --path <arquivo-ou-dir>` |
-| `collect emr-eks` | EMR on EKS (`emr-containers`): `describe_virtual_cluster`, `describe_job_run` | `.sparkforge/artifacts/emr_eks/<virtual_cluster>_<job_run>.json` | `analyze emr-eks --path <arquivo-ou-dir>` |
+| `collect event-log` | S3: `list_objects_v2`, `get_object` | `.sparkforge_aws/artifacts/eventlog/<job_run>.jsonl` | `analyze event-log --path <arquivo>` |
+| `collect glue-job` | Glue: `get_job` | `.sparkforge_aws/artifacts/glue_job/<job>.json` | nenhum extrator: serve para comparar a definição real com o Terraform |
+| `collect glue-job-runs` | Glue: `get_job_runs` | `.sparkforge_aws/artifacts/glue_job_run/<job>_<run>.json` | `analyze glue-job-runs --path <dir> --job-name <job>` |
+| `collect cloudwatch` | CloudWatch: `get_metric_data` | `.sparkforge_aws/artifacts/cloudwatch/<job>_<run>.json` | `analyze cloudwatch --path <arquivo>` |
+| `collect cloudwatch-logs` | CloudWatch Logs: `filter_log_events` | `.sparkforge_aws/artifacts/cloudwatch_logs/<job>_<run>_<grupo>.json` | `analyze cloudwatch-logs --path <arquivo-ou-dir>` |
+| `collect iceberg-metadata` | Athena: `start_query_execution`, `get_query_execution`, `get_query_results` | `.sparkforge_aws/artifacts/iceberg/<db>_<tabela>.json` | `analyze iceberg --path <arquivo-ou-dir>` |
+| `collect athena-workgroup` | Athena: `get_work_group` | `.sparkforge_aws/artifacts/athena/<workgroup>.json` | `analyze athena-workgroup --path <arquivo-ou-dir>` |
+| `collect lakeformation` | Lake Formation: `list_permissions`, `describe_resource`, `get_data_lake_settings` | `.sparkforge_aws/artifacts/lakeformation/<conta>_<db>_<tabela>.json` | `analyze lakeformation-grants --path <arquivo-ou-dir>` |
+| `collect iam-access` | IAM: `simulate_principal_policy` | `.sparkforge_aws/artifacts/iam_access/<conta>_<role>.json` | `analyze iam-access --path <arquivo-ou-dir>` |
+| `collect glue-resource-link` | Glue: `get_table` ou `get_database` (no link e na origem) | `.sparkforge_aws/artifacts/glue_resource_link/<conta>_<db>[_<tabela>].json` | `analyze glue-resource-link --path <arquivo-ou-dir>` |
+| `collect emr-cluster` | EMR: `describe_cluster`, `list_instance_groups`, `list_instance_fleets`, `list_bootstrap_actions`, `get_managed_scaling_policy`, `get_auto_termination_policy` | `.sparkforge_aws/artifacts/emr/<cluster_id>.json` | `analyze emr-cluster --path <arquivo-ou-dir>` |
+| `collect emr-serverless` | EMR Serverless: `get_application` | `.sparkforge_aws/artifacts/emr_serverless/<application_id>.json` | `analyze emr-serverless --path <arquivo-ou-dir>` |
+| `collect emr-eks` | EMR on EKS (`emr-containers`): `describe_virtual_cluster`, `describe_job_run` | `.sparkforge_aws/artifacts/emr_eks/<virtual_cluster>_<job_run>.json` | `analyze emr-eks --path <arquivo-ou-dir>` |
 | `collect verify` | nada: só lê o disco | nada | — |
 
 Nos caminhos de `lakeformation` e `glue-resource-link`, `<conta>` é o
@@ -132,7 +132,7 @@ você baixá-lo à mão. A mensagem começa assim:
 
 ```text
 boto3 nao disponivel. Instale com `pip install 'sparkforge-aws[aws]'` para usar coletores AWS, ou colete o artefato manualmente (AWS CLI ou console) e registre-o com `sparkforge_aws.collect.register_artifact`.
-  Alternativa manual: baixe o artefato (AWS CLI ou console), salve em <repo>/.sparkforge/artifacts/..., e registre com `sparkforge_aws.collect.register_artifact` (kind, sha256, source e o collect_command acima).
+  Alternativa manual: baixe o artefato (AWS CLI ou console), salve em <repo>/.sparkforge_aws/artifacts/..., e registre com `sparkforge_aws.collect.register_artifact` (kind, sha256, source e o collect_command acima).
 ```
 
 ### 2. Coletar
@@ -215,7 +215,7 @@ montado numa pasta temporária a partir de uma fixture:
   "artifacts": [
     {
       "kind": "lakeformation",
-      "path": ".sparkforge/artifacts/lakeformation/222222222222_curated_fato_venda.json",
+      "path": ".sparkforge_aws/artifacts/lakeformation/222222222222_curated_fato_venda.json",
       "present": true,
       "hash_matches": true,
       "collect_command": "sparkforge-aws collect lakeformation --repo . --database curated --table fato_venda --catalog-id 222222222222 --now 2026-09-13T12:00:00Z",
@@ -223,7 +223,7 @@ montado numa pasta temporária a partir de uma fixture:
     },
     {
       "kind": "iam_access",
-      "path": ".sparkforge/artifacts/iam_access/111111111111_glue-curated.json",
+      "path": ".sparkforge_aws/artifacts/iam_access/111111111111_glue-curated.json",
       "present": false,
       "hash_matches": false,
       "collect_command": "sparkforge-aws collect iam-access --repo . --role-arn arn:aws:iam::111111111111:role/glue-curated --now 2026-09-13T12:00:00Z",
@@ -249,7 +249,7 @@ Os manuais por assunto mostram cada um com exemplo:
 
 ## O manifesto
 
-`.sparkforge/artifacts/manifest.json` é uma lista. Cada entrada tem seis campos:
+`.sparkforge_aws/artifacts/manifest.json` é uma lista. Cada entrada tem seis campos:
 
 | Campo | O que é |
 |---|---|
@@ -260,7 +260,7 @@ Os manuais por assunto mostram cada um com exemplo:
 | `collect_command` | O comando exato para coletar de novo. Nunca fica vazio |
 | `collected_at` | O `--now` da coleta |
 
-**Faça commit do `manifest.json` e de mais nada em `.sparkforge/artifacts/`.**
+**Faça commit do `manifest.json` e de mais nada em `.sparkforge_aws/artifacts/`.**
 O manifesto é pequeno e diz o que falta e como obter. O artefato bruto pode ter
 dado de negócio e centenas de MB. O CI do próprio SparkForge falha se algum
 artefato bruto for versionado.

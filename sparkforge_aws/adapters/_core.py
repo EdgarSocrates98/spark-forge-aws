@@ -994,7 +994,7 @@ def _extract_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o diretorio da biblioteca ou para um arquivo .py:\n"
             f"    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts.json",
+            f"--out .sparkforge_aws/facts.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -1363,7 +1363,7 @@ def _extract_catalog_facts(path: str) -> list[Fact]:
             f"  Aponte para o diretorio com dumps do Glue Data Catalog ou para um "
             f"arquivo .json:\n"
             f"    sparkforge-aws analyze catalog-schema --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_catalog.json",
+            f"--out .sparkforge_aws/facts_catalog.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -1492,7 +1492,7 @@ def _extract_event_log_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o arquivo de Spark event log (.jsonl):\n"
             f"    sparkforge-aws analyze event-log --path <arquivo> "
-            f"--out .sparkforge/facts_eventlog.json",
+            f"--out .sparkforge_aws/facts_eventlog.json",
             exit_code=2,
         )
     return extract_event_log_path(target, repo_root=target.parent)
@@ -1527,7 +1527,7 @@ def analyze_sql_metrics(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um Spark event log (JSON Lines):\n"
             f"    sparkforge-aws analyze sql-metrics "
-            f"--path .sparkforge/artifacts/eventlog/app.jsonl",
+            f"--path .sparkforge_aws/artifacts/eventlog/app.jsonl",
             exit_code=2,
         )
     facts = extract_sql_metrics_path(target)
@@ -1546,7 +1546,7 @@ def _extract_cloudwatch_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um artefato gravado por `sparkforge-aws collect cloudwatch`:\n"
             f"    sparkforge-aws analyze cloudwatch "
-            f"--path .sparkforge/artifacts/cloudwatch/<job>_<run>.json",
+            f"--path .sparkforge_aws/artifacts/cloudwatch/<job>_<run>.json",
             exit_code=2,
         )
     return extract_cloudwatch_path(target)
@@ -1595,7 +1595,7 @@ def _extract_cloudwatch_logs_facts(path: str) -> list[Fact]:
             f"  Aponte para um artefato gravado por `sparkforge-aws collect "
             f"cloudwatch-logs`, ou para o DIRETORIO deles:\n"
             f"    sparkforge-aws analyze cloudwatch-logs "
-            f"--path .sparkforge/artifacts/cloudwatch_logs/",
+            f"--path .sparkforge_aws/artifacts/cloudwatch_logs/",
             exit_code=2,
         )
     # Arquivo OU diretorio, e a razao e do artefato: o coletor grava um por
@@ -1633,7 +1633,7 @@ def _extract_lakeformation_grants_facts(path: str) -> list[Fact]:
             f"  Aponte para um artefato gravado por `sparkforge-aws collect "
             f"lakeformation`, ou para o DIRETORIO deles:\n"
             f"    sparkforge-aws analyze lakeformation-grants "
-            f"--path .sparkforge/artifacts/lakeformation/",
+            f"--path .sparkforge_aws/artifacts/lakeformation/",
             exit_code=2,
         )
     # Arquivo OU diretorio, pela mesma razao do log: o coletor grava um por
@@ -1800,7 +1800,7 @@ def _extract_glue_resource_link_facts(path: str) -> list[Fact]:
             "glue-resource-link`, ou para o DIRETORIO deles:"
             + chr(10)
             + "    sparkforge-aws analyze glue-resource-link --path "
-            ".sparkforge/artifacts/glue_resource_link/",
+            ".sparkforge_aws/artifacts/glue_resource_link/",
             exit_code=2,
         )
     if target.is_dir():
@@ -1842,7 +1842,7 @@ def _extract_iam_access_facts(path: str) -> list[Fact]:
             + "  Aponte para um artefato gravado por `sparkforge-aws collect iam-access`, "
             "ou para o DIRETORIO deles:"
             + chr(10)
-            + "    sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/",
+            + "    sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/",
             exit_code=2,
         )
     if target.is_dir():
@@ -1921,7 +1921,7 @@ def _extract_parquet_footer_facts(path: str) -> list[Fact]:
             f"  Aponte para um artefato gravado por `sparkforge-aws collect "
             f"parquet-footer`, ou para o DIRETORIO deles:\n"
             f"    sparkforge-aws analyze parquet-footer "
-            f"--path .sparkforge/artifacts/parquet_footer/",
+            f"--path .sparkforge_aws/artifacts/parquet_footer/",
             exit_code=2,
         )
     if target.is_dir():
@@ -1967,7 +1967,7 @@ def analyze_glue_job_runs(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o DIRETORIO de artefatos de run, nao para um arquivo:\n"
             f"    sparkforge-aws analyze glue-job-runs "
-            f"--path .sparkforge/artifacts/glue_job_run/ --job-name <job>",
+            f"--path .sparkforge_aws/artifacts/glue_job_run/ --job-name <job>",
             exit_code=2,
         )
     cw_dir = Path(cloudwatch) if cloudwatch else None
@@ -1993,7 +1993,7 @@ def _extract_plan_facts(path: str) -> list[Fact]:
             f"  Aponte para um arquivo de texto com a saida de "
             f'`df.explain("formatted")` (um plano por arquivo):\n'
             f"    sparkforge-aws analyze plan --path <arquivo> "
-            f"--out .sparkforge/facts_plan.json",
+            f"--out .sparkforge_aws/facts_plan.json",
             exit_code=2,
         )
     return extract_plan_path(target, repo_root=target.parent)
@@ -2028,7 +2028,7 @@ def _extract_terraform_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o diretorio com arquivos .tf ou para um arquivo .tf:\n"
             f"    sparkforge-aws analyze terraform --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_terraform.json",
+            f"--out .sparkforge_aws/facts_terraform.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2060,7 +2060,7 @@ def _extract_iceberg_facts(path: str) -> list[Fact]:
             f"  Aponte para o diretorio com dumps das metadata tables Iceberg ou para "
             f"um arquivo .json:\n"
             f"    sparkforge-aws analyze iceberg --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_iceberg.json",
+            f"--out .sparkforge_aws/facts_iceberg.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2092,7 +2092,7 @@ def _extract_sql_facts(path: str | None, from_pyspark: str | None) -> list[Fact]
                 f"Caminho nao encontrado para analise: {from_pyspark}\n"
                 f'  Aponte para um arquivo .py com chamadas spark.sql("..."):\n'
                 f"    sparkforge-aws analyze sql --from-pyspark <arquivo> "
-                f"--out .sparkforge/facts_sql.json",
+                f"--out .sparkforge_aws/facts_sql.json",
                 exit_code=2,
             )
         try:
@@ -2111,7 +2111,7 @@ def _extract_sql_facts(path: str | None, from_pyspark: str | None) -> list[Fact]
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um arquivo .sql:\n"
-            f"    sparkforge-aws analyze sql --path <arquivo> --out .sparkforge/facts_sql.json",
+            f"    sparkforge-aws analyze sql --path <arquivo> --out .sparkforge_aws/facts_sql.json",
             exit_code=2,
         )
     return extract_sql_path(target, repo_root=target.parent)
@@ -2142,7 +2142,7 @@ def _extract_athena_workgroup_facts(path: str) -> list[Fact]:
             f"  Aponte para o diretorio com dumps de workgroups do Athena ou para um "
             f"arquivo .json:\n"
             f"    sparkforge-aws analyze athena-workgroup --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_athena.json",
+            f"--out .sparkforge_aws/facts_athena.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2174,7 +2174,7 @@ def _extract_emr_cluster_facts(path: str) -> list[Fact]:
             f"  Aponte para o diretorio com dumps de cluster EMR ou para um arquivo .json:\n"
             f"    sparkforge-aws collect emr-cluster --repo . --cluster-id j-XXXX --now <iso>\n"
             f"    sparkforge-aws analyze emr-cluster --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_emr.json",
+            f"--out .sparkforge_aws/facts_emr.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2220,7 +2220,7 @@ def _extract_emr_serverless_facts(path: str) -> list[Fact]:
             f"    sparkforge-aws collect emr-serverless --repo . --application-id 00fXXXX "
             f"--now <iso>\n"
             f"    sparkforge-aws analyze emr-serverless --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_emr_serverless.json",
+            f"--out .sparkforge_aws/facts_emr_serverless.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2270,7 +2270,7 @@ def _extract_emr_eks_facts(path: str) -> list[Fact]:
             f"    sparkforge-aws collect emr-eks --repo . --virtual-cluster-id 0abcXXXX "
             f"--job-run-id 0runXXXX --now <iso>\n"
             f"    sparkforge-aws analyze emr-eks --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_emr_eks.json",
+            f"--out .sparkforge_aws/facts_emr_eks.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2301,7 +2301,7 @@ def _extract_data_quality_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o diretorio do codigo PySpark ou para um arquivo .py:\n"
             f"    sparkforge-aws analyze data-quality --path src/ "
-            f"--out .sparkforge/facts_dq.json",
+            f"--out .sparkforge_aws/facts_dq.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2332,7 +2332,7 @@ def _extract_dq_ai_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um manifesto de recomendacao Glue DQ ADVANCED\n"
             f"    sparkforge-aws analyze dq-ai --path recommendation.json "
-            f"--out .sparkforge/facts_dq_ai.json",
+            f"--out .sparkforge_aws/facts_dq_ai.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2363,7 +2363,7 @@ def _extract_graph_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o diretorio do codigo PySpark ou para um arquivo .py:\n"
             f"    sparkforge-aws analyze graph --path src/ "
-            f"--out .sparkforge/facts_graph.json",
+            f"--out .sparkforge_aws/facts_graph.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2504,7 +2504,7 @@ def _extract_s3_listing_facts(path: str) -> list[Fact]:
             f"  Aponte para o diretorio com paginas de listagem ou para um arquivo .json:\n"
             f"    aws s3api list-objects-v2 --bucket <b> --prefix <p> > listing.json\n"
             f"    sparkforge-aws analyze s3-listing --path listing.json "
-            f"--out .sparkforge/facts_s3.json",
+            f"--out .sparkforge_aws/facts_s3.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2534,8 +2534,8 @@ def _extract_consumers_facts(path: str) -> list[Fact]:
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o inventario declarado de consumidores:\n"
-            f"    sparkforge-aws analyze consumers --path .sparkforge/consumers.yaml "
-            f"--out .sparkforge/facts_consumers.json",
+            f"    sparkforge-aws analyze consumers --path .sparkforge_aws/consumers.yaml "
+            f"--out .sparkforge_aws/facts_consumers.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -2569,7 +2569,7 @@ def _extract_workload_facts(path: str) -> list[Fact]:
             f"Arquivo nao encontrado para analise: {path}\n"
             f"  Aponte para o inventario declarado de workload (SLA e fonte primaria):\n"
             f"    sparkforge-aws analyze workload --path workload.yaml "
-            f"--out .sparkforge/facts_workload.json",
+            f"--out .sparkforge_aws/facts_workload.json",
             exit_code=2,
         )
     return extract_workload_path(target, repo_root=target.parent)
@@ -2909,7 +2909,7 @@ def iceberg_assess_upgrade(path: str, source: int, target: int) -> dict[str, Any
         raise AdapterError(
             f"Caminho nao encontrado: {alvo}\n"
             "  Aponte para o diretorio do job, com o inventario em "
-            "`.sparkforge/consumers.yaml`:\n"
+            "`.sparkforge_aws/consumers.yaml`:\n"
             "    sparkforge-aws iceberg assess-upgrade ./meu-job --from 2 --to 3",
             exit_code=2,
         )
@@ -3196,7 +3196,7 @@ def _extract_controlm_jobs_facts(path: str, version: str | None) -> list[Fact]:
             f"  Aponte para o diretorio com definicoes `Jobs-as-Code` ou para um "
             f"arquivo .json:\n"
             f"    sparkforge-aws analyze controlm-jobs --path jobs/ --version 9.0.21.300 "
-            f"--out .sparkforge/facts_controlm.json",
+            f"--out .sparkforge_aws/facts_controlm.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -3234,7 +3234,7 @@ def _extract_step_functions_facts(path: str) -> list[Fact]:
             f"  Aponte para o .asl.json da state machine, para a saida salva de\n"
             f"  `aws stepfunctions describe-state-machine`, ou para o diretorio com eles:\n"
             f"    sparkforge-aws analyze step-functions --path statemachines/ "
-            f"--out .sparkforge/facts_sfn.json",
+            f"--out .sparkforge_aws/facts_sfn.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -3274,7 +3274,7 @@ def _extract_sfn_history_facts(path: str) -> list[Fact]:
             f"  Aponte para o JSON salvo de `aws stepfunctions get-execution-history`,\n"
             f"  ou para o diretorio com eles:\n"
             f"    sparkforge-aws analyze sfn-history --path historicos/ "
-            f"--out .sparkforge/facts_sfn_history.json",
+            f"--out .sparkforge_aws/facts_sfn_history.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -3310,7 +3310,7 @@ def _extract_airflow_dag_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o arquivo .py do DAG ou para a pasta de DAGs:\n"
             f"    sparkforge-aws analyze airflow-dag --path dags/ "
-            f"--out .sparkforge/facts_airflow.json",
+            f"--out .sparkforge_aws/facts_airflow.json",
             exit_code=2,
         )
     if target.is_dir():
@@ -3694,7 +3694,7 @@ def funcval_plan(
     `out_path` e OBRIGATORIO, ao contrario do `--out` opcional dos verbos de
     `analyze`: la o arquivo e conveniencia, aqui ele e a entrada do proximo
     verbo e a evidencia do gate. Plano que so passa pelo stdout nao e artefato,
-    e a Task 1 recusou `.sparkforge/keys.yaml` justamente porque este arquivo ja
+    e a Task 1 recusou `.sparkforge_aws/keys.yaml` justamente porque este arquivo ja
     da ao declarado um registro auditavel.
     """
     if not facts_paths:
@@ -3711,7 +3711,7 @@ def funcval_plan(
         out_path,
         derived,
         "--out",
-        "sparkforge-aws funcval plan --facts <facts.json> --out .sparkforge/plan.json",
+        "sparkforge-aws funcval plan --facts <facts.json> --out .sparkforge_aws/plan.json",
     )
     return _facts_page(derived, "funcval.unresolved", kind, limit, cursor, detail_level)
 
@@ -3887,7 +3887,7 @@ def funcval_compare(
             facts,
             "--out",
             "sparkforge-aws funcval compare --plan <plano.json> --before <antes.json> "
-            "--after <depois.json> --out .sparkforge/funcval.json",
+            "--after <depois.json> --out .sparkforge_aws/funcval.json",
         )
     return _facts_page(facts, "funcval.unresolved", kind, limit, cursor, detail_level)
 
@@ -4163,7 +4163,7 @@ def debate_referee(repo: str) -> dict[str, Any]:
         raise AdapterError(
             f"nao foi possivel ler o blackboard em {repo}: {exc}\n"
             f"  Rode `sparkforge-aws arbitrate` antes -- e ele que escreve claims, "
-            f"objecoes e replicas em `.sparkforge/blackboard/`.",
+            f"objecoes e replicas em `.sparkforge_aws/blackboard/`.",
             exit_code=2,
         ) from exc
 
@@ -4426,8 +4426,21 @@ def gain(
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
-_SCAN_DIR = Path(".sparkforge") / "scan"
+_SCAN_DIR = Path(".sparkforge_aws") / "scan"
 _SCAN_FORMATOS = ("json", "sarif")
+
+
+def _scan_dir(raiz: Path) -> Path:
+    """Onde o scan gravado mora: `.sparkforge_aws/scan/` num repo novo, ou o
+    `.sparkforge/scan/` legado quando ele ja existe -- um diretorio de scan por
+    arvore, nunca dois irmaos divididos."""
+    return store.state_path(raiz, _SCAN_DIR)
+
+
+def _scan_rel(raiz: Path, nome: str) -> str:
+    """O caminho repo-relativo gravado no payload, com o nome do diretorio de
+    estado que a resolucao escolheu (`.sparkforge_aws` ou `.sparkforge`)."""
+    return (Path(_scan_dir(raiz).parent.name) / _SCAN_DIR.name / nome).as_posix()
 
 
 def _scan_extrair(entrada: Any, raiz: Path) -> list[dict[str, Any]]:
@@ -4467,9 +4480,10 @@ def _scan_extrair(entrada: Any, raiz: Path) -> list[dict[str, Any]]:
 
 
 def _scan_gravar(raiz: Path, arquivos: dict[str, Any]) -> list[str]:
-    """Grava com NOME FIXO sob `<raiz>/.sparkforge/scan/`; o que sobrou de um
-    scan anterior sai antes, para `facts_<analyze>.json` velho nao ficar."""
-    destino = raiz / _SCAN_DIR
+    """Grava com NOME FIXO sob o diretorio de scan que `_scan_dir` resolve;
+    o que sobrou de um scan anterior sai antes, para `facts_<analyze>.json`
+    velho nao ficar."""
+    destino = _scan_dir(raiz)
     destino.mkdir(parents=True, exist_ok=True)
     for velho in destino.iterdir():
         if velho.is_file() and velho.suffix == ".json":
@@ -4480,7 +4494,7 @@ def _scan_gravar(raiz: Path, arquivos: dict[str, Any]) -> list[str]:
             encoding="utf-8",
             newline="\n",
         )
-    return [(_SCAN_DIR / nome).as_posix() for nome in arquivos]
+    return [_scan_rel(raiz, nome) for nome in arquivos]
 
 
 def scan(
@@ -4579,14 +4593,14 @@ def scan(
     arquivos["facts.json"] = julgados
     arquivos["findings.json"] = findings
     saidas = _scan_gravar(raiz, arquivos)
-    saidas.append((_SCAN_DIR / "summary.json").as_posix())
+    saidas.append(_scan_rel(raiz, "summary.json"))
     resultado = resumo(
         plano, por_analyze, falhas, len(uniao), len(fundidos), findings, runtime, saidas, fail_on
     )
     if output_format == "sarif":
         payload = report_github(
-            str(raiz / _SCAN_DIR / "findings.json"),
-            str(raiz / _SCAN_DIR / "facts.json"),
+            str(_scan_dir(raiz) / "findings.json"),
+            str(_scan_dir(raiz) / "facts.json"),
             repo=str(raiz),
             fail_on=fail_on,
         )
@@ -4596,7 +4610,7 @@ def scan(
             "counts": payload["counts"],
             "gate": payload["gate"],
         }
-    (raiz / _SCAN_DIR / "summary.json").write_text(
+    (_scan_dir(raiz) / "summary.json").write_text(
         json.dumps(resultado, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
         encoding="utf-8",
         newline="\n",
@@ -4724,7 +4738,7 @@ def _policy_carregada(repo: str) -> tuple[Path, Any]:
 
 
 def policy_check(repo: str = ".") -> dict[str, Any]:
-    """A policy de `.sparkforge/policy.yaml`, validada, ou `active: false`."""
+    """A policy de `.sparkforge_aws/policy.yaml`, validada, ou `active: false`."""
     from dataclasses import asdict
 
     from sparkforge_aws.policy.load import POLICY_RELATIVE
@@ -4781,7 +4795,7 @@ def policy_explain(
             "subject_kind": tipo,
             "decision": "allow",
             "rule": None,
-            "reason": "sem .sparkforge/policy.yaml",
+            "reason": "sem .sparkforge_aws/policy.yaml",
             "subject": None,
             "enforced_by": None,
         }
@@ -4816,7 +4830,7 @@ def policy_sync_settings(repo: str = ".", check: bool = False) -> dict[str, Any]
     raiz, politica = _policy_carregada(repo)
     if politica is None:
         raise AdapterError(
-            "sem .sparkforge/policy.yaml: nada a gerar.\n"
+            "sem .sparkforge_aws/policy.yaml: nada a gerar.\n"
             "  Crie a policy e confira com:\n    sparkforge-aws policy check",
             exit_code=2,
         )
@@ -4905,7 +4919,7 @@ def change_plan(
 def _sandbox_varrer(raiz: Path) -> dict[str, Any]:
     """Um lado do sandbox: o `scan` inteiro sobre a copia, e os findings que ele gravou."""
     resumo = scan(str(raiz))
-    achados = json.loads((raiz / _SCAN_DIR / "findings.json").read_text(encoding="utf-8"))
+    achados = json.loads((_scan_dir(raiz) / "findings.json").read_text(encoding="utf-8"))
     return {"findings": achados, "refused": list(resumo.get("refused") or [])}
 
 
@@ -4914,7 +4928,7 @@ def change_sandbox(
 ) -> dict[str, Any]:
     """L2 do §15: o diff numa copia isolada, e o que ele move nos achados.
 
-    `before/` e `after/` sob `.sparkforge/sandbox/<id>/`, o `scan` em cada uma e
+    `before/` e `after/` sob `.sparkforge_aws/sandbox/<id>/`, o `scan` em cada uma e
     a comparacao pela chave estavel da politica de prova. Recusa de diff sai no
     payload (`refused`), sem nada gravado; erro de ENTRADA (repo ou arquivo que
     nao existe) e `AdapterError`.
@@ -5016,10 +5030,10 @@ def _recibo_do_after(depois: Path, now: str) -> dict[str, Any] | None:
     """
     from sparkforge_aws.receipt import build
 
-    achados = depois / _SCAN_DIR / "findings.json"
+    achados = _scan_dir(depois) / "findings.json"
     if not achados.is_file() or not _load_findings_file(str(achados)):
         return None
-    arquivos = sorted((depois / _SCAN_DIR).glob("facts*.json"))
+    arquivos = sorted(_scan_dir(depois).glob("facts*.json"))
     return build(
         depois,
         now=now,
@@ -5031,7 +5045,7 @@ def _recibo_do_after(depois: Path, now: str) -> dict[str, Any] | None:
         facts=[f.to_dict() for f in _merge_facts_files([str(a) for a in arquivos])]
         if arquivos
         else [],
-        findings_path=(_SCAN_DIR / "findings.json").as_posix(),
+        findings_path=_scan_rel(depois, "findings.json"),
         findings_parts=_signature_parts(str(achados)),
         report=None,
         run_id=None,
@@ -5046,7 +5060,7 @@ def change_propose(
     funcval_path: str | None = None,
     now: str | None = None,
 ) -> dict[str, Any]:
-    """L3 do §15: o pacote de um PR em `.sparkforge/proposal/<id>/`, sem rodar git.
+    """L3 do §15: o pacote de um PR em `.sparkforge_aws/proposal/<id>/`, sem rodar git.
 
     Parte do sandbox ja rodado: o que se propoe e o que passou pelo scan antes e
     depois. Recusa sai no payload (`refused`), sem nada gravado; erro de ENTRADA
@@ -5565,7 +5579,7 @@ def _budget_declarado(repo: str) -> dict[str, Any] | None:
     """O bloco `budget:` do `case.yaml`, ou `None` -- nunca o default do codigo.
 
     Case ausente ou ilegivel devolve `None`, e nao levanta: o produto deste
-    verbo e a arbitragem, e o blackboard vive em `<repo>/.sparkforge/` mesmo
+    verbo e a arbitragem, e o blackboard vive em `<repo>/.sparkforge_aws/` mesmo
     onde nunca houve `case.yaml`. Sem bloco declarado o plano de debate sai com
     `budget.status: unresolved` nomeando a lacuna, que e a saida certa -- o
     default do codigo e template, nao medida (`budget show --template`).
@@ -5719,7 +5733,7 @@ def debate_start(
     databricks: str | None = None,
     photon: str | None = None,
 ) -> dict[str, Any]:
-    """Congela o plano de debate do par `rules` em `<repo>/.sparkforge/debate/`.
+    """Congela o plano de debate do par `rules` em `<repo>/.sparkforge_aws/debate/`.
 
     Recebe os MESMOS insumos do `arbitrate` -- findings, a UNIAO dos facts e o
     runtime com a mesma precedencia (facts antes das flags) -- e recalcula os
@@ -6546,7 +6560,7 @@ def _render_signature_block(signature: str, parts: dict[str, Any]) -> str:
     )
 
 
-_REPORT_GITHUB_DIR = (".sparkforge", "report")
+_REPORT_GITHUB_DIR = (".sparkforge_aws", "report")
 REPORT_GITHUB_SARIF = "sparkforge-aws.sarif"
 REPORT_GITHUB_SUMMARY = "summary.md"
 _FAIL_ON_VALIDOS = ("P0", "P1")
@@ -6669,14 +6683,15 @@ def report_github_textos(payload: dict[str, Any]) -> dict[str, str]:
 
 
 def report_github_write(repo: str, payload: dict[str, Any]) -> dict[str, str]:
-    """Grava o SARIF e o resumo com NOME FIXO sob `<repo>/.sparkforge/report/`.
+    """Grava o SARIF e o resumo com NOME FIXO sob `<repo>/.sparkforge_aws/report/`.
 
     Nada do argv vira caminho de escrita: o diretorio e fixo e o `repo` ja foi
     validado por `report_github`. A escrita e em temporario com `replace`, para
     que uma falha no meio nao deixe metade de um SARIF que o `upload-sarif`
     subiria.
     """
-    destino = Path(repo).resolve().joinpath(*_REPORT_GITHUB_DIR)
+    raiz = Path(repo).resolve()
+    destino = store.state_path(raiz, Path(*_REPORT_GITHUB_DIR))
     destino.mkdir(parents=True, exist_ok=True)
     gravados: dict[str, str] = {}
     for nome, texto in report_github_textos(payload).items():
@@ -6684,11 +6699,11 @@ def report_github_write(repo: str, payload: dict[str, Any]) -> dict[str, str]:
         temporario = destino / f".{nome}.tmp"
         temporario.write_text(texto, encoding="utf-8", newline="\n")
         temporario.replace(final)
-        gravados[nome] = "/".join((*_REPORT_GITHUB_DIR, nome))
+        gravados[nome] = (destino / nome).relative_to(raiz).as_posix()
     return gravados
 
 
-_TELEMETRY_DIR = (".sparkforge", "telemetry")
+_TELEMETRY_DIR = (".sparkforge_aws", "telemetry")
 _RUN_ID_VALIDO = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,63}$")
 _PROVIDER_VALIDO = re.compile(r"^[a-z0-9_.]{1,64}$")
 
@@ -6746,7 +6761,7 @@ def telemetry_payload(
         raise AdapterError(
             f"run {run_id!r} sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo "
             "que chamou as tools e rode, no diretorio onde ele gravou "
-            ".sparkforge/traces.db: sparkforge-aws telemetry export --run-id <run_id>",
+            ".sparkforge_aws/traces.db: sparkforge-aws telemetry export --run-id <run_id>",
             exit_code=2,
         )
     host = None
@@ -6786,7 +6801,7 @@ def telemetry_export_textos(payload: dict[str, Any]) -> dict[str, str]:
 
 
 def telemetry_export_write(repo: str, payload: dict[str, Any]) -> dict[str, str]:
-    """Grava os dois arquivos com NOME FIXO sob `<repo>/.sparkforge/telemetry/`.
+    """Grava os dois arquivos com NOME FIXO sob `<repo>/.sparkforge_aws/telemetry/`.
 
     O nome vem do `run_id` que `telemetry_export` ja validou, e o destino e
     conferido dentro de `--repo` antes de gravar. O arquivo de metricas existe
@@ -6797,7 +6812,7 @@ def telemetry_export_write(repo: str, payload: dict[str, Any]) -> dict[str, str]
     if not raiz.is_dir():
         raise AdapterError(f"--repo {repo!r}: diretorio nao encontrado.", exit_code=2)
     raiz = raiz.resolve()
-    destino = raiz.joinpath(*_TELEMETRY_DIR)
+    destino = store.state_path(raiz, Path(*_TELEMETRY_DIR))
     gravados: dict[str, str] = {}
     for nome, texto in telemetry_export_textos(payload).items():
         final = (destino / nome).resolve()
@@ -6807,7 +6822,7 @@ def telemetry_export_write(repo: str, payload: dict[str, Any]) -> dict[str, str]
         temporario = destino / f".{nome}.tmp"
         temporario.write_text(texto, encoding="utf-8", newline="\n")
         temporario.replace(final)
-        gravados[nome] = "/".join((*_TELEMETRY_DIR, nome))
+        gravados[nome] = (destino / nome).relative_to(raiz).as_posix()
     return gravados
 
 
@@ -6815,7 +6830,7 @@ def telemetry_export_write(repo: str, payload: dict[str, Any]) -> dict[str, str]
 # receipt -- o recibo content-addressed de uma execucao do case (§14)
 # --------------------------------------------------------------------------- #
 
-_RECEIPTS_DIR = (".sparkforge", "receipts")
+_RECEIPTS_DIR = (".sparkforge_aws", "receipts")
 _RECEIPT_ID_VALIDO = re.compile(r"^rcpt_[0-9a-f]{64}$")
 _RECEIPT_PARTS = ("case", "evidence", "judgment", "decision", "proof", "tools", "host")
 _RECEIPT_EMIT_HINT = (
@@ -6823,7 +6838,7 @@ _RECEIPT_EMIT_HINT = (
     "--findings <findings.json> --now <ISO-8601> --repo ."
 )
 _RECEIPT_VERIFY_HINT = (
-    "sparkforge-aws receipt verify --receipt .sparkforge/receipts/<receipt_id>.json --repo ."
+    "sparkforge-aws receipt verify --receipt .sparkforge_aws/receipts/<receipt_id>.json --repo ."
 )
 
 
@@ -6975,7 +6990,7 @@ def receipt_emit(
 
 
 def receipt_write(repo: str, doc: dict[str, Any]) -> str:
-    """Grava `.sparkforge/receipts/<receipt_id>.json` (temporario + `replace`).
+    """Grava `.sparkforge_aws/receipts/<receipt_id>.json` (temporario + `replace`).
 
     O nome sai do `receipt_id`, validado antes de virar caminho, e o destino e
     conferido dentro de `--repo`. O texto tem `sort_keys` e LF, entao a mesma
@@ -6985,7 +7000,7 @@ def receipt_write(repo: str, doc: dict[str, Any]) -> str:
     receipt_id = str(doc.get("receipt_id") or "")
     if not _RECEIPT_ID_VALIDO.fullmatch(receipt_id):
         raise AdapterError(f"receipt_id invalido: {receipt_id!r}", exit_code=2)
-    destino = raiz.joinpath(*_RECEIPTS_DIR)
+    destino = store.state_path(raiz, Path(*_RECEIPTS_DIR))
     nome = f"{receipt_id}.json"
     final = (destino / nome).resolve()
     if not final.is_relative_to(raiz):
@@ -6998,7 +7013,7 @@ def receipt_write(repo: str, doc: dict[str, Any]) -> str:
         newline="\n",
     )
     temporario.replace(final)
-    return "/".join((*_RECEIPTS_DIR, nome))
+    return (destino / nome).relative_to(raiz).as_posix()
 
 
 def receipt_emit_and_write(repo: str, **kwargs: Any) -> dict[str, Any]:
@@ -7650,7 +7665,7 @@ def handoff(
 ) -> dict[str, Any]:
     payload = resume_case(repo, findings, unresolved, in_flight, root=root)
     markdown = render_handoff(payload)
-    path = Path(repo) / ".sparkforge" / "handoff.md"
+    path = store.state_dir(Path(repo)) / "handoff.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(markdown, encoding="utf-8")
     result = dict(payload)
@@ -8337,7 +8352,7 @@ def _code_banco(raiz: Path, db: str | None) -> Path:
     aqui: o dia em que ele mudar, dois lugares diriam coisas diferentes e o
     operador procuraria o arquivo errado.
     """
-    return Path(db) if db else raiz / _codeintel_db.BANCO_PADRAO
+    return Path(db) if db else _codeintel_db.banco_para(raiz)
 
 
 def _code_erro_de_frescor(exc: _codeintel_staleness.NegadoPorFrescor) -> CodeIndexError:
@@ -8616,7 +8631,14 @@ def _code_gitignorado(raiz: Path) -> bool:
         texto = arquivo.read_text(encoding="utf-8", errors="replace")
     except OSError:  # pragma: no cover -- .gitignore ilegivel
         return False
-    alvos = (".sparkforge/local", ".sparkforge/local/", ".sparkforge/")
+    alvos = (
+        ".sparkforge_aws/local",
+        ".sparkforge_aws/local/",
+        ".sparkforge_aws/",
+        ".sparkforge/local",
+        ".sparkforge/local/",
+        ".sparkforge/",
+    )
     return any(linha.strip() in alvos for linha in texto.splitlines())
 
 
@@ -8722,7 +8744,7 @@ def code_init(repo: str, *, db: str | None = None) -> dict[str, Any]:
 def code_sync(repo: str, *, db: str | None = None) -> dict[str, Any]:
     """SPEC 65. A UNICA tool de mutacao do Code Intelligence.
 
-    Escreve somente em `.sparkforge/local/codeintel/**`. Nunca toca o fonte do
+    Escreve somente em `.sparkforge_aws/local/codeintel/**`. Nunca toca o fonte do
     repositorio analisado -- a indexacao le, e o que ela escreve e banco.
 
     `reresolvidos` sai na resposta porque e o custo escondido do incremental:
@@ -9462,7 +9484,7 @@ def code_doctor(repo: str, *, db: str | None = None) -> dict[str, Any]:
         os.access(banco.parent if banco.parent.exists() else raiz, os.W_OK),
         (banco.parent if banco.parent.exists() else raiz).as_posix(),
     )
-    anotar("gitignore", _code_gitignorado(raiz), ".sparkforge/local sob .gitignore")
+    anotar("gitignore", _code_gitignorado(raiz), ".sparkforge_aws/local sob .gitignore")
 
     violacoes = _codeintel_security.imports_proibidos()
     anotar(
@@ -9502,7 +9524,7 @@ def code_doctor(repo: str, *, db: str | None = None) -> dict[str, Any]:
 
 
 def code_purge(repo: str, *, db: str | None = None) -> dict[str, Any]:
-    """SPEC 76. Apaga SOMENTE `.sparkforge/local/codeintel/`.
+    """SPEC 76. Apaga SOMENTE `.sparkforge_aws/local/codeintel/`.
 
     O alvo e resolvido e comparado com o esperado ANTES de qualquer remocao, e
     qualquer outro diretorio e recusado. Sem essa porta, um `--db` apontando
@@ -9512,7 +9534,7 @@ def code_purge(repo: str, *, db: str | None = None) -> dict[str, Any]:
     raiz = _code_raiz(repo)
     banco = _code_banco(raiz, db)
     alvo = banco.parent.resolve()
-    esperado = (raiz / _codeintel_db.BANCO_PADRAO).parent.resolve()
+    esperado = _codeintel_db.banco_para(raiz).parent.resolve()
     if alvo != esperado:
         raise AdapterError(
             f"purge recusado: {alvo.as_posix()} nao e o diretorio de codeintel "
@@ -9563,7 +9585,7 @@ def context_gateway_start(
         )
         response = ContextGateway(
             catalog,
-            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge" / "cache"),
+            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge_aws" / "cache"),
             authorized_root=Path(repo).resolve(),
         ).start(request)
     except (TypeError, ValueError, OSError) as exc:
@@ -9581,7 +9603,7 @@ def context_gateway_expand(
     try:
         return ContextGateway(
             catalog,
-            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge" / "cache"),
+            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge_aws" / "cache"),
             authorized_root=Path(repo).resolve(),
         ).expand(
             uri,
@@ -9619,16 +9641,22 @@ def context_inspect(
     }
 
 
+def _traces_db_path(repo: str, db_path: str | None) -> Path:
+    return (
+        Path(db_path)
+        if db_path
+        else store.state_path(Path(repo).resolve(), "traces.db")
+    )
+
+
 def agentops_inspect(repo: str = ".", *, run_id: str, db_path: str | None = None) -> dict[str, Any]:
-    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
-    return _agentops_inspect_run(path, run_id)
+    return _agentops_inspect_run(_traces_db_path(repo, db_path), run_id)
 
 
 def agentops_compare(
     repo: str = ".", *, run_a: str, run_b: str, db_path: str | None = None
 ) -> dict[str, Any]:
-    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
-    return _agentops_compare_runs(path, run_a, run_b)
+    return _agentops_compare_runs(_traces_db_path(repo, db_path), run_a, run_b)
 
 
 def agentops_timeline(
@@ -9636,8 +9664,7 @@ def agentops_timeline(
 ) -> dict[str, Any]:
     from sparkforge_aws.observability.agentops import run_timeline
 
-    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
-    return run_timeline(path, run_id)
+    return run_timeline(_traces_db_path(repo, db_path), run_id)
 
 
 def agentops_critical_path(
@@ -9645,14 +9672,13 @@ def agentops_critical_path(
 ) -> dict[str, Any]:
     from sparkforge_aws.observability.agentops import critical_path
 
-    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
-    return critical_path(path, run_id)
+    return critical_path(_traces_db_path(repo, db_path), run_id)
 
 
 def agentops_baseline(
     repo: str = ".", *, action: str, run_id: str, baseline_path: str, db_path: str | None = None
 ) -> dict[str, Any]:
-    path = Path(db_path) if db_path else Path(repo).resolve() / ".sparkforge" / "traces.db"
+    path = _traces_db_path(repo, db_path)
     if action == "save":
         return _agentops_save_baseline(path, run_id, Path(baseline_path))
     if action == "compare":
@@ -9664,15 +9690,15 @@ def agentic_doctor(repo: str = ".") -> dict[str, Any]:
     """Readiness checks for the local agentic plane; no network or provider call."""
     root = Path(repo).resolve()
     checks = {
-        "memory": (root / ".sparkforge" / "memory").is_dir(),
-        "traces": (root / ".sparkforge" / "traces.db").exists(),
+        "memory": (store.state_dir(root) / "memory").is_dir(),
+        "traces": store.state_path(root, "traces.db").exists(),
         "context_profiles": (root / "sparkforge_aws/context/gateway_profiles.yaml").exists(),
         "protocols": (root / "sparkforge_aws" / "protocols" / "forge.py").exists(),
         "offline_core": True,
         # Scorecards de modelo sao em-memoria hoje (AdaptiveModelRouter os
         # recebe por construcao); sem fonte persistida o eixo de maturidade
         # fica unresolved em vez de fingir leitura.
-        "scorecard_maturity": (root / ".sparkforge" / "model-scorecards.json").exists(),
+        "scorecard_maturity": store.state_path(root, "model-scorecards.json").exists(),
     }
     return {
         "status": "ok" if all(checks.values()) else "unresolved",

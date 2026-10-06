@@ -1,7 +1,7 @@
 """Golden do hook `PreToolUse` da policy (§16), por subprocess.
 
 Cada caso de `fixtures/policy/` e uma raiz (`CLAUDE_PROJECT_DIR`) com
-`.sparkforge/policy.yaml` (ou sem ela), o `input.json` que o Claude Code manda
+`.sparkforge_aws/policy.yaml` (ou sem ela), o `input.json` que o Claude Code manda
 no stdin e o `expected.json` com o codigo de saida e o que o stderr diz.
 """
 from __future__ import annotations
@@ -21,7 +21,14 @@ CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "input.json").is_file(
 
 
 def _rodar(caso: str) -> tuple[subprocess.CompletedProcess, float]:
-    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(FIXTURES / caso)}
+    # PYTHONPATH=ROOT: o hook importa a arvore sob teste, nao o pacote que por
+    # acaso estiver instalado no ambiente (um install velho com `.sparkforge/`
+    # leria a fixture errada e aprovaria em silencio).
+    env = {
+        **os.environ,
+        "CLAUDE_PROJECT_DIR": str(FIXTURES / caso),
+        "PYTHONPATH": str(ROOT),
+    }
     inicio = time.perf_counter()
     proc = subprocess.run(
         [sys.executable, "-m", "sparkforge_aws.policy.hook"],

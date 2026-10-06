@@ -59,7 +59,7 @@ você quer um registro auditável das decisões do case.
 ## Pré-requisitos
 
 - Facts e findings de um `judge` (veja [Investigação com case](investigacao-com-case.md)).
-- Uma pasta de case. `arbitrate` grava em `<repo>/.sparkforge/blackboard/`.
+- Uma pasta de case. `arbitrate` grava em `<repo>/.sparkforge_aws/blackboard/`.
 - Para o debate: um case aberto **com** o bloco `budget:` declarado (passo 4).
 
 ## Passo a passo, com saída real
@@ -161,7 +161,7 @@ Trecho real do par deste manual:
 ### 3. Ler o blackboard
 
 O **blackboard** é o registro do case, em arquivos `.jsonl` dentro de
-`.sparkforge/blackboard/`.
+`.sparkforge_aws/blackboard/`.
 
 ```bash
 sparkforge-aws blackboard summary --repo "$DEMO"
@@ -210,7 +210,7 @@ sparkforge-aws budget show --repo "$DEMO"
 `"kind": "template"`. Eles **não** são o budget do case.
 
 Declare o teto com o dono da investigação e acrescente ao fim do
-`.sparkforge/case.yaml`:
+`.sparkforge_aws/case.yaml`:
 
 ```yaml
 budget:
@@ -237,7 +237,7 @@ Com o bloco:
 
 ```json
 {"status": "started", "debate_id": "dbt_ea104601", "created": true,
- "rules": ["SF-GRAPH-005", "SF-LF-001"], "max_rounds": 3, "state_dir": ".sparkforge/debate/dbt_ea104601"}
+ "rules": ["SF-GRAPH-005", "SF-LF-001"], "max_rounds": 3, "state_dir": ".sparkforge_aws/debate/dbt_ea104601"}
 ```
 
 O lado A defende a primeira regra, o lado B a segunda. `next` diz de quem é a vez e

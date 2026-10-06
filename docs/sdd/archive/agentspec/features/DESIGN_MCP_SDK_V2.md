@@ -160,7 +160,7 @@ O `snapshot` roda a amostra **duas vezes** e recusa gravar se as duas divergirem
 | nome desconhecido | `sparkforge_nao_existe` (`KeyError` → `str(e)`) |
 | output fora do schema | **não** entra no golden, porque nenhuma tool real viola o próprio schema; fica coberto em `test_adapters_mcp_envelope.py` com schema sintético |
 
-As chamadas rodam com `cwd` num diretório temporário com cópia das fixtures, para que o `shared_ledger()` e o `.sparkforge/` não escrevam na árvore.
+As chamadas rodam com `cwd` num diretório temporário com cópia das fixtures, para que o `shared_ledger()` e o `.sparkforge_aws/` não escrevam na árvore.
 
 **Rationale:** um golden instável é pior do que nenhum, porque ensina a ignorar o diff.
 

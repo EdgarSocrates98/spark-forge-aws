@@ -14,7 +14,7 @@ Le um trecho do repositorio analisado, por `node_id` ou por `file` + `start_line
 |---|---|---|---|
 | `repo` | string | sim | Raiz do repositorio analisado. Nada e lido fora dela. |
 | `context_lines` | integer | não | Linhas de folga em volta do simbolo, na forma por `node_id`. |
-| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`. |
+| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`. |
 | `end_line` | integer | não |  |
 | `file` | string | não | Caminho RELATIVO a raiz. Absoluto e `..` sao recusados. |
 | `max_tokens` | integer | não |  |

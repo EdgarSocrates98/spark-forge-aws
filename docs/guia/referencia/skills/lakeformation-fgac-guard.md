@@ -123,7 +123,7 @@ Severidade, escopo de versão e o texto completo: `sparkforge-aws rules lookup -
 
 ```
 sparkforge-aws collect lakeformation --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela>
-sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
+sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lakeformation/
 ```
 
 Três chamadas, e cada uma responde uma pergunta que nenhum artefato do job responde:
@@ -148,7 +148,7 @@ As tools MCP de mesmo nome são `sparkforge_collect_lakeformation` e `sparkforge
 
 ```
 sparkforge-aws collect iam-access --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey
-sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/
+sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/
 ```
 
 Tools MCP: `sparkforge_collect_iam_access` e `sparkforge_analyze_iam_access`.
@@ -172,7 +172,7 @@ Colapsar as quatro num booleano faz *"adicione a permissão"* virar o conselho �
 
 ```
 sparkforge-aws collect glue-resource-link --database <banco-na-conta-consumidora> --table <link>     --catalog-id <conta-consumidora>
-sparkforge-aws analyze glue-resource-link --path .sparkforge/artifacts/glue_resource_link/
+sparkforge-aws analyze glue-resource-link --path .sparkforge_aws/artifacts/glue_resource_link/
 ```
 
 Tools MCP: `sparkforge_collect_glue_resource_link` e `sparkforge_analyze_glue_resource_link`.

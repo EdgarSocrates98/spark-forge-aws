@@ -29,7 +29,7 @@ Seguir imports manualmente até achar a função que executa trabalho Spark é v
 ### 1. Extraia os facts
 
 ```bash
-sparkforge-aws analyze pyspark --path <diretório-da-lib> --out .sparkforge/facts.json
+sparkforge-aws analyze pyspark --path <diretório-da-lib> --out .sparkforge_aws/facts.json
 ```
 
 Isso produz, entre outros, `pyspark.callgraph_edge` (aresta caller→callee) e os facts de trabalho Spark (`pyspark.read`, `.action`, `.write`, `.cache`, `.join`, ...) ancorados na função onde ocorrem.
@@ -37,7 +37,7 @@ Isso produz, entre outros, `pyspark.callgraph_edge` (aresta caller→callee) e o
 ### 2. Derive o grafo
 
 ```bash
-sparkforge-aws analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/callgraph.json
+sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json --out .sparkforge_aws/callgraph.json
 ```
 
 Isso deriva estrutura a partir dos facts já extraídos — não reparseia nada. Produz quatro kinds: `callgraph.function`, `callgraph.reachable_spark_work`, `callgraph.cycle`, `callgraph.summary`.

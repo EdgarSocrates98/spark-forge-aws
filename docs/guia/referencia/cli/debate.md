@@ -10,7 +10,7 @@ Conduz e arbitra o protocolo de debate do case. Nao gera argumento: quem escreve
 |---|---|
 | [`sparkforge-aws debate next`](#sparkforge-aws-debate-next) | O brief do lado da vez, ou `done` com a Decision. Grava a Decision no fechamento; depois dele devolve sempre o mesmo `done`. |
 | [`sparkforge-aws debate referee`](#sparkforge-aws-debate-referee) | Diz se o fechamento declarado pode ser publicado: hipotese que sobrevive, claim sem evidencia, objecao sem replica, referencia pendurada. |
-| [`sparkforge-aws debate start`](#sparkforge-aws-debate-start) | Congela o plano de debate do par --rules A,B em <repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml. |
+| [`sparkforge-aws debate start`](#sparkforge-aws-debate-start) | Congela o plano de debate do par --rules A,B em <repo>/.sparkforge_aws/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml. |
 | [`sparkforge-aws debate submit`](#sparkforge-aws-debate-submit) | Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual. |
 
 ## `sparkforge-aws debate next`
@@ -52,7 +52,7 @@ sparkforge-aws debate referee --help
 
 ## `sparkforge-aws debate start`
 
-Congela o plano de debate do par --rules A,B em <repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml.
+Congela o plano de debate do par --rules A,B em <repo>/.sparkforge_aws/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml.
 
 ```bash
 sparkforge-aws debate start --help

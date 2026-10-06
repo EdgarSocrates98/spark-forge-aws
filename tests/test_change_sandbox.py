@@ -28,7 +28,7 @@ def _hashes(raiz: Path) -> dict[str, str]:
     return {
         p.relative_to(raiz).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(raiz.rglob("*"))
-        if p.is_file() and not p.relative_to(raiz).as_posix().startswith(".sparkforge/sandbox/")
+        if p.is_file() and not p.relative_to(raiz).as_posix().startswith(".sparkforge_aws/sandbox/")
     }
 
 
@@ -56,7 +56,7 @@ def test_recusa_nao_cria_nada_no_disco(tmp_path):
     errado = _patch(tmp_path, PATCH.replace('"800"', '"900"'))
     resultado = _core.change_sandbox(str(repo), diff_path=errado)
     assert [r["reason"] for r in resultado["refused"]] == [DIFF_NAO_APLICA]
-    assert not (repo / ".sparkforge").exists()
+    assert not (repo / ".sparkforge_aws").exists()
 
 
 def test_diretorio_podado_vira_arquivo_fora_da_copia(tmp_path):
@@ -71,11 +71,11 @@ def test_diretorio_podado_vira_arquivo_fora_da_copia(tmp_path):
 
 def test_artefatos_coletados_entram_na_copia(tmp_path):
     repo = _repo(tmp_path)
-    artefatos = repo / ".sparkforge" / "artifacts"
+    artefatos = repo / ".sparkforge_aws" / "artifacts"
     artefatos.mkdir(parents=True)
     (artefatos / "manifest.json").write_text("[]\n", encoding="utf-8")
     resultado = _core.change_sandbox(str(repo), diff_path=_patch(tmp_path))
-    copia = repo / resultado["before"] / ".sparkforge" / "artifacts" / "manifest.json"
+    copia = repo / resultado["before"] / ".sparkforge_aws" / "artifacts" / "manifest.json"
     assert copia.read_text(encoding="utf-8") == "[]\n"
 
 
@@ -84,7 +84,7 @@ def test_limpeza_confinada(tmp_path):
     feito = _core.change_sandbox(str(repo), diff_path=_patch(tmp_path))
     limpo = _core.change_sandbox(str(repo), clean=True)
     assert limpo["removed"] == [feito["id"]] and limpo["main_tree_touched"] is False
-    assert not (repo / ".sparkforge" / "sandbox").exists()
+    assert not (repo / ".sparkforge_aws" / "sandbox").exists()
     assert (repo / "lib" / "job.py").read_text(encoding="utf-8") == JOB
 
 

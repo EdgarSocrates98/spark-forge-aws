@@ -32,7 +32,7 @@ decisions:
     rollback: "Remover o paragrafo de cada coordenador e rodar python scripts/sync_skills.py."
   - id: D3
     choice: "O teste ponta a ponta usa call_tool com sparkforge_case_open e sparkforge_change_sandbox reais sobre um repositorio sintetico em tmp_path."
-    rejected: ["fabricar .sparkforge/case.yaml e .sparkforge/sandbox/<id> a mao, que e o que o teste do nucleo ja faz"]
+    rejected: ["fabricar .sparkforge_aws/case.yaml e .sparkforge_aws/sandbox/<id> a mao, que e o que o teste do nucleo ja faz"]
     rollback: "git revert do commit do teste."
 covers:
   - {part: "gate funcval", acceptance: [AC2, AC3]}

@@ -38,8 +38,8 @@ sparkforge-aws lab scenarios --json
 sparkforge-aws lab describe kafka-consumer-lag-001
 sparkforge-aws lab plan kafka-consumer-lag-001 --backend compose
 sparkforge-aws lab run kafka-consumer-lag-001
-sparkforge-aws lab inspect .sparkforge/lab/runs/<run-id>
-sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id>
+sparkforge-aws lab inspect .sparkforge_aws/lab/runs/<run-id>
+sparkforge-aws lab analyze .sparkforge_aws/lab/runs/<run-id>
 sparkforge-aws lab compare <run-a> <run-b>
 sparkforge-aws lab promote-fixture <run> fixtures/lab/<id> --reviewed
 sparkforge-aws lab reproduce <run>/receipt.json
@@ -69,7 +69,7 @@ integração AWS foi validada. Sem transcript do host, `provider_tokens` continu
 
 ## Run layout and result classes
 
-Runs live under `.sparkforge/lab/runs/<run-id>/` and contain `run.json`,
+Runs live under `.sparkforge_aws/lab/runs/<run-id>/` and contain `run.json`,
 `scenario.yaml`, `environment.json`, `versions.json`, `topology.json`,
 `input/`, `logs/`, `metrics/`, `spark/`, `kafka/`, `flink/`, `iceberg/`,
 `cdc/`, `facts/`, `findings/`, `receipt.json` and assertions. Result classes

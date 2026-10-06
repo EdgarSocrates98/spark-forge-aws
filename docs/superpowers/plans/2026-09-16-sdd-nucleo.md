@@ -808,9 +808,9 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "change_kinds": ["tool_or_verb"],
     }
     if profile == "operator":
-        (repo / ".sparkforge").mkdir(exist_ok=True)
-        (repo / ".sparkforge" / "case.yaml").write_bytes(b"case_id: C1\n")
-        (repo / ".sparkforge" / "sandbox" / "S1").mkdir(parents=True)
+        (repo / ".sparkforge_aws").mkdir(exist_ok=True)
+        (repo / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: C1\n")
+        (repo / ".sparkforge_aws" / "sandbox" / "S1").mkdir(parents=True)
         define["case_id"] = "C1"
     caminhos["define"] = _grava(repo, feature, "define", define)
     caminhos["design"] = _grava(repo, feature, "design", {
@@ -1820,20 +1820,20 @@ def test_case_missing_case_diferente(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     for fase in ("design", "plan", "build_report", "ship"):
         caminhos[fase].unlink()
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
     assert _codigos(check(tmp_path)) == (["case_missing"], [])
 
 
 def test_change_missing(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     caminhos["ship"].unlink()
-    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "S1").rmdir()
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
 
 def test_perfil_dev_nao_pede_case_nem_change(tmp_path):
     feature_limpa(tmp_path, "dev")
-    assert not (tmp_path / ".sparkforge").exists()
+    assert not (tmp_path / ".sparkforge_aws").exists()
     assert _codigos(check(tmp_path)) == ([], [])
 ```
 
@@ -1849,7 +1849,7 @@ from sparkforge_aws.case.store import CASE_DIR, CASE_FILE
 from sparkforge_aws.change.sandbox import SANDBOX_DIR
 ```
 
-Confira antes que `import sparkforge_aws.change.sandbox` não arrasta nada pesado: `python -X importtime -c "import sparkforge_aws.change.sandbox" 2>&1 | tail -3`. Se passar de ~0,3 s, troque o import por `SANDBOX_DIR = ".sparkforge/sandbox"` local com comentário apontando para `sparkforge_aws/change/sandbox.py:40`.
+Confira antes que `import sparkforge_aws.change.sandbox` não arrasta nada pesado: `python -X importtime -c "import sparkforge_aws.change.sandbox" 2>&1 | tail -3`. Se passar de ~0,3 s, troque o import por `SANDBOX_DIR = ".sparkforge_aws/sandbox"` local com comentário apontando para `sparkforge_aws/change/sandbox.py:40`.
 
 Antes de `_GATES`:
 
@@ -2234,14 +2234,14 @@ def test_classes_das_tools():
 
 def test_stamp_pelo_mcp_grava_no_journal(tmp_path):
     caminhos = feature_limpa(tmp_path)
-    (tmp_path / ".sparkforge").mkdir(exist_ok=True)
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: C1\n")
+    (tmp_path / ".sparkforge_aws").mkdir(exist_ok=True)
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: C1\n")
     _reescreve(caminhos["build_report"], claims=[{"text": "t", "evidence_ref": "x"}])
     resposta = _estruturado(
         call_tool("sparkforge_sdd_stamp", {"repo": str(tmp_path), "path": "docs/sdd/F1/ship.md"})
     )
     assert resposta["changed"] is True
-    linhas = (tmp_path / ".sparkforge" / "journal.jsonl").read_text(encoding="utf-8").splitlines()
+    linhas = (tmp_path / ".sparkforge_aws" / "journal.jsonl").read_text(encoding="utf-8").splitlines()
     eventos = [json.loads(linha) for linha in linhas]
     assert [e.get("event") for e in eventos][-2:] == ["started", "finished"]
     assert "docs/sdd/F1/ship.md" in json.dumps(eventos[-1]["outputs"])

@@ -6,13 +6,13 @@
 
 ## O que faz
 
-Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do par `rules` em `<repo>/.sparkforge/debate/<debate_id>/plan.json`. O `debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve `created: false`. RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` nao declara `budget.max_rounds` (o default do codigo nunca vira teto), `no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado com outros facts ou outro budget, e `invalid_rules`. Antes do budget, o `debate_gate` do plano: `gate_experimentar_antes`, `gate_nao_debater` e `gate_unresolved` recusam o par cujo veredito nao e `debater`, nomeando a medida, as duas acoes com rollback, ou o sinal que falta. NAO gera argumento: nada neste projeto chama provider. Quem escreve cada submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge_aws/`. Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca (autonomia L0).
+Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do par `rules` em `<repo>/.sparkforge_aws/debate/<debate_id>/plan.json`. O `debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve `created: false`. RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` nao declara `budget.max_rounds` (o default do codigo nunca vira teto), `no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado com outros facts ou outro budget, e `invalid_rules`. Antes do budget, o `debate_gate` do plano: `gate_experimentar_antes`, `gate_nao_debater` e `gate_unresolved` recusam o par cujo veredito nao e `debater`, nomeando a medida, as duas acoes com rollback, ou o sinal que falta. NAO gera argumento: nada neste projeto chama provider. Quem escreve cada submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge_aws/`. Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca (autonomia L0).
 
 ## Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `repo` | string | sim | Raiz do case. O estado do debate fica em `<repo>/.sparkforge/debate/`, e o budget e lido do `case.yaml`. |
+| `repo` | string | sim | Raiz do case. O estado do debate fica em `<repo>/.sparkforge_aws/debate/`, e o budget e lido do `case.yaml`. |
 | `rules` | array de string | sim | O par em contradicao. O lado A defende `rules[0]`. |
 | `athena` | string | não |  |
 | `databricks` | string | não | Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, nao observacao: perde para o event log, e discordar vira divergencia reportada em `runtime.divergences`. |

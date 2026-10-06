@@ -255,7 +255,7 @@ def test_manifesto_dry_run_e_idempotencia(tmp_path):
 
     primeira = integrate("devin", home=home, windows=False)
     assert primeira["refused"] == []
-    manifesto = json.loads((home / ".sparkforge" / "integrations.json").read_text("utf-8"))
+    manifesto = json.loads((home / ".sparkforge_aws" / "integrations.json").read_text("utf-8"))
     arquivos = {
         relativo: registro["sha256"]
         for relativo, registro in manifesto["files"].items()
@@ -595,7 +595,7 @@ def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     # O mcp-config.json do Copilot foi criado pelo integrate e ficou vazio: sai.
     assert not (home / ".copilot" / "mcp-config.json").exists()
     assert meu.read_text(encoding="utf-8") == "do usuario\n"
-    assert not (home / ".sparkforge" / "integrations.json").exists()
+    assert not (home / ".sparkforge_aws" / "integrations.json").exists()
     assert detach("devin", home=home)["hosts"][0]["status"] == "not_integrated"
 
 
@@ -777,7 +777,7 @@ def test_detach_com_config_recusada_fica_pendente_ate_o_conserto(tmp_path, host)
     config.write_bytes(bom)
     assert detach(host, home=home)["refused"] == []
     assert not config.exists(), "a config que o integrate criou devia sair"
-    assert not (home / ".sparkforge" / "integrations.json").exists()
+    assert not (home / ".sparkforge_aws" / "integrations.json").exists()
 
 
 # --------------------------------------------------------------------------
@@ -801,7 +801,7 @@ def _raiz_falsa(base: Path, arquivos: dict[str, str]) -> Path:
 
 
 def _manifesto(home: Path) -> dict:
-    return json.loads((home / ".sparkforge" / "integrations.json").read_text("utf-8"))
+    return json.loads((home / ".sparkforge_aws" / "integrations.json").read_text("utf-8"))
 
 
 def _sha(texto: str) -> str:
@@ -883,7 +883,7 @@ def test_manifesto_v1_migra_para_um_sha_por_arquivo(tmp_path):
                                 ".config/devin/agents/x.md": _sha("x\n")}},
         },
     }
-    caminho = home / ".sparkforge" / "integrations.json"
+    caminho = home / ".sparkforge_aws" / "integrations.json"
     caminho.parent.mkdir(parents=True)
     caminho.write_text(json.dumps(v1), encoding="utf-8")
     manifesto = writer.load_manifest(home)
@@ -894,6 +894,50 @@ def test_manifesto_v1_migra_para_um_sha_por_arquivo(tmp_path):
         ".config/devin/agents/x.md": {"sha256": _sha("x\n"), "owners": ["devin"]},
     }
     assert manifesto["hosts"]["devin"] == {"package_version": "0.2", "config": []}
+
+
+def test_manifesto_legado_em_sparkforge_sem_aws_ainda_e_lido(tmp_path):
+    """Pre-rename, o manifesto morava em `~/.sparkforge/`: quem atualizou nao
+    pode perder o mapa de arquivos que torna `detach` seguro."""
+    from sparkforge_aws.integrate import writer
+
+    home = tmp_path / "home"
+    legado = home / ".sparkforge" / "integrations.json"
+    legado.parent.mkdir(parents=True)
+    legado.write_text(json.dumps({"schema": 2, "hosts": {"codex": {
+        "package_version": "0.4", "config": [], "files": {}}}}),
+        encoding="utf-8")
+    assert "codex" in writer.load_manifest(home)["hosts"]
+
+
+def test_manifesto_gravacao_vai_para_o_nome_novo_e_aposenta_o_legado(tmp_path):
+    """A primeira gravacao pos-rename escreve `.sparkforge_aws/` e remove o
+    arquivo antigo: um unico caminho passa a ser a verdade."""
+    from sparkforge_aws.integrate import writer
+
+    home = tmp_path / "home"
+    legado = home / ".sparkforge" / "integrations.json"
+    legado.parent.mkdir(parents=True)
+    legado.write_text(json.dumps({"schema": 2, "hosts": {}, "files": {}}),
+                      encoding="utf-8")
+    writer.save_manifest(home, {"schema": 2, "hosts": {}, "files": {
+        "x": {"sha256": "a", "owners": ["devin"]}}})
+    assert (home / ".sparkforge_aws" / "integrations.json").is_file()
+    assert not legado.exists()
+
+
+def test_manifesto_novo_ganha_do_legado_quando_ambos_existem(tmp_path):
+    """Dois manifestos nunca sao mesclados: o nome novo e a verdade."""
+    from sparkforge_aws.integrate import writer
+
+    home = tmp_path / "home"
+    for pasta, host in ((".sparkforge", "antigo"), (".sparkforge_aws", "novo")):
+        alvo = home / pasta / "integrations.json"
+        alvo.parent.mkdir(parents=True, exist_ok=True)
+        alvo.write_text(json.dumps({"schema": 2, "hosts": {host: {
+            "package_version": "0.5", "config": [], "files": {}}}}),
+            encoding="utf-8")
+    assert list(writer.load_manifest(home)["hosts"]) == ["novo"]
 
 
 def test_arquivo_preexistente_identico_nunca_sai_no_detach(tmp_path):
@@ -1032,7 +1076,7 @@ def test_manifesto_de_versao_futura_recusa(tmp_path):
     raiz = _raiz_minima(tmp_path)
     home = tmp_path / "home"
     assert integrate("copilot", home=home, root=raiz)["refused"] == []
-    caminho = home / ".sparkforge" / "integrations.json"
+    caminho = home / ".sparkforge_aws" / "integrations.json"
     dados = json.loads(caminho.read_text(encoding="utf-8"))
     dados["schema"] = 99
     caminho.write_text(json.dumps(dados), encoding="utf-8")
@@ -1046,14 +1090,14 @@ def test_manifesto_de_versao_futura_recusa(tmp_path):
 
 def test_poda_nao_remove_diretorio_que_ja_existia(tmp_path):
     home = tmp_path / "home"
-    for relativo in (".copilot/agents", ".agents", ".sparkforge"):
+    for relativo in (".copilot/agents", ".agents", ".sparkforge_aws"):
         (home / relativo).mkdir(parents=True)
     assert integrate("copilot", home=home, root=_raiz_minima(tmp_path))["refused"] == []
     assert detach("copilot", home=home)["refused"] == []
-    for relativo in (".copilot/agents", ".agents", ".sparkforge"):
+    for relativo in (".copilot/agents", ".agents", ".sparkforge_aws"):
         assert (home / relativo).is_dir(), f"a poda removeu {relativo}, que ja existia"
     assert not (home / ".agents" / "skills").exists()
-    assert not (home / ".sparkforge" / "integrations.json").exists()
+    assert not (home / ".sparkforge_aws" / "integrations.json").exists()
 
 
 # --------------------------------------------------------------------------
@@ -1115,7 +1159,7 @@ def test_escrita_atomica_da_config_deixa_a_original_intacta(tmp_path, monkeypatc
     with pytest.raises(OSError, match="disco cheio"):
         integrate("copilot", home=home, root=raiz)
     assert config.read_bytes() == original
-    sobra = set(_relativos(home)) - antes - {".sparkforge/integrations.json"}
+    sobra = set(_relativos(home)) - antes - {".sparkforge_aws/integrations.json"}
     assert sobra == set(), f"sobrou temporario ou meio arquivo: {sobra}"
 
 
@@ -1170,7 +1214,7 @@ def test_falha_de_escrita_no_meio_deixa_o_gravado_no_manifesto(tmp_path, monkeyp
     monkeypatch.setattr(writer, "gravar_atomico", falha_na_terceira)
     with pytest.raises(PermissionError):
         integrate("all", home=home, windows=False, root=raiz)
-    gravados = {r for r in _relativos(home) if r != ".sparkforge/integrations.json"}
+    gravados = {r for r in _relativos(home) if r != ".sparkforge_aws/integrations.json"}
     assert gravados, "o teste nao chegou a gravar nada antes da falha"
     registrados = set(_manifesto(home)["files"])
     assert gravados <= registrados, f"gravado fora do manifesto: {gravados - registrados}"
@@ -1180,7 +1224,7 @@ def test_manifesto_truncado_sai_recusa_nomeada(tmp_path):
     raiz = _raiz_minima(tmp_path)
     home = tmp_path / "home"
     assert integrate("copilot", home=home, root=raiz)["refused"] == []
-    manifesto = home / ".sparkforge" / "integrations.json"
+    manifesto = home / ".sparkforge_aws" / "integrations.json"
     texto = manifesto.read_bytes()
     manifesto.write_bytes(texto[: len(texto) // 2])
     antes = _foto(home)
@@ -1210,7 +1254,7 @@ def test_chave_fora_do_home_recusa_sem_apagar(tmp_path, forma):
         "barra_invertida": r"..\fora.txt",
         "appdata_sobe": "%APPDATA%/../fora.txt",
     }[forma]
-    caminho = home / ".sparkforge" / "integrations.json"
+    caminho = home / ".sparkforge_aws" / "integrations.json"
     dados = json.loads(caminho.read_text(encoding="utf-8"))
     dados["files"][chave] = {"sha256": hashlib.sha256(b"do usuario\n").hexdigest(),
                              "owners": ["copilot"]}
@@ -1338,7 +1382,7 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     from scripts import sync_skills
 
     home = tmp_path / "home"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     plugin = marketplace / "plugins" / "sparkforge-aws"
 
     # Sem `claude` no PATH: o plugin fica montado e a recusa traz os dois comandos.
@@ -1442,7 +1486,7 @@ def test_detach_do_claude_sem_cli_fica_pendente_e_conclui_depois(tmp_path):
     """I4: sem o CLI (ou com ele falhando) o registro fica, o marketplace fica no
     disco, e o detach seguinte, com o CLI, conclui."""
     home = tmp_path / "h"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     claude = _ClaudeFalso()
     integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
 
@@ -1496,7 +1540,7 @@ def test_detach_com_lista_que_nao_se_entende_roda_o_uninstall(tmp_path):
     """M3: `list --json` em formato que o SparkForge nao reconhece nao prova que o
     plugin saiu: o uninstall roda antes de o marketplace sair do disco."""
     home = tmp_path / "h"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     claude = _ClaudeFalso()
     integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     outro_formato = json.dumps([{"plugin": "sparkforge-aws",
@@ -1512,7 +1556,7 @@ def test_detach_com_lista_ilegivel_e_plugin_ja_desinstalado_conclui(tmp_path):
     """M3: lista ilegivel e o plugin ja fora (detach interrompido antes): o uninstall
     roda, "nao instalado" e sucesso, e o detach conclui."""
     home = tmp_path / "h"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     claude = _ClaudeFalso()
     integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     claude.plugins.clear()
@@ -1528,7 +1572,7 @@ def test_detach_sem_registro_desinstala_o_que_o_operador_instalou(tmp_path):
     """M4: `integrate claude` sem CLI (nao registrado); o operador rodou os dois
     comandos a mao. O detach com o CLI consulta a lista e desinstala antes de apagar."""
     home = tmp_path / "h"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     integrate("claude", home=home, which=lambda _: None)
     assert not _manifesto(home)["hosts"]["claude"].get("registered")
     claude = _ClaudeFalso(marketplaces={"sparkforge-aws-local"},
@@ -1545,7 +1589,7 @@ def test_detach_sem_registro_com_cli(tmp_path, caso):
     """M4: lista ilegivel roda o uninstall mesmo assim; lista que se le e nao mostra
     o plugin so apaga; uninstall que falha deixa tudo como `cli_pendente`."""
     home = tmp_path / "h"
-    marketplace = home / ".sparkforge" / "claude"
+    marketplace = home / ".sparkforge_aws" / "claude"
     integrate("claude", home=home, which=lambda _: None)
     claude = _ClaudeFalso()
     if caso == "ilegivel":
@@ -1609,7 +1653,7 @@ def test_versao_do_plugin_muda_com_o_conteudo_e_o_python(tmp_path):
 
 def test_comando_mostrado_cita_caminho_com_espaco(tmp_path):
     home = tmp_path / "casa com espaco"
-    marketplace = str(home / ".sparkforge" / "claude")
+    marketplace = str(home / ".sparkforge_aws" / "claude")
     recusa = integrate("claude", home=home, which=lambda _: None)["refused"][0]
     comando = recusa["commands"][0]
     if sys.platform == "win32":

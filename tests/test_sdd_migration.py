@@ -50,4 +50,4 @@ def test_readme_e_journal():
     texto = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "sdd-define" in texto and "sparkforge-aws sdd check" in texto
     ignorados = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
-    assert ".sparkforge/journal.jsonl" in ignorados
+    assert ".sparkforge_aws/journal.jsonl" in ignorados

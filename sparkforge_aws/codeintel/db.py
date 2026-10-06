@@ -99,6 +99,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from sparkforge_aws import __version__
+from sparkforge_aws.case.store import state_path
 
 # 3 desde o fluxo de dados: `data_flow` e `data_flow_blind_spots` entraram. Banco
 # de versao anterior nao e migravel para esta -- ver
@@ -111,11 +112,19 @@ SCHEMA_VERSION = 3
 # Onde o indice mora quando ninguem escolhe. Declarado AQUI, no modulo que abre o
 # arquivo, e nao em quem consulta: com o caminho repetido em `indexar` e em
 # `buscar` bastaria um deles mudar para a CLI indexar num lugar e ler noutro,
-# calada. `.sparkforge/local/` esta no `.gitignore` desde 715a657, e e por isso
+# calada. `.sparkforge_aws/local/` esta no `.gitignore` desde 715a657, e e por isso
 # que o default aponta para la -- indice de repositorio de cliente que vira
 # candidato a commit e vazamento, nao desordem. Relativo de proposito: quem
 # chama e que sabe a raiz.
-BANCO_PADRAO = Path(".sparkforge") / "local" / "codeintel" / "graph.sqlite3"
+BANCO_PADRAO = Path(".sparkforge_aws") / "local" / "codeintel" / "graph.sqlite3"
+
+
+def banco_para(raiz: Path | str) -> Path:
+    """`raiz` + `BANCO_PADRAO`, com continuidade pre-rename: um indice que ja
+    existe sob `.sparkforge/local/codeintel/` segue sendo O banco (leitura e
+    escrita) ate a proxima reindexacao, em vez de dividir a arvore em dois
+    bancos paralelos."""
+    return state_path(raiz, BANCO_PADRAO)
 
 # A mesma lista que `tests/test_codeintel_db.py` afirma, e na mesma ordem.
 PRAGMAS_DE_ABERTURA = (

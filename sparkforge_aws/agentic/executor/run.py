@@ -67,7 +67,7 @@ saber que ele e proposta, nao registro de coisa feita.
 
 ## Onde o ADR e gravado
 
-Dentro do case, em `.sparkforge/blackboard/adr/`, ao lado do `decisions.jsonl`
+Dentro do case, em `.sparkforge_aws/blackboard/adr/`, ao lado do `decisions.jsonl`
 que o gerou. **Nao** em `docs/vnext/adrs/`: aquele diretorio guarda as decisoes
 de arquitetura DESTE repositorio, numeradas a mao e auditadas pelo gate de
 lastro. Um verbo de runtime que escrevesse ali misturaria saida de case com
@@ -180,7 +180,7 @@ def run_executor(
         findings: findings ja julgados, no formato de `findings.json`.
         facts: **a uniao** dos facts do case -- o mesmo conjunto que `judge`
             recebeu. Ver o cabecalho deste modulo.
-        root: raiz do case; o blackboard fica em `<root>/.sparkforge/blackboard`.
+        root: raiz do case; o blackboard fica em `<root>/.sparkforge_aws/blackboard`.
         runtime: o que o case mediu, ex. `{"glue": "5.0", "spark": "3.5.4"}`.
         budget: o bloco `budget:` do `case.yaml`, ou `None`. **Nunca** o default
             do codigo -- sem bloco o plano de debate sai `unresolved` nomeando a

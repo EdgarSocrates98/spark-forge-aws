@@ -18,7 +18,7 @@ The catalog currently contains 52 skills. Every skill now publishes:
 python scripts/upgrade_skills.py --check
 python scripts/audit_skills.py --strict
 python scripts/check_skill_evals.py --strict
-python scripts/run_skill_evals.py --offline --out .sparkforge/skill-evals.json
+python scripts/run_skill_evals.py --offline --out .sparkforge_aws/skill-evals.json
 python scripts/sync_skills.py --check
 ```
 

@@ -9,7 +9,7 @@ com janela de retencao limitada: um consumidor Redshift, EMR ou QuickSight
 ficaria invisivel, e invisivel viraria "sem consumidor", que e a resposta
 errada com cara de resposta certa.
 
-Shape esperado (`.sparkforge/consumers.yaml`, versionado com o repositorio):
+Shape esperado (`.sparkforge_aws/consumers.yaml`, versionado com o repositorio):
 
 ```yaml
 consumers:

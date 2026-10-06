@@ -290,7 +290,7 @@ O SparkForge **nunca** importa nem executa o código analisado. Ele lê o texto
 
 ### Case
 
-Case é o estado de uma investigação, gravado em `.sparkforge/case.yaml` no
+Case é o estado de uma investigação, gravado em `.sparkforge_aws/case.yaml` no
 repositório que você está analisando. Ele guarda o runtime, a fase atual, os
 gates (condições que precisam estar cumpridas para avançar), as hipóteses e as
 skills já usadas. Serve para retomar a investigação em outra sessão ou em
@@ -549,8 +549,8 @@ a resposta vai só para a tela (stdout), e a tela é paginada (veja
 [CLI](03-cli.md)). Com ela, o arquivo recebe a lista inteira, sem paginação, e
 é esse arquivo que você passa ao próximo comando.
 
-Exemplo: `sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json`
-e, em seguida, `sparkforge-aws judge --facts .sparkforge/facts.json`.
+Exemplo: `sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json`
+e, em seguida, `sparkforge-aws judge --facts .sparkforge_aws/facts.json`.
 
 ### Recusa nomeada
 

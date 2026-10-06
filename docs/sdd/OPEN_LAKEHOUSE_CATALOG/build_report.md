@@ -39,7 +39,7 @@ T1–T3 estão `skipped` no bloco red/green porque a implementação precede est
 relatório e o histórico não preserva comandos vermelhos reproduzíveis. Nenhum
 exit vermelho foi inventado. A validação atual foi executada com
 `python -m pytest tests/test_lakehouse_catalog.py -q --basetemp
-.sparkforge/local/pytest-open-lakehouse`, terminando com `3 passed`; o comando
+.sparkforge_aws/local/pytest-open-lakehouse`, terminando com `3 passed`; o comando
 de aceite do define também terminou com exit 0.
 
 ## Revisão

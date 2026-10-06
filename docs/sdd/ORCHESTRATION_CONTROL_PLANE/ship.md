@@ -33,9 +33,9 @@ unresolved; CLI e MCP emitem o mesmo fingerprint sem disparar execução.
 
 ## Gates rodados
 
-- `python -m pytest tests/test_orchestration.py -q --basetemp .sparkforge/local/pytest-orchestration` — `4 passed`, exit 0.
+- `python -m pytest tests/test_orchestration.py -q --basetemp .sparkforge_aws/local/pytest-orchestration` — `4 passed`, exit 0.
 - `python -m sparkforge_aws.adapters.cli analyze orchestration --path fixtures/orchestration/control-plane.yaml` — exit 0.
-- `python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge/local/pytest-orchestration-gates` — exit 0.
+- `python -m pytest tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q --basetemp .sparkforge_aws/local/pytest-orchestration-gates` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_status_numbers.py --strict` — exit 0.

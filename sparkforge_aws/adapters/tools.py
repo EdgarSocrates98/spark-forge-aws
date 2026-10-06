@@ -20,7 +20,7 @@ forma, que e exatamente o problema que esta camada existe para evitar.
 Nenhuma ferramenta e destrutiva. Os coletores AWS (`collect_*`, exceto
 `collect_verify`) sao os unicos open-world -- leem de fora do sandbox local e
 nunca escrevem do lado AWS. Escrevem em disco: `case_open` e `case_update`
-(`.sparkforge/case.yaml`), `report_sign` (o bloco de assinatura, no lugar) e
+(`.sparkforge_aws/case.yaml`), `report_sign` (o bloco de assinatura, no lugar) e
 `funcval_plan` (o plano, que `funcval_compare` rele como artefato) e
 `agentops_baseline save` (baseline local idempotente); todas as outras sao
 read-only. A lista literal correspondente vive em
@@ -649,7 +649,7 @@ _ARTIFACT_ITEM: dict[str, Any] = {
 
 _CASE_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "description": "Estado completo de .sparkforge/case.yaml -- barramento de handoff.",
+    "description": "Estado completo de .sparkforge_aws/case.yaml -- barramento de handoff.",
     "required": [
         "schema_version",
         "case_id",
@@ -817,7 +817,7 @@ _RESUME_SCHEMA: dict[str, Any] = {
         "journal": {
             "type": "object",
             "description": (
-                "Estado do `.sparkforge/journal.jsonl`. `open_calls` sao `started` sem "
+                "Estado do `.sparkforge_aws/journal.jsonl`. `open_calls` sao `started` sem "
                 "`finished`: caiu OU ainda roda, nunca so 'caiu'."
             ),
             "properties": {
@@ -3919,7 +3919,7 @@ _RECEIPT_EMIT_SCHEMA: dict[str, Any] = {
     "properties": {
         "receipt_path": {
             "type": "string",
-            "description": "Relativo ao repo: .sparkforge/receipts/<receipt_id>.json.",
+            "description": "Relativo ao repo: .sparkforge_aws/receipts/<receipt_id>.json.",
         },
         "receipt_id": {"type": "string", "pattern": "^rcpt_[0-9a-f]{64}$"},
         "unresolved": {"type": "array", "items": _RECEIPT_GAP_ITEM},
@@ -4767,7 +4767,7 @@ _CODE_DB_PROP: dict[str, Any] = {
     "type": "string",
     "description": (
         "Arquivo do indice. Omitido, o default e "
-        "`.sparkforge/local/codeintel/graph.sqlite3` sob `repo`."
+        "`.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`."
     ),
 }
 
@@ -4783,7 +4783,7 @@ _CODE_DB_PROP: dict[str, Any] = {
 # de fonte ter mudado.
 #
 # `readOnlyHint` nao tem lado: ele afirma que a tool nao modifica o ambiente
-# DELA, e o ambiente destas seis inclui `.sparkforge/local/codeintel/`. E o
+# DELA, e o ambiente destas seis inclui `.sparkforge_aws/local/codeintel/`. E o
 # mesmo defeito que a Fase I3 achou nos sete coletores AWS, cuja razao escrita
 # ("nunca mudam estado") tinha um "do lado AWS" implicito. Aqui o implicito
 # seria "do lado do fonte" -- e o fonte de fato nunca muda (INV-004), o que
@@ -5490,7 +5490,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_case_open": {
         "description": (
-            "Cria um case novo em .sparkforge/case.yaml, detectando o runtime "
+            "Cria um case novo em .sparkforge_aws/case.yaml, detectando o runtime "
             "Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento "
             "de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume "
             "nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio "
@@ -5547,7 +5547,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_case_get": {
         "description": (
-            "Le o estado atual do case (.sparkforge/case.yaml): fase, gates, runtime "
+            "Le o estado atual do case (.sparkforge_aws/case.yaml): fase, gates, runtime "
             "detectado, indices de facts e findings. Falha com um erro que nomeia "
             "`sparkforge-aws case open` quando nenhum case existe ainda no repositorio."
         ),
@@ -7463,7 +7463,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_analyze_consumers": {
         "description": (
             "Extrai facts do inventario DECLARADO de consumidores de tabela "
-            "(`.sparkforge/consumers.yaml`, versionado com o repositorio). Unico "
+            "(`.sparkforge_aws/consumers.yaml`, versionado com o repositorio). Unico "
             "extrator do pacote que le um arquivo escrito por uma pessoa, e de "
             "proposito: quem consome uma tabela nao esta no codigo, no plano nem no "
             "event log -- e conhecimento da organizacao. Desbloqueia SF-ENV-002 (a "
@@ -7550,7 +7550,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "esse campo, 'nenhum achado' e indistinguivel de 'nada quebra'. Compoe o "
             "job inteiro: codigo, `.tf` quando existe (sem ele a area `SF-LF` fica "
             "sem produtor, porque a topologia de FGAC e declarada no Terraform) e o "
-            "inventario de consumidores em `.sparkforge/consumers.yaml`. Todo eixo "
+            "inventario de consumidores em `.sparkforge_aws/consumers.yaml`. Todo eixo "
             "sem evidencia nasce BLOCKED com o motivo, nunca PASS."
         ),
         "inputSchema": {
@@ -7672,7 +7672,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Avalia subir o format version de uma tabela Iceberg CONTRA quem a "
             "consome. Cruza o inventario declarado (`env.consumer`, na convencao "
-            "`.sparkforge/consumers.yaml`) com a matriz de suporte de feature "
+            "`.sparkforge_aws/consumers.yaml`) com a matriz de suporte de feature "
             "(`knowledge/storage/iceberg-feature-support.yaml`), uma celula por "
             "par engine/feature, cada uma com fonte. NUNCA executa o upgrade: o "
             "modulo por tras nao importa cliente de AWS nem Spark. Veredito em "
@@ -7690,7 +7690,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": (
                         "Diretorio do job, com o inventario em "
-                        "`.sparkforge/consumers.yaml`. Cada consumidor aceita um "
+                        "`.sparkforge_aws/consumers.yaml`. Cada consumidor aceita um "
                         "`release:` OPCIONAL (`emr-7.7.0`): com ele, a resposta "
                         "cruza a versao de Iceberg daquela release com o minimo de "
                         "biblioteca da feature, e por isso `emr_ec2` e `emr_eks` "
@@ -8694,7 +8694,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "afirmacao virar recomendacao, qual medida falta para fechar a lacuna, e em "
             "que ordem as acoes podem ser aplicadas. Grava `Claim`, `Evidence`, "
             "`Contradiction`, `Objection`, `Unknown`, `Experiment` e `Decision` no "
-            "blackboard do case (`<repo>/.sparkforge/blackboard/`), mais um ADR por "
+            "blackboard do case (`<repo>/.sparkforge_aws/blackboard/`), mais um ADR por "
             "decisao significativa. "
             "Recebe `findings` inline ou `findings_path`, e `facts` inline ou "
             "`facts_path` -- que aceita uma LISTA de caminhos, e a lista e o ponto: o "
@@ -8733,7 +8733,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": (
                         "Raiz do case. O blackboard e os ADRs ficam em "
-                        "`<repo>/.sparkforge/blackboard/` -- ADR de case viaja com o "
+                        "`<repo>/.sparkforge_aws/blackboard/` -- ADR de case viaja com o "
                         "case, nunca em `docs/`."
                     ),
                 },
@@ -8788,7 +8788,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "properties": {
                 "repo": {
                     "type": "string",
-                    "description": "Raiz do repositorio com `.sparkforge/blackboard/`.",
+                    "description": "Raiz do repositorio com `.sparkforge_aws/blackboard/`.",
                 }
             },
         },
@@ -8804,7 +8804,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: "
             "recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS "
             "insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do "
-            "par `rules` em `<repo>/.sparkforge/debate/<debate_id>/plan.json`. O "
+            "par `rules` em `<repo>/.sparkforge_aws/debate/<debate_id>/plan.json`. O "
             "`debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve "
             "`created: false`. "
             "RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` "
@@ -8828,7 +8828,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": (
                         "Raiz do case. O estado do debate fica em "
-                        "`<repo>/.sparkforge/debate/`, e o budget e lido do `case.yaml`."
+                        "`<repo>/.sparkforge_aws/debate/`, e o budget e lido do `case.yaml`."
                     ),
                 },
                 "rules": {
@@ -9442,9 +9442,9 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_scan": {
         "description": (
             "Roda sozinho os analyzes que cabem num repositorio e julga a uniao. Artefato "
-            "coletado entra pelo `kind` do `.sparkforge/artifacts/manifest.json`, com sha256 "
+            "coletado entra pelo `kind` do `.sparkforge_aws/artifacts/manifest.json`, com sha256 "
             "conferido; codigo entra pela extensao (.py, .sql, .tf, .jsonl). Um analyze por "
-            "arquivo; depois `fuse` e `judge`. Grava em `.sparkforge/scan/` (facts por "
+            "arquivo; depois `fuse` e `judge`. Grava em `.sparkforge_aws/scan/` (facts por "
             "analyze, facts.json, findings.json, summary.json) e, com `format: sarif`, o SARIF "
             "e o resumo de PR do `report github`. `dry_run` so devolve o plano. Toda recusa tem "
             "nome: sem_manifesto (JSON solto nunca e classificado pelo conteudo), "
@@ -9501,7 +9501,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_policy_explain": {
         "description": (
-            "Diz o que a policy de seguranca do repositorio (`.sparkforge/policy.yaml`) "
+            "Diz o que a policy de seguranca do repositorio (`.sparkforge_aws/policy.yaml`) "
             "decide para UM comando de shell (`bash_text`, so comparado como texto, nunca "
             "executado), UM caminho de escrita (`file_path`) "
             "ou UMA tool MCP (`tool`): allow, ask ou deny, a regra que casou e a porta que "
@@ -9570,14 +9570,15 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_change_sandbox": {
         "description": (
             "Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do "
-            "`sparkforge-aws change plan --out` ou de `git diff`) numa COPIA do repositorio em "
-            "`.sparkforge/sandbox/<id>/` -- `before/` pristina e `after/` com o diff --, roda o "
-            "scan nas duas e compara os achados pela chave estavel: `new`, `resolved`, "
-            "`kept_count` e `moved_candidates`, com as obrigacoes de prova (validation e "
-            "rollback) das regras tocadas e os proximos passos. O aplicador e estrito, tudo ou "
-            "nada: diff_vazio, diff_grande_demais, diff_nao_suportado (criacao, remocao, renome, "
-            "binario), diff_malformado, diff_nao_aplica, caminho_fora_da_raiz, "
-            "arquivo_fora_da_copia. `clean` apaga `.sparkforge/sandbox/`. O QUE ELA NAO FAZ: nao "
+            "`sparkforge-aws change plan --out` ou de `git diff`) numa COPIA do repositorio "
+            "em `.sparkforge_aws/sandbox/<id>/` -- `before/` pristina e `after/` com o diff "
+            "--, roda o scan nas duas e compara os achados pela chave estavel: `new`, "
+            "`resolved`, `kept_count` e `moved_candidates`, com as obrigacoes de prova "
+            "(validation e rollback) das regras tocadas e os proximos passos. O aplicador "
+            "e estrito, tudo ou nada: diff_vazio, diff_grande_demais, diff_nao_suportado "
+            "(criacao, remocao, renome, binario), diff_malformado, diff_nao_aplica, "
+            "caminho_fora_da_raiz, arquivo_fora_da_copia. `clean` apaga "
+            "`.sparkforge_aws/sandbox/`. O QUE ELA NAO FAZ: nao "
             "toca a arvore principal (`main_tree_touched: false`), nao executa comando do "
             "repositorio (testes sao do operador), nao usa git e nao afirma ganho: a diferenca "
             "de achados nao e desempenho."
@@ -9593,7 +9594,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "clean": {
                     "type": "boolean",
-                    "description": "Apaga .sparkforge/sandbox/ em vez de aplicar.",
+                    "description": "Apaga .sparkforge_aws/sandbox/ em vez de aplicar.",
                 },
             },
         },
@@ -9606,7 +9607,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_change_propose": {
         "description": (
             "Autonomia L3 (§15, propose change): monta o pacote de um PR em "
-            "`.sparkforge/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id "
+            "`.sparkforge_aws/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id "
             "que `sparkforge_change_sandbox` devolveu): `change.patch` e `rollback.patch` "
             "provados contra a copia validada, `pr_body.md` assinado pelo `report sign` com os "
             "findings de `after/`, `commit_message.txt`, `branch.txt`, `commands.md` com os "
@@ -9653,7 +9654,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
-            "`<repo>/.sparkforge/receipts/<receipt_id>.json`: caminho relativo e sha256 do "
+            "`<repo>/.sparkforge_aws/receipts/<receipt_id>.json`: caminho relativo e sha256 do "
             "`case.yaml`, de cada arquivo de facts (a UNIAO do case, o mesmo conjunto que "
             "`judge` recebeu), dos findings, do report, do blackboard, dos ADRs e dos "
             "debates; os fact_ids de `funcval.*` e `bench.*` como prova, sem comparar nada; "
@@ -9726,7 +9727,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "repo": {"type": "string"},
                 "receipt_path": {
                     "type": "string",
-                    "description": "`.sparkforge/receipts/<receipt_id>.json`, dentro do repo.",
+                    "description": "`.sparkforge_aws/receipts/<receipt_id>.json`, dentro do repo.",
                 },
                 "host_transcript_path": {
                     "type": "string",
@@ -9754,7 +9755,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "a ressalva de que ela nao e a causa. `subject.file` e relativo ao "
             "diretorio passado a cada `analyze --path`, entao informe esses diretorios em "
             "`source_roots`. `fail_on` so calcula `gate.tripped`; nada e gravado por esta "
-            "tool -- a CLI `sparkforge-aws report github` grava em .sparkforge/report/."
+            "tool -- a CLI `sparkforge-aws report github` grava em .sparkforge_aws/report/."
         ),
         "inputSchema": {
             "type": "object",
@@ -9809,7 +9810,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "`provider` e DECLARADO (anthropic, aws.bedrock, gcp.vertex_ai): sem ele, "
             "`gen_ai.provider.name` vai para `unresolved` e a metrica de token nao sai. Span "
             "sem horario medido vai para `refused` com o motivo. Nada e gravado por esta "
-            "tool -- a CLI `sparkforge-aws telemetry export` grava em .sparkforge/telemetry/, "
+            "tool -- a CLI `sparkforge-aws telemetry export` grava em .sparkforge_aws/telemetry/, "
             "para o receiver `otlp_json_file` de um OTLP Collector."
         ),
         "inputSchema": {
@@ -9840,7 +9841,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_collect_event_log": {
         "description": (
             "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` "
-            "e registra no manifesto (`.sparkforge/artifacts/manifest.json`). Le, nunca "
+            "e registra no manifesto (`.sparkforge_aws/artifacts/manifest.json`). Le, nunca "
             "grava nada do lado AWS. Offline-first: uma segunda chamada com o mesmo "
             "artefato ja presente e integro localmente (`cache_hit: true`) nao toca rede "
             "nem credenciais. boto3 ausente devolve um erro com o comando `pip install` E "
@@ -10826,7 +10827,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_code_sync": {
         "description": (
             "A UNICA tool de mutacao do Code Intelligence: poe o indice local em dia "
-            "com a arvore. Escreve somente em `.sparkforge/local/codeintel/**` e nunca "
+            "com a arvore. Escreve somente em `.sparkforge_aws/local/codeintel/**` e nunca "
             "toca o fonte do repositorio analisado. Cai para reconstrucao completa "
             "quando o banco esta ausente, vazio ou e de outra raiz, e diz qual dos dois "
             "aconteceu em `full_rebuild`. Chame quando outra tool recusar com "

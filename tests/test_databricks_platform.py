@@ -235,7 +235,7 @@ def test_scan_grava_os_facts_de_ambiente_que_os_achados_citam(tmp_path, capsys):
     shutil.copy(ROOT / "fixtures" / "scan" / "misto" / "repo" / "src" / "job.py", repo / "src")
     assert cli.main(["scan", str(repo), "--databricks", "15.4"]) == 0
     capsys.readouterr()
-    saida = repo / ".sparkforge" / "scan"
+    saida = repo / ".sparkforge_aws" / "scan"
     findings = json.loads((saida / "findings.json").read_text(encoding="utf-8"))
     gravados = {f["id"] for f in json.loads((saida / "facts.json").read_text(encoding="utf-8"))}
     assert "SF-ENV-006" in {f["rule_id"] for f in findings}
@@ -256,7 +256,7 @@ def test_rejulgar_a_saida_do_scan_usa_a_deteccao_nova(tmp_path, capsys):
     shutil.copy(ROOT / "fixtures" / "scan" / "misto" / "repo" / "src" / "job.py", repo / "src")
     assert cli.main(["scan", str(repo), "--databricks", "15.4"]) == 0
     capsys.readouterr()
-    arquivo = repo / ".sparkforge" / "scan" / "facts.json"
+    arquivo = repo / ".sparkforge_aws" / "scan" / "facts.json"
     assert "SF-ENV-006" in _regras_do_judge(capsys, arquivo, "--databricks", "15.4")
     assert "SF-ENV-006" not in _regras_do_judge(
         capsys, arquivo, "--databricks", "15.4", "--photon", "on"

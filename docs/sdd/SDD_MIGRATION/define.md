@@ -22,7 +22,7 @@ acceptance:
     statement: "CLAUDE.md, AGENTS.md e CONTRIBUTING.md mandam usar as skills sdd-* e sparkforge-aws sdd check, e nenhum deles manda gravar spec em .claude/sdd/ ou docs/superpowers/specs/."
     verified_by: {kind: test, ref: "tests/test_sdd_migration.py::test_documentos_de_entrada_apontam_o_sdd"}
   - id: AC5
-    statement: "README.md apresenta o SDD proprio (as seis skills e os tres verbos) e .sparkforge/journal.jsonl deste repositorio fica fora do git."
+    statement: "README.md apresenta o SDD proprio (as seis skills e os tres verbos) e .sparkforge_aws/journal.jsonl deste repositorio fica fora do git."
     verified_by: {kind: test, ref: "tests/test_sdd_migration.py::test_readme_e_journal"}
 success:
   - id: SC1

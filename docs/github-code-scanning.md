@@ -3,9 +3,9 @@
 `sparkforge-aws report github` pega os findings que `judge` produziu e os mostra
 onde o PR e revisado:
 
-- **SARIF 2.1.0** (`.sparkforge/report/sparkforge-aws.sarif`) para o GitHub Code
+- **SARIF 2.1.0** (`.sparkforge_aws/report/sparkforge-aws.sarif`) para o GitHub Code
   Scanning: alerta na aba Security e no diff do PR, deduplicado entre commits;
-- **resumo em Markdown** (`.sparkforge/report/summary.md`) para o
+- **resumo em Markdown** (`.sparkforge_aws/report/summary.md`) para o
   `$GITHUB_STEP_SUMMARY`, com **todos** os findings;
 - uma **anotacao** `::error` / `::warning` / `::notice` por finding com linha,
   impressa no stdout, que vira anotacao no diff mesmo sem Code Scanning.
@@ -76,14 +76,14 @@ de Scala. Em event log real de PySpark o nome do stage costuma ter a forma
 precisa das mesmas raizes, na mesma ordem dos `analyze`:
 
 ```bash
-sparkforge-aws analyze pyspark   --path jobs  --out .sparkforge/facts-pyspark.json
-sparkforge-aws analyze terraform --path infra --out .sparkforge/facts-terraform.json
-sparkforge-aws judge --facts .sparkforge/facts-pyspark.json \
-                 --facts .sparkforge/facts-terraform.json \
-                 --glue 5.0 --out .sparkforge/findings.json
-sparkforge-aws report github --findings .sparkforge/findings.json \
-                         --facts .sparkforge/facts-pyspark.json \
-                         --facts .sparkforge/facts-terraform.json \
+sparkforge-aws analyze pyspark   --path jobs  --out .sparkforge_aws/facts-pyspark.json
+sparkforge-aws analyze terraform --path infra --out .sparkforge_aws/facts-terraform.json
+sparkforge-aws judge --facts .sparkforge_aws/facts-pyspark.json \
+                 --facts .sparkforge_aws/facts-terraform.json \
+                 --glue 5.0 --out .sparkforge_aws/findings.json
+sparkforge-aws report github --findings .sparkforge_aws/findings.json \
+                         --facts .sparkforge_aws/facts-pyspark.json \
+                         --facts .sparkforge_aws/facts-terraform.json \
                          --repo . --source-root jobs --source-root infra \
                          --fail-on P0
 ```
@@ -116,7 +116,7 @@ do Glue. Ele precisa de `security-events: write` para o upload e sobe o SARIF
 mesmo quando o gate deixa o check vermelho, para que o alerta chegue a aba
 Security.
 
-Acrescente `.sparkforge/report/` ao `.gitignore` do repositorio de dados: sao
+Acrescente `.sparkforge_aws/report/` ao `.gitignore` do repositorio de dados: sao
 arquivos gerados a cada execucao.
 
 ## Limites conhecidos

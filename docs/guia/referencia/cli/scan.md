@@ -2,7 +2,7 @@
 
 # `sparkforge-aws scan`
 
-Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge/scan/. Sem rede.
+Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge_aws/scan/. Sem rede.
 
 ```bash
 sparkforge-aws scan --help

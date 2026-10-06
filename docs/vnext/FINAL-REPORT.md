@@ -19,7 +19,7 @@ BEFORE (v0.5.0)                                    AFTER (vNext Agent Factory)
 • Seleção de modelo rudimentar                     • Capability Model Router em 7 Tiers
 • Contexto sem funil estruturado                   • Context Funnel & Progressive Disclosure (A/B/C)
 • Execuções lineares simples                       • Execution DAG com Agendamento em Waves
-• Sem persistência estruturada de traces           • Local-First AgentOps em SQLite (.sparkforge/traces.db)
+• Sem persistência estruturada de traces           • Local-First AgentOps em SQLite (.sparkforge_aws/traces.db)
 • Evals pontuais de golden fixtures                • Pirâmide Completa: Unit, Contract, BDD, Holdout
 ```
 

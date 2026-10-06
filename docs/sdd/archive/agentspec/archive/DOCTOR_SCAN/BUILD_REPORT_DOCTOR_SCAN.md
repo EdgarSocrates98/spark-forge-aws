@@ -33,7 +33,7 @@
 |---|------|-------|--------|-------|
 | 1-3 | `sparkforge_aws/scan/` | (direct) | ✅ Complete | Plano puro, `KIND_PARA_ANALYZE` fechado, seis recusas, resumo |
 | 4 | `sparkforge_aws/doctor.py` | (direct) | ✅ Complete | `Checagem`, nove `avaliar_*` puros, `resumo` |
-| 5 | `_core.scan`, `_core.doctor` | (direct) | ✅ Complete | Um analyze por arquivo, `fuse` + `judge`, escrita em `.sparkforge/scan/`, SARIF pelo `report_github_write`; doctor sonda as portas |
+| 5 | `_core.scan`, `_core.doctor` | (direct) | ✅ Complete | Um analyze por arquivo, `fuse` + `judge`, escrita em `.sparkforge_aws/scan/`, SARIF pelo `report_github_write`; doctor sonda as portas |
 | 6-7 | CLI e tools | (direct) | ✅ Complete | `scan [raiz] --dry-run --format --fail-on --glue...`, `doctor --repo --online`; `sparkforge_scan` `_WRITE_IDEMPOTENT`, `sparkforge_doctor` `_READ_ONLY` |
 | 8-11 | Testes e fixtures | (direct) | ✅ Complete | `test_scan_plan` (12), `test_doctor` (17), golden com 7 casos + SC1, SC4, dry-run |
 | 12 | `sf-inventory` | (direct) | ✅ Complete | Passo 0 (doctor) e passo 5 (plano do scan) + espelhos |

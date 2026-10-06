@@ -129,7 +129,7 @@ class TestHandoffContract:
     e a decomposicao vira cinco investigacoes paralelas com o mesmo custo de uma
     sozinha, so que divergindo entre si.
 
-    O estado compartilhado e `.sparkforge/case.yaml`: nenhum executor guarda
+    O estado compartilhado e `.sparkforge_aws/case.yaml`: nenhum executor guarda
     contexto proprio, pela mesma razao que a Fase 0 pos o roteamento em dado --
     estado que sobrevive a troca de sessao, de modelo e de ferramenta.
     """

@@ -8,7 +8,7 @@ derruba o verbo (regra 27): falha do journal vira `journal: "unrecorded"` com
 A raiz do journal e a raiz do case que o verbo toca: o argumento `repo` (ou
 `raiz`, na CLI do `scan`). Os tres verbos sem `repo` (`report sign`,
 `funcval plan`, `funcval compare`) usam o primeiro ancestral do arquivo de
-saida que tem `.sparkforge/case.yaml`; sem ancestral, nao gravam
+saida que tem `.sparkforge_aws/case.yaml`; sem ancestral, nao gravam
 (`sem_raiz_de_case`) -- com o cwd na raiz do projeto, o journal sujaria o
 repositorio.
 """
@@ -22,7 +22,7 @@ from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
-from sparkforge_aws.case.store import CASE_DIR, CASE_FILE
+from sparkforge_aws.case.store import CASE_DIR, CASE_FILE, LEGACY_CASE_DIR
 from sparkforge_aws.durable import append_line
 from sparkforge_aws.journal import LITERAL_KEYS, SCHEMA_VERSION, journal_path, journaled
 from sparkforge_aws.paths import resolve_within
@@ -104,6 +104,9 @@ def _ancestral_com_case(caminho: Path) -> Path | None:
     inicio = caminho.resolve().parent
     for diretorio in (inicio, *inicio.parents):
         if (diretorio / CASE_DIR / CASE_FILE).is_file():
+            return diretorio
+        # Case aberto antes do rename do diretorio de estado.
+        if (diretorio / LEGACY_CASE_DIR / CASE_FILE).is_file():
             return diretorio
     return None
 

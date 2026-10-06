@@ -7,6 +7,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.observability.tracer import ExecutionTrace
 
 
@@ -21,7 +22,9 @@ class SQLiteTraceStore:
         # `AttributeError` escapava para dentro do `except Exception` de quem
         # chama, e como o buffer ja tinha sido esvaziado ANTES do `try`
         # naquele ponto, todos os spans do processo sumiam de uma vez.
-        self.db_path = Path(db_path) if db_path else (Path.cwd() / ".sparkforge" / "traces.db")
+        self.db_path = (
+            Path(db_path) if db_path else state_path(Path.cwd(), "traces.db")
+        )
         self._init_db()
 
     # Colunas que a Task 1 acrescentou a `spans`, com o tipo de cada uma. Usado

@@ -34,10 +34,10 @@ Quem reportou é avisado quando a correção entrar em `main`.
 - **Tools MCP e CLI**: leitura ou escrita fora da raiz do repositório, argumento que
   alcança arquivo sem passar por `sparkforge_aws.paths.resolve_within`, tool marcada como
   só leitura que grava.
-- **Política** (`.sparkforge/policy.yaml`, hook `PreToolUse`, `permissions.ask`): comando
+- **Política** (`.sparkforge_aws/policy.yaml`, hook `PreToolUse`, `permissions.ask`): comando
   que deveria ser negado e passa.
 - **Coletores AWS** (`collect *`): chamada que muda estado do lado da AWS. Eles só leem.
-- **Journal e artefatos commitáveis** (`.sparkforge/journal.jsonl`, `case.yaml`,
+- **Journal e artefatos commitáveis** (`.sparkforge_aws/journal.jsonl`, `case.yaml`,
   blackboard): valor literal de argumento sensível gravado onde só deveria haver hash.
 
 ## O que não é escopo

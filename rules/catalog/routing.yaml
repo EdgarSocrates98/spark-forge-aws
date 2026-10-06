@@ -32,7 +32,7 @@ gates:
 
   baseline_captured:
     satisfied_by: bench.run_delta
-    produced_by: "sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json"
+    produced_by: "sparkforge-aws benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge_aws/facts_bench.json"
     # `experiment` NÃO entra: `bench.run_delta` exige o lado `--after`, que só
     # existe depois de rodar o job mudado. Guardar `experiment` seria gate
     # insatisfazível no momento em que morde.
@@ -40,7 +40,7 @@ gates:
 
   flows_mapped:
     satisfied_by: callgraph.reachable_spark_work
-    produced_by: "sparkforge-aws analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json"
+    produced_by: "sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json --out .sparkforge_aws/facts_callgraph.json"
     # NÃO `callgraph.summary`: aquele kind é emitido incondicionalmente, então
     # destravaria rodando `analyze call-graph` sobre um facts vazio.
     # `callgraph.reachable_spark_work` só existe se algum entrypoint alcança
@@ -68,7 +68,7 @@ gates:
     # schema/os agregados vem do `catalog.table_schema`, e nenhum verbo de
     # `analyze` produz os dois no mesmo arquivo. `--out` e obrigatorio -- o plano
     # e a evidencia deste gate, nao uma conveniencia.
-    produced_by: "sparkforge-aws funcval plan --facts .sparkforge/facts.json --facts .sparkforge/facts_catalog.json --out .sparkforge/facts_funcval_plan.json"
+    produced_by: "sparkforge-aws funcval plan --facts .sparkforge_aws/facts.json --facts .sparkforge_aws/facts_catalog.json --out .sparkforge_aws/facts_funcval_plan.json"
     # SO `report`, e a medicao que decide e o `phase_in` da ROTA que destrava este
     # gate. Pela R1 da Task 1 da Fase 4b -- o gate nao pode morder numa fase em que
     # a rota que o destrava ainda opera, senao a rota vira letra morta --, e a rota
@@ -116,7 +116,7 @@ rules:
         - {case: facts_index.count, count_eq: 0}
     recommended_skill: analyze-library-call-graph
     reason: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.
-    collect_commands: ["sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json"]
+    collect_commands: ["sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json"]
 
   - id: ROUTE-003
     phase_in: [inventory, diagnosis]

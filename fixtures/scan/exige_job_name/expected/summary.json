@@ -28,11 +28,11 @@
     "tripped": false
   },
   "outputs": [
-    ".sparkforge/scan/facts_pyspark.json",
-    ".sparkforge/scan/facts_sql.json",
-    ".sparkforge/scan/facts.json",
-    ".sparkforge/scan/findings.json",
-    ".sparkforge/scan/summary.json"
+    ".sparkforge_aws/scan/facts_pyspark.json",
+    ".sparkforge_aws/scan/facts_sql.json",
+    ".sparkforge_aws/scan/facts.json",
+    ".sparkforge_aws/scan/findings.json",
+    ".sparkforge_aws/scan/summary.json"
   ],
   "plan": {
     "entries": [
@@ -50,13 +50,13 @@
     "refused": [
       {
         "detail": "source fora da forma glue:get_job_runs:<job>/<run>",
-        "path": ".sparkforge/artifacts/glue_job_run/synthetic-job_jr_0001.json",
+        "path": ".sparkforge_aws/artifacts/glue_job_run/synthetic-job_jr_0001.json",
         "reason": "exige_job_name"
       }
     ],
     "skipped": [
       {
-        "path": ".sparkforge",
+        "path": ".sparkforge_aws",
         "reason": "DIRECTORY_IGNORED"
       }
     ]
@@ -64,7 +64,7 @@
   "refused": [
     {
       "detail": "source fora da forma glue:get_job_runs:<job>/<run>",
-      "path": ".sparkforge/artifacts/glue_job_run/synthetic-job_jr_0001.json",
+      "path": ".sparkforge_aws/artifacts/glue_job_run/synthetic-job_jr_0001.json",
       "reason": "exige_job_name"
     }
   ],

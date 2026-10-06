@@ -29,8 +29,8 @@ temporais e validação funcional continuam dependentes de ondas posteriores.
 
 ## Gates rodados
 
-- `python -m pytest tests/test_facts_glue_streaming.py tests/test_glue_streaming_rules.py tests/test_fixtures_golden_glue_streaming.py tests/test_analyze_glue_streaming.py -q --basetemp .sparkforge/local/pytest-glue-streaming` — `10 passed`, exit 0.
-- `python -m pytest tests/test_capability_parity.py tests/test_agents_parity.py tests/test_offline_expansion.py tests/test_fixtures_kind_coverage.py tests/test_rules_catalog_reachability.py -q --basetemp .sparkforge/local/pytest-glue-streaming-gates` — `1018 passed`, exit 0.
+- `python -m pytest tests/test_facts_glue_streaming.py tests/test_glue_streaming_rules.py tests/test_fixtures_golden_glue_streaming.py tests/test_analyze_glue_streaming.py -q --basetemp .sparkforge_aws/local/pytest-glue-streaming` — `10 passed`, exit 0.
+- `python -m pytest tests/test_capability_parity.py tests/test_agents_parity.py tests/test_offline_expansion.py tests/test_fixtures_kind_coverage.py tests/test_rules_catalog_reachability.py -q --basetemp .sparkforge_aws/local/pytest-glue-streaming-gates` — `1018 passed`, exit 0.
 - `python scripts/sync_skills.py --check` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.

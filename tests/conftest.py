@@ -37,12 +37,12 @@ if str(_ROOT) not in sys.path:
 def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
     """Isola o ledger de contexto compartilhado (`call_tool` E
     `economy_report`, os dois pelo MESMO `shared_ledger()`) do
-    `.sparkforge/traces.db` real do repositorio durante toda a sessao de
+    `.sparkforge_aws/traces.db` real do repositorio durante toda a sessao de
     teste.
 
     POR QUE AQUI, E NAO NO PRODUTO. `sparkforge_aws.observability.context_ledger.
     shared_ledger()` materializa o ledger do processo na primeira chamada que
-    nao monkeypatcha o proprio ledger -- e o default e `.sparkforge/
+    nao monkeypatcha o proprio ledger -- e o default e `.sparkforge_aws/
     traces.db` relativo ao `cwd`, que ao rodar a suite E o repositorio.
     Achado do revisor, medido: rodar so `tests/test_adapters_tools.py` (99
     chamadas de `call_tool`, nenhuma monkeypatchando o ledger) gravou 188
@@ -79,9 +79,9 @@ def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
     # -- um terceiro ponto que um dia importe `ContextLedger` e a use por
     # conta propria escaparia dela, e nenhum teste acusaria. Este backstop
     # nao depende de saber QUEM construiu o ledger: verifica o EFEITO --
-    # o `.sparkforge/traces.db` do repositorio simplesmente nao pode existir
+    # o `.sparkforge_aws/traces.db` do repositorio simplesmente nao pode existir
     # ao fim da suite. Pega qualquer ponto novo, presente ou futuro.
-    traces_do_repo = _ROOT / ".sparkforge" / "traces.db"
+    traces_do_repo = _ROOT / ".sparkforge_aws" / "traces.db"
     assert not traces_do_repo.exists(), (
         f"{traces_do_repo} foi criado durante a suite -- algum ponto de "
         "codigo construiu ContextLedger() por fora de shared_ledger() e de "
@@ -93,8 +93,8 @@ def _journals_do_repositorio() -> dict[str, str | None]:
     import hashlib
 
     alvos = [
-        _ROOT / ".sparkforge" / "journal.jsonl",
-        *sorted((_ROOT / "fixtures").glob("**/.sparkforge/journal.jsonl")),
+        _ROOT / ".sparkforge_aws" / "journal.jsonl",
+        *sorted((_ROOT / "fixtures").glob("**/.sparkforge_aws/journal.jsonl")),
     ]
     return {
         str(alvo): hashlib.sha256(alvo.read_bytes()).hexdigest() if alvo.is_file() else None

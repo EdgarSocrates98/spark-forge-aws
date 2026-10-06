@@ -3,7 +3,7 @@
     "kind": "glue.job_run.analyzed",
     "subject": {"type": "job_run", "job_name": "orders-stream", "symbol": "orders-stream"},
     "measures": {"runs_analyzed": 1},
-    "attrs": {"path": ".sparkforge/artifacts/glue_job_run"},
+    "attrs": {"path": ".sparkforge_aws/artifacts/glue_job_run"},
     "provenance": {"artifact": "analyzed.json", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "glue_job_run@0.1.0"}
   }
 ]

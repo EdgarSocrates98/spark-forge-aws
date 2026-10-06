@@ -114,8 +114,8 @@ def _monta_case(directory: Path, raiz: Path) -> dict[str, Any]:
 
 
 def _estado(raiz: Path) -> dict[str, bytes]:
-    """Todo byte sob `.sparkforge/` -- a foto que a recusa nao pode mudar."""
-    base = raiz / ".sparkforge"
+    """Todo byte sob `.sparkforge_aws/` -- a foto que a recusa nao pode mudar."""
+    base = raiz / ".sparkforge_aws"
     foto: dict[str, bytes] = {}
     if not base.exists():
         return foto

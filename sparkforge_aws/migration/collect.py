@@ -12,7 +12,7 @@ O QUE ENTRA, E POR QUE CADA UM E DECIDIDO DIFERENTE.
   o que adivinhar --, e sem ele a area `SF-LF` fica sem produtor: a topologia de
   FGAC e declarada no Terraform do job, nunca no codigo Python.
 - O dump de metadados Iceberg entra so do diretorio em que o COLETOR o grava
-  (`.sparkforge/artifacts/iceberg/`). Um `.json` qualquer da arvore nao e dump:
+  (`.sparkforge_aws/artifacts/iceberg/`). Um `.json` qualquer da arvore nao e dump:
   varrer a arvore inteira faria `package-lock.json` e `tsconfig.json` passarem
   pelo parser de metadados e virarem `iceberg.unresolved` -- ruido que afirma
   que alguem tentou ler metadados de um arquivo que ninguem disse ser metadado.
@@ -21,8 +21,8 @@ O QUE ENTRA, E POR QUE CADA UM E DECIDIDO DIFERENTE.
   fala; `iceberg.table_property` sabe, e e o que faz `SF-ENV-002` acusar por
   tabela em vez de o gate bloquear por job.
 - O inventario de consumidores entra so na CONVENCAO que
-  `sparkforge_aws/facts/consumers.py` declara (`.sparkforge/consumers.yaml`, ou
-  `.sparkforge/consumers/` dividido por dominio). Varrer todo `*.yaml` da arvore
+  `sparkforge_aws/facts/consumers.py` declara (`.sparkforge_aws/consumers.yaml`, ou
+  `.sparkforge_aws/consumers/` dividido por dominio). Varrer todo `*.yaml` da arvore
   acharia o inventario e, junto com ele, todo workflow de CI e todo arquivo de
   configuracao -- cada um virando um `env.consumers_analyzed` que afirma
   "inventario lido" sobre arquivo que nao e inventario. Fact e observacao
@@ -48,14 +48,23 @@ from sparkforge_aws.findings.models import Fact, sort_facts
 # Onde o inventario de consumidores e procurado, relativo a raiz do job. Os dois
 # caminhos sao a convencao declarada no docstring de `sparkforge_aws/facts/
 # consumers.py` -- arquivo unico, ou diretorio dividido por dominio.
-INVENTARIO_ARQUIVO = Path(".sparkforge") / "consumers.yaml"
-INVENTARIO_DIRETORIO = Path(".sparkforge") / "consumers"
+INVENTARIO_ARQUIVO = Path(".sparkforge_aws") / "consumers.yaml"
+INVENTARIO_DIRETORIO = Path(".sparkforge_aws") / "consumers"
 
 # Onde `sparkforge-aws collect iceberg-metadata` GRAVA o dump de metadados -- ver
 # `sparkforge_aws/collect/aws.py`, que monta
-# `.sparkforge/artifacts/iceberg/<db_tabela>.json`. Ler dai nao inventa
+# `.sparkforge_aws/artifacts/iceberg/<db_tabela>.json`. Ler dai nao inventa
 # convencao nova: usa a que o coletor ja publica.
-DUMPS_ICEBERG = Path(".sparkforge") / "artifacts" / "iceberg"
+DUMPS_ICEBERG = Path(".sparkforge_aws") / "artifacts" / "iceberg"
+
+# Os mesmos pontos sob o diretorio de estado pre-rename: um repo que vinha
+# acumulando inventario em `.sparkforge/` nao perde a declaracao ao atualizar
+# o pacote. Arquivo unico: prefere o novo. Diretorios: os dois contam, porque
+# dumps e consumer-files de antes e depois do rename podem coexistir.
+LEGADO = Path(".sparkforge")
+LEGADO_INVENTARIO_ARQUIVO = LEGADO / "consumers.yaml"
+LEGADO_INVENTARIO_DIRETORIO = LEGADO / "consumers"
+LEGADO_DUMPS_ICEBERG = LEGADO / "artifacts" / "iceberg"
 
 
 def collect(path: Path | str, repo_root: Path | None = None) -> list[Fact]:
@@ -88,15 +97,17 @@ def collect(path: Path | str, repo_root: Path | None = None) -> list[Fact]:
         facts.extend(extract_terraform_tree(raiz, repo_root=base))
 
     inventario = raiz / INVENTARIO_ARQUIVO
+    if not inventario.is_file():
+        inventario = raiz / LEGADO_INVENTARIO_ARQUIVO
     if inventario.is_file():
         facts.extend(extract_consumers_path(inventario, base))
 
-    diretorio = raiz / INVENTARIO_DIRETORIO
-    if diretorio.is_dir():
-        facts.extend(extract_consumers_tree(diretorio, repo_root=base))
+    for diretorio in (raiz / INVENTARIO_DIRETORIO, raiz / LEGADO_INVENTARIO_DIRETORIO):
+        if diretorio.is_dir():
+            facts.extend(extract_consumers_tree(diretorio, repo_root=base))
 
-    dumps = raiz / DUMPS_ICEBERG
-    if dumps.is_dir():
-        facts.extend(extract_iceberg_metadata_tree(dumps, repo_root=base))
+    for dumps in (raiz / DUMPS_ICEBERG, raiz / LEGADO_DUMPS_ICEBERG):
+        if dumps.is_dir():
+            facts.extend(extract_iceberg_metadata_tree(dumps, repo_root=base))
 
     return sort_facts(facts)

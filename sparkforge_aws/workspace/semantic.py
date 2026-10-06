@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sparkforge_aws.codeintel.db import BANCO_PADRAO
+from sparkforge_aws.codeintel.db import banco_para
 from sparkforge_aws.paths import resolve_within
 from sparkforge_aws.workspace.freshness import FreshnessAssessment
 from sparkforge_aws.workspace.manifest import WorkspaceManifest
@@ -153,7 +153,7 @@ def build_semantic_graph(
     for repository in manifest.repositories:
         database = (databases or {}).get(repository.name)
         if database is None:
-            database = repository.path / BANCO_PADRAO
+            database = banco_para(repository.path)
         database_path = resolve_within(repository.path, database)
         if database_path is None or not database_path.is_file():
             unresolved.append(

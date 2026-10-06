@@ -395,10 +395,10 @@ Erro de uso nunca vira exceção crua. Ele volta como um objeto com `error`
 
 ```json
 {
-  "error": "indice inexistente: .../vazio/.sparkforge/local/codeintel/graph.sqlite3; construa com `sparkforge-aws code sync`.",
+  "error": "indice inexistente: .../vazio/.sparkforge_aws/local/codeintel/graph.sqlite3; construa com `sparkforge-aws code sync`.",
   "exit_code": 2,
   "action": "sparkforge-aws code sync",
-  "db": ".../vazio/.sparkforge/local/codeintel/graph.sqlite3",
+  "db": ".../vazio/.sparkforge_aws/local/codeintel/graph.sqlite3",
   "error_code": "INDEX_MISSING"
 }
 ```
@@ -416,7 +416,7 @@ pode ver:
 
 `call_tool` em `sparkforge_aws/adapters/tools.py` é a mesma porta que o servidor usa.
 Serve para testar sem assistente nenhum. Rode numa pasta de teste, porque cada
-chamada registra uma medição em `.sparkforge/traces.db` na pasta atual:
+chamada registra uma medição em `.sparkforge_aws/traces.db` na pasta atual:
 
 ```bash
 mkdir -p /tmp/sf-guia && cp -r sparkforge_aws/capacity /tmp/sf-guia/capacity

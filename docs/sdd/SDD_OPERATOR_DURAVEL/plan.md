@@ -52,7 +52,7 @@ Auxiliar de teste usado por T4 e T5, criado em T4 logo abaixo de
 def _relatorio_de_mudanca(repo: Path, base: str, ident: str, novos=(), resolvidos=()) -> None:
     """Grava o relatorio que `change sandbox` (ou `change propose`) deixaria."""
     nome = "report.json" if base == "sandbox" else "evidence/sandbox_report.json"
-    arquivo = repo / ".sparkforge" / base / ident / nome
+    arquivo = repo / ".sparkforge_aws" / base / ident / nome
     arquivo.parent.mkdir(parents=True, exist_ok=True)
     dado = {
         "id": ident,
@@ -70,14 +70,14 @@ Teste, depois de `test_change_id_que_e_arquivo_nao_serve`:
 def test_change_id_aceita_proposal(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     caminhos["ship"].unlink()
-    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "S1").rmdir()
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
     # o sandbox foi limpo, mas o pacote de `change propose` guarda o mesmo id
-    (tmp_path / ".sparkforge" / "proposal" / "S1").mkdir(parents=True)
+    (tmp_path / ".sparkforge_aws" / "proposal" / "S1").mkdir(parents=True)
     assert _codigos(check(tmp_path)) == ([], [])
     # a proposal passa pelo mesmo confinamento: arquivo com o nome do id nao serve
-    (tmp_path / ".sparkforge" / "proposal" / "S1").rmdir()
-    (tmp_path / ".sparkforge" / "proposal" / "S1").write_bytes(b"x")
+    (tmp_path / ".sparkforge_aws" / "proposal" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "proposal" / "S1").write_bytes(b"x")
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 ```
 
@@ -116,8 +116,8 @@ def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     if not _pastas_da_mudanca(ctx.repo, ident):
         ctx.recusa("change_missing", artefato.path, "change_id",
                    "o build do operador passa por `sparkforge-aws change sandbox`; registre o id "
-                   "em change_id (vale enquanto existir .sparkforge/sandbox/<id>/ ou "
-                   ".sparkforge/proposal/<id>/)")
+                   "em change_id (vale enquanto existir .sparkforge_aws/sandbox/<id>/ ou "
+                   ".sparkforge_aws/proposal/<id>/)")
 ```
 
 Verde: o mesmo comando, depois `python -m pytest tests/test_sdd.py -q`. Commit
@@ -131,8 +131,8 @@ Teste, depois de `test_change_id_aceita_proposal`:
 def test_case_e_change_historicos_depois_do_ship(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     # depois da entrega: outro case aberto e o sandbox limpo
-    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
-    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    (tmp_path / ".sparkforge_aws" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
+    (tmp_path / ".sparkforge_aws" / "sandbox" / "S1").rmdir()
     assert _codigos(check(tmp_path)) == ([], [])
     # com o ship ainda aberto, as duas referencias voltam a valer
     _reescreve(caminhos["ship"], status="ready")
@@ -328,8 +328,8 @@ def _nao_movidas(relatorio: dict[str, Any] | None, regras: list[str]) -> list[st
 
 
 _ONDE_O_RELATORIO_MORA = (
-    ".sparkforge/sandbox/<id>/report.json ou "
-    ".sparkforge/proposal/<id>/evidence/sandbox_report.json"
+    ".sparkforge_aws/sandbox/<id>/report.json ou "
+    ".sparkforge_aws/proposal/<id>/evidence/sandbox_report.json"
 )
 
 
@@ -431,7 +431,7 @@ def test_moved_confere_o_relatorio(tmp_path):
     )
     assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
     # o sandbox limpo nao apaga a prova que o pacote de proposal guarda
-    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox" / "S1")
+    shutil.rmtree(tmp_path / ".sparkforge_aws" / "sandbox" / "S1")
     _relatorio_de_mudanca(tmp_path, "proposal", "S1", resolvidos=["SF-PY-012"])
     assert _codigos(check(tmp_path)) == ([], [])
     # o plano que prova por #<rule_id> le o change_id do build; com o build pronto,
@@ -513,7 +513,7 @@ Commit `feat(sdd): accept an observed finding move as operator build proof`.
 
 ## T6 — ponta a ponta durável
 
-Reescrever o fluxo de `tests/test_sdd_operator.py` com a raiz `.sparkforge/sdd`:
+Reescrever o fluxo de `tests/test_sdd_operator.py` com a raiz `.sparkforge_aws/sdd`:
 
 - `_grava(repo, fase, meta, raiz=RAIZ)` grava em `<raiz>/JOB_SHUFFLE/` e chama
   `stamp(repo, ..., root=raiz)`;
@@ -534,7 +534,7 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert caso.get("case_id") == "C-42", caso
     sandbox = call_tool("sparkforge_change_sandbox", {"repo": str(repo), "diff_path": str(diff)})
     change_id = sandbox.get("id")
-    assert change_id and (repo / ".sparkforge" / "sandbox" / change_id).is_dir(), sandbox
+    assert change_id and (repo / ".sparkforge_aws" / "sandbox" / change_id).is_dir(), sandbox
     assert REGRA in {r["rule_id"] for r in sandbox["resolved"]}, sandbox
     assert (repo / "lib" / "job.py").read_bytes() == _JOB
 
@@ -542,11 +542,11 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     _feature_operator(repo, caso["case_id"], change_id)
     assert _check(repo) == ([], [])
 
-    # a spec em .sparkforge/sdd nao desatualiza a copia validada
+    # a spec em .sparkforge_aws/sdd nao desatualiza a copia validada
     proposta = call_tool("sparkforge_change_propose",
                          {"repo": str(repo), "sandbox_id": change_id, "now": _NOW})
     assert proposta["refused"] == [], proposta
-    assert (repo / ".sparkforge" / "proposal" / change_id).is_dir()
+    assert (repo / ".sparkforge_aws" / "proposal" / change_id).is_dir()
 
     # comparacao sem nenhum check_delta nao e comparacao
     comparacao.write_bytes(json.dumps({"items": [{"id": "x", "kind": "funcval.analyzed"}]})
@@ -556,11 +556,11 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
 
     # sandbox limpo: o pacote de proposal guarda o id e o relatorio
     call_tool("sparkforge_change_sandbox", {"repo": str(repo), "clean": True})
-    assert not (repo / ".sparkforge" / "sandbox" / change_id).exists()
+    assert not (repo / ".sparkforge_aws" / "sandbox" / change_id).exists()
     assert _check(repo) == ([], [])
 
     # sem nenhum dos dois e com outro case: o ship done deixa as referencias historicas
-    shutil.rmtree(repo / ".sparkforge" / "proposal" / change_id)
+    shutil.rmtree(repo / ".sparkforge_aws" / "proposal" / change_id)
     outro = call_tool("sparkforge_case_open",
                       {"repo": str(repo), "case_id": "C-43", "now": _NOW, "reopen": True})
     assert outro.get("case_id") == "C-43", outro
@@ -621,10 +621,10 @@ Teste, no fim de `tests/test_sdd_operator.py`:
 
 ```python
 _OPERADOR_DURAVEL = {
-    "sdd-define": ("--root .sparkforge/sdd", "#kind:"),
-    "sdd-plan": ("--root .sparkforge/sdd", "proof", "finding"),
-    "sdd-build": ("--root .sparkforge/sdd", "moved", "--out", "--funcval", "--benchmark"),
-    "sdd-ship": ("--root .sparkforge/sdd", "--funcval", "--benchmark", "done"),
+    "sdd-define": ("--root .sparkforge_aws/sdd", "#kind:"),
+    "sdd-plan": ("--root .sparkforge_aws/sdd", "proof", "finding"),
+    "sdd-build": ("--root .sparkforge_aws/sdd", "moved", "--out", "--funcval", "--benchmark"),
+    "sdd-ship": ("--root .sparkforge_aws/sdd", "--funcval", "--benchmark", "done"),
 }
 
 
@@ -635,7 +635,7 @@ def test_skills_ensinam_o_operador_duravel():
         for trecho in trechos:
             assert trecho in operador, (nome, trecho)
     readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
-    for trecho in ("--root .sparkforge/sdd", "sparkforge-aws change sandbox",
+    for trecho in ("--root .sparkforge_aws/sdd", "sparkforge-aws change sandbox",
                    "sparkforge-aws change propose", "#kind:"):
         assert trecho in readme, trecho
 ```
@@ -643,7 +643,7 @@ def test_skills_ensinam_o_operador_duravel():
 Vermelho: `python -m pytest tests/test_sdd_operator.py::test_skills_ensinam_o_operador_duravel -q`.
 
 Texto: a seção "Perfil operator" de cada skill ganha a raiz
-`--root .sparkforge/sdd` nos comandos, e:
+`--root .sparkforge_aws/sdd` nos comandos, e:
 
 - `sdd-define`: `{kind: fact, ref: <arquivo>#kind:<kind>}` na hora do define (o
   id de fact é hash de conteúdo); `case_missing` deixa de valer com o ship
@@ -654,7 +654,7 @@ Texto: a seção "Perfil operator" de cada skill ganha a raiz
 - `sdd-build`: `moved {change_id, resolved}` no lugar de `red`/`green`;
   `funcval compare ... --out <ref do AC>`, `benchmark ... --out bench.json`,
   `change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`;
-  evidências dentro de `.sparkforge/sdd/<F>/`.
+  evidências dentro de `.sparkforge_aws/sdd/<F>/`.
 - `sdd-ship`: o mesmo `change propose` com as duas flags; com `status: done`,
   case e mudança citados viram histórico.
 

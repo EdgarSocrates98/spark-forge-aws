@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio pela ferramenta -- quem chama fornece o timestamp.
+Cria um case novo em .sparkforge_aws/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio pela ferramenta -- quem chama fornece o timestamp.
 
 ## Parâmetros
 

@@ -414,7 +414,7 @@ class TestArbitrate:
 
         for caminho in pacote["persistence"]["adrs"]:
             arquivo = Path(caminho)
-            assert arquivo.parent == repo / ".sparkforge" / "blackboard" / "adr"
+            assert arquivo.parent == repo / ".sparkforge_aws" / "blackboard" / "adr"
             assert "## Rollback" in arquivo.read_text(encoding="utf-8")
 
     def test_aceita_a_lista_nua_e_o_objeto_embrulhado(self, tmp_path: Path, capsys):

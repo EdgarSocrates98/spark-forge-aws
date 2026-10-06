@@ -8,7 +8,7 @@
     "result": {
       "content": [
         {
-          "text": "{\"error\":\"Caminho nao encontrado para analise: nao/existe.py\\n  Aponte para o diretorio da biblioteca ou para um arquivo .py:\\n    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> --out .sparkforge/facts.json\",\"exit_code\":2}",
+          "text": "{\"error\":\"Caminho nao encontrado para analise: nao/existe.py\\n  Aponte para o diretorio da biblioteca ou para um arquivo .py:\\n    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> --out .sparkforge_aws/facts.json\",\"exit_code\":2}",
           "type": "text"
         }
       ],

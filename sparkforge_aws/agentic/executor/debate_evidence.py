@@ -45,7 +45,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from sparkforge_aws.case.store import CASE_DIR
+from sparkforge_aws.case.store import CASE_DIR, LEGACY_CASE_DIR
 from sparkforge_aws.durable import append_text_line, read_records
 
 # nome publico -> (modulo em `sparkforge_aws.facts`, funcao). O nome e o do verbo
@@ -222,7 +222,7 @@ def _confinado(raiz: str, relativo: str) -> str:
     aponta para fora caem todos na mesma checagem. `commonpath` e nao
     `startswith`, porque `C:\\case2` comeca com `C:\\case` e nao esta dentro dele.
 
-    O diretorio de estado do case (`.sparkforge/`) tambem e recusado: ali mora o
+    O diretorio de estado do case (`.sparkforge_aws/`) tambem e recusado: ali mora o
     proprio debate -- submissoes, facts reextraidos, blackboard --, e deixar o
     agente apontar o extrator para esses arquivos seria deixa-lo citar, como
     artefato, o que ele mesmo escreveu.
@@ -232,11 +232,12 @@ def _confinado(raiz: str, relativo: str) -> str:
         raise EvidenceRefused(
             ARTIFACT_OUTSIDE_CASE, f"`{relativo}` resolve para fora da raiz do case"
         )
-    if _dentro(alvo, os.path.join(raiz, CASE_DIR)):
-        raise EvidenceRefused(
-            ARTIFACT_OUTSIDE_CASE,
-            f"`{relativo}` esta no diretorio de estado `{CASE_DIR}/`, que nao e artefato",
-        )
+    for estado in (CASE_DIR, LEGACY_CASE_DIR):
+        if _dentro(alvo, os.path.join(raiz, estado)):
+            raise EvidenceRefused(
+                ARTIFACT_OUTSIDE_CASE,
+                f"`{relativo}` esta no diretorio de estado `{estado}/`, que nao e artefato",
+            )
     if not os.path.isfile(alvo):
         raise EvidenceRefused(ARTIFACT_NOT_FOUND, f"`{relativo}` nao existe no case")
     return alvo

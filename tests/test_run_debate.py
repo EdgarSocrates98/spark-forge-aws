@@ -62,7 +62,7 @@ def test_o_workspace_nao_leva_o_gabarito(caso, tmp_path):
     ws = run_debate.montar_caso(run_debate.SUITE_DIR / caso, tmp_path / "caso-1")
     arquivos = sorted(p.relative_to(ws).as_posix() for p in ws.rglob("*") if p.is_file())
     assert arquivos == [
-        ".sparkforge/case.yaml",
+        ".sparkforge_aws/case.yaml",
         "artifacts/lakeformation/curated_arestas.json",
         "facts.json",
         "findings.json",

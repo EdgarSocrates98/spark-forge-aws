@@ -35,8 +35,8 @@ Os findings do SparkForge existem so como JSON e texto de CLI. Quem abre ou revi
 | Priority | Goal |
 |----------|------|
 | **MUST** | G1: `sparkforge-aws report github --findings F --facts X [--facts Y...] --repo . [--fail-on P0\|P1] [--category <nome>]` compoe sobre findings e facts, sem ler artefato |
-| **MUST** | G2: SARIF 2.1.0 em `.sparkforge/report/sparkforge-aws.sarif` (nome fixo, sob `--repo`) so com os findings localizados. Resolucao: `subject` com `file` e `line`; senao, o primeiro fact de `evidence` cujo `subject` tenha `file` e `line`; e o arquivo precisa existir sob `--repo` |
-| **MUST** | G3: resumo Markdown em `.sparkforge/report/summary.md` com TODOS os findings. Os sem localizacao ficam numa secao propria, com o motivo (`runtime`, `arquivo_fora_do_repo`, `sem_linha`) |
+| **MUST** | G2: SARIF 2.1.0 em `.sparkforge_aws/report/sparkforge-aws.sarif` (nome fixo, sob `--repo`) so com os findings localizados. Resolucao: `subject` com `file` e `line`; senao, o primeiro fact de `evidence` cujo `subject` tenha `file` e `line`; e o arquivo precisa existir sob `--repo` |
+| **MUST** | G3: resumo Markdown em `.sparkforge_aws/report/summary.md` com TODOS os findings. Os sem localizacao ficam numa secao propria, com o motivo (`runtime`, `arquivo_fora_do_repo`, `sem_linha`) |
 | **MUST** | G4: nenhum finding some. Para toda entrada, SARIF + recusa = total de findings |
 | **MUST** | G5: `tool.driver.rules` a partir dos proprios findings: `id`, `name`, `shortDescription` (titulo), `fullDescription` (explicacao), `help` (proposed_change, validation, rollback) e `helpUri` (primeira `sources[].url`); `level` por severidade (P0/P1 `error`, P2 `warning`, P3/P4 `note`); `precision` pelo `confidence`; sem `security-severity`; sem `partialFingerprints` |
 | **MUST** | G6: nenhuma chamada de rede no pacote e nenhum caminho do argv usado para escrita |

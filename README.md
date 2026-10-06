@@ -91,25 +91,25 @@ está em [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md).
 ```bash
 pip install sparkforge-aws            # ou, no clone: pip install -e .
 sparkforge-aws runtime detect --glue 5.0
-sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
-sparkforge-aws next-step --repo . --findings .sparkforge/findings.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --glue 5.0 --out .sparkforge_aws/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge_aws/findings.json
 ```
 
 `--facts` é repetível: `judge` correlaciona código e infraestrutura numa chamada só. No
 EMR on EC2 a release vem do dump, sem flag de versão:
 
 ```bash
-sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
-sparkforge-aws judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
-  --out .sparkforge/findings.json
+sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge_aws/facts-emr.json
+sparkforge-aws judge --facts .sparkforge_aws/facts-emr.json --facts .sparkforge_aws/facts.json \
+  --out .sparkforge_aws/findings.json
 ```
 
 No Databricks, a versão e o Photon são declarados:
 
 ```bash
-sparkforge-aws judge --facts .sparkforge/facts.json --databricks 15.4 --photon on \
-  --out .sparkforge/findings.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --databricks 15.4 --photon on \
+  --out .sparkforge_aws/findings.json
 ```
 
 O pacote instalado carrega o catálogo de regras e `knowledge/` dentro do wheel:
@@ -270,7 +270,7 @@ Com histórico terminal sanitizado, componha também a definição com
 `glue.job_run`:
 
 ```bash
-sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws analyze glue-job-runs --path .sparkforge_aws/artifacts/glue_job_run --out runs.facts.json
 sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
 sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
@@ -305,7 +305,7 @@ schema ou version.
 
 ```bash
 sparkforge-aws collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
-sparkforge-aws analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+sparkforge-aws analyze schema-registry --path .sparkforge_aws/artifacts/schema_registry/events.json
 ```
 
 Detalhes em [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md),
@@ -358,20 +358,20 @@ nome. As skills `sdd-explore`, `sdd-define`, `sdd-design`, `sdd-plan`, `sdd-buil
 
 ## Investigação, prova e handoff
 
-O case (`.sparkforge/case.yaml`) atravessa sessões e ferramentas. Com `--strict-gates`,
+O case (`.sparkforge_aws/case.yaml`) atravessa sessões e ferramentas. Com `--strict-gates`,
 a fase só avança com a evidência que destrava cada gate — o benchmark, o call graph, o
 plano de validação funcional —, nunca com a flag. `report sign` e `report verify` provam
 **correspondência** entre relatório e findings, não autoria. `report github` projeta os
 findings em SARIF para o Code Scanning.
 
-Ao pausar, `sparkforge-aws handoff --repo .` escreve `.sparkforge/handoff.md`, e cinco
+Ao pausar, `sparkforge-aws handoff --repo .` escreve `.sparkforge_aws/handoff.md`, e cinco
 arquivos pequenos viram o barramento entre sessões:
 
 ```bash
-git add .sparkforge/case.yaml .sparkforge/facts.json .sparkforge/findings.json .sparkforge/handoff.md .sparkforge/artifacts/manifest.json
+git add .sparkforge_aws/case.yaml .sparkforge_aws/facts.json .sparkforge_aws/findings.json .sparkforge_aws/handoff.md .sparkforge_aws/artifacts/manifest.json
 ```
 
-`.sparkforge/artifacts/**` nunca é commitado, exceto o `manifest.json`: o artefato bruto
+`.sparkforge_aws/artifacts/**` nunca é commitado, exceto o `manifest.json`: o artefato bruto
 pode carregar dado de negócio e ter centenas de MB. O manifesto guarda `sha256`, origem e
 o comando exato de recoleta. Detalhe em [Rigor, assinatura e handoff](docs/guia/08-rigor-e-handoff.md).
 
@@ -413,7 +413,7 @@ Use as superfícies novas quando houver artefato local:
 sparkforge-aws context inspect --input context.json
 sparkforge-aws agentops inspect <run_id> --repo .
 sparkforge-aws agentops compare <run_a> <run_b> --repo .
-sparkforge-aws agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
+sparkforge-aws agentops baseline save <run_id> --path .sparkforge_aws/baselines/base.json --repo .
 sparkforge-aws doctor agentic --repo .
 ```
 
@@ -428,7 +428,7 @@ por padrão e não executa provider.
 Clonar e abrir o Claude Code **executa código**: o hook de policy (`PreToolUse`), os hooks
 de `SessionStart` e o servidor MCP. `tests/test_execution_surface.py` trava a **string
 exata** de cada comando, e um deny-list recusa `curl`, `| sh`, `eval` e parentes. A policy
-de `.sparkforge/policy.yaml` decide o que o agente faz sozinho, o que pede confirmação e o
+de `.sparkforge_aws/policy.yaml` decide o que o agente faz sozinho, o que pede confirmação e o
 que é proibido.
 
 Nenhuma skill e nenhum agent executam manutenção destrutiva. Expirar snapshot, remover

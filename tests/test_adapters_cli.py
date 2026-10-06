@@ -368,7 +368,7 @@ class TestCaseLifecycle:
         self._open(repo, capsys)
         code, _ = run(["handoff", "--repo", str(repo)], capsys)
         assert code == 0
-        assert (repo / ".sparkforge" / "handoff.md").is_file()
+        assert (repo / ".sparkforge_aws" / "handoff.md").is_file()
 
 
 class TestStrictGatesNaCLI:
@@ -506,7 +506,7 @@ class TestStrictGatesNaCLI:
              "--reason", "corpus sem trabalho Spark alcancavel",
              "--now", self.NOW], capsys)
         run(["handoff", "--repo", str(repo)], capsys)
-        text = (repo / ".sparkforge" / "handoff.md").read_text(encoding="utf-8")
+        text = (repo / ".sparkforge_aws" / "handoff.md").read_text(encoding="utf-8")
         assert "## Overrides de gate" in text
         assert "corpus sem trabalho Spark alcancavel" in text
 
@@ -557,10 +557,10 @@ class TestCaseOpenNaoApagaRigorEmSilencio:
 
     def test_a_recusa_nao_toca_no_arquivo(self, repo, capsys):
         self._estrito_com_override(repo, capsys)
-        antes = (repo / ".sparkforge" / "case.yaml").read_text(encoding="utf-8")
+        antes = (repo / ".sparkforge_aws" / "case.yaml").read_text(encoding="utf-8")
         main(["case", "open", "--repo", str(repo), "--case-id", "c1",
               "--now", self.NOW])
-        assert (repo / ".sparkforge" / "case.yaml").read_text(encoding="utf-8") == antes
+        assert (repo / ".sparkforge_aws" / "case.yaml").read_text(encoding="utf-8") == antes
 
     def test_reopen_recria_o_case_do_zero(self, repo, capsys):
         """O caminho legitimo continua existindo -- com nome."""
@@ -599,7 +599,7 @@ class TestCaseOpenNaoApagaRigorEmSilencio:
         """Arquivo que `load_case` recusa ainda e um case ocupando o lugar:
         sobrescreve-lo em silencio apagaria o estado que alguem precisa ver
         antes de decidir."""
-        alvo = repo / ".sparkforge"
+        alvo = repo / ".sparkforge_aws"
         alvo.mkdir(parents=True, exist_ok=True)
         (alvo / "case.yaml").write_text("schema_version: 99\n", encoding="utf-8")
         assert main(["case", "open", "--repo", str(repo), "--case-id", "c1",
@@ -862,7 +862,7 @@ class TestCollect:
 
         entry = ArtifactEntry(
             kind="event_log",
-            path=".sparkforge/artifacts/eventlog/jr_gone.jsonl",
+            path=".sparkforge_aws/artifacts/eventlog/jr_gone.jsonl",
             sha256="a" * 64,
             source="s3://bucket/prefix/jr_gone/",
             collect_command="sparkforge-aws collect event-log --job-run jr_gone",
@@ -891,7 +891,7 @@ class TestCollect:
             ],
             capsys,
         )
-        target = repo / ".sparkforge" / "artifacts" / "eventlog" / "jr_corrupt.jsonl"
+        target = repo / ".sparkforge_aws" / "artifacts" / "eventlog" / "jr_corrupt.jsonl"
         target.write_bytes(b"corrupted")
 
         code, output = run(["collect", "verify", "--repo", str(repo)], capsys)
@@ -2241,7 +2241,7 @@ class TestCliMcpEquivalence:
 
         entry = ArtifactEntry(
             kind="event_log",
-            path=".sparkforge/artifacts/eventlog/jr_x.jsonl",
+            path=".sparkforge_aws/artifacts/eventlog/jr_x.jsonl",
             sha256="a" * 64,
             source="s3://bucket/prefix/jr_x/",
             collect_command="sparkforge-aws collect event-log --job-run jr_x",
@@ -2861,7 +2861,7 @@ class TestEconomyReportCommand:
     `adapters/tools.py:call_tool` alimenta -- por isso a fixture de sessao em
     `tests/conftest.py` so precisa substituir um nome
     (`context_ledger._SHARED_LEDGER`) para isolar esta chamada do
-    `.sparkforge/traces.db` real do repositorio."""
+    `.sparkforge_aws/traces.db` real do repositorio."""
 
     def test_an_unknown_run_refuses_by_name(self, capsys):
         from sparkforge_aws.adapters.cli import main

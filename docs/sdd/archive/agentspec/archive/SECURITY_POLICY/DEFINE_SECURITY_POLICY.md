@@ -1,6 +1,6 @@
 # DEFINE: Security Policy
 
-> Uma politica declarada (`.sparkforge/policy.yaml`) imposta em tres portas -- servidor MCP, hook `PreToolUse` e regras `permissions.ask` -- para que acao destrutiva por shell, escrita sensivel e tool que grava ou coleta passem por decisao registrada.
+> Uma politica declarada (`.sparkforge_aws/policy.yaml`) imposta em tres portas -- servidor MCP, hook `PreToolUse` e regras `permissions.ask` -- para que acao destrutiva por shell, escrita sensivel e tool que grava ou coleta passem por decisao registrada.
 
 ## Metadata
 
@@ -34,7 +34,7 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 
 | Priority | Goal |
 |----------|------|
-| **MUST** | `.sparkforge/policy.yaml` com schema: `tools` (denied, approvals, ask por classe ou nome), `bash` e `paths` (regras na sintaxe do Claude Code com `decision: ask\|deny` e `reason`), `extra_roots` |
+| **MUST** | `.sparkforge_aws/policy.yaml` com schema: `tools` (denied, approvals, ask por classe ou nome), `bash` e `paths` (regras na sintaxe do Claude Code com `decision: ask\|deny` e `reason`), `extra_roots` |
 | **MUST** | Hook `PreToolUse` (`python -m sparkforge_aws.policy.hook`, matcher `Bash\|Edit\|Write`) aplica as regras `deny`: exit 2 com o motivo; quebra comando composto antes de casar |
 | **MUST** | `sparkforge-aws policy sync-settings` gera `permissions.ask` no `.claude/settings.json` a partir das regras `ask` (Bash, Edit/Write e `mcp__sparkforge-aws__<tool>`); `--check` falha quando diverge |
 | **MUST** | O servidor MCP carrega a policy ao subir e a passa ao `call_tool`: `denied` recusa, classe sem aprovacao recusa, caminho fora do repositorio e das `extra_roots` recusa; sem arquivo, comportamento de hoje |
@@ -52,7 +52,7 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 - [x] SC2: uma regra `deny` faz o hook sair 2 com o motivo em 100% dos casos de `fixtures/policy/` que a casam, e sair 0 sem saida nos que nao casam.
 - [x] SC3: o hook responde em menos de 0,2 s por chamada (medido sobre os casos de fixture), sem importar `sparkforge_aws.adapters.tools`.
 - [x] SC4: policy invalida faz o hook sair 2 e o `call_tool` do servidor recusar; o handler nao roda.
-- [x] SC5: sem `.sparkforge/policy.yaml`, hook e servidor MCP se comportam como hoje (os testes atuais de `call_tool` passam sem mudanca).
+- [x] SC5: sem `.sparkforge_aws/policy.yaml`, hook e servidor MCP se comportam como hoje (os testes atuais de `call_tool` passam sem mudanca).
 - [x] SC6: com a policy padrao carregada, nenhuma tool que o MCP chama hoje com caminho dentro do repositorio passa a ser recusada; uma chamada com caminho fora da raiz e das `extra_roots` e recusada.
 - [x] SC7: tool nova com registros, `test_execution_surface` com o hook na lista fechada, surface e claims em dia; suite nos 9 lotes com 0 falhas.
 
@@ -104,7 +104,7 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 
 | Aspect | Value | Notes |
 |--------|-------|-------|
-| **Deployment Location** | `sparkforge_aws/policy/` (novo), `sparkforge_aws/adapters/{mcp,_core,cli,tools}.py`, `sparkforge_aws/agents/autonomy.py` (raizes extras), `.sparkforge/policy.yaml`, `.claude/settings.json`, `fixtures/policy/`, `docs/harness/*.md` | O modulo de politica nao importa `adapters` |
+| **Deployment Location** | `sparkforge_aws/policy/` (novo), `sparkforge_aws/adapters/{mcp,_core,cli,tools}.py`, `sparkforge_aws/agents/autonomy.py` (raizes extras), `.sparkforge_aws/policy.yaml`, `.claude/settings.json`, `fixtures/policy/`, `docs/harness/*.md` | O modulo de politica nao importa `adapters` |
 | **KB Domains** | Nenhum dominio do KB do agentspec; fontes: documentacao oficial de hooks e permissoes do Claude Code, `docs/harness/AUTHORIZATION-CHAIN.md`, `THREAT-MODEL.md` | Consultar no design |
 | **IaC Impact** | None | Regras sobre comandos de IaC, nada provisionado |
 

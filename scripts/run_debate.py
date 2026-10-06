@@ -8,7 +8,7 @@ script e o host headless -- o unico lugar do repositorio, junto de
 
 Para cada caso da suite `evals/agentic/debate/`:
 
-  1. monta o workspace de PROVA em `~/.sparkforge/debate-evals/workspace-<ts>/`,
+  1. monta o workspace de PROVA em `~/.sparkforge_aws/debate-evals/workspace-<ts>/`,
      copiando por ALLOWLIST o `case.yaml`, o diretorio `artifacts/` e a uniao
      (`uniao/findings.json`, `uniao/facts.json`) -- o `expected.yaml` nunca vai,
      e o subdiretorio do caso tem nome NEUTRO (`caso-<k>`), porque o nome da
@@ -21,7 +21,7 @@ Para cada caso da suite `evals/agentic/debate/`:
      esgotada a partir da rodada 2 vira passe do driver (`driver_pass`, uma
      submissao vazia, que o protocolo aceita); na rodada 1 o caso aborta;
   4. copia o transcript de cada chamada para
-     `~/.sparkforge/debate-evals/<run>/<caso>/<n>-<lado>.jsonl`, grava
+     `~/.sparkforge_aws/debate-evals/<run>/<caso>/<n>-<lado>.jsonl`, grava
      `result.json` e, no fim, o placar `grade.json`
      (`python -m sparkforge_aws.evals debate --run <run>` refaz o placar).
 
@@ -29,7 +29,7 @@ NENHUM VALOR DO ARGV CHEGA A UM CAMINHO, E NENHUM VALOR LIVRE CHEGA A
 `subprocess`. A suite e constante, os casos sao iterados da tupla constante
 `CASOS` (`--only` so FILTRA, e o caminho sai da constante), o modelo e as fontes
 de configuracao saem de allowlist, o executavel e o `claude` do PATH, e a saida
-mora sempre sob `~/.sparkforge/debate-evals/` -- fora do repositorio, porque
+mora sempre sob `~/.sparkforge_aws/debate-evals/` -- fora do repositorio, porque
 transcript de sessao real carrega caminho e contexto do operador. Mesmo molde
 de `scripts/run_agentic_eval.py`, que o scanner de seguranca aceitou.
 
@@ -77,7 +77,7 @@ SUITE_DIR = ROOT / "evals" / "agentic" / "debate"
 UNIAO_DIR = SUITE_DIR / "uniao"
 CASOS = ("lf_vence", "graph_vence", "sem_fato")
 REGRAS = ("SF-GRAPH-005", "SF-LF-001")
-OUT_BASE = Path.home() / ".sparkforge" / "debate-evals"
+OUT_BASE = Path.home() / ".sparkforge_aws" / "debate-evals"
 TRANSCRIPTS = Path.home() / ".claude" / "projects"
 
 # O que o workspace de prova recebe, por allowlist -- nunca por denylist: um
@@ -149,7 +149,7 @@ def _budget(valor: float | None) -> str | None:
 def montar_caso(origem: Path, destino: Path) -> Path:
     """Copia UM caso para `destino`, sem gabarito. `destino` nao pode existir.
 
-    `case.yaml` vai para `.sparkforge/case.yaml` (onde `load_case` o le), os
+    `case.yaml` vai para `.sparkforge_aws/case.yaml` (onde `load_case` o le), os
     artefatos vao como estao -- o caminho relativo deles e o que o lado passa em
     `evidence_artifacts` --, e a uniao vai para a raiz do workspace.
     """
@@ -538,7 +538,7 @@ def rodar_caso(
 def _dry_run(args: argparse.Namespace, claude: str | None) -> int:
     """Monta cada caso num diretorio TEMPORARIO, gera o primeiro brief e sai.
 
-    Nada vai para `~/.sparkforge/`, e o `claude` nem precisa estar no PATH.
+    Nada vai para `~/.sparkforge_aws/`, e o `claude` nem precisa estar no PATH.
     """
     executavel = claude or "<claude>"
     for caso in CASOS:

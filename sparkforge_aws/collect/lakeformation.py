@@ -83,7 +83,7 @@ def lakeformation_path(catalog_id: str, database: str, table: str) -> str:
     que muda sozinho.
     """
     catalogo = catalog_id or "local"
-    return f".sparkforge/artifacts/lakeformation/{catalogo}_{database}_{table}.json"
+    return f".sparkforge_aws/artifacts/lakeformation/{catalogo}_{database}_{table}.json"
 
 
 def _codigo_de_erro(exc: BaseException) -> str:

@@ -12,7 +12,7 @@ sparkforge-aws receipt emit --repo . --facts facts/pyspark.json --facts facts/tf
   --findings findings.json --report report.md --now 2026-09-12T00:00:00Z \
   --run-id "$SPARKFORGE_RUN_ID" --host-transcript ~/.claude/projects/<p>/<sessao>.jsonl \
   --provider anthropic
-sparkforge-aws receipt verify --repo . --receipt .sparkforge/receipts/<receipt_id>.json
+sparkforge-aws receipt verify --repo . --receipt .sparkforge_aws/receipts/<receipt_id>.json
 ```
 
 As tools MCP são `sparkforge_receipt_emit` (`LOCAL_MUTATION`) e
@@ -52,7 +52,7 @@ amarrado pelo sha256 dos arquivos de facts e de findings.
 
 Nunca entra: valor de `measures`, `metadata_json` de span, caminho absoluto
 (o transcript entra só pelo sha256, porque o caminho dele tem o usuário da
-máquina) ou qualquer texto de fact. `.sparkforge/` pode ser commitado, e caso
+máquina) ou qualquer texto de fact. `.sparkforge_aws/` pode ser commitado, e caso
 real nunca entra em arquivo. Toda lacuna sai em `unresolved` com a razão:
 `run_id_nao_declarado`, `transcript_ausente`, `provider_nao_declarado`,
 `modelos_multiplos`, `sem_arbitragem`, `sem_prova_funcional`, `sem_benchmark`,

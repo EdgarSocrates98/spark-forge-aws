@@ -178,7 +178,7 @@ class TestReadme:
     def test_documents_the_handoff_flow(self):
         assert "handoff" in self.README.lower()
         assert "git add" in self.README
-        assert ".sparkforge" in self.README
+        assert ".sparkforge_aws" in self.README
 
     def test_documents_why_artifacts_are_not_committed(self):
         assert "artifacts/**" in self.README or "artifacts/" in self.README
@@ -257,7 +257,7 @@ class TestGuia:
         assert "funcval compare" in self.GUIA
         # `--out` obrigatório no `plan` e ausente no `compare` é a assimetria que
         # mais confunde; o guia tem de declarar as duas metades.
-        assert "--out .sparkforge/facts_funcval_plan.json" in self.GUIA
+        assert "--out .sparkforge_aws/facts_funcval_plan.json" in self.GUIA
         assert "next_cursor" in self.GUIA
 
 

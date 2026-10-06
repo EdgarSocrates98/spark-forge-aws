@@ -29,7 +29,7 @@ Resultado esperado: o passo 3 mostra `"total_count": 1` com o achado
 explica cada campo.
 
 No seu projeto, troque o passo 2 por
-`sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json`.
+`sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json`.
 
 ## Para que serve
 
@@ -207,7 +207,7 @@ sparkforge-aws analyze pyspark --path fixtures/nao_existe
 ```text
 Caminho nao encontrado para analise: fixtures/nao_existe
   Aponte para o diretorio da biblioteca ou para um arquivo .py:
-    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> --out .sparkforge/facts.json
+    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> --out .sparkforge_aws/facts.json
 ```
 
 Em CI, use o código de saída para decidir se o passo passa. Não use a
@@ -321,7 +321,7 @@ Com um diretório de runs Glue já coletado, use o analyzer existente e o mesmo
 compositor:
 
 ```bash
-sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws analyze glue-job-runs --path .sparkforge_aws/artifacts/glue_job_run --out runs.facts.json
 sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
 sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
@@ -390,14 +390,14 @@ gerenciado. O contrato completo está em
 
 | Comando | O que faz | Referência |
 |---|---|---|
-| `case` | Abre, lê e atualiza `.sparkforge/case.yaml` (`open`, `get`, `update`). | [case](referencia/cli/case.md) |
+| `case` | Abre, lê e atualiza `.sparkforge_aws/case.yaml` (`open`, `get`, `update`). | [case](referencia/cli/case.md) |
 | `next-step` | Próximo passo recomendado, calculado a partir de `rules/catalog/routing.yaml`. | [next-step](referencia/cli/next-step.md) |
 | `resume` | Payload para retomar o case. | [resume](referencia/cli/resume.md) |
-| `handoff` | Escreve `.sparkforge/handoff.md` e imprime o payload. | [handoff](referencia/cli/handoff.md) |
+| `handoff` | Escreve `.sparkforge_aws/handoff.md` e imprime o payload. | [handoff](referencia/cli/handoff.md) |
 | `playbook` | Passos sequenciais de um coordenador, para ferramentas sem subagentes. | [playbook](referencia/cli/playbook.md) |
 | `runtime` | Detecção de versões (`runtime detect`). | [runtime](referencia/cli/runtime.md) |
 | `agents` | Lista e inspeciona agents. | [agents](referencia/cli/agents.md) |
-| `blackboard` | Lê o blackboard do case (`.sparkforge/blackboard/`). | [blackboard](referencia/cli/blackboard.md) |
+| `blackboard` | Lê o blackboard do case (`.sparkforge_aws/blackboard/`). | [blackboard](referencia/cli/blackboard.md) |
 | `decisions` | Lista e explica decisões registradas. | [decisions](referencia/cli/decisions.md) |
 | `budget` | Mostra o budget declarado do case. | [budget](referencia/cli/budget.md) |
 | `autonomy` | Mostra os níveis de autonomia L0 a L5. | [autonomy](referencia/cli/autonomy.md) |
@@ -433,7 +433,7 @@ gerenciado. O contrato completo está em
 | Comando | O que faz | Referência |
 |---|---|---|
 | `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user` (obrigatório), `--dry-run`, `--on-conflict overwrite\|merge\|ignore` para a cópia em dobro no repositório atual. | [integrate](referencia/cli/integrate.md) |
-| `detach` | Remove a integração de usuário: só o que `~/.sparkforge/integrations.json` registrou e ainda tem o sha256 gravado; `--dry-run` lista sem remover. | [detach](referencia/cli/detach.md) |
+| `detach` | Remove a integração de usuário: só o que `~/.sparkforge_aws/integrations.json` registrou e ainda tem o sha256 gravado; `--dry-run` lista sem remover. | [detach](referencia/cli/detach.md) |
 
 Os dois saem 1 quando há recusa, do host ou da cópia em dobro (`conflict.refused`);
 `sem_repositorio` e `mantido_host_nao_integrado` são informação e não mudam o código.
@@ -636,7 +636,7 @@ Saída real do `next-step`:
   "evidence": ["case:facts_index.count count_eq=0"],
   "missing_artifacts": [],
   "collect_commands": [
-    "sparkforge-aws analyze pyspark --path <lib> --out .sparkforge/facts.json"
+    "sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json"
   ],
   "blocked_by": [],
   "alternatives": [],
@@ -735,14 +735,14 @@ Acrescenta o estado de cada fonte citada, calculado sobre
 `knowledge/sources.lock.json`. O resultado depende do dia; para fixar o dia,
 use `--as-of AAAA-MM-DD`.
 
-### Grave em `.sparkforge/` no projeto real
+### Grave em `.sparkforge_aws/` no projeto real
 
-No seu próprio projeto, a convenção é gravar em `.sparkforge/`:
+No seu próprio projeto, a convenção é gravar em `.sparkforge_aws/`:
 
 ```bash
-sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
-sparkforge-aws next-step --repo . --findings .sparkforge/findings.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --glue 5.0 --out .sparkforge_aws/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge_aws/findings.json
 ```
 
 ### Comandos que falam com a AWS
@@ -765,7 +765,7 @@ observada junto com metadata e definição:
 sparkforge-aws collect schema-registry --repo . --registry-name events \
   --max-schemas 100 --now <ISO8601>
 sparkforge-aws analyze schema-registry \
-  --path .sparkforge/artifacts/schema_registry/events.json
+  --path .sparkforge_aws/artifacts/schema_registry/events.json
 ```
 
 `--schema-name` filtra um schema; `--schema-arn` consulta por ARN. Os limites
@@ -784,7 +784,7 @@ sparkforge-aws collect streaming-integrations --repo . --kinesis-stream orders \
   --now 2026-10-02T00:10:00Z
 sparkforge-aws analyze transport \
   --artifact kinesis \
-  --path .sparkforge/artifacts/streaming_integrations/kinesis_orders__metrics_*.json
+  --path .sparkforge_aws/artifacts/streaming_integrations/kinesis_orders__metrics_*.json
 ```
 
 O collector consulta cinco métricas stream-level do CloudWatch e preserva
@@ -800,7 +800,7 @@ baixa código nem job plan:
 sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 --now <ISO8601>
 sparkforge-aws analyze flink \
-  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
+  --path .sparkforge_aws/artifacts/managed_flink_application/orders__us-east-1.json \
   --artifact managed_flink
 ```
 

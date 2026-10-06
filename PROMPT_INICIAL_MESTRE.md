@@ -36,7 +36,7 @@ Nesta ordem, sempre:
    P0 e invalida qualquer limiar citado depois — não cite API nem
    propriedade de versão antes de resolver a divergência.
 2. **Abra o case** (`sparkforge-aws case open` ou `sparkforge_case_open`) com um
-   timestamp ISO 8601 explícito. Investigação sem `.sparkforge/case.yaml`
+   timestamp ISO 8601 explícito. Investigação sem `.sparkforge_aws/case.yaml`
    não é retomável em outra ferramenta ou sessão.
 3. **Leia `AGENT_PROTOCOL.md`.** Skills e agentes apenas APONTAM para ele;
    nenhum o embute, e `scripts/sync_skills.py` só espelha arquivos, não injeta

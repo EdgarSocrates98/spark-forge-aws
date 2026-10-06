@@ -38,6 +38,7 @@ DEFAULT_DENY_NAMES = frozenset(
     {
         ".git",
         ".sparkforge",
+        ".sparkforge_aws",
         ".pytest_cache",
         ".mypy_cache",
         ".ruff_cache",

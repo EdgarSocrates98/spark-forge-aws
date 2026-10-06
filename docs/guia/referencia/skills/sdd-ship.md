@@ -115,8 +115,8 @@ substituída depois vira `status: superseded`.
 
 ### Perfil operator
 
-- O `ship.md` mora em `.sparkforge/sdd/<F>/`, como as outras fases:
-  `sparkforge-aws sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+- O `ship.md` mora em `.sparkforge_aws/sdd/<F>/`, como as outras fases:
+  `sparkforge-aws sdd check --repo . --root .sparkforge_aws/sdd --feature <F>`.
 - O pacote do PR sai de
   `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`,
   sobre o `change_id` que o build registrou, e o PR pela skill
@@ -138,8 +138,8 @@ substituída depois vira `status: superseded`.
   rodar, sem `case_missing` nem `change_missing`. `moved` e `finding` só
   deixam de ser conferidos quando **nenhum** relatório da mudança existe; aí
   o que resta é o `report_sha256` gravado. Antes do `done`, tudo vale; o id
-  serve enquanto existir `.sparkforge/sandbox/<id>/` ou
-  `.sparkforge/proposal/<id>/`.
+  serve enquanto existir `.sparkforge_aws/sandbox/<id>/` ou
+  `.sparkforge_aws/proposal/<id>/`.
 - Os registros de `change_kinds` são do repositório SparkForge; mudança só no
   job do operador costuma ter `change_kinds: []`.
 

@@ -184,7 +184,7 @@ class TestPaginacao:
         with pytest.raises(CollectionFailed) as exc:
             _coletar(tmp_path, monkeypatch, ClienteQueNuncaPara(), max_events=10_000)
         assert "paginava" in str(exc.value)
-        assert not (Path(tmp_path) / ".sparkforge" / "artifacts").exists()
+        assert not (Path(tmp_path) / ".sparkforge_aws" / "artifacts").exists()
 
     def test_o_teto_de_eventos_sai_DECLARADO(self, tmp_path, monkeypatch):
         """Corte silencioso e log parcial com cara de completo."""

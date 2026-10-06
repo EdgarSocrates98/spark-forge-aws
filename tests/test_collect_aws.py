@@ -193,7 +193,7 @@ class TestCollectEventLog:
         )
 
         assert entry.kind == "event_log"
-        assert entry.path == ".sparkforge/artifacts/eventlog/jr_1.jsonl"
+        assert entry.path == ".sparkforge_aws/artifacts/eventlog/jr_1.jsonl"
         assert entry.source == "s3://my-bucket/spark-logs/jr_1/"
         assert entry.collected_at == "2026-07-30T00:00:00Z"
         assert (tmp_path / entry.path).is_file()
@@ -273,7 +273,7 @@ class TestCollectGlueJob:
         entry = aws.collect_glue_job("etl-job", tmp_path, now="2026-07-30T00:00:00Z")
 
         assert entry.kind == "terraform"
-        assert entry.path == ".sparkforge/artifacts/glue_job/etl-job.json"
+        assert entry.path == ".sparkforge_aws/artifacts/glue_job/etl-job.json"
         written = json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
         assert written == job
         assert glue.calls == [("get_job", {"JobName": "etl-job"})]
@@ -916,7 +916,7 @@ class TestCollectEmrEks:
         assert set(gravado) == {"virtualCluster", "jobRun"}
         assert gravado["jobRun"]["id"] == "0run"
         assert gravado["virtualCluster"]["state"] == "RUNNING"
-        assert entry.path == ".sparkforge/artifacts/emr_eks/0abc_0run.json"
+        assert entry.path == ".sparkforge_aws/artifacts/emr_eks/0abc_0run.json"
         assert emrc.calls == [
             ("describe_virtual_cluster", {"id": "0abc"}),
             ("describe_job_run", {"id": "0run", "virtualClusterId": "0abc"}),
@@ -950,7 +950,7 @@ class TestCollectVerifyIntegration:
 
         entry = ArtifactEntry(
             kind="event_log",
-            path=".sparkforge/artifacts/eventlog/jr_missing.jsonl",
+            path=".sparkforge_aws/artifacts/eventlog/jr_missing.jsonl",
             sha256="a" * 64,
             source="s3://bucket/prefix/jr_missing/",
             collect_command=(

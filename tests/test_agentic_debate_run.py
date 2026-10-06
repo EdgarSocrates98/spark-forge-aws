@@ -98,7 +98,7 @@ class TestOPlanoEOMesmoDoArbitrate:
         """`start` recalcula; ele nao escreve claim, evidencia nem trace."""
         raiz = _case(tmp_path / "case")
         assert _start(raiz)["status"] == "started"
-        assert not (raiz / ".sparkforge" / "blackboard").exists()
+        assert not (raiz / ".sparkforge_aws" / "blackboard").exists()
 
 
 class TestStart:
@@ -124,7 +124,7 @@ class TestStart:
         raiz = _case(tmp_path / "case", budget=None)
         saida = _start(raiz)
         assert saida["status"] == "refused" and saida["reason"] == dr.BUDGET_UNDECLARED
-        assert not (raiz / ".sparkforge" / "debate").exists()
+        assert not (raiz / ".sparkforge_aws" / "debate").exists()
 
     def test_sem_case_yaml_tambem_e_budget_undeclared(self, tmp_path):
         saida = _start(tmp_path)
@@ -194,7 +194,7 @@ class TestRetomada:
         payload = {"side": "A", "round": 1, "claims": [A1]}
         assert dr.submit(raiz, debate_id, payload)["status"] == "accepted"
 
-        arquivo = raiz / ".sparkforge" / "debate" / debate_id / "submissions.jsonl"
+        arquivo = raiz / ".sparkforge_aws" / "debate" / debate_id / "submissions.jsonl"
         arquivo.write_text("", encoding="utf-8")  # o processo morreu antes desta linha
 
         assert dr.submit(raiz, debate_id, payload)["status"] == "accepted"

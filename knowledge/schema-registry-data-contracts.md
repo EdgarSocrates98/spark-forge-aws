@@ -53,7 +53,7 @@ Quando a fonte é o Glue Schema Registry, use o collector somente de leitura:
 sparkforge-aws collect schema-registry --repo . --registry-name events \
   --max-schemas 100 --now <ISO8601>
 sparkforge-aws analyze schema-registry \
-  --path .sparkforge/artifacts/schema_registry/events.json
+  --path .sparkforge_aws/artifacts/schema_registry/events.json
 ```
 
 O collector chama apenas `get_registry`, `list_schemas`, `get_schema` e

@@ -20,7 +20,7 @@
 | Metric | Value |
 |--------|-------|
 | **Tasks Completed** | 14/14 entradas do manifesto |
-| **Files Created** | 7 modulos (`sparkforge_aws/policy/`), 3 de teste, 10 casos de fixture, `.sparkforge/policy.yaml`, 1 manual, 2 paginas de referencia, este relatorio |
+| **Files Created** | 7 modulos (`sparkforge_aws/policy/`), 3 de teste, 10 casos de fixture, `.sparkforge_aws/policy.yaml`, 1 manual, 2 paginas de referencia, este relatorio |
 | **Lines of Code** | `policy/` ~480; `_core` +~140, `tools.py` +~50, `cli.py` +~60, `mcp.py` +~45, `autonomy.py` +3 |
 | **Tests Passing** | ver Verification Results |
 | **Agents Used** | 0 (build direto) |
@@ -39,7 +39,7 @@
 | 6 | `autonomy.py` | (direct) | ✅ Complete | `root` aceita sequencia; teste de nao-regressao com uma raiz |
 | 7 | `adapters/mcp.py` | (direct) | ✅ Complete | `build_server(policy=, policy_error=)`; `main()` carrega de `CLAUDE_PROJECT_DIR`; `POLICY_INVALID` por chamada |
 | 8 | CLI e tool | (direct) | ✅ Complete | `policy check|explain|sync-settings`; `sparkforge_policy_explain` READ_ONLY |
-| 9 | `.sparkforge/policy.yaml` | (direct) | ✅ Complete | Destrutivos em `ask`, nada em `deny`, 3 classes pre-aprovadas |
+| 9 | `.sparkforge_aws/policy.yaml` | (direct) | ✅ Complete | Destrutivos em `ask`, nada em `deny`, 3 classes pre-aprovadas |
 | 10 | `.claude/settings.json` | (direct) | ✅ Complete | Hook `PreToolUse` e `permissions.ask` gerado |
 | 11-12 | Testes e fixtures | (direct) | ✅ Complete | `test_policy_decide` (27), `test_policy_mcp` (6), golden do hook com 10 casos |
 | 13 | `test_execution_surface` | (direct) | ✅ Complete | O comando do hook na lista fechada |

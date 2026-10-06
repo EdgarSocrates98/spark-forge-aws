@@ -33,7 +33,7 @@ O que executa hoje, na íntegra (relido dos três arquivos em 2026-09-18):
 | `vendor/caveman` plugin, `UserPromptSubmit` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-mode-tracker.js"` |
 | `.mcp.json` | `python -m sparkforge_aws.adapters.mcp --transport stdio` |
 
-O `PreToolUse` é o hook da policy de `.sparkforge/policy.yaml`: ele bloqueia as regras
+O `PreToolUse` é o hook da policy de `.sparkforge_aws/policy.yaml`: ele bloqueia as regras
 `deny` antes de o comando rodar. O que ele cobre e o que fica em `permissions.ask` está
 em [Política de segurança](usos/politica-de-seguranca.md).
 

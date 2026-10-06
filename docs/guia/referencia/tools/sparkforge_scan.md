@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Roda sozinho os analyzes que cabem num repositorio e julga a uniao. Artefato coletado entra pelo `kind` do `.sparkforge/artifacts/manifest.json`, com sha256 conferido; codigo entra pela extensao (.py, .sql, .tf, .jsonl). Um analyze por arquivo; depois `fuse` e `judge`. Grava em `.sparkforge/scan/` (facts por analyze, facts.json, findings.json, summary.json) e, com `format: sarif`, o SARIF e o resumo de PR do `report github`. `dry_run` so devolve o plano. Toda recusa tem nome: sem_manifesto (JSON solto nunca e classificado pelo conteudo), sha256_divergente, kind_sem_analyze, exige_job_name, fora_da_raiz, analyze_falhou (um arquivo ruim nao derruba os outros). Sem rede: nao coleta nada.
+Roda sozinho os analyzes que cabem num repositorio e julga a uniao. Artefato coletado entra pelo `kind` do `.sparkforge_aws/artifacts/manifest.json`, com sha256 conferido; codigo entra pela extensao (.py, .sql, .tf, .jsonl). Um analyze por arquivo; depois `fuse` e `judge`. Grava em `.sparkforge_aws/scan/` (facts por analyze, facts.json, findings.json, summary.json) e, com `format: sarif`, o SARIF e o resumo de PR do `report github`. `dry_run` so devolve o plano. Toda recusa tem nome: sem_manifesto (JSON solto nunca e classificado pelo conteudo), sha256_divergente, kind_sem_analyze, exige_job_name, fora_da_raiz, analyze_falhou (um arquivo ruim nao derruba os outros). Sem rede: nao coleta nada.
 
 ## Parâmetros
 

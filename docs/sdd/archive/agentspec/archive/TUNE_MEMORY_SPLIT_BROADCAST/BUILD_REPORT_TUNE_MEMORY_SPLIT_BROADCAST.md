@@ -111,7 +111,7 @@ total       12772 passed, 13 skipped, 0 failed
 | 4 | Arquivo solto de 0 byte na raiz (`(node_id`), fora do git | Inspecionado (vazio) e apagado | nenhum |
 | 5 | `sync_skills.py` desfez a edição feita no espelho `.claude/agents/` | Edição refeita na fonte `agents/spark-performance-architect.md` e espelhos ressincronizados | pequeno |
 | 6 | Paridade MCP: descrição, `explanation` e enum de recusa do `sparkforge_tune` diferem do golden congelado do SDK 1.29 | `sparkforge_tune` em `ALTERADAS_DEPOIS_DO_GOLDEN` (o `headroom` é aditivo) e `REESCRITAS_DEPOIS_DO_GOLDEN` novo, com motivo por caminho; enum só aceito crescendo com os valores antigos na frente, e contagem medida de 3 por transporte | pequeno |
-| 7 | `.sparkforge/traces.db` criado por um script de diagnóstico da paridade rodado fora do isolamento de teste, e cobrado pela guarda do `conftest` | Inspecionado (ledger ignorado pelo git, criado às 12:22 pelo script) e apagado; lotes a-c e goldens-3 rodados de novo | pequeno |
+| 7 | `.sparkforge_aws/traces.db` criado por um script de diagnóstico da paridade rodado fora do isolamento de teste, e cobrado pela guarda do `conftest` | Inspecionado (ledger ignorado pelo git, criado às 12:22 pelo script) e apagado; lotes a-c e goldens-3 rodados de novo | pequeno |
 
 ---
 

@@ -73,7 +73,7 @@ def streaming_integrations_path(
     subject = _slug("__".join(item for item in values if item.split("=", 1)[1]))
     if metrics_start or metrics_end:
         subject += f"__metrics_{_slug(metrics_start)}_{_slug(metrics_end)}_{metrics_period}"
-    return f".sparkforge/artifacts/streaming_integrations/{subject}.json"
+    return f".sparkforge_aws/artifacts/streaming_integrations/{subject}.json"
 
 
 def _redact(value: Any) -> Any:

@@ -235,7 +235,7 @@ class TestRecusaEFronteira:
         code, recusa = _run(_start_argv(caso), capsys)
         assert code == 0
         assert recusa["reason"] == debate_run.BUDGET_UNDECLARED
-        assert not (caso["repo"] / ".sparkforge" / "debate").exists()
+        assert not (caso["repo"] / ".sparkforge_aws" / "debate").exists()
 
     def test_debate_inexistente_e_debate_not_found(self, caso, capsys):
         code, recusa = _next(caso, "../../etc", capsys)

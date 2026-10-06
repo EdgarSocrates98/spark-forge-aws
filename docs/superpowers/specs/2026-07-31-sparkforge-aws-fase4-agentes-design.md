@@ -64,7 +64,7 @@ playbook (verbo de CLI)       mesma decomposicao, sequencial,
                               para plataforma sem despacho de subagente
 ```
 
-O que mantém as três honestas é `.sparkforge/case.yaml`: coordenador, executor e playbook leem e escrevem o mesmo estado. Nenhum guarda contexto próprio. É a mesma razão pela qual a Fase 0 pôs o roteamento em dado — estado que sobrevive à troca de sessão, de modelo e de ferramenta.
+O que mantém as três honestas é `.sparkforge_aws/case.yaml`: coordenador, executor e playbook leem e escrevem o mesmo estado. Nenhum guarda contexto próprio. É a mesma razão pela qual a Fase 0 pôs o roteamento em dado — estado que sobrevive à troca de sessão, de modelo e de ferramenta.
 
 ### 4.2 Coordenadores
 

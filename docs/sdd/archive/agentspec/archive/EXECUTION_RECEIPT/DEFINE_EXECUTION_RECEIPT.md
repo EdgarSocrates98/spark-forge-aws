@@ -16,7 +16,7 @@
 
 ## Problem Statement
 
-Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados em ate sete lugares: `case.yaml`, arquivos de facts, findings, report, `.sparkforge/blackboard/`, `.sparkforge/adr/` e `.sparkforge/debate/`. Os spans ficam num `traces.db` que nao vai para o git e nao carrega `case_id`. Nenhum artefato diz, de forma conferivel, quais desses pertencem a mesma execucao, com qual catalogo ela julgou, que tools chamou, que modelo o host declarou e que nada foi aplicado. O `report sign` prova a correspondencia do relatorio, nao a da execucao.
+Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados em ate sete lugares: `case.yaml`, arquivos de facts, findings, report, `.sparkforge_aws/blackboard/`, `.sparkforge_aws/adr/` e `.sparkforge_aws/debate/`. Os spans ficam num `traces.db` que nao vai para o git e nao carrega `case_id`. Nenhum artefato diz, de forma conferivel, quais desses pertencem a mesma execucao, com qual catalogo ela julgou, que tools chamou, que modelo o host declarou e que nada foi aplicado. O `report sign` prova a correspondencia do relatorio, nao a da execucao.
 
 ---
 
@@ -36,7 +36,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 |----------|------|
 | **MUST** | G1: modulo puro `sparkforge_aws/receipt/` com `build` (monta o recibo a partir de caminhos e de um `now` injetado) e `verify` (recalcula e diagnostica), sem I/O de rede e sem importar provider |
 | **MUST** | G2: `receipt_id` = `rcpt_` + sha256 do JSON canonico do recibo sem o proprio campo; o JSON canonico reutiliza um helper que ja existe no pacote, sem criar um setimo |
-| **MUST** | G3: parte `case` com caminho, sha256 e `case_id` de `.sparkforge/case.yaml`; parte `evidence` com caminho, sha256 e `fact_count` de cada arquivo de `--facts` (repetivel, a uniao) e `fact_ids_sha256`; parte `judgment` com caminho e sha256 dos findings, `rule_ids`, `fact_ids`, `catalog_version` e `schema_version` (lidos pelo mesmo `_signature_parts` do `report sign`) e, com `--report`, caminho e `signature` do report |
+| **MUST** | G3: parte `case` com caminho, sha256 e `case_id` de `.sparkforge_aws/case.yaml`; parte `evidence` com caminho, sha256 e `fact_count` de cada arquivo de `--facts` (repetivel, a uniao) e `fact_ids_sha256`; parte `judgment` com caminho e sha256 dos findings, `rule_ids`, `fact_ids`, `catalog_version` e `schema_version` (lidos pelo mesmo `_signature_parts` do `report sign`) e, com `--report`, caminho e `signature` do report |
 | **MUST** | G4: sha256 de artefato de texto com CRLF normalizado para LF; a regra de normalizacao entra no hash via `receipt_version` |
 | **MUST** | G5: parte `tools` com `run_id` e, por span do run, `name`, `status`, `outcome`, `payload_bytes`, `detail_level`, `start` e `end`, mais `spans_sha256`; `metadata_json` nunca entra; o span do proprio emit fica fora e aparece em `tools.excluded`; sem `--run-id`, ou com o `traces.db` indisponivel, a parte sai `unresolved` com a razao e o emit nao falha (regra 27) |
 | **MUST** | G6: nenhum conteudo de caso no recibo: so caminho, hash, id, contagem, versao e as colunas escolhidas do span; nenhum valor de `measures` |
@@ -45,9 +45,9 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 | **MUST** | G9: `tools` no verify: com o run presente no `traces.db`, recalcula `spans_sha256`; com o banco ausente ou sem o run, sai `not_rechecked` com a razao, listado, sem derrubar `valid` |
 | **MUST** | G10: `receipt_version` diferente da build: as partes que dependem de normalizacao saem `not_evaluable`, fora de `diverged` |
 | **MUST** | G11: `emitted_at` vem de `--now` (obrigatorio) e entra no hash; mesma entrada e mesmo `--now` dao o mesmo `receipt_id` e o mesmo arquivo byte a byte |
-| **MUST** | G12: CLI `sparkforge-aws receipt emit` e `sparkforge-aws receipt verify`; tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge/receipts/<receipt_id>.json`, caminhos de entrada confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) |
+| **MUST** | G12: CLI `sparkforge-aws receipt emit` e `sparkforge-aws receipt verify`; tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge_aws/receipts/<receipt_id>.json`, caminhos de entrada confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) |
 | **SHOULD** | G13: parte `host`: com `--host-transcript`, `transcript_sha256`, `agent` e `model` lidos pelos facts `host.*` de `extract_host_transcript_path`; `provider` so de `--provider`; sem transcript, `host.model` e `host.agent` saem `unresolved` (`transcript_ausente`); sem provider, `host.provider` sai `unresolved` (`provider_nao_declarado`); mais de um modelo sai `modelos_multiplos` |
-| **SHOULD** | G14: parte `decision`: por arquivo de `.sparkforge/blackboard/*.jsonl` presente, caminho, sha256 e contagem; `decision_ids`; por ADR em `.sparkforge/blackboard/adr/`, caminho, sha256 e `rollback_present`; por debate em `.sparkforge/debate/<id>/`, id e sha256 do estado; sem nenhum deles, `unresolved` (`sem_arbitragem`) |
+| **SHOULD** | G14: parte `decision`: por arquivo de `.sparkforge_aws/blackboard/*.jsonl` presente, caminho, sha256 e contagem; `decision_ids`; por ADR em `.sparkforge_aws/blackboard/adr/`, caminho, sha256 e `rollback_present`; por debate em `.sparkforge_aws/debate/<id>/`, id e sha256 do estado; sem nenhum deles, `unresolved` (`sem_arbitragem`) |
 | **SHOULD** | G15: parte `proof`: fact_ids `funcval.*` em `tests` e fact_ids de benchmark em `before_after`, so os presentes na uniao; nenhuma comparacao e nenhum ganho; sem nenhum, `unresolved` (`sem_prova_funcional`, `sem_benchmark`); no verify, fact_id citado que nao esta na uniao declarada faz a parte divergir |
 | **SHOULD** | G16: parte `actions` fixa: `autonomy: L0`, `applied_changes: false`, `items: []` |
 | **SHOULD** | G17: `sf-synthesizer` ganha o passo de emitir o recibo depois de `report_sign` e `telemetry_export`, com o `run_id` do processo; `parity.yaml` ganha a capacidade "prove what an execution used and decided" |
@@ -74,7 +74,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 
 | ID | Scenario | Given | When | Then |
 |----|----------|-------|------|------|
-| AT-001 | Emissao completa | Case sintetico com a uniao, findings, report assinado, blackboard e ADR do `arbitrate`, `traces.db` com um run e transcript sintetico | `receipt emit` com `--now` fixo | Arquivo em `.sparkforge/receipts/rcpt_<sha>.json` igual ao golden; `unresolved` so com o que nao foi fornecido |
+| AT-001 | Emissao completa | Case sintetico com a uniao, findings, report assinado, blackboard e ADR do `arbitrate`, `traces.db` com um run e transcript sintetico | `receipt emit` com `--now` fixo | Arquivo em `.sparkforge_aws/receipts/rcpt_<sha>.json` igual ao golden; `unresolved` so com o que nao foi fornecido |
 | AT-002 | Deterministico | A mesma entrada | Duas emissoes com o mesmo `--now` | Mesmo `receipt_id`, arquivo byte a byte |
 | AT-003 | Verify limpo | Recibo do AT-001, nada alterado | `receipt verify` | `valid: true`, `diverged: []`, exit 0 |
 | AT-004 | Facts adulterado | Um byte trocado num arquivo de facts | `receipt verify` | `diverged: ["evidence"]`, exit 1 |
@@ -115,7 +115,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 | Technical | Regras 13 e 30 | `proof` so aponta fact_ids; nenhum delta, nenhum ganho |
 | Technical | Regra 26 | Duas tools movem a superficie; crescimento declarado no commit |
 | Technical | Regra 27: medicao nunca derruba a chamada | `traces.db` indisponivel deixa `tools` `unresolved`, e o emit segue |
-| Technical | Caso real nunca entra em arquivo | Fixture sintetica; o recibo, commitavel pela politica de `.sparkforge/`, nao carrega conteudo |
+| Technical | Caso real nunca entra em arquivo | Fixture sintetica; o recibo, commitavel pela politica de `.sparkforge_aws/`, nao carrega conteudo |
 | Technical | Modulo novo em `sparkforge_aws/` | `iter_source_files` em vez de `Path.glob` (`test_facts_scan`); `git add` antes dos lotes; nenhum `def` aninhado repetido (codeintel) |
 | Technical | Windows e Linux | Caminhos relativos em POSIX no recibo; CRLF normalizado (G4) |
 
@@ -170,7 +170,7 @@ None - ready for Design. A-005 a A-008 sao de implementacao e se decidem no DESI
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_EXECUTION_RECEIPT.md`; A-004 corrige "traces.db podavel por desenho" do brainstorm |
-| 1.1 | 2026-09-12 | design-agent | A-005 a A-008 fechadas; G14 com o caminho real do ADR (`.sparkforge/blackboard/adr/`) |
+| 1.1 | 2026-09-12 | design-agent | A-005 a A-008 fechadas; G14 com o caminho real do ADR (`.sparkforge_aws/blackboard/adr/`) |
 | 1.2 | 2026-09-12 | ship-agent | Shipped and archived (PR #54) |
 
 ---

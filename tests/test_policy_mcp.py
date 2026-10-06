@@ -50,8 +50,8 @@ def test_tool_negada_nao_roda_o_handler(monkeypatch):
 
 def test_servidor_sem_policy_e_com_policy_invalida(tmp_path):
     assert mcp_adapter.carregar_policy_do_servidor(tmp_path) == (None, None)
-    (tmp_path / ".sparkforge").mkdir()
-    (tmp_path / ".sparkforge" / "policy.yaml").write_text("version: 9\n", encoding="utf-8")
+    (tmp_path / ".sparkforge_aws").mkdir()
+    (tmp_path / ".sparkforge_aws" / "policy.yaml").write_text("version: 9\n", encoding="utf-8")
     policy, erro = mcp_adapter.carregar_policy_do_servidor(tmp_path)
     assert policy is None and "version" in erro
     recusa = mcp_adapter._recusa_por_policy_invalida(erro)("sparkforge_judge", {})

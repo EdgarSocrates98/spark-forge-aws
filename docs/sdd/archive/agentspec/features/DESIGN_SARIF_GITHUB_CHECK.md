@@ -38,8 +38,8 @@
 │             ▼               ▼                     ▼              ▼         │
 │        sarif(dict)    summary(str)        annotations(list)   gate(bool)   │
 │             │               │                     │              │         │
-│  CLI ───────┼── .sparkforge/report/sparkforge-aws.sarif (nome fixo)  │         │
-│             │   .sparkforge/report/summary.md     (nome fixo)    │         │
+│  CLI ───────┼── .sparkforge_aws/report/sparkforge-aws.sarif (nome fixo)  │         │
+│             │   .sparkforge_aws/report/summary.md     (nome fixo)    │         │
 │             │   stdout: ::error file=..,line=..::msg              │         │
 │             │   exit: 1 se o gate disparar; 0 senao; 2 uso ───────┘         │
 │  MCP ───────┴── sparkforge_report_github (READ_ONLY): devolve tudo,        │
@@ -51,8 +51,8 @@ WORKFLOW (fora do pacote, examples/github/sparkforge-aws.yml)
   analyze terraform --path infra → facts
   judge --facts ... → findings
   report github --source-root jobs --source-root infra --fail-on P0
-  github/codeql-action/upload-sarif  ← .sparkforge/report/sparkforge-aws.sarif
-  cat .sparkforge/report/summary.md >> $GITHUB_STEP_SUMMARY
+  github/codeql-action/upload-sarif  ← .sparkforge_aws/report/sparkforge-aws.sarif
+  cat .sparkforge_aws/report/summary.md >> $GITHUB_STEP_SUMMARY
 ```
 
 ---
@@ -170,7 +170,7 @@ Motivos de recusa, na ordem de teste:
 **Context:** no eval harness, o scanner de seguranca recusou escrita em caminho vindo do argv. O workflow le a saida de lugar conhecido, e o GitHub so transforma em anotacao a linha `::cmd...::` inteira no stdout.
 
 **Choice:**
-- escrita em `<repo>/.sparkforge/report/sparkforge-aws.sarif` e `<repo>/.sparkforge/report/summary.md`, ambos com `newline="\n"`;
+- escrita em `<repo>/.sparkforge_aws/report/sparkforge-aws.sarif` e `<repo>/.sparkforge_aws/report/summary.md`, ambos com `newline="\n"`;
 - stdout: so as linhas de anotacao, uma por finding localizado, na ordem do SARIF;
 - stderr: uma linha `sparkforge-aws report github: <n> no SARIF, <m> sem localizacao, gate <P0|P1|off>: <ok|disparou>`;
 - exit code: 1 so pelo gate, 2 para erro de uso ou de entrada, 0 nos outros casos.
@@ -439,7 +439,7 @@ def _existe_sob(repo: Path) -> Callable[[str], bool]:
 4. github.projetar → sarif, summary, annotations, gate (limites aplicados e nomeados)
    │
    ▼
-5a. CLI: grava .sparkforge/report/{sparkforge-aws.sarif, summary.md}; anotacoes no stdout;
+5a. CLI: grava .sparkforge_aws/report/{sparkforge-aws.sarif, summary.md}; anotacoes no stdout;
     contagem no stderr; exit 0|1
 5b. MCP: devolve o mesmo, sem gravar
    │
@@ -492,7 +492,7 @@ def _existe_sob(repo: Path) -> Callable[[str], bool]:
 | Fact de evidencia ausente da uniao | Recusa `evidencia_ausente`, sem excecao | No |
 | Mais de 5 000 resultados | Recusa `limite_do_github` para o excedente | No |
 | Resumo acima de 1 MiB | Corte nomeado da tabela de recusas | No |
-| Falha ao gravar `.sparkforge/report/` | Exit 2 com a causa; nada parcial fica gravado (escrita em temporario e depois `replace`) | No |
+| Falha ao gravar `.sparkforge_aws/report/` | Exit 2 com a causa; nada parcial fica gravado (escrita em temporario e depois `replace`) | No |
 
 ---
 

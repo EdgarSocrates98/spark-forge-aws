@@ -47,7 +47,7 @@ Ver **Status por componente** abaixo.
 `sparkforge-aws change plan` (L1, *produce change*) gera o diff e o diff de rollback
 de um valor de configuração pela procedência dos facts, sem aplicar;
 `sparkforge-aws change sandbox` (L2, *sandbox execute*) aplica qualquer diff numa
-cópia em `.sparkforge/sandbox/<id>/` e compara os achados do `scan` antes e
+cópia em `.sparkforge_aws/sandbox/<id>/` e compara os achados do `scan` antes e
 depois. As duas saídas levam um campo `stage` próprio (`produce_change`,
 `sandbox_execute`) e **não** usam o enum `AutonomyLevel` desta biblioteca, onde
 L1 é *specialist* e L2 é *cooperative* — níveis de coordenação de agentes, com
@@ -98,7 +98,7 @@ decisão ADR/arbitragem de `sparkforge_aws/agentic/decision.py`:
 | Contrato de roteamento | `config/decisions/routing.data_domain.yaml` | IMPLEMENTED, `mode: shadow` | `tests/test_decision_contracts.py` |
 | Motor e comparação | `sparkforge_aws/economy/decision_*.py` | IMPLEMENTED, determinístico e offline | `tests/test_decision_engine.py`, `tests/test_decision_compare.py` |
 | Observação no runtime | `sparkforge_aws/agentic/shadow.py` | IMPLEMENTED, sem alterar dispatch | `tests/test_decision_runtime_integration.py` |
-| Receipts | `.sparkforge/decision-receipts/` via `decision_receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_receipts.py` |
+| Receipts | `.sparkforge_aws/decision-receipts/` via `decision_receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_receipts.py` |
 | Avaliação seed | `sparkforge_aws/evals/decision_plane.py` + fixture | IMPLEMENTED, 23/23 no run de 2026-09-28 | `tests/test_decision_evaluation.py` |
 | Ativação | `decision_activation.py` | FAIL-CLOSED; não pronta | `tests/test_decision_activation.py` |
 
@@ -361,12 +361,12 @@ publicada na primeira versão desta página estava errada em todos os módulos
   único que escrevia até 2026-09-11
 
 Desde 2026-09-11, `sparkforge-aws debate start|next|submit` também escrevem, em
-`.sparkforge/debate/<debate_id>/` e no blackboard. As tools correspondentes
+`.sparkforge_aws/debate/<debate_id>/` e no blackboard. As tools correspondentes
 são `LOCAL_MUTATION`. O `next` também é mutação, porque grava a `Decision` no
 fechamento. `sparkforge-aws debate referee` só lê.
 
 `arbitrate` segue a forma dos verbos agênticos existentes (`--repo`, nunca
-`--case <id>`), porque o blackboard mora em `<repo>/.sparkforge/blackboard/`.
+`--case <id>`), porque o blackboard mora em `<repo>/.sparkforge_aws/blackboard/`.
 `--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO
 dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
 findings (§12.9 do spec do executor). Alimentá-lo com um subconjunto fabrica
@@ -375,7 +375,7 @@ computado por `Fact.id`. O `budget` do plano de debate sai do bloco `budget:` do
 `case.yaml`, nunca do default do código: sem case, `budget.status` sai
 `unresolved` nomeando a lacuna.
 
-`budget show` lê o bloco `budget:` de `.sparkforge/case.yaml`. Sem esse bloco a
+`budget show` lê o bloco `budget:` de `.sparkforge_aws/case.yaml`. Sem esse bloco a
 resposta é `limits.status = "unresolved"` **nomeando a lacuna**; os defaults do
 código só saem sob `--template`, rotulados como template. Consumo sai
 `unresolved` e aponta `sparkforge-aws economy report --run-id <id>`, que é onde ele
@@ -393,7 +393,7 @@ código só saem sob `--template`, rotulados como template. Consumo sai
   determinístico **emitia** o `DebatePlan` e parava em `debate.unresolved`, e
   nenhum laço executava as rodadas. O que existe hoje, com precisão:
   - **máquina de estados L0** em `executor/debate_run.py`. `start` congela o
-    plano do par em `.sparkforge/debate/<debate_id>/`, `next` devolve o brief
+    plano do par em `.sparkforge_aws/debate/<debate_id>/`, `next` devolve o brief
     do lado da vez, e `submit` valida tudo antes de gravar qualquer coisa. O
     estado vive só em arquivo, e por isso a retomada é recálculo. Sem `budget:`
     declarado no `case.yaml`, o `start` recusa com `budget_undeclared`;

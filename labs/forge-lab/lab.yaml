@@ -3,7 +3,7 @@ lab: spark-forge-digital-twin
 product:
   registry: lab/versions.yaml
   scenario_suite: lab/scenarios/golden.yaml
-  run_root: .sparkforge/lab/runs
+  run_root: .sparkforge_aws/lab/runs
   result_classifications: [PASS, FAIL, UNRESOLVED, INFRA_FAILURE, INVALID_SCENARIO]
   fidelity:
     L0: deterministic_fixture

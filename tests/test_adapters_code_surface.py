@@ -92,7 +92,7 @@ def _envelhecer_conferencia(raiz):
     por isso o teste envelhece o carimbo em vez de dormir 30 s. Escreve so em
     `metadata`, no banco de indice do tmpdir -- nunca no fonte.
     """
-    banco = raiz / ".sparkforge" / "local" / "codeintel" / "graph.sqlite3"
+    banco = raiz / ".sparkforge_aws" / "local" / "codeintel" / "graph.sqlite3"
     conexao = sqlite3.connect(banco)
     try:
         conexao.execute("UPDATE metadata SET value='0' WHERE key='freshness_checked_ns'")
@@ -511,7 +511,7 @@ class TestPurgeSoApagaODiretorioDeCodeintel:
     """SPEC 76. A diferenca entre um verbo de limpeza e um `rm -rf` com nome bonito."""
 
     def test_apaga_o_diretorio_esperado(self, arvore):
-        alvo = arvore / ".sparkforge" / "local" / "codeintel"
+        alvo = arvore / ".sparkforge_aws" / "local" / "codeintel"
         assert alvo.is_dir()
         resultado = _core.code_purge(str(arvore))
         assert resultado["purged"] is True
@@ -544,7 +544,7 @@ class TestDoctorEManifesto:
         raiz = tmp_path / "arvore"
         (raiz / "jobs").mkdir(parents=True)
         (raiz / "jobs" / "etl.py").write_text(_JOB, encoding="utf-8")
-        (raiz / ".gitignore").write_text(".sparkforge/local\n", encoding="utf-8")
+        (raiz / ".gitignore").write_text(".sparkforge_aws/local\n", encoding="utf-8")
         _core.code_init(str(raiz))
         relatorio = _core.code_doctor(str(raiz))
         reprovadas = [c for c in relatorio["checks"] if not c["ok"]]

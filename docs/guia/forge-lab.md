@@ -68,10 +68,10 @@ sparkforge-aws lab run iceberg-small-files --backend compose --seed 42 \
   --execute --confirm --repo .
 
 # inspecionar, analisar, comparar e reproduzir evidência
-sparkforge-aws lab inspect .sparkforge/lab/runs/<run-id> --repo .
-sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id> --repo .
+sparkforge-aws lab inspect .sparkforge_aws/lab/runs/<run-id> --repo .
+sparkforge-aws lab analyze .sparkforge_aws/lab/runs/<run-id> --repo .
 sparkforge-aws lab compare <run-a> <run-b> --repo .
-sparkforge-aws lab reproduce .sparkforge/lab/runs/<run-id>/receipt.json --repo .
+sparkforge-aws lab reproduce .sparkforge_aws/lab/runs/<run-id>/receipt.json --repo .
 
 # promover somente depois de revisão humana
 sparkforge-aws lab promote-fixture <run-id> fixtures/lab/<id> \

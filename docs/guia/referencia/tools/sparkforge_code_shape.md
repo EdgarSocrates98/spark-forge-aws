@@ -13,7 +13,7 @@ A FORMA do grafo de codigo: comunidades (grupos que se chamam mais entre si) e o
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `repo` | string | sim | Raiz do repositorio analisado. Nada e lido fora dela. |
-| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`. |
+| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`. |
 | `detail_level` | string: `summary`, `normal`, `full` | não | `summary` para as contagens e o metodo; `normal` e `full` acrescentam os membros e a lista por grau. |
 | `top` | integer | não | Quantas comunidades e quantos nos por grau devolver. Satura no teto, nao recusa. |
 

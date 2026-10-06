@@ -14,7 +14,7 @@ A tool PRINCIPAL do Code Intelligence: monta o ContextPack de uma tarefa a parti
 |---|---|---|---|
 | `repo` | string | sim | Raiz do repositorio analisado. Nada e lido fora dela. |
 | `task` | string | sim | A pergunta em linguagem natural. Nunca ecoada de volta. |
-| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`. |
+| `db` | string | não | Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`. |
 | `include` | array de string | não | Secoes a preencher. `snippets` e RECUSADO com a razao em vez de devolvido vazio. Em `lineage` a recusa desceu de nivel: a secao responde, e o ITEM que nao se pode nomear sai marcado. |
 | `max_tokens` | integer | não | Teto do pacote. Fora da faixa satura no limite, nao recusa. |
 

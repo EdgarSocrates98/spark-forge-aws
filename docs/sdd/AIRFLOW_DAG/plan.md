@@ -1480,7 +1480,7 @@ def _extract_airflow_dag_facts(path: str) -> list[Fact]:
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para o arquivo .py do DAG ou para a pasta de DAGs:\n"
             f"    sparkforge-aws analyze airflow-dag --path dags/ "
-            f"--out .sparkforge/facts_airflow.json",
+            f"--out .sparkforge_aws/facts_airflow.json",
             exit_code=2,
         )
     if target.is_dir():

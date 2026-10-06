@@ -15,7 +15,7 @@ Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
 de regras versionado em YAML ([Conhecimento e catálogo](07-conhecimento-e-catalogo.md)),
-e um ciclo de vida de case (`.sparkforge/case.yaml`) que atravessa sessões e
+e um ciclo de vida de case (`.sparkforge_aws/case.yaml`) que atravessa sessões e
 ferramentas.
 
 ## Forge Lab: quando a pergunta exige experimentar
@@ -30,7 +30,7 @@ sparkforge-aws lab verify --repo .
 sparkforge-aws lab plan iceberg-small-files --backend compose --seed 42 --repo .
 sparkforge-aws lab run iceberg-small-files --backend compose --seed 42 \
   --execute --confirm --repo .
-sparkforge-aws lab analyze .sparkforge/lab/runs/<run-id> --repo .
+sparkforge-aws lab analyze .sparkforge_aws/lab/runs/<run-id> --repo .
 ```
 
 O Golden 20 é compilado de `lab/scenarios/golden.yaml`; o oracle esperado é
@@ -98,7 +98,7 @@ Com histórico sanitizado de execução, componha a definição efetiva com o
 analyzer existente de runs:
 
 ```bash
-sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws analyze glue-job-runs --path .sparkforge_aws/artifacts/glue_job_run --out runs.facts.json
 sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
 sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
@@ -148,9 +148,9 @@ os facts upstream.
 ```bash
 pip install -e .
 sparkforge-aws runtime detect --glue 5.0
-sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge-aws judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
-sparkforge-aws next-step --repo . --findings .sparkforge/findings.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --glue 5.0 --out .sparkforge_aws/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge_aws/findings.json
 ```
 
 ## EMR on EC2
@@ -162,10 +162,10 @@ infraestrutura juntos, que é o que faz um achado de código ser julgado contra
 o Spark que aquele cluster realmente roda.
 
 ```bash
-sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
-sparkforge-aws analyze pyspark --path lib/ --out .sparkforge/facts.json
-sparkforge-aws judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
-  --out .sparkforge/findings.json
+sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge_aws/facts-emr.json
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json
+sparkforge-aws judge --facts .sparkforge_aws/facts-emr.json --facts .sparkforge_aws/facts.json \
+  --out .sparkforge_aws/findings.json
 ```
 
 `--emr` existe nos três verbos que aceitam runtime (`judge`, `case open`,
@@ -281,7 +281,7 @@ essa etapa inteira. `collect emr-eks` é o único que faz **duas** chamadas de A
 (`describe-virtual-cluster` e `describe-job-run`) e grava **um** arquivo: os dois
 ids são obrigatórios, porque a própria API não aceita um job run sem o cluster
 virtual que o contém. `collect glue-job-runs` grava um artefato por run em
-estado terminal em `.sparkforge/artifacts/glue_job_run/`; run já em disco com
+estado terminal em `.sparkforge_aws/artifacts/glue_job_run/`; run já em disco com
 hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é teto de
 paginação, não filtro de data. `rules/catalog/` não tem nenhuma regra com
 `blocked_on` — o que falta para uma regra disparar é sempre coleta, nunca
@@ -380,22 +380,22 @@ e o próprio comparador carrega esse limite em
 ```bash
 # o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
 aws emr describe-cluster --cluster-id j-XXXX > cluster.json
-sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
+sparkforge-aws analyze emr-cluster --path cluster.json --out .sparkforge_aws/facts.json
 
 # onde o job valida dado, e o que acontece quando o check falha
-sparkforge-aws analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
+sparkforge-aws analyze data-quality --path lib/ --out .sparkforge_aws/facts-dq.json
 
 # o mesmo lib/, pela ótica do GraphFrames — sem import da biblioteca, só sentinela
-sparkforge-aws analyze graph --path lib/ --out .sparkforge/facts-graph.json
+sparkforge-aws analyze graph --path lib/ --out .sparkforge_aws/facts-graph.json
 
 # o antes e o depois, comparados — e o fact_id que o benchmark_ref cita
-sparkforge-aws analyze event-log --path before.jsonl --out .sparkforge/before.json
-sparkforge-aws analyze event-log --path after.jsonl  --out .sparkforge/after.json
-sparkforge-aws benchmark --before .sparkforge/before.json \
-                     --after .sparkforge/after.json \
-                     --out .sparkforge/bench.json
-sparkforge-aws validate --findings .sparkforge/findings.json \
-                    --facts .sparkforge/bench.json
+sparkforge-aws analyze event-log --path before.jsonl --out .sparkforge_aws/before.json
+sparkforge-aws analyze event-log --path after.jsonl  --out .sparkforge_aws/after.json
+sparkforge-aws benchmark --before .sparkforge_aws/before.json \
+                     --after .sparkforge_aws/after.json \
+                     --out .sparkforge_aws/bench.json
+sparkforge-aws validate --findings .sparkforge_aws/findings.json \
+                    --facts .sparkforge_aws/bench.json
 ```
 
 ## Próximos passos

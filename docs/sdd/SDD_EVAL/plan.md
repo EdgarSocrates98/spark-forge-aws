@@ -31,7 +31,7 @@ tasks:
 ## T1 — fixtures
 
 Cinco repositorios em `fixtures/sdd/<caso>/` com `docs/sdd/<FEATURE>/` e o que
-o gate precisa (teste alvo, `.sparkforge/case.yaml` no operador). Os arquivos sao
+o gate precisa (teste alvo, `.sparkforge_aws/case.yaml` no operador). Os arquivos sao
 gerados uma vez por um script de scratchpad que usa `stamp`, e conferidos:
 
 ```python

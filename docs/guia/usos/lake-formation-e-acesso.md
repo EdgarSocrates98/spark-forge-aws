@@ -525,7 +525,7 @@ mesmo log e o mesmo código, com `ALL` no grant. Ali o `fuse` não produz
 
 ### O mesmo caminho na sua conta
 
-Os coletores gravam em `.sparkforge/artifacts/` (veja
+Os coletores gravam em `.sparkforge_aws/artifacts/` (veja
 [Coleta na AWS](coleta-na-aws.md)). Os valores entre `<` e `>` são do seu job.
 
 ```bash
@@ -553,9 +553,9 @@ Depois, analise cada diretório, junte tudo no `fuse` e julgue:
 ```bash
 sparkforge-aws analyze pyspark --path <job.py> --out facts_code.json
 sparkforge-aws analyze terraform --path <diretorio-do-terraform> --out facts_tf.json
-sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/ --out facts_lf.json
-sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/ --out facts_iam.json
-sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/ --out facts_logs.json
+sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lakeformation/ --out facts_lf.json
+sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/ --out facts_iam.json
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge_aws/artifacts/cloudwatch_logs/ --out facts_logs.json
 sparkforge-aws analyze error-signatures --facts facts_logs.json --out facts_err.json
 sparkforge-aws fuse --facts facts_code.json --facts facts_tf.json --facts facts_lf.json \
   --facts facts_iam.json --facts facts_logs.json --facts facts_err.json --out facts_case.json

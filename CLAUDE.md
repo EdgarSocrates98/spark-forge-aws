@@ -52,12 +52,12 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
 | A spec desta mudança está bem posta? | `sdd check` / `sdd status` / `sdd stamp` | o frontmatter de `docs/sdd/<FEATURE>/<fase>.md`; julga contrato, cascata por hash, cobertura e TDD declarado, nunca a prosa |
-| O que estava rodando quando a sessão caiu? | `resume` (bloco `journal`) / `journal verify` | o `.sparkforge/journal.jsonl`, que `call_tool` e a CLI gravam — um `started` e um `finished` por verbo que muda estado, encadeados por hash. `started` sem `finished` é "caiu **ou** ainda roda", nunca só "caiu"; e a cadeia não detecta edição da **última** linha (quem a protege é o commit) |
+| O que estava rodando quando a sessão caiu? | `resume` (bloco `journal`) / `journal verify` | o `.sparkforge_aws/journal.jsonl`, que `call_tool` e a CLI gravam — um `started` e um `finished` por verbo que muda estado, encadeados por hash. `started` sem `finished` é "caiu **ou** ainda roda", nunca só "caiu"; e a cadeia não detecta edição da **última** linha (quem a protege é o commit) |
 | O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge_aws.evals grade` / `compare` (fora da CLI `sparkforge-aws`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
-| Como o revisor vê os findings no PR? | `report github` | findings de `judge` e a união dos facts; grava SARIF e resumo em `.sparkforge/report/`, com recusa nomeada para o que não tem linha no repositório |
-| Como vejo as tools e a sessão no meu backend de tracing? | `telemetry export` | os spans que `call_tool` gravou no ledger e, com `--host-transcript`, o transcript do host; grava OTLP/JSON (`gen_ai.*`, `mcp.*`) em `.sparkforge/telemetry/` para o receiver `otlp_json_file` do Collector, com o provider declarado e recusa nomeada para span sem horário |
+| Como o revisor vê os findings no PR? | `report github` | findings de `judge` e a união dos facts; grava SARIF e resumo em `.sparkforge_aws/report/`, com recusa nomeada para o que não tem linha no repositório |
+| Como vejo as tools e a sessão no meu backend de tracing? | `telemetry export` | os spans que `call_tool` gravou no ledger e, com `--host-transcript`, o transcript do host; grava OTLP/JSON (`gen_ai.*`, `mcp.*`) em `.sparkforge_aws/telemetry/` para o receiver `otlp_json_file` do Collector, com o provider declarado e recusa nomeada para span sem horário |
 | Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
-| Que mudança de arquivo esse valor vira, o que ela move nos achados, e como vira PR? | `change plan` / `change sandbox` / `change propose` | a procedência de `tf.spark_conf`/`pyspark.conf_set` (arquivo e linha) e o valor de `tune` ou do operador; no sandbox, um diff aplicado numa cópia em `.sparkforge/sandbox/<id>/`, julgada antes e depois pelo `scan`. Não aplica na árvore do operador nem afirma ganho (§15, `stage` próprio, fora do `AutonomyLevel`) |
+| Que mudança de arquivo esse valor vira, o que ela move nos achados, e como vira PR? | `change plan` / `change sandbox` / `change propose` | a procedência de `tf.spark_conf`/`pyspark.conf_set` (arquivo e linha) e o valor de `tune` ou do operador; no sandbox, um diff aplicado numa cópia em `.sparkforge_aws/sandbox/<id>/`, julgada antes e depois pelo `scan`. Não aplica na árvore do operador nem afirma ganho (§15, `stage` próprio, fora do `AutonomyLevel`) |
 
 Regras que valem para todos eles:
 
@@ -282,7 +282,7 @@ memória, budget, segurança, autonomia L0–L5 e o grafo de execução.
     `action_kinds.yaml`, ou arbitragem sem lastro; lacuna mensurável citando o par
     recusa `gate_experimentar_antes`, par barato e reversível `gate_nao_debater`,
     sinal ausente `gate_unresolved`. `sparkforge-aws debate start|next|submit` (tools
-    `LOCAL_MUTATION`) é máquina de estados L0 sobre `.sparkforge/debate/<debate_id>/`:
+    `LOCAL_MUTATION`) é máquina de estados L0 sobre `.sparkforge_aws/debate/<debate_id>/`:
     diz de quem é a vez, recusa por nome a submissão que fere o protocolo, só aceita
     evidência nova **reextraída** por extrator da allowlist, exige `budget:` declarado
     no case (`budget_undeclared`) e fecha **sempre** pelo `referee`. `sparkforge-aws debate

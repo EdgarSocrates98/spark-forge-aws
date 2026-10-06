@@ -91,9 +91,9 @@ class TestPortas:
         assert (fim["event"], fim["seq"], fim["started_seq"]) == ("finished", 2, 1)
         assert fim["prev"] == sha256_texto(linhas[0])
         assert fim["outcome"] == "ok"
-        caso = tmp_path / ".sparkforge" / "case.yaml"
+        caso = tmp_path / ".sparkforge_aws" / "case.yaml"
         assert fim["outputs"] == {
-            ".sparkforge/case.yaml": hashlib.sha256(caso.read_bytes()).hexdigest()
+            ".sparkforge_aws/case.yaml": hashlib.sha256(caso.read_bytes()).hexdigest()
         }
 
     def test_case_update_pelo_mcp_encadeia(self, tmp_path: Path, capsys) -> None:
@@ -152,7 +152,7 @@ class TestRegra27:
         )
         assert resultado["journal"] == UNRECORDED
         assert resultado["journal_reason"]
-        assert (tmp_path / ".sparkforge" / "case.yaml").is_file()
+        assert (tmp_path / ".sparkforge_aws" / "case.yaml").is_file()
 
     def test_cli_avisa_em_stderr(self, tmp_path: Path, capsys) -> None:
         journal_path(tmp_path).mkdir(parents=True)
@@ -171,6 +171,17 @@ class TestRegra27:
         _abrir_pela_cli(tmp_path)
         (tmp_path / "saidas").mkdir()
         assert raiz_do_journal({"out_path": str(tmp_path / "saidas" / "plano.json")}) == (
+            tmp_path.resolve(),
+            None,
+        )
+
+    def test_ancestral_reconhece_case_legado(self, tmp_path: Path) -> None:
+        """Case aberto em `.sparkforge/` pre-rename continua sendo raiz de
+        journal: o par started/finished nao pode morrer em silencio."""
+        (tmp_path / ".sparkforge").mkdir()
+        (tmp_path / ".sparkforge" / "case.yaml").write_text("x", encoding="utf-8")
+        (tmp_path / "saidas").mkdir()
+        assert raiz_do_journal({"out_path": str(tmp_path / "saidas" / "p.json")}) == (
             tmp_path.resolve(),
             None,
         )
@@ -222,7 +233,7 @@ class TestResume:
     def test_handoff_diz_caiu_ou_ainda_roda(self, tmp_path: Path, capsys) -> None:
         self._em_voo(tmp_path)
         _core.handoff(str(tmp_path))
-        texto = (tmp_path / ".sparkforge" / "handoff.md").read_text(encoding="utf-8")
+        texto = (tmp_path / ".sparkforge_aws" / "handoff.md").read_text(encoding="utf-8")
         assert "sem finished (caiu ou ainda roda)" in texto
 
     def test_sem_journal_nada_muda(self, tmp_path: Path) -> None:
@@ -258,3 +269,24 @@ class TestLimiteDaCadeia:
 def test_journal_verify_pela_cli(tmp_path: Path, capsys, status: str, esperado: int) -> None:
     assert main(["journal", "verify", "--repo", str(tmp_path)]) == esperado
     assert json.loads(capsys.readouterr().out)["status"] == status
+
+
+class TestJournalLegado:
+    """O journal mora ao lado do `case.yaml` que a leitura resolveu: um case
+    pre-rename em `.sparkforge/` tem a cadeia `seq`/`prev` continuada la."""
+
+    def test_journal_path_follows_legacy_case(self, tmp_path: Path) -> None:
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "case.yaml").write_text(
+            "schema_version: 1\ncase_id: c\n", encoding="utf-8"
+        )
+        assert journal_path(tmp_path) == legado / "journal.jsonl"
+
+    def test_verify_reads_legacy_journal(self, tmp_path: Path) -> None:
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "case.yaml").write_text(
+            "schema_version: 1\ncase_id: c\n", encoding="utf-8"
+        )
+        assert verify(tmp_path)["status"] == "absent"

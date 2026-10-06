@@ -4,7 +4,7 @@ Os dois estagios usam o nome do §15 (`produce_change`, `sandbox_execute`) num
 campo `stage` proprio, e NAO o enum `AutonomyLevel` de `agentic/autonomy.py`:
 la L1/L2 sao Specialist/Cooperative, outra escala. Nada aqui chama provider,
 subprocess ou git, e nada escreve na arvore do operador fora de
-`.sparkforge/sandbox/`.
+`.sparkforge_aws/sandbox/`.
 """
 from __future__ import annotations
 

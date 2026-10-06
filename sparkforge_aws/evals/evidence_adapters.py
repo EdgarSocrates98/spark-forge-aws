@@ -134,7 +134,7 @@ class AuthorizedCommandAdapter:
         executable_path = Path(executable).expanduser().resolve()
         if not executable_path.is_file():
             raise EvidenceAdapterError(f"external_command_not_found:{executable_path}")
-        temp_dir = self.repo / ".sparkforge" / "evidence-input"
+        temp_dir = self.repo / ".sparkforge_aws" / "evidence-input"
         temp_dir.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as run_dir:
             input_path = Path(run_dir) / "input.json"

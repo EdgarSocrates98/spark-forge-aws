@@ -11,7 +11,7 @@
 
 **Goal:** toda capacidade do toolkit alcançável a partir de um coordenador, em toda plataforma suportada — verificado por invariante de CI, não prometido em prosa. Hoje 21 das 29 tools MCP não são citadas em agente nenhum nem em skill nenhuma.
 
-**Architecture:** três camadas sobre um estado só. Coordenadores (agentes Claude) decidem o QUE investigar por domínio; executores (subagentes Claude) fazem UMA função do loop de fase, com fronteira negativa explícita; `sparkforge-aws playbook` emite a mesma decomposição em sequência para plataforma sem despacho de subagente. As três leem e escrevem `.sparkforge/case.yaml` — nenhuma guarda contexto próprio.
+**Architecture:** três camadas sobre um estado só. Coordenadores (agentes Claude) decidem o QUE investigar por domínio; executores (subagentes Claude) fazem UMA função do loop de fase, com fronteira negativa explícita; `sparkforge-aws playbook` emite a mesma decomposição em sequência para plataforma sem despacho de subagente. As três leem e escrevem `.sparkforge_aws/case.yaml` — nenhuma guarda contexto próprio.
 
 **Tech Stack:** markdown com frontmatter YAML (agentes), YAML declarativo (`routing.yaml`, `parity.yaml`), Python stdlib + PyYAML, pytest.
 
@@ -219,7 +219,7 @@ class TestHandoffContract:
     e a decomposicao vira cinco investigacoes paralelas com o mesmo custo de uma
     sozinha, so que divergindo entre si.
 
-    O estado compartilhado e `.sparkforge/case.yaml`: nenhum executor guarda
+    O estado compartilhado e `.sparkforge_aws/case.yaml`: nenhum executor guarda
     contexto proprio, pela mesma razao que a Fase 0 pos o roteamento em dado --
     estado que sobrevive a troca de sessao, de modelo e de ferramenta.
     """

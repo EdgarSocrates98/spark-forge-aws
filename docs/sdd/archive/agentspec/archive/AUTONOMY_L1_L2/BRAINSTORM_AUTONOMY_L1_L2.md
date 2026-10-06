@@ -23,9 +23,9 @@
 - `_core.tune_conf(facts_path)` já deriva o valor de configuração com procedência por chave: `current{value, provenance, evidence[fact ids]}` e `derived{value, formula, basis}`.
 - Os facts de procedência trazem arquivo e linha: `tf.spark_conf` com `subject {"file":"main.tf","line":30,"symbol":"job#spark.sql.shuffle.partitions"}` e `pyspark.conf_set` com `subject {"file":"job.py","line":12}`. Isso basta para um diff determinístico de VALOR.
 - `sparkforge_aws/simulate/patch.py` (`parse_sets`, `Mudanca(camada, chave, valor)`, sintaxe `camada:chave=valor`) age sobre facts, não sobre arquivos.
-- `_core.scan(repo)` (§22) roda plano por manifesto, `analyze`, `fuse` e `judge` em processo e grava em `<repo>/.sparkforge/scan/`. Serve de "antes" e "depois" dentro da cópia.
+- `_core.scan(repo)` (§22) roda plano por manifesto, `analyze`, `fuse` e `judge` em processo e grava em `<repo>/.sparkforge_aws/scan/`. Serve de "antes" e "depois" dentro da cópia.
 - `sparkforge_aws/facts/scan.py::varrer_source_files` já tem a varredura que pula `.git`, `.venv`, credenciais e diretórios de estado.
-- Nenhum `subprocess.run(` em `sparkforge_aws/` fora do hook da policy. O §16 declara `.sparkforge/policy.yaml` com LOCAL_MUTATION pré-aprovada.
+- Nenhum `subprocess.run(` em `sparkforge_aws/` fora do hook da policy. O §16 declara `.sparkforge_aws/policy.yaml` com LOCAL_MUTATION pré-aprovada.
 - Catálogo: 155 regras com `action` {kind, target, direction, …}. `validation` e `rollback` são listas de prosa por regra, e são elas que viram obrigações de prova no relatório do sandbox.
 
 **Technical Context Observed (for Define):**
@@ -44,7 +44,7 @@
 |---|----------|--------|--------|
 | 1 | Qual recorte do §15 entra? | **L1 config + L2 sandbox** | L1 gera diff e diff de rollback de VALOR de configuração (do `tune` ou de `--set`), sem aplicar. L2 aplica QUALQUER diff (do L1 ou do host) numa cópia isolada e compara achados |
 | 2 | O que o sandbox executa depois de aplicar? | **Só verbos do SparkForge** | `scan` (analyze+fuse+judge) antes e depois, diferença de achados e obrigações de prova. Nenhum comando arbitrário; o teste do usuário vira próximo passo nomeado |
-| 3 | Como o sandbox isola a mudança? | **Cópia em diretório temporário** | Cópia da árvore para `.sparkforge/sandbox/<id>/`, aplicada em Python, sem git. Inclui o que não foi commitado e funciona fora de repositório git |
+| 3 | Como o sandbox isola a mudança? | **Cópia em diretório temporário** | Cópia da árvore para `.sparkforge_aws/sandbox/<id>/`, aplicada em Python, sem git. Inclui o que não foi commitado e funciona fora de repositório git |
 | 4 | De onde vêm as amostras? | **Domínio novo `fixtures/change/`** | Repo sintético (main.tf, job.py) + facts + `expected.json` com diff, rollback e recusas |
 | 5 | Qual abordagem? | **Módulo novo `sparkforge_aws/change`** | `plan.py` puro + `sandbox.py` com aplicador estrito próprio |
 | 6 | O que fica fora? | L3/L4, migration e benchmark real, security scan externo, mudança de código gerada | Ver YAGNI |
@@ -131,16 +131,16 @@
 | 2 | L1 confere que o valor atual do fact está na linha antes de trocar | O repo pode ter mudado desde a extração; trocar às cegas edita a linha errada | Confiar só no número da linha |
 | 3 | Recusas nomeadas do L1: `sem_procedencia_em_arquivo`, `linha_nao_confere`, `procedencia_ambigua`, `valor_nao_literal` | Regra 20: toda recusa diz a medida que a destravaria | Pular a chave em silêncio |
 | 4 | `change plan` não escreve; tool READ_ONLY com o diff no payload; `--out` na CLI grava o `.patch` só se pedido | L1 é "produzir, não aplicar" | Gravar diff sempre |
-| 5 | Sandbox é cópia em `.sparkforge/sandbox/<id>/`, com a varredura que pula `.git`, `.venv`, credenciais e `.sparkforge` | Isola, inclui mudança não commitada, funciona sem git, e o pacote não chama binário | `git worktree` (ignora não commitado, exige git); branch no repo (mexe no checkout do operador) |
+| 5 | Sandbox é cópia em `.sparkforge_aws/sandbox/<id>/`, com a varredura que pula `.git`, `.venv`, credenciais e `.sparkforge_aws` | Isola, inclui mudança não commitada, funciona sem git, e o pacote não chama binário | `git worktree` (ignora não commitado, exige git); branch no repo (mexe no checkout do operador) |
 | 6 | Aplicador de diff próprio e estrito: contexto tem que bater, senão `diff_nao_aplica` com o hunk | Aplicação parcial ou fuzzy produz árvore que ninguém revisou | Chamar `patch`/`git apply` (subprocess) |
 | 7 | Sandbox roda só verbos do SparkForge: `scan` antes e depois, diferença por (`rule_id`, subject) | Comando arbitrário no sandbox é execução não confiável; o teste do usuário é dele | Rodar pytest/spark-submit do usuário |
 | 8 | Relatório traz achados novos, resolvidos e mantidos, obrigações de prova (`validation`/`rollback` das regras tocadas) e `next_steps` nomeados (teste do usuário, `benchmark` com dois runs, `funcval`) | Regra 13: não estimar ganho; a prova de desempenho exige run medido | Afirmar melhoria a partir da diferença de achados |
 | 9 | Confinamento do diff: `..`, caminho absoluto e symlink recusados (`caminho_fora_da_raiz`); sem binário; teto de 2 MB (`diff_grande_demais`) | Diff do host é entrada não confiável | Aceitar qualquer caminho |
 | 10 | `<id>` do sandbox = sha256 curto do diff + hash da árvore copiada; recriado a cada execução | Determinístico e idempotente | Timestamp ou uuid |
-| 11 | Sandbox fica em disco para inspeção; `change sandbox --clean` apaga só `.sparkforge/sandbox/` com `resolve_within` | Operador precisa ver a cópia; limpeza confinada | Apagar ao terminar |
+| 11 | Sandbox fica em disco para inspeção; `change sandbox --clean` apaga só `.sparkforge_aws/sandbox/` com `resolve_within` | Operador precisa ver a cópia; limpeza confinada | Apagar ao terminar |
 | 12 | NÃO reusar `AutonomyLevel`; os verbos saem com campo próprio `stage: produce_change \| sandbox_execute` | O enum existente significa Specialist/Cooperative e proíbe `modify_code`; renomear quebraria perfis e testes com outra semântica | Redefinir L1/L2 do enum |
 | 13 | `applied_changes` segue `false` nos schemas existentes | Nada destes verbos aplica na árvore principal | Virar `true` no sandbox |
-| 14 | `change sandbox` é LOCAL_MUTATION (grava em `.sparkforge/sandbox/`); a policy padrão do §16 já pré-aprova a classe | Classe honesta; sem regra nova de policy | READ_ONLY |
+| 14 | `change sandbox` é LOCAL_MUTATION (grava em `.sparkforge_aws/sandbox/`); a policy padrão do §16 já pré-aprova a classe | Classe honesta; sem regra nova de policy | READ_ONLY |
 
 ---
 
@@ -182,7 +182,7 @@ Hoje o SparkForge só diagnostica (L0): o `tune` diz qual valor a medida sustent
 - [ ] `change plan` sobre cada golden de `fixtures/change/` gera diff e rollback byte a byte iguais ao `expected.json`.
 - [ ] Ida-e-volta: aplicar o diff e depois o rollback devolve os bytes originais, em todos os casos.
 - [ ] Toda chave sem base sai em `refused[]` com um dos nomes da decisão 3 e a medida que a destravaria.
-- [ ] `change sandbox` nunca altera um byte fora de `.sparkforge/sandbox/` (teste compara hash da árvore antes e depois).
+- [ ] `change sandbox` nunca altera um byte fora de `.sparkforge_aws/sandbox/` (teste compara hash da árvore antes e depois).
 - [ ] Diff que não aplica, que escapa da raiz ou que passa do teto sai recusado por nome, sem aplicação parcial.
 - [ ] O caso "diff que resolve um achado" mostra o `rule_id` em `resolved` e as obrigações de prova da regra.
 - [ ] Nenhum `subprocess` e nenhum import de provider em `sparkforge_aws/change/`.

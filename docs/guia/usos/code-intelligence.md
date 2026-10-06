@@ -22,7 +22,7 @@ sparkforge-aws code symbol node_ab77aa4fcaa97f1006bd6d033aa27855 --root capacity
 1. Copia o pacote `sparkforge_aws/capacity` para uma pasta temporária. Assim o índice
    de teste não fica dentro do repositório.
 2. Entra na pasta.
-3. `code init` cria o índice em `capacity/.sparkforge/local/codeintel/graph.sqlite3`.
+3. `code init` cria o índice em `capacity/.sparkforge_aws/local/codeintel/graph.sqlite3`.
 4. `code search` responde "onde está X definido" e devolve o `node_id`, que é o
    identificador de cada símbolo.
 5. `code symbol` recebe esse `node_id` e responde "quem chama X, e o que X chama".
@@ -273,10 +273,10 @@ final do Graphify não é publicado.
 
 - `sparkforge-aws code doctor --root capacity` confere o índice e sai com código 1
   se alguma checagem falhar. Na pasta temporária, a checagem `gitignore` falhou,
-  porque ali não há `.gitignore`. No repositório, `.sparkforge/local` já está no
+  porque ali não há `.gitignore`. No repositório, `.sparkforge_aws/local` já está no
   `.gitignore`.
 - `sparkforge-aws code purge --root capacity` apaga **somente**
-  `.sparkforge/local/codeintel/`. Qualquer outro diretório é recusado.
+  `.sparkforge_aws/local/codeintel/`. Qualquer outro diretório é recusado.
 
 ## Como ler o resultado
 
@@ -319,8 +319,8 @@ um pacote que omite o símbolo pedido pelo nome é falha, e não economia.
 | `indice inexistente: ...; construa com sparkforge-aws code sync.` (código 2) | Nunca rodou `init` naquela raiz | `sparkforge-aws code init --root <pasta>` |
 | Resultado velho depois de editar | Índice fora de dia | `sparkforge-aws code status`, depois `sparkforge-aws code sync` |
 | `code path` com `no_resolved_path` | A ligação passa por chamada não resolvida | Veja `unresolved_refs` e confira com `code symbol` |
-| `code doctor` sai com 1 na checagem `gitignore` | A pasta não tem `.gitignore` cobrindo `.sparkforge/local` | Normal em pasta de teste. No seu projeto, acrescente a linha ao `.gitignore` |
-| O banco apareceu no `git status` | Você usou `--db` apontando para fora de `.sparkforge/local/` | Volte ao padrão ou apague o arquivo |
+| `code doctor` sai com 1 na checagem `gitignore` | A pasta não tem `.gitignore` cobrindo `.sparkforge_aws/local` | Normal em pasta de teste. No seu projeto, acrescente a linha ao `.gitignore` |
+| O banco apareceu no `git status` | Você usou `--db` apontando para fora de `.sparkforge_aws/local/` | Volte ao padrão ou apague o arquivo |
 
 ## Próximos passos
 

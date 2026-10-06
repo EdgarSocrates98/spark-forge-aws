@@ -214,7 +214,7 @@ class TestContract:
 
 class TestPathEntryPoints:
     def test_reads_yaml_and_anchors_relative_to_the_repo_root(self, tmp_path):
-        inventory = tmp_path / ".sparkforge" / "consumers.yaml"
+        inventory = tmp_path / ".sparkforge_aws" / "consumers.yaml"
         inventory.parent.mkdir()
         inventory.write_text(
             "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
@@ -222,7 +222,7 @@ class TestPathEntryPoints:
 
         facts = extract_consumers_path(inventory, repo_root=tmp_path)
         assert _consumers(facts)[0].attrs["table"] == "db.t"
-        assert _sentinel(facts).provenance["artifact"] == ".sparkforge/consumers.yaml"
+        assert _sentinel(facts).provenance["artifact"] == ".sparkforge_aws/consumers.yaml"
 
     def test_invalid_yaml_becomes_unresolved_with_a_sentinel(self, tmp_path):
         inventory = tmp_path / "consumers.yaml"

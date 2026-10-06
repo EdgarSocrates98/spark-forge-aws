@@ -123,7 +123,7 @@ def cloudwatch_logs_path(job_name: str, job_run_id: str, log_group: str) -> str:
     sobrescrever a primeira, e o manifesto registraria um sha256 que muda
     sozinho."""
     grupo = log_group.strip("/").replace("/", "_")
-    return f".sparkforge/artifacts/cloudwatch_logs/{job_name}_{job_run_id}_{grupo}.json"
+    return f".sparkforge_aws/artifacts/cloudwatch_logs/{job_name}_{job_run_id}_{grupo}.json"
 
 
 def _ms(iso: str) -> int:

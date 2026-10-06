@@ -8,7 +8,7 @@ consultar regras e fontes pela CLI, veja [Packs e conhecimento](usos/packs-e-con
 ## Base de conhecimento
 
 `knowledge/` é a fonte de verdade sobre **como Spark, Glue, EMR, Athena, Parquet e
-Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/`
+Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge_aws/`
 (estado da investigação). Comece por [`knowledge/INDEX.md`](../../knowledge/INDEX.md).
 
 Cobertura: modelo de execução do Spark, referência de configuração com defaults

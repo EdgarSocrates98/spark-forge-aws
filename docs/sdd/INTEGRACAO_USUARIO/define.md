@@ -16,7 +16,7 @@ acceptance:
     statement: "O wheel embute `skills/` e `agents/` (como ja embute `rules/catalog` e `knowledge`), e o pacote instalado os le sem o clone do repositorio."
     verified_by: {kind: test, ref: "tests/test_integrate.py::test_wheel_embute_skills_e_agents"}
   - id: AC2
-    statement: "`sparkforge-aws integrate claude --scope user` monta, sob ~/.sparkforge, um marketplace local com o plugin (skills/, agents/, .mcp.json e .claude-plugin/plugin.json) e registra a instalacao pelo `claude plugin marketplace add` e `claude plugin install --scope user`; o .mcp.json do plugin aponta o Python que tem o sparkforge-aws instalado, sem PYTHONPATH para o repo. Sem o binario `claude` no PATH, sai recusa nomeada com o comando que o operador roda."
+    statement: "`sparkforge-aws integrate claude --scope user` monta, sob ~/.sparkforge_aws, um marketplace local com o plugin (skills/, agents/, .mcp.json e .claude-plugin/plugin.json) e registra a instalacao pelo `claude plugin marketplace add` e `claude plugin install --scope user`; o .mcp.json do plugin aponta o Python que tem o sparkforge-aws instalado, sem PYTHONPATH para o repo. Sem o binario `claude` no PATH, sai recusa nomeada com o comando que o operador roda."
     verified_by: {kind: test, ref: "tests/test_integrate.py::test_integrate_claude_monta_plugin_e_recusa_sem_cli"}
   - id: AC3
     statement: "`sparkforge-aws integrate devin --scope user` grava agents em ~/.config/devin/agents/ (%APPDATA%\\devin\\agents\\ no Windows), skills em ~/.agents/skills/ e o servidor MCP em ~/.config/devin/mcp_config.json (chave mcpServers), preservando os outros servidores que ja estavam no arquivo."
@@ -31,7 +31,7 @@ acceptance:
     statement: "O conteudo de cada skill e agent gravado por integrate e byte a byte o que scripts/sync_skills.py renderiza para a mesma plataforma; nao existe um quinto renderizador."
     verified_by: {kind: test, ref: "tests/test_integrate.py::test_conteudo_e_o_da_renderizacao_do_sync_skills"}
   - id: AC7
-    statement: "Toda escrita fora do repositorio passa por manifesto (~/.sparkforge/integrations.json) com caminho e sha256 de cada arquivo gravado; `--dry-run` lista o que seria escrito sem escrever; rodar integrate duas vezes nao muda nada na segunda (idempotente)."
+    statement: "Toda escrita fora do repositorio passa por manifesto (~/.sparkforge_aws/integrations.json) com caminho e sha256 de cada arquivo gravado; `--dry-run` lista o que seria escrito sem escrever; rodar integrate duas vezes nao muda nada na segunda (idempotente)."
     verified_by: {kind: test, ref: "tests/test_integrate.py::test_manifesto_dry_run_e_idempotencia"}
   - id: AC8
     statement: "`sparkforge-aws detach <host> --scope user` remove so o que o manifesto registrou e ainda tem o sha256 gravado; arquivo que o usuario editou depois sai listado como recusa nomeada e fica; config de usuario que ja existia antes do integrate volta ao estado anterior (entradas do sparkforge-aws retiradas, o resto intacto)."

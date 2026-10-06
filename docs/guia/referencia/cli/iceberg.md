@@ -22,7 +22,7 @@ sparkforge-aws iceberg assess-upgrade --help
 
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
-| `path` (posicional) | sim | texto |  |  | Diretorio do job, com o inventario em .sparkforge/consumers.yaml. |
+| `path` (posicional) | sim | texto |  |  | Diretorio do job, com o inventario em .sparkforge_aws/consumers.yaml. |
 | `--from` | sim | texto |  |  | Format version de origem. |
 | `--to` | sim | texto |  |  | Format version alvo. |
 

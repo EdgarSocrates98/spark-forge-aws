@@ -28,18 +28,18 @@
     "tripped": false
   },
   "outputs": [
-    ".sparkforge/scan/facts_pyspark.json",
-    ".sparkforge/scan/facts_sql.json",
-    ".sparkforge/scan/facts.json",
-    ".sparkforge/scan/findings.json",
-    ".sparkforge/scan/summary.json"
+    ".sparkforge_aws/scan/facts_pyspark.json",
+    ".sparkforge_aws/scan/facts_sql.json",
+    ".sparkforge_aws/scan/facts.json",
+    ".sparkforge_aws/scan/findings.json",
+    ".sparkforge_aws/scan/summary.json"
   ],
   "plan": {
     "entries": [
       {
         "analyze": "lakeformation-grants",
         "origin": "manifesto",
-        "path": ".sparkforge/artifacts/lakeformation/quebrado.json"
+        "path": ".sparkforge_aws/artifacts/lakeformation/quebrado.json"
       },
       {
         "analyze": "pyspark",
@@ -55,7 +55,7 @@
     "refused": [],
     "skipped": [
       {
-        "path": ".sparkforge",
+        "path": ".sparkforge_aws",
         "reason": "DIRECTORY_IGNORED"
       }
     ]
@@ -63,7 +63,7 @@
   "refused": [
     {
       "detail": "lakeformation-grants: JSONDecodeError: Expecting property name enclosed in double quotes: line 2 column 1 (char 2)",
-      "path": ".sparkforge/artifacts/lakeformation/quebrado.json",
+      "path": ".sparkforge_aws/artifacts/lakeformation/quebrado.json",
       "reason": "analyze_falhou"
     }
   ],

@@ -35,7 +35,7 @@ capacidade, versão ou comportamento do outro.
 2. Extraia facts:
 
    ```bash
-   sparkforge-aws analyze flink --path <dump.json-ou-diretorio> --artifact flink --out .sparkforge/facts_flink.json
+   sparkforge-aws analyze flink --path <dump.json-ou-diretorio> --artifact flink --out .sparkforge_aws/facts_flink.json
    ```
 
    Para Amazon Managed Service for Apache Flink, use `--artifact managed_flink`.
@@ -59,7 +59,7 @@ capacidade, versão ou comportamento do outro.
 3. Julgue fatos observados:
 
    ```bash
-   sparkforge-aws judge --facts .sparkforge/facts_flink.json --show-skipped
+   sparkforge-aws judge --facts .sparkforge_aws/facts_flink.json --show-skipped
    ```
 
    Em MCP, a mesma extração é `sparkforge_analyze_flink`.

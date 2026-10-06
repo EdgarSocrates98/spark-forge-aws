@@ -4,7 +4,7 @@ O pacote MONTA e o host EXECUTA. Nada aqui chama git, gh, subprocess ou
 provider: `commands.md` e texto, e quem o roda e o operador -- ou o host, pela
 skill `propose-change-pr`, que para antes de `git push` e de `gh pr create`.
 
-A entrada e o sandbox do L2 (`.sparkforge/sandbox/<id>/`), e nao o diff: o que
+A entrada e o sandbox do L2 (`.sparkforge_aws/sandbox/<id>/`), e nao o diff: o que
 se propoe e exatamente o que passou pelo scan antes e depois. Por isso as
 recusas saem antes de qualquer byte gravado:
 
@@ -28,6 +28,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.change.apply import apply_patches, parse_unified_diff
 from sparkforge_aws.change.plan import diff_unificado
 from sparkforge_aws.change.refusals import (
@@ -42,8 +43,8 @@ from sparkforge_aws.change.sandbox import SANDBOX_DIR, inventariar
 from sparkforge_aws.paths import resolve_within
 
 STAGE_PROPOSAL = "propose_change"
-PROPOSAL_DIR = PurePosixPath(".sparkforge/proposal")
-SCAN_DIR = PurePosixPath(".sparkforge/scan")
+PROPOSAL_DIR = PurePosixPath(".sparkforge_aws/proposal")
+SCAN_DIR = PurePosixPath(".sparkforge_aws/scan")
 BLOQUEANTES = frozenset({"P0", "P1"})
 MAX_CAMINHOS = 20
 MEDIDAS = ("benchmark", "funcval")
@@ -102,7 +103,7 @@ def _diretorio(raiz: Path, base: PurePosixPath, ident: str) -> Path:
     alvo = resolve_within(raiz, (base / ident).as_posix())
     if alvo is None:
         raise ChangeError(CAMINHO_FORA_DA_RAIZ, f"{base} resolve para fora de {raiz}")
-    return alvo
+    return state_path(raiz, base / ident)
 
 
 def ler_sandbox(raiz: Path, ident: str) -> tuple[Path, dict[str, Any]]:
@@ -122,7 +123,7 @@ def ler_sandbox(raiz: Path, ident: str) -> tuple[Path, dict[str, Any]]:
 def desatualizados(raiz: Path, antes: Path) -> list[str]:
     """Os caminhos em que a arvore de hoje difere da copia `before/` validada.
 
-    O inventario e o do proprio sandbox, com as mesmas podas: `.sparkforge` fica
+    O inventario e o do proprio sandbox, com as mesmas podas: `.sparkforge_aws` fica
     fora dos dois lados (o scan de `before/` grava la dentro), e so os artefatos
     coletados entram.
     """
@@ -228,9 +229,13 @@ def corpo(
     patch: str,
     atencao: Sequence[Mapping[str, Any]],
     anexos: Mapping[str, Sequence[Mapping[str, Any]]],
+    pasta: str,
 ) -> str:
-    """O corpo do PR sem a assinatura; termina no titulo da secao dela."""
-    pasta = (PROPOSAL_DIR / ident).as_posix()
+    """O corpo do PR sem a assinatura; termina no titulo da secao dela.
+
+    `pasta` e o caminho repo-relativo onde o pacote foi gravado de fato --
+    `.sparkforge_aws/proposal/<id>` num repo novo, `.sparkforge/proposal/<id>`
+    quando a arvore pre-rename ja continha aquela proposta."""
     linhas = [
         f"# {titulo}",
         "",
@@ -297,8 +302,9 @@ def corpo(
     return "\n".join(linhas)
 
 
-def comandos(ident: str, branch: str, titulo: str, arquivos: Sequence[str]) -> str:
-    pasta = (PROPOSAL_DIR / ident).as_posix()
+def comandos(
+    ident: str, branch: str, titulo: str, arquivos: Sequence[str], pasta: str
+) -> str:
     return "\n".join(
         [
             "# Como abrir este PR",
@@ -399,6 +405,7 @@ def montar(
             resultado["blocking_findings"] = bloqueantes
             return resultado
         destino = _diretorio(raiz, PROPOSAL_DIR, ident)
+        pasta = destino.relative_to(raiz).as_posix()
     except ChangeError as exc:
         return recusa(exc)
 
@@ -408,7 +415,7 @@ def montar(
     titulo = f"config: {', '.join(arquivos)} (sparkforge-aws change {ident[:8]})"
     pendentes = [tipo for tipo in MEDIDAS if not anexos.get(tipo)]
 
-    texto = corpo(ident, titulo, relatorio, ida, atencao, anexos)
+    texto = corpo(ident, titulo, relatorio, ida, atencao, anexos, pasta)
     assinado = assinar(texto, achados_depois)
     if assinado is None:
         texto += "O scan de `after/` nao deixou achado nenhum: nao ha evidencia para assinar.\n"
@@ -424,7 +431,7 @@ def montar(
             ident, titulo, arquivos, len(relatorio.get("resolved") or []), len(atencao), pendentes
         ).encode("utf-8"),
         "branch.txt": f"{branch}\n".encode(),
-        "commands.md": comandos(ident, branch, titulo, arquivos).encode("utf-8"),
+        "commands.md": comandos(ident, branch, titulo, arquivos, pasta).encode("utf-8"),
         "evidence/sandbox_report.json": _json(relatorio),
     }
     if doc_recibo is not None:
@@ -433,7 +440,7 @@ def montar(
         {
             "id": ident,
             "stage": STAGE_PROPOSAL,
-            "sandbox": (SANDBOX_DIR / ident).as_posix(),
+            "sandbox": base.relative_to(raiz).as_posix(),
             "files": [
                 {"path": rel, "sha256": hashlib.sha256(dados).hexdigest()}
                 for rel, dados in sorted(pacote.items())
@@ -443,7 +450,7 @@ def montar(
     _gravar(destino, pacote)
     return {
         **_vazio(),
-        "proposal": (PROPOSAL_DIR / ident).as_posix(),
+        "proposal": pasta,
         "id": ident,
         "files": sorted(pacote),
         "branch": branch,

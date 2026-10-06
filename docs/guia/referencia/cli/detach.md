@@ -2,7 +2,7 @@
 
 # `sparkforge-aws detach`
 
-Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado.
+Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge_aws/integrations.json registrou e ainda tem o sha256 gravado.
 
 ```bash
 sparkforge-aws detach --help

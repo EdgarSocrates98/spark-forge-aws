@@ -13,7 +13,7 @@ Tres verbos:
 
 - `start` recalcula os planos pelo MESMO caminho do `arbitrate`
   (`run.open_debate_plans`), sem gravar a saida dele, e congela o plano do par
-  pedido em `.sparkforge/debate/<debate_id>/plan.json`;
+  pedido em `.sparkforge_aws/debate/<debate_id>/plan.json`;
 - `next_step` le so os arquivos do debate e devolve o brief do lado da vez, ou
   fecha e devolve `done`;
 - `submit` valida TUDO antes de gravar QUALQUER coisa. Recusa deixa o estado
@@ -104,7 +104,7 @@ from sparkforge_aws.agentic.models import (
     Rebuttal,
 )
 from sparkforge_aws.agentic.referee import referee_over_blackboard
-from sparkforge_aws.case.store import CASE_DIR, load_case
+from sparkforge_aws.case.store import CASE_DIR, load_case, state_dir
 from sparkforge_aws.durable import append_text_line, read_records, write_atomic
 
 AGENTE = "sparkforge_aws.agentic.executor.debate_run"
@@ -208,7 +208,7 @@ def start(
     """Congela o plano de debate do par `rules` e devolve o `debate_id`.
 
     Args:
-        case_root: raiz do case -- o estado vai em `<root>/.sparkforge/debate/`.
+        case_root: raiz do case -- o estado vai em `<root>/.sparkforge_aws/debate/`.
         findings: os mesmos findings que `arbitrate` recebeu.
         facts: a UNIAO dos facts do case, com `id` (o mesmo conjunto do
             `arbitrate`; subconjunto fabricaria claim desancorada).
@@ -443,7 +443,7 @@ def _debate_do_par(case_root: Path | str, par: tuple[str, str]) -> str | None:
     em `sparkforge_aws/`, e aqui a arvore e um nivel so, de nomes que este modulo
     mesmo escreveu.
     """
-    base = Path(case_root) / CASE_DIR / DEBATE_DIR
+    base = state_dir(case_root) / DEBATE_DIR
     if not base.is_dir():
         return None
     with os.scandir(base) as entradas:
@@ -1139,7 +1139,7 @@ def _opcao(regra: str, plano: dict[str, Any]) -> str:
 
 
 def _dir_do_debate(case_root: Path | str, debate_id: str) -> Path:
-    return Path(case_root) / CASE_DIR / DEBATE_DIR / debate_id
+    return state_dir(case_root) / DEBATE_DIR / debate_id
 
 
 def _canonico(valor: Any) -> str:

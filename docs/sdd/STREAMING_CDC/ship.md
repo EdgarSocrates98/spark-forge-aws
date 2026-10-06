@@ -30,7 +30,7 @@ cross-artifact e validação funcional continuam dependentes das próximas waves
 
 ## Gates rodados
 
-- `python -m pytest tests/test_facts_cdc.py tests/test_cdc_rules.py tests/test_fixtures_golden_cdc.py tests/test_analyze_cdc.py tests/test_reference_docs.py -q --basetemp .sparkforge/local/pytest-streaming-cdc-final` — `21 passed`, exit 0.
+- `python -m pytest tests/test_facts_cdc.py tests/test_cdc_rules.py tests/test_fixtures_golden_cdc.py tests/test_analyze_cdc.py tests/test_reference_docs.py -q --basetemp .sparkforge_aws/local/pytest-streaming-cdc-final` — `21 passed`, exit 0.
 - `python scripts/sync_skills.py --check` — exit 0.
 - `python scripts/check_surface_lock.py` — exit 0.
 - `python scripts/gen_reference_docs.py --check` — exit 0.

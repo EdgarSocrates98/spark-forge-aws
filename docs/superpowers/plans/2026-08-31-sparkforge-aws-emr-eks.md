@@ -1470,7 +1470,7 @@ def test_collect_emr_eks_grava_as_duas_respostas_num_arquivo(tmp_path, monkeypat
     gravado = json.loads((tmp_path / entrada.path).read_text(encoding="utf-8"))
     assert set(gravado) == {"virtualCluster", "jobRun"}
     assert gravado["jobRun"]["id"] == "0run"
-    assert entrada.path == ".sparkforge/artifacts/emr_eks/0abc_0run.json"
+    assert entrada.path == ".sparkforge_aws/artifacts/emr_eks/0abc_0run.json"
 ```
 
 - [ ] **Step 2: Rodar e verificar que falha**
@@ -1484,7 +1484,7 @@ Em `sparkforge_aws/collect/aws.py`, logo depois de `emr_serverless_path` (linha 
 
 ```python
 def emr_eks_path(virtual_cluster_id: str, job_run_id: str) -> str:
-    return f".sparkforge/artifacts/emr_eks/{virtual_cluster_id}_{job_run_id}.json"
+    return f".sparkforge_aws/artifacts/emr_eks/{virtual_cluster_id}_{job_run_id}.json"
 ```
 
 E, ao lado de `collect_emr_serverless`:
@@ -1607,7 +1607,7 @@ def _extract_emr_eks_facts(path: str) -> list[Fact]:
             f"    sparkforge-aws collect emr-eks --repo . --virtual-cluster-id 0abc "
             f"--job-run-id 0run --now <iso>\n"
             f"    sparkforge-aws analyze emr-eks --path <dir-ou-arquivo> "
-            f"--out .sparkforge/facts_emr_eks.json",
+            f"--out .sparkforge_aws/facts_emr_eks.json",
             exit_code=2,
         )
     if target.is_dir():

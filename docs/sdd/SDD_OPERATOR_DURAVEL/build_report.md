@@ -37,7 +37,7 @@ tasks:
     red: {command: "python -m pytest tests/test_sdd_operator.py::test_skills_ensinam_o_operador_duravel -q", exit: 1}
     green: {command: "python -m pytest tests/test_sdd.py tests/test_sdd_operator.py tests/test_sdd_skills.py tests/test_skill_content.py tests/test_sync_render.py tests/test_agents_parity.py -q", exit: 0}
 claims:
-  - text: "change_id vale com .sparkforge/sandbox/<id>/ ou .sparkforge/proposal/<id>/, as duas confinadas a um segmento; arquivo com o nome do id nao serve."
+  - text: "change_id vale com .sparkforge_aws/sandbox/<id>/ ou .sparkforge_aws/proposal/<id>/, as duas confinadas a um segmento; arquivo com o nome do id nao serve."
     evidence_ref: "tests/test_sdd.py::test_change_id_aceita_proposal"
   - text: "Com o ship done, case trocado e sandbox apagado nao recusam; com o ship ready ou ausente, case_missing e change_missing voltam."
     evidence_ref: "tests/test_sdd.py::test_case_e_change_historicos_depois_do_ship"
@@ -49,11 +49,11 @@ claims:
     evidence_ref: "tests/test_sdd.py::test_moved_confere_o_relatorio"
   - text: "proof e moved fecham propriedades no schema."
     evidence_ref: "tests/test_sdd.py::test_proof_e_moved_fecham_propriedades"
-  - text: "O fluxo operator com case_open, change_sandbox, change_propose e analyze_pyspark reais, raiz .sparkforge/sdd, proof finding e moved sobre o report.json real passa no check; passa depois do sandbox limpo e com outro case e o ship done; com o ship ready sai case_missing, change_missing e dois moved_not_observed."
+  - text: "O fluxo operator com case_open, change_sandbox, change_propose e analyze_pyspark reais, raiz .sparkforge_aws/sdd, proof finding e moved sobre o report.json real passa no check; passa depois do sandbox limpo e com outro case e o ship done; com o ship ready sai case_missing, change_missing e dois moved_not_observed."
     evidence_ref: "tests/test_sdd_operator.py::test_fluxo_operator_ponta_a_ponta"
   - text: "A mesma spec em docs/sdd faz change propose recusar com sandbox_desatualizado."
     evidence_ref: "tests/test_sdd_operator.py::test_spec_em_docs_sdd_desatualiza_o_sandbox"
-  - text: "As quatro skills e o README ensinam a raiz .sparkforge/sdd, o seletor por kind, proof, moved e as flags de evidencia."
+  - text: "As quatro skills e o README ensinam a raiz .sparkforge_aws/sdd, o seletor por kind, proof, moved e as flags de evidencia."
     evidence_ref: "tests/test_sdd_operator.py::test_skills_ensinam_o_operador_duravel"
   - text: "A superficie de skills cresceu 3066 bytes (529195 para 532261)."
     evidence_ref: "docs/surface.lock.json"
@@ -90,7 +90,7 @@ plano.
    que o plano já trazia; ele passa nas duas árvores, porque mede o
    comportamento do `change propose`, não do gate.
 3. **T6, erro de ambiente visto no T1.** As sondas desta sessão chamaram
-   `call_tool` a partir da raiz e criaram `.sparkforge/traces.db`, que o
+   `call_tool` a partir da raiz e criaram `.sparkforge_aws/traces.db`, que o
    `conftest` recusa; o arquivo (ignorado pelo git) foi apagado antes do
    primeiro vermelho, e as sondas seguintes rodaram fora da raiz.
 4. **Registros fora do manifesto:** `docs/harness/CODEINTEL-GAP.md` (o número

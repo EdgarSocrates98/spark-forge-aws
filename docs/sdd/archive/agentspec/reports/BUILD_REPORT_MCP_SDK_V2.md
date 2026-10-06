@@ -104,7 +104,7 @@ Cliente mcp 1.29 real (venv separada) via stdio -> servidor 2.x: 2025-11-25, 86 
 | 3 | O modelo do cliente 2.x preenche `resultType`, `ttlMs` e `cacheScope` que o servidor não mandou no legado | O comparador lê o JSON cru no modo `legacy` (`session._dispatcher.send_raw_request`, API privada sustentada pelo pin `<3`) |
 | 4 | `test_fixtures_kind_coverage.py` exige um módulo golden por domínio de `fixtures/` | `test_mcp_parity.py` virou `test_fixtures_golden_mcp_parity.py`, com `FIXTURES` declarado |
 | 5 | A suíte em segundo plano foi derrubada por falta de memória na 217ª de 260 | Retomada em primeiro plano, em dois blocos, pelos arquivos que faltavam |
-| 6 | Um probe manual de `call_tool` na raiz criou `.sparkforge/traces.db`, e o backstop de `conftest.py` acusou | Arquivo removido (criado na sessão, ignorado pelo git); os probes seguintes rodaram em diretório temporário |
+| 6 | Um probe manual de `call_tool` na raiz criou `.sparkforge_aws/traces.db`, e o backstop de `conftest.py` acusou | Arquivo removido (criado na sessão, ignorado pelo git); os probes seguintes rodaram em diretório temporário |
 
 ---
 

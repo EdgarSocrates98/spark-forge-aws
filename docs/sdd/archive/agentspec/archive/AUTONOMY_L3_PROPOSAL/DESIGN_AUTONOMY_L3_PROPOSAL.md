@@ -17,9 +17,9 @@
 ## Architecture Overview
 
 ```text
-.sparkforge/sandbox/<id>/            (L2, ja rodado)
+.sparkforge_aws/sandbox/<id>/            (L2, ja rodado)
    ├─ before/   copia da arvore de origem
-   ├─ after/    copia + diff ; after/.sparkforge/scan/{facts_*.json, findings.json}
+   ├─ after/    copia + diff ; after/.sparkforge_aws/scan/{facts_*.json, findings.json}
    └─ report.json
             │
             ▼
@@ -33,7 +33,7 @@ sparkforge-aws change propose --sandbox <id> [--benchmark f]... [--funcval f] [-
    ├─ 5. pr_body.md (+ bloco do report sign sobre os findings de after/)
    ├─ 6. commit_message.txt, branch.txt, commands.md (texto; o host executa)
    ├─ 7. evidence/sandbox_report.json, evidence/receipt.json (receipt.build, raiz after/, spans None)
-   └─ 8. manifest.json (sha256 de cada arquivo) -> grava em .sparkforge/proposal/<id>/ (tmp + replace)
+   └─ 8. manifest.json (sha256 de cada arquivo) -> grava em .sparkforge_aws/proposal/<id>/ (tmp + replace)
             │
             ▼
 host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
@@ -51,7 +51,7 @@ host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
 | `sparkforge_aws/adapters/_core.py::change_propose` | Resolve o repo, carrega anexos, chama receipt e report sign, grava | padrão dos verbos de topo |
 | `sparkforge-aws change propose` / `sparkforge_change_propose` | CLI e tool (`_WRITE_IDEMPOTENT`) | argparse, `TOOLS` |
 | `skills/propose-change-pr/SKILL.md` | Roteiro do host, com as paradas de confirmação | skill não despachável |
-| `.sparkforge/policy.yaml` + `.claude/settings.json` | `git push *` e `gh pr create *` em `ask` | `policy sync-settings` |
+| `.sparkforge_aws/policy.yaml` + `.claude/settings.json` | `git push *` e `gh pr create *` em `ask` | `policy sync-settings` |
 
 ---
 
@@ -109,7 +109,7 @@ host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
 
 **Context:** A-004 e A-005. O bloco do `report sign` é visível (lista entre comentários HTML) e fecha o arquivo. O recibo sem `run_id` recebe `spans=None`.
 
-**Choice:** `pr_body.md` com, nesta ordem: resumo (chaves e valores, de onde veio o valor — `basis` do `tune` quando o `report.json` o traz), achados resolvidos, achados novos P2/P3 em "Atenção", obrigações de prova (validation e rollback por regra), medidas (anexos, ou PENDENTE com o verbo que as produz), "O que esta proposta não afirma" (ganho, custo, efeito em produção), e por último `## Assinatura` seguido do bloco do `report sign` calculado sobre os findings de `after/`. O recibo sai de `receipt.build` com raiz em `after/`, facts `after/.sparkforge/scan/facts_*.json`, findings `after/.sparkforge/scan/findings.json`, `now` recebido e `run_id=None`, gravado em `evidence/receipt.json`.
+**Choice:** `pr_body.md` com, nesta ordem: resumo (chaves e valores, de onde veio o valor — `basis` do `tune` quando o `report.json` o traz), achados resolvidos, achados novos P2/P3 em "Atenção", obrigações de prova (validation e rollback por regra), medidas (anexos, ou PENDENTE com o verbo que as produz), "O que esta proposta não afirma" (ganho, custo, efeito em produção), e por último `## Assinatura` seguido do bloco do `report sign` calculado sobre os findings de `after/`. O recibo sai de `receipt.build` com raiz em `after/`, facts `after/.sparkforge_aws/scan/facts_*.json`, findings `after/.sparkforge_aws/scan/findings.json`, `now` recebido e `run_id=None`, gravado em `evidence/receipt.json`.
 
 **Rationale:** O revisor confere o corpo com `report verify` e a árvore com o recibo, sem acesso ao sandbox.
 
@@ -172,7 +172,7 @@ host (skill propose-change-pr): le commands.md, git switch/apply/add/commit,
 | 3 | `sparkforge_aws/change/__init__.py` | Modify | Exporta `montar` | @python-developer | 2 |
 | 4 | `sparkforge_aws/adapters/{_core,cli,tools}.py` | Modify | Verbo, tool, schema | @python-developer | 2 |
 | 5 | `skills/propose-change-pr/SKILL.md` | Create | Roteiro do host | (general) | 4 |
-| 6 | `.sparkforge/policy.yaml`, `.claude/settings.json`, `.gitignore` | Modify | `ask` e pasta ignorada | (general) | None |
+| 6 | `.sparkforge_aws/policy.yaml`, `.claude/settings.json`, `.gitignore` | Modify | `ask` e pasta ignorada | (general) | None |
 | 7 | `fixtures/change/{proposta_completa,proposta_com_medida,proposta_desatualizada,proposta_bloqueada}/` | Create | Goldens | @test-generator | 4 |
 | 8 | `tests/test_change_proposal.py`, `tests/test_fixtures_golden_change.py` | Create/Modify | Unidade, AST, golden | @test-generator | 7 |
 | 9 | Registros: `tests/test_adapters_tools.py`, `test_harness_authorization.py`, `parity.yaml`, `manifest.json`, `agents/executors/sf-verifier.md`, `scripts/sync_skills.py`, `tests/test_sync_render.py`, `tests/test_fixtures_golden_mcp_parity.py` | Modify | Tool e skill novas | (general) | 4, 5 |
@@ -236,13 +236,13 @@ temporario.replace(base)
 ## Data Flow
 
 ```text
-1. operador: change sandbox --diff d  ->  .sparkforge/sandbox/<id>/
+1. operador: change sandbox --diff d  ->  .sparkforge_aws/sandbox/<id>/
    │
    ▼
 2. change propose --sandbox <id>: recusas -> patch -> corpo -> assinatura -> recibo -> manifest
    │
    ▼
-3. .sparkforge/proposal/<id>/  (ignorado pelo git)
+3. .sparkforge_aws/proposal/<id>/  (ignorado pelo git)
    │
    ▼
 4. host + skill: commands.md, parando antes de push e de PR

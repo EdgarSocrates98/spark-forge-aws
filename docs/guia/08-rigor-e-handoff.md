@@ -26,15 +26,15 @@ sparkforge-aws case open --repo . --case-id perf-2026-08 \
 # destrava `flows_mapped` e o plano de validação destrava
 # `functional_validation_defined`. Faltando uma, bloqueia — com a mensagem
 # nomeando qual fact falta e o comando que o produz.
-sparkforge-aws analyze call-graph --facts .sparkforge/facts.json \
-                              --out .sparkforge/facts_callgraph.json
-sparkforge-aws funcval plan --facts .sparkforge/facts.json \
-                        --facts .sparkforge/facts-catalog.json \
-                        --out .sparkforge/facts_funcval_plan.json
+sparkforge-aws analyze call-graph --facts .sparkforge_aws/facts.json \
+                              --out .sparkforge_aws/facts_callgraph.json
+sparkforge-aws funcval plan --facts .sparkforge_aws/facts.json \
+                        --facts .sparkforge_aws/facts-catalog.json \
+                        --out .sparkforge_aws/facts_funcval_plan.json
 sparkforge-aws case update --repo . --phase report \
-  --facts .sparkforge/bench.json \
-  --facts .sparkforge/facts_callgraph.json \
-  --facts .sparkforge/facts_funcval_plan.json
+  --facts .sparkforge_aws/bench.json \
+  --facts .sparkforge_aws/facts_callgraph.json \
+  --facts .sparkforge_aws/facts_funcval_plan.json
 ```
 
 O que destrava é **evidência**, nunca a flag: `case update --gate X --gate-value
@@ -79,8 +79,8 @@ versão da assinatura, evidência, catálogo ou corpo — em vez de devolver só
 `sparkforge_report_verify`):
 
 ```bash
-sparkforge-aws report sign   --report relatorio.md --findings .sparkforge/findings.json
-sparkforge-aws report verify --report relatorio.md --findings .sparkforge/findings.json
+sparkforge-aws report sign   --report relatorio.md --findings .sparkforge_aws/findings.json
+sparkforge-aws report verify --report relatorio.md --findings .sparkforge_aws/findings.json
 ```
 
 O arquivo é o de **findings**, e não o de facts: `rule_id`, `catalog_version` e
@@ -116,18 +116,18 @@ e [`examples/github/sparkforge-aws.yml`](../../examples/github/sparkforge-aws.ym
 
 ## Fluxo de handoff
 
-`sparkforge-aws handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
+`sparkforge-aws handoff --repo <raiz>` escreve `.sparkforge_aws/handoff.md` a partir
 do mesmo payload que `sparkforge-aws resume` produz — os dois nunca divergem
 porque vêm da mesma função. Ao encerrar ou pausar uma investigação, commite:
 
 ```bash
-git add .sparkforge/case.yaml .sparkforge/facts.json .sparkforge/findings.json .sparkforge/handoff.md .sparkforge/artifacts/manifest.json
+git add .sparkforge_aws/case.yaml .sparkforge_aws/facts.json .sparkforge_aws/findings.json .sparkforge_aws/handoff.md .sparkforge_aws/artifacts/manifest.json
 ```
 
 Esses cinco arquivos são pequenos, derivados, e são o barramento de handoff
 entre sessões e ferramentas (Devin, Claude Code, CI).
 
-**`.sparkforge/artifacts/**` nunca é commitado**, exceto o `manifest.json`
+**`.sparkforge_aws/artifacts/**` nunca é commitado**, exceto o `manifest.json`
 acima — o `.gitignore` já bloqueia isso. É onde ficam os artefatos brutos
 coletados (event logs, planos físicos, saída de Terraform): podem carregar
 dados de negócio e chegar a centenas de MB. O que substitui o artefato bruto

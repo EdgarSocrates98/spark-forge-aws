@@ -12,7 +12,7 @@ files:
   - {path: sparkforge_aws/sdd/schema/plan.json, action: modify, reason: "tasks[].proof fechado (kind, ref)"}
   - {path: sparkforge_aws/sdd/schema/build_report.json, action: modify, reason: "tasks[].moved fechado (change_id, resolved)"}
   - {path: tests/test_sdd.py, action: modify, reason: "AC2 a AC7"}
-  - {path: tests/test_sdd_operator.py, action: modify, reason: "AC1 (ponta a ponta com raiz .sparkforge/sdd, proof, moved e change propose) e AC8"}
+  - {path: tests/test_sdd_operator.py, action: modify, reason: "AC1 (ponta a ponta com raiz .sparkforge_aws/sdd, proof, moved e change propose) e AC8"}
   - {path: skills/sdd-define/SKILL.md, action: modify, reason: "raiz do operador e seletor por kind"}
   - {path: skills/sdd-plan/SKILL.md, action: modify, reason: "proof de tarefa no operator"}
   - {path: skills/sdd-build/SKILL.md, action: modify, reason: "moved no operator, raiz do operador e comandos com as flags de evidencia"}
@@ -36,13 +36,13 @@ files:
   - {path: docs/superpowers/STATUS.md, action: modify, reason: "linha de Skills nomeia a entrega"}
 decisions:
   - id: D1
-    choice: "Os artefatos SDD do operador moram em .sparkforge/sdd no repositorio dele (--root .sparkforge/sdd); a arvore do job continua mudando so por change sandbox e change propose. A varredura do sandbox poda .sparkforge, entao escrever ali nao desatualiza a copia validada; a raiz passada a discover nunca e podada, so as subpastas."
+    choice: "Os artefatos SDD do operador moram em .sparkforge_aws/sdd no repositorio dele (--root .sparkforge_aws/sdd); a arvore do job continua mudando so por change sandbox e change propose. A varredura do sandbox poda .sparkforge_aws, entao escrever ali nao desatualiza a copia validada; a raiz passada a discover nunca e podada, so as subpastas."
     rejected:
       - "docs/sdd no repositorio do operador: muda a arvore que change sandbox copiou e change propose recusa com sandbox_desatualizado (medido no teste ponta a ponta)"
       - "uma pasta fora do repositorio: o upstream e resolvido dentro de --repo (resolve_within) e o stamp recusaria"
     rollback: "git revert dos commits de skill e README; o nucleo nao muda, porque --root ja existia."
   - id: D2
-    choice: "change_id vale quando .sparkforge/sandbox/<id>/ OU .sparkforge/proposal/<id>/ existe como diretorio; o id e um segmento so e cada base e conferida pelo mesmo confinamento de hoje. O id da proposal e o do sandbox (proposal.montar grava em PROPOSAL_DIR/ident)."
+    choice: "change_id vale quando .sparkforge_aws/sandbox/<id>/ OU .sparkforge_aws/proposal/<id>/ existe como diretorio; o id e um segmento so e cada base e conferida pelo mesmo confinamento de hoje. O id da proposal e o do sandbox (proposal.montar grava em PROPOSAL_DIR/ident)."
     rejected:
       - "so o sandbox: change sandbox --clean apaga a unica prova e a feature entregue volta a ser recusada"
       - "ler o manifest.json da proposal para achar o id do sandbox: o nome da pasta ja e o id"
@@ -66,9 +66,9 @@ decisions:
       - "aceitar proof no dev: o dev tem pytest, e o vermelho antes do verde e a lei do build"
     rollback: "Remover proof do schema de plan e o ramo de _gate_task_test."
   - id: D6
-    choice: "No operator, tasks[].moved {change_id, resolved} substitui red e green; o gate le .sparkforge/sandbox/<id>/report.json ou .sparkforge/proposal/<id>/evidence/sandbox_report.json e exige cada rule_id em resolved e ausente de new; senao, recusa moved_not_observed. No dev, moved e schema_invalid e red segue exigido."
+    choice: "No operator, tasks[].moved {change_id, resolved} substitui red e green; o gate le .sparkforge_aws/sandbox/<id>/report.json ou .sparkforge_aws/proposal/<id>/evidence/sandbox_report.json e exige cada rule_id em resolved e ausente de new; senao, recusa moved_not_observed. No dev, moved e schema_invalid e red segue exigido."
     rejected:
-      - "ler after/.sparkforge/scan/findings.json para provar a ausencia total da regra: o pacote de proposal nao carrega o scan, e o report ja e o que sandbox e propose gravam"
+      - "ler after/.sparkforge_aws/scan/findings.json para provar a ausencia total da regra: o pacote de proposal nao carrega o scan, e o report ja e o que sandbox e propose gravam"
       - "aceitar moved sem ler o relatorio: seria um exit inventado com outro nome"
     rollback: "Remover moved do schema de build_report e o ramo de _gate_red."
 covers:
@@ -89,15 +89,15 @@ Nada de Glue, Spark ou Iceberg: a mudança é no gate e no texto. Lido no códig
 
 - `sparkforge_aws/change/sandbox.py`: `SANDBOX_DIR`, `executar` grava
   `report.json` com `new` e `resolved` (cada item com `rule_id` e `subject`),
-  e `inventariar` poda `.sparkforge` (só `.sparkforge/artifacts/` entra).
+  e `inventariar` poda `.sparkforge_aws` (só `.sparkforge_aws/artifacts/` entra).
 - `sparkforge_aws/change/proposal.py`: `PROPOSAL_DIR`, `montar` grava em
   `PROPOSAL_DIR/<ident>` com o mesmo id e copia o relatório para
   `evidence/sandbox_report.json`; `desatualizados` recusa a proposta quando a
   árvore difere de `before/`.
 - `sparkforge_aws/facts/scan.py::varrer_source_files` só poda subpastas; a raiz
   passada nunca é podada.
-- `.gitignore` deste repositório ignora `.sparkforge/sandbox/` e
-  `.sparkforge/proposal/`, e não ignora `.sparkforge/sdd/`. O repositório do
+- `.gitignore` deste repositório ignora `.sparkforge_aws/sandbox/` e
+  `.sparkforge_aws/proposal/`, e não ignora `.sparkforge_aws/sdd/`. O repositório do
   operador tem o próprio `.gitignore`; as skills dizem para não ignorar a pasta
   da spec.
 

@@ -450,9 +450,9 @@ class TestCli:
 
 class TestCaminhoPadrao:
     def test_o_banco_padrao_mora_sob_o_estado_local_ignorado_pelo_git(self):
-        """`.sparkforge/local/` esta no `.gitignore` desde 715a657.
+        """`.sparkforge_aws/local/` esta no `.gitignore` desde 715a657.
 
         Se o default sair de la, o indice de um repositorio de cliente passa a
         ser candidato a commit -- que e vazamento, nao desordem.
         """
-        assert BANCO_PADRAO.as_posix() == ".sparkforge/local/codeintel/graph.sqlite3"
+        assert BANCO_PADRAO.as_posix() == ".sparkforge_aws/local/codeintel/graph.sqlite3"

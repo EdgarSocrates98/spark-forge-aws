@@ -84,7 +84,7 @@ def glue_resource_link_path(catalog_id: str, database: str, table: str = "") -> 
     """
     catalogo = catalog_id or "local"
     alvo = f"{database}_{table}" if table else database
-    return f".sparkforge/artifacts/glue_resource_link/{catalogo}_{alvo}.json"
+    return f".sparkforge_aws/artifacts/glue_resource_link/{catalogo}_{alvo}.json"
 
 
 def _codigo_de_erro(exc: BaseException) -> str:

@@ -115,7 +115,7 @@ jobs:
                      print(len(load_catalog(validate_exprs=True)), 'regras validadas')"
       - name: No raw artifact is tracked
         run: |
-          if git ls-files | grep -E '^\.sparkforge/artifacts/' | grep -v 'manifest\.json'; then
+          if git ls-files | grep -E '^\.sparkforge_aws/artifacts/' | grep -v 'manifest\.json'; then
             echo "artefato bruto rastreado pelo git" >&2
             exit 1
           fi
@@ -270,14 +270,14 @@ jobs:
         id: upload
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: .sparkforge/report/sparkforge-aws.sarif
+          sarif_file: .sparkforge_aws/report/sparkforge-aws.sarif
           category: sparkforge-aws-fixtures-${{ matrix.caso }}
           wait-for-processing: true
       - name: Conferir a analise aceita
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          esperado=$(python -c "import json; print(len(json.load(open('.sparkforge/report/sparkforge-aws.sarif'))['runs'][0]['results']))")
+          esperado=$(python -c "import json; print(len(json.load(open('.sparkforge_aws/report/sparkforge-aws.sarif'))['runs'][0]['results']))")
           gh api "repos/${{ github.repository }}/code-scanning/sarifs/${{ steps.upload.outputs.sarif-id }}" --jq '.processing_status' | tee status.txt
           grep -qx complete status.txt
           obtido=$(gh api "repos/${{ github.repository }}/code-scanning/analyses?sarif_id=${{ steps.upload.outputs.sarif-id }}" --jq 'map(.results_count) | add')

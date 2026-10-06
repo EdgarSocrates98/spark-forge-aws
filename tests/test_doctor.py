@@ -169,7 +169,7 @@ def test_manifesto_ilegivel_mantem_uma_checagem_por_host(tmp_path, home_isolado)
     assert {c.status for c in checagens} == {dr.WARN}
     assert all("manifesto_ilegivel" in c.detail for c in checagens)
     # O doctor de verdade, com o manifesto do HOME truncado, mantem os mesmos ids.
-    manifesto = home_isolado / ".sparkforge" / "integrations.json"
+    manifesto = home_isolado / ".sparkforge_aws" / "integrations.json"
     manifesto.parent.mkdir()
     manifesto.write_text('{"schema": 2, "files": {', encoding="utf-8")
     repo = tmp_path / "repo"

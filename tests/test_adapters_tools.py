@@ -311,14 +311,14 @@ class TestToolSurface:
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
         assert writers - de_rede == {
             # `sparkforge_arbitrate` escreve o blackboard do case
-            # (`.sparkforge/blackboard/*.jsonl` mais um ADR por decisao
+            # (`.sparkforge_aws/blackboard/*.jsonl` mais um ADR por decisao
             # significativa), e por isso nao e `readOnlyHint`. Ela tambem nao e
             # idempotente, e a diferenca e medida: as ENTIDADES tem id
             # content-addressed e a segunda execucao as pula, mas o `trace` da
             # arbitragem nao tem id -- ele registra que a arbitragem
             # ACONTECEU, e duas execucoes sao dois acontecimentos.
             "sparkforge_arbitrate",
-            # O executor de debate grava em `.sparkforge/debate/<id>/` e no
+            # O executor de debate grava em `.sparkforge_aws/debate/<id>/` e no
             # blackboard: `start` congela `plan.json`, `submit` grava a
             # submissao e as entidades, e `next` -- que parece leitura -- grava
             # a `Decision` no fechamento. As tres sao `LOCAL_MUTATION`.
@@ -329,12 +329,12 @@ class TestToolSurface:
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
             "sparkforge_funcval_plan",
-            # `sparkforge_receipt_emit` grava `.sparkforge/receipts/<id>.json`.
+            # `sparkforge_receipt_emit` grava `.sparkforge_aws/receipts/<id>.json`.
             # E idempotente (a mesma entrada com o mesmo `now` grava o mesmo
             # arquivo), mas escreve -- `LOCAL_MUTATION`, como `report_sign`.
             "sparkforge_receipt_emit",
             "sparkforge_report_sign",
-            # `sparkforge_scan` grava `.sparkforge/scan/` (facts por analyze,
+            # `sparkforge_scan` grava `.sparkforge_aws/scan/` (facts por analyze,
             # uniao, findings, summary) e, com `format: sarif`, o SARIF do
             # `report github`. Idempotente: a mesma arvore da os mesmos arquivos.
             "sparkforge_scan",
@@ -343,12 +343,12 @@ class TestToolSurface:
             # certo, nao regrava. `sdd_check` e `sdd_status` so leem e ficam fora.
             "sparkforge_sdd_stamp",
             # `sparkforge_change_sandbox` grava as copias `before/`/`after/` e o
-            # `report.json` em `.sparkforge/sandbox/<id>/`, recriadas a cada
+            # `report.json` em `.sparkforge_aws/sandbox/<id>/`, recriadas a cada
             # execucao com o mesmo `id` para a mesma entrada (§15). A arvore
             # principal nunca e escrita.
             "sparkforge_change_sandbox",
             # `sparkforge_change_propose` grava o pacote do PR em
-            # `.sparkforge/proposal/<id>/` (tmp + troca), e o mesmo `now` grava os
+            # `.sparkforge_aws/proposal/<id>/` (tmp + troca), e o mesmo `now` grava os
             # mesmos bytes (§15 L3). Nao roda git e nao toca a arvore principal.
             "sparkforge_change_propose",
             "sparkforge_agentops_baseline",
@@ -2082,7 +2082,7 @@ def _code_tree(tmp_path):
     raiz = tmp_path / "arvore"
     (raiz / "jobs").mkdir(parents=True)
     (raiz / "jobs" / "etl.py").write_text(_CODE_JOB, encoding="utf-8")
-    (raiz / ".gitignore").write_text(".sparkforge/local\n", encoding="utf-8")
+    (raiz / ".gitignore").write_text(".sparkforge_aws/local\n", encoding="utf-8")
     call_tool("sparkforge_code_sync", {"repo": str(raiz)})
     return raiz
 
@@ -3144,7 +3144,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
 
     if name == "sparkforge_scan":
         # O repositorio misto de `fixtures/scan/`, copiado: o scan grava em
-        # `<repo>/.sparkforge/scan/`, e o schema e validado por um plano cheio.
+        # `<repo>/.sparkforge_aws/scan/`, e o schema e validado por um plano cheio.
         import shutil
         import tempfile
         from pathlib import Path
@@ -3277,9 +3277,9 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
 
     if name == "sparkforge_iceberg_assess_upgrade":
         job = tmp_path / "assess-upgrade"
-        (job / ".sparkforge").mkdir(parents=True)
+        (job / ".sparkforge_aws").mkdir(parents=True)
         (job / "job.py").write_text("x = 1\n", encoding="utf-8")
-        (job / ".sparkforge" / "consumers.yaml").write_text(
+        (job / ".sparkforge_aws" / "consumers.yaml").write_text(
             "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
         )
         result = call_tool(
@@ -3964,7 +3964,7 @@ class TestArbitrateTool:
         assert {"repo", "findings_path", "facts_path"} <= set(propriedades)
 
     def test_ela_e_local_mutation_e_nao_read_only(self):
-        """Ela GRAVA: `.sparkforge/blackboard/*.jsonl` mais o ADR."""
+        """Ela GRAVA: `.sparkforge_aws/blackboard/*.jsonl` mais o ADR."""
         from sparkforge_aws.agents.autonomy import ToolClass, tool_class
 
         assert tool_class("sparkforge_arbitrate") is ToolClass.LOCAL_MUTATION

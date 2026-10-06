@@ -12,7 +12,7 @@ registries: [sync_skills, agents_parity]
 deviations:
   - "T2: o teste ponta a ponta antigo esperava change_missing com o ship done; passou a conferir os dois lados no commit de T2 (vermelho vizinho da propria tarefa)."
   - "T6: o teste passou de primeira depois de T1 a T5; o vermelho foi visto num git worktree em 4c9fa9e5."
-  - "T6: .sparkforge/traces.db criado pelas sondas da sessao foi apagado antes do primeiro vermelho."
+  - "T6: .sparkforge_aws/traces.db criado pelas sondas da sessao foi apagado antes do primeiro vermelho."
   - "D5 acrescenta ao pedido: finding aceita #<rule_id> sem change_id, lido do build_report, porque o id do sandbox nao existe na hora do plano."
   - "D3 estende a referencia historica a moved e a proof finding, alem de case_missing e change_missing, pelo mesmo motivo (sandbox limpo depois do done)."
   - "Registros fora do manifesto: docs/harness/CODEINTEL-GAP.md (VNX-674)."
@@ -27,7 +27,7 @@ deviations:
 observações, todas medidas em `tests/test_sdd_operator.py`:
 
 1. O fluxo com `case_open`, `change_sandbox`, `change_propose` e
-   `analyze_pyspark` reais, raiz `.sparkforge/sdd`, uma tarefa provada por
+   `analyze_pyspark` reais, raiz `.sparkforge_aws/sdd`, uma tarefa provada por
    `finding` e um `moved` sobre o `report.json` real passa no `sdd check`
    (`test_fluxo_operator_ponta_a_ponta`).
 2. Depois de `change sandbox --clean`, continua passando pelo pacote de
@@ -79,7 +79,7 @@ A suíte inteira em lotes não rodou nesta entrega.
 ## Lições
 
 - O perfil operator só é conferível se a spec não mexer na árvore que o
-  sandbox validou; a poda de `.sparkforge` é o que torna isso verdade.
+  sandbox validou; a poda de `.sparkforge_aws` é o que torna isso verdade.
 - Referência a estado recriado (case, sandbox) precisa de prazo de validade;
   o `done` do ship é esse prazo.
 - Id que é hash não pode ser pedido antes de existir: o seletor por kind e o

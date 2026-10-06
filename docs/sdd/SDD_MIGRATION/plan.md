@@ -101,7 +101,7 @@ no `AGENTS.md`, e o item de `CONTRIBUTING.md:80` reescrito. Commit.
 def test_readme_e_journal():
     texto = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "sdd-define" in texto and "sparkforge-aws sdd check" in texto
-    assert ".sparkforge/journal.jsonl" in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert ".sparkforge_aws/journal.jsonl" in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 ```
 
 Secao curta no `README.md` apontando `docs/sdd/README.md`; linha no `.gitignore`

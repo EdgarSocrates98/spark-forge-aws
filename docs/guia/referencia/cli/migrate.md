@@ -45,7 +45,7 @@ sparkforge-aws migrate emr --help
 
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
-| `path` (posicional) | sim | texto |  |  | Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando existem e o inventario de consumidores em .sparkforge/consumers.yaml --, ou um .py sozinho. |
+| `path` (posicional) | sim | texto |  |  | Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando existem e o inventario de consumidores em .sparkforge_aws/consumers.yaml --, ou um .py sozinho. |
 | `--platform` | sim | `emr_ec2`, `emr_serverless`, `emr_eks` |  |  | Qual matriz de EMR ordena o caminho e da o runtime de cada degrau. |
 | `--from` | sim | texto |  |  | Release de origem, com ou sem o prefixo `emr-`. |
 | `--to` | sim | texto |  |  | Release alvo, com ou sem o prefixo `emr-`. |
@@ -67,7 +67,7 @@ sparkforge-aws migrate glue --help
 
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
-| `path` (posicional) | sim | texto |  |  | Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando existem e o inventario de consumidores em .sparkforge/consumers.yaml --, ou um .py sozinho. |
+| `path` (posicional) | sim | texto |  |  | Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando existem e o inventario de consumidores em .sparkforge_aws/consumers.yaml --, ou um .py sozinho. |
 | `--from` | sim | texto |  |  | Versao de Glue de origem. |
 | `--to` | sim | texto |  |  | Versao de Glue alvo. |
 | `--out` | não | texto |  |  | Escreve o assessment completo (JSON) neste arquivo. |

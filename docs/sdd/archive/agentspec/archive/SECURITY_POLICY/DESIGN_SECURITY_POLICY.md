@@ -17,7 +17,7 @@
 ## Architecture Overview
 
 ```text
-                     .sparkforge/policy.yaml  (schema, commitado)
+                     .sparkforge_aws/policy.yaml  (schema, commitado)
                                  |
             sparkforge_aws/policy/load.py: carregar() -> Politica | PolicyError
                  |                         |                          |
@@ -43,7 +43,7 @@
 | Component | Purpose | Technology |
 |-----------|---------|------------|
 | `sparkforge_aws/policy/schema.py` | Schema da policy (dict JSON Schema) e validacao | `jsonschema` (dependencia ja declarada) |
-| `sparkforge_aws/policy/load.py` | `carregar(raiz)`: acha `.sparkforge/policy.yaml`, valida, devolve `Politica` ou levanta `PolicyError`; `None` sem arquivo | `yaml` |
+| `sparkforge_aws/policy/load.py` | `carregar(raiz)`: acha `.sparkforge_aws/policy.yaml`, valida, devolve `Politica` ou levanta `PolicyError`; `None` sem arquivo | `yaml` |
 | `sparkforge_aws/policy/decide.py` | Puro: `dividir_comando`, `decidir_bash`, `decidir_caminho`, `decidir_tool` -> `Decisao(decision, rule, reason)` | `fnmatch`, `re` |
 | `sparkforge_aws/policy/hook.py` | `python -m sparkforge_aws.policy.hook`: le o stdin do Claude Code, decide, sai 2 com motivo em `deny` | stdlib + os dois acima |
 | `sparkforge_aws/policy/settings.py` | Gera `permissions.ask` a partir das regras `ask`; `--check` compara | `json` |
@@ -65,7 +65,7 @@
 
 **Context:** O `PreToolUse` do Claude Code so decide `allow`/`deny` (documentacao oficial, busca literal por `"ask"`: NOT FOUND). `ask` existe nas regras `permissions.ask`, avaliadas deny -> ask -> allow, e pedem confirmacao ate em modo auto.
 
-**Choice:** `.sparkforge/policy.yaml` e a fonte. Regras `deny` sao aplicadas pelo hook (Bash, Edit, Write) e pelo servidor MCP (`tools.denied`). Regras `ask` viram `permissions.ask` geradas por `policy sync-settings`, com `--check` no teste. As aprovacoes de classe sao declaradas na policy e passadas a `CallPolicy`.
+**Choice:** `.sparkforge_aws/policy.yaml` e a fonte. Regras `deny` sao aplicadas pelo hook (Bash, Edit, Write) e pelo servidor MCP (`tools.denied`). Regras `ask` viram `permissions.ask` geradas por `policy sync-settings`, com `--check` no teste. As aprovacoes de classe sao declaradas na policy e passadas a `CallPolicy`.
 
 **Rationale:** cada porta faz so o que o mecanismo dela sustenta, e as tres leem a mesma decisao de `decide.py`.
 
@@ -136,7 +136,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-13 |
 
-**Choice:** `.sparkforge/policy.yaml` commitado:
+**Choice:** `.sparkforge_aws/policy.yaml` commitado:
 
 ```yaml
 version: 1
@@ -173,7 +173,7 @@ paths:
 | 6 | `sparkforge_aws/agents/autonomy.py` | Modify | Varias raizes | @python-developer | None |
 | 7 | `sparkforge_aws/adapters/mcp.py` | Modify | `build_server(policy=)`, carga no `main()`, `POLICY_INVALID` | @python-developer | 5 |
 | 8 | `sparkforge_aws/adapters/{_core,cli,tools}.py` | Modify | Verbos e tool `sparkforge_policy_explain` | @python-developer | 2, 4 |
-| 9 | `.sparkforge/policy.yaml` | Create | Policy padrao | (general) | 1 |
+| 9 | `.sparkforge_aws/policy.yaml` | Create | Policy padrao | (general) | 1 |
 | 10 | `.claude/settings.json` | Modify | Hook `PreToolUse` e `permissions.ask` gerado | (general) | 3, 4, 9 |
 | 11 | `fixtures/policy/<caso>/` + `tests/test_fixtures_golden_policy.py` | Create | Stdin do hook, policy e decisao esperada; hook por subprocess | @test-generator | 3 |
 | 12 | `tests/test_policy_decide.py`, `tests/test_policy_mcp.py` | Create | Unidade da decisao, varias raizes, servidor com policy | @test-generator | 2, 5, 6, 7 |

@@ -1,7 +1,7 @@
 {
   "tools": [
     {
-      "description": "Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio pela ferramenta -- quem chama fornece o timestamp.",
+      "description": "Cria um case novo em .sparkforge_aws/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio pela ferramenta -- quem chama fornece o timestamp.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -66,7 +66,7 @@
         "description": "Case carregado, ou erro se ausente.",
         "oneOf": [
           {
-            "description": "Estado completo de .sparkforge/case.yaml -- barramento de handoff.",
+            "description": "Estado completo de .sparkforge_aws/case.yaml -- barramento de handoff.",
             "properties": {
               "artifacts": {
                 "items": {
@@ -374,7 +374,7 @@
       }
     },
     {
-      "description": "Le o estado atual do case (.sparkforge/case.yaml): fase, gates, runtime detectado, indices de facts e findings. Falha com um erro que nomeia `sparkforge-aws case open` quando nenhum case existe ainda no repositorio.",
+      "description": "Le o estado atual do case (.sparkforge_aws/case.yaml): fase, gates, runtime detectado, indices de facts e findings. Falha com um erro que nomeia `sparkforge-aws case open` quando nenhum case existe ainda no repositorio.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -392,7 +392,7 @@
         "description": "Case carregado, ou erro se ausente.",
         "oneOf": [
           {
-            "description": "Estado completo de .sparkforge/case.yaml -- barramento de handoff.",
+            "description": "Estado completo de .sparkforge_aws/case.yaml -- barramento de handoff.",
             "properties": {
               "artifacts": {
                 "items": {
@@ -789,7 +789,7 @@
         "description": "Case carregado, ou erro se ausente.",
         "oneOf": [
           {
-            "description": "Estado completo de .sparkforge/case.yaml -- barramento de handoff.",
+            "description": "Estado completo de .sparkforge_aws/case.yaml -- barramento de handoff.",
             "properties": {
               "artifacts": {
                 "items": {
@@ -9859,7 +9859,7 @@
       }
     },
     {
-      "description": "Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge/consumers.yaml`, versionado com o repositorio). Unico extrator do pacote que le um arquivo escrito por uma pessoa, e de proposito: quem consome uma tabela nao esta no codigo, no plano nem no event log -- e conhecimento da organizacao. Desbloqueia SF-ENV-002 (a tabela Iceberg em format V3 que o Athena nao le). Tabela ausente do inventario nao produz fact: ausencia de declaracao nao e declaracao de ausencia.",
+      "description": "Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge_aws/consumers.yaml`, versionado com o repositorio). Unico extrator do pacote que le um arquivo escrito por uma pessoa, e de proposito: quem consome uma tabela nao esta no codigo, no plano nem no event log -- e conhecimento da organizacao. Desbloqueia SF-ENV-002 (a tabela Iceberg em format V3 que o Athena nao le). Tabela ausente do inventario nao produz fact: ausencia de declaracao nao e declaracao de ausencia.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -10522,7 +10522,7 @@
       }
     },
     {
-      "description": "Julga a migracao de um job entre um par de versoes com o catalogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), uma vez por DEGRAU do caminho -- 4.0 para 6.0 passa por 5.0 e 5.1, porque os breaking changes se acumulam e um salto esconde os do meio. Entrada: o diretorio do job (codigo, `requirements*.txt` e `.jar`) ou um arquivo `.py`; o diretorio e o caso que interessa, porque um pin de dependencia e um binario Scala nao tem linha de fonte Python e sobrevivem a troca de runtime. `source` e `target` nao tem default: um par embutido responderia sobre um alvo que ninguem declarou. `platform` aceita as QUATRO (`glue`, `emr_ec2`, `emr_serverless`, `emr_eks`) e tem default `glue`; a ordem das releases e o runtime de cada degrau vem da matriz DAQUELA plataforma, nunca de outra -- a de EC2 nao descreve EKS nem Serverless, e elas divergem em celulas reais. Devolve `findings` (cardinalidade por degrau), `report` (cada problema uma vez, com os degraus em que vale), `gates`, `missing_evidence`, `component_diff` (o que muda de componente por degrau, do `ReleaseDiff`) e `coverage`. LEIA `coverage.statement` ANTES de concluir qualquer coisa de um assessment sem achado: o catalogo tem ZERO regras guardadas por versao de EMR, entao um caminho de EMR avalia Spark e componente e NAO avalia breaking change de plataforma -- sem esse campo, 'nenhum achado' e indistinguivel de 'nada quebra'. Compoe o job inteiro: codigo, `.tf` quando existe (sem ele a area `SF-LF` fica sem produtor, porque a topologia de FGAC e declarada no Terraform) e o inventario de consumidores em `.sparkforge/consumers.yaml`. Todo eixo sem evidencia nasce BLOCKED com o motivo, nunca PASS.",
+      "description": "Julga a migracao de um job entre um par de versoes com o catalogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), uma vez por DEGRAU do caminho -- 4.0 para 6.0 passa por 5.0 e 5.1, porque os breaking changes se acumulam e um salto esconde os do meio. Entrada: o diretorio do job (codigo, `requirements*.txt` e `.jar`) ou um arquivo `.py`; o diretorio e o caso que interessa, porque um pin de dependencia e um binario Scala nao tem linha de fonte Python e sobrevivem a troca de runtime. `source` e `target` nao tem default: um par embutido responderia sobre um alvo que ninguem declarou. `platform` aceita as QUATRO (`glue`, `emr_ec2`, `emr_serverless`, `emr_eks`) e tem default `glue`; a ordem das releases e o runtime de cada degrau vem da matriz DAQUELA plataforma, nunca de outra -- a de EC2 nao descreve EKS nem Serverless, e elas divergem em celulas reais. Devolve `findings` (cardinalidade por degrau), `report` (cada problema uma vez, com os degraus em que vale), `gates`, `missing_evidence`, `component_diff` (o que muda de componente por degrau, do `ReleaseDiff`) e `coverage`. LEIA `coverage.statement` ANTES de concluir qualquer coisa de um assessment sem achado: o catalogo tem ZERO regras guardadas por versao de EMR, entao um caminho de EMR avalia Spark e componente e NAO avalia breaking change de plataforma -- sem esse campo, 'nenhum achado' e indistinguivel de 'nada quebra'. Compoe o job inteiro: codigo, `.tf` quando existe (sem ele a area `SF-LF` fica sem produtor, porque a topologia de FGAC e declarada no Terraform) e o inventario de consumidores em `.sparkforge_aws/consumers.yaml`. Todo eixo sem evidencia nasce BLOCKED com o motivo, nunca PASS.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -11487,12 +11487,12 @@
       }
     },
     {
-      "description": "Avalia subir o format version de uma tabela Iceberg CONTRA quem a consome. Cruza o inventario declarado (`env.consumer`, na convencao `.sparkforge/consumers.yaml`) com a matriz de suporte de feature (`knowledge/storage/iceberg-feature-support.yaml`), uma celula por par engine/feature, cada uma com fonte. NUNCA executa o upgrade: o modulo por tras nao importa cliente de AWS nem Spark. Veredito em vocabulario fechado -- BLOCKED quando ha fonte dizendo que uma engine nao le; UNRESOLVED quando falta fonte, INCLUSIVE quando nao ha inventario nenhum, porque ausencia de declaracao nao e declaracao de ausencia; CONDITIONAL quando o suporte e parcial; SAFE so quando toda celula consultada e afirmativa.",
+      "description": "Avalia subir o format version de uma tabela Iceberg CONTRA quem a consome. Cruza o inventario declarado (`env.consumer`, na convencao `.sparkforge_aws/consumers.yaml`) com a matriz de suporte de feature (`knowledge/storage/iceberg-feature-support.yaml`), uma celula por par engine/feature, cada uma com fonte. NUNCA executa o upgrade: o modulo por tras nao importa cliente de AWS nem Spark. Veredito em vocabulario fechado -- BLOCKED quando ha fonte dizendo que uma engine nao le; UNRESOLVED quando falta fonte, INCLUSIVE quando nao ha inventario nenhum, porque ausencia de declaracao nao e declaracao de ausencia; CONDITIONAL quando o suporte e parcial; SAFE so quando toda celula consultada e afirmativa.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
           "path": {
-            "description": "Diretorio do job, com o inventario em `.sparkforge/consumers.yaml`. Cada consumidor aceita um `release:` OPCIONAL (`emr-7.7.0`): com ele, a resposta cruza a versao de Iceberg daquela release com o minimo de biblioteca da feature, e por isso `emr_ec2` e `emr_eks` respondem DIFERENTE na mesma release, como as fontes dizem que respondem. Sem ele, a resposta e a da engine sem recorte de versao -- mais fraca, e nao errada.",
+            "description": "Diretorio do job, com o inventario em `.sparkforge_aws/consumers.yaml`. Cada consumidor aceita um `release:` OPCIONAL (`emr-7.7.0`): com ele, a resposta cruza a versao de Iceberg daquela release com o minimo de biblioteca da feature, e por isso `emr_ec2` e `emr_eks` respondem DIFERENTE na mesma release, como as fontes dizem que respondem. Sem ele, a resposta e a da engine sem recorte de versao -- mais fraca, e nao errada.",
             "type": "string"
           },
           "source": {
@@ -15799,7 +15799,7 @@
       }
     },
     {
-      "description": "Executor agentico DETERMINISTICO. Roda DEPOIS de `sparkforge_judge`, sobre findings ja julgados, e nao reavalia regra nenhuma: o que ele decide e o que o julgamento deixou em aberto -- conflito entre dois achados que movem a MESMA propriedade em direcoes opostas, lastro suficiente para uma afirmacao virar recomendacao, qual medida falta para fechar a lacuna, e em que ordem as acoes podem ser aplicadas. Grava `Claim`, `Evidence`, `Contradiction`, `Objection`, `Unknown`, `Experiment` e `Decision` no blackboard do case (`<repo>/.sparkforge/blackboard/`), mais um ADR por decisao significativa. Recebe `findings` inline ou `findings_path`, e `facts` inline ou `facts_path` -- que aceita uma LISTA de caminhos, e a lista e o ponto: o executor precisa da UNIAO dos facts do case, o MESMO conjunto que `judge` recebeu. Alimenta-lo com um subconjunto fabrica claim desancorada que a execucao real nao produz, e o gate de lastro a reprova por ausencia de medida. Fact sem `id` tem o id computado pelo conteudo. O QUE ELA NAO FAZ, e isto e contrato e nao ressalva: (1) nao estima ganho -- afirmar quanto se economiza exige o custo do run que NAO aconteceu, e ele nao existe; (2) nao publica score de arbitragem como confianca medida -- os pesos de `assess_claim` (evidencia 40%, autoridade 30%, especificidade 20%, aplicabilidade 10%) sao CONVENCAO e nenhum experimento os calibrou; eles ordenam claims dentro de uma arbitragem e o valor absoluto nao sai na resposta, so o desfecho; (3) nao executa debate -- quando a arbitragem nao fecha, sai um PLANO em `debate_plans`, com `executed: false` e `unresolved.reason: debate.unresolved`. Quem debateria e um `AgentRuntime` concreto, do host: `sparkforge_aws/` nao chama provider nenhum. Autonomia L0: escreve decisao e NUNCA aplica mudanca. O ADR e proposta com `rollback` obrigatorio, nao registro de coisa feita -- `applied_changes` sai sempre `false`. `persisted: false` nao e falha da chamada: a resposta e montada antes da gravacao e o que falhou sai nomeado em `persistence.errors`.",
+      "description": "Executor agentico DETERMINISTICO. Roda DEPOIS de `sparkforge_judge`, sobre findings ja julgados, e nao reavalia regra nenhuma: o que ele decide e o que o julgamento deixou em aberto -- conflito entre dois achados que movem a MESMA propriedade em direcoes opostas, lastro suficiente para uma afirmacao virar recomendacao, qual medida falta para fechar a lacuna, e em que ordem as acoes podem ser aplicadas. Grava `Claim`, `Evidence`, `Contradiction`, `Objection`, `Unknown`, `Experiment` e `Decision` no blackboard do case (`<repo>/.sparkforge_aws/blackboard/`), mais um ADR por decisao significativa. Recebe `findings` inline ou `findings_path`, e `facts` inline ou `facts_path` -- que aceita uma LISTA de caminhos, e a lista e o ponto: o executor precisa da UNIAO dos facts do case, o MESMO conjunto que `judge` recebeu. Alimenta-lo com um subconjunto fabrica claim desancorada que a execucao real nao produz, e o gate de lastro a reprova por ausencia de medida. Fact sem `id` tem o id computado pelo conteudo. O QUE ELA NAO FAZ, e isto e contrato e nao ressalva: (1) nao estima ganho -- afirmar quanto se economiza exige o custo do run que NAO aconteceu, e ele nao existe; (2) nao publica score de arbitragem como confianca medida -- os pesos de `assess_claim` (evidencia 40%, autoridade 30%, especificidade 20%, aplicabilidade 10%) sao CONVENCAO e nenhum experimento os calibrou; eles ordenam claims dentro de uma arbitragem e o valor absoluto nao sai na resposta, so o desfecho; (3) nao executa debate -- quando a arbitragem nao fecha, sai um PLANO em `debate_plans`, com `executed: false` e `unresolved.reason: debate.unresolved`. Quem debateria e um `AgentRuntime` concreto, do host: `sparkforge_aws/` nao chama provider nenhum. Autonomia L0: escreve decisao e NUNCA aplica mudanca. O ADR e proposta com `rollback` obrigatorio, nao registro de coisa feita -- `applied_changes` sai sempre `false`. `persisted: false` nao e falha da chamada: a resposta e montada antes da gravacao e o que falhou sai nomeado em `persistence.errors`.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -15846,7 +15846,7 @@
             "type": "string"
           },
           "repo": {
-            "description": "Raiz do case. O blackboard e os ADRs ficam em `<repo>/.sparkforge/blackboard/` -- ADR de case viaja com o case, nunca em `docs/`.",
+            "description": "Raiz do case. O blackboard e os ADRs ficam em `<repo>/.sparkforge_aws/blackboard/` -- ADR de case viaja com o case, nunca em `docs/`.",
             "type": "string"
           },
           "spark": {
@@ -16273,7 +16273,7 @@
         "additionalProperties": false,
         "properties": {
           "repo": {
-            "description": "Raiz do repositorio com `.sparkforge/blackboard/`.",
+            "description": "Raiz do repositorio com `.sparkforge_aws/blackboard/`.",
             "type": "string"
           }
         },
@@ -16379,7 +16379,7 @@
       }
     },
     {
-      "description": "Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do par `rules` em `<repo>/.sparkforge/debate/<debate_id>/plan.json`. O `debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve `created: false`. RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` nao declara `budget.max_rounds` (o default do codigo nunca vira teto), `no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado com outros facts ou outro budget, e `invalid_rules`. NAO gera argumento: nada neste projeto chama provider. Quem escreve cada submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge_aws/`. Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca (autonomia L0).",
+      "description": "Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos facts do case, runtime), e congela o plano do par `rules` em `<repo>/.sparkforge_aws/debate/<debate_id>/plan.json`. O `debate_id` e o hash do plano: o mesmo `start` e idempotente e devolve `created: false`. RECUSA por nome, sem gravar nada: `budget_undeclared` quando o `case.yaml` nao declara `budget.max_rounds` (o default do codigo nunca vira teto), `no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado com outros facts ou outro budget, e `invalid_rules`. NAO gera argumento: nada neste projeto chama provider. Quem escreve cada submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge_aws/`. Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca (autonomia L0).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -16426,7 +16426,7 @@
             "type": "string"
           },
           "repo": {
-            "description": "Raiz do case. O estado do debate fica em `<repo>/.sparkforge/debate/`, e o budget e lido do `case.yaml`.",
+            "description": "Raiz do case. O estado do debate fica em `<repo>/.sparkforge_aws/debate/`, e o budget e lido do `case.yaml`.",
             "type": "string"
           },
           "rules": {
@@ -18326,7 +18326,7 @@
       }
     },
     {
-      "description": "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` e registra no manifesto (`.sparkforge/artifacts/manifest.json`). Le, nunca grava nada do lado AWS. Offline-first: uma segunda chamada com o mesmo artefato ja presente e integro localmente (`cache_hit: true`) nao toca rede nem credenciais. boto3 ausente devolve um erro com o comando `pip install` E o caminho exato para registrar uma coleta manual -- nunca deixa a ferramenta inutilizavel. NAO interpreta o log; use `sparkforge_analyze_event_log` depois.",
+      "description": "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` e registra no manifesto (`.sparkforge_aws/artifacts/manifest.json`). Le, nunca grava nada do lado AWS. Offline-first: uma segunda chamada com o mesmo artefato ja presente e integro localmente (`cache_hit: true`) nao toca rede nem credenciais. boto3 ausente devolve um erro com o comando `pip install` E o caminho exato para registrar uma coleta manual -- nunca deixa a ferramenta inutilizavel. NAO interpreta o log; use `sparkforge_analyze_event_log` depois.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -19639,7 +19639,7 @@
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "include": {
@@ -19908,7 +19908,7 @@
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "kind": {
@@ -20065,7 +20065,7 @@
             "type": "boolean"
           },
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "detail_level": {
@@ -20222,7 +20222,7 @@
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "detail_level": {
@@ -20458,7 +20458,7 @@
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "depth": {
@@ -20685,7 +20685,7 @@
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "depth": {
@@ -20992,7 +20992,7 @@
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "detail_level": {
@@ -21297,12 +21297,12 @@
       }
     },
     {
-      "description": "A UNICA tool de mutacao do Code Intelligence: poe o indice local em dia com a arvore. Escreve somente em `.sparkforge/local/codeintel/**` e nunca toca o fonte do repositorio analisado. Cai para reconstrucao completa quando o banco esta ausente, vazio ou e de outra raiz, e diz qual dos dois aconteceu em `full_rebuild`. Chame quando outra tool recusar com `STALE_INDEX` ou `INDEX_MISSING`.",
+      "description": "A UNICA tool de mutacao do Code Intelligence: poe o indice local em dia com a arvore. Escreve somente em `.sparkforge_aws/local/codeintel/**` e nunca toca o fonte do repositorio analisado. Cai para reconstrucao completa quando o banco esta ausente, vazio ou e de outra raiz, e diz qual dos dois aconteceu em `full_rebuild`. Chame quando outra tool recusar com `STALE_INDEX` ou `INDEX_MISSING`.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
           "db": {
-            "description": "Arquivo do indice. Omitido, o default e `.sparkforge/local/codeintel/graph.sqlite3` sob `repo`.",
+            "description": "Arquivo do indice. Omitido, o default e `.sparkforge_aws/local/codeintel/graph.sqlite3` sob `repo`.",
             "type": "string"
           },
           "repo": {

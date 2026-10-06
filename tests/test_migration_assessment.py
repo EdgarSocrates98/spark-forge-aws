@@ -416,7 +416,7 @@ class TestBloqueioPorConsumidorIncompativel:
             "spark.sql(\"CREATE TABLE db.t ... TBLPROPERTIES ('format-version'='3')\")\n",
             encoding="utf-8",
         )
-        pasta = tmp_path / ".sparkforge"
+        pasta = tmp_path / ".sparkforge_aws"
         pasta.mkdir()
         (pasta / "consumers.yaml").write_text(
             f"consumers:\n  - table: db.t\n    service: {servico}\n", encoding="utf-8"
@@ -454,7 +454,7 @@ class TestBloqueioPorConsumidorIncompativel:
         from sparkforge_aws.migration import collect as collect_mod
 
         (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
-        pasta = tmp_path / ".sparkforge"
+        pasta = tmp_path / ".sparkforge_aws"
         pasta.mkdir()
         (pasta / "consumers.yaml").write_text(
             "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
@@ -483,7 +483,7 @@ class TestConsumidorPorTabela:
             "TBLPROPERTIES ('format-version'='3')\")\n",
             encoding="utf-8",
         )
-        pasta = tmp_path / ".sparkforge"
+        pasta = tmp_path / ".sparkforge_aws"
         pasta.mkdir()
         (pasta / "consumers.yaml").write_text(
             f"consumers:\n  - table: {tabela_no_inventario}\n    service: athena\n",

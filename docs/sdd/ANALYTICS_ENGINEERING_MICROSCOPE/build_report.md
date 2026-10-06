@@ -40,7 +40,7 @@ relatório e o histórico não preserva comandos vermelhos reproduzíveis. Nenhu
 exit vermelho foi inventado. A validação atual executou os testes focados com
 `python -m pytest tests/test_analytics_microscope.py
 tests/test_fixtures_golden_analytics.py -q --basetemp
-.sparkforge/local/pytest-analytics-microscope`, com `5 passed`.
+.sparkforge_aws/local/pytest-analytics-microscope`, com `5 passed`.
 
 ## Revisão
 

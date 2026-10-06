@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge/consumers.yaml`, versionado com o repositorio). Unico extrator do pacote que le um arquivo escrito por uma pessoa, e de proposito: quem consome uma tabela nao esta no codigo, no plano nem no event log -- e conhecimento da organizacao. Desbloqueia SF-ENV-002 (a tabela Iceberg em format V3 que o Athena nao le). Tabela ausente do inventario nao produz fact: ausencia de declaracao nao e declaracao de ausencia.
+Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge_aws/consumers.yaml`, versionado com o repositorio). Unico extrator do pacote que le um arquivo escrito por uma pessoa, e de proposito: quem consome uma tabela nao esta no codigo, no plano nem no event log -- e conhecimento da organizacao. Desbloqueia SF-ENV-002 (a tabela Iceberg em format V3 que o Athena nao le). Tabela ausente do inventario nao produz fact: ausencia de declaracao nao e declaracao de ausencia.
 
 ## Parâmetros
 

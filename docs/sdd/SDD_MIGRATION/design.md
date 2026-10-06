@@ -10,7 +10,7 @@ upstream:
 files:
   - {path: .claude/settings.json, action: modify, reason: "agentspec@agentspec false em enabledPlugins"}
   - {path: .claude/sdd, action: delete, reason: "git mv para docs/sdd/archive/agentspec/; .detected-stack.md sai por git rm"}
-  - {path: .gitignore, action: modify, reason: ".claude/sdd/ e .sparkforge/journal.jsonl ignorados neste repositorio"}
+  - {path: .gitignore, action: modify, reason: ".claude/sdd/ e .sparkforge_aws/journal.jsonl ignorados neste repositorio"}
   - {path: docs/sdd/archive/agentspec, action: create, reason: "destino do historico, conteudo identico"}
   - {path: docs/superpowers/README.md, action: create, reason: "specs/ e plans/ congelados; STATUS.md continua vivo"}
   - {path: CLAUDE.md, action: modify, reason: "secao curta: spec e desenvolvimento pelo SDD proprio"}

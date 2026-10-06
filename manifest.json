@@ -261,7 +261,7 @@
     "fact": "sparkforge_aws/findings/schemas/fact.schema.json",
     "finding": "sparkforge_aws/findings/schemas/finding.schema.json",
     "business_rule": "sparkforge_aws/findings/schemas/business_rule.schema.json",
-    "case": ".sparkforge/case.yaml",
+    "case": ".sparkforge_aws/case.yaml",
     "dq_ai_report": "sparkforge_aws/findings/schemas/dq_ai_report.schema.json"
   },
   "agent_tooling": {

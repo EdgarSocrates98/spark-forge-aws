@@ -1,4 +1,4 @@
-"""Leitura e escrita de `.sparkforge/case.yaml` — o barramento de handoff.
+"""Leitura e escrita de `.sparkforge_aws/case.yaml` — o barramento de handoff.
 
 O case file é o que atravessa a fronteira entre uma sessão Devin e uma sessão
 Claude Code: são processos diferentes, sem contexto conversacional compartilhado.
@@ -11,6 +11,7 @@ Isto mantém o módulo puro e reprodutível, e impede um LLM de inventar hora.
 from __future__ import annotations
 
 import copy
+import shutil
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,7 @@ import yaml
 from sparkforge_aws.durable import write_atomic
 
 SCHEMA_VERSION = 1
-CASE_DIR = ".sparkforge"
+CASE_DIR = ".sparkforge_aws"
 CASE_FILE = "case.yaml"
 
 PHASES = (
@@ -46,8 +47,105 @@ class CaseError(ValueError):
     """Case ausente, malformado, ou mutação com valor fora do domínio."""
 
 
+# Diretorio de estado legado: repos que ja tinham um case aberto gravaram-no em
+# `.sparkforge/case.yaml`. A leitura cai para o nome antigo quando so ele
+# existe; `case_path` (escrita) aponta sempre para o nome novo.
+LEGACY_CASE_DIR = ".sparkforge"
+
+
 def case_path(root: Path | str) -> Path:
     return Path(root) / CASE_DIR / CASE_FILE
+
+
+def case_read_path(root: Path | str) -> Path:
+    """Onde o case e LIDO: `.sparkforge_aws/`, ou o legado `.sparkforge/`
+    quando so ele existe. E o diretorio que ancora o resto do estado do case
+    (journal, artefatos): quem le estado do case deve resolve-lo por aqui."""
+    novo = case_path(root)
+    if novo.is_file():
+        return novo
+    legado = Path(root) / LEGACY_CASE_DIR / CASE_FILE
+    return legado if legado.is_file() else novo
+
+
+def state_dir(root: Path | str) -> Path:
+    """O diretorio de estado do case: `.sparkforge_aws/`, ou `.sparkforge/`
+    enquanto o `case.yaml` ainda morar la.
+
+    O case e a ancora: journal, blackboard, memory e debate vivem ao lado dele
+    e seguem a mesma decisao, entao uma arvore pre-rename continua coerente
+    ate a proxima gravacao do case, que muda a ancora de uma vez."""
+    return case_read_path(root).parent
+
+
+def state_path(root: Path | str, rel: Path | str) -> Path:
+    """Onde um arquivo de estado autonomo mora: `<root>/.sparkforge_aws/<rel>`
+    se ele existe ou se nada existe ainda; o mesmo relativo sob `.sparkforge/`
+    quando so a copia legada existe.
+
+    Diferente de `state_dir`, que ancora no `case.yaml`: `traces.db`, o indice
+    de codeintel e o inventario de consumidores existem sem case algum, entao
+    a ancora deles e o proprio arquivo — o existente continua em uso em vez
+    de dividir o historico em duas arvores paralelas. `rel` pode vir com ou
+    sem o prefixo `.sparkforge_aws/` (ou o `.sparkforge/` legado — ambos sao
+    normalizados para a cauda relativa)."""
+    rel = Path(rel)
+    partes = rel.parts
+    tail = Path(*partes[1:]) if partes and partes[0] in (CASE_DIR, LEGACY_CASE_DIR) else rel
+    novo = Path(root) / CASE_DIR / tail
+    if novo.exists():
+        return novo
+    legado = Path(root) / LEGACY_CASE_DIR / tail
+    return legado if legado.exists() else novo
+
+
+# Estado vizinho do `case.yaml`, carregado junto quando a gravacao do case muda
+# a ancora de `.sparkforge/` para `.sparkforge_aws/`: historicos pequenos e o
+# indice de artefatos. O manifesto referencia payloads por caminho relativo ao
+# repo (`.sparkforge/artifacts/x`), que continua resolvendo -- os payloads em
+# si ficam onde estao e `artifacts/` nao entra na copia. Os nomes pertencem a
+# outros modulos (journal, agentic/*, collect); repetidos aqui de proposito,
+# porque importa-los criaria ciclo com quem ja resolve estado via `state_dir`.
+_CARRY_ON_FLIP = (
+    Path("journal.jsonl"),
+    Path("blackboard"),
+    Path("memory"),
+    Path("debate"),
+    Path("artifacts") / "manifest.json",
+)
+
+
+def _copiar_ausentes(origem: Path, destino: Path) -> None:
+    """Copia arquivos que ainda nao existem no destino; nunca sobrescreve."""
+    if origem.is_file():
+        if not destino.exists():
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(origem, destino)
+        return
+    for item in sorted(origem.rglob("*")):
+        if not item.is_file():
+            continue
+        alvo = destino / item.relative_to(origem)
+        if alvo.exists():
+            continue
+        alvo.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, alvo)
+
+
+def _carry_legacy_state(root: Path) -> None:
+    """Virada de ancora: traz o estado vizinho do case para `.sparkforge_aws/`.
+
+    Chamado na primeira gravacao de `case.yaml` num repo que so tinha o
+    `.sparkforge/` legado. Sem a copia, o journal encadeado por hash, o
+    blackboard, a memoria e os debates continuariam legiveis em disco mas
+    invisiveis para os verbos, que agora ancoram no diretorio novo. Copia,
+    nunca move: o original legado permanece intocado no lugar."""
+    origem = Path(root) / LEGACY_CASE_DIR
+    destino = Path(root) / CASE_DIR
+    for nome in _CARRY_ON_FLIP:
+        src = origem / nome
+        if src.exists():
+            _copiar_ausentes(src, destino / nome)
 
 
 def new_case(
@@ -104,8 +202,22 @@ def save_case(case: dict[str, Any], root: Path | str) -> Path:
 
     Gravação atômica (`durable.write_atomic`): uma queda no meio deixa o case
     anterior inteiro, nunca um YAML truncado que `load_case` recusaria.
+
+    Quando esta gravacao e a virada de ancora (o MESMO case existia so em
+    `.sparkforge/` e acaba de nascer em `.sparkforge_aws/`), o estado vizinho
+    do case vem junto — `_carry_legacy_state`. A comparacao por `case_id` e o
+    que distingue a virada de um `case open` novo num repo com case legado:
+    o journal e o blackboard de uma investigacao diferente nao podem ser
+    copiados para debaixo dela. Depois da virada o novo case existe sempre,
+    e a checagem custa um `is_file` por gravacao.
     """
     path = case_path(root)
+    virada = not path.is_file() and _mesmo_case_legado(Path(root), case)
+    if virada:
+        # Copia ANTES de gravar o case: falha aqui nao toca nada, e as copias
+        # sao ancoradas no case — invisiveis ate ele existir no diretorio novo
+        # — entao uma gravacao que falhe depois delas nao deixa estado partido.
+        _carry_legacy_state(Path(root))
     text = yaml.safe_dump(
         case, sort_keys=True, allow_unicode=True, default_flow_style=False
     )
@@ -113,9 +225,24 @@ def save_case(case: dict[str, Any], root: Path | str) -> Path:
     return path
 
 
+def _mesmo_case_legado(root: Path, case: dict[str, Any]) -> bool:
+    """O case sendo gravado e o mesmo que mora em `.sparkforge/`?
+
+    Compara `case_id` lendo o YAML legado; ilegivel ou sem id, responde
+    "nao" — e a virada nao carrega nada, o que e a escolha segura."""
+    legado = root / LEGACY_CASE_DIR / CASE_FILE
+    if not legado.is_file():
+        return False
+    try:
+        documento = yaml.safe_load(legado.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return False
+    return bool(case.get("case_id")) and documento.get("case_id") == case["case_id"]
+
+
 def load_case(root: Path | str) -> dict[str, Any]:
     """Carrega o case. Levanta CaseError se ausente ou schema divergente."""
-    path = case_path(root)
+    path = case_read_path(root)
     if not path.is_file():
         raise CaseError(
             f"Nenhum case em {path}. Rode `sparkforge-aws case open` para criar um."

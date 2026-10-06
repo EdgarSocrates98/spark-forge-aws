@@ -99,8 +99,8 @@ cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo
 
 - As tarefas seguem `docs/sdd/README.md#caminho-da-mudança-do-operador`;
   nenhuma tarefa edita a árvore do operador direto. O plano mora em
-  `.sparkforge/sdd/<F>/plan.md`:
-  `sparkforge-aws sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/plan.md`.
+  `.sparkforge_aws/sdd/<F>/plan.md`:
+  `sparkforge-aws sdd stamp --repo . --root .sparkforge_aws/sdd .sparkforge_aws/sdd/<F>/plan.md`.
 - Toda tarefa prova alguma coisa. Com pytest sobre as funções puras do job, é
   `test`. Sem ele, a tarefa declara `proof` no lugar:
 

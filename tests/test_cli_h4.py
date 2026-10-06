@@ -19,7 +19,7 @@ def _job(tmp_path, com_inventario=None):
     (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
     (tmp_path / "requirements.txt").write_text(REQS, encoding="utf-8")
     if com_inventario:
-        pasta = tmp_path / ".sparkforge"
+        pasta = tmp_path / ".sparkforge_aws"
         pasta.mkdir()
         (pasta / "consumers.yaml").write_text(
             INVENTARIO.format(servico=com_inventario), encoding="utf-8"

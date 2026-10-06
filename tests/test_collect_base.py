@@ -2,6 +2,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -79,7 +80,7 @@ class TestArtifactEntryValidation:
 class TestManifestPath:
     def test_manifest_path_is_under_sparkforge_artifacts(self, tmp_path):
         path = manifest_path(tmp_path)
-        assert path == tmp_path / ".sparkforge" / "artifacts" / "manifest.json"
+        assert path == tmp_path / ".sparkforge_aws" / "artifacts" / "manifest.json"
 
 
 class TestLoadManifest:
@@ -181,6 +182,35 @@ class TestVerifyArtifact:
         assert result["hash_matches"] is False
 
 
+class TestManifestoLegado:
+    """O manifesto ancora no `case.yaml`: um repo cujo case ainda mora no
+    `.sparkforge/` pre-rename le e continua o manifesto de la."""
+
+    def _case_legado(self, tmp_path: Path) -> None:
+        legado = tmp_path / ".sparkforge"
+        legado.mkdir()
+        (legado / "case.yaml").write_text(
+            "schema_version: 1\ncase_id: c\n", encoding="utf-8"
+        )
+
+    def test_manifest_reads_legacy_when_case_is_legacy(self, tmp_path):
+        self._case_legado(tmp_path)
+        legado_manifest = tmp_path / ".sparkforge" / "artifacts"
+        legado_manifest.mkdir()
+        (legado_manifest / "manifest.json").write_text(
+            '[{"path": "velho.json", "sha256": "x", "kind": "k", "source": "s",'
+            ' "collect_command": "c", "collected_at": "t"}]',
+            encoding="utf-8",
+        )
+        assert [e["path"] for e in load_manifest(tmp_path)] == ["velho.json"]
+
+    def test_register_appends_to_legacy_manifest_while_case_is_legacy(self, tmp_path):
+        self._case_legado(tmp_path)
+        register_artifact(make_entry(path="novo.json"), tmp_path)
+        assert (tmp_path / ".sparkforge" / "artifacts" / "manifest.json").is_file()
+        assert not (tmp_path / ".sparkforge_aws" / "artifacts" / "manifest.json").exists()
+
+
 class TestVerifyAll:
     def test_empty_manifest_yields_empty_result(self, tmp_path):
         assert verify_all(tmp_path) == []
@@ -199,7 +229,7 @@ class TestGlueJobRunKind:
 
         entry = ArtifactEntry(
             kind="glue_job_run",
-            path=".sparkforge/artifacts/glue_job_run/job_jr_1.json",
+            path=".sparkforge_aws/artifacts/glue_job_run/job_jr_1.json",
             sha256="a" * 64,
             source="glue:get_job_runs:job",
             collect_command="sparkforge-aws collect glue-job-runs --job-name job",
@@ -212,7 +242,7 @@ class TestGlueJobRunKind:
 
         assert (
             aws.glue_job_run_path("my-job", "jr_abc")
-            == ".sparkforge/artifacts/glue_job_run/my-job_jr_abc.json"
+            == ".sparkforge_aws/artifacts/glue_job_run/my-job_jr_abc.json"
         )
 
 

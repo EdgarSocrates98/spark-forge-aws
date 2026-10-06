@@ -1,6 +1,6 @@
 """L2 do §15 (sandbox execute): o diff numa copia isolada, e o que ele move nos achados.
 
-Duas copias do repositorio sob `.sparkforge/sandbox/<id>/`: `before/`, pristina,
+Duas copias do repositorio sob `.sparkforge_aws/sandbox/<id>/`: `before/`, pristina,
 e `after/`, com o diff aplicado. Cada uma passa pelo mesmo `scan` (injetado por
 quem chama, para este modulo nao importar `adapters`), e a comparacao e a do
 `simulate`, pela chave estavel do subject. Duas raizes separadas e o que impede
@@ -10,7 +10,7 @@ ferramenta que quiser.
 A arvore principal nunca e escrita: toda recusa sai antes do primeiro byte em
 disco, e o unico diretorio criado e o do `id`. A copia usa a varredura de
 `facts/scan.py`, que nao le arquivo sensivel e poda `.venv`, `vendor`, `build` e
-o proprio `.sparkforge` -- exceto `.sparkforge/artifacts/`, copiado a parte
+o proprio `.sparkforge_aws` -- exceto `.sparkforge_aws/artifacts/`, copiado a parte
 porque e onde o `scan` acha os artefatos coletados.
 
 O relatorio nao afirma ganho (regra 13): a diferenca de achados diz o que a
@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from sparkforge_aws.case.store import state_path
 from sparkforge_aws.change.apply import apply_patches, parse_unified_diff
 from sparkforge_aws.change.refusals import (
     ARQUIVO_FORA_DA_COPIA,
@@ -37,13 +38,18 @@ from sparkforge_aws.paths import resolve_within
 from sparkforge_aws.simulate.diff import diff as comparar
 
 STAGE_SANDBOX = "sandbox_execute"
-SANDBOX_DIR = PurePosixPath(".sparkforge/sandbox")
-ARTIFACTS_DIR = PurePosixPath(".sparkforge/artifacts")
+SANDBOX_DIR = PurePosixPath(".sparkforge_aws/sandbox")
+ARTIFACTS_DIR = PurePosixPath(".sparkforge_aws/artifacts")
 ID_HEX = 16
 # O estado do proprio SparkForge (e as copias anteriores do sandbox) fica fora
 # da copia por poda e fora de `copy_skipped`: listá-lo mudaria o relatorio da
 # segunda execucao sobre a mesma entrada, que a primeira criou.
-ESTADO_PROPRIO = ".sparkforge"
+ESTADO_PROPRIO = ".sparkforge_aws"
+# O nome pre-rename e estado proprio do mesmo jeito: sem a entrada legada, uma
+# arvore antiga vazia `.sparkforge/` para dentro da copia do sandbox.
+ESTADO_LEGADO = ".sparkforge"
+ESTADOS_PROPRIOS = frozenset({ESTADO_PROPRIO, ESTADO_LEGADO})
+LEGADO_ARTIFACTS_DIR = PurePosixPath(".sparkforge/artifacts")
 
 Varrer = Callable[[Path], Mapping[str, Any]]
 
@@ -68,9 +74,14 @@ def inventariar(repo: Path) -> Copia:
     varredura = varrer_source_files(raiz, "*")
     origens = {origem.relative_to(raiz).as_posix(): origem for origem in varredura.arquivos}
     pulos = {pulo.relativo: pulo.razao for pulo in varredura.pulos}
-    artefatos = resolve_within(raiz, ARTIFACTS_DIR.as_posix())
-    if artefatos is not None and artefatos.is_dir():
+    for base_art in (LEGADO_ARTIFACTS_DIR, ARTIFACTS_DIR):
+        artefatos = resolve_within(raiz, base_art.as_posix())
+        if artefatos is None or not artefatos.is_dir():
+            continue
         extra = varrer_source_files(artefatos, "*")
+        # A copia e sempre relayout canonico: artefatos legados entram sob
+        # `.sparkforge_aws/artifacts/` para que `_manifesto` os ache dentro do
+        # sandbox; numa colisao de caminho, o diretorio novo prevalece.
         for origem in extra.arquivos:
             origens[(ARTIFACTS_DIR / origem.relative_to(artefatos).as_posix()).as_posix()] = origem
         for pulo in extra.pulos:
@@ -98,7 +109,9 @@ def _diretorio_do_id(raiz: Path, ident: str) -> Path:
     alvo = resolve_within(raiz, (SANDBOX_DIR / ident).as_posix())
     if alvo is None:
         raise ChangeError(CAMINHO_FORA_DA_RAIZ, f"{SANDBOX_DIR} resolve para fora de {raiz}")
-    return alvo
+    # Ancora no disco: um sandbox criado antes do rename continua sendo O
+    # sandbox daquele id, e o materializado novo segue para `.sparkforge_aws`.
+    return state_path(raiz, SANDBOX_DIR / ident)
 
 
 def _copiar(copia: Copia, destino: Path) -> None:
@@ -242,7 +255,7 @@ def executar(
         list(lado_antes["findings"]), list(lado_depois["findings"]), [], [], stable_keys
     )
     novos, resolvidos = comparacao["appeared"], comparacao["disappeared"]
-    rel_base = SANDBOX_DIR / ident
+    rel_base = PurePosixPath(base.relative_to(raiz).as_posix())
     relatorio = {
         **_vazio(),
         "applied": True,
@@ -263,7 +276,7 @@ def executar(
         "copy_skipped": [
             {"path": rel, "reason": razao}
             for rel, razao in sorted(copia.pulos.items())
-            if rel != ESTADO_PROPRIO
+            if rel not in ESTADOS_PROPRIOS
         ],
         "scan_refused": {
             "before": list(lado_antes.get("refused") or []),
@@ -280,16 +293,20 @@ def executar(
 
 def limpar(repo: Path | str) -> dict[str, Any]:
     raiz = Path(repo).expanduser()
-    alvo = resolve_within(raiz, SANDBOX_DIR.as_posix())
-    if alvo is None:
-        raise ChangeError(CAMINHO_FORA_DA_RAIZ, f"{SANDBOX_DIR} resolve para fora de {raiz}")
-    removidos = sorted(p.name for p in alvo.iterdir() if p.is_dir()) if alvo.is_dir() else []
-    if alvo.exists():
-        shutil.rmtree(alvo)
+    removidos: list[str] = []
+    # Os dois nomes de diretorio de estado: um sandbox pre-rename tambem e
+    # `change clean` de verdade, nao um orfao que fica para sempre.
+    for cand in (SANDBOX_DIR, PurePosixPath(ESTADO_LEGADO) / "sandbox"):
+        alvo = resolve_within(raiz, cand.as_posix())
+        if alvo is None:
+            raise ChangeError(CAMINHO_FORA_DA_RAIZ, f"{cand} resolve para fora de {raiz}")
+        if alvo.is_dir():
+            removidos.extend(sorted(p.name for p in alvo.iterdir() if p.is_dir()))
+            shutil.rmtree(alvo)
     return {
         "stage": STAGE_SANDBOX,
         "main_tree_touched": False,
         "cleaned": True,
-        "removed": removidos,
+        "removed": sorted(removidos),
         "sandbox": SANDBOX_DIR.as_posix(),
     }

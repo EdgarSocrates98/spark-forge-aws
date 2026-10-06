@@ -5,7 +5,7 @@ description: Rehidrata o estado de um case ao retomar a investigação em outra 
 
 Você está retomando uma investigação SparkForge que talvez tenha sido iniciada
 em outra sessão, ou por outra ferramenta (Devin, outra instância do Claude
-Code). O estado sobrevive em `.sparkforge/case.yaml`, não na conversa.
+Code). O estado sobrevive em `.sparkforge_aws/case.yaml`, não na conversa.
 
 Rode:
 

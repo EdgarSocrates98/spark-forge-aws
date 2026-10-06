@@ -8,12 +8,12 @@ Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o reci
 
 | Subcomando | O que faz |
 |---|---|
-| [`sparkforge-aws receipt emit`](#sparkforge-aws-receipt-emit) | Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso. |
+| [`sparkforge-aws receipt emit`](#sparkforge-aws-receipt-emit) | Grava .sparkforge_aws/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso. |
 | [`sparkforge-aws receipt verify`](#sparkforge-aws-receipt-verify) | Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 quando o recibo nao corresponde. |
 
 ## `sparkforge-aws receipt emit`
 
-Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso.
+Grava .sparkforge_aws/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso.
 
 ```bash
 sparkforge-aws receipt emit --help

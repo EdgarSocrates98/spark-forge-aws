@@ -45,7 +45,7 @@ class Host:
 
 
 def claude_marketplace_dir(home: Path) -> Path:
-    return Path(home) / ".sparkforge" / "claude"
+    return Path(home) / ".sparkforge_aws" / "claude"
 
 
 def claude_plugin_dir(home: Path) -> Path:

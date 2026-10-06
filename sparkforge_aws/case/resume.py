@@ -2,7 +2,7 @@
 
 `resume()` produz um dict pronto para ser consumido por um LLM que acabou de
 retomar o case (Devin ou Claude Code, tanto faz). `render_handoff()` transforma
-esse mesmo payload em markdown fixo, committado em `.sparkforge/handoff.md`,
+esse mesmo payload em markdown fixo, committado em `.sparkforge_aws/handoff.md`,
 para que a leitura humana e a leitura de máquina partam do mesmo dado.
 
 Ambas as funções são puras e determinísticas: mesma entrada, mesma saída,

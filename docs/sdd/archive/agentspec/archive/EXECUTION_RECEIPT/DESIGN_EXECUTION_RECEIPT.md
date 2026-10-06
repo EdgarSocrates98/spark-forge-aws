@@ -37,7 +37,7 @@
                                           judgment, decision, proof, tools, host
                            │
                            v
- <repo>/.sparkforge/receipts/<receipt_id>.json   (temp + replace; commitavel; sem conteudo)
+ <repo>/.sparkforge_aws/receipts/<receipt_id>.json   (temp + replace; commitavel; sem conteudo)
 ```
 
 ---
@@ -191,7 +191,7 @@ Tres consequencias:
 
 **Context:**
 - `test_facts_scan` varre `sparkforge_aws/` por AST e recusa `Path.glob`/`rglob`.
-- O ADR mora em `.sparkforge/blackboard/adr/ADR-<decision_id>.md` (`agentic/executor/run.py:136` e `:982`), e nao em `.sparkforge/adr/` como o DEFINE 1.0 dizia.
+- O ADR mora em `.sparkforge_aws/blackboard/adr/ADR-<decision_id>.md` (`agentic/executor/run.py:136` e `:982`), e nao em `.sparkforge_aws/adr/` como o DEFINE 1.0 dizia.
 - O blackboard tem nomes fixos em `agentic/blackboard.py:49-58`.
 
 **Choice:**
@@ -199,7 +199,7 @@ Tres consequencias:
 - `decision_ids`: os ids de `decisions.jsonl`.
 - `adrs`: `blackboard/adr/ADR-<id>.md` para cada decisao. Com o arquivo ausente, o item sai `missing` ja no emit.
 - `rollback_present` sai do registro da decisao, sem parsear o Markdown.
-- `debates`: pela funcao de listagem que `debate_run.py` ja expoe sobre `.sparkforge/debate/`. Por debate, id e sha256 do arquivo de estado.
+- `debates`: pela funcao de listagem que `debate_run.py` ja expoe sobre `.sparkforge_aws/debate/`. Por debate, id e sha256 do arquivo de estado.
 - Sem blackboard e sem debate: `unresolved` com `sem_arbitragem`.
 
 **Rationale:** enumeracao por dado que ja existe e deterministica, e o teste de varredura continua verde.
@@ -276,7 +276,7 @@ Tres consequencias:
 | 5 | `sparkforge_aws/adapters/_core.py` | Modify | `receipt_emit`, `receipt_verify`, `receipt_write`, confinamento | (general) | 2, 3 |
 | 6 | `sparkforge_aws/adapters/cli.py` | Modify | Grupo `receipt` (`emit`, `verify`), exit 0/1/2 | (general) | 5 |
 | 7 | `sparkforge_aws/adapters/tools.py` | Modify | Duas tools, schemas, handlers, registro no mapa | (general) | 5 |
-| 8 | `fixtures/receipt/` (`input/` com `.sparkforge/case.yaml`, `blackboard/*.jsonl`, `blackboard/adr/ADR-*.md`, facts e findings da uniao, report assinado; `expected/receipt.json`) + `tests/test_fixtures_golden_receipt.py` | Create | Golden byte a byte (SC1) e os ATs de ponta a ponta pela CLI | @agentspec:test:test-generator | 5, 6 |
+| 8 | `fixtures/receipt/` (`input/` com `.sparkforge_aws/case.yaml`, `blackboard/*.jsonl`, `blackboard/adr/ADR-*.md`, facts e findings da uniao, report assinado; `expected/receipt.json`) + `tests/test_fixtures_golden_receipt.py` | Create | Golden byte a byte (SC1) e os ATs de ponta a ponta pela CLI | @agentspec:test:test-generator | 5, 6 |
 | 9 | `tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `tests/test_fixtures_golden_mcp_parity.py` | Modify | Lista, amostra real, contagem, `NOVAS_DEPOIS_DO_GOLDEN` | (general) | 7 |
 | 10 | `parity.yaml`, `manifest.json`, `agents/executors/sf-synthesizer.md` + espelhos (`scripts/sync_skills.py`) | Modify | Capacidade, chave `tools`, passo novo | (general) | 7 |
 | 11 | `docs/execution-receipt.md`, `docs/superpowers/STATUS.md` | Create/Modify | Schema, o que prova e recusa, `cosign attest-blob` fora do pacote (G18) | (general) | all |
@@ -403,7 +403,7 @@ def conferir_tools(declarado: dict[str, Any], do_run: list[dict[str, Any]]) -> d
    projeta spans; aponta proof; monta host/actions/unresolved/refused; calcula receipt_id
    │
    ▼
-3. receipt_write: .sparkforge/receipts/<receipt_id>.json (temp + replace, confinado)
+3. receipt_write: .sparkforge_aws/receipts/<receipt_id>.json (temp + replace, confinado)
    │
    ▼
 4. verify (outro dia, outra maquina): le o recibo; version -> integrity -> cada parte
@@ -472,7 +472,7 @@ def conferir_tools(declarado: dict[str, Any], do_run: list[dict[str, Any]]) -> d
 
 - Nenhum conteudo de caso no recibo (V2): caminho relativo, hash, id, contagem, versao e colunas escolhidas do span; nunca `metadata_json` nem `measures`.
 - Nenhum caminho absoluto no recibo; o transcript entra so por sha256 (Decision 4).
-- Todo caminho de entrada confinado ao repo, e a escrita so em `.sparkforge/receipts/`, com o destino conferido antes de gravar.
+- Todo caminho de entrada confinado ao repo, e a escrita so em `.sparkforge_aws/receipts/`, com o destino conferido antes de gravar.
 - O recibo nao prova autoria e diz isso em `proves` e em `refused`. Quem precisa de autoria assina o arquivo fora do pacote.
 - Nenhuma rede e nenhum provider.
 
@@ -505,7 +505,7 @@ def conferir_tools(declarado: dict[str, Any], do_run: list[dict[str, Any]]) -> d
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-09-12 | design-agent | Versao inicial. A-005 a A-008 decididas; ADR em `.sparkforge/blackboard/adr/` (corrige o DEFINE 1.0); spans ancorados por `span_id` e lidos do `shared_ledger` (Decision 2) |
+| 1.0 | 2026-09-12 | design-agent | Versao inicial. A-005 a A-008 decididas; ADR em `.sparkforge_aws/blackboard/adr/` (corrige o DEFINE 1.0); spans ancorados por `span_id` e lidos do `shared_ledger` (Decision 2) |
 | 1.1 | 2026-09-12 | ship-agent | Shipped and archived (PR #54) |
 
 ---

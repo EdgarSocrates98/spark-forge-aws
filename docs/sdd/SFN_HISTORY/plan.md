@@ -1365,7 +1365,7 @@ def _extract_sfn_history_facts(path: str) -> list[Fact]:
             f"  Aponte para o JSON salvo de `aws stepfunctions get-execution-history`,\n"
             f"  ou para o diretorio com eles:\n"
             f"    sparkforge-aws analyze sfn-history --path historicos/ "
-            f"--out .sparkforge/facts_sfn_history.json",
+            f"--out .sparkforge_aws/facts_sfn_history.json",
             exit_code=2,
         )
     if target.is_dir():

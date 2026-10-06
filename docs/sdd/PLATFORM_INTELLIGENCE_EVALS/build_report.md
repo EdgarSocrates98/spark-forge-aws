@@ -34,7 +34,7 @@ T1–T2 estão `skipped` porque a implementação precede este relatório e o
 histórico não preserva comandos vermelhos reproduzíveis. Nenhum exit foi
 inventado. A validação atual foi executada com
 `python -m pytest tests/test_platform_evals.py -q --basetemp
-.sparkforge/local/pytest-platform-evals`, que terminou com `2 passed`.
+.sparkforge_aws/local/pytest-platform-evals`, que terminou com `2 passed`.
 
 ## Revisão
 

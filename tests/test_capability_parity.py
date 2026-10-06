@@ -130,7 +130,7 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mesma capacidade que 'resume'; escreve markdown em disco, sem uso "
             "para um cliente MCP."
         ),
-        # `journal verify` e auditoria da cadeia do `.sparkforge/journal.jsonl`.
+        # `journal verify` e auditoria da cadeia do `.sparkforge_aws/journal.jsonl`.
         # O estado que o cliente MCP precisa (o que ficou sem `finished`, a
         # cadeia intacta ou quebrada) ja chega pelo bloco `journal` de
         # `sparkforge_resume`; uma tool so para conferir a cadeia nao cabia no

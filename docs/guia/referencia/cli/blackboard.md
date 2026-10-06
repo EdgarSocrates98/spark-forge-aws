@@ -2,7 +2,7 @@
 
 # `sparkforge-aws blackboard`
 
-Lê o shared blackboard (.sparkforge/blackboard/).
+Lê o shared blackboard (.sparkforge_aws/blackboard/).
 
 ## Subcomandos
 

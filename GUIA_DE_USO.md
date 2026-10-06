@@ -98,7 +98,7 @@ produção executa com a configuração declarada.
 Se houver histórico terminal sanitizado, componha-o com a definição efetiva:
 
 ```bash
-sparkforge-aws analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws analyze glue-job-runs --path .sparkforge_aws/artifacts/glue_job_run --out runs.facts.json
 sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
 sparkforge-aws judge --facts runtime.facts.json --show-skipped
 ```
@@ -122,7 +122,7 @@ create, update ou delete na AWS:
 
 ```bash
 sparkforge-aws collect schema-registry --repo . --registry-name events --now 2026-10-03T00:00:00Z
-sparkforge-aws analyze schema-registry --path .sparkforge/artifacts/schema_registry/events.json
+sparkforge-aws analyze schema-registry --path .sparkforge_aws/artifacts/schema_registry/events.json
 ```
 
 Definição ausente, inválida ou acima do limite é `unresolved`, não contrato
@@ -442,7 +442,7 @@ resposta determinística primeiro; reviewer, specialist ou debate surgem por tri
 explícitos ou derivados de evidência estruturada (`risk`, `confidence`, conflitos e
 unresolved). O core não chama modelo.
 
-Para repositórios relacionados, declare `.sparkforge/workspace.yaml` e use a API de
+Para repositórios relacionados, declare `.sparkforge_aws/workspace.yaml` e use a API de
 workspace. Paths fora da raiz, repositórios não declarados e relações ausentes não são
 descobertos silenciosamente: entram como erro ou `unresolved`.
 
@@ -461,8 +461,8 @@ As superfícies Agentic OS v2 são locais e compartilham `_core` entre CLI e MCP
 sparkforge-aws context inspect --input context.json
 sparkforge-aws agentops inspect <run_id> --repo .
 sparkforge-aws agentops compare <run_a> <run_b> --repo .
-sparkforge-aws agentops baseline save <run_id> --path .sparkforge/baselines/base.json --repo .
-sparkforge-aws agentops baseline compare <run_b> --path .sparkforge/baselines/base.json --repo .
+sparkforge-aws agentops baseline save <run_id> --path .sparkforge_aws/baselines/base.json --repo .
+sparkforge-aws agentops baseline compare <run_b> --path .sparkforge_aws/baselines/base.json --repo .
 sparkforge-aws doctor agentic --repo .
 ```
 
@@ -587,7 +587,7 @@ Em EMR Serverless o artefato é um só, e os dois verbos são estes:
 
 ```bash
 sparkforge-aws collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
-sparkforge-aws analyze emr-serverless --path .sparkforge/artifacts/<dir-ou-arquivo>   --out .sparkforge/facts_emr_serverless.json
+sparkforge-aws analyze emr-serverless --path .sparkforge_aws/artifacts/<dir-ou-arquivo>   --out .sparkforge_aws/facts_emr_serverless.json
 ```
 
 `collect` exige o **id** da application e nunca o nome — `name` é opcional na API e a
@@ -624,10 +624,10 @@ precisa ser medido nos dois lados — contagem, schema, chaves e agregados do al
 
 ```bash
 sparkforge-aws funcval plan \
-  --facts .sparkforge/facts.json \
-  --facts .sparkforge/facts_catalog.json \
+  --facts .sparkforge_aws/facts.json \
+  --facts .sparkforge_aws/facts_catalog.json \
   --key pedido_id,dt \
-  --out .sparkforge/facts_funcval_plan.json
+  --out .sparkforge_aws/facts_funcval_plan.json
 ```
 
 `--facts` é repetível e **precisa** ser: o alvo vem do `pyspark.write` de
@@ -644,10 +644,10 @@ Medidos os dois lados — quem mede é você, o motor não executa consulta nenh
 
 ```bash
 sparkforge-aws funcval compare \
-  --plan .sparkforge/facts_funcval_plan.json \
-  --before .sparkforge/funcval_before.json \
-  --after .sparkforge/funcval_after.json \
-  --out .sparkforge/facts_funcval.json
+  --plan .sparkforge_aws/facts_funcval_plan.json \
+  --before .sparkforge_aws/funcval_before.json \
+  --after .sparkforge_aws/funcval_after.json \
+  --out .sparkforge_aws/facts_funcval.json
 ```
 
 `--out` grava a lista **completa** de facts, no formato que `judge --facts` lê — o stdout
@@ -668,19 +668,19 @@ cada um responde uma metade que o anterior deixou aberta.
 
 ```bash
 # 1. o que o JOB declara -- FGAC, Full Table Access, catálogo, filesystem
-sparkforge-aws analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+sparkforge-aws analyze terraform --path infra/ --out .sparkforge_aws/facts_tf.json
 
 # 2. o que a TABELA e a CONTA respondem
 sparkforge-aws collect lakeformation --repo . --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela> --now <ISO8601>
-sparkforge-aws analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/     --out .sparkforge/facts_lf.json
+sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lakeformation/     --out .sparkforge_aws/facts_lf.json
 
 # 3. o que o IAM decide, SIMULADO -- não o documento da policy
 sparkforge-aws collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey     --now <ISO8601>
-sparkforge-aws analyze iam-access --path .sparkforge/artifacts/iam_access/     --out .sparkforge/facts_iam.json
+sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/     --out .sparkforge_aws/facts_iam.json
 
 # 4. a mensagem exata da falha
 sparkforge-aws collect cloudwatch-logs --repo . --job-name <job> --job-run <run>     --log-group /aws-glue/jobs/error --start <ISO8601> --end <ISO8601> --now <ISO8601>
-sparkforge-aws analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_log.json
+sparkforge-aws analyze cloudwatch-logs --path .sparkforge_aws/artifacts/cloudwatch_logs/     --out .sparkforge_aws/facts_log.json
 ```
 
 **Três coisas que decidem a qualidade da resposta, e todas são escolha de quem coleta:**
@@ -732,9 +732,9 @@ eles nomeiam o comando: item de conclusão sem verbo produtor é exatamente a pr
 
 O que atravessa a fronteira entre uma sessão Devin e uma sessão Claude Code é
 um commit, não contexto de conversa. Cinco arquivos pequenos e derivados sob
-`.sparkforge/` são committados — `case.yaml`, `facts.json`, `findings.json`,
+`.sparkforge_aws/` são committados — `case.yaml`, `facts.json`, `findings.json`,
 `handoff.md` e `artifacts/manifest.json` — porque são o barramento de handoff.
-Tudo em `.sparkforge/artifacts/**` além do `manifest.json` **não** é
+Tudo em `.sparkforge_aws/artifacts/**` além do `manifest.json` **não** é
 committado: são artefatos brutos (event logs, planos físicos, saída de
 Terraform) que podem carregar dado de negócio e chegar a centenas de MB. O
 manifesto é o que substitui o artefato ausente no commit: ele registra

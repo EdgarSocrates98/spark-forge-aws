@@ -102,7 +102,7 @@ comando de recoleta e cache offline-first.
 sparkforge-aws collect managed-flink --repo . --application-name orders \
   --region us-east-1 --now <ISO8601>
 sparkforge-aws analyze flink \
-  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1.json \
+  --path .sparkforge_aws/artifacts/managed_flink_application/orders__us-east-1.json \
   --artifact managed_flink
 ```
 
@@ -128,7 +128,7 @@ sparkforge-aws collect managed-flink --repo . --application-name orders \
   --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
   --now 2026-10-03T02:05:00Z
 sparkforge-aws analyze flink \
-  --path .sparkforge/artifacts/managed_flink_application/orders__us-east-1__metrics_*.json \
+  --path .sparkforge_aws/artifacts/managed_flink_application/orders__us-east-1__metrics_*.json \
   --artifact managed_flink
 ```
 

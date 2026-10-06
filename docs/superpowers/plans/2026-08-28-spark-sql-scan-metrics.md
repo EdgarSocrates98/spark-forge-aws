@@ -1401,7 +1401,7 @@ def analyze_sql_metrics(
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um Spark event log (JSON Lines):\n"
-            f"    sparkforge-aws analyze sql-metrics --path .sparkforge/artifacts/eventlog/app.jsonl",
+            f"    sparkforge-aws analyze sql-metrics --path .sparkforge_aws/artifacts/eventlog/app.jsonl",
             exit_code=2,
         )
     facts = extract_sql_metrics_path(target)

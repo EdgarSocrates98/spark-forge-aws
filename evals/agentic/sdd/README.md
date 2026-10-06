@@ -34,7 +34,7 @@ python -m sparkforge_aws.evals grade --suite sdd --run <run_id>
 ```
 
 O runner copia `fixtures/` para o workspace de prova (sem `expected/`), gasta
-token e grava tudo sob `~/.sparkforge/agentic-evals/`. Só o scorecard entra em
+token e grava tudo sob `~/.sparkforge_aws/agentic-evals/`. Só o scorecard entra em
 `baselines/`, no formato de `evals/agentic/fase0/baselines/`; transcript de
 sessão real carrega caminho e contexto do operador e nunca entra no git.
 

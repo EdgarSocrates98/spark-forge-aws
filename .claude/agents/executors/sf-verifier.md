@@ -60,7 +60,7 @@ Para cada um, procure ativamente:
 10. **O que um diff move, antes de alguém aplicá-lo?** Quando houver um diff proposto (o
     `diff` de `sparkforge_change_plan` gravado em arquivo, ou um escrito pelo host), chame
     `sparkforge_change_sandbox` com o `repo` e o `diff_path`. Ele aplica o diff numa cópia
-    em `.sparkforge/sandbox/<id>/` e roda o scan antes e depois: `resolved` é o que sumiu,
+    em `.sparkforge_aws/sandbox/<id>/` e roda o scan antes e depois: `resolved` é o que sumiu,
     `new` é o que apareceu, e `moved_candidates` é o mesmo achado com a linha deslocada.
     Esse último não é resolução. As `proof_obligations` trazem a validação e o rollback de
     cada regra tocada. Achado resolvido no sandbox é "o motor deixou de ver", nunca ganho
@@ -68,7 +68,7 @@ Para cada um, procure ativamente:
     resultado, `funcval`. Recusa do aplicador (`diff_nao_aplica`, `arquivo_fora_da_copia`)
     vai no relatório como está. Não conserte o diff por conta própria.
 11. **O sandbox passou: como isso vira um PR revisável?** Chame `sparkforge_change_propose`
-    com o `repo`, o `sandbox_id` e o `now`. Ele monta em `.sparkforge/proposal/<id>/` o patch,
+    com o `repo`, o `sandbox_id` e o `now`. Ele monta em `.sparkforge_aws/proposal/<id>/` o patch,
     o rollback, o corpo do PR assinado, o recibo e o `commands.md` com os comandos git/gh —
     e não roda nenhum deles (`git_run: false`). Recusa sem gravar nada quando o sandbox não
     existe, não aplicou, ficou velho (a árvore mudou depois dele) ou fez aparecer achado P0/P1.

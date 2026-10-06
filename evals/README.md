@@ -82,13 +82,13 @@ invalidaria os transcripts já gravados.
 
 ```bash
 # 1. roda o agente e pontua cada execucao -- gasta token do host, fora do CI.
-#    Grava em ~/.sparkforge/agentic-evals/: uma pasta por execucao (com
+#    Grava em ~/.sparkforge_aws/agentic-evals/: uma pasta por execucao (com
 #    scorecard.json) e o conjunto fase0-<data>/ com os N scorecards.
 python scripts/run_agentic_eval.py --repeat 3 --model haiku
 # 2. repontua uma execucao, se o gabarito mudou
 python -m sparkforge_aws.evals grade --suite fase0 --run <run_id>
 # 3. compara dois conjuntos: cada nome e procurado em
-#    evals/agentic/fase0/baselines/ (commitado) e em ~/.sparkforge/agentic-evals/
+#    evals/agentic/fase0/baselines/ (commitado) e em ~/.sparkforge_aws/agentic-evals/
 python -m sparkforge_aws.evals compare --suite fase0 --baseline <nome> --candidate <nome>
 ```
 
@@ -129,7 +129,7 @@ allowlist. O
 executável é o `claude` do PATH, e a configuração MCP é `evals/agentic/mcp.json`,
 que não usa a `${CLAUDE_PLUGIN_ROOT}` do `.mcp.json` da raiz: fora do contexto de
 plugin ela vira vazia, e o catálogo apontaria para `/rules/catalog`. A saída mora
-sempre sob `~/.sparkforge/agentic-evals/`. Nenhum texto livre do argv chega a
+sempre sob `~/.sparkforge_aws/agentic-evals/`. Nenhum texto livre do argv chega a
 `subprocess` nem a um caminho. Quem precisar de outro valor edita a lista, e a
 mudança fica no diff.
 
@@ -149,7 +149,7 @@ CLI `sparkforge-aws`, porque o runtime não importa a avaliação
 `fixtures/.../expected/findings.json` e copiou a resposta. O veredito de tools
 (`failed` nas 10) foi o que denunciou o atalho; a coluna de resposta, sozinha,
 teria lido acerto. Desde então o runner monta
-`~/.sparkforge/agentic-evals/workspace-<data>/`, uma cópia com o pacote, o
+`~/.sparkforge_aws/agentic-evals/workspace-<data>/`, uma cópia com o pacote, o
 catálogo, o knowledge, as skills, os agentes e só as **entradas** das fixtures.
 Ficam de fora `expected/`, `meta.yaml` (o `proves` cita a regra esperada), o
 corpus `host_transcript`, `tests/`, `evals/`, `docs/` e `.claude/`. É a mesma
@@ -362,7 +362,7 @@ agente.
 # headless: um `claude -p` por vez de lado, no workspace de prova (sem expected.yaml)
 python scripts/run_debate.py --model haiku --max-budget-usd 0.3
 python scripts/run_debate.py --dry-run          # monta e mostra; nao gasta
-# repontua uma execucao em ~/.sparkforge/debate-evals/<run>/
+# repontua uma execucao em ~/.sparkforge_aws/debate-evals/<run>/
 python -m sparkforge_aws.evals debate --run <run>
 ```
 

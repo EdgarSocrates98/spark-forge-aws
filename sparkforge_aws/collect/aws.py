@@ -174,39 +174,39 @@ class CollectionFailed(RuntimeError):
 # montar uma mensagem de erro acionavel quando `boto3` falta) monte o mesmo
 # caminho que o coletor vai usar sem duplicar a logica de formatacao.
 def event_log_path(job_run_id: str) -> str:
-    return f".sparkforge/artifacts/eventlog/{job_run_id}.jsonl"
+    return f".sparkforge_aws/artifacts/eventlog/{job_run_id}.jsonl"
 
 
 def glue_job_path(job_name: str) -> str:
-    return f".sparkforge/artifacts/glue_job/{job_name}.json"
+    return f".sparkforge_aws/artifacts/glue_job/{job_name}.json"
 
 
 def cloudwatch_path(job_name: str, job_run_id: str) -> str:
-    return f".sparkforge/artifacts/cloudwatch/{job_name}_{job_run_id}.json"
+    return f".sparkforge_aws/artifacts/cloudwatch/{job_name}_{job_run_id}.json"
 
 
 def glue_job_run_path(job_name: str, job_run_id: str) -> str:
-    return f".sparkforge/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
+    return f".sparkforge_aws/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
 
 
 def iceberg_metadata_path(table: str) -> str:
-    return f".sparkforge/artifacts/iceberg/{table.replace('.', '_')}.json"
+    return f".sparkforge_aws/artifacts/iceberg/{table.replace('.', '_')}.json"
 
 
 def athena_workgroup_path(workgroup: str) -> str:
-    return f".sparkforge/artifacts/athena/{workgroup}.json"
+    return f".sparkforge_aws/artifacts/athena/{workgroup}.json"
 
 
 def emr_cluster_path(cluster_id: str) -> str:
-    return f".sparkforge/artifacts/emr/{cluster_id}.json"
+    return f".sparkforge_aws/artifacts/emr/{cluster_id}.json"
 
 
 def emr_serverless_path(application_id: str) -> str:
-    return f".sparkforge/artifacts/emr_serverless/{application_id}.json"
+    return f".sparkforge_aws/artifacts/emr_serverless/{application_id}.json"
 
 
 def emr_eks_path(virtual_cluster_id: str, job_run_id: str) -> str:
-    return f".sparkforge/artifacts/emr_eks/{virtual_cluster_id}_{job_run_id}.json"
+    return f".sparkforge_aws/artifacts/emr_eks/{virtual_cluster_id}_{job_run_id}.json"
 
 
 def _sha256_bytes(content: bytes) -> str:

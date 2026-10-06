@@ -22,10 +22,10 @@ SPANS = [
 IDS = [fact["id"] for fact in FACTS]
 
 ADULTERACOES = {
-    "case": ".sparkforge/case.yaml",
+    "case": ".sparkforge_aws/case.yaml",
     "evidence": "facts/a.json",
     "judgment": "findings.json",
-    "decision": ".sparkforge/blackboard/claims.jsonl",
+    "decision": ".sparkforge_aws/blackboard/claims.jsonl",
 }
 
 
@@ -59,7 +59,10 @@ def test_adulterar_um_artefato_acusa_so_a_parte_dele(tmp_path, parte):
 
 @pytest.mark.parametrize(
     "arquivo",
-    [".sparkforge/blackboard/adr/ADR-dec_1.md", ".sparkforge/debate/dbt_0000abcd/plan.json"],
+    [
+        ".sparkforge_aws/blackboard/adr/ADR-dec_1.md",
+        ".sparkforge_aws/debate/dbt_0000abcd/plan.json",
+    ],
 )
 def test_adr_e_debate_caem_na_parte_decisao(tmp_path, arquivo):
     montar_case(tmp_path)
@@ -78,7 +81,7 @@ def test_report_editado_cai_no_julgamento(tmp_path):
 def test_artefato_apagado_e_missing(tmp_path):
     montar_case(tmp_path)
     doc = emitir(tmp_path)
-    (tmp_path / ".sparkforge" / "blackboard" / "adr" / "ADR-dec_1.md").unlink()
+    (tmp_path / ".sparkforge_aws" / "blackboard" / "adr" / "ADR-dec_1.md").unlink()
     veredito = conferir(doc, tmp_path)
     assert veredito["missing"] == ["decision"]
     assert veredito["diverged"] == []

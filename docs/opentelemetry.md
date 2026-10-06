@@ -6,7 +6,7 @@ Grafana, Datadog, Langfuse, Jaeger ou o backend que o time ja usa. Duas fontes
 entram no arquivo:
 
 - **as chamadas de tool do SparkForge**: cada chamada que passa por
-  `call_tool` ja vira um span em `.sparkforge/traces.db` (o mesmo que
+  `call_tool` ja vira um span em `.sparkforge_aws/traces.db` (o mesmo que
   `economy report` le), com nome, duracao, bytes e desfecho;
 - **a sessao do host**, quando voce aponta o transcript
   (`--host-transcript`): um span `invoke_agent` com modelo e tokens, e um span
@@ -30,8 +30,8 @@ sparkforge-aws telemetry export --run-id run_sessao_42 \
 
 A saida tem nome fixo, sob `--repo`:
 
-- `.sparkforge/telemetry/<run_id>.traces.jsonl` (uma linha `TracesData`)
-- `.sparkforge/telemetry/<run_id>.metrics.jsonl` (uma linha `MetricsData`, ou
+- `.sparkforge_aws/telemetry/<run_id>.traces.jsonl` (uma linha `TracesData`)
+- `.sparkforge_aws/telemetry/<run_id>.metrics.jsonl` (uma linha `MetricsData`, ou
   vazio)
 
 O stdout traz as contagens, as recusas e as lacunas. Exportar o mesmo run duas
@@ -46,10 +46,10 @@ grava**: gravar e da CLI.
 ```yaml
 receivers:
   otlp_json_file/traces:
-    include: [/caminho/do/repo/.sparkforge/telemetry/*.traces.jsonl]
+    include: [/caminho/do/repo/.sparkforge_aws/telemetry/*.traces.jsonl]
     start_at: beginning
   otlp_json_file/metrics:
-    include: [/caminho/do/repo/.sparkforge/telemetry/*.metrics.jsonl]
+    include: [/caminho/do/repo/.sparkforge_aws/telemetry/*.metrics.jsonl]
     start_at: beginning
 exporters:
   otlphttp:

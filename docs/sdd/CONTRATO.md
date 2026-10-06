@@ -43,7 +43,7 @@ e não acompanha o código.
 ## Onde moram os artefatos
 
 `<root>/<FEATURE>/<fase>.md`, com `<root>` = `docs/sdd` (padrão) ou
-`.sparkforge/sdd` no operador. `FEATURE` casa `^[A-Z0-9_]+$`; outra pasta
+`.sparkforge_aws/sdd` no operador. `FEATURE` casa `^[A-Z0-9_]+$`; outra pasta
 (`templates/`, `archive/`) não é feature. Fases, em ordem: `explore`
 (opcional), `define`, `design`, `plan`, `build_report`, `ship`. Nada mais fundo
 que `<FEATURE>/<fase>.md` é lido. O frontmatter é YAML entre duas cercas
@@ -112,7 +112,7 @@ com `red`/`green` = `{command, exit}` e `moved` = `{change_id, resolved: [rule_i
 | `success_without_source` | `success[]` sem `source` | define |
 | `verified_by_dangling` | teste citado (`verified_by` do define ou `test` do plan) não existe com o `build_report` em `ready`/`done` | define, plan |
 | `funcval_not_comparison` | o arquivo `funcval` existe e não tem nenhum `funcval.check_delta` (inclui JSON quebrado) | define, plan |
-| `case_missing` | operator sem `case_id`, vazio, ou diferente do `case_id` de `.sparkforge/case.yaml` (comparados como texto); não confere com o ship em `done` | define |
+| `case_missing` | operator sem `case_id`, vazio, ou diferente do `case_id` de `.sparkforge_aws/case.yaml` (comparados como texto); não confere com o ship em `done` | define |
 | `manifest_path_unknown` | `modify` em caminho inexistente; `delete` em caminho inexistente antes do build pronto | design |
 | `rollback_missing` | decisão sem `rollback` | design |
 | `acceptance_uncovered` | `AC` do define fora de todo `covers` da fase conferida | design, plan |
@@ -122,7 +122,7 @@ com `red`/`green` = `{command, exit}` e `moved` = `{change_id, resolved: [rule_i
 | `red_not_declared` | tarefa `done` sem `red`, ou com `red.exit` 0 (no operator, `moved` dispensa `red`) | build_report |
 | `acceptance_never_red` | só no perfil `dev`, com o build_report em `ready`/`done` e o ship ausente ou fora de `done`: `acceptance` de `kind: test` sem `guard` que nenhuma tarefa `done` do plan com o AC em `covers` viu vermelho — o `red` dela precisa de `exit` diferente de zero e de 5 (nenhum teste coletado) **e** citar o node id do `verified_by` no comando, ou só o arquivo com `exit` 2 (erro de coleta), com `\` e `./` inicial normalizados dos dois lados; o gate confere a **citação** do node id no comando declarado, não a execução — um `red` com `--deselect` do node, ou com o node num comentário, passaria; tarefa já recusada por `red_not_declared` não repete a causa, nem ship recusado por schema | build_report |
 | `claim_without_evidence` | claim sem `evidence_ref` | build_report |
-| `change_missing` | operator com `change_id` vazio, com separador, `.`/`..`, ou sem `.sparkforge/sandbox/<id>/` nem `.sparkforge/proposal/<id>/` como pasta; não confere com o ship em `done` | build_report |
+| `change_missing` | operator com `change_id` vazio, com separador, `.`/`..`, ou sem `.sparkforge_aws/sandbox/<id>/` nem `.sparkforge_aws/proposal/<id>/` como pasta; não confere com o ship em `done` | build_report |
 | `hypothesis_open_at_ship` | ship sem `hypothesis_outcome` | ship |
 | `registry_unchecked` | registro exigido pelos `change_kinds` do define ausente de `registries` (um por registro) | ship |
 | `ship_evidence_missing` | ship operator com o build_report sem `change_id`; sem `evidence`; ou sem entrada para um `change_id` citado (o do build, o de cada `moved`, o prefixo de cada `proof` `finding`); o `unlock` traz o `text_sha256` de cada relatório presente | ship |
@@ -146,10 +146,10 @@ com `red`/`green` = `{command, exit}` e `moved` = `{change_id, resolved: [rule_i
 
 ## Perfil operator
 
-- **Raiz.** A spec mora em `.sparkforge/sdd/` (`--root`): a cópia do sandbox
-  poda `.sparkforge`. A raiz passada à descoberta nunca é podada.
+- **Raiz.** A spec mora em `.sparkforge_aws/sdd/` (`--root`): a cópia do sandbox
+  poda `.sparkforge_aws`. A raiz passada à descoberta nunca é podada.
 - **`change_id`** é um segmento só e vale enquanto existir
-  `.sparkforge/sandbox/<id>/` ou `.sparkforge/proposal/<id>/`. O relatório da
+  `.sparkforge_aws/sandbox/<id>/` ou `.sparkforge_aws/proposal/<id>/`. O relatório da
   mudança é `report.json` na primeira ou `evidence/sandbox_report.json` na
   segunda, lido só se resolver dentro da pasta (symlink para fora é ignorado);
   vale o primeiro que for JSON de objeto.

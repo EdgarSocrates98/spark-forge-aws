@@ -11,7 +11,11 @@ import yaml
 from sparkforge_aws.paths import resolve_within
 from sparkforge_aws.policy.schema import validar
 
-POLICY_RELATIVE = Path(".sparkforge") / "policy.yaml"
+POLICY_RELATIVE = Path(".sparkforge_aws") / "policy.yaml"
+# Policy legada: um repo que ja tinha `.sparkforge/policy.yaml` nao pode ficar
+# sem a policy que escolheu so porque o diretorio mudou de nome. A leitura cai
+# para o caminho antigo quando so ele existe.
+LEGACY_POLICY_RELATIVE = Path(".sparkforge") / "policy.yaml"
 
 
 class PolicyError(ValueError):
@@ -70,7 +74,7 @@ def raiz_do_projeto(valor: Path | str) -> Path:
 
 
 def caminho(raiz: Path | str) -> Path:
-    """`<raiz>/.sparkforge/policy.yaml`, confinado a raiz; um symlink que
+    """`<raiz>/.sparkforge_aws/policy.yaml`, confinado a raiz; um symlink que
     escape dela e recusado em vez de lido."""
     alvo = resolve_within(raiz_do_projeto(raiz), POLICY_RELATIVE)
     if alvo is None:
@@ -78,9 +82,20 @@ def caminho(raiz: Path | str) -> Path:
     return alvo
 
 
-def carregar(raiz: Path | str) -> Politica | None:
-    """A policy de `<raiz>/.sparkforge/policy.yaml`, ou `None` sem arquivo."""
+def _caminho_leitura(raiz: Path | str) -> Path:
+    """O caminho novo, ou o legado confinado quando so o legado existe."""
     alvo = caminho(raiz)
+    if alvo.is_file():
+        return alvo
+    legado = resolve_within(raiz_do_projeto(raiz), LEGACY_POLICY_RELATIVE)
+    if legado is not None and legado.is_file():
+        return legado
+    return alvo
+
+
+def carregar(raiz: Path | str) -> Politica | None:
+    """A policy de `<raiz>/.sparkforge_aws/policy.yaml`, ou `None` sem arquivo."""
+    alvo = _caminho_leitura(raiz)
     if not alvo.is_file():
         return None
     try:

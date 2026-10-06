@@ -85,7 +85,7 @@ sparkforge_aws/sdd/
   `jsonschema`, que já são do núcleo.
 - Artefatos em `docs/sdd/<FEATURE>/<PHASE>.md`; raiz configurável por `--root`.
 - **Separação de estado.** O artefato `operator` referencia o case por
-  `case_id`; não copia nada dele. `.sparkforge/` continua sendo do case, e o SDD
+  `case_id`; não copia nada dele. `.sparkforge_aws/` continua sendo do case, e o SDD
   nunca escreve lá (o `stamp` escreve só no próprio `.md` e no journal).
 
 ## 4. Contrato dos artefatos
@@ -211,7 +211,7 @@ Reexecutar `green` fica fora de A (executar código é outra classe de efeito); 
 | `hypothesis_open_at_ship` | ship sem `hypothesis_outcome` | ship |
 | `registry_unchecked` | ship não lista registro que `change_kinds.yaml` exige para os `change_kinds` do define | ship |
 | `case_missing` | `profile: operator` sem `case_id`, ou case inexistente | define |
-| `change_missing` | `profile: operator` sem `change_id`, ou id ausente de `.sparkforge/sandbox/` | build_report |
+| `change_missing` | `profile: operator` sem `change_id`, ou id ausente de `.sparkforge_aws/sandbox/` | build_report |
 
 **`explore` é opcional.** Ordem exigida: define → design → plan → build_report →
 ship. O define só declara `upstream` quando `explore.md` existe. `feature`
@@ -263,7 +263,7 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
   `test_not_written`.
 - **`fact`:** item sem `id` verdadeiro é ignorado (`#None` não casa).
 - **`change_id`** é um segmento só, sem separador, e precisa ser subpasta
-  direta de `.sparkforge/sandbox/`; `..`, `.` e `../../docs` saem
+  direta de `.sparkforge_aws/sandbox/`; `..`, `.` e `../../docs` saem
   `change_missing`. **`case_id`** é comparado como texto nos dois lados, e
   vazio conta como ausente.
 - O `stamp` preserva comentário de coluna zero dentro do bloco `upstream:`,
@@ -280,10 +280,10 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
   Se a divergência passa do limiar continua com as `SF-FVAL-*` no `judge`
   (regra 11).
 - **Perfil operator durável** (feature `SDD_OPERATOR_DURAVEL`). A spec do
-  operador mora em `.sparkforge/sdd` (`--root`), porque a cópia do sandbox poda
-  `.sparkforge`; a raiz passada à descoberta nunca é podada.
-  - **`change_id`** vale quando `.sparkforge/sandbox/<id>/` **ou**
-    `.sparkforge/proposal/<id>/` existe como diretório, as duas com o mesmo
+  operador mora em `.sparkforge_aws/sdd` (`--root`), porque a cópia do sandbox poda
+  `.sparkforge_aws`; a raiz passada à descoberta nunca é podada.
+  - **`change_id`** vale quando `.sparkforge_aws/sandbox/<id>/` **ou**
+    `.sparkforge_aws/proposal/<id>/` existe como diretório, as duas com o mesmo
     confinamento de um segmento.
   - **Referência histórica.** Com o `ship.md` carregado em `status: done`,
     `case_missing`, `change_missing` e as conferências de `moved` e de

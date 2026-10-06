@@ -39,7 +39,7 @@
 | 5 | `tools.py` | (direct) | ✅ Complete | - | Gancho em `call_tool`; `_RESUME_SCHEMA` aditivo |
 | 6 | `cli.py` | (direct) | ✅ Complete | - | Gancho em `_dispatch`; `journal verify` |
 | 7 | `_core.py`, `case/resume.py` | (direct) | ✅ Complete | - | `resume_case` lê o journal; `journal_verify`; `handoff.md` |
-| 8 | `.gitignore`, `.gitattributes` | (direct) | ✅ Complete | - | `**/.sparkforge/**/*.torn`; `fixtures/journal/** -text` |
+| 8 | `.gitignore`, `.gitattributes` | (direct) | ✅ Complete | - | `**/.sparkforge_aws/**/*.torn`; `fixtures/journal/** -text` |
 | 9 | `tests/test_durable.py`, `tests/test_journal.py` | (direct) | ✅ Complete | - | 13 + 23 testes |
 | 10 | `fixtures/journal/` + golden | (direct) | ✅ Complete | - | 5 casos, `SPARKFORGE_REGEN_JOURNAL` |
 | 11 | `conftest.py`, paridade MCP, `ALLOWED_CLI_ONLY` | (direct) | ✅ Complete | - | Backstop do journal na raiz e nas fixtures |
@@ -112,7 +112,7 @@ total           12940 passed, 13 skipped, 0 failed
 | # | Issue | Resolution | Time Impact |
 |---|-------|------------|-------------|
 | 1 | O golden `linha_alterada` saiu `intact`: o gerador editou a ÚLTIMA linha, e nenhuma linha posterior guarda o hash dela | O caso passou a editar a linha do meio (quebra no seq 3); o limite virou teste (`test_editar_a_ultima_linha_nao_e_detectavel_pela_cadeia`), docstring do `read.py`, linha do `CLAUDE.md` e seção do guia | pequeno |
-| 2 | `test_fixtures_golden_scan` (`json_solto`, `workload_na_raiz`) passou a listar `.sparkforge` em `skipped`: o `started` cria `.sparkforge/journal.jsonl` antes do scan montar o plano | Goldens regravados (`SPARKFORGE_REGEN_SCAN=1`); o diff é só a entrada `{"path": ".sparkforge", "reason": "DIRECTORY_IGNORED"}`, a mesma que qualquer segundo `scan` já mostrava | um lote a mais |
+| 2 | `test_fixtures_golden_scan` (`json_solto`, `workload_na_raiz`) passou a listar `.sparkforge_aws` em `skipped`: o `started` cria `.sparkforge_aws/journal.jsonl` antes do scan montar o plano | Goldens regravados (`SPARKFORGE_REGEN_SCAN=1`); o diff é só a entrada `{"path": ".sparkforge_aws", "reason": "DIRECTORY_IGNORED"}`, a mesma que qualquer segundo `scan` já mostrava | um lote a mais |
 | 3 | A contagem medida de diferenças aditivas da paridade MCP subiu de 14 para 16 por transporte (`journal` e `in_flight_source` no `resume`) | Constante atualizada junto com `ALTERADAS_DEPOIS_DO_GOLDEN["sparkforge_resume"]` | nenhum |
 | 4 | A prova da VNX-726 é um `python -c` de várias linhas: via `shell=True` no Windows a saída vinha vazia | O script de remediação passou a executar como o gate: `shlex.split`, sem shell | nenhum |
 | 5 | `test_arvore_versionada::test_espelho_gerado_esta_em_dia_no_disco` acusa `.claude/agents/README.md` como ÓRFÃO (só local) | README tirado da árvore durante a suíte e devolvido depois do backup | nenhum |

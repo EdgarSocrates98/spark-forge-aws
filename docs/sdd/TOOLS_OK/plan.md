@@ -164,7 +164,7 @@ def test_baseline_tools_ok_gravado():
 2. Vermelho: `python -m pytest tests/test_tools_ok_rule.py::test_baseline_tools_ok_gravado -q`
    — `AssertionError: baseline -tools-ok ausente`.
 3. Rodada: `python scripts/run_agentic_eval.py --suite fase0 --model haiku --runs 3`.
-   O runner grava em `~/.sparkforge/agentic-evals/fase0-<data>/r1.json..r3.json`
+   O runner grava em `~/.sparkforge_aws/agentic-evals/fase0-<data>/r1.json..r3.json`
    (`OUT_BASE` em `scripts/run_agentic_eval.py`). Copie os três `r*.json` para
    `evals/agentic/fase0/baselines/<AAAA-MM-DD>-haiku-4-5-tools-ok/`, no formato dos
    baselines vizinhos (confira se eles carregam mais algum arquivo além de `r*.json`,

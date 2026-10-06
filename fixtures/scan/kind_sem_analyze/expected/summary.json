@@ -28,11 +28,11 @@
     "tripped": false
   },
   "outputs": [
-    ".sparkforge/scan/facts_pyspark.json",
-    ".sparkforge/scan/facts_sql.json",
-    ".sparkforge/scan/facts.json",
-    ".sparkforge/scan/findings.json",
-    ".sparkforge/scan/summary.json"
+    ".sparkforge_aws/scan/facts_pyspark.json",
+    ".sparkforge_aws/scan/facts_sql.json",
+    ".sparkforge_aws/scan/facts.json",
+    ".sparkforge_aws/scan/findings.json",
+    ".sparkforge_aws/scan/summary.json"
   ],
   "plan": {
     "entries": [
@@ -50,18 +50,18 @@
     "refused": [
       {
         "detail": "definicao implantada do job (collect glue-job) em JSON; o analyze terraform le HCL e nenhum extrator le este artefato",
-        "path": ".sparkforge/artifacts/glue_job/synthetic-job.json",
+        "path": ".sparkforge_aws/artifacts/glue_job/synthetic-job.json",
         "reason": "kind_sem_analyze"
       },
       {
         "detail": "kind 'kind_inventado' desconhecido",
-        "path": ".sparkforge/artifacts/outro/x.json",
+        "path": ".sparkforge_aws/artifacts/outro/x.json",
         "reason": "kind_sem_analyze"
       }
     ],
     "skipped": [
       {
-        "path": ".sparkforge",
+        "path": ".sparkforge_aws",
         "reason": "DIRECTORY_IGNORED"
       }
     ]
@@ -69,12 +69,12 @@
   "refused": [
     {
       "detail": "definicao implantada do job (collect glue-job) em JSON; o analyze terraform le HCL e nenhum extrator le este artefato",
-      "path": ".sparkforge/artifacts/glue_job/synthetic-job.json",
+      "path": ".sparkforge_aws/artifacts/glue_job/synthetic-job.json",
       "reason": "kind_sem_analyze"
     },
     {
       "detail": "kind 'kind_inventado' desconhecido",
-      "path": ".sparkforge/artifacts/outro/x.json",
+      "path": ".sparkforge_aws/artifacts/outro/x.json",
       "reason": "kind_sem_analyze"
     }
   ],

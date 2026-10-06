@@ -19,7 +19,7 @@ metadata:
 
 # Propose Change PR
 
-O L3 do §15 é "propor para produção": abrir o PR, anexar a evidência e pedir aprovação humana. O SparkForge MONTA o pacote em `.sparkforge/proposal/<id>/` e não executa nada. Esta skill é o lado do host: ela lê o pacote, roda os comandos na árvore do operador e para onde o operador precisa decidir.
+O L3 do §15 é "propor para produção": abrir o PR, anexar a evidência e pedir aprovação humana. O SparkForge MONTA o pacote em `.sparkforge_aws/proposal/<id>/` e não executa nada. Esta skill é o lado do host: ela lê o pacote, roda os comandos na árvore do operador e para onde o operador precisa decidir.
 
 ## Antes de começar
 
@@ -53,7 +53,7 @@ Se um passo falhar (`git apply --check` recusa, conflito, branch que já existe)
 | diff de configuração | `sparkforge_change_plan` | `sparkforge-aws change plan --facts ... --repo . --set k=v --out d.patch` |
 | diff numa cópia | `sparkforge_change_sandbox` | `sparkforge-aws change sandbox --repo . --diff d.patch` |
 | pacote do PR | `sparkforge_change_propose` | `sparkforge-aws change propose --sandbox <id> --repo .` |
-| conferir o corpo | `sparkforge_report_verify` | `sparkforge-aws report verify --report pr_body.md --findings <after>/.sparkforge/scan/findings.json` |
+| conferir o corpo | `sparkforge_report_verify` | `sparkforge-aws report verify --report pr_body.md --findings <after>/.sparkforge_aws/scan/findings.json` |
 
 Recusas do `propose`: `sandbox_inexistente`, `sandbox_nao_aplicado`, `sandbox_desatualizado`, `achado_novo_bloqueante`, `caminho_fora_da_raiz`.
 

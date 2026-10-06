@@ -317,7 +317,7 @@ class AgentRuntime(Protocol):
 Evoluir de `case.yaml` único para árvore estruturada:
 
 ```
-.sparkforge/
+.sparkforge_aws/
   case.yaml           # metadata + phase + gates (existente)
   blackboard/
     facts.jsonl       # facts extraídos (existente via facts_index)

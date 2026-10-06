@@ -452,7 +452,7 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
         "rollback_target": candidate.parent_digest,
         "unresolved": [],
     }
-    transcript_root = repo / ".sparkforge" / "evidence" / "ci"
+    transcript_root = repo / ".sparkforge_aws" / "evidence" / "ci"
     transcript_root.mkdir(parents=True, exist_ok=True)
     for side in ("baseline", "candidate"):
         transcript = transcript_root / f"{side}-transcript.json"
@@ -463,7 +463,7 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
         }
     for kind in ("ci", "benchmark", "review"):
         root = (
-            repo / ".sparkforge" / "evidence" / ("reviews" if kind == "review" else kind)
+            repo / ".sparkforge_aws" / "evidence" / ("reviews" if kind == "review" else kind)
             if kind != "benchmark"
             else repo / "evals" / "token_efficient" / "fixtures"
         )

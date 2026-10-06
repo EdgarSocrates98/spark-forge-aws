@@ -69,16 +69,16 @@ policies:
       kinds:
         ci:
           roots:
-            - .sparkforge/evidence/ci
+            - .sparkforge_aws/evidence/ci
         benchmark:
           roots:
-            - .sparkforge/evidence/benchmarks
+            - .sparkforge_aws/evidence/benchmarks
             - evals/token_efficient/fixtures
         review:
           roots:
-            - .sparkforge/evidence/reviews
+            - .sparkforge_aws/evidence/reviews
       roots:
-        - .sparkforge/evidence
+        - .sparkforge_aws/evidence
         - evals/token_efficient/fixtures
 candidates:
   - id: routing-baseline

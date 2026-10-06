@@ -24,7 +24,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-MANIFEST_RELATIVE = Path(".sparkforge") / "artifacts" / "manifest.json"
+from sparkforge_aws.case.store import state_dir
+
+MANIFEST_RELATIVE = Path(".sparkforge_aws") / "artifacts" / "manifest.json"
 
 ARTIFACT_KINDS = (
     "event_log",
@@ -130,7 +132,11 @@ class ArtifactEntry:
 
 
 def manifest_path(root: Path | str) -> Path:
-    return Path(root) / MANIFEST_RELATIVE
+    """O manifesto do case, no diretorio de estado que a ancora resolveu:
+    `.sparkforge_aws/` num repo novo, `.sparkforge/` enquanto o `case.yaml`
+    ainda morar la. O manifesto e o indice que o `resume` le; ancorar no case
+    impede que uma coleta pos-rename pareca nao ter acontecido."""
+    return state_dir(root) / "artifacts" / "manifest.json"
 
 
 def load_manifest(root: Path | str) -> list[dict[str, Any]]:

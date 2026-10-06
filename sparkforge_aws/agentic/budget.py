@@ -288,7 +288,7 @@ class CaseBudget:
         }
 
 
-# Chave opcional de `.sparkforge/case.yaml` que declara os tetos do case.
+# Chave opcional de `.sparkforge_aws/case.yaml` que declara os tetos do case.
 CASE_BUDGET_KEY = "budget"
 
 # A unica chave do bloco `budget:` que NAO e teto do case inteiro: e o teto de

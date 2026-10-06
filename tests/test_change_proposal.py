@@ -87,7 +87,9 @@ class TestPacote:
     def test_a_assinatura_do_corpo_confere(self, tmp_path):
         repo, ident = _sandbox(tmp_path)
         resultado = _core.change_propose(str(repo), sandbox_id=ident, now=NOW)
-        achados = repo / ".sparkforge" / "sandbox" / ident / "after" / ".sparkforge" / "scan"
+        achados = (
+            repo / ".sparkforge_aws" / "sandbox" / ident / "after" / ".sparkforge_aws" / "scan"
+        )
 
         assert resultado["signed"] is True
         verificado = _core.report_verify(
@@ -104,14 +106,14 @@ class TestPacote:
 
         assert recibo["receipt_id"] == resultado["receipt_id"]
         texto = json.dumps(recibo)
-        assert ".sparkforge/scan/findings.json" in texto
-        assert "before" not in texto.replace("\\", "/").split(".sparkforge/scan")[0]
+        assert ".sparkforge_aws/scan/findings.json" in texto
+        assert "before" not in texto.replace("\\", "/").split(".sparkforge_aws/scan")[0]
 
     def test_o_patch_e_o_rollback_reproduzem_as_duas_copias(self, tmp_path):
         repo, ident = _sandbox(tmp_path)
         resultado = _core.change_propose(str(repo), sandbox_id=ident, now=NOW)
         pasta = repo / resultado["proposal"]
-        base = repo / ".sparkforge" / "sandbox" / ident
+        base = repo / ".sparkforge_aws" / "sandbox" / ident
         original = {"main.tf": (base / "before" / "main.tf").read_bytes()}
         mudado = {"main.tf": (base / "after" / "main.tf").read_bytes()}
 
@@ -147,7 +149,7 @@ class TestRecusas:
         resultado = _core.change_propose(str(repo), sandbox_id="0" * 16, now=NOW)
 
         assert [r["reason"] for r in resultado["refused"]] == ["sandbox_inexistente"]
-        assert not (repo / ".sparkforge" / "proposal").exists()
+        assert not (repo / ".sparkforge_aws" / "proposal").exists()
 
     def test_arvore_mudada_depois_do_sandbox(self, tmp_path):
         repo, ident = _sandbox(tmp_path)
@@ -156,11 +158,11 @@ class TestRecusas:
 
         assert [r["reason"] for r in resultado["refused"]] == ["sandbox_desatualizado"]
         assert "main.tf" in resultado["refused"][0]["detail"]
-        assert not (repo / ".sparkforge" / "proposal").exists()
+        assert not (repo / ".sparkforge_aws" / "proposal").exists()
 
     def test_sandbox_que_nao_aplicou(self, tmp_path):
         repo, ident = _sandbox(tmp_path)
-        relatorio = repo / ".sparkforge" / "sandbox" / ident / "report.json"
+        relatorio = repo / ".sparkforge_aws" / "sandbox" / ident / "report.json"
         dados = json.loads(relatorio.read_text(encoding="utf-8"))
         dados.update(applied=False, refused=[{"reason": "diff_nao_aplica"}])
         relatorio.write_text(json.dumps(dados), encoding="utf-8")
@@ -170,13 +172,13 @@ class TestRecusas:
 
     def test_achado_novo_p1_bloqueia_e_nao_grava(self, tmp_path):
         repo, ident = _sandbox(tmp_path)
-        base = repo / ".sparkforge" / "sandbox" / ident
+        base = repo / ".sparkforge_aws" / "sandbox" / ident
         sujeito = {"type": "tf_resource", "file": "main.tf", "line": 13, "symbol": "x"}
         relatorio = base / "report.json"
         dados = json.loads(relatorio.read_text(encoding="utf-8"))
         dados["new"] = [{"rule_id": "SF-TESTE-001", "subject": sujeito}]
         relatorio.write_text(json.dumps(dados), encoding="utf-8")
-        achados = base / "after" / ".sparkforge" / "scan" / "findings.json"
+        achados = base / "after" / ".sparkforge_aws" / "scan" / "findings.json"
         lista = json.loads(achados.read_text(encoding="utf-8"))
         lista.append({"rule_id": "SF-TESTE-001", "severity": "P1", "subject": sujeito})
         achados.write_text(json.dumps(lista), encoding="utf-8")
@@ -184,7 +186,7 @@ class TestRecusas:
 
         assert [r["reason"] for r in resultado["refused"]] == ["achado_novo_bloqueante"]
         assert resultado["blocking_findings"][0]["severity"] == "P1"
-        assert not (repo / ".sparkforge" / "proposal").exists()
+        assert not (repo / ".sparkforge_aws" / "proposal").exists()
 
     def test_id_malformado_e_erro_de_entrada(self, tmp_path):
         repo, _ = _sandbox(tmp_path)
