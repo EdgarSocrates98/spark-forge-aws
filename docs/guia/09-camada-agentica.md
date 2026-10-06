@@ -6,7 +6,7 @@ em [Arbitragem e debate](usos/arbitragem-e-debate.md).
 
 ## As entidades
 
-`sparkforge/agentic/` (22 módulos, mais `__init__.py`) traz
+`sparkforge/agentic/` (23 módulos, mais `__init__.py`) traz
 entidades de primeira classe e engines para trabalho agêntico auditável: `Claim`,
 `Evidence` (com tiers de autoridade T1-T6), `Hypothesis`, `Experiment`, `Decision`,
 `Unknown`, `Contradiction`, `Objection`, `Rebuttal`; mais blackboard JSONL, protocolo
