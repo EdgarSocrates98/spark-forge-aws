@@ -1,0 +1,8 @@
+schema_version: 1
+case_id: recovery-provider-bounded-retry
+failure: provider_unavailable
+attempt: 2
+strategy_fingerprint: pv-001
+history: []
+profile: economy
+risk: low

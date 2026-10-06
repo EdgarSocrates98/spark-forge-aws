@@ -23,6 +23,15 @@ from sparkforge.agentic.recovery import (
 )
 from sparkforge.agentic.stop import ExpectedGainState, StopPolicy
 from sparkforge.decision.authority import AuthorityPolicy
+
+
+_GATED_ACTIONS = frozenset(
+    {
+        RecoveryAction.RETRY.value,
+        RecoveryAction.REPLAN.value,
+        RecoveryAction.ESCALATE.value,
+    }
+)
 from sparkforge.decision.fingerprint import digest
 from sparkforge.economy.decision_activation import ActivationEvidence
 from sparkforge.economy.decision_contracts import DecisionContract
@@ -87,7 +96,7 @@ class RecoveryGovernor:
             history=tuple(history) + ((strategy_fingerprint,) if repeated_cycle else ()),
         )
         self._seen_cycles.add(strategy_fingerprint)
-        if gain_state is not None and not decision.terminal:
+        if gain_state is not None and decision.action in _GATED_ACTIONS:
             stop = self.stop_policy.evaluate(gain_state)
             if stop.stops:
                 return GovernedRecovery(
