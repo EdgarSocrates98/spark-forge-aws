@@ -17,6 +17,11 @@ from sparkforge.economy.decision_models import (
     ShadowEvaluation,
 )
 from sparkforge.economy.decision_plane import DecisionPlaneService
+from sparkforge.economy.model_router import (
+    AdaptiveModelRouter,
+    ModelRouteDecision,
+    ModelRoutingInput,
+)
 from sparkforge.economy.router import CapabilityModelRouter, RoutingDecision
 from sparkforge.registry.models import ExecutionProfile, RiskLevel
 
@@ -24,6 +29,20 @@ from sparkforge.registry.models import ExecutionProfile, RiskLevel
 @dataclass(frozen=True, slots=True)
 class ShadowRouteObservation:
     current: RoutingDecision
+    evaluation: ShadowEvaluation
+
+
+@dataclass(frozen=True, slots=True)
+class AdaptiveRouteObservation:
+    """Rota adaptativa observada pelo Decision Plane, com a saude por eixo.
+
+    `decision` e o que o `AdaptiveModelRouter` concluiu (scorecard +
+    maturidade); `evaluation` e o que o plano declarativo respondeu sobre o
+    mesmo estado. Nenhuma das duas promove nada sozinha.
+    """
+
+    decision: ModelRouteDecision
+    health: dict[str, Any]
     evaluation: ShadowEvaluation
 
 
@@ -97,6 +116,49 @@ def observe_route(
     return ShadowRouteObservation(current, evaluation)
 
 
+def observe_adaptive_route(
+    request: ModelRoutingInput,
+    *,
+    task_description: str,
+    repo: Path | str = ".",
+    contract_id: str = "routing.data_domain",
+    profile: ExecutionProfile = ExecutionProfile.ECO,
+    risk_level: RiskLevel = RiskLevel.READ_ONLY,
+    task_id: str = "runtime-task",
+    router: AdaptiveModelRouter | None = None,
+    service: DecisionPlaneService | None = None,
+    now: str | None = None,
+    trace_ref: str | None = None,
+) -> AdaptiveRouteObservation:
+    """Task -> route -> scorecard -> Decision Plane -> shadow route.
+
+    O `AdaptiveModelRouter` decide em modo SHADOW (a decisao nao aplica nada);
+    a rota escolhida entra como `current` na avaliacao do plano, que compara
+    contra o contrato declarativo e emite recibo. `provider/model` e a forma
+    canonica de rota do adaptativo dentro do plano -- uma tupla legivel,
+    nao o dict inteiro da decisao.
+    """
+    adaptive = router or AdaptiveModelRouter()
+    decision = adaptive.route(request)
+    health = adaptive.route_health(request)
+    selected = decision.selected
+    current = f"{selected.provider}/{selected.model}" if selected else None
+    state = DecisionInput(
+        task_id=task_id,
+        task_description=task_description,
+        current_route=current,
+        profile=profile.value,
+        risk_level=risk_level.value,
+        provider_usage=ProviderUsage.unresolved("host_transcript_absent"),
+    )
+    plane = service or DecisionPlaneService(repo)
+    contract = plane.validate(contract_id)
+    evaluation = plane.shadow(
+        state, current, contract=contract, now=now, trace_ref=trace_ref
+    )
+    return AdaptiveRouteObservation(decision, health, evaluation)
+
+
 def _provider_usage(host_usage: dict[str, Any] | None) -> ProviderUsage:
     if not host_usage:
         return ProviderUsage.unresolved("host_transcript_absent")
@@ -106,4 +168,10 @@ def _provider_usage(host_usage: dict[str, Any] | None) -> ProviderUsage:
         return ProviderUsage.unresolved("provider_tokens_invalid")
 
 
-__all__ = ["ShadowRouteObservation", "observe_route", "route_with_mode"]
+__all__ = [
+    "AdaptiveRouteObservation",
+    "ShadowRouteObservation",
+    "observe_adaptive_route",
+    "observe_route",
+    "route_with_mode",
+]
