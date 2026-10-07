@@ -1,0 +1,51 @@
+[
+  {
+    "id": "f_493939",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 0,
+      "instance_capacity_count": 0,
+      "configuration_count": 0,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_cluster"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

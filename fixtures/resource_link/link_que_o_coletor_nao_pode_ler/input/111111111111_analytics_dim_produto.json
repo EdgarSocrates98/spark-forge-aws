@@ -1,0 +1,19 @@
+{
+  "catalog_id": "111111111111",
+  "database": "analytics",
+  "link": {
+    "aws_error_code": "AccessDeniedException",
+    "requested_catalog_id": "111111111111",
+    "requested_database": "analytics",
+    "requested_table": "dim_produto",
+    "status": "sem_permissao",
+    "target_type": "table"
+  },
+  "status": "sem_permissao",
+  "table": "dim_produto",
+  "target": {
+    "reason": "sem_alvo_medido_no_link",
+    "status": "nao_coletado"
+  },
+  "target_type": "table"
+}

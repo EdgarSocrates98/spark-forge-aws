@@ -1,0 +1,16 @@
+{
+  "name": "ck",
+  "version": "4.1.0",
+  "description": "Cavekit — compressed spec-driven dev. Full loop (grill → spec → research → review → build) over one SPEC.md file: three core commands + four reach-for. Caveman encoding. Bug-to-spec backprop.",
+  "author": { "name": "Julius Brussee" },
+  "license": "MIT",
+  "keywords": [
+    "spec-driven",
+    "caveman",
+    "cavekit",
+    "backprop",
+    "sdd",
+    "adversarial-review",
+    "deep-modules"
+  ]
+}

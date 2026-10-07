@@ -1,0 +1,21 @@
+name: retry_duas_camadas
+proves: >
+  O POSITIVO de SF-SFN-004. O Task liga ao `aws_glue_job.carga_diaria` pelo `JobName`
+  literal igual ao `name`; o retrier do Step Functions tem efetivo 2 e o job declara
+  `max_retries = 2`. As duas camadas existem sobre o mesmo job, e a composicao delas
+  nao e documentada. SF-SFN-002 dispara junto, e deve: o retrier reexecuta o job.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.glue_job_link
+  - sfn.state_machine
+  - sfn.task
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: [SF-SFN-002, SF-SFN-004]

@@ -1,0 +1,4 @@
+{
+  "kind": "sandbox",
+  "diff": "host.patch"
+}

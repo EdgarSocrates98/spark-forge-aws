@@ -1,0 +1,326 @@
+[
+  {
+    "id": "f_e57aa1",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_0",
+      "symbol": "jr_x10_0"
+    },
+    "measures": {
+      "execution_time_s": 500,
+      "number_of_workers": 10,
+      "dpu_seconds": 10000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_0bb5a5",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_1",
+      "symbol": "jr_x10_1"
+    },
+    "measures": {
+      "execution_time_s": 500,
+      "number_of_workers": 10,
+      "dpu_seconds": 10000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_1abff9",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_2",
+      "symbol": "jr_x10_2"
+    },
+    "measures": {
+      "execution_time_s": 500,
+      "number_of_workers": 10,
+      "dpu_seconds": 10000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_e7805a",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_3",
+      "symbol": "jr_x10_3"
+    },
+    "measures": {
+      "execution_time_s": 500,
+      "number_of_workers": 10,
+      "dpu_seconds": 10000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_a0bba3",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_4",
+      "symbol": "jr_x10_4"
+    },
+    "measures": {
+      "execution_time_s": 500,
+      "number_of_workers": 10,
+      "dpu_seconds": 10000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_ed992c",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_5",
+      "symbol": "jr_x10_5"
+    },
+    "measures": {
+      "execution_time_s": 500,
+      "number_of_workers": 10,
+      "dpu_seconds": 10000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_c66596",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_0",
+      "symbol": "jr_x20_0"
+    },
+    "measures": {
+      "execution_time_s": 200,
+      "number_of_workers": 20,
+      "dpu_seconds": 8000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_64f71d",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_1",
+      "symbol": "jr_x20_1"
+    },
+    "measures": {
+      "execution_time_s": 200,
+      "number_of_workers": 20,
+      "dpu_seconds": 8000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_bd1321",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_2",
+      "symbol": "jr_x20_2"
+    },
+    "measures": {
+      "execution_time_s": 200,
+      "number_of_workers": 20,
+      "dpu_seconds": 8000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_c0db11",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_3",
+      "symbol": "jr_x20_3"
+    },
+    "measures": {
+      "execution_time_s": 200,
+      "number_of_workers": 20,
+      "dpu_seconds": 8000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_b58c8b",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_4",
+      "symbol": "jr_x20_4"
+    },
+    "measures": {
+      "execution_time_s": 200,
+      "number_of_workers": 20,
+      "dpu_seconds": 8000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_725e3b",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_5",
+      "symbol": "jr_x20_5"
+    },
+    "measures": {
+      "execution_time_s": 200,
+      "number_of_workers": 20,
+      "dpu_seconds": 8000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  }
+]

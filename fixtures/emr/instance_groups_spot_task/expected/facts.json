@@ -1,0 +1,399 @@
+[
+  {
+    "id": "f_ff96e6",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 3,
+      "configuration_count": 5,
+      "bootstrap_action_count": 1,
+      "unapplied_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_5eba63",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/application/Hadoop"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Hadoop",
+      "version": "3.3.6-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_ceb82e",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/application/Iceberg"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Iceberg",
+      "version": "1.4.0-amzn-0"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_f7099b",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.4.1-amzn-2"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_d502bf",
+    "schema_version": 1,
+    "kind": "emr.bootstrap_action",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/bootstrap/0/instala-dependencias"
+    },
+    "measures": {
+      "arg_count": 3,
+      "position": 0
+    },
+    "attrs": {
+      "name": "instala-dependencias",
+      "path": "s3://lake-emr-scripts/bootstrap.sh",
+      "args": [
+        "--repo",
+        "interno",
+        "<redigido>"
+      ],
+      "redacted": true,
+      "secret_pattern_match": true
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_18d4fd",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER"
+    },
+    "measures": {
+      "release_major": 6,
+      "release_minor": 15,
+      "idle_timeout_seconds": 3600
+    },
+    "attrs": {
+      "cluster_id": "j-1GROUPSCLUSTER",
+      "name": "etl-pedidos",
+      "release_label": "emr-6.15.0",
+      "release": "6.15.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": "TERMINATE_AT_TASK_COMPLETION",
+      "auto_terminate": false,
+      "unhealthy_node_replacement": true,
+      "state": "RUNNING",
+      "state_change_reason_code": "ALL_STEPS_COMPLETED"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_d6f2a7",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/configuration/emrfs-site/fs.s3.awsSecretAccessKey"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "emrfs-site",
+      "key": "fs.s3.awsSecretAccessKey",
+      "value": "<redigido>",
+      "overridden_in": [],
+      "redacted": true,
+      "secret_pattern_match": true
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_6a0632",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/configuration/export/PYSPARK_PYTHON"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "export",
+      "key": "PYSPARK_PYTHON",
+      "value": "/usr/bin/python3",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_823d3e",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/configuration/spark-defaults/spark.dynamicAllocation.enabled"
+    },
+    "measures": {
+      "overriding_group_count": 1
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "spark-defaults",
+      "key": "spark.dynamicAllocation.enabled",
+      "value": "false",
+      "overridden_in": [
+        "ig-TASK"
+      ]
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_ada21e",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/configuration/spark-defaults/spark.sql.sources.partitionOverwriteMode"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "spark-defaults",
+      "key": "spark.sql.sources.partitionOverwriteMode",
+      "value": "dynamic",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_e20de9",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/ig-TASK/configuration/spark-defaults/spark.dynamicAllocation.enabled"
+    },
+    "measures": {},
+    "attrs": {
+      "level": "instance_group",
+      "scope": "ig-TASK",
+      "classification": "spark-defaults",
+      "key": "spark.dynamicAllocation.enabled",
+      "value": "true",
+      "overrides_cluster": true,
+      "cluster_value": "false"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_62fc43",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/ig-CORE"
+    },
+    "measures": {
+      "requested_instance_count": 4,
+      "running_instance_count": 4,
+      "ebs_block_device_count": 1
+    },
+    "attrs": {
+      "id": "ig-CORE",
+      "cluster_id": "j-1GROUPSCLUSTER",
+      "role": "CORE",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "r5.2xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_0d7167",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/ig-MASTER"
+    },
+    "measures": {
+      "requested_instance_count": 1,
+      "running_instance_count": 1,
+      "ebs_block_device_count": 0
+    },
+    "attrs": {
+      "id": "ig-MASTER",
+      "cluster_id": "j-1GROUPSCLUSTER",
+      "role": "MASTER",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "m5.xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_95f5c2",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/ig-TASK"
+    },
+    "measures": {
+      "requested_instance_count": 8,
+      "running_instance_count": 6,
+      "configurations_version": 2
+    },
+    "attrs": {
+      "id": "ig-TASK",
+      "cluster_id": "j-1GROUPSCLUSTER",
+      "role": "TASK",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "SPOT",
+      "has_spot_capacity": true,
+      "has_on_demand_capacity": false,
+      "instance_types": [
+        "r5.2xlarge"
+      ],
+      "has_auto_scaling_policy": true,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_1d6231",
+    "schema_version": 1,
+    "kind": "emr.managed_scaling",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/managed-scaling"
+    },
+    "measures": {
+      "minimum_capacity_units": 5,
+      "maximum_capacity_units": 40,
+      "maximum_on_demand_capacity_units": 5,
+      "maximum_core_capacity_units": 5
+    },
+    "attrs": {
+      "cluster_id": "j-1GROUPSCLUSTER",
+      "unit_type": "Instances"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "5cde3c3532799f066e9c1917321397b67a16ad13203b808d73b50dd5d8416ff5",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

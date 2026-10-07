@@ -1,0 +1,10 @@
+name: review_missing
+proves: Valid external DQDL without declared human review remains actionable.
+runtime:
+  glue: "6.0"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.analyzed
+  - dq.dqdl
+expects_rules:
+  - SF-DQ-AI-004

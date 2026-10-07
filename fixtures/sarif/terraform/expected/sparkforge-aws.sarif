@@ -1,0 +1,68 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SparkForge",
+          "semanticVersion": "0.0.0+golden",
+          "informationUri": "https://github.com/EdgarSocrates98/spark-forge-aws",
+          "rules": [
+            {
+              "id": "SF-LF-005",
+              "name": "SFLF005",
+              "shortDescription": {
+                "text": "Controle de acesso fino e Full Table Access declarados no mesmo job"
+              },
+              "fullDescription": {
+                "text": "A AWS declara: *\"Only one AWS Lake Formation permission method can be enabled for a given AWS Glue job. A job cannot simultaneously run Full Table Access (FTA) and Fine-Grained Access Control (FGAC) at the same time.\"* Este job declara os dois.\n\n**A diferença entre eles não é granularidade — é quem vende a credencial.** Sob controle de acesso fino a leitura passa pelo Lake Formation e a **escrita usa IAM do runtime role**. Sob Full Table Access a credencial do Lake Formation lê e escreve o S3 das tabelas **registradas**, e o runtime role lê e escreve tudo o que não está registrado. Declarar os dois não soma os dois comportamentos: pede uma combinação que a plataforma não oferece.\n\n`attrs.fta_markers` no fact traz a chave que ativou o lado FTA, e é ela que decide qual dos dois foi declarado por engano. As duas que contam são `spark.hadoop.fs.s3.credentialsResolverClass` com o resolver do Lake Formation, e `spark.sql.catalog.<nome>.glue.lakeformation-enabled = true`. Ver `knowledge/glue/lakeformation-fgac.md` §5."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "precision": "high"
+              },
+              "help": {
+                "text": "Mudanca proposta:\n- Decidir qual modelo o job usa, e a pergunta que decide é sobre o DADO, não sobre o job: se a tabela tem regra de linha, coluna ou célula no Lake Formation, o caminho é FGAC — sob Full Table Access, job que referencia tabela com regra de FGAC **falha**.\n- Para ficar com FGAC — remover as chaves de credencial do Lake Formation do `--conf`. Elas não ligam nada sob FGAC, e mantê-las declaradas faz o próximo leitor acreditar que o caminho de credencial está ativo.\n- Para ficar com FTA — remover `--enable-lakeformation-fine-grained-access`, e então valem os requisitos próprios de FTA: `ALL` no Lake Formation para escrever (não `SELECT`), `lakeformation:GetDataAccess` no IAM, o passo de conta de *application integration*, e EMRFS restaurado quando o runtime for Glue 5.1.\n- Quando a leitura precisa de FGAC e a escrita precisa de credencial do Lake Formation, **um job só não resolve** — a saída é separar em dois, e essa é decisão de desenho, não de configuração.\nValidacao:\n- Contagem de linhas e conjunto de colunas do resultado, antes e depois: os dois modelos filtram coisas diferentes, e trocar de modelo pode mudar o que a leitura devolve sem que nada acuse.\n- A configuração efetiva do run seguinte, lida do event log (`spark.conf_effective`), e não a declarada no Terraform.\n- Se o job passou a usar FTA — uma leitura de controle sobre tabela REGISTRADA, com o runtime role sem permissão S3 direta no caminho: é o único teste que prova que a credencial do Lake Formation está sendo usada.\nRollback:\n- Restaurar as chaves removidas devolve o job ao estado não suportado. Só é rollback válido junto de uma decisão sobre qual modelo fica.\n- Se alguma escrita aconteceu sob o modelo novo, o rollback é de dado e não de configuração — o destino precisa ser comparado antes.",
+                "markdown": "**Mudanca proposta**\n\n- Decidir qual modelo o job usa, e a pergunta que decide é sobre o DADO, não sobre o job: se a tabela tem regra de linha, coluna ou célula no Lake Formation, o caminho é FGAC — sob Full Table Access, job que referencia tabela com regra de FGAC **falha**.\n- Para ficar com FGAC — remover as chaves de credencial do Lake Formation do `--conf`. Elas não ligam nada sob FGAC, e mantê-las declaradas faz o próximo leitor acreditar que o caminho de credencial está ativo.\n- Para ficar com FTA — remover `--enable-lakeformation-fine-grained-access`, e então valem os requisitos próprios de FTA: `ALL` no Lake Formation para escrever (não `SELECT`), `lakeformation:GetDataAccess` no IAM, o passo de conta de *application integration*, e EMRFS restaurado quando o runtime for Glue 5.1.\n- Quando a leitura precisa de FGAC e a escrita precisa de credencial do Lake Formation, **um job só não resolve** — a saída é separar em dois, e essa é decisão de desenho, não de configuração.\n\n**Validacao**\n\n- Contagem de linhas e conjunto de colunas do resultado, antes e depois: os dois modelos filtram coisas diferentes, e trocar de modelo pode mudar o que a leitura devolve sem que nada acuse.\n- A configuração efetiva do run seguinte, lida do event log (`spark.conf_effective`), e não a declarada no Terraform.\n- Se o job passou a usar FTA — uma leitura de controle sobre tabela REGISTRADA, com o runtime role sem permissão S3 direta no caminho: é o único teste que prova que a credencial do Lake Formation está sendo usada.\n\n**Rollback**\n\n- Restaurar as chaves removidas devolve o job ao estado não suportado. Só é rollback válido junto de uma decisão sobre qual modelo fica.\n- Se alguma escrita aconteceu sob o modelo novo, o rollback é de dado e não de configuração — o destino precisa ser comparado antes."
+              },
+              "helpUri": "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "SF-LF-005",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Controle de acesso fino e Full Table Access declarados no mesmo job"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "infra/main.tf",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              "f_96aae6"
+            ],
+            "severity": "P0",
+            "status": "structural"
+          }
+        }
+      ]
+    }
+  ]
+}

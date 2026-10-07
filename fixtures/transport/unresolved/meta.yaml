@@ -1,0 +1,4 @@
+artifact: kinesis
+expects_kinds:
+  - kinesis.analyzed
+  - kinesis.unresolved

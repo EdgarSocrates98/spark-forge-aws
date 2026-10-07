@@ -1,0 +1,148 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SparkForge",
+          "semanticVersion": "0.0.0+golden",
+          "informationUri": "https://github.com/EdgarSocrates98/spark-forge-aws",
+          "rules": [
+            {
+              "id": "SF-UI-001",
+              "name": "SFUI001",
+              "shortDescription": {
+                "text": "Skew de duração de task no stage"
+              },
+              "fullDescription": {
+                "text": "O stage termina quando a última task termina. Uma task muito mais longa que a mediana significa que a maior parte do cluster está ociosa esperando por ela. Este achado sozinho não distingue skew de dados de skew de computação: cruzar com SF-UI-002 para separá-los, porque o tratamento é diferente. Ver knowledge/spark/shuffle-join-skew.md secao 3."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "precision": "high"
+              },
+              "help": {
+                "text": "Mudanca proposta:\n- Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.\n- Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.\n- Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos.\nValidacao:\n- Contagem total antes e depois.\n- Contagem de linhas com chave nula.\n- Contagem distinta da chave primária do resultado, para detectar duplicação.\n- Agregados de controle por dimensão de negócio.\n- Nova razão max/p50 do stage após a mudança.\nRollback:\n- Reverter o commit. Se houve escrita\n- usar time travel em Iceberg.",
+                "markdown": "**Mudanca proposta**\n\n- Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.\n- Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.\n- Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos.\n\n**Validacao**\n\n- Contagem total antes e depois.\n- Contagem de linhas com chave nula.\n- Contagem distinta da chave primária do resultado, para detectar duplicação.\n- Agregados de controle por dimensão de negócio.\n- Nova razão max/p50 do stage após a mudança.\n\n**Rollback**\n\n- Reverter o commit. Se houve escrita\n- usar time travel em Iceberg."
+              },
+              "helpUri": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html"
+            },
+            {
+              "id": "SF-WASTE-002",
+              "name": "SFWASTE002",
+              "shortDescription": {
+                "text": "Worker ocioso com skew extremo — reduzir capacidade não toca a causa"
+              },
+              "fullDescription": {
+                "text": "A utilização está baixa e o skew é alto ao mesmo tempo. A ociosidade tem explicação medida: o stage termina quando a última task termina, e a maior parte do cluster está esperando por um número pequeno de tasks longas.\n\nReduzir workers aqui reduz o custo por run e deixa a causa intacta — o stage continua preso na mesma task, e a duração sobe. É o par negativo da `SF-WASTE-001`, e as duas nunca disparam juntas: a ausência de skew é condição daquela, e a presença é condição desta."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "precision": "high"
+              },
+              "help": {
+                "text": "Mudanca proposta:\n- Tratar o skew antes de tocar em capacidade — `SF-UI-001` e `SF-UI-002` classificam o tipo, e o tratamento difere.\n- Depois do skew tratado, medir a utilização de novo; a folga que sobrar aí é a folga real.\nValidacao:\n- Nova razão p95/p50 de duração de task no stage que disparou.\n- Utilização de worker do run seguinte, depois do skew tratado.\n- Contagem total e agregados de controle, se a correção mexeu na chave.\nRollback:\n- Reverter o commit. Se houve escrita, usar time travel em Iceberg.",
+                "markdown": "**Mudanca proposta**\n\n- Tratar o skew antes de tocar em capacidade — `SF-UI-001` e `SF-UI-002` classificam o tipo, e o tratamento difere.\n- Depois do skew tratado, medir a utilização de novo; a folga que sobrar aí é a folga real.\n\n**Validacao**\n\n- Nova razão p95/p50 de duração de task no stage que disparou.\n- Utilização de worker do run seguinte, depois do skew tratado.\n- Contagem total e agregados de controle, se a correção mexeu na chave.\n\n**Rollback**\n\n- Reverter o commit. Se houve escrita, usar time travel em Iceberg."
+              },
+              "helpUri": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "SF-UI-001",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Skew de duração de task no stage (medido: max_ms=15000, mean_ms=3333.3333333333335, min_ms=1000, p50_ms=1000, p95_ms=15000, task_count=6) -- linha da acao `save` que originou o stage 0 (nao e a causa)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "jobs/lib/carga.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              "f_5f6e8d"
+            ],
+            "severity": "P0",
+            "status": "confirmed"
+          }
+        },
+        {
+          "ruleId": "SF-UI-001",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Skew de duração de task no stage (medido: max_ms=15000, mean_ms=3333.3333333333335, min_ms=1000, p50_ms=1000, p95_ms=15000, task_count=6) -- linha da acao `collect` que originou o stage 0 (nao e a causa)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "jobs/lib/job.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 42
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              "f_c88230"
+            ],
+            "severity": "P0",
+            "status": "confirmed"
+          }
+        },
+        {
+          "ruleId": "SF-WASTE-002",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Worker ocioso com skew extremo — reduzir capacidade não toca a causa (medido: disk_used_pct_p95=9.0, memory_used_pct_p95=22.0, skew_p95_over_p50=11.4, worker_utilization_p50=0.31) -- linha da acao `count` que originou o stage 3 (nao e a causa)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "jobs/lib/job.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 58
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              "f_cbbd8f"
+            ],
+            "severity": "P1",
+            "status": "confirmed"
+          }
+        }
+      ],
+      "automationDetails": {
+        "id": "fixture-stage-python/"
+      }
+    }
+  ]
+}

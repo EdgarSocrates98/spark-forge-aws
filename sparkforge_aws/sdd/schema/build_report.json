@@ -1,0 +1,56 @@
+{
+  "required": ["tasks", "claims"],
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^T[0-9]+$"},
+          "status": {"enum": ["done", "skipped", "blocked"]},
+          "red": {"$ref": "#/$defs/run"},
+          "green": {"$ref": "#/$defs/run"},
+          "moved": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["change_id", "resolved"],
+            "properties": {
+              "change_id": {"type": "string", "minLength": 1},
+              "resolved": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string", "minLength": 1},
+          "evidence_ref": {"type": "string"}
+        }
+      }
+    },
+    "change_id": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "exit"],
+      "properties": {
+        "command": {"type": "string", "minLength": 1},
+        "exit": {"type": "integer"}
+      }
+    }
+  }
+}

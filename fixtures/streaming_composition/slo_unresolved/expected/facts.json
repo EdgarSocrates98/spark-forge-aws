@@ -1,0 +1,276 @@
+[
+  {
+    "id": "f_4ab195",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "slo",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 7,
+      "derived_fact_count": 1,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "mode": "slo",
+      "table": null,
+      "query_name": "orders-query",
+      "transport_key": null,
+      "max_skew_seconds": null,
+      "slo_name": "throughput"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "contract.json",
+        "progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_b75ed6",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 3,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_8c6021",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "input_rows_per_second": 120,
+      "processed_rows_per_second": 100
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_e52798",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "input_rows_per_second": 120,
+      "processed_rows_per_second": 90
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:05:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_d1a8c0",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 3,
+      "observed_index": 2,
+      "input_rows_per_second": 120,
+      "processed_rows_per_second": 110
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:10:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_3847f3",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 3,
+      "first_batch_id": 1,
+      "last_batch_id": 3,
+      "input_rows_per_second_first": 120.0,
+      "input_rows_per_second_last": 120.0,
+      "processed_rows_per_second_first": 100.0,
+      "processed_rows_per_second_last": 110.0,
+      "observed_span_seconds": 600.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 2,
+      "all_processed_below_input": true,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:10:00+00:00"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_0f35a2",
+    "schema_version": 1,
+    "kind": "streaming.slo",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "throughput",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 95
+    },
+    "attrs": {
+      "name": "throughput",
+      "metric": "processed_rows_per_second",
+      "operator": "gte",
+      "unit": "rows_per_second",
+      "window": "15m",
+      "source": "spark_progress"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "0f2d583c6fbcf49b5e83bc97ec0553dc809a25a34a1d1e9646e4f7afcc784a06",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_4904e3",
+    "schema_version": 1,
+    "kind": "streaming.slo.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query:throughput",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "window_not_covered",
+      "slo_name": "throughput",
+      "query_name": "orders-query",
+      "causal_inference": false,
+      "observed_span_seconds": 600.0,
+      "window_seconds": 900.0
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "contract.json",
+        "progress.jsonl"
+      ],
+      "extractor": "streaming_slo@0.1.0"
+    }
+  },
+  {
+    "id": "f_2ff6da",
+    "schema_version": 1,
+    "kind": "streaming_ops.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 1
+    },
+    "attrs": {
+      "sections": [
+        "finops",
+        "lakehouse",
+        "security",
+        "serving",
+        "slo"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "0f2d583c6fbcf49b5e83bc97ec0553dc809a25a34a1d1e9646e4f7afcc784a06",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  }
+]

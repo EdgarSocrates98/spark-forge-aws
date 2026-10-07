@@ -1,0 +1,48 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_hoje_005",
+  "sla_minutes": 10.0,
+  "reliability_target": 0.8,
+  "volume_tolerance": 0.25,
+  "current_volume_bytes": 2000000000,
+  "candidates": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs_total": 10,
+      "runs_comparable": 10,
+      "runs_within_sla": 10,
+      "reliability": 1.0,
+      "resolution": 0.1,
+      "dpu_seconds_p95": 1000.0,
+      "meets_sla": true,
+      "safety": "REVIEW"
+    }
+  ],
+  "chosen": {
+    "glue_version": "5.0",
+    "worker_type": "G.2X",
+    "number_of_workers": 10,
+    "autoscaling": false,
+    "runs_total": 10,
+    "runs_comparable": 10,
+    "runs_within_sla": 10,
+    "reliability": 1.0,
+    "resolution": 0.1,
+    "dpu_seconds_p95": 1000.0,
+    "meets_sla": true,
+    "safety": "REVIEW"
+  },
+  "refused": [
+    {
+      "reason": "cost_unobservable",
+      "capacity": "G.2X x10",
+      "runs_comparable": 10,
+      "detail": "Nenhum run comparavel tem `dpu_seconds` medido. Sob Auto Scaling sem DPUSeconds, `number_of_workers` e teto e nao uso, e o coletor recusou derivar -- sem custo nao ha o que minimizar."
+    }
+  ],
+  "discarded_runs": {},
+  "only_one_capacity_observed": false
+}

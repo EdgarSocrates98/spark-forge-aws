@@ -1,0 +1,94 @@
+[
+  {
+    "id": "f_d149b5",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 42,
+      "node_count": 8,
+      "file_scan_count": 0,
+      "exchange_count": 0,
+      "skipped_logical_lines": 1,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": false,
+      "aqe_final_plan": "unknown",
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "d88cf5d5664aeb205554f46e8579e87321090a78db3228b2847be2a82e319604",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_83cacb",
+    "schema_version": 1,
+    "kind": "plan.photon",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 12,
+      "symbol": "(1) PhotonRange",
+      "node_id": 1,
+      "operator": "PhotonRange",
+      "relation": ""
+    },
+    "measures": {
+      "photon_operators": 7,
+      "operators": 8
+    },
+    "attrs": {
+      "operators": [
+        "PhotonArrowBatchSink",
+        "PhotonArrowBatchSource",
+        "PhotonArrowResultStage",
+        "PhotonColumnarToRow",
+        "PhotonProject",
+        "PhotonRange",
+        "PhotonResultStage"
+      ],
+      "explanation": "The query is fully supported by Photon."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "d88cf5d5664aeb205554f46e8579e87321090a78db3228b2847be2a82e319604",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_854281",
+    "schema_version": 1,
+    "kind": "plan.python_udf",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 23,
+      "symbol": "(4) ArrowEvalPython",
+      "node_id": 4,
+      "operator": "ArrowEvalPython",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "ArrowEvalPython",
+      "udf_type": "arrow"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "d88cf5d5664aeb205554f46e8579e87321090a78db3228b2847be2a82e319604",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

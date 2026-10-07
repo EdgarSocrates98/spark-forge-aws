@@ -1,0 +1,53 @@
+[
+  {
+    "id": "f_c0edc8",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_s1t2u3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_s1t2u3"
+    },
+    "measures": {
+      "events": 0.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "sem_permissao",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_s1t2u3"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_s1t2u3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_d93e38",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.unresolved",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_s1t2u3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_s1t2u3"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sem_permissao",
+      "detail": "A chamada foi recusada por AccessDenied. Sem `logs:FilterLogEvents` no grupo, a resposta e indistinguivel de um grupo vazio -- e por isso a razao entra no fact em vez de virar lista vazia.",
+      "filter_pattern": "",
+      "start": "2026-09-09T10:00:00Z",
+      "end": "2026-09-09T11:00:00Z"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_s1t2u3_aws-glue_jobs_error.json"
+    }
+  }
+]

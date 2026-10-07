@@ -1,0 +1,77 @@
+[
+  {
+    "rule_id": "SF-PY-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "broadcast() forçado por hint",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 11,
+      "end_line": 5,
+      "symbol": "unir",
+      "snippet": "return a.join(broadcast(b), \"k\")"
+    },
+    "evidence": [
+      "f_42b69b"
+    ],
+    "measured": {
+      "on_arity": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Um hint de broadcast é permanente no código, mas o tamanho do lado \"pequeno\" não é. O driver materializa a tabela antes de distribuir, então o modo de falha quando ela cresce é OOM de driver ou broadcastTimeout, não degradação gradual. O limiar automático (autoBroadcastJoinThreshold, default 10MB) decide sem hint em qualquer versão. Já a conversão de sort-merge em broadcast com estatística de runtime, em vez de uma decisão congelada no código, é do AQE, ligado por default só a partir do Spark 3.2; em 3.0 e 3.1 ela só acontece com spark.sql.adaptive.enabled=true, e sem isso a escolha fica inteira com o limiar estático.",
+    "proposed_change": [
+      "Medir o tamanho serializado real do lado pequeno, não o estimado.",
+      "Remover o hint e verificar se o AQE converte sozinho para BroadcastHashJoin. Em Spark 3.0 e 3.1, confirmar antes que spark.sql.adaptive.enabled esteja true; sem AQE não há conversão em runtime, e o lado pequeno precisa caber em autoBroadcastJoinThreshold para o broadcast acontecer.",
+      "Se o broadcast é necessário e o lado é estável, documentar o limite de tamanho assumido e monitorá-lo."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover o hint pode fazer o Spark escolher sort-merge join, aumentando o shuffle, se a estatística estiver ausente ou ruim.",
+      "O que NÃO muda, e dizer isto é metade do risco: o conjunto de linhas do equi-join é o mesmo em BroadcastHashJoin e em SortMergeJoin, e nulo e cardinalidade se comportam igual nos dois. Quem procurar a divergência na contagem não vai achar.",
+      "O que MUDA é o particionamento e a ORDEM da saída: o sort-merge reparticiona por chave em spark.sql.shuffle.partitions e ordena; o broadcast preserva as partições do lado grande. Todo operador a jusante que dependa de ordem ou de partição passa a devolver outra coisa com a MESMA contagem — dropDuplicates e first/last sem ordenação total escolhem outra linha, collect_list monta outra sequência, monotonically_increasing_id emite outros ids, e row_number sobre janela cujo ORDER BY não desempata totalmente desempata diferente. Se o resultado é escrito, muda também o número de arquivos e qual linha cai em qual arquivo.",
+      "O hint pode já estar sendo ignorado, e aí remover não muda nada — o Spark não faz broadcast do lado que a semântica do join proíbe. Medir a estratégia física dos dois lados é o que separa esse caso do outro; sem isso, \"removi e nada mudou\" tanto confirma a recomendação quanto esconde que ela nunca valeu."
+    ],
+    "tradeoffs": [
+      "Hint dá previsibilidade de plano ao custo de não reagir ao crescimento do dado."
+    ],
+    "validation": [
+      "Estratégia física de join confirmada na aba SQL do Spark UI, não apenas no explain.",
+      "Contagem total de linhas do resultado, antes e depois. É o eixo mais barato e o mais fraco desta regra: ele passa em TODOS os modos de falha descritos em risks, e serve para descartar o erro grosseiro (um on alterado junto com o hint no mesmo commit), nunca para aprovar a mudança.",
+      "Contagem distinta da chave de negócio no resultado, antes e depois, para separar troca de estratégia de troca de condição de join quando as duas vêm no mesmo diff.",
+      "Valor — e não só contagem — de cada operador a jusante que dependa de ordem ou de partição: dropDuplicates, first/last, collect_list, monotonically_increasing_id e row_number com empate. É exatamente aqui que o erro aparece, porque os quatro eixos de SF-FVAL (contagem, schema, chaves, agregados) passam INTEIROS enquanto a linha que sobreviveu é outra. Se não houver nenhum operador desses a jusante, escreva isso: a ausência declarada é o que autoriza ler os quatro eixos como suficientes.",
+      "Número de arquivos e distribuição de linhas por arquivo no destino, antes e depois, quando o resultado do join é escrito.",
+      "Runtime e custo de compute medido antes e depois.",
+      "Heap do driver antes e depois."
+    ],
+    "rollback": [
+      "Readicionar o hint."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A página do Spark sustenta o lado do PLANO: que o hint força o broadcast, que autoBroadcastJoinThreshold decide sem hint, e que o AQE converte estratégia com estatística de runtime. O que ela NÃO afirma é a metade que sustenta o risco de resultado -- que a troca de estratégia troca o particionamento e a ordem da saída, e que os operadores não determinísticos a jusante mudam de valor com a MESMA contagem. Essa metade é leitura de campo, e está declarada porque é ela que o `validation` cobra: sem ela, a regra recomendaria remover um hint medindo só tempo e heap, que foi o estado desta regra até esta rodada."
+      }
+    ],
+    "action": {
+      "kind": "join.change_broadcast_decision",
+      "target": "pyspark.join.hint",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

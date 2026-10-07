@@ -1,0 +1,8 @@
+name: none_fits
+job_name: etl_pedidos_diario
+job_run_id: jr_hoje_002
+proves: 'Mesmo historico do cenario `cheapest_that_fits`, mas o SLA declarado cai para 1 minuto:
+  nenhuma das tres capacidades roda em menos de 60 segundos (a mais rapida leva 200s). `chosen`
+  sai `None` e os tres candidatos permanecem na lista com `meets_sla: false`, cada um mostrando
+  por quanto errou (`reliability: 0.0` para os tres, porque nenhum run de nenhuma capacidade
+  cumpriu o SLA).'

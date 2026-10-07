@@ -1,0 +1,7 @@
+{
+  "application": {
+    "name": "sem-id",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark"
+  }
+}

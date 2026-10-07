@@ -1,0 +1,13 @@
+name: express_com_sync
+proves: >
+  O POSITIVO de SF-SFN-003, lido da saida de `describe-state-machine` (definition como
+  string JSON). `type: EXPRESS` declarado e `.sync` no Task do Glue: "Express Workflows
+  only support Request Response integrations." O NEGATIVO ja esta no corpus: todo
+  `.asl.json` sai com tipo `undeclared` e nenhum dispara a regra.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.state_machine, sfn.task]
+expects_rules: [SF-SFN-003]

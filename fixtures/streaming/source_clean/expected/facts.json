@@ -1,0 +1,176 @@
+[
+  {
+    "id": "f_f4b69f",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "end_line": 6,
+      "symbol": "",
+      "snippet": "batch.write.mode(\"append\").format(\"parquet\").save(\"s3://lake/curated/events\")"
+    },
+    "measures": {
+      "length": 4
+    },
+    "attrs": {
+      "methods": [
+        "write",
+        "mode",
+        "format",
+        "save"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "e401bb619e638ca548a048eb38ecf022168164e4275079054a94b65b21ed40b1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_15a5bb",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 4,
+      "col": 8,
+      "end_line": 4,
+      "symbol": "",
+      "snippet": "spark = SparkSession.builder.getOrCreate()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "builder",
+        "getOrCreate"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "e401bb619e638ca548a048eb38ecf022168164e4275079054a94b65b21ed40b1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_5e551e",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 8,
+      "end_line": 5,
+      "symbol": "",
+      "snippet": "batch = spark.read.format(\"parquet\").load(\"s3://lake/events\")"
+    },
+    "measures": {
+      "length": 3
+    },
+    "attrs": {
+      "methods": [
+        "read",
+        "format",
+        "load"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "e401bb619e638ca548a048eb38ecf022168164e4275079054a94b65b21ed40b1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_7be437",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 6,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true,
+      "referenced_names": [
+        "SparkSession",
+        "batch",
+        "builder",
+        "format",
+        "getOrCreate",
+        "load",
+        "mode",
+        "read",
+        "save",
+        "spark",
+        "write"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "e401bb619e638ca548a048eb38ecf022168164e4275079054a94b65b21ed40b1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4066ba",
+    "schema_version": 1,
+    "kind": "pyspark.read",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 8,
+      "end_line": 5,
+      "symbol": "",
+      "snippet": "batch = spark.read.format(\"parquet\").load(\"s3://lake/events\")"
+    },
+    "measures": {},
+    "attrs": {
+      "format": "load",
+      "target": "s3://lake/events"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "e401bb619e638ca548a048eb38ecf022168164e4275079054a94b65b21ed40b1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_5e83af",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "end_line": 6,
+      "symbol": "",
+      "snippet": "batch.write.mode(\"append\").format(\"parquet\").save(\"s3://lake/curated/events\")"
+    },
+    "measures": {},
+    "attrs": {
+      "api": "dataframe_writer_v1",
+      "mode": "append",
+      "target": "s3://lake/curated/events"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "e401bb619e638ca548a048eb38ecf022168164e4275079054a94b65b21ed40b1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

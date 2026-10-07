@@ -1,0 +1,10 @@
+[
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "iceberg_metadata",
+    "path": "../fora.json",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": "sintetico"
+  }
+]

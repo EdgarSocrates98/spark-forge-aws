@@ -1,0 +1,24 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T13:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T13:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaComLaco"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T13:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T13:00:03.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_eeeeeeee1\", \"JobName\": \"carga-com-laco\"}"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T13:10:00.000000+00:00", "type": "TaskFailed", "taskFailedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "error": "Glue.AWSGlueException", "cause": "JobRun jr_eeeeeeee1 FAILED"}},
+    {"id": 6, "previousEventId": 5, "timestamp": "2026-09-18T13:10:01.000000+00:00", "type": "TaskStateExited", "stateExitedEventDetails": {"name": "CargaComLaco"}},
+    {"id": 7, "previousEventId": 6, "timestamp": "2026-09-18T13:10:02.000000+00:00", "type": "ChoiceStateEntered", "stateEnteredEventDetails": {"name": "TentarDeNovo"}},
+    {"id": 8, "previousEventId": 7, "timestamp": "2026-09-18T13:10:03.000000+00:00", "type": "ChoiceStateExited", "stateExitedEventDetails": {"name": "TentarDeNovo"}},
+    {"id": 9, "previousEventId": 8, "timestamp": "2026-09-18T13:10:04.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaComLaco"}},
+    {"id": 10, "previousEventId": 9, "timestamp": "2026-09-18T13:10:05.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 11, "previousEventId": 10, "timestamp": "2026-09-18T13:10:06.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_eeeeeeee2\", \"JobName\": \"carga-com-laco\"}"}},
+    {"id": 12, "previousEventId": 11, "timestamp": "2026-09-18T13:20:00.000000+00:00", "type": "TaskFailed", "taskFailedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "error": "Glue.AWSGlueException", "cause": "JobRun jr_eeeeeeee2 FAILED"}},
+    {"id": 13, "previousEventId": 12, "timestamp": "2026-09-18T13:20:01.000000+00:00", "type": "TaskStateExited", "stateExitedEventDetails": {"name": "CargaComLaco"}},
+    {"id": 14, "previousEventId": 13, "timestamp": "2026-09-18T13:20:02.000000+00:00", "type": "ChoiceStateEntered", "stateEnteredEventDetails": {"name": "TentarDeNovo"}},
+    {"id": 15, "previousEventId": 14, "timestamp": "2026-09-18T13:20:03.000000+00:00", "type": "ChoiceStateExited", "stateExitedEventDetails": {"name": "TentarDeNovo"}},
+    {"id": 16, "previousEventId": 15, "timestamp": "2026-09-18T13:20:04.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaComLaco"}},
+    {"id": 17, "previousEventId": 16, "timestamp": "2026-09-18T13:20:05.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 18, "previousEventId": 17, "timestamp": "2026-09-18T13:20:06.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_eeeeeeee3\", \"JobName\": \"carga-com-laco\"}"}},
+    {"id": 19, "previousEventId": 18, "timestamp": "2026-09-18T13:32:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 20, "previousEventId": 19, "timestamp": "2026-09-18T13:32:01.000000+00:00", "type": "ExecutionSucceeded"}
+  ]
+}

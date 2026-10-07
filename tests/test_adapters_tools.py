@@ -1,0 +1,4052 @@
+import json
+from pathlib import Path
+
+import jsonschema
+import pytest
+
+from sparkforge_aws.adapters.tools import TOOLS, call_tool
+
+JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture()
+def repo(tmp_path):
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "loader.py").write_text(JOB, encoding="utf-8")
+    return tmp_path
+
+
+class TestToolSurface:
+    def test_the_full_tool_surface_is_declared(self):
+        """Fase 1: a superficie MCP cresceu para cobrir todo verbo da CLI --
+        os 10 tools da Fase 0, mais catalog-schema/fuse/call-graph e os
+        extratores sem verbo proprio (event-log, terraform, iceberg, sql,
+        athena-workgroup), mais os coletores AWS -- SETE que tocam a rede desde
+        que a Fase 5d acrescentou `collect_emr_serverless`, mais `collect_verify`,
+        que so le disco. Um tool que sai desta
+        lista sem querer e um capability reachable-por-CLI-mas-nao-por-MCP
+        que `parity.yaml`/`test_capability_parity.py` deveriam pegar -- este
+        teste falha primeiro, com um diff legivel."""
+        assert set(TOOLS) == {
+            "sparkforge_aws_context_start",
+            "sparkforge_aws_context_expand",
+            "sparkforge_aws_context_inspect",
+            "sparkforge_aws_agentops_inspect",
+            "sparkforge_aws_agentops_compare",
+            "sparkforge_aws_agentops_baseline",
+            "sparkforge_aws_agentops_timeline",
+            "sparkforge_aws_agentops_critical_path",
+            "sparkforge_aws_doctor_agentic",
+            "sparkforge_aws_case_open",
+            "sparkforge_aws_case_get",
+            "sparkforge_aws_case_update",
+            "sparkforge_aws_next_step",
+            "sparkforge_aws_resume",
+            "sparkforge_aws_playbook",
+            "sparkforge_aws_runtime_detect",
+            "sparkforge_aws_knowledge_path",
+            "sparkforge_aws_analyze_pyspark",
+            "sparkforge_aws_analyze_streaming",
+            "sparkforge_aws_analyze_transport",
+            "sparkforge_aws_analyze_flink",
+            "sparkforge_aws_analyze_cdc",
+            "sparkforge_aws_analyze_schema_registry",
+            "sparkforge_aws_analyze_event_driven",
+            "sparkforge_aws_analyze_streaming_ops",
+            "sparkforge_aws_analyze_streaming_integrations",
+            "sparkforge_aws_analyze_streaming_composition",
+            "sparkforge_aws_analyze_glue_streaming",
+            "sparkforge_aws_analyze_catalog_schema",
+            "sparkforge_aws_analyze_event_log",
+            "sparkforge_aws_analyze_sql_metrics",
+            "sparkforge_aws_analyze_cloudwatch",
+            "sparkforge_aws_analyze_cloudwatch_logs",
+            "sparkforge_aws_analyze_lakeformation_grants",
+            "sparkforge_aws_analyze_iam_access",
+            "sparkforge_aws_analyze_glue_resource_link",
+            "sparkforge_aws_analyze_error_signatures",
+            "sparkforge_aws_analyze_glue_job_runs",
+            "sparkforge_aws_analyze_parquet_footer",
+            "sparkforge_aws_analyze_plan",
+            "sparkforge_aws_analyze_terraform",
+            "sparkforge_aws_analyze_iceberg",
+            "sparkforge_aws_analyze_sql",
+            "sparkforge_aws_analyze_athena_workgroup",
+            "sparkforge_aws_analyze_emr_cluster",
+            "sparkforge_aws_analyze_emr_serverless",
+            "sparkforge_aws_analyze_emr_eks",
+            "sparkforge_aws_analyze_controlm_jobs",
+            "sparkforge_aws_analyze_step_functions",
+            "sparkforge_aws_analyze_sfn_history",
+            "sparkforge_aws_analyze_airflow_dag",
+            "sparkforge_aws_analyze_data_quality",
+            "sparkforge_aws_analyze_dq_ai",
+            "sparkforge_aws_analyze_graph",
+            "sparkforge_aws_analyze_call_graph",
+            "sparkforge_aws_analyze_s3_listing",
+            "sparkforge_aws_analyze_consumers",
+            "sparkforge_aws_analyze_workload",
+            "sparkforge_aws_analyze_terraform_diff",
+            "sparkforge_aws_migration_assess",
+            "sparkforge_aws_glue_dependency_audit",
+            "sparkforge_aws_iceberg_assess_upgrade",
+            "sparkforge_aws_release_describe",
+            "sparkforge_aws_release_diff",
+            "sparkforge_aws_controlm_describe",
+            "sparkforge_aws_benchmark",
+            "sparkforge_aws_funcval_plan",
+            "sparkforge_aws_funcval_compare",
+            # 2026-09-16: o SDD proprio. `check` e `status` leem os artefatos de
+            # `docs/sdd/<FEATURE>/`; `stamp` grava o hash do upstream de um deles.
+            "sparkforge_aws_sdd_check",
+            "sparkforge_aws_sdd_status",
+            "sparkforge_aws_sdd_stamp",
+            "sparkforge_aws_fuse",
+            "sparkforge_aws_workload",
+            "sparkforge_aws_capacity",
+            "sparkforge_aws_finops",
+            "sparkforge_aws_dq_ai_assess",
+            "sparkforge_aws_tune",
+            "sparkforge_aws_economy_report",
+            "sparkforge_aws_decision_evaluate",
+            "sparkforge_aws_judge",
+            "sparkforge_aws_arbitrate",
+            "sparkforge_aws_lakeformation_access_graph",
+            "sparkforge_aws_lakeformation_architect",
+            "sparkforge_aws_debate_referee",
+            "sparkforge_aws_debate_start",
+            "sparkforge_aws_debate_next",
+            "sparkforge_aws_debate_submit",
+            "sparkforge_aws_root_cause",
+            "sparkforge_aws_lakeformation_matrix",
+            "sparkforge_aws_rules_lookup",
+            "sparkforge_aws_validate_output",
+            "sparkforge_aws_report_sign",
+            "sparkforge_aws_report_verify",
+            "sparkforge_aws_report_github",
+            "sparkforge_aws_telemetry_export",
+            "sparkforge_aws_receipt_emit",
+            "sparkforge_aws_receipt_verify",
+            "sparkforge_aws_proof",
+            "sparkforge_aws_simulate",
+            "sparkforge_aws_pack_list",
+            "sparkforge_aws_knowledge_drift",
+            "sparkforge_aws_gain",
+            "sparkforge_aws_scan",
+            "sparkforge_aws_doctor",
+            "sparkforge_aws_policy_explain",
+            "sparkforge_aws_change_plan",
+            "sparkforge_aws_change_sandbox",
+            "sparkforge_aws_change_propose",
+            "sparkforge_aws_collect_event_log",
+            "sparkforge_aws_collect_glue_job",
+            "sparkforge_aws_collect_streaming_integrations",
+            "sparkforge_aws_collect_schema_registry",
+            "sparkforge_aws_collect_managed_flink",
+            "sparkforge_aws_collect_cloudwatch",
+            "sparkforge_aws_collect_cloudwatch_logs",
+            "sparkforge_aws_collect_lakeformation",
+            "sparkforge_aws_collect_iam_access",
+            "sparkforge_aws_collect_glue_resource_link",
+            "sparkforge_aws_collect_glue_job_runs",
+            "sparkforge_aws_collect_iceberg_metadata",
+            "sparkforge_aws_collect_parquet_footer",
+            "sparkforge_aws_collect_athena_workgroup",
+            "sparkforge_aws_collect_emr_cluster",
+            "sparkforge_aws_collect_emr_serverless",
+            "sparkforge_aws_collect_emr_eks",
+            "sparkforge_aws_collect_verify",
+            # Platform analysis surfaces were added after the original catalog
+            # fixture; keep the explicit allowlist synchronized with TOOLS.
+            "sparkforge_aws_analyze_data_observability",
+            "sparkforge_aws_analyze_dbt_artifacts",
+            "sparkforge_aws_analyze_duckdb_microscope",
+            "sparkforge_aws_analyze_forge_lab",
+            "sparkforge_aws_analyze_lakehouse_catalog",
+            "sparkforge_aws_analyze_orchestration",
+            "sparkforge_aws_analyze_platform_ecosystem",
+            "sparkforge_aws_analyze_platform_graph",
+            # SPEC 56-77: SEIS tools de Code Intelligence, e nao as onze que as
+            # secoes 57 a 67 listam. A justificativa por nome esta no comentario
+            # de bloco de `tools.py` -- resumo: 59+61 colapsam (mesma entrada,
+            # profundidade diferente), 63+64+67 colapsam (mesma medicao do estado
+            # do indice), 62 e 66 NAO entram porque a implementacao nao existe, e
+            # 60 fica separada de proposito por ser a unica que devolve fonte.
+            "sparkforge_aws_code_context",
+            "sparkforge_aws_code_search",
+            "sparkforge_aws_code_path",
+            "sparkforge_aws_code_shape",
+            "sparkforge_aws_code_export",
+            "sparkforge_aws_code_symbol",
+            "sparkforge_aws_code_read",
+            "sparkforge_aws_code_status",
+            "sparkforge_aws_code_sync",
+        }
+
+    def test_every_tool_declares_an_output_schema(self):
+        """`sparkforge_aws_judge` pode devolver sucesso ou o shape de erro de
+        fronteira (`facts_path` ausente), entao seu outputSchema usa `oneOf`
+        em vez de um `type` plano na raiz -- ver TestOutputSchemasAreReal
+        para a verificacao real de cada branch."""
+        for name, spec in TOOLS.items():
+            schema = spec["outputSchema"]
+            assert schema.get("type") == "object" or "oneOf" in schema, name
+
+    def test_every_tool_declares_annotations(self):
+        for name, spec in TOOLS.items():
+            for key in ("readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"):
+                assert key in spec["annotations"], f"{name} sem {key}"
+
+    def test_no_tool_is_destructive(self):
+        assert all(s["annotations"]["destructiveHint"] is False for s in TOOLS.values())
+
+    def test_only_collect_tools_are_open_world(self):
+        """O nucleo determinístico e offline; os coletores AWS (`collect_*`,
+        exceto `collect_verify`, que so le o manifesto local) sao as
+        primeiras ferramentas deste projeto que tocam a rede de verdade.
+        Antes da Fase 1 nenhum tool era openWorld -- agora a invariante
+        precisa e "so collect_* (menos verify)", nao mais "nenhum"."""
+        open_world = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
+        assert open_world == {
+            "sparkforge_aws_collect_event_log",
+            "sparkforge_aws_collect_glue_job",
+            "sparkforge_aws_collect_cloudwatch",
+            "sparkforge_aws_collect_cloudwatch_logs",
+            "sparkforge_aws_collect_lakeformation",
+            "sparkforge_aws_collect_iam_access",
+            "sparkforge_aws_collect_glue_resource_link",
+            "sparkforge_aws_collect_glue_job_runs",
+            "sparkforge_aws_collect_iceberg_metadata",
+            "sparkforge_aws_collect_parquet_footer",
+            "sparkforge_aws_collect_athena_workgroup",
+            "sparkforge_aws_collect_emr_cluster",
+            "sparkforge_aws_collect_emr_serverless",
+            "sparkforge_aws_collect_emr_eks",
+            "sparkforge_aws_collect_streaming_integrations",
+            "sparkforge_aws_collect_schema_registry",
+            "sparkforge_aws_collect_managed_flink",
+        }
+
+    def test_every_open_world_tool_also_writes_locally(self):
+        """Este teste afirmava o CONTRARIO ate a Fase I3, e estava errado --
+        ele trancava a mentira em vez de pegar.
+
+        A razao antiga era "os coletores so leem da AWS, nunca escrevem do
+        lado AWS", e a parte depois da virgula e verdade. So que
+        `readOnlyHint` nao tem lado: ele afirma que a tool nao modifica o
+        ambiente dela. Os sete coletores modificam o ambiente LOCAL -- todos
+        terminam em `sparkforge_aws.collect.aws._write_and_register`, que grava o
+        artefato e depois grava o manifesto `path` + `sha256` que
+        `sparkforge_aws_collect_verify` confere.
+
+        A invariante real e esta, e vale a pena tranca-la nos dois sentidos:
+        toda tool que sai para a rede TAMBEM persiste o que trouxe. Um coletor
+        que tocasse a AWS sem registrar o artefato deixaria o livro-razao de
+        integridade sem a entrada correspondente, e o `verify` nao teria como
+        saber que ela deveria existir."""
+        de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
+        assert de_rede, "o corpus precisa ter ao menos uma tool de rede"
+        for name in de_rede:
+            assert TOOLS[name]["annotations"]["readOnlyHint"] is False, name
+
+    def test_only_declared_local_writers_are_not_read_only(self):
+        """A quarta lista manual desta classe, e ela mudou junto com as outras
+        tres na Fase 4b: `sparkforge_aws_report_sign` escreve o bloco de assinatura
+        DENTRO do relatorio, no lugar. Um `sign` que so devolvesse o bloco para
+        alguem colar seria a versao decorativa da capacidade -- e a colagem
+        manual e exatamente onde o corpo assinado deixaria de ser o corpo
+        escrito. `report_verify` fica de fora: so le.
+
+        A Fase 4c acrescentou `sparkforge_aws_funcval_plan` pela MESMA razao, um
+        dominio adiante: o plano nao e saida legivel, e o artefato que
+        `sparkforge_aws_funcval_compare` rele e que o gate cobra. Um `plan` que so
+        devolvesse `structuredContent` daria a capacidade a quem usa a CLI
+        (`--out`) e nao a quem usa o MCP -- a assimetria que `parity.yaml`
+        existe para pegar.
+
+        `sparkforge_aws_funcval_compare` ENTROU na lista ao fechar a D-4c-26, e a
+        razao e a mesma vista do outro lado: `sparkforge_aws_judge` le facts, e sem
+        `out_path` a saida da comparacao so chegava la extraida do envelope a
+        mao -- de um envelope que PAGINA. A diferenca para o plano esta no
+        schema, nao aqui: `out_path` do plano e `required`, o da comparacao e
+        opcional, porque um plano sem arquivo nao serve para nada e uma
+        comparacao sem arquivo ainda e legivel.
+
+        A Fase I3 descobriu que os SETE coletores AWS tambem escrevem, e nao
+        por mudanca de capacidade: a anotacao deles dizia `readOnlyHint: True`
+        e mentia. Eles gravam o artefato e o manifesto de integridade via
+        `sparkforge_aws.collect.aws._write_and_register` desde que existem -- ver
+        o comentario de `_WRITE_LOCAL_OPEN_WORLD` em `tools.py`.
+
+        Eles NAO entram na lista a mao, e a razao nao e economia de digitacao:
+        os sete ja estao garantidos por dois testes desta mesma classe --
+        `test_only_collect_tools_are_open_world` fixa o conjunto `openWorld`
+        EXATAMENTE nesses sete nomes, e
+        `test_every_open_world_tool_also_writes_locally` cobra
+        `readOnlyHint is False` de cada tool `openWorld`. Repetir os sete aqui
+        somaria garantia zero e cresceria a cada coletor novo. Descontar o
+        conjunto de rede e afirmar o resto preserva a garantia inteira e para
+        de crescer.
+
+        `sparkforge_aws_agentops_baseline` grava baseline local quando `action=save`,
+        portanto tambem e mutacao local declarada e entra na lista.
+
+        Os locais continuam a mao de proposito, e ai a lista carrega
+        garantia real: nao ha nenhuma outra propriedade declarada que separe
+        `case_open` de `analyze_pyspark` -- derivar de `TOOLS` seria escrever
+        `writers == writers` e o teste deixaria de cobrar decisao humana
+        quando uma tool trocasse de lado.
+
+        O RISCO desta forma, escrito porque ja se materializou aqui: quando um
+        pin escrito a mao falha, o conserto barato e editar a expectativa em
+        vez de consertar a anotacao. Foi exatamente o que aconteceu com
+        `test_every_open_world_tool_is_still_read_only`, que entrou em
+        `afd2c96` (2026-07-30) afirmando o CONTRARIO do que o codigo fazia e
+        trancou a mentira por centenas de commits. Um pin que falha nao e um
+        pin que protege: quem editar esta lista precisa provar que a tool
+        mudou de lado, nao so fazer o vermelho sumir."""
+        de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
+        writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
+        assert writers - de_rede == {
+            # `sparkforge_aws_arbitrate` escreve o blackboard do case
+            # (`.sparkforge_aws/blackboard/*.jsonl` mais um ADR por decisao
+            # significativa), e por isso nao e `readOnlyHint`. Ela tambem nao e
+            # idempotente, e a diferenca e medida: as ENTIDADES tem id
+            # content-addressed e a segunda execucao as pula, mas o `trace` da
+            # arbitragem nao tem id -- ele registra que a arbitragem
+            # ACONTECEU, e duas execucoes sao dois acontecimentos.
+            "sparkforge_aws_arbitrate",
+            # O executor de debate grava em `.sparkforge_aws/debate/<id>/` e no
+            # blackboard: `start` congela `plan.json`, `submit` grava a
+            # submissao e as entidades, e `next` -- que parece leitura -- grava
+            # a `Decision` no fechamento. As tres sao `LOCAL_MUTATION`.
+            "sparkforge_aws_debate_start",
+            "sparkforge_aws_debate_next",
+            "sparkforge_aws_debate_submit",
+            "sparkforge_aws_case_open",
+            "sparkforge_aws_case_update",
+            "sparkforge_aws_funcval_compare",
+            "sparkforge_aws_funcval_plan",
+            # `sparkforge_aws_receipt_emit` grava `.sparkforge_aws/receipts/<id>.json`.
+            # E idempotente (a mesma entrada com o mesmo `now` grava o mesmo
+            # arquivo), mas escreve -- `LOCAL_MUTATION`, como `report_sign`.
+            "sparkforge_aws_receipt_emit",
+            "sparkforge_aws_report_sign",
+            # `sparkforge_aws_scan` grava `.sparkforge_aws/scan/` (facts por analyze,
+            # uniao, findings, summary) e, com `format: sarif`, o SARIF do
+            # `report github`. Idempotente: a mesma arvore da os mesmos arquivos.
+            "sparkforge_aws_scan",
+            # `sparkforge_aws_sdd_stamp` (2026-09-16) grava `upstream.sha256` no
+            # artefato SDD, e so essa linha -- `_WRITE_IDEMPOTENT`: com o hash ja
+            # certo, nao regrava. `sdd_check` e `sdd_status` so leem e ficam fora.
+            "sparkforge_aws_sdd_stamp",
+            # `sparkforge_aws_change_sandbox` grava as copias `before/`/`after/` e o
+            # `report.json` em `.sparkforge_aws/sandbox/<id>/`, recriadas a cada
+            # execucao com o mesmo `id` para a mesma entrada (§15). A arvore
+            # principal nunca e escrita.
+            "sparkforge_aws_change_sandbox",
+            # `sparkforge_aws_change_propose` grava o pacote do PR em
+            # `.sparkforge_aws/proposal/<id>/` (tmp + troca), e o mesmo `now` grava os
+            # mesmos bytes (§15 L3). Nao roda git e nao toca a arvore principal.
+            "sparkforge_aws_change_propose",
+            "sparkforge_aws_agentops_baseline",
+            # AS SEIS DE CODIGO, e nao so `sparkforge_aws_code_sync`.
+            #
+            # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
+            # Intelligence" e a SPEC 57 anota `code_context` como
+            # `readOnlyHint: true`. As duas afirmacoes caem pelo mesmo
+            # contraexemplo MEDIDO: toda consulta atravessa
+            # `staleness.garantir_frescor`, que grava `freshness_checked_ns` e
+            # `freshness_verdict` em `metadata` a cada conferencia, e que ate
+            # `max_auto_sync_files` roda uma sincronizacao incremental inteira
+            # dentro da chamada. Medicao: `mtime_ns` do `.sqlite3` antes e
+            # depois de um `sparkforge_aws_code_search`, sem nenhum arquivo de
+            # fonte alterado -- DIFERENTES.
+            #
+            # `readOnlyHint` nao tem lado. O que nunca muda e o FONTE
+            # (INV-004), e isso esta trancado em
+            # `tests/test_adapters_code_surface.py`, nao aqui.
+            "sparkforge_aws_code_context",
+            "sparkforge_aws_code_read",
+            "sparkforge_aws_code_path",
+            "sparkforge_aws_code_shape",
+            "sparkforge_aws_code_export",
+            "sparkforge_aws_code_search",
+            "sparkforge_aws_code_status",
+            "sparkforge_aws_code_symbol",
+            "sparkforge_aws_code_sync",
+        }
+
+    def test_every_tool_has_a_description(self):
+        for name, spec in TOOLS.items():
+            assert len(spec["description"]) > 20, name
+
+
+class TestCallTool:
+    def test_analyze_returns_structured_content(self, repo):
+        result = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(repo / "lib")})
+        assert result["total_count"] >= 1
+        assert result["by_kind"]["pyspark.partitioning"] == 1
+
+    def test_judge_finds_sf_py_005(self, repo):
+        facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(repo / "lib")})
+        result = call_tool("sparkforge_aws_judge", {"facts": facts["items"], "glue": "5.0"})
+        assert [f["rule_id"] for f in result["items"]] == ["SF-PY-005"]
+
+    def test_rules_lookup_returns_thresholds_and_sources(self):
+        rule = call_tool("sparkforge_aws_rules_lookup", {"id": ["SF-PY-007"]})["rules"][0]
+        assert rule["threshold"] == {"run_length": 10}
+        assert rule["sources"]
+
+    def test_validate_output_rejects_unbacked_gain(self):
+        payload = {
+            "rule_id": "SF-PY-005", "schema_version": 1, "title": "t", "severity": "P0",
+            "confidence": "high", "status": "structural",
+            "subject": {"type": "source_location"}, "evidence": ["f_abc123"],
+            "expected_effect": "reduz 40%", "benchmark_ref": "",
+        }
+        result = call_tool("sparkforge_aws_validate_output", {"finding": payload})
+        assert result["valid"] is False
+        assert "benchmark_ref" in result["errors"][0]
+
+    def test_validate_output_accepts_a_clean_finding(self):
+        payload = {
+            "rule_id": "SF-PY-005", "schema_version": 1, "title": "t", "severity": "P0",
+            "confidence": "high", "status": "structural",
+            "subject": {"type": "source_location"}, "evidence": ["f_abc123"],
+        }
+        assert call_tool("sparkforge_aws_validate_output", {"finding": payload})["valid"] is True
+
+    def _gain_finding(self, benchmark_ref):
+        return {
+            "rule_id": "SF-BENCH-001", "schema_version": 1, "title": "t", "severity": "P2",
+            "confidence": "high", "status": "confirmed",
+            "subject": {"type": "job_run"}, "evidence": ["f_abc123"],
+            "expected_effect": "reduz 40%", "benchmark_ref": benchmark_ref,
+        }
+
+    def test_validate_output_rejects_a_free_text_benchmark_ref(self):
+        result = call_tool(
+            "sparkforge_aws_validate_output",
+            {"finding": self._gain_finding("bench/2026-07-29.json")},
+        )
+        assert result["valid"] is False
+        assert "nao e um fact_id" in result["errors"][0]
+
+    def test_validate_output_accepts_a_well_formed_ref_without_facts_path(self):
+        result = call_tool(
+            "sparkforge_aws_validate_output", {"finding": self._gain_finding("f_a1b2c3")}
+        )
+        assert result["valid"] is True
+
+    def test_facts_path_turns_on_the_relevance_layer(self, tmp_path):
+        import json as _json
+
+        from sparkforge_aws.findings.models import Fact
+
+        fact = Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": 1})
+        facts_path = tmp_path / "facts.json"
+        facts_path.write_text(_json.dumps([fact.to_dict()]), encoding="utf-8")
+
+        absent = call_tool(
+            "sparkforge_aws_validate_output",
+            {"finding": self._gain_finding("f_a1b2c3"), "facts_path": str(facts_path)},
+        )
+        assert absent["valid"] is False
+        assert "nao esta no conjunto" in absent["errors"][0]
+
+        present = call_tool(
+            "sparkforge_aws_validate_output",
+            {"finding": self._gain_finding(fact.id), "facts_path": str(facts_path)},
+        )
+        assert present["valid"] is True
+
+    def test_strict_gates_reaches_mcp_too(self, repo):
+        """A assimetria que a Fase 5b corrigiu na flag `--emr` nao pode voltar:
+        o rigor e escolha do case, e um cliente MCP precisa poder faze-la."""
+        case = call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "glue": "5.0", "strict_gates": True},
+        )
+        assert case["strict_gates"] is True
+        blocked = call_tool(
+            "sparkforge_aws_case_update", {"repo": str(repo), "phase": "validation"}
+        )
+        assert blocked["exit_code"] == 2
+        assert "sparkforge-aws benchmark" in blocked["error"]
+
+    def test_case_open_without_strict_gates_stays_advisory(self, repo):
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z"},
+        )
+        result = call_tool(
+            "sparkforge_aws_case_update", {"repo": str(repo), "phase": "validation"}
+        )
+        assert result["phase"] == "validation"
+
+    def test_override_gate_needs_a_reason_over_mcp(self, repo):
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        recusado = call_tool(
+            "sparkforge_aws_case_update",
+            {"repo": str(repo), "override_gate": "baseline_captured"},
+        )
+        assert recusado["exit_code"] == 2
+        assert "reason" in recusado["error"]
+
+        aceito = call_tool(
+            "sparkforge_aws_case_update",
+            {"repo": str(repo), "override_gate": "baseline_captured",
+             "reason": "job descontinuado", "now": "2026-08-04T00:00:00Z"},
+        )
+        assert aceito["gate_overrides"][0]["reason"] == "job descontinuado"
+
+    def test_facts_path_unlocks_the_phase_over_mcp(self, repo, tmp_path):
+        from sparkforge_aws.findings.models import Fact
+
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        facts = tmp_path / "gate_facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    Fact(kind=k, subject={"type": "job_run"}, measures={"n": 1}).to_dict()
+                    for k in ("bench.run_delta", "callgraph.reachable_spark_work")
+                ]
+            ),
+            encoding="utf-8",
+        )
+        result = call_tool(
+            "sparkforge_aws_case_update",
+            {"repo": str(repo), "phase": "validation", "facts_path": str(facts)},
+        )
+        assert result["phase"] == "validation"
+
+    def test_resume_carries_the_override_over_mcp(self, repo):
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        call_tool(
+            "sparkforge_aws_case_update",
+            {"repo": str(repo), "override_gate": "flows_mapped",
+             "reason": "corpus sem trabalho Spark alcancavel",
+             "now": "2026-08-04T00:00:00Z"},
+        )
+        payload = call_tool("sparkforge_aws_resume", {"repo": str(repo)})
+        assert payload["strict_gates"] is True
+        assert payload["gate_overrides"][0]["reason"] == (
+            "corpus sem trabalho Spark alcancavel"
+        )
+        jsonschema.validate(payload, TOOLS["sparkforge_aws_resume"]["outputSchema"])
+
+    def test_case_open_then_next_step(self, repo):
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-07-30T00:00:00Z", "glue": "5.0"},
+        )
+        assert call_tool("sparkforge_aws_next_step", {"repo": str(repo)})["recommended_skill"]
+
+    def test_unknown_tool_raises_with_the_valid_names(self):
+        with pytest.raises(KeyError, match="sparkforge_aws_judge"):
+            call_tool("sparkforge_aws_nope", {})
+
+    def test_error_result_carries_a_collect_command(self, repo):
+        result = call_tool("sparkforge_aws_judge", {"facts_path": str(repo / "nope.json")})
+        assert "sparkforge-aws analyze pyspark" in json.dumps(result)
+
+    def test_judge_accepts_a_list_of_facts_paths(self, repo, tmp_path):
+        """Paridade com `judge --facts` repetivel na CLI: uma regra que cruza
+        extratores (SF-GLUE-004) precisa das duas fontes na mesma chamada."""
+        tf_dir = tmp_path / "infra"
+        tf_dir.mkdir()
+        (tf_dir / "main.tf").write_text(
+            'resource "aws_glue_job" "etl" {\n'
+            '  name         = "etl"\n'
+            '  glue_version = "5.0"\n'
+            "  max_retries  = 2\n"
+            "\n"
+            "  default_arguments = {\n"
+            '    "--enable-spark-ui"       = "true"\n'
+            '    "--spark-event-logs-path" = "s3://b/logs/"\n'
+            "  }\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        lib = tmp_path / "job"
+        lib.mkdir()
+        (lib / "w.py").write_text('df.write.mode("append").parquet("s3://b/p")\n', encoding="utf-8")
+
+        tf_facts = tmp_path / "tf.json"
+        py_facts = tmp_path / "py.json"
+        for tool, target, out in (
+            ("sparkforge_aws_analyze_terraform", tf_dir, tf_facts),
+            ("sparkforge_aws_analyze_pyspark", lib, py_facts),
+        ):
+            payload = call_tool(tool, {"path": str(target), "limit": 1000})
+            out.write_text(json.dumps(payload["items"], ensure_ascii=False), encoding="utf-8")
+
+        result = call_tool(
+            "sparkforge_aws_judge",
+            {"facts_path": [str(tf_facts), str(py_facts)], "glue": "5.0", "limit": 1000},
+        )
+        assert "SF-GLUE-004" in {f["rule_id"] for f in result["items"]}
+
+
+class TestFuncvalCompareWritesLikeTheCLI:
+    """D-4c-26 pelo lado do MCP.
+
+    A divida pedia os DOIS: `--out` na CLI e `out_path` na tool. Fechar so um
+    lado trocaria uma assimetria (verbo que grava contra verbo que nao grava)
+    por outra (superficie que grava contra superficie que nao grava), e a
+    segunda e a que `parity.yaml` existe para pegar -- um cliente MCP nao tem
+    shell onde rodar o `jq` que faltava.
+    """
+
+    def _compare(self, tmp_path, **extra):
+        plan_path = _write_funcval_plan_file(tmp_path)
+        before, after = _write_funcval_result_files(tmp_path)
+        return call_tool(
+            "sparkforge_aws_funcval_compare",
+            {
+                "plan_path": str(plan_path),
+                "before_path": str(before),
+                "after_path": str(after),
+                **extra,
+            },
+        )
+
+    def test_out_path_writes_the_list_that_judge_reads(self, tmp_path):
+        out = tmp_path / "funcval.json"
+        payload = self._compare(tmp_path, out_path=str(out))
+        gravado = json.loads(out.read_text(encoding="utf-8"))
+        assert isinstance(gravado, list)
+        assert gravado == payload["items"]
+        judged = call_tool(
+            "sparkforge_aws_judge", {"facts_path": [str(out)], "glue": "5.0", "limit": 1000}
+        )
+        assert "SF-FVAL-001" in {f["rule_id"] for f in judged["items"]}
+
+    def test_the_file_is_the_whole_comparison_and_not_the_page(self, tmp_path):
+        """`limit` corta o `structuredContent`, nunca o arquivo. O contrario
+        seria o motor entregando a primeira pagina com nome de comparacao."""
+        out = tmp_path / "funcval.json"
+        payload = self._compare(tmp_path, out_path=str(out), limit=1)
+        assert len(payload["items"]) == 1
+        assert payload["next_cursor"]
+        gravado = json.loads(out.read_text(encoding="utf-8"))
+        assert len(gravado) == payload["total_count"] > 1
+
+    def test_without_out_path_nothing_is_written(self, tmp_path):
+        plan_path = _write_funcval_plan_file(tmp_path)
+        before, after = _write_funcval_result_files(tmp_path)
+        antes = set(tmp_path.iterdir())
+        call_tool(
+            "sparkforge_aws_funcval_compare",
+            {
+                "plan_path": str(plan_path),
+                "before_path": str(before),
+                "after_path": str(after),
+            },
+        )
+        assert set(tmp_path.iterdir()) == antes
+
+    def test_the_two_surfaces_declare_the_same_optionality(self, tmp_path):
+        """A simetria dita no schema, e nao so no comportamento: `out_path` do
+        plano e `required`, o da comparacao nao -- e a CLI diz o mesmo, com
+        `--out` obrigatorio no `plan` e opcional no `compare`."""
+        plano = TOOLS["sparkforge_aws_funcval_plan"]["inputSchema"]
+        compare = TOOLS["sparkforge_aws_funcval_compare"]["inputSchema"]
+        assert "out_path" in plano["required"]
+        assert "out_path" in plano["properties"]
+        assert "out_path" in compare["properties"]
+        assert "out_path" not in compare["required"]
+
+
+class TestUnresolvedIsAlwaysReported:
+    """Regra 7 do AGENT_PROTOCOL.md: no nao resolvido e ponto cego, nao ausencia
+    de problema. Se a tool nao devolve a contagem, o protocolo exige do agente
+    algo que a ferramenta nao fornece."""
+
+    def _repo(self, tmp_path):
+        lib = tmp_path / "lib"
+        lib.mkdir()
+        (lib / "a.py").write_text(
+            "getattr(df, metodo)(1)\ndf.coalesce(1)\n", encoding="utf-8"
+        )
+        return lib
+
+    def test_analyze_reports_unresolved_count(self, tmp_path):
+        result = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(self._repo(tmp_path))})
+        assert result["unresolved"] == 1
+
+    def test_analyze_reports_where_each_blind_spot_is(self, tmp_path):
+        result = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(self._repo(tmp_path))})
+        spot = result["unresolved_at"][0]
+        assert spot["reason"] == "getattr"
+        assert spot["line"] == 1
+        assert spot["file"].endswith("a.py")
+
+    def test_filtering_by_kind_cannot_hide_the_blind_spot(self, tmp_path):
+        """Filtrar por kind nao pode fazer o ponto cego sumir do relatorio."""
+        result = call_tool(
+            "sparkforge_aws_analyze_pyspark",
+            {"path": str(self._repo(tmp_path)), "kind": ["pyspark.partitioning"]},
+        )
+        assert result["by_kind"] == {"pyspark.partitioning": 1}
+        assert result["unresolved"] == 1
+
+    def test_clean_source_reports_zero_not_absent(self, tmp_path):
+        lib = tmp_path / "lib"
+        lib.mkdir()
+        (lib / "a.py").write_text('df.select("a")\n', encoding="utf-8")
+        result = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+        assert result["unresolved"] == 0
+        assert result["unresolved_at"] == []
+
+
+class TestOutputSchemasAreReal:
+    """Um outputSchema `{"type": "object"}` generico passa no teste e nao entrega
+    nada: o cliente volta a adivinhar a forma, que e exatamente o que esta
+    arquitetura existe para evitar."""
+
+    def _branches(self, spec):
+        """`sparkforge_aws_judge` descreve sucesso e erro via `oneOf`; as demais
+        ferramentas sao um schema plano. Normaliza os dois casos para uma
+        lista de sub-schemas a inspecionar."""
+        schema = spec["outputSchema"]
+        return schema.get("oneOf") or [schema]
+
+    def test_every_tool_declares_properties(self):
+        for name, spec in TOOLS.items():
+            for branch in self._branches(spec):
+                assert branch.get("properties"), name
+
+    def test_every_tool_declares_required_keys(self):
+        for name, spec in TOOLS.items():
+            for branch in self._branches(spec):
+                assert branch.get("required"), name
+
+    def test_no_tool_uses_a_bare_object_schema(self):
+        for name, spec in TOOLS.items():
+            schema = spec["outputSchema"]
+            assert set(schema) > {"type"} or "oneOf" in schema, name
+
+
+_CASE_OPEN_ARGS = {"case_id": "c1", "now": "2026-07-30T00:00:00Z", "glue": "5.0"}
+
+CATALOG_DUMP = json.dumps(
+    {
+        "tables": [
+            {
+                "name": "db.eventos",
+                "storage_format": "parquet",
+                "partition_keys": [{"name": "dt", "type": "string"}],
+                "columns": [
+                    {"name": "cliente_id", "type": "bigint"},
+                    {"name": "dt", "type": "string"},
+                ],
+            }
+        ]
+    }
+)
+
+_EVENT_LOG_LINE = json.dumps({"Event": "SparkListenerApplicationStart"}) + "\n"
+
+# Event log minimo COM metrica de plano SQL: um no `FileScan parquet
+# db.clientes[id#1]` que publica `number of files read` (mapeado para
+# `files_read` em knowledge/spark/sql-metrics.yaml), atribuido via
+# SparkListenerDriverAccumUpdates. Sem os dois eventos, `extract_sql_metrics`
+# so renderiza o fact `spark.sql.unresolved` de `no_sql_events`, e o teste de
+# schema validaria o ramo errado -- o de ausencia, nao o de `spark.sql.scan`.
+_SQL_METRICS_EVENT_LOG_LINES = "".join(
+    json.dumps(e) + "\n"
+    for e in [
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart",
+            "executionId": 0,
+            "description": "select * from db.clientes",
+            "sparkPlanInfo": {
+                "nodeName": "FileScan parquet",
+                "simpleString": "FileScan parquet db.clientes[id#1]",
+                "children": [],
+                "metadata": {"Format": "parquet"},
+                "metrics": [{"name": "number of files read", "accumulatorId": 1}],
+            },
+        },
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates",
+            "executionId": 0,
+            "accumUpdates": [[1, 3]],
+        },
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
+            "executionId": 0,
+        },
+    ]
+)
+
+# Artefato de metricas do CloudWatch no shape que `sparkforge-aws collect cloudwatch`
+# grava -- ver `_artifact()` de `tests/test_facts_cloudwatch.py`. Com valores nao
+# vazios: uma serie vazia validaria `sparkforge_aws_analyze_cloudwatch` contra o
+# schema pelo motivo errado (`glue.metric.unresolved`, nao `glue.metric`).
+_CLOUDWATCH_ARTIFACT = json.dumps(
+    {
+        "job_name": "etl-job",
+        "job_run_id": "jr_1",
+        "start": "2026-08-26T10:00:00Z",
+        "end": "2026-08-26T10:20:00Z",
+        "period_seconds": 60,
+        "metric_data_results": [
+            {
+                "Id": "m0",
+                "Label": "glue.driver.workerUtilization",
+                "Timestamps": ["t1", "t2", "t3"],
+                "Values": [0.3, 0.9, 0.6],
+            }
+        ],
+    }
+)
+
+# Artefato do FOOTER no shape que `sparkforge-aws collect parquet-footer` grava.
+# DOIS row groups com faixas disjuntas, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico`.
+# Artefato do FOOTER no shape que `sparkforge-aws collect parquet-footer` grava.
+# DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a
+# tool existe para publicar.
+def _pqf_coluna(minimo: int, maximo: int) -> dict:
+    """Um column chunk no shape que o coletor grava."""
+    return {
+        "path": "id",
+        "physical_type": "INT64",
+        "compression": "SNAPPY",
+        "encodings": ["PLAIN", "RLE_DICTIONARY"],
+        "has_dictionary_page": True,
+        "is_stats_set": True,
+        "has_min_max": True,
+        "min": minimo,
+        "max": maximo,
+        "null_count": 0,
+        "num_values": 1000,
+        "total_compressed_size": 4000,
+        "total_uncompressed_size": 12000,
+        "has_column_index": False,
+        "has_offset_index": False,
+        "bloom_filter_offset": None,
+    }
+
+
+# Artefato do FOOTER no shape que `sparkforge-aws collect parquet-footer` grava.
+# DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a tool
+# existe para publicar.
+_PARQUET_FOOTER_ARTIFACT = json.dumps(
+    {
+        "prefix": "s3://lake/curated/pedidos/",
+        "status": "ok",
+        "files_seen": 1,
+        "files_read": 1,
+        "sampling": "first_n_by_name",
+        "max_files": 20,
+        "files": [
+            {
+                "path": "s3://lake/curated/pedidos/part-00000.parquet",
+                "file_bytes": 268435456,
+                "num_rows": 2000,
+                "num_row_groups": 2,
+                "num_columns": 1,
+                "created_by": "parquet-mr version 1.13.1",
+                "format_version": "2.6",
+                "row_groups": [
+                    {
+                        "index": 0,
+                        "num_rows": 1000,
+                        "total_byte_size": 134217728,
+                        "columns": [_pqf_coluna(0, 999)],
+                    },
+                    {
+                        "index": 1,
+                        "num_rows": 1000,
+                        "total_byte_size": 134217728,
+                        "columns": [_pqf_coluna(1000, 1999)],
+                    },
+                ],
+            }
+        ],
+    }
+)
+
+# Artefato do LOG de UM run no shape que `sparkforge-aws collect cloudwatch-logs`
+# grava. A linha carrega a assinatura `ERR-GLUE-001` de proposito: e ela que faz
+# a amostra de `sparkforge_aws_analyze_error_signatures` casar por `log_line`.
+_CLOUDWATCH_LOGS_ARTIFACT = json.dumps(
+    {
+        "job_name": "etl-job",
+        "job_run_id": "jr_1",
+        "log_group": "/aws-glue/jobs/error",
+        "log_stream_prefix": "jr_1",
+        "start": "2026-09-09T10:00:00Z",
+        "end": "2026-09-09T11:00:00Z",
+        "filter_pattern": "?ERROR",
+        "max_events": 500,
+        "status": "ok",
+        "truncated": False,
+        "events_collected": 1,
+        "events": [
+            {
+                "eventId": "e0",
+                "ingestionTime": 1788948000500,
+                "logStreamName": "jr_1",
+                "message": (
+                    "2026-09-09 10:07:42,881 ERROR [Executor task launch worker] "
+                    "executor.Executor: Container killed by YARN for exceeding "
+                    "memory limits. 10.4 GB of 10 GB physical memory used"
+                ),
+                "timestamp": 1788948000000,
+            }
+        ],
+    }
+)
+
+# Artefato de UM run Glue no shape que `sparkforge-aws collect glue-job-runs` grava
+# -- um JSON por run terminal, nomeado `<job>_<run_id>.json`.
+_GLUE_JOB_RUN_ARTIFACT = json.dumps(
+    {
+        "JobName": "etl-job",
+        "Id": "jr_1",
+        "JobRunState": "SUCCEEDED",
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 2,
+        "GlueVersion": "5.0",
+        "ExecutionTime": 120,
+        "StartedOn": "2026-08-26T10:00:00Z",
+        "CompletedOn": "2026-08-26T10:02:00Z",
+    }
+)
+
+_PLAN_TEXT = (
+    "== Physical Plan ==\n"
+    "* Project (2)\n"
+    "+- Scan parquet db.eventos (1)\n"
+    "\n"
+    "\n"
+    "(1) Scan parquet db.eventos\n"
+    "Output [2]: [cliente_id#10, dt#12]\n"
+    "Batched: true\n"
+    "Location: InMemoryFileIndex [s3://lake/eventos]\n"
+    "ReadSchema: struct<cliente_id:bigint>\n"
+    "\n"
+    "(2) Project [codegen id : 1]\n"
+    "Output [1]: [cliente_id#10]\n"
+    "Input [2]: [cliente_id#10, dt#12]\n"
+)
+
+_TERRAFORM_SOURCE = (
+    'resource "aws_glue_job" "etl" {\n'
+    '  glue_version = "5.0"\n'
+    '  worker_type = "G.1X"\n'
+    "  number_of_workers = 10\n"
+    "}\n"
+)
+
+_ICEBERG_DUMP = json.dumps(
+    {
+        "table": "db.tbl",
+        "files": [
+            {"file_path": "s3://b/f1.parquet", "file_size_in_bytes": 1024, "record_count": 10}
+        ],
+    }
+)
+
+_SQL_TEXT = "SELECT a, b FROM db.eventos WHERE dt = '2026-01-01'\n"
+
+_PYSPARK_SQL_SOURCE = 'spark.sql("SELECT a FROM db.eventos")\n'
+
+_ATHENA_WORKGROUP_DUMP = json.dumps(
+    {
+        "workgroups": [
+            {
+                "name": "primary",
+                "engine_version": {
+                    "effective_engine_version": "Athena engine version 2",
+                    "selected_engine_version": "AUTO",
+                },
+                "state": "ENABLED",
+                "bytes_scanned_cutoff": 1099511627776,
+            }
+        ]
+    }
+)
+
+
+def _open_case(repo):
+    call_tool("sparkforge_aws_case_open", {"repo": str(repo), **_CASE_OPEN_ARGS})
+
+
+def _write_job(repo):
+    lib = repo / "lib"
+    lib.mkdir()
+    (lib / "loader.py").write_text(JOB, encoding="utf-8")
+    return lib
+
+
+def _write_facts_file(tmp_path):
+    lib = _write_job(tmp_path)
+    facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+    path = tmp_path / "facts.json"
+    path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def _debate_start_args(tmp_path):
+    """Os insumos do caso da regra 29: a UNIAO de duas fixtures, o unico par do
+    catalogo que `direct_conflicts` produz (`SF-GRAPH-005` x `SF-LF-001`).
+
+    Os findings das duas fixtures vao num arquivo so porque `findings_path` e
+    um caminho -- como o de `arbitrate`; os facts vao como LISTA de caminhos,
+    que e a uniao. O case declara `budget:`: sem ele `start` recusa
+    `budget_undeclared`, que e outro ramo do schema.
+    """
+    from pathlib import Path
+
+    from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
+
+    raiz = Path(__file__).resolve().parents[1]
+    pastas = (
+        raiz / "fixtures" / "graph" / "import_sem_jar_no_iac" / "expected",
+        raiz / "fixtures" / "infra_code" / "fgac_com_jar_extra" / "expected",
+    )
+    repo = tmp_path / "case_debate"
+    repo.mkdir()
+    save_case(
+        {
+            "schema_version": SCHEMA_VERSION,
+            "case_id": "debate-tools",
+            "budget": {"max_debates": 1, "max_rounds": 3},
+        },
+        repo,
+    )
+    findings = []
+    for pasta in pastas:
+        findings += json.loads((pasta / "findings.json").read_text(encoding="utf-8"))
+    findings_path = tmp_path / "debate_findings.json"
+    findings_path.write_text(json.dumps(findings), encoding="utf-8")
+    return {
+        "repo": str(repo),
+        "rules": ["SF-GRAPH-005", "SF-LF-001"],
+        "findings_path": str(findings_path),
+        "facts_path": [str(p / "facts.json") for p in pastas],
+        "glue": "5.0",
+    }
+
+
+def _receipt_args(tmp_path):
+    """Um case com a UNIAO das duas fixtures do debate DENTRO do repo: o recibo
+    recusa artefato fora de `--repo`, porque o verify nao o alcancaria."""
+    from pathlib import Path
+
+    from sparkforge_aws.case.store import SCHEMA_VERSION, save_case
+
+    raiz = Path(__file__).resolve().parents[1]
+    pastas = (
+        raiz / "fixtures" / "graph" / "import_sem_jar_no_iac" / "expected",
+        raiz / "fixtures" / "infra_code" / "fgac_com_jar_extra" / "expected",
+    )
+    repo = tmp_path / "case_recibo"
+    (repo / "facts").mkdir(parents=True)
+    save_case({"schema_version": SCHEMA_VERSION, "case_id": "recibo-tools"}, repo)
+    findings = []
+    facts_path = []
+    for indice, pasta in enumerate(pastas):
+        destino = repo / "facts" / f"f{indice}.json"
+        destino.write_text((pasta / "facts.json").read_text(encoding="utf-8"), encoding="utf-8")
+        facts_path.append(str(destino))
+        findings += json.loads((pasta / "findings.json").read_text(encoding="utf-8"))
+    (repo / "findings.json").write_text(json.dumps(findings), encoding="utf-8")
+    return {
+        "repo": str(repo),
+        "facts_path": facts_path,
+        "findings_path": str(repo / "findings.json"),
+        "now": "2026-09-12T00:00:00Z",
+    }
+
+
+def _write_workload_facts_file(tmp_path):
+    """Um fact `spark.stage.task_duration`, o suficiente para `skew_risk` sair
+    `measured` -- os demais eixos saem `unknown` de proposito, sem `history_path`."""
+    path = tmp_path / "workload_facts.json"
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "a" * 16,
+                    "schema_version": 1,
+                    "kind": "spark.stage.task_duration",
+                    "subject": {"type": "stage", "symbol": "stage-1", "stage_id": 1},
+                    "measures": {"p50_ms": 100, "p95_ms": 1000, "task_count": 20},
+                    "attrs": {},
+                    "provenance": {},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _capacity_fact(kind, subject, measures=None, attrs=None):
+    return {
+        "id": "0" * 16,
+        "schema_version": 1,
+        "kind": kind,
+        "subject": subject,
+        "measures": measures or {},
+        "attrs": attrs or {},
+        "provenance": {},
+    }
+
+
+def _capacity_scan(bytes_read):
+    return _capacity_fact(
+        "spark.sql.scan",
+        {
+            "type": "plan_node",
+            "node_id": 1,
+            "operator": "Scan parquet",
+            "relation": "db.pedidos",
+            "symbol": "0:1",
+            "execution_id": 0,
+        },
+        {"bytes_read": bytes_read},
+        {"format": "parquet", "scan_api": "v1", "node_name": "Scan parquet"},
+    )
+
+
+def _capacity_run(run_id, segundos, workers, dpu):
+    return _capacity_fact(
+        "glue.job_run",
+        {"type": "job_run", "job_name": "etl", "job_run_id": run_id, "symbol": run_id},
+        {"execution_time_s": segundos, "number_of_workers": workers, "dpu_seconds": dpu},
+        {
+            "state": "SUCCEEDED",
+            "worker_type": "G.2X",
+            "glue_version": "5.0",
+            "autoscaling": False,
+            "dpu_source": "derived",
+        },
+    )
+
+
+def _write_capacity_facts_files(tmp_path):
+    """Facts do run corrente (SLA declarado + scan) e um diretorio de historico
+    com runs suficientes para `candidates`/`chosen` sairem preenchidos -- a
+    resolucao de 6 runs comparaveis sustenta o alvo padrao de 0.8."""
+    facts_path = tmp_path / "capacity_facts.json"
+    facts_path.write_text(
+        json.dumps(
+            [
+                _capacity_fact(
+                    "workload.declared",
+                    {"type": "job_run", "symbol": "etl"},
+                    {"sla_minutes": 10, "reliability_target": 0.8},
+                ),
+                _capacity_scan(1000),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    history_dir = tmp_path / "capacity_history"
+    history_dir.mkdir()
+    for i in range(6):
+        (history_dir / f"barato{i}.json").write_text(
+            json.dumps([_capacity_run(f"b{i}", 500, 10, 1000.0), _capacity_scan(1000)]),
+            encoding="utf-8",
+        )
+    return facts_path, history_dir
+
+
+def _write_finops_facts_file(tmp_path):
+    """Seis `glue.job_run` de DUAS capacidades e um `workload.declared`, para
+    `frontier` sair com duas linhas e `per_sla_outcome` render (a resolucao de
+    seis runs comparaveis sustenta o alvo padrao de 0.8, mesma amostra de
+    `_write_capacity_facts_files`)."""
+    facts_path = tmp_path / "finops_facts.json"
+    runs = [_capacity_run(f"b{i}", 500, 10, 1000.0) for i in range(6)]
+    facts_path.write_text(
+        json.dumps(
+            runs
+            + [
+                _capacity_fact(
+                    "workload.declared",
+                    {"type": "job_run", "symbol": "etl"},
+                    {"sla_minutes": 10, "reliability_target": 0.8},
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return facts_path
+
+
+def _write_tune_facts_file(tmp_path):
+    """Shuffle medido mais a versao, que e o par minimo que sustenta derivacao.
+
+    Sem `spark.runtime_version` o relatorio recusa por `runtime_unknown` e
+    `properties` sai vazio -- e lista vazia valida contra qualquer schema de
+    array, que e validar pelo motivo errado.
+    """
+    facts_path = tmp_path / "tune_facts.json"
+    facts_path.write_text(
+        json.dumps(
+            [
+                _capacity_fact(
+                    "spark.stage.shuffle",
+                    {"type": "stage", "symbol": "stage-4", "stage_id": 4},
+                    {"write_bytes": 640 * 1024 * 1024, "read_bytes": 0},
+                ),
+                _capacity_fact(
+                    "spark.runtime_version",
+                    {"type": "job_run", "symbol": "app-1"},
+                    {},
+                    {"component": "spark", "version": "3.5.4"},
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return facts_path
+
+
+_FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
+
+
+def _write_funcval_facts_files(tmp_path):
+    """Os DOIS arquivos que `sparkforge_aws_funcval_plan` une.
+
+    O alvo sai do `pyspark.write` (`analyze pyspark`) e o schema/os agregados
+    saem do `catalog.table_schema` (`analyze catalog-schema`). Nenhum verbo
+    produz os dois no mesmo arquivo -- e e exatamente por isso que
+    `facts_paths` e lista: com um arquivo so, os eixos de schema e de agregado
+    nunca seriam derivaveis.
+    """
+    lib = tmp_path / "job"
+    lib.mkdir()
+    (lib / "carga.py").write_text(_FUNCVAL_JOB, encoding="utf-8")
+    catalog_dir = tmp_path / "catalog_dump"
+    catalog_dir.mkdir()
+    (catalog_dir / "dump.json").write_text(CATALOG_DUMP, encoding="utf-8")
+
+    produced = (
+        ("pyspark", call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})),
+        (
+            "catalog",
+            call_tool("sparkforge_aws_analyze_catalog_schema", {"path": str(catalog_dir)}),
+        ),
+    )
+    paths = []
+    for name, payload in produced:
+        path = tmp_path / f"{name}_facts.json"
+        path.write_text(json.dumps(payload["items"], ensure_ascii=False), encoding="utf-8")
+        paths.append(str(path))
+    return paths
+
+
+def _write_funcval_plan_file(tmp_path):
+    """O artefato que `sparkforge_aws_funcval_compare` rele. `db.eventos` casa com
+    o dump, entao o plano sai com os quatro eixos: `count` e `schema` derivados,
+    `agg:sum:cliente_id` derivado do tipo declarado, e `key:cliente_id`
+    DECLARADO -- que e o unico jeito de o eixo de chaves existir."""
+    plan_path = tmp_path / "plano.json"
+    call_tool(
+        "sparkforge_aws_funcval_plan",
+        {
+            "facts_paths": _write_funcval_facts_files(tmp_path),
+            "out_path": str(plan_path),
+            "keys": ["cliente_id"],
+        },
+    )
+    return plan_path
+
+
+def _write_funcval_result_files(tmp_path):
+    """Os dois resultados que o OPERADOR mediu -- o motor nunca os produz."""
+    paths = []
+    for name, count in (("antes", 1000), ("depois", 998)):
+        path = tmp_path / f"{name}.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "target": "db.eventos",
+                    "checks": {
+                        "count": {"value": count},
+                        "key:cliente_id": {"value": 0},
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        paths.append(path)
+    return paths[0], paths[1]
+
+
+def _event_log_lines(run_ms):
+    """Event log minimo com UM stage nomeado `scan` e duas tasks.
+
+    `run_ms` e o unico eixo que os dois lados do benchmark precisam variar:
+    `total_task_ms` sai de `mean_ms * task_count` sobre `spark.stage.task_duration`.
+    `_EVENT_LOG_LINE` nao serve aqui -- ele so tem `ApplicationStart`, entao nao
+    produz stage nenhum e o comparador nao teria o que comparar.
+    """
+    def task(task_id):
+        return {
+            "Event": "SparkListenerTaskEnd",
+            "Stage ID": 0,
+            "Stage Attempt ID": 0,
+            "Task Type": "ResultTask",
+            "Task End Reason": {"Reason": "Success"},
+            "Task Info": {
+                "Task ID": task_id,
+                "Index": task_id,
+                "Attempt": 0,
+                "Launch Time": 1000,
+                "Finish Time": 1000 + run_ms,
+                "Executor ID": "1",
+                "Host": "10.0.0.11",
+                "Failed": False,
+                "Killed": False,
+            },
+            "Task Metrics": {
+                "Executor Run Time": run_ms,
+                "JVM GC Time": 10,
+                "Memory Bytes Spilled": 0,
+                "Disk Bytes Spilled": 0,
+                "Input Metrics": {"Bytes Read": 1000, "Records Read": 10},
+            },
+        }
+
+    stage_info = {
+        "Stage ID": 0,
+        "Stage Attempt ID": 0,
+        "Stage Name": "scan",
+        "Number of Tasks": 2,
+        "Parent IDs": [],
+        "Details": "",
+    }
+    events = [
+        {"Event": "SparkListenerApplicationStart", "App Name": "j", "App ID": "a", "Timestamp": 1},
+        {
+            "Event": "SparkListenerStageSubmitted",
+            "Stage Info": {**stage_info, "Submission Time": 100},
+        },
+        task(0),
+        task(1),
+        {"Event": "SparkListenerStageCompleted", "Stage Info": stage_info},
+    ]
+    return "".join(json.dumps(e) + "\n" for e in events)
+
+
+def _write_event_log_facts_files(tmp_path):
+    """Os DOIS arquivos de facts que `sparkforge_aws_benchmark` compara, cada um
+    produzido pelo caminho real (`sparkforge_aws_analyze_event_log`)."""
+    paths = []
+    for name, run_ms in (("before", 200), ("after", 100)):
+        log = tmp_path / f"{name}.jsonl"
+        log.write_text(_event_log_lines(run_ms), encoding="utf-8")
+        facts = call_tool("sparkforge_aws_analyze_event_log", {"path": str(log)})
+        path = tmp_path / f"{name}_facts.json"
+        path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
+        paths.append(path)
+    return paths[0], paths[1]
+
+
+class _FakeS3Client:
+    def list_objects_v2(self, **kwargs):
+        return {"Contents": [{"Key": f"{kwargs['Prefix']}part-00000"}]}
+
+    def get_object(self, **kwargs):
+        import io
+
+        return {"Body": io.BytesIO(b'{"Event":"SparkListenerJobStart"}\n')}
+
+
+class _FakeGlueClient:
+    def get_job(self, **kwargs):
+        return {"Job": {"Name": kwargs.get("JobName", "job"), "GlueVersion": "5.0"}}
+
+    def get_job_runs(self, **kwargs):
+        job_name = kwargs.get("JobName", "job")
+        return {
+            "JobRuns": [
+                {
+                    "Id": "jr_1",
+                    "JobName": job_name,
+                    "JobRunState": "SUCCEEDED",
+                    "WorkerType": "G.1X",
+                    "NumberOfWorkers": 2,
+                    "GlueVersion": "5.0",
+                    "ExecutionTime": 120,
+                    "StartedOn": "2026-08-26T10:00:00Z",
+                    "CompletedOn": "2026-08-26T10:02:00Z",
+                }
+            ]
+        }
+
+    # `collect_glue_resource_link` le o link na conta consumidora e depois o
+    # recurso de origem. No catalogo `111111111111` o objeto E um link; em
+    # qualquer outro e a tabela/banco de origem, sem `Target*`.
+    def get_table(self, **kwargs):
+        tabela = {"Name": kwargs["Name"], "DatabaseName": kwargs["DatabaseName"]}
+        if kwargs.get("CatalogId") == "111111111111":
+            tabela["TargetTable"] = {
+                "CatalogId": "222222222222",
+                "DatabaseName": "curated",
+                "Name": kwargs["Name"],
+            }
+        return {"Table": tabela}
+
+    def get_database(self, **kwargs):
+        banco = {"Name": kwargs["Name"]}
+        if kwargs.get("CatalogId") == "111111111111":
+            banco["TargetDatabase"] = {"CatalogId": "222222222222", "DatabaseName": "curated"}
+        return {"Database": banco}
+
+
+class _FakeCloudWatchClient:
+    def get_metric_data(self, **kwargs):
+        return {"MetricDataResults": []}
+
+
+class _FakeAthenaClient:
+    def __init__(self):
+        self._exec_id = 0
+
+    def start_query_execution(self, **kwargs):
+        self._exec_id += 1
+        return {"QueryExecutionId": f"q{self._exec_id}"}
+
+    def get_query_execution(self, **kwargs):
+        return {"QueryExecution": {"Status": {"State": "SUCCEEDED"}}}
+
+    def get_query_results(self, **kwargs):
+        return {"ResultSet": {"Rows": []}}
+
+    def get_work_group(self, **kwargs):
+        return {
+            "WorkGroup": {
+                "Name": kwargs.get("WorkGroup", "primary"),
+                "State": "ENABLED",
+                "Configuration": {
+                    "EngineVersion": {
+                        "EffectiveEngineVersion": "Athena engine version 3",
+                        "SelectedEngineVersion": "AUTO",
+                    },
+                    "BytesScannedCutoffPerQuery": 100,
+                    "ResultConfiguration": {"OutputLocation": "s3://bucket/results/"},
+                },
+            }
+        }
+
+
+class _FakeEmrClient:
+    """Cluster de instance GROUPS: `list_instance_fleets` levanta, como a API
+    real faz quando o modelo nao se aplica -- e o caminho que prova que o
+    coletor omite a secao em vez de gravar lista vazia."""
+
+    def describe_cluster(self, **kwargs):
+        return {
+            "Cluster": {
+                "Id": kwargs.get("ClusterId", "j-1EXAMPLE"),
+                "Name": "etl",
+                "ReleaseLabel": "emr-7.5.0",
+                "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+                "InstanceCollectionType": "INSTANCE_GROUP",
+                "LogUri": "s3://bucket/elasticmapreduce/",
+                "AutoTerminate": False,
+                "Status": {"State": "RUNNING"},
+            }
+        }
+
+    def list_instance_groups(self, **kwargs):
+        return {
+            "InstanceGroups": [
+                {
+                    "Id": "ig-1",
+                    "InstanceGroupType": "MASTER",
+                    "Market": "ON_DEMAND",
+                    "InstanceType": "m5.xlarge",
+                    "RequestedInstanceCount": 1,
+                }
+            ]
+        }
+
+    def list_instance_fleets(self, **kwargs):
+        raise RuntimeError("InvalidRequestException: cluster nao usa instance fleets")
+
+    def list_bootstrap_actions(self, **kwargs):
+        return {"BootstrapActions": []}
+
+    def get_managed_scaling_policy(self, **kwargs):
+        return {}
+
+    def get_auto_termination_policy(self, **kwargs):
+        return {"AutoTerminationPolicy": {"IdleTimeout": 3600}}
+
+
+class _FakeEmrServerlessClient:
+    """Uma chamada so: `GetApplication` ja devolve capacidade, auto-stop,
+    `runtimeConfiguration` e monitoramento no mesmo objeto -- nao ha o par de
+    secoes opcionais que o cluster on EC2 tem."""
+
+    def get_application(self, **kwargs):
+        return {
+            "application": {
+                "applicationId": kwargs.get("applicationId", "00fEXAMPLE"),
+                "arn": "arn:aws:emr-serverless:us-east-1:123456789012:/applications/00fEXAMPLE",
+                "name": "etl",
+                "releaseLabel": "emr-7.5.0",
+                "type": "Spark",
+                "state": "STARTED",
+                "architecture": "X86_64",
+                "autoStopConfiguration": {"enabled": True, "idleTimeoutMinutes": 15},
+                "initialCapacity": {
+                    "DRIVER": {
+                        "workerCount": 1,
+                        "workerConfiguration": {"cpu": "4vCPU", "memory": "16GB"},
+                    }
+                },
+                "runtimeConfiguration": [
+                    {
+                        "classification": "spark-defaults",
+                        "properties": {"spark.executor.cores": "4"},
+                    }
+                ],
+                "monitoringConfiguration": {
+                    "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
+                },
+            }
+        }
+
+
+class _FakeEmrContainersClient:
+    """DUAS chamadas, em contraste com `_FakeEmrServerlessClient` (uma):
+    `DescribeVirtualCluster` e `DescribeJobRun` sao APIs separadas do
+    `emr-containers`, e o coletor precisa das duas para montar o arquivo
+    autocontido."""
+
+    def describe_virtual_cluster(self, **kwargs):
+        return {
+            "virtualCluster": {
+                "id": kwargs["id"],
+                "name": "meu-cluster",
+                "state": "RUNNING",
+                "containerProvider": {
+                    "type": "EKS",
+                    "id": "meu-cluster-eks",
+                    "info": {"eksInfo": {"namespace": "spark-jobs"}},
+                },
+            }
+        }
+
+    def describe_job_run(self, **kwargs):
+        return {
+            "jobRun": {
+                "id": kwargs["id"],
+                "name": "etl-diario",
+                "virtualClusterId": kwargs["virtualClusterId"],
+                "state": "COMPLETED",
+                "releaseLabel": "emr-7.5.0-latest",
+            }
+        }
+
+
+class _FakeLogsClient:
+    """`filter_log_events` de uma pagina so -- e AQUI o suficiente, e o motivo
+    esta escrito para nao ser confundido com o defeito que a auditoria de fakes
+    de 2026-09-03 achou: este arquivo mede SCHEMA DE SAIDA da tool, nao o laco
+    de paginacao do coletor. Quem prova a paginacao com paginas distintas e
+    `tests/test_collect_cloudwatch_logs.py`, e e la que um fake de pagina unica
+    seria o fake errado."""
+
+    def filter_log_events(self, **kwargs):
+        return {
+            "events": [
+                {
+                    "logStreamName": kwargs.get("logStreamNamePrefix", "jr_1"),
+                    "timestamp": 1_788_948_000_000,
+                    "message": (
+                        "ERROR Container killed by YARN for exceeding memory limits."
+                    ),
+                }
+            ]
+        }
+
+
+class _FakeLakeFormationClient:
+    """As TRES chamadas do coletor, cada uma respondendo o seu bloco.
+
+    A tabela tem UM grant de `SELECT`+`DESCRIBE` e a localizacao esta
+    registrada -- o par que interessa a esta area: grant de leitura sobre
+    localizacao registrada nao autoriza escrita sob Full Table Access, que
+    exige `ALL`.
+    """
+
+    def list_permissions(self, **kwargs):
+        return {
+            "PrincipalResourcePermissions": [
+                {
+                    "Principal": {
+                        "DataLakePrincipalIdentifier": "arn:aws:iam::111111111111:role/glue"
+                    },
+                    "Permissions": ["SELECT", "DESCRIBE"],
+                    "PermissionsWithGrantOption": [],
+                    "Resource": {
+                        "Table": {"DatabaseName": "curated", "Name": "fato_venda"}
+                    },
+                }
+            ]
+        }
+
+    def describe_resource(self, **kwargs):
+        return {
+            "ResourceInfo": {
+                "ResourceArn": kwargs.get("ResourceArn", ""),
+                "RoleArn": "arn:aws:iam::111111111111:role/lf-registration",
+                "HybridAccessEnabled": False,
+                "WithFederation": False,
+            }
+        }
+
+    def get_data_lake_settings(self, **kwargs):
+        return {
+            "DataLakeSettings": {
+                "AllowFullTableExternalDataAccess": True,
+                "AllowExternalDataFiltering": True,
+                "ExternalDataFilteringAllowList": [
+                    {"DataLakePrincipalIdentifier": "111111111111"}
+                ],
+            }
+        }
+
+
+class _FakeIamClient:
+    """`simulate_principal_policy` com as respostas que dao sentido ao verbo.
+
+    `allowed` e `implicitDeny`, e a segunda com
+    `AllowedByPermissionsBoundary: False` -- a camada que decide e o boundary, e
+    nao a policy do role. Uma amostra so de `allowed` passaria no schema sem
+    exercitar o campo que separa tres consertos diferentes.
+    """
+
+    def simulate_principal_policy(self, **kwargs):
+        return {
+            "EvaluationResults": [
+                {
+                    "EvalActionName": "s3:PutObject",
+                    "EvalResourceName": "arn:aws:s3:::lake/curated/*",
+                    "EvalDecision": "allowed",
+                    "MatchedStatements": [{"SourcePolicyId": "inline"}],
+                    "MissingContextValues": [],
+                },
+                {
+                    "EvalActionName": "kms:GenerateDataKey",
+                    "EvalResourceName": "arn:aws:kms:us-east-1:111111111111:key/abc",
+                    "EvalDecision": "implicitDeny",
+                    "MatchedStatements": [],
+                    "MissingContextValues": [],
+                    "PermissionsBoundaryDecisionDetail": {
+                        "AllowedByPermissionsBoundary": False
+                    },
+                },
+            ],
+            "IsTruncated": False,
+        }
+
+
+class _FakeBoto3ForCollect:
+    def __init__(self):
+        self._clients = {
+            "s3": _FakeS3Client(),
+            "glue": _FakeGlueClient(),
+            "cloudwatch": _FakeCloudWatchClient(),
+            "athena": _FakeAthenaClient(),
+            "emr": _FakeEmrClient(),
+            "emr-serverless": _FakeEmrServerlessClient(),
+            "emr-containers": _FakeEmrContainersClient(),
+            "logs": _FakeLogsClient(),
+            "lakeformation": _FakeLakeFormationClient(),
+            "iam": _FakeIamClient(),
+        }
+
+    def client(self, name, **kwargs):
+        return self._clients[name]
+
+
+# Amostra igual a `fixtures/resource_link/link_de_tabela_com_nome_divergente/`:
+# link que aponta para o lugar certo com NOME PROPRIO.
+_RESOURCE_LINK_ARTIFACT = """
+{
+        "catalog_id": "111111111111",
+        "database": "analytics",
+        "link": {
+            "aws_error_code": "",
+            "is_resource_link": true,
+            "link_catalog_id": "111111111111",
+            "link_database": "analytics",
+            "link_name": "dim_cliente_prod",
+            "requested_catalog_id": "111111111111",
+            "requested_database": "analytics",
+            "requested_table": "dim_cliente_prod",
+            "status": "ok",
+            "target_catalog_id": "999999999999",
+            "target_database": "curated",
+            "target_name": "dim_cliente",
+            "target_region": "us-east-1",
+            "target_type": "table"
+        },
+        "status": "ok",
+        "table": "dim_cliente_prod",
+        "target": {
+            "aws_error_code": "",
+            "catalog_id": "999999999999",
+            "database": "curated",
+            "name": "dim_cliente",
+            "resolved_name": "dim_cliente",
+            "status": "ok"
+        },
+        "target_type": "table"
+    }
+"""
+
+_IAM_ACCESS_ARTIFACT = json.dumps(
+    {
+        "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+        "status": "ok",
+        "actions_requested": ["s3:PutObject", "kms:GenerateDataKey"],
+        "resource_arns": ["arn:aws:s3:::lake/curated/*"],
+        "scoped_to_resource": True,
+        "results": [
+            {
+                "action": "s3:PutObject",
+                "resource": "arn:aws:s3:::lake/curated/*",
+                "decision": "allowed",
+                "matched_statements": 1,
+                "missing_context_values": [],
+                "allowed_by_organizations": None,
+                "allowed_by_permissions_boundary": None,
+            },
+            {
+                "action": "kms:GenerateDataKey",
+                "resource": "arn:aws:kms:us-east-1:111111111111:key/abc",
+                "decision": "implicitDeny",
+                "matched_statements": 0,
+                "missing_context_values": [],
+                "allowed_by_organizations": None,
+                "allowed_by_permissions_boundary": False,
+            },
+        ],
+        "results_collected": 2,
+        "truncated": False,
+    }
+)
+
+_LAKEFORMATION_ARTIFACT = json.dumps(
+    {
+        "catalog_id": "111111111111",
+        "database": "curated",
+        "table": "fato_venda",
+        "status": "ok",
+        "permissions": {
+            "status": "ok",
+            "principals": [
+                {
+                    "Principal": {
+                        "DataLakePrincipalIdentifier": "arn:aws:iam::111111111111:role/glue"
+                    },
+                    "Permissions": ["SELECT", "DESCRIBE"],
+                    "PermissionsWithGrantOption": [],
+                    "Resource": {"Table": {"DatabaseName": "curated", "Name": "fato_venda"}},
+                }
+            ],
+            "grants_collected": 1,
+            "truncated": False,
+        },
+        "registered_location": {
+            "status": "ok",
+            "resource_arn": "arn:aws:s3:::lake/curated/fato_venda",
+            "registered": True,
+            "role_arn": "arn:aws:iam::111111111111:role/lf-registration",
+            "hybrid_access_enabled": False,
+            "with_federation": False,
+        },
+        "data_lake_settings": {
+            "status": "ok",
+            "allow_full_table_external_data_access": True,
+            "allow_external_data_filtering": True,
+            "external_data_filtering_allow_list": ["111111111111"],
+        },
+    }
+)
+
+_S3_LISTING = json.dumps(
+    {
+        "Name": "lake",
+        "Prefix": "analytics/pedidos/",
+        "IsTruncated": False,
+        "Contents": [
+            {"Key": "analytics/pedidos/dt=2026-07-30/part-0.snappy.parquet", "Size": 4194304}
+        ],
+    }
+)
+
+_EMR_CLUSTER_DUMP = json.dumps(
+    {
+        "Cluster": {
+            "Id": "j-1EXAMPLE",
+            "ReleaseLabel": "emr-7.5.0",
+            "InstanceCollectionType": "INSTANCE_GROUP",
+            "LogUri": "s3://bucket/elasticmapreduce/",
+            "AutoTerminate": False,
+            "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+            "Configurations": [
+                {
+                    "Classification": "spark-defaults",
+                    "Properties": {"spark.dynamicAllocation.enabled": "true"},
+                }
+            ],
+        },
+        "InstanceGroups": [
+            {
+                "Id": "ig-1",
+                "InstanceGroupType": "MASTER",
+                "Market": "ON_DEMAND",
+                "InstanceType": "m5.xlarge",
+                "RequestedInstanceCount": 1,
+            }
+        ],
+    }
+)
+
+_EMR_SERVERLESS_DUMP = json.dumps(
+    {
+        "application": {
+            "applicationId": "00fEXAMPLE",
+            "name": "etl",
+            "releaseLabel": "emr-7.5.0",
+            "type": "Spark",
+            "state": "STARTED",
+            "architecture": "X86_64",
+            "autoStopConfiguration": {"enabled": False},
+            "initialCapacity": {
+                "DRIVER": {
+                    "workerCount": 1,
+                    "workerConfiguration": {"cpu": "4vCPU", "memory": "16GB"},
+                },
+                "EXECUTOR": {
+                    "workerCount": 10,
+                    "workerConfiguration": {"cpu": "4vCPU", "memory": "16GB"},
+                },
+            },
+            "maximumCapacity": {"cpu": "400vCPU", "memory": "3000GB", "disk": "20000GB"},
+            "runtimeConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {"spark.dynamicAllocation.enabled": "true"},
+                }
+            ],
+            "monitoringConfiguration": {
+                "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
+            },
+        }
+    }
+)
+
+_EMR_EKS_DUMP = json.dumps(
+    {
+        "virtualCluster": {
+            "id": "0abcEXAMPLE",
+            "name": "analytics",
+            "state": "RUNNING",
+            "containerProvider": {
+                "type": "EKS",
+                "id": "analytics-eks",
+                "info": {"eksInfo": {"namespace": "spark-jobs"}},
+            },
+        },
+        "jobRun": {
+            "id": "0runEXAMPLE",
+            "name": "etl-diario",
+            "virtualClusterId": "0abcEXAMPLE",
+            "state": "COMPLETED",
+            "releaseLabel": "emr-7.5.0-latest",
+            "executionRoleArn": "arn:aws:iam::123456789012:role/emr-eks",
+            "jobDriver": {
+                "sparkSubmitJobDriver": {
+                    "entryPoint": "s3://bucket/job.py",
+                    "sparkSubmitParameters": "--conf spark.executor.cores=4",
+                }
+            },
+            "configurationOverrides": {
+                "applicationConfiguration": [
+                    {
+                        "classification": "spark-defaults",
+                        "properties": {"spark.dynamicAllocation.enabled": "true"},
+                    }
+                ],
+                "monitoringConfiguration": {
+                    "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrc-logs/"}
+                },
+            },
+        },
+    }
+)
+
+# Definicao `Jobs-as-Code` com o UNICO job type que a matriz do Automation API
+# data dentro da faixa. E de proposito: um payload com `Job:Command` validaria
+# contra o schema pelo motivo errado -- nenhum fact de capacidade sairia, e o
+# bloco derivado que esta tool existe para produzir ficaria vazio. Objeto vazio
+# passa em qualquer schema de objeto.
+_CONTROLM_JOBS = json.dumps(
+    {
+        "PagamentosDiarios": {
+            "Type": "Folder",
+            "Application": "Financeiro",
+            "ExtraiExtrato": {
+                "Type": "Job:DetachedEmbeddedScript",
+                "RunAs": "ctmagent",
+                "Script": "extrai.sh",
+            },
+        }
+    }
+)
+
+# Definicao ASL com um Glue `.sync` e retry implicito: rende `sfn.task` com os campos
+# que as regras SF-SFN leem, e nao so a sentinela que sai de qualquer `.json`.
+_STEP_FUNCTIONS_ASL = json.dumps(
+    {
+        "StartAt": "RodarCarga",
+        "States": {
+            "RodarCarga": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {"JobName": "carga-diaria"},
+                "Retry": [{"ErrorEquals": ["States.ALL"]}],
+                "End": True,
+            }
+        },
+    }
+)
+
+# DAG com um GlueJobOperator: rende `af.task` com os campos que as regras SF-AIRFLOW
+# leem, e nao so a sentinela que sai de qualquer `.py`.
+_AIRFLOW_DAG_SOURCE = '''from datetime import datetime
+
+from airflow import DAG
+from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+
+with DAG(dag_id="carga", schedule="@daily", start_date=datetime(2026, 1, 1)) as dag:
+    carga = GlueJobOperator(task_id="carga", job_name="carga-diaria")
+'''
+
+# Historico com UMA tentativa de Glue `.sync` que falhou, com o JobRunId no output do
+# TaskSubmitted: rende `sfn.attempt` e `sfn.job_run` com os campos que as regras
+# SF-SFNX leem, e nao so a sentinela que sai de qualquer `.json`.
+_SFN_HISTORY_EVENTS = [
+    {
+        "id": 1,
+        "previousEventId": 0,
+        "timestamp": "2026-09-18T03:00:00+00:00",
+        "type": "ExecutionStarted",
+    },
+    {
+        "id": 2,
+        "previousEventId": 1,
+        "timestamp": "2026-09-18T03:00:01+00:00",
+        "type": "TaskStateEntered",
+        "stateEnteredEventDetails": {"name": "CargaDiaria"},
+    },
+    {
+        "id": 3,
+        "previousEventId": 2,
+        "timestamp": "2026-09-18T03:00:02+00:00",
+        "type": "TaskScheduled",
+        "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"},
+    },
+    {
+        "id": 4,
+        "previousEventId": 3,
+        "timestamp": "2026-09-18T03:00:03+00:00",
+        "type": "TaskSubmitted",
+        "taskSubmittedEventDetails": {
+            "resource": "startJobRun.sync",
+            "resourceType": "glue",
+            "output": json.dumps({"JobRunId": "jr_amostra"}),
+        },
+    },
+    {
+        "id": 5,
+        "previousEventId": 4,
+        "timestamp": "2026-09-18T03:00:30+00:00",
+        "type": "TaskFailed",
+        "taskFailedEventDetails": {"error": "Glue.AWSGlueException", "cause": "FAILED"},
+    },
+    {
+        "id": 6,
+        "previousEventId": 5,
+        "timestamp": "2026-09-18T03:00:31+00:00",
+        "type": "ExecutionFailed",
+        "executionFailedEventDetails": {"error": "Glue.AWSGlueException"},
+    },
+]
+_SFN_EXECUTION_HISTORY = json.dumps({"events": _SFN_HISTORY_EVENTS})
+
+_CONSUMER_INVENTORY = """consumers:
+  - table: glue_catalog.curated.pedidos
+    service: athena
+"""
+
+# Validacao artesanal COM consequencia: rende `dq.check`, `dq.enforcement` e
+# `dq.module_analyzed` no mesmo arquivo, entao o branch exercita o extrator de
+# verdade e nao so o fact sentinela que sai de qualquer `.py`.
+_DQ_SOURCE = """def validar(vendas):
+    ruins = vendas.filter(vendas.valor < 0).count()
+    if ruins > 0:
+        raise ValueError("valor negativo")
+"""
+
+# Mesma exigencia para `analyze graph`: o fonte precisa produzir `graph.import`,
+# `graph.construction` e `graph.algorithm` -- nao so o `graph.module_analyzed`
+# que sai de qualquer `.py` -- para que o schema declarado seja validado contra
+# a saida cheia do extrator, e nao contra a de um arquivo sem grafo nenhum.
+_GRAPH_SOURCE = """from graphframes import GraphFrame
+
+def rodar(spark, vertices, arestas):
+    v = vertices.cache()
+    g = GraphFrame(v, arestas.cache())
+    return g.connectedComponents()
+"""
+
+
+def _fake_collect_boto3(monkeypatch):
+    """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
+    rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
+    from sparkforge_aws.collect import aws as collect_aws
+    from sparkforge_aws.collect import cloudwatch_logs as collect_cw_logs
+    from sparkforge_aws.collect import glue_resource_link as collect_rlink
+    from sparkforge_aws.collect import iam_access as collect_iam
+    from sparkforge_aws.collect import lakeformation as collect_lf
+
+    # Um patch POR MODULO que importa `require_boto3` para o proprio namespace:
+    # patchar so `aws` deixaria os outros escaparem para a rede. Foi o que
+    # aconteceu com `glue_resource_link` (#47): o CI, sem regiao, falhava com
+    # `NoRegionError`, e numa maquina com credencial o teste chamava a AWS.
+    monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_lf, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_iam, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_rlink, "require_boto3", lambda: _FakeBoto3ForCollect())
+
+
+_CODE_JOB = (
+    "def carregar_particao(df):\n"
+    '    """Repartition explicito para o teste ter o que ranquear."""\n'
+    "    return df.repartition(200)\n"
+    "\n"
+    "\n"
+    "def principal():\n"
+    "    return carregar_particao(None)\n"
+)
+
+
+def _code_tree(tmp_path):
+    """Arvore minima COM aresta e COM termo de dominio.
+
+    As duas propriedades sao exigidas e nao decorativas: sem `principal`
+    chamando `carregar_particao` nao ha aresta, e `callers`/`impact` sairiam
+    vazios -- lista vazia valida contra qualquer schema de array, e o teste
+    passaria pelo motivo errado. Sem `repartition` no nome e no corpo, a
+    expansao de `code_context` nao casaria nenhum cluster de dominio e a secao
+    `rules` da SPEC 77 sairia vazia pela mesma razao.
+    """
+    raiz = tmp_path / "arvore"
+    (raiz / "jobs").mkdir(parents=True)
+    (raiz / "jobs" / "etl.py").write_text(_CODE_JOB, encoding="utf-8")
+    (raiz / ".gitignore").write_text(".sparkforge_aws/local\n", encoding="utf-8")
+    call_tool("sparkforge_aws_code_sync", {"repo": str(raiz)})
+    return raiz
+
+
+def _real_code_output_for(name, tmp_path):
+    """Saida REAL das nove tools de Code Intelligence, sobre uma arvore de verdade.
+
+    Cada uma passa pela porta de frescor da SPEC 43 antes de responder, entao
+    construir o indice com `sparkforge_aws_code_sync` aqui nao e conveniencia: e o
+    unico caminho que existe. Uma chamada sem indice devolveria o ramo de ERRO
+    do `oneOf`, e o teste validaria o schema pelo motivo errado -- por isso as
+    asercoes abaixo travam o ramo de sucesso.
+    """
+    if name == "sparkforge_aws_code_sync":
+        raiz = tmp_path / "arvore"
+        (raiz / "jobs").mkdir(parents=True)
+        (raiz / "jobs" / "etl.py").write_text(_CODE_JOB, encoding="utf-8")
+        resultado = call_tool("sparkforge_aws_code_sync", {"repo": str(raiz)})
+        assert resultado["nodes"] == 2, "a amostra precisa render dois simbolos"
+        return resultado
+
+    raiz = _code_tree(tmp_path)
+
+    if name == "sparkforge_aws_code_status":
+        resultado = call_tool("sparkforge_aws_code_status", {"repo": str(raiz)})
+        assert resultado["initialized"] is True
+        assert resultado["security"]["not_measured"], (
+            "o bloco de seguranca precisa declarar o que NAO foi medido"
+        )
+        return resultado
+
+    if name == "sparkforge_aws_code_context":
+        resultado = call_tool(
+            "sparkforge_aws_code_context",
+            {"repo": str(raiz), "task": "otimizar o repartition da carga por particao"},
+        )
+        assert resultado["entry_points"], "a amostra precisa render pelo menos um ponto de entrada"
+        assert resultado["rules"], (
+            "a SPEC 77 so esta exercida se a consulta casar cluster de dominio"
+        )
+        return resultado
+
+    achados = call_tool(
+        "sparkforge_aws_code_search", {"repo": str(raiz), "query": "carregar_particao"}
+    )
+    assert achados["results"], "a busca precisa achar o simbolo da amostra"
+    if name == "sparkforge_aws_code_search":
+        return achados
+
+    if name == "sparkforge_aws_code_export":
+        resultado = call_tool("sparkforge_aws_code_export", {"repo": str(raiz)})
+        # As DUAS metades da compatibilidade sao o que este teste prende: um
+        # artefato que so declarasse a primeira convidaria a assumir a segunda.
+        assert resultado["sparkforge-aws"]["compatible_fields"]
+        assert resultado["sparkforge-aws"]["not_implemented"]
+        assert resultado["node_count"] >= 1
+        return resultado
+
+    if name == "sparkforge_aws_code_shape":
+        resultado = call_tool("sparkforge_aws_code_shape", {"repo": str(raiz)})
+        # O ALGORITMO e o que este teste prende: sem ele no corpo, a particao
+        # sairia com cara de canonica, e ela nao e.
+        assert resultado["communities"]["algorithm"]
+        assert resultado["communities"]["total"] >= 1
+        return resultado
+
+    node_id = achados["results"][0]["node_id"]
+    if name == "sparkforge_aws_code_path":
+        # Origem e destino SAO o mesmo no, e de proposito: a amostra tem um
+        # chamador resolvido mas nao garante um par a distancia conhecida, e um
+        # caminho de zero saltos exercita o schema inteiro -- `found`, `reason`
+        # nulo, `path` de um item e as cinco contagens de `graph`. O que este
+        # teste prende e a FORMA da resposta; a topologia esta em
+        # `tests/test_codeintel_graph_caminho.py`, sobre corpus sintetico.
+        resultado = call_tool(
+            "sparkforge_aws_code_path",
+            {"repo": str(raiz), "origem": node_id, "destino": node_id},
+        )
+        assert resultado["found"] is True
+        assert resultado["reason"] is None
+        return resultado
+
+    if name == "sparkforge_aws_code_symbol":
+        resultado = call_tool(
+            "sparkforge_aws_code_symbol", {"repo": str(raiz), "node_id": node_id}
+        )
+        assert resultado["callers"], "a amostra precisa ter um chamador resolvido"
+        return resultado
+
+    resultado = call_tool("sparkforge_aws_code_read", {"repo": str(raiz), "node_id": node_id})
+    assert resultado["snippet"]["code"], "o trecho nao pode sair vazio"
+    return resultado
+
+
+def _real_output_for(name, tmp_path, monkeypatch=None):
+    """Chama `name` com argumentos realistas, criando qualquer estado
+    (case, facts) de que a ferramenta dependa, e devolve o dict cru que um
+    cliente MCP receberia como `structuredContent`."""
+    if name == "sparkforge_aws_case_open":
+        return call_tool("sparkforge_aws_case_open", {"repo": str(tmp_path), **_CASE_OPEN_ARGS})
+
+    if name == "sparkforge_aws_context_start":
+        return call_tool(
+            "sparkforge_aws_context_start",
+            {
+                "intent": "Glue 5.1 FGAC Iceberg",
+                "profile": "economy",
+                "max_bytes": 5000,
+                "repo": str(tmp_path),
+                "items": [
+                    {"fact_id": "f_gateway", "kind": "fact", "critical": True, "value": "observed"}
+                ],
+            },
+        )
+
+    if name == "sparkforge_aws_context_expand":
+        started = call_tool(
+            "sparkforge_aws_context_start",
+            {
+                "intent": "Iceberg knowledge",
+                "profile": "economy",
+                "max_bytes": 5000,
+                "repo": str(tmp_path),
+                "items": [{"kind": "knowledge", "content": "knowledge " * 200}],
+            },
+        )
+        assert started["refs"], "a amostra precisa render uma ref expansivel"
+        return call_tool(
+            "sparkforge_aws_context_expand",
+            {"ref": started["refs"][0]["uri"], "max_bytes": 5000, "repo": str(tmp_path)},
+        )
+
+    if name == "sparkforge_aws_context_inspect":
+        return call_tool(
+            name,
+            {
+                "payload": {
+                    "items": [
+                        {"item_id": "f1", "kind": "fact", "critical": True, "evidence_refs": ["f1"]}
+                    ],
+                    "required_evidence_refs": ["f1"],
+                },
+                "observed_provider_tokens": 1,
+            },
+        )
+
+    if name == "sparkforge_aws_agentops_inspect":
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
+
+    if name == "sparkforge_aws_agentops_compare":
+        return call_tool(
+            name,
+            {"repo": str(tmp_path), "run_a": "missing-a", "run_b": "missing-b"},
+        )
+
+    if name == "sparkforge_aws_agentops_baseline":
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "action": "save",
+                "run_id": "missing-run",
+                "baseline_path": str(tmp_path / "baseline.json"),
+            },
+        )
+
+    if name in {"sparkforge_aws_agentops_timeline", "sparkforge_aws_agentops_critical_path"}:
+        return call_tool(name, {"repo": str(tmp_path), "run_id": "missing-run"})
+
+    if name == "sparkforge_aws_doctor_agentic":
+        return call_tool(name, {"repo": str(tmp_path)})
+
+    if name == "sparkforge_aws_case_get":
+        _open_case(tmp_path)
+        return call_tool("sparkforge_aws_case_get", {"repo": str(tmp_path)})
+
+    if name == "sparkforge_aws_case_update":
+        _open_case(tmp_path)
+        return call_tool(
+            "sparkforge_aws_case_update",
+            {
+                "repo": str(tmp_path),
+                "phase": "facts",
+                "gate": "baseline_captured",
+                "gate_value": True,
+                "skill": "analyze-spark-plan",
+                "now": "2026-07-30T01:00:00Z",
+                "outcome": "ok",
+            },
+        )
+
+    if name == "sparkforge_aws_next_step":
+        _open_case(tmp_path)
+        return call_tool("sparkforge_aws_next_step", {"repo": str(tmp_path)})
+
+    if name == "sparkforge_aws_resume":
+        _open_case(tmp_path)
+        return call_tool(
+            "sparkforge_aws_resume", {"repo": str(tmp_path), "findings": [], "unresolved": 0}
+        )
+
+    if name == "sparkforge_aws_playbook":
+        return call_tool(
+            "sparkforge_aws_playbook",
+            {"coordinator": "glue-infra-reviewer", "repo": str(tmp_path)},
+        )
+
+    if name == "sparkforge_aws_runtime_detect":
+        return call_tool("sparkforge_aws_runtime_detect", {"glue": "5.0"})
+
+    if name == "sparkforge_aws_knowledge_path":
+        return call_tool("sparkforge_aws_knowledge_path", {"file": "glue/runtime-matrix.md"})
+
+    if name in {
+        "sparkforge_aws_analyze_data_observability",
+        "sparkforge_aws_analyze_dbt_artifacts",
+        "sparkforge_aws_analyze_duckdb_microscope",
+        "sparkforge_aws_analyze_forge_lab",
+        "sparkforge_aws_analyze_lakehouse_catalog",
+        "sparkforge_aws_analyze_orchestration",
+        "sparkforge_aws_analyze_platform_ecosystem",
+        "sparkforge_aws_analyze_platform_graph",
+    }:
+        fixture_by_tool = {
+            "sparkforge_aws_analyze_data_observability": ROOT
+            / "fixtures"
+            / "observability"
+            / "sre.yaml",
+            "sparkforge_aws_analyze_dbt_artifacts": ROOT / "fixtures" / "analytics" / "dbt",
+            "sparkforge_aws_analyze_duckdb_microscope": ROOT
+            / "fixtures"
+            / "analytics"
+            / "duckdb"
+            / "microscope.yaml",
+            "sparkforge_aws_analyze_forge_lab": ROOT / "labs" / "forge-lab" / "lab.yaml",
+            "sparkforge_aws_analyze_lakehouse_catalog": (
+                ROOT / "fixtures" / "platform" / "catalog.yaml"
+            ),
+            "sparkforge_aws_analyze_orchestration": ROOT
+            / "fixtures"
+            / "orchestration"
+            / "control-plane.yaml",
+            "sparkforge_aws_analyze_platform_ecosystem": ROOT
+            / "fixtures"
+            / "platform"
+            / "ecosystem.yaml",
+            "sparkforge_aws_analyze_platform_graph": ROOT / "fixtures" / "platform" / "graph.yaml",
+        }
+        return call_tool(name, {"path": str(fixture_by_tool[name])})
+
+    if name == "sparkforge_aws_analyze_pyspark":
+        lib = _write_job(tmp_path)
+        return call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+
+    if name == "sparkforge_aws_analyze_streaming":
+        lib = tmp_path / "streaming.py"
+        lib.write_text(
+            "query = (spark.readStream.format('rate').load()"
+            ".writeStream.format('memory').queryName('rates').start())\n",
+            encoding="utf-8",
+        )
+        return call_tool(
+            "sparkforge_aws_analyze_streaming",
+            {"path": str(lib), "artifact": "source"},
+        )
+
+    if name == "sparkforge_aws_analyze_transport":
+        dump = tmp_path / "transport.json"
+        dump.write_text('{"stream_name":"events","stream_mode":"ON_DEMAND"}', encoding="utf-8")
+        return call_tool(
+            "sparkforge_aws_analyze_transport",
+            {"path": str(dump), "artifact": "kinesis"},
+        )
+
+    if name == "sparkforge_aws_analyze_flink":
+        dump = tmp_path / "flink.json"
+        dump.write_text('{"job":{"job_id":"job-1","parallelism":2}}', encoding="utf-8")
+        return call_tool(
+            "sparkforge_aws_analyze_flink",
+            {"path": str(dump), "artifact": "flink"},
+        )
+
+    if name == "sparkforge_aws_analyze_cdc":
+        dump = tmp_path / "debezium.json"
+        dump.write_text(
+            '{"connector":{"name":"orders","connector.class":"io.debezium.connector.postgresql.PostgresConnector",'
+            '"topic.prefix":"orders","snapshot.mode":"initial","schema.history.internal":"ok"}}',
+            encoding="utf-8",
+        )
+        return call_tool(
+            "sparkforge_aws_analyze_cdc",
+            {"path": str(dump), "artifact": "debezium"},
+        )
+
+    if name == "sparkforge_aws_analyze_schema_registry":
+        dump = tmp_path / "schema.json"
+        dump.write_text(
+            '{"registry":{"name":"orders","provider":"glue","compatibility":"BACKWARD"},'
+            '"schema":{"name":"orders-value","format":"AVRO","definition":'
+            '{"type":"record","fields":[{"name":"id","type":"string"}]}}}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_analyze_schema_registry", {"path": str(dump)})
+
+    if name == "sparkforge_aws_analyze_event_driven":
+        dump = tmp_path / "event_driven.json"
+        dump.write_text(
+            '{"sqs_queues":[{"name":"orders","fifo":false,"redrive_policy":{"deadLetterTargetArn":"arn:aws:sqs:us-east-1:111111111111:dlq"}}]}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_analyze_event_driven", {"path": str(dump)})
+
+    if name == "sparkforge_aws_analyze_streaming_ops":
+        dump = tmp_path / "streaming_ops.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "slo": [
+                        {
+                            "name": "freshness",
+                            "metric": "p95",
+                            "target": 30,
+                            "unit": "s",
+                            "window": "5m",
+                            "source": "cloudwatch",
+                        }
+                    ],
+                    "finops": [
+                        {
+                            "metric": "worker_hours",
+                            "value": 2,
+                            "unit": "hours",
+                            "period": "hour",
+                            "region": "us-east-1",
+                            "tier": "standard",
+                            "source": "cur",
+                        }
+                    ],
+                    "security": [
+                        {
+                            "system": "msk",
+                            "transport": "tls",
+                            "auth": "iam",
+                            "tls": True,
+                            "kms": True,
+                            "vpc": True,
+                            "secrets_manager": True,
+                            "cross_account": False,
+                            "resource_policy": True,
+                        }
+                    ],
+                    "serving": [
+                        {
+                            "name": "redshift",
+                            "system": "redshift",
+                            "source": "iceberg",
+                            "mode": "streaming",
+                            "schema": "orders",
+                        }
+                    ],
+                    "lakehouse": [
+                        {
+                            "name": "events",
+                            "format": "iceberg",
+                            "mode": "append",
+                            "checkpoint": "s3://lake/checkpoints/events",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_analyze_streaming_ops", {"path": str(dump)})
+    if name == "sparkforge_aws_analyze_streaming_integrations":
+        dump = tmp_path / "streaming_integrations.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "openlineage": {
+                        "eventType": "COMPLETE",
+                        "job": {"name": "job"},
+                        "run": {"runId": "run"},
+                        "inputs": [],
+                        "outputs": [],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_analyze_streaming_integrations", {"path": str(dump)})
+
+    if name == "sparkforge_aws_analyze_streaming_composition":
+        dump = tmp_path / "streaming_facts.json"
+        source = json.loads(
+            (
+                ROOT / "fixtures/streaming_composition/iceberg_non_append/expected/facts.json"
+            ).read_text(encoding="utf-8")
+        )
+        dump.write_text(json.dumps(source), encoding="utf-8")
+        return call_tool(
+            "sparkforge_aws_analyze_streaming_composition",
+            {
+                "facts_paths": [str(dump)],
+                "mode": "iceberg",
+                "table": "db.events",
+                "query_name": "orders-query",
+            },
+        )
+
+    if name == "sparkforge_aws_analyze_glue_streaming":
+        dump = tmp_path / "glue_streaming.json"
+        dump.write_text(
+            '{"job":{"name":"rtm","glue_version":"6.0",'
+            '"default_arguments":{"--enable-real-time-mode":"true",'
+            '"--job-language":"scala"},"stream":{"source_type":"kafka",'
+            '"partition_count":2,"task_slots":2,"stateful":false,'
+            '"output_mode":"Update","foreach_batch":false}}}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_analyze_glue_streaming", {"path": str(dump)})
+
+    if name == "sparkforge_aws_judge":
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+        return call_tool(
+            "sparkforge_aws_judge",
+            {"facts": facts["items"], "glue": "5.0", "show_skipped": True},
+        )
+
+    if name == "sparkforge_aws_arbitrate":
+        # Encadeada de proposito, e nao com findings escritos a mao: o executor
+        # roda DEPOIS de `judge`, sobre os findings que ele produziu, e sobre a
+        # UNIAO dos facts que ele recebeu. Montar os dois lados aqui a mao
+        # validaria o schema contra uma entrada que a execucao real nao tem.
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_aws_judge", {"facts": facts["items"], "glue": "5.0"})
+        repo = tmp_path / "case_arbitrate"
+        repo.mkdir()
+        return call_tool(
+            "sparkforge_aws_arbitrate",
+            {
+                "repo": str(repo),
+                "findings": judged["items"],
+                "facts": facts["items"],
+                "glue": "5.0",
+            },
+        )
+
+    if name == "sparkforge_aws_lakeformation_access_graph":
+        facts_file = tmp_path / "lf_facts.json"
+        # Case VAZIO de proposito: a tool devolve `unresolved` nomeando o que
+        # coletar, e esse payload valida contra o schema igual.
+        facts_file.write_text("[]", encoding="utf-8")
+        return call_tool(
+            "sparkforge_aws_lakeformation_access_graph", {"facts_path": str(facts_file)}
+        )
+
+    if name in ("sparkforge_aws_sdd_check", "sparkforge_aws_sdd_status"):
+        # Raiz sem docs/sdd de proposito: sai `root_missing` em `unresolved`, e o
+        # payload valida contra o schema igual.
+        return call_tool(name, {"repo": str(tmp_path)})
+
+    if name == "sparkforge_aws_sdd_stamp":
+        # Um artefato de verdade (`<root>/<FEATURE>/<fase>.md`) com a linha do hash
+        # vazia: o stamp grava o sha256 do define e devolve `changed: true`.
+        pasta = tmp_path / "docs" / "sdd" / "F1"
+        pasta.mkdir(parents=True)
+        (pasta / "define.md").write_bytes(b"---\nsdd: 1\n---\n")
+        (pasta / "design.md").write_bytes(
+            b"---\nupstream:\n  path: docs/sdd/F1/define.md\n  sha256: \"\"\n---\n"
+        )
+        return call_tool(name, {"repo": str(tmp_path), "path": "docs/sdd/F1/design.md"})
+
+    if name == "sparkforge_aws_debate_referee":
+        # Blackboard VAZIO de proposito: a tool devolve `upheld: true` com
+        # `closed: false`, que e a resposta honesta para "nada a arbitrar" -- e o
+        # payload dela valida contra o schema igual.
+        return call_tool("sparkforge_aws_debate_referee", {"repo": str(tmp_path)})
+
+    if name in (
+        "sparkforge_aws_debate_start",
+        "sparkforge_aws_debate_next",
+        "sparkforge_aws_debate_submit",
+    ):
+        # Encadeadas sobre o caso real da regra 29: `next` e `submit` so existem
+        # depois de um `start` que congelou o plano. `submit` devolve `accepted`
+        # com o brief do lado B aninhado em `next` -- os dois ramos de uma vez.
+        args = _debate_start_args(tmp_path)
+        started = call_tool("sparkforge_aws_debate_start", args)
+        if name == "sparkforge_aws_debate_start":
+            return started
+        alvo = {"repo": args["repo"], "debate_id": started["debate_id"]}
+        if name == "sparkforge_aws_debate_next":
+            return call_tool("sparkforge_aws_debate_next", alvo)
+        return call_tool(
+            "sparkforge_aws_debate_submit",
+            {
+                **alvo,
+                "submission": {
+                    "side": "A",
+                    "round": 1,
+                    "claims": [
+                        {
+                            "claim_type": "inference",
+                            "statement": "o job importa GraphFrames e o IaC nao entrega o JAR",
+                            "evidence_refs": ["f_32bc0d", "f_d9303b"],
+                            "confidence": "high",
+                        }
+                    ],
+                },
+            },
+        )
+
+    if name == "sparkforge_aws_root_cause":
+        facts_file = tmp_path / "facts.json"
+        facts_file.write_text(
+            json.dumps(
+                [
+                    {
+                        "id": "f_aaaaaa",
+                        "schema_version": 1,
+                        "kind": "pyspark.udf",
+                        "subject": {
+                            "type": "source_location",
+                            "file": "job.py",
+                            "line": 3,
+                            "col": 0,
+                            "symbol": "minha_udf",
+                            "snippet": "",
+                        },
+                        "measures": {},
+                        "attrs": {"udf_type": "python"},
+                        "provenance": {
+                            "artifact": "job.py",
+                            "artifact_sha256": "a" * 64,
+                            "extractor": "pyspark_ast@0.1.0",
+                        },
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_root_cause", {"facts_path": str(facts_file)})
+
+    if name == "sparkforge_aws_lakeformation_matrix":
+        # Sem `path` nenhum: a matriz e conhecimento versionado que viaja no
+        # pacote, e nao artefato de case. E a unica tool desta suite cujos
+        # argumentos reais nao apontam para o disco do operador.
+        return call_tool(
+            "sparkforge_aws_lakeformation_matrix",
+            {"runtime": "5.1", "axis": "fgac_spark_native_write"},
+        )
+
+    if name == "sparkforge_aws_lakeformation_architect":
+        return call_tool("sparkforge_aws_lakeformation_architect", {"payload": {}})
+
+    if name == "sparkforge_aws_rules_lookup":
+        return call_tool("sparkforge_aws_rules_lookup", {"id": ["SF-PY-007"]})
+
+    if name == "sparkforge_aws_validate_output":
+        payload = {
+            "rule_id": "SF-PY-005",
+            "schema_version": 1,
+            "title": "t",
+            "severity": "P0",
+            "confidence": "high",
+            "status": "structural",
+            "subject": {"type": "source_location"},
+            "evidence": ["f_abc123"],
+        }
+        return call_tool("sparkforge_aws_validate_output", {"finding": payload})
+
+    if name == "sparkforge_aws_analyze_catalog_schema":
+        catalog_dir = tmp_path / "catalog"
+        catalog_dir.mkdir()
+        (catalog_dir / "dump.json").write_text(CATALOG_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_catalog_schema", {"path": str(catalog_dir)})
+
+    if name == "sparkforge_aws_analyze_event_log":
+        log_path = tmp_path / "log.jsonl"
+        log_path.write_text(_EVENT_LOG_LINE, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_event_log", {"path": str(log_path)})
+
+    if name == "sparkforge_aws_analyze_sql_metrics":
+        log_path = tmp_path / "sql_metrics_log.jsonl"
+        log_path.write_text(_SQL_METRICS_EVENT_LOG_LINES, encoding="utf-8")
+        resultado = call_tool("sparkforge_aws_analyze_sql_metrics", {"path": str(log_path)})
+        assert any(item["kind"] == "spark.sql.scan" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos um fact spark.sql.scan"
+        )
+        return resultado
+
+    if name == "sparkforge_aws_analyze_cloudwatch":
+        cw_path = tmp_path / "cw.json"
+        cw_path.write_text(_CLOUDWATCH_ARTIFACT, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_cloudwatch", {"path": str(cw_path)})
+
+    if name == "sparkforge_aws_analyze_cloudwatch_logs":
+        cw_logs_dir = tmp_path / "cloudwatch_logs"
+        cw_logs_dir.mkdir()
+        (cw_logs_dir / "etl_jr1_error.json").write_text(
+            _CLOUDWATCH_LOGS_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_aws_analyze_cloudwatch_logs", {"path": str(cw_logs_dir)}
+        )
+        assert any(item["kind"] == "cloudwatch.log_event" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos uma linha de log"
+        )
+        return resultado
+
+    if name == "sparkforge_aws_analyze_glue_resource_link":
+        rlink_dir = tmp_path / "glue_resource_link"
+        rlink_dir.mkdir()
+        (rlink_dir / "111111111111_analytics_dim_cliente_prod.json").write_text(
+            _RESOURCE_LINK_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool("sparkforge_aws_analyze_glue_resource_link", {"path": str(rlink_dir)})
+        assert any(
+            item["kind"] == "glue.resource_link" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos um link"
+        return resultado
+
+    if name == "sparkforge_aws_analyze_iam_access":
+        iam_dir = tmp_path / "iam_access"
+        iam_dir.mkdir()
+        (iam_dir / "111111111111_glue-curated.json").write_text(
+            _IAM_ACCESS_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool("sparkforge_aws_analyze_iam_access", {"path": str(iam_dir)})
+        assert any(
+            item["kind"] == "iam.access_decision" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos uma decisao"
+        return resultado
+
+    if name == "sparkforge_aws_analyze_lakeformation_grants":
+        lf_dir = tmp_path / "lakeformation"
+        lf_dir.mkdir()
+        (lf_dir / "111111111111_curated_fato_venda.json").write_text(
+            _LAKEFORMATION_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_aws_analyze_lakeformation_grants", {"path": str(lf_dir)}
+        )
+        assert any(item["kind"] == "lakeformation.grant" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos um grant"
+        )
+        return resultado
+
+    if name == "sparkforge_aws_analyze_error_signatures":
+        # A UNIAO do case num arquivo so, que e o contrato desta tool. Aqui ela
+        # e produzida pelo proprio verbo do log -- a outra metade (o
+        # `spark.exception` do event log) nao entra de proposito: o que esta
+        # amostra exercita e o caminho `matched_on: log_line`.
+        cw_logs_dir = tmp_path / "cloudwatch_logs_sig"
+        cw_logs_dir.mkdir()
+        (cw_logs_dir / "etl_jr1_error.json").write_text(
+            _CLOUDWATCH_LOGS_ARTIFACT, encoding="utf-8"
+        )
+        extraido = call_tool(
+            "sparkforge_aws_analyze_cloudwatch_logs",
+            {"path": str(cw_logs_dir), "limit": 1000},
+        )
+        facts_path = tmp_path / "facts_uniao.json"
+        facts_path.write_text(
+            json.dumps(extraido["items"], ensure_ascii=False), encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_aws_analyze_error_signatures", {"facts_path": str(facts_path)}
+        )
+        assert any(
+            item["kind"] == "error.signature_match" for item in resultado["items"]
+        ), "a amostra precisa casar pelo menos uma assinatura pelo caminho de log"
+        return resultado
+
+    if name == "sparkforge_aws_analyze_parquet_footer":
+        # A amostra e um FOOTER, nao um `.parquet`: a tool parte do artefato
+        # JSON e nao depende de pyarrow. Dois row groups com faixas DISJUNTAS,
+        # para que `avg_range_coverage` saia -- com um row group so a medida
+        # recusaria com `row_group_unico`, e a amostra nao exercitaria o que a
+        # tool existe para publicar.
+        pqf_dir = tmp_path / "parquet_footer"
+        pqf_dir.mkdir()
+        (pqf_dir / "curated.json").write_text(
+            _PARQUET_FOOTER_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_aws_analyze_parquet_footer", {"path": str(pqf_dir)}
+        )
+        assert any(
+            item["kind"] == "parquet.column_profile" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos um perfil de coluna"
+        return resultado
+
+    if name == "sparkforge_aws_analyze_glue_job_runs":
+        runs_dir = tmp_path / "glue_job_run"
+        runs_dir.mkdir()
+        (runs_dir / "etl-job_jr_1.json").write_text(_GLUE_JOB_RUN_ARTIFACT, encoding="utf-8")
+        return call_tool(
+            "sparkforge_aws_analyze_glue_job_runs",
+            {"path": str(runs_dir), "job_name": "etl-job"},
+        )
+
+    if name == "sparkforge_aws_analyze_plan":
+        plan_path = tmp_path / "plan.txt"
+        plan_path.write_text(_PLAN_TEXT, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_plan", {"path": str(plan_path)})
+
+    if name == "sparkforge_aws_analyze_terraform":
+        tf_path = tmp_path / "main.tf"
+        tf_path.write_text(_TERRAFORM_SOURCE, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_terraform", {"path": str(tf_path)})
+
+    if name == "sparkforge_aws_analyze_iceberg":
+        ice_path = tmp_path / "iceberg.json"
+        ice_path.write_text(_ICEBERG_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_iceberg", {"path": str(ice_path)})
+
+    if name == "sparkforge_aws_analyze_sql":
+        sql_path = tmp_path / "q.sql"
+        sql_path.write_text(_SQL_TEXT, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_sql", {"path": str(sql_path)})
+
+    if name == "sparkforge_aws_analyze_athena_workgroup":
+        wg_path = tmp_path / "wg.json"
+        wg_path.write_text(_ATHENA_WORKGROUP_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_athena_workgroup", {"path": str(wg_path)})
+
+    if name == "sparkforge_aws_analyze_emr_cluster":
+        emr_path = tmp_path / "cluster.json"
+        emr_path.write_text(_EMR_CLUSTER_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_emr_cluster", {"path": str(emr_path)})
+
+    if name == "sparkforge_aws_analyze_emr_serverless":
+        emrs_path = tmp_path / "application.json"
+        emrs_path.write_text(_EMR_SERVERLESS_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_emr_serverless", {"path": str(emrs_path)})
+
+    if name == "sparkforge_aws_analyze_emr_eks":
+        emrc_path = tmp_path / "job_run.json"
+        emrc_path.write_text(_EMR_EKS_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_emr_eks", {"path": str(emrc_path)})
+
+    if name == "sparkforge_aws_analyze_controlm_jobs":
+        # `version` DECLARADA e abaixo da fronteira que a matriz le em
+        # `9.0.22.005`: e a unica combinacao que resolve os tres blocos que esta
+        # tool existe para produzir -- inventario, `ctm.version_declared` e o
+        # kind derivado do cruzamento. Sem `version` o derivado sairia como
+        # recusa, e a saida validaria contra o schema sem provar o cruzamento.
+        ctm_path = tmp_path / "jobs.json"
+        ctm_path.write_text(_CONTROLM_JOBS, encoding="utf-8")
+        resultado = call_tool(
+            "sparkforge_aws_analyze_controlm_jobs",
+            {"path": str(ctm_path), "version": "9.0.21.300"},
+        )
+        assert resultado["by_kind"].get("ctm.capability_incompatible") == 1, resultado["by_kind"]
+        assert resultado["by_kind"].get("ctm.version_declared") == 1, resultado["by_kind"]
+        return resultado
+
+    if name == "sparkforge_aws_analyze_sfn_history":
+        sfnh_path = tmp_path / "execucao.json"
+        sfnh_path.write_text(_SFN_EXECUTION_HISTORY, encoding="utf-8")
+        resultado = call_tool("sparkforge_aws_analyze_sfn_history", {"path": str(sfnh_path)})
+        assert resultado["by_kind"].get("sfn.attempt") == 1, resultado["by_kind"]
+        assert resultado["by_kind"].get("sfn.job_run") == 1, resultado["by_kind"]
+        return resultado
+
+    if name == "sparkforge_aws_analyze_step_functions":
+        sfn_path = tmp_path / "carga.asl.json"
+        sfn_path.write_text(_STEP_FUNCTIONS_ASL, encoding="utf-8")
+        resultado = call_tool("sparkforge_aws_analyze_step_functions", {"path": str(sfn_path)})
+        assert resultado["by_kind"].get("sfn.task") == 1, resultado["by_kind"]
+        return resultado
+
+    if name == "sparkforge_aws_analyze_airflow_dag":
+        dag_path = tmp_path / "carga_diaria.py"
+        dag_path.write_text(_AIRFLOW_DAG_SOURCE, encoding="utf-8")
+        resultado = call_tool("sparkforge_aws_analyze_airflow_dag", {"path": str(dag_path)})
+        assert resultado["by_kind"].get("af.task") == 1, resultado["by_kind"]
+        return resultado
+
+    if name == "sparkforge_aws_analyze_data_quality":
+        dq_path = tmp_path / "validacao.py"
+        dq_path.write_text(_DQ_SOURCE, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_data_quality", {"path": str(dq_path)})
+
+    if name == "sparkforge_aws_analyze_dq_ai":
+        recommendation = tmp_path / "recommendation.json"
+        recommendation.write_text(
+            '{"table_name":"orders","recommendation_mode":"BASIC"}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_aws_analyze_dq_ai", {"path": str(recommendation)})
+
+    if name == "sparkforge_aws_analyze_graph":
+        graph_path = tmp_path / "grafo.py"
+        graph_path.write_text(_GRAPH_SOURCE, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_graph", {"path": str(graph_path)})
+
+    if name == "sparkforge_aws_analyze_s3_listing":
+        listing = tmp_path / "listing.json"
+        listing.write_text(_S3_LISTING, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_s3_listing", {"path": str(listing)})
+
+    if name == "sparkforge_aws_analyze_consumers":
+        inventory = tmp_path / "consumers.yaml"
+        inventory.write_text(_CONSUMER_INVENTORY, encoding="utf-8")
+        return call_tool("sparkforge_aws_analyze_consumers", {"path": str(inventory)})
+
+    if name == "sparkforge_aws_analyze_workload":
+        # O golden do extrator: `workload.declared` com SLA e fonte primaria.
+        from pathlib import Path
+
+        alvo = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "workload" / "declared_only" / "input" / "workload.yaml"
+        )
+        result = call_tool("sparkforge_aws_analyze_workload", {"path": str(alvo)})
+        assert result["by_kind"].get("workload.declared"), result
+        return result
+
+    if name == "sparkforge_aws_analyze_terraform_diff":
+        before = tmp_path / "before"
+        after = tmp_path / "after"
+        before.mkdir()
+        after.mkdir()
+        (before / "main.tf").write_text(_TERRAFORM_SOURCE, encoding="utf-8")
+        (after / "main.tf").write_text(
+            _TERRAFORM_SOURCE.replace("G.1X", "G.4X"), encoding="utf-8"
+        )
+        return call_tool(
+            "sparkforge_aws_analyze_terraform_diff", {"before": str(before), "after": str(after)}
+        )
+
+    if name == "sparkforge_aws_analyze_call_graph":
+        facts_path = _write_facts_file(tmp_path)
+        return call_tool("sparkforge_aws_analyze_call_graph", {"facts_path": str(facts_path)})
+
+    if name == "sparkforge_aws_benchmark":
+        before, after = _write_event_log_facts_files(tmp_path)
+        return call_tool(
+            "sparkforge_aws_benchmark", {"before_path": str(before), "after_path": str(after)}
+        )
+
+    if name == "sparkforge_aws_funcval_plan":
+        return call_tool(
+            "sparkforge_aws_funcval_plan",
+            {
+                "facts_paths": _write_funcval_facts_files(tmp_path),
+                "out_path": str(tmp_path / "plano.json"),
+                "keys": ["cliente_id"],
+            },
+        )
+
+    if name == "sparkforge_aws_funcval_compare":
+        plan_path = _write_funcval_plan_file(tmp_path)
+        before, after = _write_funcval_result_files(tmp_path)
+        return call_tool(
+            "sparkforge_aws_funcval_compare",
+            {
+                "plan_path": str(plan_path),
+                "before_path": str(before),
+                "after_path": str(after),
+            },
+        )
+
+    if name == "sparkforge_aws_fuse":
+        facts_path = _write_facts_file(tmp_path)
+        return call_tool("sparkforge_aws_fuse", {"facts_paths": [str(facts_path)]})
+
+    if name == "sparkforge_aws_workload":
+        facts_path = _write_workload_facts_file(tmp_path)
+        return call_tool(
+            "sparkforge_aws_workload",
+            {"facts_path": str(facts_path), "job_name": "etl", "job_run_id": "jr_1"},
+        )
+
+    if name == "sparkforge_aws_capacity":
+        facts_path, history_dir = _write_capacity_facts_files(tmp_path)
+        result = call_tool(
+            "sparkforge_aws_capacity",
+            {
+                "facts_path": str(facts_path),
+                "job_name": "etl",
+                "job_run_id": "jr_hoje",
+                "history_path": str(history_dir),
+            },
+        )
+        assert result["chosen"], "a amostra precisa render uma capacidade escolhida"
+        return result
+
+    if name == "sparkforge_aws_finops":
+        facts_path = _write_finops_facts_file(tmp_path)
+        result = call_tool(
+            "sparkforge_aws_finops", {"facts_path": str(facts_path), "job_name": "etl"}
+        )
+        assert result["frontier"], "a amostra precisa render ao menos uma capacidade"
+        return result
+
+    if name == "sparkforge_aws_dq_ai_assess":
+        recommendation = tmp_path / "recommendation.json"
+        recommendation.write_text(
+            '{"table_name":"orders","recommendation_mode":"BASIC"}',
+            encoding="utf-8",
+        )
+        analyzed = call_tool("sparkforge_aws_analyze_dq_ai", {"path": str(recommendation)})
+        facts_path = tmp_path / "dq_ai_facts.json"
+        facts_path.write_text(json.dumps(analyzed["items"]), encoding="utf-8")
+        return call_tool(
+            "sparkforge_aws_dq_ai_assess",
+            {"facts_paths": [str(facts_path)], "glue": "4.0"},
+        )
+
+    if name == "sparkforge_aws_tune":
+        facts_path = _write_tune_facts_file(tmp_path)
+        result = call_tool("sparkforge_aws_tune", {"facts_path": str(facts_path)})
+        assert result["properties"], "a amostra precisa render ao menos uma proposta"
+        return result
+
+    if name == "sparkforge_aws_telemetry_export":
+        # Um ledger proprio com um span de verdade: sem span o verbo sai 2, e o
+        # schema seria validado so pelo envelope de erro. O transcript e o de
+        # `fixtures/host_transcript/correct_mcp`, para `traces` ter o trace do
+        # host e `metrics` ter a metrica de token (so sai com provider).
+        from pathlib import Path
+
+        from sparkforge_aws.observability import context_ledger
+
+        assert monkeypatch is not None, f"{name} precisa de monkeypatch para o ledger"
+        ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_amostra")
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+        _open_case(tmp_path)
+        call_tool(
+            "sparkforge_aws_case_get",
+            {"repo": str(tmp_path)},
+            channel="mcp",
+            transport="stdio",
+        )
+        transcript = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "host_transcript" / "correct_mcp" / "input" / "q-mcp.jsonl"
+        )
+        result = call_tool(
+            "sparkforge_aws_telemetry_export",
+            {
+                "run_id": "run_amostra",
+                "host_transcript_path": str(transcript),
+                "provider": "anthropic",
+            },
+        )
+        assert result["counts"]["exported"] >= 2, result
+        assert result["metrics"] is not None
+        return result
+
+    if name == "sparkforge_aws_receipt_emit":
+        result = call_tool("sparkforge_aws_receipt_emit", _receipt_args(tmp_path))
+        assert result["receipt_id"].startswith("rcpt_"), result
+        return result
+
+    if name == "sparkforge_aws_receipt_verify":
+        argumentos = _receipt_args(tmp_path)
+        emitido = call_tool("sparkforge_aws_receipt_emit", argumentos)
+        result = call_tool(
+            "sparkforge_aws_receipt_verify",
+            {"repo": argumentos["repo"], "receipt_path": emitido["receipt_path"]},
+        )
+        assert result["valid"] is True, result
+        return result
+
+    if name == "sparkforge_aws_proof":
+        # O mesmo artefato como antes e como depois: a regra ainda dispara, entao
+        # a resolucao sai `refuted` -- o schema e validado por um desfecho real,
+        # e nao pelo envelope de erro.
+        from pathlib import Path
+
+        raiz = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "pyspark" / "collect_unbounded" / "expected"
+        )
+        result = call_tool(
+            "sparkforge_aws_proof",
+            {
+                "findings_path": str(raiz / "findings.json"),
+                "facts_path": [str(raiz / "facts.json")],
+                "after_facts_path": [str(raiz / "facts.json")],
+                "applied": ["SF-PY-002"],
+            },
+        )
+        assert result["results"][0]["obligations"][0]["outcome"] == "refuted", result
+        return result
+
+    if name == "sparkforge_aws_simulate":
+        # Concorrencia 3 -> 1 num job com bookmark: SF-GLUE-003 some. O schema e
+        # validado por uma diferenca real, e nao por uma lista vazia.
+        from pathlib import Path
+
+        fatos = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "terraform" / "bookmarks_with_concurrency" / "expected"
+            / "facts.json"
+        )
+        result = call_tool(
+            "sparkforge_aws_simulate",
+            {"facts_path": [str(fatos)], "sets": ["tf:max_concurrent_runs=1"]},
+        )
+        assert [d["rule_id"] for d in result["disappeared"]] == ["SF-GLUE-003"], result
+        return result
+
+    if name == "sparkforge_aws_pack_list":
+        # Um pack ativo e um recusado: o schema e validado com as duas listas
+        # cheias, e nao por listas vazias que passam em qualquer schema de array.
+        import os
+        from pathlib import Path
+
+        raiz = Path(__file__).resolve().parents[1] / "fixtures" / "packs"
+        antes = os.environ.get("SPARKFORGE_AWS_PACKS")
+        os.environ["SPARKFORGE_AWS_PACKS"] = os.pathsep.join(
+            [str(raiz / "acme-platform"), str(raiz / "recusa_prefixo_reservado")]
+        )
+        try:
+            result = call_tool("sparkforge_aws_pack_list", {})
+        finally:
+            if antes is None:
+                os.environ.pop("SPARKFORGE_AWS_PACKS", None)
+            else:
+                os.environ["SPARKFORGE_AWS_PACKS"] = antes
+        assert result["prefixes"] == {"ACME": "acme-platform"}, result
+        assert [r["reason"] for r in result["refused"]] == ["prefixo_reservado"], result
+        return result
+
+    if name == "sparkforge_aws_knowledge_drift":
+        # Lock sintetico com uma fonte mudada: o schema e validado com citacoes,
+        # impacto e revalidadas cheios, e nao pela lista vazia do lock real.
+        import os
+        from pathlib import Path
+
+        lock = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "knowledge_drift" / "lf_consideracoes" / "lock.json"
+        )
+        antes = os.environ.get("SPARKFORGE_AWS_SOURCES_LOCK")
+        os.environ["SPARKFORGE_AWS_SOURCES_LOCK"] = str(lock)
+        try:
+            result = call_tool("sparkforge_aws_knowledge_drift", {"as_of": "2026-09-13"})
+        finally:
+            if antes is None:
+                os.environ.pop("SPARKFORGE_AWS_SOURCES_LOCK", None)
+            else:
+                os.environ["SPARKFORGE_AWS_SOURCES_LOCK"] = antes
+        [fonte] = result["changed_sources"]
+        assert fonte["impact"]["rules"] and fonte["revalidated"], result
+        return result
+
+    if name == "sparkforge_aws_gain":
+        # G.1X x10 contra G.2X x10 do capacity: o schema e validado por um delta
+        # real nas tres metricas, com a marca de custo que falta.
+        from pathlib import Path
+
+        caso = Path(__file__).resolve().parents[1] / "fixtures" / "gain" / "ganho_por_capacidade"
+        result = call_tool(
+            "sparkforge_aws_gain",
+            {
+                "baseline_paths": [str(p) for p in sorted((caso / "baseline").glob("*.json"))],
+                "candidate_paths": [str(p) for p in sorted((caso / "candidate").glob("*.json"))],
+            },
+        )
+        assert result["metrics"]["execution_time_s"]["delta_pct"] == -44.4, result
+        return result
+
+    if name == "sparkforge_aws_scan":
+        # O repositorio misto de `fixtures/scan/`, copiado: o scan grava em
+        # `<repo>/.sparkforge_aws/scan/`, e o schema e validado por um plano cheio.
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        origem = Path(__file__).resolve().parents[1] / "fixtures" / "scan" / "misto" / "repo"
+        destino = Path(tempfile.mkdtemp()) / "repo"
+        shutil.copytree(origem, destino)
+        result = call_tool("sparkforge_aws_scan", {"repo": str(destino)})
+        assert "SF-LF-005" in result["findings"]["rule_ids"], result
+        return result
+
+    if name == "sparkforge_aws_doctor":
+        # O doctor le o manifesto de integracao do HOME: nunca o do operador.
+        casa = tmp_path / "home_isolado"
+        casa.mkdir()
+        assert monkeypatch is not None
+        monkeypatch.setenv("HOME", str(casa))
+        monkeypatch.setenv("USERPROFILE", str(casa))
+        monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
+        monkeypatch.setenv("CODEX_HOME", str(casa / ".codex"))
+        repo = tmp_path / "repo_doctor"
+        repo.mkdir()
+        result = call_tool("sparkforge_aws_doctor", {"repo": str(repo)})
+        assert len(result["checks"]) == 13 and result["online"] is False, result
+        return result
+
+    if name == "sparkforge_aws_policy_explain":
+        # A policy commitada do proprio repositorio: destroy pede confirmacao.
+        from pathlib import Path
+
+        raiz = str(Path(__file__).resolve().parents[1])
+        result = call_tool(
+            "sparkforge_aws_policy_explain", {"repo": raiz, "bash_text": "terraform destroy"}
+        )
+        assert result["decision"] == "ask" and result["active"] is True, result
+        return result
+
+    if name == "sparkforge_aws_change_plan":
+        # O golden com quatro chaves na mesma linha do `--conf`: o diff troca so
+        # o par pedido, e o schema e validado por uma mudanca real.
+        from pathlib import Path
+
+        caso = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "change" / "tf_linha_compartilhada" / "input"
+        )
+        result = call_tool(
+            "sparkforge_aws_change_plan",
+            {
+                "facts_path": [str(caso / "facts.json")],
+                "repo": str(caso / "repo"),
+                "sets": ["spark.sql.shuffle.partitions=320"],
+            },
+        )
+        assert result["files"] == ["main.tf"] and result["changes"][0]["to"] == "320", result
+        return result
+
+    if name == "sparkforge_aws_change_sandbox":
+        # O diff do host que tira o `spark.conf.set`, numa copia do repo: o
+        # SF-PY-012 sai em `resolved`, com as obrigacoes de prova da regra.
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        caso = (
+            Path(__file__).resolve().parents[1] / "fixtures" / "change" / "resolve_achado" / "input"
+        )
+        destino = Path(tempfile.mkdtemp()) / "repo"
+        shutil.copytree(caso / "repo", destino)
+        result = call_tool(
+            "sparkforge_aws_change_sandbox",
+            {"repo": str(destino), "diff_path": str(caso / "host.patch")},
+        )
+        assert [r["rule_id"] for r in result["resolved"]] == ["SF-PY-012"], result
+        return result
+
+    if name == "sparkforge_aws_change_propose":
+        # O sandbox que resolve o SF-PY-012 vira pacote de PR: nove arquivos, o
+        # corpo assinado e o recibo, e git nenhum rodado.
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        caso = (
+            Path(__file__).resolve().parents[1] / "fixtures" / "change" / "resolve_achado" / "input"
+        )
+        destino = Path(tempfile.mkdtemp()) / "repo"
+        shutil.copytree(caso / "repo", destino)
+        sandbox = call_tool(
+            "sparkforge_aws_change_sandbox",
+            {"repo": str(destino), "diff_path": str(caso / "host.patch")},
+        )
+        result = call_tool(
+            "sparkforge_aws_change_propose",
+            {"repo": str(destino), "sandbox_id": sandbox["id"], "now": "2026-09-14T00:00:00Z"},
+        )
+        assert result["refused"] == [] and result["git_run"] is False, result
+        assert "pr_body.md" in result["files"], result
+        return result
+
+    if name == "sparkforge_aws_economy_report":
+        result = call_tool("sparkforge_aws_economy_report", {"run_id": "run_inexistente"})
+        assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
+        return result
+
+    if name == "sparkforge_aws_decision_evaluate":
+        return call_tool(
+            "sparkforge_aws_decision_evaluate",
+            {
+                "repo": str(__import__("pathlib").Path(__file__).resolve().parents[1]),
+                "contract": "kernel.synthetic",
+                "state": {"signal": "safe"},
+                "now": "2026-09-28T00:00:00Z",
+            },
+        )
+
+    if name == "sparkforge_aws_glue_dependency_audit":
+        # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
+        # amostra precisa render achado, senao valida contra o schema pelo
+        # motivo errado -- lista vazia passa em qualquer schema de array.
+        job = tmp_path / "dep-audit"
+        job.mkdir()
+        (job / "job.py").write_text("import pyarrow\n", encoding="utf-8")
+        (job / "requirements.txt").write_text("pyarrow==8.0.0\n", encoding="utf-8")
+        result = call_tool(
+            "sparkforge_aws_glue_dependency_audit", {"path": str(job), "glue": "6.0"}
+        )
+        assert result["dependencies"], "a amostra precisa observar ao menos um pin"
+        return result
+
+    if name == "sparkforge_aws_iceberg_assess_upgrade":
+        job = tmp_path / "assess-upgrade"
+        (job / ".sparkforge_aws").mkdir(parents=True)
+        (job / "job.py").write_text("x = 1\n", encoding="utf-8")
+        (job / ".sparkforge_aws" / "consumers.yaml").write_text(
+            "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
+        )
+        result = call_tool(
+            "sparkforge_aws_iceberg_assess_upgrade",
+            {"path": str(job), "source": 2, "target": 3},
+        )
+        assert result["cells"], "a amostra precisa consultar ao menos uma celula"
+        return result
+
+    if name == "sparkforge_aws_release_describe":
+        # `emr_ec2`/`7.7.0` de proposito: a release resolve cinco componentes E
+        # recusa quatro. Uma release sem recusa nenhuma validaria contra o
+        # schema pelo motivo errado -- `unresolved` vazio passa em qualquer
+        # schema de array.
+        resultado = call_tool(
+            "sparkforge_aws_release_describe", {"platform": "emr_ec2", "release": "7.7.0"}
+        )
+        assert resultado["components"], "a amostra precisa resolver ao menos um componente"
+        assert resultado["unresolved"], "a amostra precisa recusar ao menos um componente"
+        return resultado
+
+    if name == "sparkforge_aws_release_diff":
+        # O CONTRAFACTUAL DE PLATAFORMA, e nao duas releases da mesma: o mesmo
+        # rotulo `7.7.0` publica Iceberg e Spark diferentes no EC2 e no EKS, e e
+        # esse par que faz `changed` sair nao-vazio com `axis == ["platform"]`.
+        resultado = call_tool(
+            "sparkforge_aws_release_diff",
+            {
+                "left_platform": "emr_ec2",
+                "left_release": "7.7.0",
+                "right_platform": "emr_eks",
+                "right_release": "7.7.0",
+            },
+        )
+        assert resultado["axis"] == ["platform"], resultado["axis"]
+        assert resultado["changed"], "a amostra precisa render ao menos uma mudanca"
+        assert resultado["unresolved"], "as cinco dimensoes sem lastro saem sempre"
+        return resultado
+
+    if name == "sparkforge_aws_controlm_describe":
+        # `9.0.22.010` de proposito: e a versao que resolve os DOIS eixos de uma
+        # vez -- capacidades introduzidas, uma capacidade DEPRECIADA
+        # (`config em:param::set`, de `9.0.21.300`) e exigencia de componente
+        # (`java`, `python`, `pip`). Uma versao do piso da faixa validaria contra
+        # o schema pelo motivo errado: `deprecated` e `components` sairiam
+        # vazios, e objeto vazio passa em qualquer schema de objeto.
+        resultado = call_tool("sparkforge_aws_controlm_describe", {"version": "9.0.22.010"})
+        assert resultado["capabilities"], "a amostra precisa resolver capacidade"
+        assert resultado["deprecated"], "a amostra precisa render o eixo de depreciacao"
+        assert resultado["components"], "a amostra precisa render exigencia de componente"
+        assert resultado["unresolved"], "as recusas nomeadas saem sempre"
+        return resultado
+
+    if name == "sparkforge_aws_migration_assess":
+        # Um job com SDK v1 e um pin de PyArrow abaixo do piso do Spark 4.1:
+        # o primeiro faz `SF-MIG-001` nascer, o segundo faz `SF-SPARK4-003`
+        # nascer -- e o segundo so aparece porque a entrada e um DIRETORIO.
+        # Assessment vazio validaria contra o schema pelo motivo errado.
+        job = tmp_path / "job"
+        job.mkdir()
+        (job / "job.py").write_text(
+            "import com.amazonaws.services.s3.AmazonS3\n", encoding="utf-8"
+        )
+        (job / "requirements.txt").write_text("pyarrow==14.0.0\n", encoding="utf-8")
+        result = call_tool(
+            "sparkforge_aws_migration_assess",
+            {"path": str(job), "source": "4.0", "target": "6.0"},
+        )
+        assert result["findings"], "a amostra precisa render pelo menos um finding"
+        return result
+
+    if name == "sparkforge_aws_collect_parquet_footer":
+        # Sem AWS: um Parquet LOCAL gerado pelo pyarrow. O coletor le so o footer e
+        # registra no manifesto, e o schema e validado por um artefato de verdade.
+        import pytest
+
+        pa = pytest.importorskip("pyarrow")
+        pq = pytest.importorskip("pyarrow.parquet")
+        dados = tmp_path / "dados"
+        dados.mkdir()
+        pq.write_table(pa.table({"id": [1, 2, 3]}), dados / "part-0.parquet")
+        result = call_tool(
+            "sparkforge_aws_collect_parquet_footer",
+            {"repo": str(tmp_path), "prefix": str(dados), "now": "2026-09-14T00:00:00Z"},
+        )
+        assert result["kind"] == "parquet_footer", result
+        return result
+
+    if name == "sparkforge_aws_collect_streaming_integrations":
+        from sparkforge_aws.collect import streaming as collect_streaming
+
+        class _Kinesis:
+            def describe_stream_summary(self, **kwargs):
+                return {"StreamDescriptionSummary": {"StreamName": kwargs["StreamName"]}}
+
+            def list_shards(self, **kwargs):
+                return {"Shards": [{"ShardId": "shard-0"}]}
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "kinesis"
+                return _Kinesis()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_streaming, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "kinesis_stream_name": "orders",
+                "now": "2026-10-02T00:00:00Z",
+            },
+        )
+
+    if name == "sparkforge_aws_collect_schema_registry":
+        from sparkforge_aws.collect import schema_registry as collect_schema_registry
+
+        class _Glue:
+            def get_registry(self, **kwargs):
+                return {"RegistryName": kwargs["RegistryId"]["RegistryName"]}
+
+            def list_schemas(self, **kwargs):
+                return {"Schemas": [{"SchemaName": "orders", "RegistryName": "events"}]}
+
+            def get_schema(self, **kwargs):
+                return {
+                    "SchemaName": kwargs["SchemaId"]["SchemaName"],
+                    "RegistryName": "events",
+                    "DataFormat": "AVRO",
+                }
+
+            def get_schema_version(self, **kwargs):
+                return {
+                    "SchemaVersionId": "00000000-0000-0000-0000-000000000001",
+                    "VersionNumber": 1,
+                    "Status": "AVAILABLE",
+                    "SchemaDefinition": '{"type":"record","name":"orders","fields":[]}',
+                }
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "glue"
+                return _Glue()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_schema_registry, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "registry_name": "events",
+                "now": "2026-10-03T00:00:00Z",
+            },
+        )
+
+    if name == "sparkforge_aws_collect_managed_flink":
+        from sparkforge_aws.collect import managed_flink as collect_managed_flink
+
+        class _ManagedFlink:
+            def describe_application(self, **kwargs):
+                return {
+                    "ApplicationDetail": {
+                        "ApplicationName": kwargs["ApplicationName"],
+                        "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:"
+                        "application/orders",
+                        "ApplicationStatus": "RUNNING",
+                        "RuntimeEnvironment": "FLINK-1_20",
+                        "ApplicationVersionId": 1,
+                    }
+                }
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "kinesisanalyticsv2"
+                return _ManagedFlink()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_managed_flink, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "application_name": "orders",
+                "region_name": "us-east-1",
+                "now": "2026-10-03T00:00:00Z",
+            },
+        )
+
+    if name in (
+        "sparkforge_aws_collect_event_log",
+        "sparkforge_aws_collect_glue_job",
+        "sparkforge_aws_collect_cloudwatch",
+        "sparkforge_aws_collect_cloudwatch_logs",
+        "sparkforge_aws_collect_lakeformation",
+        "sparkforge_aws_collect_iam_access",
+        "sparkforge_aws_collect_glue_resource_link",
+        "sparkforge_aws_collect_glue_job_runs",
+        "sparkforge_aws_collect_iceberg_metadata",
+        "sparkforge_aws_collect_athena_workgroup",
+        "sparkforge_aws_collect_emr_cluster",
+        "sparkforge_aws_collect_emr_serverless",
+        "sparkforge_aws_collect_emr_eks",
+        "sparkforge_aws_collect_managed_flink",
+    ):
+        assert monkeypatch is not None, f"{name} precisa de monkeypatch para o client AWS falso"
+        _fake_collect_boto3(monkeypatch)
+        args = {
+            "sparkforge_aws_collect_event_log": {
+                "repo": str(tmp_path),
+                "job_run_id": "jr_1",
+                "bucket": "my-bucket",
+                "prefix": "spark-logs",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_glue_job": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_cloudwatch": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
+                "job_run_id": "jr_1",
+                "start": "2026-07-29T00:00:00Z",
+                "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_cloudwatch_logs": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
+                "job_run_id": "jr_1",
+                "log_group": "/aws-glue/jobs/error",
+                "start": "2026-07-29T00:00:00Z",
+                "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_iam_access": {
+                "repo": str(tmp_path),
+                "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+                "resource_arns": ["arn:aws:s3:::lake/curated/*"],
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_glue_resource_link": {
+                "repo": str(tmp_path),
+                "database": "analytics",
+                "table": "dim_cliente_prod",
+                "catalog_id": "111111111111",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_lakeformation": {
+                "repo": str(tmp_path),
+                "database": "curated",
+                "table": "fato_venda",
+                "catalog_id": "111111111111",
+                "resource_arn": "arn:aws:s3:::lake/curated/fato_venda",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_glue_job_runs": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_iceberg_metadata": {
+                "repo": str(tmp_path),
+                "table": "db.tbl",
+                "workgroup": "primary",
+                "output_location": "s3://athena-results/",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_athena_workgroup": {
+                "repo": str(tmp_path),
+                "workgroup": "primary",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_emr_cluster": {
+                "repo": str(tmp_path),
+                "cluster_id": "j-1EXAMPLE",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_aws_collect_emr_serverless": {
+                "repo": str(tmp_path),
+                "application_id": "00fEXAMPLE",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            # Os DOIS ids, porque `DescribeJobRun` exige `virtualClusterId`
+            # junto do `id` -- nao ha forma de pedir um job run sozinho.
+            "sparkforge_aws_collect_emr_eks": {
+                "repo": str(tmp_path),
+                "virtual_cluster_id": "0abcEXAMPLE",
+                "job_run_id": "0runEXAMPLE",
+                "now": "2026-07-30T00:00:00Z",
+            },
+        }[name]
+        return call_tool(name, args)
+
+    if name == "sparkforge_aws_report_github":
+        # Mesmo job de amostra de `report sign`: um finding com LINHA num arquivo
+        # que existe sob `repo`, para que o SARIF validado aqui tenha resultado,
+        # e nao so o `results: []` que qualquer entrada vazia produziria.
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_aws_judge", {"facts": facts["items"], "glue": "5.0"})
+        assert judged["items"], "o job de amostra precisa render pelo menos um finding"
+        findings_path = tmp_path / "findings.json"
+        findings_path.write_text(json.dumps(judged["items"]), encoding="utf-8")
+        facts_path = tmp_path / "facts.json"
+        facts_path.write_text(json.dumps(facts["items"]), encoding="utf-8")
+        resultado = call_tool(
+            "sparkforge_aws_report_github",
+            {
+                "findings_path": str(findings_path),
+                "facts_path": [str(facts_path)],
+                "repo": str(lib),
+                "fail_on": "P0",
+            },
+        )
+        assert resultado["counts"]["located"] >= 1, resultado["refused"]
+        return resultado
+
+    if name in ("sparkforge_aws_report_sign", "sparkforge_aws_report_verify"):
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_aws_judge", {"facts": facts["items"], "glue": "5.0"})
+        # Sem finding, `report sign` recusa por desenho -- e o dict de erro
+        # validaria contra o ramo de erro do `oneOf`, fazendo o teste passar
+        # pelo motivo errado. A asercao trava o branch no caminho de sucesso.
+        assert judged["items"], "o job de amostra precisa render pelo menos um finding"
+        findings_path = tmp_path / "findings.json"
+        findings_path.write_text(json.dumps(judged["items"]), encoding="utf-8")
+        report = tmp_path / "relatorio.md"
+        report.write_text(
+            "# Relatorio de Performance\n\n## 1. Resumo executivo\n\n"
+            "- Gargalo dominante: escrita com coalesce(1)\n",
+            encoding="utf-8",
+        )
+        args = {"report_path": str(report), "findings_path": str(findings_path)}
+        signed = call_tool("sparkforge_aws_report_sign", args)
+        if name == "sparkforge_aws_report_sign":
+            return signed
+        return call_tool("sparkforge_aws_report_verify", args)
+
+    if name == "sparkforge_aws_collect_verify":
+        return call_tool("sparkforge_aws_collect_verify", {"repo": str(tmp_path)})
+
+    if name in (
+        "sparkforge_aws_code_context",
+        "sparkforge_aws_code_search",
+        "sparkforge_aws_code_symbol",
+        "sparkforge_aws_code_path",
+        "sparkforge_aws_code_shape",
+        "sparkforge_aws_code_export",
+        "sparkforge_aws_code_read",
+        "sparkforge_aws_code_status",
+        "sparkforge_aws_code_sync",
+    ):
+        return _real_code_output_for(name, tmp_path)
+
+    raise AssertionError(f"sem construtor de argumentos reais para {name}")
+
+
+class TestRealOutputValidatesAgainstItsOwnSchema:
+    """O ponto do trabalho: sem isto, os schemas sao documentacao que pode
+    apodrecer a qualquer refactor de `_core.py` sem que nenhum teste perceba."""
+
+    @pytest.mark.parametrize("name", sorted(TOOLS))
+    def test_real_output_matches_declared_schema(self, name, tmp_path, monkeypatch):
+        result = _real_output_for(name, tmp_path, monkeypatch)
+        jsonschema.validate(result, TOOLS[name]["outputSchema"])
+
+    def test_judge_error_shape_also_matches_its_schema(self, tmp_path):
+        """`facts_path` ausente e o outro branch do `oneOf` de sparkforge_aws_judge:
+        um dict de erro de fronteira, nunca uma excecao."""
+        result = call_tool("sparkforge_aws_judge", {"facts_path": str(tmp_path / "nope.json")})
+        assert "error" in result
+        jsonschema.validate(result, TOOLS["sparkforge_aws_judge"]["outputSchema"])
+
+
+class TestErrorShapesValidateToo:
+    """`call_tool` converte AdapterError em `{"error", "exit_code"}` em vez de
+    propagar excecao. Um schema so-de-sucesso e promessa falsa: o cliente que
+    validar uma resposta de "case nao existe" recebe falha de validacao em cima
+    de um erro que a tool ja tratou corretamente."""
+
+    FAILABLE = (
+        ("sparkforge_aws_case_get", {"repo": "<tmp>"}),
+        ("sparkforge_aws_case_update", {"repo": "<tmp>", "phase": "diagnosis"}),
+        ("sparkforge_aws_next_step", {"repo": "<tmp>"}),
+        ("sparkforge_aws_resume", {"repo": "<tmp>"}),
+        ("sparkforge_aws_playbook", {"coordinator": "nao-existe", "repo": "<tmp>"}),
+        ("sparkforge_aws_analyze_pyspark", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_catalog_schema", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_event_log", {"path": "<tmp>/inexistente.jsonl"}),
+        ("sparkforge_aws_analyze_plan", {"path": "<tmp>/inexistente.txt"}),
+        ("sparkforge_aws_analyze_terraform", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_iceberg", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_sql", {"path": "<tmp>/inexistente.sql"}),
+        ("sparkforge_aws_analyze_athena_workgroup", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_emr_serverless", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_emr_eks", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_controlm_jobs", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_step_functions", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_sfn_history", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_airflow_dag", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_data_quality", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_graph", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_aws_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_aws_migration_assess",
+            {"path": "<tmp>/inexistente", "source": "4.0", "target": "6.0"},
+        ),
+        (
+            "sparkforge_aws_glue_dependency_audit",
+            {"path": "<tmp>/inexistente", "glue": "6.0"},
+        ),
+        (
+            "sparkforge_aws_iceberg_assess_upgrade",
+            {"path": "<tmp>/inexistente", "source": 2, "target": 3},
+        ),
+        # Release desconhecida, e nao plataforma desconhecida, porque
+        # `platform` declara `enum` no inputSchema: um valor fora dele seria
+        # entrada invalida antes de ser erro de fronteira, e o que este teste
+        # cobra e o SEGUNDO. A plataforma fora das quatro tem o seu proprio
+        # caminho, com a lista das quatro na mensagem.
+        ("sparkforge_aws_release_describe", {"platform": "glue", "release": "99.9"}),
+        # Versao ACIMA do teto da faixa, e ela existe de verdade na fonte
+        # (`9.0.22.125`, agosto de 2026). O erro que se cobra nao e "numero
+        # invalido": e a recusa de EXTRAPOLAR para fora do passado fechado que a
+        # matriz leu.
+        ("sparkforge_aws_controlm_describe", {"version": "9.0.22.125"}),
+        (
+            "sparkforge_aws_release_diff",
+            {
+                "left_platform": "glue",
+                "left_release": "5.0",
+                "right_platform": "glue",
+                "right_release": "99.9",
+            },
+        ),
+        (
+            "sparkforge_aws_benchmark",
+            {"before_path": "<tmp>/nao-existe.json", "after_path": "<tmp>/nao-existe.json"},
+        ),
+        (
+            "sparkforge_aws_funcval_plan",
+            {"facts_paths": ["<tmp>/nao-existe.json"], "out_path": "<tmp>/plano.json"},
+        ),
+        (
+            "sparkforge_aws_funcval_compare",
+            {
+                "plan_path": "<tmp>/nao-existe.json",
+                "before_path": "<tmp>/antes.json",
+                "after_path": "<tmp>/depois.json",
+            },
+        ),
+        ("sparkforge_aws_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
+        (
+            "sparkforge_aws_workload",
+            {
+                "facts_path": "<tmp>/nao-existe.json",
+                "job_name": "etl",
+                "job_run_id": "jr_1",
+            },
+        ),
+        ("sparkforge_aws_judge", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_aws_report_sign",
+            {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
+        (
+            "sparkforge_aws_report_verify",
+            {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
+        (
+            "sparkforge_aws_report_github",
+            {
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+                "repo": "<tmp>",
+            },
+        ),
+        ("sparkforge_aws_telemetry_export", {"run_id": "../fora"}),
+        (
+            "sparkforge_aws_receipt_emit",
+            {
+                "repo": "<tmp>",
+                "facts_path": "<tmp>/nada.json",
+                "findings_path": "<tmp>/nada.json",
+                "now": "2026-09-12T00:00:00Z",
+            },
+        ),
+        ("sparkforge_aws_receipt_verify", {"repo": "<tmp>", "receipt_path": "<tmp>/nada.json"}),
+        ("sparkforge_aws_sdd_check", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_aws_sdd_status", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_aws_sdd_stamp", {"repo": "<tmp>", "path": "nao-existe.md"}),
+        (
+            "sparkforge_aws_proof",
+            {
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+                "after_facts_path": "<tmp>/nada.json",
+                "applied": ["SF-PY-002"],
+            },
+        ),
+        ("sparkforge_aws_simulate", {"facts_path": "<tmp>/nada.json", "sets": ["tf:x=1"]}),
+        (
+            "sparkforge_aws_gain",
+            {"baseline_paths": ["<tmp>/nada.json"], "candidate_paths": ["<tmp>/nada.json"]},
+        ),
+        ("sparkforge_aws_scan", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_aws_doctor", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_aws_policy_explain", {"repo": "<tmp>/nao-existe", "bash_text": "ls"}),
+        (
+            "sparkforge_aws_change_plan",
+            {"facts_path": ["<tmp>/nada.json"], "repo": "<tmp>/nao-existe", "sets": ["a=1"]},
+        ),
+        (
+            "sparkforge_aws_change_sandbox",
+            {"repo": "<tmp>/nao-existe", "diff_path": "<tmp>/x.patch"},
+        ),
+        (
+            "sparkforge_aws_change_propose",
+            {"repo": "<tmp>/nao-existe", "sandbox_id": "0" * 16, "now": "2026-09-14T00:00:00Z"},
+        ),
+        (
+            "sparkforge_aws_arbitrate",
+            {
+                "repo": "<tmp>",
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+            },
+        ),
+        (
+            "sparkforge_aws_debate_start",
+            {
+                "repo": "<tmp>",
+                "rules": ["SF-GRAPH-005", "SF-LF-001"],
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+            },
+        ),
+    )
+
+    @staticmethod
+    def _resolve(value, tmp_path):
+        """Substitui `<tmp>` pelo tmp_path real, preservando listas -- `str(v)`
+        num valor de lista (`facts_paths`) produziria `"['<tmp>/x.json']"`, uma
+        string malformada em vez de uma lista real."""
+        if isinstance(value, list):
+            return [str(v).replace("<tmp>", str(tmp_path)) for v in value]
+        return str(value).replace("<tmp>", str(tmp_path))
+
+    @pytest.mark.parametrize("name,args", FAILABLE, ids=[n for n, _ in FAILABLE])
+    def test_error_response_validates_against_its_own_schema(self, name, args, tmp_path):
+        import jsonschema
+
+        resolved = {k: self._resolve(v, tmp_path) for k, v in args.items()}
+        result = call_tool(name, resolved)
+        assert "error" in result, f"{name} deveria ter falhado neste input"
+        jsonschema.validate(result, TOOLS[name]["outputSchema"])
+
+    @pytest.mark.parametrize("name,args", FAILABLE, ids=[n for n, _ in FAILABLE])
+    def test_error_message_is_actionable(self, name, args, tmp_path):
+        resolved = {k: self._resolve(v, tmp_path) for k, v in args.items()}
+        message = call_tool(name, resolved)["error"]
+        assert "sparkforge-aws" in message, f"{name}: erro sem comando que resolve"
+
+    def test_every_failable_tool_declares_both_shapes(self):
+        for name, _ in self.FAILABLE:
+            assert "oneOf" in TOOLS[name]["outputSchema"], name
+
+
+class TestGlueJobRunTools:
+    def test_the_three_new_tools_are_declared_and_dispatchable(self):
+        from sparkforge_aws.adapters import tools
+
+        novas = {
+            "sparkforge_aws_collect_glue_job_runs",
+            "sparkforge_aws_analyze_cloudwatch",
+            "sparkforge_aws_analyze_glue_job_runs",
+        }
+        assert novas <= set(tools.TOOLS)
+        assert novas <= set(tools._HANDLERS)
+
+    def test_the_three_new_tools_are_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        listadas = set(manifest["tools"])
+        assert {
+            "sparkforge_aws_analyze_cloudwatch",
+            "sparkforge_aws_analyze_glue_job_runs",
+            "sparkforge_aws_collect_glue_job_runs",
+        } <= listadas
+
+
+class TestSqlMetricsTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge_aws.adapters import tools
+
+        assert "sparkforge_aws_analyze_sql_metrics" in tools.TOOLS
+        assert "sparkforge_aws_analyze_sql_metrics" in tools._HANDLERS
+
+    def test_the_tool_is_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        assert "sparkforge_aws_analyze_sql_metrics" in set(manifest["tools"])
+
+
+class TestWorkloadTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge_aws.adapters import tools
+
+        assert "sparkforge_aws_workload" in tools.TOOLS
+        assert "sparkforge_aws_workload" in tools._HANDLERS
+
+    def test_the_tool_is_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        assert "sparkforge_aws_workload" in set(manifest["tools"])
+
+
+class TestCapacityTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge_aws.adapters import tools
+
+        assert "sparkforge_aws_capacity" in tools.TOOLS
+        assert "sparkforge_aws_capacity" in tools._HANDLERS
+
+
+class TestFinopsTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge_aws.adapters import tools
+
+        assert "sparkforge_aws_finops" in tools.TOOLS
+        assert "sparkforge_aws_finops" in tools._HANDLERS
+
+class TestArbitrateTool:
+    """`sparkforge_aws_arbitrate` -- a superficie MCP do executor agentico.
+
+    A descricao dela declara TRES coisas que a tool nao faz, e isso nao e
+    decoracao: e o contrato. Sem elas escritas, quem le a superficie assume que
+    uma tool chamada "arbitrate" resolve a disputa, mede o ganho e publica uma
+    confianca -- e nenhuma das tres e verdade.
+    """
+
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge_aws.adapters import tools
+
+        assert "sparkforge_aws_arbitrate" in tools.TOOLS
+        assert "sparkforge_aws_arbitrate" in tools._HANDLERS
+
+    def test_a_descricao_declara_o_que_ela_nao_faz(self):
+        descricao = TOOLS["sparkforge_aws_arbitrate"]["description"].lower()
+        # Nao estima ganho (regra 13: atribuir custo a uma causa exige o custo
+        # do run que nao aconteceu).
+        assert "nao estima ganho" in descricao
+        # Nao publica score como confianca medida: os pesos de `assess_claim`
+        # sao convencao e nenhum experimento os calibrou.
+        assert "convencao" in descricao
+        assert "score" in descricao
+        # Nao executa debate: quando a arbitragem nao fecha, sai o plano.
+        assert "debate.unresolved" in descricao
+
+    def test_ela_declara_caminho_e_por_isso_cai_na_cadeia_de_autorizacao(self):
+        """`repo`, `findings_path` e `facts_path` sao nomes de caminho.
+
+        A cadeia de `sparkforge_aws.agents.autonomy` confina TODO argumento cujo
+        nome nomeia caminho dentro da raiz do case. Uma tool que grava no disco
+        e nao declarasse nenhum cairia no conjunto de excecao -- e sairia da
+        verificacao de confinamento sem que nada acusasse.
+        """
+        from sparkforge_aws.agents.autonomy import _e_chave_de_caminho
+
+        propriedades = TOOLS["sparkforge_aws_arbitrate"]["inputSchema"]["properties"]
+        assert _e_chave_de_caminho("repo")
+        assert {"repo", "findings_path", "facts_path"} <= set(propriedades)
+
+    def test_ela_e_local_mutation_e_nao_read_only(self):
+        """Ela GRAVA: `.sparkforge_aws/blackboard/*.jsonl` mais o ADR."""
+        from sparkforge_aws.agents.autonomy import ToolClass, tool_class
+
+        assert tool_class("sparkforge_aws_arbitrate") is ToolClass.LOCAL_MUTATION
+
+    def test_o_score_de_arbitragem_nao_aparece_no_output_schema(self):
+        """O desfecho sai; o numero nao.
+
+        `assess_claim` pontua evidencia 40%, autoridade 30%, especificidade 20%
+        e aplicabilidade 10% -- pesos de convencao, sem calibracao. Eles ordenam
+        claims DENTRO de uma arbitragem; publicar o valor absoluto num schema o
+        transformaria em confianca medida, que ele nao e.
+        """
+        schema = json.dumps(TOOLS["sparkforge_aws_arbitrate"]["outputSchema"])
+        for proibido in ("confidence_score", "evidence_quality", "independence_score"):
+            assert proibido not in schema, proibido
+
+    def test_a_tool_grava_o_blackboard_que_os_verbos_de_leitura_liam_vazio(self, tmp_path):
+        from sparkforge_aws.agentic.blackboard import read_claims
+
+        lib = tmp_path / "lib"
+        lib.mkdir()
+        (lib / "loader.py").write_text(JOB, encoding="utf-8")
+        facts = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_aws_judge", {"facts": facts["items"], "glue": "5.0"})
+        repo = tmp_path / "case"
+        repo.mkdir()
+
+        resultado = call_tool(
+            "sparkforge_aws_arbitrate",
+            {
+                "repo": str(repo),
+                "findings": judged["items"],
+                "facts": facts["items"],
+                "glue": "5.0",
+            },
+        )
+
+        assert resultado["kind"] == "executor.run"
+        assert resultado["persisted"] is True
+        assert resultado["claims"]
+        assert len(read_claims(repo)) == len(resultado["claims"])
+
+
+class TestJudgeDeclaraOPlano:
+    """O bloco `plan` e o `evidence_standing` chegaram na resposta na T4 e nao
+    estavam no `outputSchema`. Campo que o payload carrega e o schema nao
+    declara e campo que o cliente MCP nao tem como saber que existe -- o mesmo
+    defeito que `emr` teve em `_RUNTIME_CONTEXT`."""
+
+    def test_outputschema_declara_plan_e_evidence_standing(self):
+        from sparkforge_aws.adapters.tools import TOOLS
+
+        schema = json.dumps(TOOLS["sparkforge_aws_judge"])
+        assert "plan" in schema
+        assert "evidence_standing" in schema
+
+    def test_a_descricao_diz_que_nao_grava(self):
+        from sparkforge_aws.adapters.tools import TOOLS
+
+        desc = TOOLS["sparkforge_aws_judge"]["description"].lower()
+        assert "nao grava" in desc or "não grava" in desc
+        assert "arbitrate" in desc
+
+    def test_o_judge_continua_read_only(self):
+        """A fronteira da secao 2 do spec, exercitada e nao so escrita: publicar
+        o plano NAO podia mover a classe da tool. Se ela virasse
+        `LOCAL_MUTATION`, a cadeia de autorizacao de um verbo que muitas skills
+        chamam mudaria em silencio."""
+        from sparkforge_aws.agents.autonomy import ToolClass, tool_class
+
+        assert tool_class("sparkforge_aws_judge") is ToolClass.READ_ONLY

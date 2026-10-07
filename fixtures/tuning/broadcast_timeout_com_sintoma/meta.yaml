@@ -1,0 +1,4 @@
+name: broadcast_timeout_com_sintoma
+runtime:
+  glue: '5.0'
+proves: 'O caso de `broadcast_timeout_medido` com skew de duracao 5x ao lado, acima do limiar 3,0 da SF-TIMEOUT-001: recusa `sintoma_ao_lado`, nomeando a medida.'

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge_aws.local/contracts/forge-lab-receipt-v1.schema.json",
+  "title": "Forge Lab Receipt v1",
+  "type": "object",
+  "required": ["schema_version", "run_id", "scenario", "fidelity", "oracle", "receipt_sha256"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "scenario": {"type": "string", "minLength": 1},
+    "scenario_version": {"type": "integer", "const": 1},
+    "fidelity": {"type": "object", "required": ["tier", "proves", "does_not_prove"]},
+    "facts": {"type": "array"},
+    "findings": {"type": "array"},
+    "oracle": {"type": "object", "required": ["classification"]},
+    "assertions": {"type": "object", "required": ["classification"]},
+    "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

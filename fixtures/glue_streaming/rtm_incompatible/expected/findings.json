@@ -1,0 +1,131 @@
+[
+  {
+    "rule_id": "SF-GLUESTREAM-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Glue Real-Time Mode com requisito observado incompatível",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-incompatible",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_4eea5a"
+    ],
+    "measured": {
+      "partition_count": 4,
+      "task_slots": 4
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O dump observado marca Real-Time Mode e também traz pelo menos uma propriedade incompatível com as restrições documentadas do Glue 6.0: linguagem Scala, fonte Kafka, operação stateless, output Update e uso direto de streaming sem foreachBatch. O achado não substitui a confirmação da versão/runtime efetivos.",
+    "proposed_change": [
+      "Confirmar Glue 6.0, tipo gluestreaming e argumento de habilitação no job efetivo.",
+      "Remover ou substituir somente a restrição observada após validar requisito funcional.",
+      "Se o workload for stateful, Kafka não for a fonte ou PySpark for necessário, avaliar micro-batch."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Migrar para RTM pode alterar semântica de state, output e recuperação.",
+      "Trocar modo sem validar consumidores pode perder latência ou resultado esperado."
+    ],
+    "tradeoffs": [
+      "RTM reduz latência em uma classe restrita de workload, mas reduz opções de operação."
+    ],
+    "validation": [
+      "Reextrair a definição do job e confirmar cada requisito contra a versão observada.",
+      "Executar teste controlado com contagem, schema, chaves, agregados e comportamento do sink.",
+      "Comparar latência somente com janelas, volume e fonte equivalentes."
+    ],
+    "rollback": [
+      "Reverter o argumento/configuração RTM e restaurar o modo anterior preservando checkpoint e evidência."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "glue.streaming.rtm_constraints",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version",
+        "correctness.write_result",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-GLUESTREAM-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Auto Scaling declarado junto com Glue RTM",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-incompatible",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_4eea5a"
+    ],
+    "measured": {
+      "partition_count": 4,
+      "task_slots": 4
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O dump traz RTM e auto scaling habilitado no mesmo job. A documentação oficial declara que auto scaling não é compatível com RTM; o fato não mede impacto operacional desta aplicação.",
+    "proposed_change": [
+      "Confirmar se auto scaling está efetivamente aplicado, não apenas declarado.",
+      "Avaliar worker count fixo com partições observadas antes de qualquer alteração."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fixar workers sem medir partições pode deixar capacidade insuficiente ou ociosa."
+    ],
+    "tradeoffs": [
+      "Worker count fixo troca elasticidade por previsibilidade da execução RTM."
+    ],
+    "validation": [
+      "Comparar partições, task slots, backlog e latência antes e depois da mudança."
+    ],
+    "rollback": [
+      "Restaurar a configuração anterior preservando métricas e resultado funcional."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "glue.streaming.rtm.autoscaling",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

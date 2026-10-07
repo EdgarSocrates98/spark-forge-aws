@@ -1,0 +1,1448 @@
+schema_version: 1
+
+platforms: [claude_code, devin_desktop, devin_cli, codex, copilot_ci]
+mechanisms: [mcp, cli, files, playbook, subagent]
+
+notes: >
+  Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge_aws.adapters.mcp
+  --transport http` e serverUrl `http://<host>:<port>/mcp`. Claude Code, Devin CLI e CI usam
+  stdio. `.mcp.json` configura o de Claude Code -- e SO o dele: ele parametriza
+  `PYTHONPATH` e `SPARKFORGE_AWS_CATALOG` por `${CLAUDE_PLUGIN_ROOT}`, variavel do carregador
+  de plugin do Claude Code que nenhuma pagina do Devin documenta expandir; importado como
+  esta, o servidor morre na primeira leitura do catalogo. O Devin CLI tem arquivo proprio
+  (`.devin/mcp_config.json`, chave `mcpServers`) e comando proprio (`devin mcp add`), e o
+  procedimento esta em GUIA_DE_USO.md secao 3.4 -- declarar `mcp` sem dizer como aciona-lo
+  seria o defeito do transporte HTTP da Fase 1 outra vez.
+  Devin CLI nao le Knowledge nem Playbooks da conta Devin, por isso o procedimento e
+  autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
+  interativa: roda o CLI `sparkforge-aws` como processo de linha de comando dentro do workflow,
+  ou opera diretamente sobre arquivo quando nem isso esta disponivel.
+  Codex, como Copilot CI, nao mantem sessao MCP interativa da mesma forma: roda o CLI
+  `sparkforge-aws` como processo de linha de comando dentro do seu ambiente de execucao, ou
+  opera diretamente sobre arquivo. Por isso `codex` nunca declara `mcp` em nenhuma
+  capacidade -- o mesmo raciocinio ja aplicado a `copilot_ci`, nao um caso novo.
+  `subagent` NAO e mecanismo declarado neste manifesto, de proposito. Despacho de
+  subagente e capacidade de HARNESS do Claude Code (o `Agent` tool desta CLI), nao
+  conteudo deste repositorio: nenhuma outra plataforma tem um equivalente que este
+  repositorio possa acionar. Declara-lo como mecanismo portavel faria o manifesto
+  afirmar paridade que nao existe -- o defeito exato do transporte HTTP na Fase 1, que
+  `parity.yaml` afirmava e nenhum teste tocava, e que so apareceu quando alguem subiu o
+  servidor de verdade. Em vez disso, a capacidade "coordenar investigacao por agente
+  especializado" declara `playbook`: a tool/CLI `sparkforge_aws_playbook` le os mesmos
+  arquivos em `agents/` e `agents/executors/` que um coordenador Claude Code despacharia
+  como subagente, e devolve a mesma decomposicao em passos sequenciais -- perde o
+  paralelismo do despacho, mantem o metodo. E o que Devin Desktop, Devin CLI, Codex e
+  Copilot CI conseguem consumir sem harness de subagente.
+
+  DESVIO REGISTRADO SOBRE O PARAGRAFO ACIMA (2026-08-04, fase de perfis de subagente do
+  Devin). O paragrafo fica como esta, e nao e reescrito: e a convencao deste repositorio
+  para decisao registrada que a fonte derrubou pela metade.
+  O QUE CAIU: a frase universal "nenhuma outra plataforma tem um equivalente que este
+  repositorio possa acionar". Ela cai por contraexemplo medido em
+  knowledge/devin/agents-and-subagents.md (retrieved 2026-08-04): o Devin CLI le
+  `.agents/agents/` nativamente e importa `.claude/agents/*.md` ("Each `.md` file becomes
+  a subagent profile"), e o Devin Local agent do Desktop despacha os mesmos perfis --
+  dois diretorios que este repositorio ja publicava antes desta fase, sem nenhuma mudanca.
+  Por isso `subagent` entra em `mechanisms`, e a capacidade de coordenacao o declara para
+  `claude_code`, `devin_cli` e `devin_desktop`.
+  O QUE SOBROU, e continua valendo palavra por palavra: o perfil e nosso, o despacho e
+  deles. Nenhum arquivo versionado liga subagente nem fixa modelo -- `subagents_enabled` e
+  chave de usuario, "Default subagent model" e setting de organizacao com opcao *None* que
+  desliga o despacho por completo, e a propria Cognition declara custom subagents
+  EXPERIMENTAIS. E por isso `playbook` continua declarado nas cinco plataformas, inclusive
+  nas tres que despacham: ele e o piso que roda quando o despacho esta desligado, nao um
+  degrau que `subagent` substitui.
+  A DISCIPLINA DO PARAGRAFO SEGUE SENDO EXERCIDA, e nao abandonada: `codex` e `copilot_ci`
+  NAO ganham `subagent`, porque a pesquisa nao os cobriu e nada nela diz que eles tenham
+  equivalente. Afirmar sem medir seria repetir o defeito do transporte HTTP da Fase 1 que
+  este mesmo paragrafo cita como razao de ser da regra.
+  RECORTE DO `devin_desktop`, medido e nao inferido: subagente e documentado como
+  capacidade do Devin Local agent, sob o toggle "Subagents (Preview)" em Devin Settings, e
+  a pagina do Desktop delega formato e descoberta a do CLI. As paginas do motor Cascade
+  (cascade.md, skills.md, workflows.md, agents-md.md, advanced.md, agent-command-center.md)
+  nao mencionam subagente -- argumento por ausencia, marcado como tal na pesquisa. Fora do
+  Devin Local agent com o toggle ligado, a coordenacao no Desktop e `playbook`.
+
+capabilities:
+  - name: detect runtime and version divergence
+    tools: [sparkforge_aws_runtime_detect]
+    cli: [runtime detect]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract anchored facts from PySpark source
+    tools: [sparkforge_aws_analyze_pyspark]
+    cli: [analyze pyspark]
+    knowledge: [knowledge/anti-patterns.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Structured Streaming source and StreamingQueryProgress facts
+    tools: [sparkforge_aws_analyze_streaming]
+    cli: [analyze streaming]
+    knowledge: [knowledge/streaming-reliability.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Kafka MSK and Kinesis transport artifact facts
+    tools: [sparkforge_aws_analyze_transport]
+    cli: [analyze transport]
+    knowledge: [knowledge/transport-diagnostics.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Apache Flink and Managed Flink streaming artifact facts
+    tools: [sparkforge_aws_analyze_flink]
+    cli: [analyze flink]
+    knowledge: [knowledge/flink-streaming.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract CDC, Debezium and AWS DMS replication artifact facts
+    tools: [sparkforge_aws_analyze_cdc]
+    cli: [analyze cdc]
+    knowledge: [knowledge/cdc-replication.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract Schema Registry and data-contract artifact facts
+    tools: [sparkforge_aws_analyze_schema_registry]
+    cli: [analyze schema-registry]
+    knowledge: [knowledge/schema-registry-data-contracts.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compose streaming lakehouse and transport observability evidence
+    tools: [sparkforge_aws_analyze_streaming_composition]
+    cli: [analyze streaming-composition]
+    knowledge:
+      - knowledge/streaming-lakehouse-observability.md
+      - rules/catalog/streaming_iceberg.yaml
+      - rules/catalog/streaming_observability.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract event-driven AWS configuration facts
+    tools: [sparkforge_aws_analyze_event_driven]
+    cli: [analyze event-driven]
+    knowledge:
+      - knowledge/event-driven-architecture.md
+      - rules/catalog/event-driven.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: review declared streaming SLO, FinOps, security, serving and lakehouse operations
+    tools: [sparkforge_aws_analyze_streaming_ops]
+    cli: [analyze streaming-ops]
+    knowledge:
+      - knowledge/streaming-operations.md
+      - knowledge/streaming-format-serving-matrix.md
+      - rules/catalog/streaming-operations.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze streaming checkpoints, Kafka Connect/Streams and OpenLineage artifacts
+    tools: [sparkforge_aws_analyze_streaming_integrations]
+    cli: [analyze streaming-integrations]
+    knowledge:
+      - knowledge/streaming-integrations.md
+      - rules/catalog/streaming-integrations.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: decide realtime architecture from declared requirements and constraints
+    tools: []
+    cli: [architecture streaming]
+    knowledge: [knowledge/streaming-realtime-candidate-matrix.md]
+    platforms:
+      claude_code: [cli, files]
+      devin_desktop: [cli, files]
+      devin_cli: [cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract AWS Glue Streaming and Real-Time Mode artifact facts
+    tools: [sparkforge_aws_analyze_glue_streaming]
+    cli: [analyze glue-streaming]
+    knowledge: [knowledge/glue-streaming-rtm.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Glue Data Catalog schema dump
+    tools: [sparkforge_aws_analyze_catalog_schema]
+    cli: [analyze catalog-schema]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Spark event log
+    tools:
+      - sparkforge_aws_analyze_event_log
+      - sparkforge_aws_analyze_cloudwatch
+      - sparkforge_aws_analyze_glue_job_runs
+      - sparkforge_aws_analyze_sql_metrics
+    cli:
+      - analyze event-log
+      - analyze cloudwatch
+      - analyze glue-job-runs
+      - analyze sql-metrics
+    knowledge: [knowledge/spark/memory-and-oom.md, knowledge/spark/sql-metrics.yaml]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # Capacidade PROPRIA e nao uma linha a mais na de cima, e a razao e a fonte:
+  # o event log e o log do CloudWatch sao artefatos SEPARADOS, coletados por
+  # verbos diferentes, e o que o segundo carrega -- falha de driver antes do
+  # primeiro stage, `Py4JJavaError` de codigo Python, OOM de container -- nao
+  # esta no primeiro.
+  #
+  # `analyze error-signatures` mora aqui e nao numa capacidade de "julgamento"
+  # porque ele NAO julga: ele constata que a assinatura casou. O juizo e das
+  # regras `SF-ERR-*`, que a capacidade de `judge` ja cobre.
+  # Capacidade PROPRIA, e nao uma linha na de layout S3: `SF-PQ-001` a
+  # `SF-PQ-005` julgam por LISTAGEM (tamanho de objeto) e por PLANO (filtros
+  # declarados); esta le o RODAPE do arquivo, que e artefato separado e exige
+  # uma dependencia que o nucleo nao tem.
+  - name: read the Parquet footer and measure whether its statistics can prune
+    tools:
+      - sparkforge_aws_analyze_parquet_footer
+    cli:
+      - analyze parquet-footer
+    knowledge: [knowledge/storage/parquet-layout.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: read the error from a run and match it against the signature catalog
+    tools:
+      - sparkforge_aws_analyze_cloudwatch_logs
+      - sparkforge_aws_analyze_error_signatures
+    cli:
+      - analyze cloudwatch-logs
+      - analyze error-signatures
+    knowledge: [knowledge/spark/memory-and-oom.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: read who holds which Lake Formation permission on a table
+    tools:
+      - sparkforge_aws_analyze_lakeformation_grants
+      - sparkforge_aws_analyze_iam_access
+      - sparkforge_aws_analyze_glue_resource_link
+    cli:
+      - analyze lakeformation-grants
+      - analyze iam-access
+      - analyze glue-resource-link
+    knowledge: [knowledge/glue/lakeformation-fgac.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Spark physical plan
+    tools: [sparkforge_aws_analyze_plan]
+    cli: [analyze plan]
+    knowledge: [knowledge/spark/plan-reading.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Terraform aws_glue_job definitions
+    tools: [sparkforge_aws_analyze_terraform]
+    cli: [analyze terraform]
+    knowledge: [knowledge/glue/job-arguments.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Iceberg metadata tables
+    tools: [sparkforge_aws_analyze_iceberg]
+    cli: [analyze iceberg]
+    knowledge: [knowledge/storage/iceberg-performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from SQL text and spark.sql literals
+    tools: [sparkforge_aws_analyze_sql]
+    cli: [analyze sql]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Athena workgroup configuration
+    tools: [sparkforge_aws_analyze_athena_workgroup]
+    cli: [analyze athena-workgroup]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from an EMR on EC2 cluster dump
+    tools: [sparkforge_aws_analyze_emr_cluster]
+    cli: [analyze emr-cluster]
+    knowledge: [knowledge/emr/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from an EMR Serverless application dump
+    tools: [sparkforge_aws_analyze_emr_serverless]
+    cli: [analyze emr-serverless]
+    knowledge: [knowledge/emr-serverless/application-configuration.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # `knowledge:` com DOIS caminhos, e a lista mudou dentro da propria fase: quando
+  # esta entrada foi escrita, `knowledge/` ainda nao tinha documento de EMR on EKS
+  # e declarar um caminho inexistente reprovaria em
+  # `test_every_declared_knowledge_file_exists`. Os dois documentos existem desde a
+  # Task que os escreveu, e a ausencia deixou de ser decidida para virar omissao --
+  # que e o defeito oposto, e o unico que aquele teste NAO pega. A capacidade chega
+  # as cinco plataformas pelas mesmas duas superficies das irmas.
+  - name: extract facts from an EMR on EKS job run dump
+    tools: [sparkforge_aws_analyze_emr_eks]
+    cli: [analyze emr-eks]
+    knowledge:
+      - knowledge/emr-eks/job-run-configuration.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts about data validation in PySpark code
+    tools: [sparkforge_aws_analyze_data_quality]
+    cli: [analyze data-quality]
+    knowledge: [knowledge/dq/validation-frameworks.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts about GraphFrames graph processing in PySpark code
+    tools: [sparkforge_aws_analyze_graph]
+    cli: [analyze graph]
+    knowledge: [knowledge/graph/graphframes-api.md, knowledge/graph/availability.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze explicit Data Platform metadata graph and bounded lineage impact
+    tools: [sparkforge_aws_analyze_platform_graph]
+    cli: [analyze platform-graph]
+    knowledge: [docs/knowledge/platform-intelligence-graph.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: inventory serving ingestion AI data and optional radar ecosystem
+    tools: [sparkforge_aws_analyze_platform_ecosystem]
+    cli: [analyze platform-ecosystem]
+    knowledge: [docs/knowledge/data-platform-ecosystem.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: describe offline Forge Lab topology and failure scenarios
+    tools: [sparkforge_aws_analyze_forge_lab]
+    cli: [analyze forge-lab]
+    knowledge: [docs/knowledge/forge-lab-digital-twin.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze open lakehouse catalog and multi-engine bindings
+    tools: [sparkforge_aws_analyze_lakehouse_catalog]
+    cli: [analyze lakehouse-catalog]
+    knowledge: [docs/knowledge/open-lakehouse-catalog.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze dbt manifest catalog and run results
+    tools: [sparkforge_aws_analyze_dbt_artifacts]
+    cli: [analyze dbt-artifacts]
+    knowledge: [docs/knowledge/analytics-engineering-microscope.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze read-only DuckDB Parquet and Iceberg microscope bundles
+    tools: [sparkforge_aws_analyze_duckdb_microscope]
+    cli: [analyze duckdb-microscope]
+    knowledge: [docs/knowledge/analytics-engineering-microscope.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: evaluate offline data observability and SRE SLO evidence
+    tools: [sparkforge_aws_analyze_data_observability]
+    cli: [analyze data-observability]
+    knowledge: [docs/knowledge/data-observability-sre.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: normalize orchestration control plane across Airflow Dagster Step Functions and Control-M
+    tools: [sparkforge_aws_analyze_orchestration]
+    cli: [analyze orchestration]
+    knowledge: [docs/knowledge/orchestration-control-plane.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from an S3 object listing
+    tools: [sparkforge_aws_analyze_s3_listing]
+    cli: [analyze s3-listing]
+    knowledge: [knowledge/storage/parquet-layout.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from the declared workload inventory (SLA and primary source)
+    tools: [sparkforge_aws_analyze_workload]
+    cli: [analyze workload]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from the declared table consumer inventory
+    tools: [sparkforge_aws_analyze_consumers]
+    cli: [analyze consumers]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compare two Terraform states and mark what changed
+    tools: [sparkforge_aws_analyze_terraform_diff]
+    cli: [analyze terraform-diff]
+    knowledge: [knowledge/glue/workers-and-capacity.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: audit declared Python and Scala dependencies against a runtime
+    tools: [sparkforge_aws_glue_dependency_audit]
+    cli: [glue dependency-audit]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: assess an Iceberg format version upgrade against declared consumers
+    tools: [sparkforge_aws_iceberg_assess_upgrade]
+    cli: [iceberg assess-upgrade]
+    knowledge: [knowledge/storage/iceberg-v3.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # DUAS capacidades e nao uma, porque a fronteira das duas e diferente e
+  # `parity.yaml` e o que uma plataforma le para saber o que existe. `describe`
+  # responde "o que esta release publica" -- e o que ela NAO publica, nomeado.
+  # `diff` responde "o que muda entre duas", com o eixo declarado. Nenhuma das
+  # duas responde "isso quebra?": essa e a capacidade de cima, `assess a Glue
+  # version migration step by step`, e colapsar as tres numa so faria o
+  # manifesto prometer avaliacao de compatibilidade onde ha leitura de matriz.
+  #
+  # `knowledge:` com as QUATRO paginas de matriz, e nao com uma: o verbo le as
+  # quatro, e declarar so a de Glue faria o degrau `files` -- o que chega a quem
+  # nao tem MCP nem Python -- apontar para um quarto do dado.
+  - name: describe what a runtime release publishes, and what it does not
+    tools: [sparkforge_aws_release_describe]
+    cli: [release describe]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # CAPACIDADE PROPRIA, e nao uma quinta plataforma da de cima. A de cima
+  # responde "o que esta release publica" para as QUATRO plataformas de Spark,
+  # com um eixo (componente -> versao). Esta responde por versao do Control-M
+  # Automation API, com DOIS eixos -- capacidade com fronteira, e componente com
+  # exigencia -- e sobre um produto que nao roda Spark. Colapsar as duas faria o
+  # manifesto prometer, para Glue e EMR, um eixo de capacidade que aquelas
+  # fontes nao publicam.
+  #
+  # `knowledge:` com a pagina da matriz, que e onde mora o que a fonte NAO
+  # sustenta -- inclusive o limite entre o Automation API e o produto Control-M,
+  # e o fato de `WebFetch` devolver 403 contra `documents.bmc.com`.
+  - name: describe what a Control-M Automation API version supports
+    tools: [sparkforge_aws_controlm_describe]
+    cli: [controlm describe]
+    knowledge:
+      - knowledge/controlm/automation-api-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # A CAPACIDADE IRMA DA DE CIMA, E A DIFERENCA ENTRE AS DUAS E O QUE ELAS LEEM.
+  # `controlm describe` le SO a matriz de `knowledge/` e responde por VERSAO --
+  # nao ha artefato do operador em jogo. Esta le o artefato: a definicao
+  # `Jobs-as-Code` versionada no repositorio do cliente, que e codigo-fonte da
+  # mesma natureza de um `main.tf`. Colapsar as duas numa so faria o manifesto
+  # prometer, para quem so quer consultar a matriz, uma capacidade que exige ter
+  # o JSON de definicao em maos.
+  #
+  # `knowledge:` com a pagina da matriz porque e la que mora a FRONTEIRA que o
+  # cruzamento usa -- e tambem o que a fonte NAO sustenta, incluindo as 9 versoes
+  # da faixa sem afirmacao propria e o fato de `WebFetch` devolver 403 contra
+  # `documents.bmc.com`.
+  #
+  # NAO HA `collect` PAR, e a ausencia e decidida: `Jobs-as-Code` e codigo-fonte
+  # no repositorio do cliente, nao resposta de API. Nao ha o que baixar, e um
+  # verbo de coleta aqui seria parametro sem consumidor.
+  - name: extract facts from a Control-M Jobs-as-Code definition
+    tools: [sparkforge_aws_analyze_controlm_jobs]
+    cli: [analyze controlm-jobs]
+    knowledge:
+      - knowledge/controlm/automation-api-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # A definicao ASL do AWS Step Functions e codigo-fonte, como o `Jobs-as-Code` da
+  # capacidade acima: o `.asl.json` do repositorio, ou a saida salva de
+  # `describe-state-machine`. NAO HA `collect` PAR neste incremento, e a ausencia e
+  # decidida (D3 de `docs/sdd/STEP_FUNCTIONS/design.md`): a chamada exige credencial.
+  - name: extract facts from an AWS Step Functions state machine definition
+    tools: [sparkforge_aws_analyze_step_functions]
+    cli: [analyze step-functions]
+    knowledge:
+      - knowledge/stepfunctions/glue-integration.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # O HISTORICO de execucao e o par da capacidade acima, e a diferenca e de natureza: a
+  # definicao diz o que DEVIA acontecer, o historico diz o que ACONTECEU. NAO HA
+  # `collect` PAR neste incremento, e a ausencia e decidida (D3 de
+  # `docs/sdd/SFN_HISTORY/design.md`): a chamada exige credencial, e a API nao suporta
+  # state machine EXPRESS.
+  - name: extract facts from an AWS Step Functions execution history
+    tools: [sparkforge_aws_analyze_sfn_history]
+    cli: [analyze sfn-history]
+    knowledge:
+      - knowledge/stepfunctions/execution-history.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # O arquivo `.py` do DAG e codigo-fonte, como a definicao ASL da capacidade acima.
+  # NAO HA `collect` PAR, e a ausencia e decidida (D1 de `docs/sdd/AIRFLOW_DAG/design.md`):
+  # o metadado do Airflow em execucao exige acesso ao banco ou a API, e o `define` o poe
+  # fora de escopo. O bloco `knowledge:` entra na T4, com o documento.
+  - name: extract facts from an Apache Airflow DAG file
+    tools: [sparkforge_aws_analyze_airflow_dag]
+    cli: [analyze airflow-dag]
+    knowledge:
+      - knowledge/airflow/glue-operator.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: diff component versions between two runtime releases
+    tools: [sparkforge_aws_release_diff]
+    cli: [release diff]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # As quatro plataformas atravessam o MESMO verbo, e por isso uma capacidade
+  # so: `sparkforge_aws_migration_assess` ganhou o parametro `platform` em vez de
+  # uma tool nova por plataforma, e a CLI cobre a mesma superficie com
+  # `migrate glue` (a plataforma esta no nome, publicada antes das quatro
+  # existirem) mais `migrate emr --platform`, que escolhe entre as tres
+  # matrizes de EMR. Nenhum runtime sai da matriz de outra plataforma.
+  - name: assess a runtime version migration step by step, on any of the four platforms
+    tools: [sparkforge_aws_migration_assess]
+    cli: [migrate glue, migrate emr, migrate controlm]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+      - knowledge/controlm/automation-api-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: derive a call graph and Spark work reachability from facts
+    tools: [sparkforge_aws_analyze_call_graph]
+    cli: [analyze call-graph]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compare two Spark runs from their event log facts
+    tools: [sparkforge_aws_benchmark]
+    cli: [benchmark]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: profile a workload by independent axis from already-extracted facts
+    tools: [sparkforge_aws_workload]
+    cli: [workload]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: choose the cheapest observed capacity that meets the SLA
+    tools: [sparkforge_aws_capacity, sparkforge_aws_finops]
+    cli: [capacity, finops]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: derive Spark configuration from the measured shuffle
+    tools: [sparkforge_aws_tune]
+    cli: [tune]
+    knowledge: [knowledge/spark/shuffle-join-skew.md, knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: measure what the run puts in the context window
+    tools: [sparkforge_aws_economy_report]
+    cli: [economy report]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: evaluate a bounded deterministic decision offline
+    tools: [sparkforge_aws_decision_evaluate]
+    cli: [decision evaluate]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: derive what to measure on both sides of a change
+    tools: [sparkforge_aws_funcval_plan]
+    cli: [funcval plan]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compare the before and after measurements against the plan
+    tools: [sparkforge_aws_funcval_compare]
+    cli: [funcval compare]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: check spec artifacts against the SDD contract
+    tools: [sparkforge_aws_sdd_check, sparkforge_aws_sdd_status]
+    cli: [sdd check, sdd status]
+    knowledge: [docs/gates-por-mudanca.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: record the upstream hash of a spec artifact
+    tools: [sparkforge_aws_sdd_stamp]
+    cli: [sdd stamp]
+    knowledge: [docs/gates-por-mudanca.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: correlate facts from multiple extractors before judging
+    tools: [sparkforge_aws_fuse]
+    cli: [fuse]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: judge facts against the version-guarded catalog
+    tools: [sparkforge_aws_judge]
+    cli: [judge]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # Roda DEPOIS de `judge`, sobre os findings dele, e nao reavalia regra: decide
+  # conflito entre achados, lastro, medida que falta e ordem de aplicacao. O
+  # terceiro degrau e o proprio catalogo -- o bloco `action:` de cada regra
+  # (`kind`, `target`, `direction`, `depends_on`, `requires_absent`) e o que
+  # torna a contradicao e a ordem legiveis sem MCP e sem Python.
+  - name: arbitrate already-judged findings and decide what the judgement left open
+    tools: [sparkforge_aws_arbitrate]
+    cli: [arbitrate]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: locate the version-controlled knowledge files
+    tools: [sparkforge_aws_knowledge_path]
+    cli: [knowledge path]
+    knowledge: [knowledge/INDEX.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: trace the access path to a governed table as a graph
+    tools: [sparkforge_aws_lakeformation_access_graph]
+    cli: [lakeformation access-graph]
+    # A perna lf_grant cobra a operacao pelo fact `lakeformation.missing_grant`, que le
+    # a tabela operacao -> permissao citada.
+    knowledge: [knowledge/glue/lakeformation-fgac.md, knowledge/glue/lakeformation-permissions.yaml]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: referee the debate protocol and refuse a closure not anchored in evidence
+    tools: [sparkforge_aws_debate_referee]
+    cli: [debate referee]
+    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: run the debate protocol turn by turn and close it through the referee
+    tools: [sparkforge_aws_debate_start, sparkforge_aws_debate_next, sparkforge_aws_debate_submit]
+    cli: [debate start, debate next, debate submit]
+    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-aws-agentic-evolution-design.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: order the findings by declared consequence and name the gap
+    tools: [sparkforge_aws_root_cause]
+    cli: [root-cause]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: read the Lake Formation version axis for a Glue runtime
+    tools: [sparkforge_aws_lakeformation_matrix]
+    cli: [lakeformation matrix]
+    knowledge: [knowledge/glue/lakeformation-matrix.yaml, knowledge/glue/lakeformation-fgac.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: evaluate a version-aware Lake Formation architecture without AWS mutation
+    tools: [sparkforge_aws_lakeformation_architect]
+    cli: [lakeformation architect]
+    knowledge:
+      - knowledge/lakeformation/capability-matrix.yaml
+      - knowledge/lakeformation/architecture.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: look up a rule with threshold, version guard and source
+    tools: [sparkforge_aws_rules_lookup]
+    cli: [rules lookup]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: validate a recommendation written by the model
+    tools: [sparkforge_aws_validate_output]
+    cli: [validate]
+    knowledge: [AGENTS.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: prove a report corresponds to its evidence and catalog
+    tools: [sparkforge_aws_report_sign, sparkforge_aws_report_verify]
+    cli: [report sign, report verify]
+    knowledge: [templates/performance-report.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: show findings where the pull request is reviewed
+    tools: [sparkforge_aws_report_github]
+    cli: [report github]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: export tool spans and host usage to an OTLP collector
+    tools: [sparkforge_aws_telemetry_export]
+    cli: [telemetry export]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: prove what an execution used and decided
+    tools: [sparkforge_aws_receipt_emit, sparkforge_aws_receipt_verify]
+    cli: [receipt emit, receipt verify]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: prove what an applied change did and did not break
+    tools: [sparkforge_aws_proof]
+    cli: [proof]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: show what a configuration change would structurally move
+    tools: [sparkforge_aws_simulate]
+    cli: [simulate]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: produce a configuration change and try any diff in a sandbox copy
+    tools: [sparkforge_aws_change_plan, sparkforge_aws_change_sandbox, sparkforge_aws_change_propose]
+    cli: [change plan, change sandbox, change propose]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: load third-party rule packs alongside the core
+    tools: [sparkforge_aws_pack_list]
+    cli: [pack list, pack check]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: show what a changed official source drags along
+    tools: [sparkforge_aws_knowledge_drift]
+    cli: [knowledge drift]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: show the observed gain between measured runs
+    tools: [sparkforge_aws_gain]
+    cli: [gain]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: run the analyzers that fit a repository and judge them
+    tools: [sparkforge_aws_scan]
+    cli: [scan]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: check that the environment is ready
+    tools: [sparkforge_aws_doctor]
+    cli: [doctor]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: declare and explain the repository security policy
+    tools: [sparkforge_aws_policy_explain]
+    cli: [policy check, policy explain, policy sync-settings]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: maintain investigation state
+    tools: [sparkforge_aws_case_open, sparkforge_aws_case_get, sparkforge_aws_case_update]
+    cli: [case open, case get, case update]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: route the next step deterministically
+    tools: [sparkforge_aws_next_step]
+    cli: [next-step]
+    knowledge: [rules/catalog/routing.yaml]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: resume an investigation started in another tool
+    tools: [sparkforge_aws_resume]
+    cli: [resume, handoff]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: coordenar investigacao por agente especializado
+    tools: [sparkforge_aws_playbook]
+    cli: [playbook]
+    knowledge: [AGENT_PROTOCOL.md]
+    platforms:
+      # `subagent`: o tool `Agent` desta CLI despacha os perfis de `.claude/agents/`.
+      claude_code: [mcp, cli, files, playbook, subagent]
+      # `subagent` no Desktop SO no Devin Local agent, com o toggle "Subagents
+      # (Preview)" ligado; o motor Cascade nao o tem. Recorte inteiro em `notes` e em
+      # knowledge/devin/agents-and-subagents.md secao 2 (retrieved 2026-08-04).
+      devin_desktop: [mcp, cli, files, playbook, subagent]
+      # `subagent`: `run_subagent`/`read_subagent`, com descoberta em `.agents/agents/`
+      # e importacao de `.claude/agents/*.md`. Mesma pesquisa, secao 1.
+      devin_cli: [mcp, cli, files, playbook, subagent]
+      # Sem `subagent`, de proposito: a pesquisa nao cobriu estas duas plataformas, e
+      # declarar por simetria seria afirmar paridade que ninguem mediu. Ver `notes`.
+      codex: [cli, files, playbook]
+      copilot_ci: [cli, files, playbook]
+
+  - name: collect real AWS artifacts and verify the manifest
+    tools:
+      - sparkforge_aws_collect_event_log
+      - sparkforge_aws_collect_glue_job
+      - sparkforge_aws_collect_cloudwatch
+      - sparkforge_aws_collect_cloudwatch_logs
+      - sparkforge_aws_collect_lakeformation
+      - sparkforge_aws_collect_iam_access
+      - sparkforge_aws_collect_glue_resource_link
+      - sparkforge_aws_collect_glue_job_runs
+      - sparkforge_aws_collect_iceberg_metadata
+      - sparkforge_aws_collect_athena_workgroup
+      - sparkforge_aws_collect_emr_cluster
+      - sparkforge_aws_collect_emr_serverless
+      - sparkforge_aws_collect_emr_eks
+      - sparkforge_aws_collect_parquet_footer
+      - sparkforge_aws_collect_verify
+    cli:
+      - collect parquet-footer
+      - collect event-log
+      - collect glue-job
+      - collect cloudwatch
+      - collect cloudwatch-logs
+      - collect lakeformation
+      - collect iam-access
+      - collect glue-resource-link
+      - collect glue-job-runs
+      - collect iceberg-metadata
+      - collect athena-workgroup
+      - collect emr-cluster
+      - collect emr-serverless
+      - collect emr-eks
+      - collect verify
+    knowledge: [knowledge/glue/observability.md, knowledge/glue/observability.yaml]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: apply performance knowledge with no tooling at all
+    knowledge:
+      - knowledge/INDEX.md
+      - knowledge/spark/execution-model.md
+      - knowledge/spark/config-reference.md
+      - knowledge/spark/shuffle-join-skew.md
+      - knowledge/spark/memory-and-oom.md
+      - knowledge/spark/plan-reading.md
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/glue/workers-and-capacity.md
+      - knowledge/glue/job-arguments.md
+      - knowledge/glue/observability.md
+      - knowledge/athena/performance.md
+      - knowledge/storage/parquet-layout.md
+      - knowledge/storage/iceberg-performance.md
+      - knowledge/cross-service-constraints.md
+      - knowledge/performance-principles.md
+      - knowledge/anti-patterns.md
+      - knowledge/runtime-compatibility.md
+      - rules/catalog/README.md
+    platforms:
+      claude_code: [files]
+      devin_desktop: [files]
+      devin_cli: [files]
+      codex: [files]
+      copilot_ci: [files]
+
+  # Code Intelligence (SPEC 56-77). QUATRO capacidades para SEIS tools, e nao
+  # uma capacidade por tool: capacidade e o que o operador quer fazer, tool e
+  # como. `symbol` e `read` sao a mesma pergunta -- "me mostre este simbolo" --
+  # com e sem o corpo, e separa-las no manifesto faria o gate cobrar paridade
+  # de uma divisao que existe por seguranca, nao por capacidade.
+  #
+  # `code init`, `code index`, `code doctor` e `code purge` NAO aparecem em
+  # `cli:` de nenhuma delas, e a ausencia esta declarada em
+  # `TestNoCliVerbIsAnUndeclaredMcpGap.ALLOWED_CLI_ONLY` com a razao de cada
+  # uma. As quatro sao ciclo de vida de estado local da maquina de quem chama,
+  # e a SPEC as coloca em `73/74/75/76` -- fora da lista de tools de `57` a
+  # `67`.
+  - name: montar contexto de codigo dentro de um orcamento de tokens
+    tools: [sparkforge_aws_code_context]
+    cli: [code context]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: localizar simbolo no indice local de codigo
+    tools: [sparkforge_aws_code_search]
+    cli: [code search]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: inspecionar simbolo, vizinhanca e raio de impacto
+    tools: [sparkforge_aws_code_symbol, sparkforge_aws_code_read]
+    cli: [code symbol, code read]
+    knowledge: [docs/harness/UNTRUSTED-CONTENT.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: tracar o caminho de chamadas entre dois simbolos
+    tools: [sparkforge_aws_code_path]
+    cli: [code path]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: medir a forma do grafo de codigo -- comunidades e grau
+    tools: [sparkforge_aws_code_shape]
+    cli: [code shape]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: exportar o grafo no formato de extracao do Graphify
+    tools: [sparkforge_aws_code_export]
+    cli: [code export]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: conferir e sincronizar o frescor do indice de codigo
+    tools: [sparkforge_aws_code_status, sparkforge_aws_code_sync]
+    cli: [code status, code sync]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: discover and expand selective context under a hard byte budget
+    tools:
+      - sparkforge_aws_context_start
+      - sparkforge_aws_context_expand
+    cli:
+      - context start
+      - context expand
+    knowledge:
+      - knowledge/token-economy.md
+      - knowledge/model-selection-observability.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compose deterministic data-quality AI assessment
+    tools:
+      - sparkforge_aws_analyze_dq_ai
+      - sparkforge_aws_dq_ai_assess
+    cli:
+      - analyze dq-ai
+      - dq-ai assess
+    knowledge: [knowledge/dq/validation-frameworks.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect read-only streaming integration snapshots
+    tools: [sparkforge_aws_collect_streaming_integrations]
+    cli: [collect streaming-integrations]
+    knowledge: [knowledge/streaming-integrations.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect Glue Schema Registry latest versions read-only
+    tools: [sparkforge_aws_collect_schema_registry]
+    cli: [collect schema-registry]
+    knowledge: [knowledge/schema-registry-data-contracts.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect Managed Flink configuration and bounded temporal metrics read-only
+    tools: [sparkforge_aws_collect_managed_flink]
+    cli: [collect managed-flink]
+    knowledge: [knowledge/flink-streaming.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: inspect agentic context quality and local AgentOps economy
+    tools:
+      - sparkforge_aws_context_inspect
+      - sparkforge_aws_agentops_inspect
+      - sparkforge_aws_agentops_compare
+      - sparkforge_aws_agentops_baseline
+      - sparkforge_aws_agentops_timeline
+      - sparkforge_aws_agentops_critical_path
+      - sparkforge_aws_doctor_agentic
+    cli:
+      - context inspect
+      - agentops inspect
+      - agentops compare
+      - agentops baseline
+      - agentops timeline
+      - agentops critical-path
+      - doctor agentic
+    knowledge:
+      - docs/sdd/AGENTIC_ENGINEERING_OS_V2/design.md
+      - knowledge/token-economy.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]

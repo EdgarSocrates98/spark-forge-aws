@@ -1,0 +1,36 @@
+name: collect_com_stage_de_outra_linha
+proves: 'O par negativo, e ele e adversarial: MESMO job, MESMO metodo no nome do stage, MESMO
+  arquivo -- so a LINHA difere (99 contra a 9 real).
+
+  O cruzamento NAO acontece, e e isso que prova que a chave e `arquivo:linha` e nao so `arquivo`.
+  Se alguem trocar a chave por basename sozinho, esta fixture passa a produzir `bridge.driver_collect_confirmed`
+  e o golden quebra -- exatamente o falso positivo em que dois `collect` do mesmo modulo viram
+  um.
+
+  `SF-PY-002` continua disparando (o codigo estatico nao mudou), e `SF-BRIDGE-001` fica calada.
+  Os dois goldens lado a lado sao o par bidirecional que a Fase 2 exige.
+
+  '
+runtime: {}
+expects_kinds:
+- bridge.analyzed
+- pyspark.action
+- pyspark.callgraph_edge
+- pyspark.chain
+- pyspark.driver_collect
+- pyspark.function_def
+- pyspark.module_analyzed
+- pyspark.read
+- spark.cluster.cores
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.shuffle
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+expects_rules:
+- SF-PY-002

@@ -1,0 +1,4 @@
+name: speculation_espalhada
+runtime:
+  glue: '5.0'
+proves: 'Tasks lentas em executores diferentes a cada stage: nenhum no se repete, recusa `lentidao_espalhada`.'

@@ -1,0 +1,4 @@
+name: broadcast_timeout_medido
+runtime:
+  glue: '5.0'
+proves: 'Broadcast estourado em 300s, sem outra categoria nem sintoma, e o mesmo broadcast medido num run que completou em 370 s (coletar, montar e distribuir): `spark.sql.broadcastTimeout` = 370 s.'

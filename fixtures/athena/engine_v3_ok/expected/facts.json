@@ -1,0 +1,72 @@
+[
+  {
+    "id": "f_cfd098",
+    "schema_version": 1,
+    "kind": "athena.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "workgroups.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "workgroup_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "c4cb91a070caac8ebbea449a110d986e2082bfca81a75c3950dcdb07474760bd",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  },
+  {
+    "id": "f_f7806d",
+    "schema_version": 1,
+    "kind": "athena.workgroup",
+    "subject": {
+      "type": "job_run",
+      "symbol": "analytics"
+    },
+    "measures": {
+      "engine_version": 3
+    },
+    "attrs": {
+      "name": "analytics",
+      "state": "ENABLED",
+      "effective_engine_version": "Athena engine version 3",
+      "selected_engine_version": "Athena engine version 3"
+    },
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "c4cb91a070caac8ebbea449a110d986e2082bfca81a75c3950dcdb07474760bd",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  },
+  {
+    "id": "f_0ed71b",
+    "schema_version": 1,
+    "kind": "athena.workgroup",
+    "subject": {
+      "type": "job_run",
+      "symbol": "primary"
+    },
+    "measures": {
+      "engine_version": 3,
+      "bytes_scanned_cutoff": 1099511627776
+    },
+    "attrs": {
+      "name": "primary",
+      "state": "ENABLED",
+      "effective_engine_version": "Athena engine version 3",
+      "selected_engine_version": "AUTO"
+    },
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "c4cb91a070caac8ebbea449a110d986e2082bfca81a75c3950dcdb07474760bd",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  }
+]

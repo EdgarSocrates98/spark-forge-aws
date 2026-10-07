@@ -1,0 +1,9 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T05:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T05:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaLenta"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T05:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 60}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T05:01:02.000000+00:00", "type": "TaskTimedOut", "taskTimedOutEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "error": "States.Timeout", "cause": "Task timed out after 60 seconds"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T05:01:03.000000+00:00", "type": "ExecutionFailed", "executionFailedEventDetails": {"error": "States.Timeout", "cause": "Task timed out"}}
+  ]
+}

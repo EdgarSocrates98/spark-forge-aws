@@ -1,0 +1,78 @@
+name: refresh-knowledge
+
+# Confere se alguma fonte oficial citada pelo catalogo mudou, e abre PR com o
+# lock atualizado e o relatorio do que precisa ser relido.
+#
+# Manual e agendado, NUNCA em push ou pull_request: e o unico workflow do repo
+# que acessa a rede externa, e o resultado dele nao e um veredito sobre o commit
+# -- e uma tarefa de leitura para uma pessoa.
+#
+# O que este workflow NAO faz, por decisao da secao 12.3 da spec da Fase 0:
+# nao commita em main, nao edita regra, nao mexe em data de `retrieved`.
+# Conhecimento entra por revisao, nao por scraper. Tudo que ele produz e um
+# branch e um PR; o merge e humano.
+on:
+  workflow_dispatch:
+  schedule:
+    # Segunda-feira, 06:00 UTC. Semanal e a cadencia certa: doc oficial nao muda
+    # diariamente, e um PR por dia treinaria o revisor a fechar sem ler.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: python -m pip install -e ".[dev]" --quiet
+
+      - name: Check watched sources
+        id: check
+        # `--update` reescreve o lock no working tree; nada e commitado aqui.
+        # exit 1 significa "ha o que revisar", nao falha de build -- por isso
+        # `|| true` seguido de captura explicita do codigo.
+        run: |
+          set +e
+          python scripts/refresh_knowledge.py --update --out refresh-report.md
+          echo "changed=$?" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Open pull request
+        if: steps.check.outputs.changed == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="chore/refresh-knowledge-$(date -u +%Y%m%d)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "branch $BRANCH ja existe; PR desta semana ainda aberto. Nada a fazer."
+            exit 0
+          fi
+
+          git checkout -b "$BRANCH"
+          git add knowledge/sources.lock.json
+          git commit -m "chore(knowledge): fontes vigiadas mudaram, releitura pendente"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(knowledge): fontes oficiais mudaram — releitura pendente" \
+            --body-file refresh-report.md
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refresh-report
+          path: refresh-report.md
+          if-no-files-found: ignore

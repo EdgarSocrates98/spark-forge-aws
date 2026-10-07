@@ -1,0 +1,20 @@
+{
+  "trace": [
+    {
+      "op": "start",
+      "status": "refused",
+      "reason": "invalid_rules"
+    },
+    {
+      "op": "start",
+      "status": "refused",
+      "reason": "no_open_debate_for_rules"
+    }
+  ],
+  "blackboard": {
+    "decisions": 0,
+    "debate_claims": 0,
+    "debate_objections": 0,
+    "debate_rebuttals": 0
+  }
+}

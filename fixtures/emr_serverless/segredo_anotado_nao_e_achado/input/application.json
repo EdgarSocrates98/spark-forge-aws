@@ -1,0 +1,27 @@
+{
+  "application": {
+    "applicationId": "00fanotado0000000001",
+    "name": "metastore-com-secrets-manager",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "runtimeConfiguration": [
+      {
+        "classification": "spark-hive-site",
+        "properties": {
+          "javax.jdo.option.ConnectionPassword": "EMR.secret@{{SenhaDoMetastore}}",
+          "spark.hadoop.fs.s3a.access.key": "EMR.secret@{{AKIAXXXXXXXXXXXXXXXX}}"
+        }
+      }
+    ],
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

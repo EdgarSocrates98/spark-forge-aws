@@ -1,0 +1,19 @@
+name: no_observability
+proves: >
+  aws_glue_job sem --enable-spark-ui e sem --spark-event-logs-path: nao ha
+  como diagnosticar o job depois do fato. tf.observability.spark_ui nunca e
+  emitido para este recurso, e tf.module_analyzed prova que o Terraform foi
+  de fato analisado -- entao a ausencia e um achado real, nao um blind spot
+  do extrator. Job pelo resto limpo (sem auto scaling, sem bookmark
+  concorrente, sem segredo), para isolar SF-GLUE-002.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+expects_rules:
+  - SF-GLUE-002

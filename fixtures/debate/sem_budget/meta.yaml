@@ -1,0 +1,14 @@
+name: sem_budget
+proves: 'case.yaml sem bloco budget: start recusa com budget_undeclared e nao grava nada (SC5,
+  AT-002).'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget: null
+expects_outcome: refused:budget_undeclared

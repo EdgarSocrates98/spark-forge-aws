@@ -1,0 +1,376 @@
+# Catálogo de regras — infraestrutura Glue e Terraform
+# Depende do extrator de Terraform HCL da Fase 1. Regras inertes até ele existir.
+
+catalog_version: 1
+schema_version: 1
+area: SF-GLUE
+retrieved: 2026-07-29
+
+rules:
+
+  # REGRA APOSENTADA -- SF-GLUE-001, aposentada em 2026-08-28.
+  #
+  # Nenhuma regra deste catálogo tinha sido aposentada antes desta. Este
+  # comentário é o molde para a próxima: id aposentado, o que a regra
+  # afirmava, por que estava errada com a citação exata da fonte, e a data.
+  # O id NUNCA é reaproveitado por uma regra nova -- quem rastreou um achado
+  # antigo por `SF-GLUE-001` num relatório precisa continuar encontrando esta
+  # nota, não uma regra diferente vestindo o mesmo número.
+  #
+  # O QUE ELA AFIRMAVA: título "Auto Scaling habilitado junto com
+  # NumberOfWorkers", status confirmed, severity_default P1. O `when` casava
+  # `--enable-auto-scaling = "true"` com `number_of_workers` presente no
+  # mesmo recurso, e o `proposed_change` dizia "Remover number_of_workers e
+  # definir MinCapacity e MaxCapacity."
+  #
+  # POR QUE ESTAVA ERRADA: a própria fonte que a regra citava --
+  # https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html, a mesma URL
+  # de `sources[].url` que esteve aqui -- diz o oposto do que a regra
+  # afirmava. O exemplo de CLI daquela página traz literalmente
+  # `"NumberOfWorkers": 20, // represents Maximum number of workers`, e a
+  # interface descreve: "Set the Maximum number of workers to define the
+  # maximum number of workers that can be vended to the job run." `MinCapacity`
+  # e `MaxCapacity` NÃO aparecem em lugar nenhum daquela página. A regra
+  # disparava P1 sobre a configuração CORRETA -- Auto Scaling com
+  # `number_of_workers` como teto -- e a mudança que ela propunha (removê-lo
+  # em favor de campos que a própria fonte citada não menciona) pioraria o
+  # job, não o corrigiria.
+  #
+  # O conflito real é o oposto, e está em SF-GLUE-007 logo abaixo: quem não
+  # coexiste com `worker_type`/`number_of_workers` é `max_capacity` -- a API
+  # antiga de capacidade --, não Auto Scaling. Fonte:
+  # https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html, campo
+  # `MaxCapacity`: "For Glue version 2.0 or later jobs, you cannot specify a
+  # Maximum capacity. Instead, you should specify a Worker type and the
+  # Number of workers." e "Do not set MaxCapacity if using WorkerType and
+  # NumberOfWorkers."
+
+  # `max_capacity` e `worker_type` são as duas APIs de capacidade do Glue, e
+  # não coexistem: a API antiga (`MaxCapacity` sozinho, sem `WorkerType`) e a
+  # API >= 2.0 (`WorkerType` + `NumberOfWorkers`). A fonte é a definição do
+  # campo `MaxCapacity` na API do Job
+  # (https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html): "For Glue
+  # version 2.0 or later jobs, you cannot specify a Maximum capacity.
+  # Instead, you should specify a Worker type and the Number of workers." e
+  # "Do not set MaxCapacity if using WorkerType and NumberOfWorkers." É o
+  # conflito que SF-GLUE-001 (aposentada acima) errou: aquela regra acusava
+  # Auto Scaling com `number_of_workers` -- configuração correta, onde
+  # `number_of_workers` é exatamente o teto que a API >= 2.0 espera.
+  #
+  # `same_subject: true` porque a afirmação é sobre UM job: `max_capacity` de
+  # um recurso combinado com `worker_type` de outro recurso, no mesmo
+  # arquivo, não é o achado -- mesmo raciocínio de SF-GLUE-001/003.
+  #
+  # `runtime_scope: {glue: ">=2.0"}` porque é exatamente a partir dessa versão
+  # que a API rejeita `max_capacity` junto de `worker_type`; abaixo de 2.0,
+  # `max_capacity` é a ÚNICA forma de declarar capacidade (não havia
+  # `worker_type`/`number_of_workers` para conflitar com ele), e a combinação
+  # que esta regra acusa não existe.
+  #
+  # A condição ancora em `worker_type`, não em `number_of_workers`: o
+  # provider Terraform exige os dois juntos quando a API >= 2.0 é usada (não
+  # há forma válida de declarar só `number_of_workers` sem `worker_type`), e
+  # `worker_type` é o campo que a fonte citada nomeia primeiro como par de
+  # `MaxCapacity`.
+  - id: SF-GLUE-007
+    category: glue-infra
+    title: max_capacity definido junto com worker_type (API antiga e nova de capacidade)
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: "max_capacity", attrs.present: true}
+        - fact: tf.attribute
+          where: {attrs.key: "worker_type", attrs.present: true}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: ">=2.0"}
+    explanation: >
+      Para jobs Glue 2.0 ou superior, a API do Job documenta que max_capacity não pode
+      ser especificado -- a forma correta de declarar capacidade é worker_type e
+      number_of_workers. Definir os dois ao mesmo tempo não é redundância inofensiva: é
+      o par de campos que a própria fonte descreve como incompatível, e o comportamento
+      efetivo -- qual dos dois a API aplica, ou se a criação do job falha -- fica fora
+      do que a documentação garante.
+    proposed_change:
+      - Remover max_capacity e manter worker_type e number_of_workers.
+      - Se o job depende de max_capacity por alguma razão de compatibilidade, remover worker_type e number_of_workers em vez do inverso -- nunca manter os dois.
+    action:
+      kind: config.remove_property
+      target: glue.max_capacity
+      direction: remove
+      requires_absent: []
+      moves:
+        - capacity.worker_count
+      depends_on: []
+    risks: [O job pode estar rodando hoje sob um dos dois campos sendo ignorado silenciosamente pela API; remover o errado sem confirmar qual prevalece muda a capacidade em produção sem aviso.]
+    tradeoffs: [Nenhum. Os dois campos não coexistem na API para esta versão; a única decisão real é qual dos dois manter.]
+    validation:
+      - Definição do job pela API (get-job), não só o Terraform declarado, confirma qual dos dois campos ficou efetivamente aplicado.
+      - Runtime e DPU-hours antes e depois, em runs de volume comparável.
+    rollback: [Reverter para a combinação de campos anterior; nenhum efeito sobre o resultado do job.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html", retrieved: 2026-08-28}
+
+  # A âncora é `tf.resource` (um por bloco `aws_glue_job`), não `tf.module_analyzed`.
+  # `absent:` sob `same_subject` é avaliado dentro do grupo do subject, e observabilidade
+  # é propriedade de UM job: num `.tf` com quatro jobs onde só um habilita Spark UI,
+  # ancorar no módulo esconde os outros três (`absent` falha globalmente e a regra não
+  # dispara para ninguém). Ancorar em `tf.module_analyzed` com `same_subject` seria pior
+  # ainda: o subject dele é o arquivo (`symbol: ""`), grupo que nunca contém fact de
+  # observabilidade — a regra acusaria todo módulo, inclusive o configurado corretamente.
+  #
+  # `requires_facts` também é `tf.resource`, e não `tf.module_analyzed`, porque a
+  # sentinela é genérica demais para gatear esta regra: ela prova que ALGUM `.tf` foi
+  # lido, não que existe um `aws_glue_job` para revisar. Num repositório com Terraform
+  # mas sem job Glue, a sentinela deixava a regra passar a barreira, o `when` dava falso,
+  # e a regra sumia de `findings` E de `skipped` — e ausência sem explicação lê como
+  # "revisei e está tudo bem". `tf.resource` só é emitido para bloco `aws_glue_job`
+  # (`facts/terraform.py` ignora qualquer outro `resource_type`), e só depois de o bloco
+  # ser parseado inteiro, então ele prova as duas coisas ao mesmo tempo: o extrator rodou
+  # E há um job Glue aqui. Exigir `tf.module_analyzed` junto seria redundante — todo
+  # arquivo que produz `tf.resource` produz a sentinela também.
+  - id: SF-GLUE-002
+    category: glue-infra
+    title: Observabilidade ausente em job de produção
+    requires_facts: [tf.resource]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.resource
+          where: {attrs.resource_type: aws_glue_job}
+        - absent: tf.observability.spark_ui
+        # Sem esta segunda condição a regra confunde "não configurou" com "o
+        # valor só existe depois do apply". `--spark-event-logs-path` escrito
+        # como "s3://${var.bucket_logs}/sparkui/" é a forma normal de escrever
+        # Terraform: o extrator não adivinha o valor (vira `tf.unresolved`) e,
+        # sem `tf.observability.unknown`, isso acusaria em P1 um job que TEM
+        # observabilidade configurada. Ausência de evidência não é evidência
+        # de ausência — mesma guarda de `plan.unresolved` /
+        # `partition_status_unknown` no lado do plano físico.
+        - absent: tf.observability.unknown
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Sem --enable-spark-ui e sem --spark-event-logs-path com destino válido, não há
+      como diagnosticar o job depois do fato. Não é um problema de performance, é um
+      problema de capacidade de diagnóstico: qualquer investigação futura começará sem
+      evidência de execução e dependerá de reproduzir o problema.
+    proposed_change:
+      - Habilitar --enable-spark-ui e definir --spark-event-logs-path para um prefixo S3 com retenção adequada.
+      - Habilitar --enable-observability-metrics em Glue 4.0 ou superior, confirmando que glueContext é inicializado no código.
+      - Habilitar --enable-continuous-cloudwatch-log para não depender de log apenas no encerramento.
+    action:
+      kind: observability.enable_application_ui
+      target: glue.enable_spark_ui
+      direction: add
+      requires_absent: []
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on: []
+    risks: [Event logs consomem armazenamento S3; definir política de retenção.]
+    tradeoffs: [Custo marginal de armazenamento contra capacidade de diagnóstico.]
+    validation:
+      - Event log presente no prefixo S3 após um run.
+      - Spark UI acessível para o run.
+      - Métricas de observabilidade presentes no CloudWatch.
+    rollback: [Remover os argumentos; nenhum efeito sobre o resultado do job.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-003
+    category: glue-infra
+    title: MaxConcurrentRuns maior que 1 com bookmarks habilitados
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: "--job-bookmark-option", attrs.value: "job-bookmark-enable"}
+        - fact: tf.attribute
+          where: {attrs.key: "max_concurrent_runs"}
+          expr: "measures.value > 1"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      O Glue expõe a categoria de erro GLUE_JOB_BOOKMARK_VERSION_MISMATCH_ERROR
+      justamente para o caso de o mesmo job rodar concorrentemente sobre a mesma origem.
+      Além disso, bookmark não é mecanismo de incremental universal: usado como se fosse
+      CDC, leva a reprocessamento ou a perda silenciosa de dados. Para Iceberg, o
+      incremental correto é leitura por snapshot, não bookmark.
+    proposed_change:
+      - Reduzir max_concurrent_runs para 1, ou desabilitar bookmarks e adotar controle de incremental explícito.
+      - Se a fonte é Iceberg, migrar para leitura incremental por snapshot.
+    action:
+      kind: orchestration.restrict_run_policy
+      target: glue.max_concurrent_runs
+      direction: decrease
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
+    risks: [Reduzir concorrência pode afetar o SLA se havia dependência real de paralelismo entre runs.]
+    tradeoffs: [Controle explícito de incremental é mais código e mais confiável que bookmark.]
+    validation:
+      - Ausência de GLUE_JOB_BOOKMARK_VERSION_MISMATCH_ERROR nas categorias de erro.
+      - Contagem de linhas processadas por janela, comparada com a contagem esperada na origem.
+      - Verificação de ausência de duplicação e de lacuna no destino.
+    rollback: [Restaurar max_concurrent_runs e a opção de bookmark anteriores.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-004
+    category: glue-infra
+    title: MaxRetries maior que zero em job com escrita não idempotente
+    requires_facts: [tf.attribute, pyspark.write]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: max_retries}
+          expr: "measures.value > 0"
+        - fact: pyspark.write
+          where: {attrs.mode: append}
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Retry de job inteiro reexecuta o script do começo. Se a escrita é append e não há
+      controle de idempotência, o retry duplica dado. O risco fica disfarçado de
+      resiliência, e a duplicação só aparece depois, numa conferência de números.
+    proposed_change:
+      - Tornar a escrita idempotente, por merge com chave, por overwrite de partição, ou por controle de execução.
+      - Ou reduzir max_retries para zero e tratar a falha explicitamente.
+    action:
+      kind: code.make_write_idempotent
+      target: pyspark.write
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks: [Reduzir retries expõe o pipeline a falhas transitórias que antes eram absorvidas.]
+    tradeoffs: [Idempotência custa desenho e, em merge, custo de escrita maior que append.]
+    validation:
+      - Contagem distinta da chave primária no destino igual à contagem total.
+      - Simular retry num ambiente de teste e confirmar ausência de duplicação.
+    rollback: [Restaurar max_retries anterior.]
+    sources:
+      - {origin: field-heuristic, note: "Idempotência de escrita sob retry é requisito de desenho; a regra apenas expõe a combinação de risco."}
+
+  # INERTE POR DESENHO ATE EXISTIR EXTRATOR DE DIFF.
+  # `attrs.changed` significa "este atributo mudou em relacao a um estado anterior".
+  # Isso e um diff entre dois pontos no tempo (dois commits, ou plan vs. state), e
+  # nenhum extrator de arquivo unico pode saber. A regra nao dispara hoje e nao vai
+  # disparar ate que um extrator de `terraform plan`/diff produza `attrs.changed`.
+  # Fica registrada em vez de removida porque o conhecimento e valido; o que falta e
+  # a capacidade de coleta. Ver o campo `blocked_on` abaixo.
+  - id: SF-GLUE-005
+    category: glue-infra
+    title: Worker maior recomendado sem evidência de limitação de memória
+    # Esta regra tinha DOIS defeitos que o `blocked_on` manteve invisíveis
+    # enquanto ela ficou inerte, e os dois só aparecem quando ela roda:
+    #
+    # 1. `spark.stage.spill` estava em `requires_facts` E em `absent:`. O motor
+    #    exige que todo kind de `requires_facts` esteja presente, então a regra
+    #    era uma contradição — não podia disparar nunca.
+    # 2. Mesmo corrigido o item 1, `absent: spark.stage.spill` continuaria
+    #    errado: o extrator emite esse fact para TODO stage analisado, com zero
+    #    byte inclusive, porque "este stage não derramou" é informação. A
+    #    ausência dele significa "não analisei event log", não "não houve
+    #    spill". E `fact:` casa quando ALGUM fact satisfaz a condição, então
+    #    perguntar por stage também não serve: num job com um stage limpo e
+    #    outro derramando, "existe stage sem spill" é verdadeiro.
+    #
+    # Daí `spark.job.spill_summary`, que responde a pergunta no nível em que
+    # ela é feita: o job inteiro derramou alguma coisa? A sentinela
+    # `spark.log_analyzed` continua exigida para que a resposta "não" só possa
+    # vir de um log que foi realmente lido, e `spark.executor.memory_usage`
+    # também: afirmar que não há limitação de memória sem ter visto uma única
+    # medida de memória é o mesmo erro, um passo adiante.
+    requires_facts:
+      [tf.attribute, spark.log_analyzed, spark.job.spill_summary, spark.executor.memory_usage]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: worker_type, attrs.changed: true}
+        - fact: spark.job.spill_summary
+          expr: measures.stages_with_spill == 0
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Aumentar o worker sem baseline de CPU, heap, disco, spill e distribuição de task é
+      tuning por intuição. As causas mais comuns de lentidão não são resolvidas por
+      capacidade: skew, small files, trabalho no driver, e utilização baixa por
+      superprovisão. Ver knowledge/glue/workers-and-capacity.md secao 2, onde quatro das
+      oito linhas da tabela de decisão têm capacidade como resposta errada.
+    proposed_change:
+      - Coletar os sete números do baseline antes de mudar capacidade.
+      - "Classificar o gargalo por eixo: CPU, memória, disco, skew, driver, I/O."
+      - Se for memória comprovada, avaliar a série R, que dobra a memória com o mesmo vCPU, antes de subir na série G.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.worker_type
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks: [Aumentar capacidade sem diagnóstico eleva o custo sem reduzir o runtime.]
+    tradeoffs: [Coletar baseline atrasa a mudança em um ciclo de execução.]
+    validation:
+      - Runtime e DPU-hours antes e depois, em runs de volume comparável.
+      - glue.driver.workerUtilization antes e depois.
+      - Spill do stage dominante antes e depois.
+    rollback: [Restaurar worker_type e number_of_workers anteriores.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html", retrieved: 2026-07-29}
+      - {url: "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-006
+    category: glue-infra
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Mesma natureza de SF-EMR-002.
+    title: Segredo em default argument
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.secret_pattern_match: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Default arguments aparecem na job definition, na resposta da API e em logs.
+      Segredo colocado ali é exposto a qualquer principal com permissão de leitura da
+      definição do job. É achado de segurança e tem precedência sobre qualquer
+      recomendação de performance no mesmo relatório.
+    proposed_change:
+      - Mover para AWS Secrets Manager ou Parameter Store, referenciando por nome no argumento.
+      - Rotacionar o segredo exposto, porque ele deve ser considerado comprometido.
+      - Revisar histórico do repositório de IaC, onde o valor pode persistir.
+    action:
+      kind: security.move_secret_to_manager
+      target: glue.default_arguments
+      direction: replace
+      requires_absent: []
+      moves:
+        - security.secret_exposure
+      depends_on: []
+    risks: [Rotacionar segredo em uso exige coordenação com os consumidores.]
+    tradeoffs: [Nenhum. Não há justificativa de performance para manter segredo em argumento.]
+    validation:
+      - Argumento não contém mais o valor.
+      - Job executa com sucesso lendo do cofre.
+      - Segredo antigo revogado.
+    rollback:
+      - >
+        Não reverter para o segredo em texto claro. Se a leitura do cofre falha, corrigir
+        a permissão de IAM, não o método de armazenamento.
+    sources:
+      - {origin: field-heuristic, note: "Prática de segurança padrão; a superfície de exposição de default arguments é documentada no comportamento da API do Glue."}

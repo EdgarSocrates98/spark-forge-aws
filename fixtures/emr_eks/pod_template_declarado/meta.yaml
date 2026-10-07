@@ -1,0 +1,19 @@
+name: pod_template_declarado
+proves: >
+  A recusa VISIVEL. `emrc.pod_template.unresolved` e o unico kind desta area que
+  nao alimenta regra nenhuma, e ainda assim precisa de golden: ele existe para que
+  o operador veja que o template foi pedido e nao foi lido. O YAML apontado carrega
+  nodeSelector, tolerations e resources -- metade do diagnostico de pod pendente --,
+  e ignorar as duas propriedades em silencio faria o relatorio parecer completo.
+  Sem fixture, o kind fica sem prova e o gate de cobertura passa sem avaliar.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.pod_template.unresolved
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules: []

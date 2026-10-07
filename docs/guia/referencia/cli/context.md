@@ -1,0 +1,77 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# `sparkforge-aws context`
+
+Descobre capabilities e empacota contexto deterministico sob limite explicito.
+
+## Subcomandos
+
+| Subcomando | O que faz |
+|---|---|
+| [`sparkforge-aws context expand`](#sparkforge-aws-context-expand) | Expande uma referencia ctx://v1 sob budget. |
+| [`sparkforge-aws context inspect`](#sparkforge-aws-context-inspect) | Inspeciona qualidade de contexto sem inferir tokens por bytes. |
+| [`sparkforge-aws context start`](#sparkforge-aws-context-start) | Inicia descoberta, selecao, reducao e materializacao de contexto. |
+
+## `sparkforge-aws context expand`
+
+Expande uma referencia ctx://v1 sob budget.
+
+```bash
+sparkforge-aws context expand --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--ref` | sim | texto |  |  |  |
+| `--max-bytes` | não | texto |  |  | Teto de bytes serializados; omitido usa default economy. |
+| `--repo` | não | texto |  | `.` |  |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_context_expand`](../tools/sparkforge_aws_context_expand.md), [`sparkforge_aws_context_start`](../tools/sparkforge_aws_context_start.md)
+
+## `sparkforge-aws context inspect`
+
+Inspeciona qualidade de contexto sem inferir tokens por bytes.
+
+```bash
+sparkforge-aws context inspect --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--input` | sim | texto |  |  | JSON com itens e refs de evidencia. |
+| `--observed-provider-tokens` | não | texto |  |  | Tokens observados no transcript do host; omitido permanece unresolved. |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
+
+## `sparkforge-aws context start`
+
+Inicia descoberta, selecao, reducao e materializacao de contexto.
+
+```bash
+sparkforge-aws context start --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--intent` | sim | texto |  |  |  |
+| `--profile` | não | `economy`, `balanced`, `deep` |  | `balanced` |  |
+| `--max-bytes` | não | texto |  |  | Teto de bytes serializados; omitido usa default do profile. |
+| `--items` | não | texto |  |  | JSON com lista de facts/findings/knowledge/codigo ja extraidos. |
+| `--role` | não | texto |  |  | Role com plano declarado (sf-inventory/sf-extractor/sf-judge/sf-verifier/sf-synthesizer); desconhecida nega contexto. |
+| `--role-plan` | não | texto |  |  | Arquivo JSON com RoleContextPlan serializado (vence --role). |
+| `--repo` | não | texto |  | `.` |  |
+| `--case-id` | não | texto |  |  |  |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_context_expand`](../tools/sparkforge_aws_context_expand.md), [`sparkforge_aws_context_start`](../tools/sparkforge_aws_context_start.md)

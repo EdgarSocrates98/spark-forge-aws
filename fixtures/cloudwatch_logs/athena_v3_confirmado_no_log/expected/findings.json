@@ -1,0 +1,135 @@
+[
+  {
+    "rule_id": "SF-ENV-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tabela Iceberg em format V3 com consumo por Athena",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "evidence": [
+      "f_31f118",
+      "f_632d90"
+    ],
+    "measured": {
+      "version": 3
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.1",
+      "iceberg": ">=1.10.0"
+    },
+    "explanation": "AWS Glue 5.1 pode escrever tabelas Iceberg format version 3. Amazon Athena não lê V3. O modo de falha é perverso: a migração de runtime passa, o job roda, e dias depois as queries e dashboards em Athena quebram, com a causa a semanas de distância no log de mudanças. Ver knowledge/cross-service-constraints.md secao 1.",
+    "proposed_change": [
+      "Escrever a tabela em format version 2. Fixar apenas a table property `format-version` NAO basta: o `format_version` do metadata e o que a engine le, e a propriedade pode divergir dele -- `iceberg.format_version` reporta os dois lado a lado com `attrs.diverges`.\n",
+      "Ou permanecer em Glue 5.0 até que Athena suporte V3.",
+      "Inventariar todos os consumidores da tabela antes de qualquer mudança de format version."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fixar V2 renuncia às capacidades novas do V3, incluindo deletion vectors e row lineage."
+    ],
+    "tradeoffs": [
+      "V3 traz ganhos reais em merge-on-read; o custo é perder o consumo por Athena."
+    ],
+    "validation": [
+      "format-version confirmado nas table properties.",
+      "Query de smoke test em Athena sobre a tabela, executada com sucesso.",
+      "Inventário de consumidores documentado."
+    ],
+    "rollback": [
+      "Reverter format-version não é trivial após escritas em V3. Verificar a documentação da versão de Iceberg em uso antes de assumir que é reversível, e tratar a mudança para V3 como decisão de ida.\n"
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
+        "retrieved": "2026-07-29"
+      }
+    ],
+    "action": {
+      "kind": "storage.change_storage_format",
+      "target": "iceberg.table.format_version",
+      "direction": "replace",
+      "requires_absent": [
+        "env.unresolved"
+      ],
+      "moves": [],
+      "depends_on": [
+        "SF-ENV-001"
+      ]
+    }
+  },
+  {
+    "rule_id": "SF-ERR-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Leitura em Athena falhou sobre tabela Iceberg em format version 3, com consumidor Athena declarado no inventário",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-pedidos",
+      "job_run_id": "jr_ath1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ath1",
+      "event": 0,
+      "signature_id": "ERR-ATH-001"
+    },
+    "evidence": [
+      "f_4fd097",
+      "f_31f118",
+      "f_632d90"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A query em Athena FALHOU com `Cannot read unsupported version 3`, a tabela declara `format_version: 3` no metadata, e o inventário registra pelo menos um consumidor Athena. As três evidências juntas são o que a assinatura `ERR-ATH-001` declara precisar -- e ela é uma das duas únicas, das seis assinaturas, cujo `evidence_required` nomeia kind que este motor realmente emite.\n\nO modo de falha é o mais perverso do catálogo porque a causa fica a semanas de distância do sintoma: a migração de runtime passa, o job de escrita roda e reporta sucesso, e o que quebra é o dashboard de outro time, dias depois, sem que ninguém tenha tocado na query.\n\nEsta regra é `confirmed` e tem uma irmã em `SF-ENV-002`, que afirma o mesmo defeito a partir do artefato parado -- tabela em v3 mais consumidor Athena declarado, sem nenhuma falha registrada. As duas juntas não se contradizem: a segunda previu, a primeira registrou. A diferença muda a decisão, porque aqui já há consumidor quebrado esperando.",
+    "proposed_change": [
+      "Reescrever a tabela em format version 2. Fixar apenas a table property `format-version` NÃO basta -- o `format_version` do metadata é o que a engine lê, e `iceberg.format_version` reporta os dois lado a lado com `attrs.diverges`.",
+      "Ou manter v3 e mover os consumidores Athena para uma engine que o leia, com os donos daqueles consumidores concordando com a mudança ANTES.",
+      "Inventariar todos os consumidores da tabela antes de qualquer mudança de format version -- o log traz o que falhou, nunca o que ainda não rodou hoje."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fixar v2 renuncia às capacidades novas do v3, incluindo deletion vectors e row lineage.",
+      "A saída que o job de escrita já produziu em v3 continua lá. Reescrever a tabela em v2 é reprocessamento, não ajuste de configuração, e o intervalo entre a escrita em v3 e a correção é dado que os consumidores Athena não leram.",
+      "O log traz o consumidor que FALHOU. Consumidores que não rodaram na janela coletada não aparecem nele, e concluir \"só o Athena quebrou\" a partir do log é conclusão sobre o que não foi medido."
+    ],
+    "tradeoffs": [
+      "V3 traz ganhos reais em merge-on-read; o custo é perder o consumo por Athena enquanto ele não o suportar."
+    ],
+    "validation": [
+      "Query de smoke test em Athena sobre a tabela, executada com sucesso -- a mesma query que falhou, não uma equivalente.",
+      "`iceberg.format_version.attrs.declared` igual a `2` no dump seguinte, e `attrs.diverges: false` entre o metadata e a table property.",
+      "Comparação de VALOR entre a tabela reescrita e a anterior -- contagem, contagem de nulos por coluna e agregados de controle. Reescrever em v2 é reescrever dado, e contagem igual com valor diferente é o modo de falha que só o eixo de valor pega."
+    ],
+    "rollback": [
+      "Reverter format version NÃO é trivial depois de escritas em v3. Verificar a documentação da versão de Iceberg em uso antes de assumir que é reversível, e tratar a mudança para v3 como decisão de ida."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+        "retrieved": "2026-08-23",
+        "note": "Fonte declarada por `knowledge/errors/athena/iceberg_v3_unsupported.json` (`ERR-ATH-001`), com `last_verified: 2026-08-23`.\n"
+      }
+    ],
+    "action": {
+      "kind": "storage.change_storage_format",
+      "target": "iceberg.table.format_version",
+      "direction": "replace",
+      "requires_absent": [
+        "env.unresolved"
+      ],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

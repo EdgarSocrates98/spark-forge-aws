@@ -1,0 +1,43 @@
+[
+  {
+    "kind": "workload.declared",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "sla_minutes": 10,
+      "reliability_target": 0.75,
+      "volume_tolerance": 0.25
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "workload@0.1.0",
+      "artifact": "workload.yaml"
+    }
+  },
+  {
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "db.pedidos",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {
+      "bytes_read": 1000000000,
+      "files_read": 4
+    },
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "event_log.jsonl"
+    }
+  }
+]

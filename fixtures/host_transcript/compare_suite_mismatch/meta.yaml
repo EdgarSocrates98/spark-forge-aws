@@ -1,0 +1,6 @@
+name: compare_suite_mismatch
+mode: compare
+proves: >
+  AT-017: o candidato foi pontuado contra outro gabarito (sha256 diferente).
+  Recusa suite_mismatch com os dois hashes e zero transicoes -- comparar
+  nota de gabaritos diferentes mediria a mudanca do gabarito.

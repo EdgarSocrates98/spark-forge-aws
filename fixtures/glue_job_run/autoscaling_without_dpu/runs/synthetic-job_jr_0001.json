@@ -1,0 +1,15 @@
+{
+  "Id": "jr_0001",
+  "JobName": "synthetic-job",
+  "JobRunState": "SUCCEEDED",
+  "StartedOn": "2024-03-01T08:00:00+00:00",
+  "CompletedOn": "2024-03-01T08:15:00+00:00",
+  "ExecutionTime": 900,
+  "GlueVersion": "4.0",
+  "WorkerType": "G.2X",
+  "NumberOfWorkers": 30,
+  "Timeout": 120,
+  "Arguments": {
+    "--enable-auto-scaling": "true"
+  }
+}

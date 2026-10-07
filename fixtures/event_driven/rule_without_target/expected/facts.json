@@ -1,0 +1,57 @@
+[
+  {
+    "id": "f_a5cde3",
+    "schema_version": 1,
+    "kind": "event_driven.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 1
+    },
+    "attrs": {
+      "sections": [
+        "eventbridge"
+      ]
+    },
+    "provenance": {
+      "artifact": "architecture.json",
+      "artifact_sha256": "2ed4a67765e5439fdac93097121379b0efd17d32f03a53a0ba1a718fa7e99f70",
+      "extractor": "event_driven@0.1.0"
+    }
+  },
+  {
+    "id": "f_ddcd2f",
+    "schema_version": 1,
+    "kind": "eventbridge.rule",
+    "subject": {
+      "type": "source_location",
+      "file": "architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-rule",
+      "snippet": ""
+    },
+    "measures": {
+      "target_count": 0
+    },
+    "attrs": {
+      "name": "orders-rule",
+      "state": "ENABLED",
+      "target_types": [],
+      "event_pattern_declared": true,
+      "retry_declared": false,
+      "dead_letter_declared": false
+    },
+    "provenance": {
+      "artifact": "architecture.json",
+      "artifact_sha256": "2ed4a67765e5439fdac93097121379b0efd17d32f03a53a0ba1a718fa7e99f70",
+      "extractor": "event_driven@0.1.0"
+    }
+  }
+]

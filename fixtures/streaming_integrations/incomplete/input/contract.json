@@ -1,0 +1,24 @@
+{
+  "checkpoint": {
+    "query_name": "orders",
+    "storage": "s3",
+    "batch_duration_ms": [12000],
+    "trigger_interval_ms": 10000
+  },
+  "kafka_connect": {
+    "name": "orders-source",
+    "mode": "distributed",
+    "connector_class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks": [{"id": 0, "state": "FAILED"}]
+  },
+  "kafka_streams": {
+    "application_id": "orders-enrichment",
+    "state_stores": [{"name": "orders-store", "type": "rocksdb"}],
+    "processing_guarantee": "at_least_once"
+  },
+  "openlineage": {
+    "eventType": "START",
+    "job": {"name": "orders-enrichment"},
+    "inputs": [{"namespace": "kafka", "name": "orders"}]
+  }
+}

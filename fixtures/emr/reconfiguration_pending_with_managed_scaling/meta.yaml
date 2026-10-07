@@ -1,0 +1,39 @@
+name: reconfiguration_pending_with_managed_scaling
+proves: >
+  A unica fixture do corpus em que o guarda de qualidade da evidencia MUDA o
+  veredito de uma regra, e sem ela `- absent: emr.configuration.unapplied` em
+  SF-EMR-003 seria uma linha que nunca fez diferenca nenhuma.
+  O dump e identico a `managed_scaling_static_executors` nos tres ingredientes
+  da regra: `spark.dynamicAllocation.enabled=false` no nivel CLUSTER, nenhum
+  grupo redefinindo a chave em `Configurations` (`overriding_group_count` vale
+  zero), e politica de managed scaling presente. So que o grupo TASK tem
+  `LastSuccessfullyAppliedConfigurations` trazendo
+  `spark.dynamicAllocation.enabled=true` que `Configurations` NAO traz mais --
+  o campo `dropped` do guarda. Traduzindo: alguem pediu uma reconfiguracao que
+  remove o override, e ela ainda nao entrou em vigor. O cluster CONTINUA
+  executando com alocacao dinamica ligada no TASK, e a afirmacao "este cluster
+  esta com alocacao dinamica desligada em todo lugar" e falsa neste instante.
+  `measures.overriding_group_count` sozinho nao pega este caso, e e por isso que
+  o guarda existe: a measure le o que foi PEDIDO, e aqui o pedido e justamente
+  o que ainda nao vigora. O par de fixtures -- esta e
+  `managed_scaling_static_executors` -- e a prova bidirecional do guarda: mesmo
+  gatilho, mesma severidade em jogo, e a unica diferenca e a qualidade da
+  evidencia.
+  O `pending` do guarda registra a outra metade da divergencia
+  (`yarn-site/yarn.log-aggregation-enable`, pedido e nao aplicado), provando que
+  o fact continua sendo por GRUPO e nos dois sentidos, e nao um sinalizador
+  binario de cluster.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.configuration
+  - emr.configuration.unapplied
+  - emr.instance_capacity
+  - emr.managed_scaling
+expects_rules: []

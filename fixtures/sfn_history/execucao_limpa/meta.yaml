@@ -1,0 +1,18 @@
+name: execucao_limpa
+proves: >
+  O NEGATIVO da area inteira. Uma tentativa, `.sync`, `TaskSucceeded`, execucao
+  `ExecutionSucceeded`: `job_run_outcome_observed` verdadeiro, `terminal_present`
+  verdadeiro, `execution_outcome_class: finished`. Nenhuma das tres regras dispara.
+  Sem ASL no case: a lacuna do confronto sai nomeada, e nao vira achado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: []

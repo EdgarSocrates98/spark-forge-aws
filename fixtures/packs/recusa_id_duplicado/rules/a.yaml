@@ -1,0 +1,14 @@
+rules:
+  - id: DUP-GOV-001
+    category: dup
+    title: Primeira escrita
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: worker_type, attrs.value: G.8X}
+    status: structural
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    sources:
+      - {origin: sintetico}

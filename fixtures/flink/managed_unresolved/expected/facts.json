@@ -1,0 +1,103 @@
+[
+  {
+    "id": "f_3b83fd",
+    "schema_version": 1,
+    "kind": "managed_flink.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 3
+    },
+    "attrs": {
+      "artifact": "managed_flink"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4d733f5ae5bd054e51adcb908b6cee42b20dad1e0600355d86519ec9772a5d65",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_8f1299",
+    "schema_version": 1,
+    "kind": "managed_flink.application",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "application_name": "metrics-missing",
+      "application_arn": null,
+      "status": "RUNNING",
+      "runtime_version": null,
+      "application_version_id": null,
+      "service_execution_role": null,
+      "application_mode": null
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4d733f5ae5bd054e51adcb908b6cee42b20dad1e0600355d86519ec9772a5d65",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_dd68c2",
+    "schema_version": 1,
+    "kind": "managed_flink.config",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "checkpointing_enabled",
+      "value": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4d733f5ae5bd054e51adcb908b6cee42b20dad1e0600355d86519ec9772a5d65",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_8d19bc",
+    "schema_version": 1,
+    "kind": "managed_flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "metrics_missing"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4d733f5ae5bd054e51adcb908b6cee42b20dad1e0600355d86519ec9772a5d65",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  }
+]

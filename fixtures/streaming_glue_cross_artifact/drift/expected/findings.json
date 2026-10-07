@@ -1,0 +1,131 @@
+[
+  {
+    "rule_id": "SF-GLUESTREAM-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Drift entre job Glue Streaming observado e Terraform",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "rtm-valid->aws_glue_job.rtm",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2db905"
+    ],
+    "measured": {
+      "comparison_count": 4,
+      "divergence_count": 4,
+      "unresolved_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job efetivo salvo e o recurso aws_glue_job Terraform têm pelo menos um eixo literal divergente entre Glue version, habilitação RTM, linguagem ou número de workers. O link prova diferença declarada entre artefatos, não qual lado será aplicado nem o comportamento da execução.",
+    "proposed_change": [
+      "Reextrair os dois artefatos e revisar somente os campos listados em drifts.",
+      "Confirmar qual fonte representa estado desejado e qual representa estado efetivo antes de alterar IaC ou job.",
+      "Validar runtime, capacidade e resultado funcional em janela equivalente depois da reconciliação."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Alinhar Terraform ao dump efetivo pode codificar uma configuração já obsoleta.",
+      "Alterar RTM, linguagem ou workers pode mudar compatibilidade, capacidade ou semântica do job."
+    ],
+    "tradeoffs": [
+      "Reconciliar drift reduz ambiguidade de operação, mas exige escolher a fonte de verdade do ambiente."
+    ],
+    "validation": [
+      "Comparar novamente os quatro eixos após a mudança e manter os source_fact_ids da nova extração.",
+      "Executar validação funcional com contagem, schema, chaves e agregados; não usar ausência de drift como prova de saúde."
+    ],
+    "rollback": [
+      "Reverter o diff Terraform ou a configuração efetiva para o último estado aprovado e preservar os dois artefatos."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "glue.streaming.terraform_contract",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version",
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-GLUESTREAM-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Observação de runtime Glue Streaming não resolvida",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "unresolved",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_960fc3"
+    ],
+    "measured": {
+      "run_count": 0,
+      "unresolved_count": 3
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A composição recebeu definição Glue Streaming ou histórico de runs, mas não pôde provar uma identidade literal única, uma execução observada ou todos os eixos comparáveis. A ausência não prova consistência, drift, capacidade suficiente ou saúde do streaming.",
+    "proposed_change": [
+      "Preservar o nome literal do job, run id e campos de runtime no dump sanitizado.",
+      "Resolver o motivo nomeado e reextrair antes de julgar divergência."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Casar por nome parcial ou preencher campo ausente pode ligar o run errado e gerar finding falso."
+    ],
+    "tradeoffs": [
+      "Coletar mais evidência aumenta payload local, mas mantém a decisão reauditável."
+    ],
+    "validation": [
+      "Reexecutar fuse e confirmar que a recusa desapareceu ou mudou de motivo.",
+      "Tratar duração e DPU como observações de execução, nunca como latência de evento sem medição própria."
+    ],
+    "rollback": [
+      "Não há mutação; descartar ou reter o artefato incompleto conforme política local."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "glue.streaming.runtime_observation",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

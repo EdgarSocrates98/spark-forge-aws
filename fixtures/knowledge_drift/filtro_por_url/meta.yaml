@@ -1,0 +1,3 @@
+description: >-
+  Duas fontes mudaram; `--source` pede so a dos argumentos de job do Glue.
+args: ["--source","https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html"]

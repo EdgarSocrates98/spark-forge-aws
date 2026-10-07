@@ -1,0 +1,911 @@
+[
+  {
+    "id": "f_c4a45b",
+    "schema_version": 1,
+    "kind": "env.platform",
+    "subject": {
+      "type": "job_run",
+      "symbol": "platform"
+    },
+    "measures": {
+      "distinct_platforms": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "resolved": "glue",
+      "observed": [
+        "glue"
+      ],
+      "source": "resolved",
+      "origins": {
+        "glue": [
+          "terraform"
+        ]
+      }
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
+    "id": "f_04444c",
+    "schema_version": 1,
+    "kind": "env.runtime_signal",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "measures": {
+      "distinct_versions": 1,
+      "source_count": 2
+    },
+    "attrs": {
+      "component": "spark",
+      "resolved": "3.5.4",
+      "observed": [
+        "3.5.4"
+      ],
+      "source": "resolved",
+      "spark_minor": 3.5
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca5585",
+    "schema_version": 1,
+    "kind": "pyspark.action",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 11,
+      "end_line": 13,
+      "symbol": "",
+      "snippet": "stateful = joined.groupBy(\"key\").count()"
+    },
+    "measures": {},
+    "attrs": {
+      "method": "count"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_8d7a20",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 11,
+      "end_line": 13,
+      "symbol": "",
+      "snippet": "stateful = joined.groupBy(\"key\").count()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "groupBy",
+        "count"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_e261e4",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 11,
+      "col": 13,
+      "end_line": 11,
+      "symbol": "",
+      "snippet": "dimensions = spark.readStream.format(\"rate\").load()"
+    },
+    "measures": {
+      "length": 3
+    },
+    "attrs": {
+      "methods": [
+        "readStream",
+        "format",
+        "load"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_0c079b",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 18,
+      "col": 4,
+      "end_line": 18,
+      "symbol": "write_batch",
+      "snippet": "batch.write.mode(\"append\").format(\"iceberg\").saveAsTable(\"analytics.events\")"
+    },
+    "measures": {
+      "length": 4
+    },
+    "attrs": {
+      "methods": [
+        "write",
+        "mode",
+        "format",
+        "saveAsTable"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_0f136d",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 26,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {
+      "length": 6
+    },
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "option",
+        "trigger",
+        "foreachBatch",
+        "start"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_e4a1b7",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 30,
+      "col": 4,
+      "end_line": 30,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"append\").start()"
+    },
+    "measures": {
+      "length": 3
+    },
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "start"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_f7236a",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 4,
+      "end_line": 9,
+      "symbol": "",
+      "snippet": "spark.readStream.format(\"kafka\")"
+    },
+    "measures": {
+      "length": 5
+    },
+    "attrs": {
+      "methods": [
+        "readStream",
+        "format",
+        "option",
+        "load",
+        "withWatermark"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_15a5bb",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 4,
+      "col": 8,
+      "end_line": 4,
+      "symbol": "",
+      "snippet": "spark = SparkSession.builder.getOrCreate()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "builder",
+        "getOrCreate"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a4280",
+    "schema_version": 1,
+    "kind": "pyspark.dedup",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 14,
+      "col": 15,
+      "end_line": 14,
+      "symbol": "",
+      "snippet": "deduplicated = stateful.dropDuplicates([\"key\"])"
+    },
+    "measures": {},
+    "attrs": {
+      "has_explicit_columns": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_66d1a2",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 17,
+      "col": 0,
+      "end_line": 18,
+      "symbol": "write_batch",
+      "snippet": "def write_batch(batch, epoch_id):"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_1e834b",
+    "schema_version": 1,
+    "kind": "pyspark.join",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 9,
+      "end_line": 12,
+      "symbol": "",
+      "snippet": "joined = events.join(dimensions, \"key\")"
+    },
+    "measures": {
+      "on_arity": 1
+    },
+    "attrs": {
+      "how": "inner",
+      "has_broadcast_hint": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_e135b8",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 21,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true,
+      "referenced_names": [
+        "SparkSession",
+        "batch",
+        "builder",
+        "count",
+        "deduplicated",
+        "dimensions",
+        "dropDuplicates",
+        "events",
+        "foreachBatch",
+        "format",
+        "getOrCreate",
+        "groupBy",
+        "join",
+        "joined",
+        "load",
+        "mode",
+        "option",
+        "outputMode",
+        "readStream",
+        "saveAsTable",
+        "spark",
+        "start",
+        "stateful",
+        "trigger",
+        "withWatermark",
+        "write",
+        "writeStream",
+        "write_batch"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_8d4e08",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 18,
+      "col": 4,
+      "end_line": 18,
+      "symbol": "write_batch",
+      "snippet": "batch.write.mode(\"append\").format(\"iceberg\").saveAsTable(\"analytics.events\")"
+    },
+    "measures": {},
+    "attrs": {
+      "api": "dataframe_writer_v1",
+      "mode": "append",
+      "target": "analytics.events"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_b5a0b3",
+    "schema_version": 1,
+    "kind": "streaming.checkpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 23,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "option"
+      ],
+      "configured": true,
+      "location": "s3://lake/checkpoints/events"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_d199a4",
+    "schema_version": 1,
+    "kind": "streaming.dedup",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 14,
+      "col": 15,
+      "end_line": 14,
+      "symbol": "",
+      "snippet": "deduplicated = stateful.dropDuplicates([\"key\"])"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "dropDuplicates"
+      ],
+      "method": "dropDuplicates",
+      "has_explicit_columns": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_c647d1",
+    "schema_version": 1,
+    "kind": "streaming.foreach_batch",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 25,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "option",
+        "trigger",
+        "foreachBatch"
+      ],
+      "callback_literal": null
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_934471",
+    "schema_version": 1,
+    "kind": "streaming.join",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 9,
+      "end_line": 12,
+      "symbol": "",
+      "snippet": "joined = events.join(dimensions, \"key\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "join"
+      ],
+      "streaming_lineage": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_12fd01",
+    "schema_version": 1,
+    "kind": "streaming.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "streaming_fact_count": 15
+    },
+    "attrs": {
+      "parsed": true,
+      "read_stream_seen": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_d323f1",
+    "schema_version": 1,
+    "kind": "streaming.output_mode",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 22,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode"
+      ],
+      "mode": "update"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_8817ba",
+    "schema_version": 1,
+    "kind": "streaming.output_mode",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 30,
+      "col": 4,
+      "end_line": 30,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"append\").start()"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode"
+      ],
+      "mode": "append"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_73d8f1",
+    "schema_version": 1,
+    "kind": "streaming.query",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 26,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "option",
+        "trigger",
+        "foreachBatch",
+        "start"
+      ],
+      "checkpoint_configured": true,
+      "trigger_configured": true,
+      "output_mode": "update"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4c5169",
+    "schema_version": 1,
+    "kind": "streaming.query",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 30,
+      "col": 4,
+      "end_line": 30,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"append\").start()"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "start"
+      ],
+      "checkpoint_configured": false,
+      "trigger_configured": false,
+      "output_mode": "append"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_7b7fd7",
+    "schema_version": 1,
+    "kind": "streaming.sink",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 26,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "option",
+        "trigger",
+        "foreachBatch",
+        "start"
+      ],
+      "format": null,
+      "output_mode": "update",
+      "checkpoint_configured": true,
+      "target": "update"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_451647",
+    "schema_version": 1,
+    "kind": "streaming.sink",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 30,
+      "col": 4,
+      "end_line": 30,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"append\").start()"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "start"
+      ],
+      "format": null,
+      "output_mode": "append",
+      "checkpoint_configured": false,
+      "target": "append"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c317c",
+    "schema_version": 1,
+    "kind": "streaming.source",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 11,
+      "col": 13,
+      "end_line": 11,
+      "symbol": "",
+      "snippet": "dimensions = spark.readStream.format(\"rate\").load()"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "readStream",
+        "format",
+        "load"
+      ],
+      "format": "rate",
+      "target": "rate"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_71dd6d",
+    "schema_version": 1,
+    "kind": "streaming.source",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 4,
+      "end_line": 8,
+      "symbol": "",
+      "snippet": "spark.readStream.format(\"kafka\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "readStream",
+        "format",
+        "option",
+        "load"
+      ],
+      "format": "kafka",
+      "target": "kafka"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_8352b6",
+    "schema_version": 1,
+    "kind": "streaming.stateful_operation",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 11,
+      "end_line": 13,
+      "symbol": "",
+      "snippet": "stateful = joined.groupBy(\"key\").count()"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "groupBy",
+        "count"
+      ],
+      "operation": "count"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_248dff",
+    "schema_version": 1,
+    "kind": "streaming.trigger",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 4,
+      "end_line": 24,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"update\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "writeStream",
+        "outputMode",
+        "option",
+        "trigger"
+      ],
+      "args": [],
+      "kwargs": {
+        "processingTime": "10 seconds"
+      }
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_1c37c1",
+    "schema_version": 1,
+    "kind": "streaming.watermark",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 4,
+      "end_line": 9,
+      "symbol": "",
+      "snippet": "spark.readStream.format(\"kafka\")"
+    },
+    "measures": {},
+    "attrs": {
+      "methods": [
+        "readStream",
+        "format",
+        "option",
+        "load",
+        "withWatermark"
+      ],
+      "event_time_column": "event_time",
+      "delay": "10 minutes"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a7ad964c6af26027447ccdd016730a786c364c14b74e5537967fd14ace455e58",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

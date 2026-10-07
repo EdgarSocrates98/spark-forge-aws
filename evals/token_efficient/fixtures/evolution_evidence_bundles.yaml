@@ -1,0 +1,50 @@
+schema_version: 1
+# Surrogate fixture is structural; active promotion uses resolver-backed bundles.
+fixture_id: evolution-evidence-bundles-v2
+bundles:
+  - id: valid-surrogate-shape
+    bundle:
+      schema_version: 1
+      candidate:
+        id: routing-variant
+        version: "1.1.0"
+        family: prompt
+        kind: prompt
+        candidate_digest: 4d7b80248b56d48300359facc9b6a5e997ea89878819a73ed311ba46405b2b7f
+        parent_digest: 55dfe5e44c323473bc012f767035bcb1797fe64247d211b794b0a69437830e09
+        contract_id: routing.data_domain
+        contract_version: "1"
+        contract_sha256: 6ab2bdd8f175302549a6f9aa34807ab8c6829145618bcd7e57f319b28434139c
+      suite:
+        suite_id: decision-control-plane-v1
+        suite_sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+        input_manifest_sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+        labeled_tasks: 50
+      execution:
+        mode: surrogate
+        adapter: fixture
+        sequence: 1
+      transcripts:
+        baseline: null
+        candidate: null
+      reports:
+        baseline: {}
+        candidate: {}
+      metrics:
+        comparison: {}
+        quality: {}
+        economy: {}
+      policy:
+        policy_id: prompt.prompt.routing.data_domain.1
+        policy_version: prompt-agent-evolution-policy-v2
+        policy_sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+      evidence_refs: []
+      rollback_target: 55dfe5e44c323473bc012f767035bcb1797fe64247d211b794b0a69437830e09
+      unresolved: []
+      bundle_id: d1fd5a9d64de8ac56c940d128995da6fb6700faf9a1b0b57b2013d153c490e82
+  - id: tampered-candidate
+    based_on: valid-surrogate-shape
+    mutation: candidate.candidate_digest
+  - id: missing-promotion-review
+    based_on: valid-surrogate-shape
+    mutation: evidence_refs

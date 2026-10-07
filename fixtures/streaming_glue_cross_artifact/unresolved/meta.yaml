@@ -1,0 +1,9 @@
+name: unresolved
+description: Terraform job identity is present only as a non-literal value.
+expects_kinds:
+  - glue.streaming.job
+  - tf.resource
+  - tf.attribute
+  - glue.streaming.cross.unresolved
+  - glue.streaming.runtime.unresolved
+  - fusion.summary

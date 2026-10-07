@@ -1,0 +1,15 @@
+{
+  "slo": [{
+    "name": "transport-slo",
+    "metric": "lag",
+    "target": 50,
+    "operator": "lte",
+    "unit": "records",
+    "window": "5m",
+    "source": "kafka"
+  }],
+  "finops": [],
+  "security": [],
+  "serving": [],
+  "lakehouse": []
+}

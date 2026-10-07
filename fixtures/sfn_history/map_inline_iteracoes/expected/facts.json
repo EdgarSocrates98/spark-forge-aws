@@ -1,0 +1,144 @@
+[
+  {
+    "id": "f_47e980",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 0,
+      "job_run_count": 2,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "bb4491964fc4cd07ebda6de57c236b11a49e9499dbb49a3803bfe2f00ac917fa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_31440d",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "read_event_count": 18,
+      "attempt_count": 0,
+      "job_run_count": 2,
+      "duration_seconds": 784.0
+    },
+    "attrs": {
+      "status": "succeeded",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "bb4491964fc4cd07ebda6de57c236b11a49e9499dbb49a3803bfe2f00ac917fa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_25dfaa",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "submitted_event_id": 10
+    },
+    "attrs": {
+      "job_run_id": "jr_eeeeeeee1",
+      "job_name": "carga-particao",
+      "state_name": "Carga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output",
+      "attempt_index_refused": "state_name_in_concurrent_branches"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "bb4491964fc4cd07ebda6de57c236b11a49e9499dbb49a3803bfe2f00ac917fa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_7a885f",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "submitted_event_id": 11
+    },
+    "attrs": {
+      "job_run_id": "jr_eeeeeeee2",
+      "job_name": "carga-particao",
+      "state_name": "Carga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output",
+      "attempt_index_refused": "state_name_in_concurrent_branches"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "bb4491964fc4cd07ebda6de57c236b11a49e9499dbb49a3803bfe2f00ac917fa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_fe86bd",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "entry_count": 2,
+      "attempt_count": 2
+    },
+    "attrs": {
+      "reason": "state_name_in_concurrent_branches",
+      "state_name": "Carga"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "bb4491964fc4cd07ebda6de57c236b11a49e9499dbb49a3803bfe2f00ac917fa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  }
+]

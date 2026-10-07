@@ -1,0 +1,125 @@
+[
+  {
+    "id": "f_ff3bde",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_g7h8i9",
+      "log_group": "/aws-glue/jobs/output",
+      "type": "job_run",
+      "symbol": "jr_g7h8i9",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:00:04,001 INFO [main] spark.SparkContext: Running Spark version 3.5.4",
+      "log_stream": "jr_g7h8i9"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_g7h8i9_aws-glue_jobs_output.json"
+    }
+  },
+  {
+    "id": "f_bf643b",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_g7h8i9",
+      "log_group": "/aws-glue/jobs/output",
+      "type": "job_run",
+      "symbol": "jr_g7h8i9",
+      "event": 1
+    },
+    "measures": {
+      "timestamp_ms": 1788948000137.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:00:09,730 INFO [main] glue.GlueContext: Initialized with Iceberg 1.7.1",
+      "log_stream": "jr_g7h8i9_g-abc"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_g7h8i9_aws-glue_jobs_output.json"
+    }
+  },
+  {
+    "id": "f_973a7e",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_g7h8i9",
+      "log_group": "/aws-glue/jobs/output",
+      "type": "job_run",
+      "symbol": "jr_g7h8i9",
+      "event": 2
+    },
+    "measures": {
+      "timestamp_ms": 1788948000274.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:31:55,318 INFO [main] scheduler.DAGScheduler: Job 0 finished, took 1905.6 s",
+      "log_stream": "jr_g7h8i9"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_g7h8i9_aws-glue_jobs_output.json"
+    }
+  },
+  {
+    "id": "f_ddc7b7",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_g7h8i9",
+      "log_group": "/aws-glue/jobs/output",
+      "type": "job_run",
+      "symbol": "jr_g7h8i9"
+    },
+    "measures": {
+      "events": 3.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_g7h8i9"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_g7h8i9_aws-glue_jobs_output.json"
+    }
+  },
+  {
+    "id": "f_c5ebf0",
+    "schema_version": 1,
+    "kind": "error.signature.unresolved",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_g7h8i9",
+      "log_group": "/aws-glue/jobs/output",
+      "type": "job_run",
+      "symbol": "jr_g7h8i9"
+    },
+    "measures": {
+      "lines_examined": 3.0
+    },
+    "attrs": {
+      "reason": "nenhuma_assinatura_casou_no_log",
+      "source": "cloudwatch.log_event"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_g7h8i9_aws-glue_jobs_output.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

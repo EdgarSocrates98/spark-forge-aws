@@ -1,0 +1,20 @@
+name: historico_truncado
+proves: >
+  AC3 no caso que mais engana. `nextToken` na saida salva: a pagina seguinte existe e
+  ninguem a salvou. O que foi lido continua valendo -- a tentativa e o JobRun saem --,
+  e as duas lacunas saem nomeadas: `truncated` e `execution_terminal_absent`. O
+  `status` da execucao e `unresolved`, NUNCA sucesso por suposicao, e por isso a
+  SF-SFNX-003 fica calada: `execution_outcome_class` e `unresolved`, nao `stopped`.
+  Um extrator que chutasse "abortada" aqui inventaria um achado P1.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: []

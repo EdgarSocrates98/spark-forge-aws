@@ -1,0 +1,75 @@
+[
+  {
+    "rule_id": "SF-STREAM-011",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "SLO de streaming observado fora do target declarado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query:sink-output",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_6c5df4"
+    ],
+    "measured": {
+      "target": 95,
+      "observed_min": 90.0,
+      "observed_max": 110.0,
+      "observation_count": 3,
+      "observed_span_seconds": 600.0,
+      "window_seconds": 300.0,
+      "violated_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A série Structured Streaming observada cobre a janela declarada e contém ao menos uma métrica fora do operador e target do SLO. Isso confirma a violação observada, mas não identifica causa, custo ou impacto funcional.",
+    "proposed_change": [
+      "Preservar a série e investigar backlog, duração, state, sink e runtime na mesma janela.",
+      "Alterar uma variável principal por experimento e validar o resultado funcional."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Escalar capacidade ou mudar target sem localizar o gargalo pode aumentar custo sem restaurar o SLO."
+    ],
+    "tradeoffs": [
+      "Retenção de séries SLO exige observabilidade e disciplina de janela."
+    ],
+    "validation": [
+      "Reauditar query, métrica, unidade, operador, target, timestamps e source_fact_ids.",
+      "Repetir coleta na mesma janela depois da mudança e comparar os valores observados."
+    ],
+    "rollback": [
+      "Reverter a mudança experimental e preservar baseline e evidência da violação."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-02"
+      },
+      {
+        "url": "https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.lastProgress.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.slo",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "observability.diagnostic_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

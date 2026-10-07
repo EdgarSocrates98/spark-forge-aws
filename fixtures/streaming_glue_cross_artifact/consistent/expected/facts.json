@@ -1,0 +1,282 @@
+[
+  {
+    "id": "f_30491b",
+    "schema_version": 1,
+    "kind": "fusion.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "enriched_count": 0,
+      "unmatched_projection_count": 0,
+      "unmatched_predicate_count": 0,
+      "tables_known": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_48f4b7",
+    "schema_version": 1,
+    "kind": "glue.streaming.job",
+    "subject": {
+      "type": "source_location",
+      "file": "effective.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-valid",
+      "snippet": ""
+    },
+    "measures": {
+      "worker_count": 4
+    },
+    "attrs": {
+      "name": "rtm-valid",
+      "mode": "REAL_TIME",
+      "glue_version": "6.0",
+      "language": "SCALA"
+    },
+    "provenance": {
+      "artifact": "effective.json",
+      "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_960fc3",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "unresolved",
+      "snippet": ""
+    },
+    "measures": {
+      "run_count": 0,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "job_name": "rtm-valid",
+      "reason": "run_observation_missing",
+      "unresolved_fields": [
+        "glue_version",
+        "worker_count",
+        "worker_type"
+      ],
+      "source_fact_ids": [
+        "f_48f4b7"
+      ]
+    },
+    "provenance": {
+      "extractor": "streaming_glue_runtime@0.1.0",
+      "artifact": "<fusion>",
+      "source_fact_ids": [
+        "f_48f4b7"
+      ]
+    }
+  },
+  {
+    "id": "f_7f59cf",
+    "schema_version": 1,
+    "kind": "glue.streaming.terraform_link",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "rtm-valid->aws_glue_job.rtm",
+      "snippet": ""
+    },
+    "measures": {
+      "comparison_count": 4,
+      "divergence_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "job_name": "rtm-valid",
+      "terraform_resource": "aws_glue_job.rtm",
+      "comparison_status": "consistent",
+      "drifts": [],
+      "unresolved_fields": [],
+      "source_fact_ids": [
+        "f_48f4b7",
+        "f_4dea91",
+        "f_4ef5bf",
+        "f_66da0f",
+        "f_79987b",
+        "f_afc478"
+      ]
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "effective.json",
+        "main.tf"
+      ],
+      "extractor": "streaming_glue_cross@0.1.0"
+    }
+  },
+  {
+    "id": "f_31491c",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 2,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "rtm-valid",
+      "literal": true,
+      "present": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_79987b",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 3,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "6.0",
+      "literal": true,
+      "present": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4ef5bf",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 4,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {
+      "value": 4
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "4",
+      "literal": true,
+      "present": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_afc478",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-real-time-mode",
+      "value": "true",
+      "literal": true,
+      "present": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_66da0f",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--job-language",
+      "value": "scala",
+      "literal": true,
+      "present": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4dea91",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {
+      "attribute_count": 5
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "rtm"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

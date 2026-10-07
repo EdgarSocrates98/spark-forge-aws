@@ -1,0 +1,10 @@
+name: timeout_com_spill_e_skew
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'Timeout com sintoma medido ao lado: razao p95/p50 de 11.4 e spill de 0.4 sobre o
+  input lido. `SF-TIMEOUT-001` dispara, e a mensagem dela e sobre a ORDEM da investigacao
+  -- subir o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.'

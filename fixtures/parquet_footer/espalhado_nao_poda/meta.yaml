@@ -1,0 +1,22 @@
+name: espalhado_nao_poda
+proves: >
+  O POSITIVO de `SF-PQ-008`, e o falso negativo que motivou a frente inteira.
+
+  MESMO numero de linhas, MESMO `row_group_size` e MESMO conjunto de valores que
+  `ordenado_poda`. So a ORDEM muda -- cada row group recebe uma amostra que
+  atravessa todo o dominio, entao min e max de cada um sao quase os globais.
+
+  `avg_range_coverage` fica perto de 1.0 e `expected_row_groups_scanned` perto de
+  3: NENHUM row group pode ser descartado, apesar de a estatistica estar toda la.
+
+  O par prova que a medida e de ORDENACAO: se ela reagisse a tamanho ou a
+  contagem, as duas fixtures dariam igual.
+
+  `SF-PQ-008` exige `sql.predicate` no case, e este corpus nao tem -- entao aqui
+  ela sai PULADA com `missing: ["sql.predicate"]`, que e a segunda coisa que a
+  fixture mede: cobertura alta numa coluna que ninguem filtra nao e defeito.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

@@ -1,0 +1,40 @@
+{
+  "id": "ERR-SPARK-004",
+  "signature": "NoClassDefFoundError",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The message names a class that the build did resolve, so the code compiled against it",
+    "The first occurrence sometimes names a class the job never references directly",
+    "Retrying the same job produces the same failure at the same point"
+  ],
+  "likely_causes": [
+    "The class was present at compile time and is absent at runtime",
+    "The static initializer of the class threw, and every later reference reports the class as missing",
+    "A transitive dependency of a shipped jar was not shipped with it"
+  ],
+  "evidence_required": [
+    "mig.jar_binary",
+    "tf.attribute"
+  ],
+  "diagnostic_steps": [
+    "Look for an earlier ExceptionInInitializerError in the same log: when it is there, the class is present and its initializer failed, which is a different problem",
+    "Compare the jars delivered to the runtime with the dependencies the build resolved, including transitive ones",
+    "Check whether the named class belongs to a transitive dependency of a jar that was shipped alone"
+  ],
+  "fixes": [
+    "Ship the transitive dependency alongside the jar that needs it, or build a shaded artifact that contains it",
+    "If an initializer failed, fix that failure: the missing-class message is a consequence, and adding the jar again changes nothing"
+  ],
+  "unsafe_fixes": [
+    "Treating it as a missing jar without reading the log for an earlier initializer failure, which sends the operator hunting for a jar that is already there"
+  ],
+  "verification": "Re-run the job and exercise the code path that loads the class; if an initializer was at fault, confirm the initializer completes",
+  "rollback": "Revert the classpath change; partial output from the failed run has to be handled separately",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

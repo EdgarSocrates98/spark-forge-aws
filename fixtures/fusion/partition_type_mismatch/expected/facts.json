@@ -1,0 +1,249 @@
+[
+  {
+    "id": "f_0efeb7",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "catalog.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "catalog.json",
+      "artifact_sha256": "7176db919c7db0b54937bc860a9506cc5e63dc828a1dd275f1eb2595735f6136",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_22aa44",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "catalog.json",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "column_count": 2,
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "db.eventos",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "a": "string",
+        "dt": "bigint"
+      }
+    },
+    "provenance": {
+      "artifact": "catalog.json",
+      "artifact_sha256": "7176db919c7db0b54937bc860a9506cc5e63dc828a1dd275f1eb2595735f6136",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_5e49f1",
+    "schema_version": 1,
+    "kind": "fusion.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "enriched_count": 2,
+      "unmatched_projection_count": 0,
+      "unmatched_predicate_count": 0,
+      "tables_known": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_018a21",
+    "schema_version": 1,
+    "kind": "sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "projection_count": 1,
+      "predicate_count": 1,
+      "unresolved_count": 0,
+      "statement_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "393a9cc4765a349c6b76dd56b74dcec7b32f73da321f9448b4096f2c4d4609df",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_08ce9e",
+    "schema_version": 1,
+    "kind": "sql.predicate",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "column": "dt",
+      "operator": "=",
+      "value": "'20260101'",
+      "table": "db.eventos",
+      "on_partition_column": null,
+      "type_mismatch": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "393a9cc4765a349c6b76dd56b74dcec7b32f73da321f9448b4096f2c4d4609df",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_7bada2",
+    "schema_version": 1,
+    "kind": "sql.predicate.enriched",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "column": "dt",
+      "operator": "=",
+      "value": "'20260101'",
+      "table": "db.eventos",
+      "on_partition_column": true,
+      "type_mismatch": true,
+      "fused_from": [
+        "f_08ce9e",
+        "f_22aa44"
+      ]
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_86c976",
+    "schema_version": 1,
+    "kind": "sql.predicate.partition_filter",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "column": "dt",
+      "table": "db.eventos",
+      "fused_from": [
+        "f_08ce9e",
+        "f_22aa44"
+      ]
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_f02cd9",
+    "schema_version": 1,
+    "kind": "sql.projection",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "column_count": 1
+    },
+    "attrs": {
+      "star": false,
+      "has_limit": false,
+      "table": "db.eventos",
+      "table_format_columnar": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "393a9cc4765a349c6b76dd56b74dcec7b32f73da321f9448b4096f2c4d4609df",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_eb2eda",
+    "schema_version": 1,
+    "kind": "sql.projection.enriched",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "column_count": 1
+    },
+    "attrs": {
+      "star": false,
+      "has_limit": false,
+      "table": "db.eventos",
+      "table_format_columnar": true,
+      "fused_from": [
+        "f_22aa44",
+        "f_f02cd9"
+      ]
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  }
+]

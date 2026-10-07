@@ -1,0 +1,45 @@
+name: noclassdef_com_jar
+proves: >
+  O POSITIVO de `SF-ERR-010`, e a mensagem afirma o que
+  `ClassNotFoundException` nao afirma: a classe EXISTIA quando o codigo foi
+  compilado.
+
+  A regra tem um segundo caminho que a fixture nao exercita e o `explanation`
+  nomeia: quando o inicializador estatico de uma classe lanca, toda referencia
+  posterior reporta `NoClassDefFoundError` com a classe presente. A distincao
+  esta num `ExceptionInInitializerError` ANTERIOR no log, e por isso o primeiro
+  passo de `proposed_change` e ler o log -- nao o classpath.
+
+  Registrado como LIMITE: este corpus nao tem o par com o inicializador falho,
+  porque ele exigiria um event log com duas excecoes encadeadas em ordem, e o
+  extrator hoje estrutura UMA por `spark.stage.failure`.
+runtime:
+  glue: "6.0"
+  spark: "4.0.0"
+  python: "3.11"
+  iceberg: "1.9.1"
+expects_kinds:
+  - error.signature_match
+  - mig.jar_binary
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-010
+  - SF-SPARK4-004

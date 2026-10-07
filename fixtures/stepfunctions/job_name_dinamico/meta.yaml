@@ -1,0 +1,21 @@
+name: job_name_dinamico
+proves: >
+  O NEGATIVO de SF-SFN-004 por nome dinamico. O retrier tem efetivo 1 e o Terraform tem
+  `max_retries = 2`, mas `JobName.$` nao e literal: nao ha vinculo, sai
+  `sfn.unresolved` com `reason: job_name_dynamic`, e SF-SFN-004 fica calada em vez de
+  adivinhar o job. SF-SFN-002 dispara, porque ela so le o ASL.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.state_machine
+  - sfn.task
+  - sfn.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: [SF-SFN-002]

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "refused": null,
+  "single_sample": false,
+  "suite": {
+    "id": "host_transcript_fixtures",
+    "sha256": "1ff6e7851af4f6780a9927399812b5aa0921fb4e75003944b2062ee6c5c8a803"
+  },
+  "baseline": {
+    "n": 3,
+    "models": [
+      "synthetic-model-a"
+    ],
+    "host_versions": [
+      "2.1.268"
+    ]
+  },
+  "candidate": {
+    "n": 3,
+    "models": [
+      "synthetic-model-a"
+    ],
+    "host_versions": [
+      "2.1.268"
+    ]
+  },
+  "differs": {
+    "models": false,
+    "host_versions": false
+  },
+  "questions": [
+    {
+      "id": "q-mcp",
+      "metric": "correct",
+      "answer": {
+        "baseline": "3/3",
+        "candidate": "3/3",
+        "transition": "pass->pass"
+      },
+      "tools_ok": {
+        "baseline": "3/3",
+        "candidate": "3/3",
+        "transition": "pass->pass"
+      },
+      "ungraded": {
+        "baseline": 0,
+        "candidate": 0
+      }
+    },
+    {
+      "id": "q-abst",
+      "metric": "abstained",
+      "answer": {
+        "baseline": "3/3",
+        "candidate": "3/3",
+        "transition": "pass->pass"
+      },
+      "tools_ok": {
+        "baseline": "3/3",
+        "candidate": "3/3",
+        "transition": "pass->pass"
+      },
+      "ungraded": {
+        "baseline": 0,
+        "candidate": 0
+      }
+    },
+    {
+      "id": "q-alt",
+      "metric": "correct",
+      "answer": {
+        "baseline": "3/3",
+        "candidate": "3/3",
+        "transition": "pass->pass"
+      },
+      "tools_ok": {
+        "baseline": "3/3",
+        "candidate": "3/3",
+        "transition": "pass->pass"
+      },
+      "ungraded": {
+        "baseline": 0,
+        "candidate": 0
+      }
+    }
+  ],
+  "cost": {
+    "baseline": {
+      "tool_calls": {
+        "median_low": 1,
+        "max": 2
+      }
+    },
+    "candidate": {
+      "tool_calls": {
+        "median_low": 1,
+        "max": 2
+      }
+    }
+  }
+}

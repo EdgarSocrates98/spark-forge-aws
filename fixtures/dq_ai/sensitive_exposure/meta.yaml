@@ -1,0 +1,10 @@
+name: sensitive_exposure
+proves: Sensitive classification produces an explicit ADVANCED governance finding.
+runtime:
+  glue: "6.0"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.review
+  - dq.ai.analyzed
+expects_rules:
+  - SF-DQ-AI-001

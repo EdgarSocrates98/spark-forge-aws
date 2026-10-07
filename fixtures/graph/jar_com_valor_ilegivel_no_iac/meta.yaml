@@ -1,0 +1,34 @@
+name: jar_com_valor_ilegivel_no_iac
+proves: >
+  A guarda de `SF-GRAPH-005` contra o falso positivo que a acompanha desde o
+  desenho: `"--extra-jars" = "s3://${var.bucket_artefatos}/jars/graphframes.jar"`
+  e a forma NORMAL de escrever Terraform, e o extrator nunca adivinha o valor --
+  ele vira `tf.unresolved` com `reason: interpolation`.
+  Sem o kind `tf.graphframes.unknown` ao lado de `tf.graphframes.jar`, a regra
+  leria isso como "nao declarou" e acusaria em P1 um job que entrega a
+  biblioteca. Ausencia de evidencia nao e evidencia de ausencia -- mesma guarda
+  de `tf.observability.unknown` em `SF-GLUE-002`.
+  E ELA E O UNICO GOLDEN QUE REPROVA A REMOCAO da segunda condicao `absent:`.
+  Apagar `- absent: tf.graphframes.unknown` do catalogo deixa o resto da suite
+  verde e faz esta fixture disparar.
+  GLUE 5.0 DE PROPOSITO, e nao 4.0 como o par de disponibilidade: com Spark
+  3.5.4 ha artefato publicado, `SF-GRAPH-002` fica fora de escopo e o unico eixo
+  em jogo e o do IaC. `expects_rules` vazio e o resultado esperado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+  - tf.attribute
+  - tf.graphframes.unknown
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.unresolved
+expects_rules: []

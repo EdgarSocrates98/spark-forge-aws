@@ -1,0 +1,42 @@
+[
+  {
+    "id": "f_03c84a",
+    "schema_version": 1,
+    "kind": "workload.declared",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "sla_minutes": 30
+    },
+    "attrs": {
+      "primary_source": "db.eventos"
+    },
+    "provenance": {
+      "extractor": "workload@0.1.0",
+      "artifact": "workload.yaml"
+    }
+  },
+  {
+    "id": "f_c54e06",
+    "schema_version": 1,
+    "kind": "workload.declared_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "workload.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "jobs_declared": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "workload@0.1.0",
+      "artifact": "workload.yaml"
+    }
+  }
+]

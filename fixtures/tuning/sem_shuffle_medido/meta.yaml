@@ -1,0 +1,5 @@
+name: sem_shuffle_medido
+runtime:
+  glue: '5.0'
+proves: 'Nenhum `spark.stage.shuffle` na entrada. Nao ha proposta, e a recusa tem nome: `no_shuffle_measured`.
+  Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui.'

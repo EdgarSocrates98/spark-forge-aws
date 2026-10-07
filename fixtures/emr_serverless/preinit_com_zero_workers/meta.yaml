@@ -1,0 +1,37 @@
+name: preinit_com_zero_workers
+proves: >
+  Entrada de `initialCapacity` existe e worker nenhum existe: `workerCount: 0`.
+  E o golden negativo do measure que as duas regras de custo leem -- ele conta
+  WORKER declarado, nao entrada do map (D-5d-43).
+  Antes da correcao esta fixture disparava `SF-EMRS-001` em P0. A `explanation`
+  da regra funda o achado em "o que se cobra e worker existente", e zero workers
+  nao e worker existente: o achado era confiante e falso, na severidade mais alta
+  do catalogo.
+  Dois payloads, um por regra, pela mesma razao de `sem_preinit_nada_a_cobrar`:
+  as duas condicoes de auto-stop sao mutuamente exclusivas.
+    * `autostop_desligado.json` -- `enabled: false` com uma entrada `DRIVER` de
+      `workerCount: 0`. Se o measure voltar a contar entradas do map, este
+      `expects_rules` vazio fica vermelho.
+    * `janela_longa.json` -- auto-stop ligado com `idleTimeoutMinutes: 10080`, o
+      teto da API, e uma entrada `EXECUTOR` de `workerCount: 0`. Faz o mesmo por
+      `SF-EMRS-005`, cujo par positivo e `autostop_longo`.
+  Nada torna este payload inalcancavel:
+  `knowledge/emr-serverless/application-configuration.md` registra `workerCount`
+  apenas como "(numero)" -- sem `Required`, sem minimo --, e vale aqui a mesma
+  doutrina que sustentou `unknown_capacity_unit`, que nada na documentacao
+  garante que `get-application` so devolva valores que satisfacam os patterns de
+  ENTRADA.
+  Zero e valor LIDO, nao ponto cego: nenhum `emrs.unresolved` sai daqui. O par
+  que separa "leu zero" de "nao conseguiu ler" e `preinit_sem_worker_count`.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules: []

@@ -1,0 +1,16 @@
+name: debate_fechado
+proves: 'Depois do fechamento: submit e recusado com debate_closed, next devolve o mesmo done,
+  e start com o mesmo plano devolve o mesmo id sem recriar.'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: unresolved

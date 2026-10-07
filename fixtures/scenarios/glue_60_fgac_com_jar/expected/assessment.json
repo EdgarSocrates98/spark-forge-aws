@@ -1,0 +1,343 @@
+{
+  "platform": "glue",
+  "source_runtime": "5.1",
+  "target_runtime": "6.0",
+  "steps": [
+    [
+      "5.1",
+      "6.0"
+    ]
+  ],
+  "findings": [
+    {
+      "rule_id": "SF-LF-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "JAR adicional declarado em job com controle de acesso fino do Lake Formation",
+      "severity": "P0",
+      "confidence": "high",
+      "status": "structural",
+      "subject": {
+        "type": "tf_resource",
+        "file": "glue_governado.tf",
+        "line": 15,
+        "symbol": "aws_glue_job.vendas_governado"
+      },
+      "evidence": [
+        "f_07323a",
+        "f_a04d34"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "Sob controle de acesso fino do Lake Formation, a AWS BLOQUEIA o fornecimento de JAR adicional para extensão do Spark, conector ou metastore. O bloqueio não é lacuna de roadmap -- a documentação declara que ele existe para preservar o isolamento completo do system driver, o mesmo motivo que bloqueia UDT, HiveUDF, função com classe customizada, data source customizado e `ANALYZE TABLE`. Um job que declara `--enable-lakeformation-fine-grained-access` E `--extra-jars` está pedindo duas coisas que a AWS declara incompatíveis, e isso é visível no Terraform antes de qualquer execução. A severidade é P0 porque não é risco nem degradação -- é configuração declarada bloqueada, e o que acontece com ela não é escolha de quem escreveu o Terraform. Ver `knowledge/glue/lakeformation-fgac.md` §2.",
+      "proposed_change": [
+        "Decidir qual das duas fica, porque não existe meio-termo de configuração -- a AWS não oferece um modo de FGAC que aceite JAR adicional, e nenhum ajuste de argumento reconcilia os dois. Ou o job mantém FGAC e perde a dependência, ou mantém a dependência e perde FGAC.",
+        "Para manter FGAC -- reescrever em Spark SQL nativo ou em API do DataFrame o que o JAR fazia, e remover `--extra-jars`. Vale quando o JAR é um conector para formato que o runtime já lê nativamente, ou uma biblioteca de utilidade pequena.",
+        "Para manter a dependência -- remover `--enable-lakeformation-fine-grained-access` e mover o controle de acesso para o mecanismo que sobra, que é permissão IAM sobre o caminho S3 do runtime role. É controle mais grosso, e a diferença precisa ser registrada com quem responde pela governança, não absorvida em silêncio.",
+        "Conferir o classpath inteiro na mesma passada, e não só o JAR que motivou o achado -- `--extra-jars` costuma carregar mais de um artefato, e cada um é uma decisão separada de reescrever ou abandonar."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover `--enable-lakeformation-fine-grained-access` para manter o JAR AFROUXA o controle de acesso do job. Se havia permissão de coluna ou de linha concedida no Lake Formation contando com FGAC, ela deixa de ser aplicada na leitura, e o job passa a ler o que o runtime role puder ler.",
+        "Reescrever sem o JAR muda o caminho de leitura ou de escrita, e com ele o tratamento de tipo, de nulo e de encoding que a biblioteca fazia. A saída pode mudar de valor sem levantar erro.",
+        "Sob FGAC a escrita continua usando permissão IAM do runtime role, e não a concedida no Lake Formation. Quem remove FGAC esperando \"perder o controle de escrita\" está removendo algo que nunca controlou a escrita -- e quem o mantém esperando que ele cubra escrita está errado sobre metade do modelo."
+      ],
+      "tradeoffs": [
+        "Não há troca de configuração aqui, e é isso que torna a decisão arquitetural em vez de operacional. A escolha é entre FGAC e a dependência, e ela custa desenvolvimento (reescrever) de um lado e granularidade de governança do outro.",
+        "Separar o job em dois -- um sob FGAC lendo a tabela governada, outro sem FGAC usando o JAR sobre a saída intermediária -- preserva os dois, ao custo de uma etapa a mais, de um artefato intermediário e do controle de acesso sobre ele. Vale quando a tabela governada é a entrada e o JAR atua depois; não vale quando o JAR é o próprio leitor da tabela."
+      ],
+      "validation": [
+        "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de código que usava o JAR. Submissão bem-sucedida não é validação -- ela não carrega classe nenhuma.",
+        "Contagem total de linhas, contagem por chave e schema idênticos aos do run anterior sobre o mesmo lote de entrada, para separar \"roda\" de \"faz a mesma coisa\".",
+        "Se FGAC foi mantido -- consulta de controle com um principal que TEM e outro que NÃO TEM a permissão concedida no Lake Formation, conferindo que a projeção de coluna e o filtro de linha diferem entre os dois. Sem esse par, \"FGAC está ligado\" é uma afirmação sobre o argumento, não sobre o efeito.",
+        "Se FGAC foi removido -- inventário das permissões que existiam no Lake Formation sobre a tabela, e confirmação explícita de que o novo controle por IAM cobre cada uma, ou registro de qual deixou de ser coberta."
+      ],
+      "rollback": [
+        "Restaurar os `default_arguments` anteriores e reaplicar. É rollback de configuração, não de dado -- mas a saída produzida pelo run com o caminho novo precisa ser descartada ou reconciliada antes, se houve divergência de valor.",
+        "Rollback que reponha `--extra-jars` COM FGAC ligado devolve o job ao estado bloqueado. Só é rollback válido o que remove um dos dois."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+          "retrieved": "2026-08-22"
+        }
+      ],
+      "action": {
+        "kind": "dependency.remove_library",
+        "target": "glue.default_arguments",
+        "direction": "remove",
+        "requires_absent": [],
+        "moves": [
+          "dependency.delivered_artifacts",
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
+    }
+  ],
+  "by_step": [
+    {
+      "finding": {
+        "rule_id": "SF-LF-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "JAR adicional declarado em job com controle de acesso fino do Lake Formation",
+        "severity": "P0",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "tf_resource",
+          "file": "glue_governado.tf",
+          "line": 15,
+          "symbol": "aws_glue_job.vendas_governado"
+        },
+        "evidence": [
+          "f_07323a",
+          "f_a04d34"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "Sob controle de acesso fino do Lake Formation, a AWS BLOQUEIA o fornecimento de JAR adicional para extensão do Spark, conector ou metastore. O bloqueio não é lacuna de roadmap -- a documentação declara que ele existe para preservar o isolamento completo do system driver, o mesmo motivo que bloqueia UDT, HiveUDF, função com classe customizada, data source customizado e `ANALYZE TABLE`. Um job que declara `--enable-lakeformation-fine-grained-access` E `--extra-jars` está pedindo duas coisas que a AWS declara incompatíveis, e isso é visível no Terraform antes de qualquer execução. A severidade é P0 porque não é risco nem degradação -- é configuração declarada bloqueada, e o que acontece com ela não é escolha de quem escreveu o Terraform. Ver `knowledge/glue/lakeformation-fgac.md` §2.",
+        "proposed_change": [
+          "Decidir qual das duas fica, porque não existe meio-termo de configuração -- a AWS não oferece um modo de FGAC que aceite JAR adicional, e nenhum ajuste de argumento reconcilia os dois. Ou o job mantém FGAC e perde a dependência, ou mantém a dependência e perde FGAC.",
+          "Para manter FGAC -- reescrever em Spark SQL nativo ou em API do DataFrame o que o JAR fazia, e remover `--extra-jars`. Vale quando o JAR é um conector para formato que o runtime já lê nativamente, ou uma biblioteca de utilidade pequena.",
+          "Para manter a dependência -- remover `--enable-lakeformation-fine-grained-access` e mover o controle de acesso para o mecanismo que sobra, que é permissão IAM sobre o caminho S3 do runtime role. É controle mais grosso, e a diferença precisa ser registrada com quem responde pela governança, não absorvida em silêncio.",
+          "Conferir o classpath inteiro na mesma passada, e não só o JAR que motivou o achado -- `--extra-jars` costuma carregar mais de um artefato, e cada um é uma decisão separada de reescrever ou abandonar."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover `--enable-lakeformation-fine-grained-access` para manter o JAR AFROUXA o controle de acesso do job. Se havia permissão de coluna ou de linha concedida no Lake Formation contando com FGAC, ela deixa de ser aplicada na leitura, e o job passa a ler o que o runtime role puder ler.",
+          "Reescrever sem o JAR muda o caminho de leitura ou de escrita, e com ele o tratamento de tipo, de nulo e de encoding que a biblioteca fazia. A saída pode mudar de valor sem levantar erro.",
+          "Sob FGAC a escrita continua usando permissão IAM do runtime role, e não a concedida no Lake Formation. Quem remove FGAC esperando \"perder o controle de escrita\" está removendo algo que nunca controlou a escrita -- e quem o mantém esperando que ele cubra escrita está errado sobre metade do modelo."
+        ],
+        "tradeoffs": [
+          "Não há troca de configuração aqui, e é isso que torna a decisão arquitetural em vez de operacional. A escolha é entre FGAC e a dependência, e ela custa desenvolvimento (reescrever) de um lado e granularidade de governança do outro.",
+          "Separar o job em dois -- um sob FGAC lendo a tabela governada, outro sem FGAC usando o JAR sobre a saída intermediária -- preserva os dois, ao custo de uma etapa a mais, de um artefato intermediário e do controle de acesso sobre ele. Vale quando a tabela governada é a entrada e o JAR atua depois; não vale quando o JAR é o próprio leitor da tabela."
+        ],
+        "validation": [
+          "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de código que usava o JAR. Submissão bem-sucedida não é validação -- ela não carrega classe nenhuma.",
+          "Contagem total de linhas, contagem por chave e schema idênticos aos do run anterior sobre o mesmo lote de entrada, para separar \"roda\" de \"faz a mesma coisa\".",
+          "Se FGAC foi mantido -- consulta de controle com um principal que TEM e outro que NÃO TEM a permissão concedida no Lake Formation, conferindo que a projeção de coluna e o filtro de linha diferem entre os dois. Sem esse par, \"FGAC está ligado\" é uma afirmação sobre o argumento, não sobre o efeito.",
+          "Se FGAC foi removido -- inventário das permissões que existiam no Lake Formation sobre a tabela, e confirmação explícita de que o novo controle por IAM cobre cada uma, ou registro de qual deixou de ser coberta."
+        ],
+        "rollback": [
+          "Restaurar os `default_arguments` anteriores e reaplicar. É rollback de configuração, não de dado -- mas a saída produzida pelo run com o caminho novo precisa ser descartada ou reconciliada antes, se houve divergência de valor.",
+          "Rollback que reponha `--extra-jars` COM FGAC ligado devolve o job ao estado bloqueado. Só é rollback válido o que remove um dos dois."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+            "retrieved": "2026-08-22"
+          }
+        ],
+        "action": {
+          "kind": "dependency.remove_library",
+          "target": "glue.default_arguments",
+          "direction": "remove",
+          "requires_absent": [],
+          "moves": [
+            "dependency.delivered_artifacts",
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    }
+  ],
+  "report": [
+    {
+      "finding": {
+        "rule_id": "SF-LF-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "JAR adicional declarado em job com controle de acesso fino do Lake Formation",
+        "severity": "P0",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "tf_resource",
+          "file": "glue_governado.tf",
+          "line": 15,
+          "symbol": "aws_glue_job.vendas_governado"
+        },
+        "evidence": [
+          "f_07323a",
+          "f_a04d34"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "Sob controle de acesso fino do Lake Formation, a AWS BLOQUEIA o fornecimento de JAR adicional para extensão do Spark, conector ou metastore. O bloqueio não é lacuna de roadmap -- a documentação declara que ele existe para preservar o isolamento completo do system driver, o mesmo motivo que bloqueia UDT, HiveUDF, função com classe customizada, data source customizado e `ANALYZE TABLE`. Um job que declara `--enable-lakeformation-fine-grained-access` E `--extra-jars` está pedindo duas coisas que a AWS declara incompatíveis, e isso é visível no Terraform antes de qualquer execução. A severidade é P0 porque não é risco nem degradação -- é configuração declarada bloqueada, e o que acontece com ela não é escolha de quem escreveu o Terraform. Ver `knowledge/glue/lakeformation-fgac.md` §2.",
+        "proposed_change": [
+          "Decidir qual das duas fica, porque não existe meio-termo de configuração -- a AWS não oferece um modo de FGAC que aceite JAR adicional, e nenhum ajuste de argumento reconcilia os dois. Ou o job mantém FGAC e perde a dependência, ou mantém a dependência e perde FGAC.",
+          "Para manter FGAC -- reescrever em Spark SQL nativo ou em API do DataFrame o que o JAR fazia, e remover `--extra-jars`. Vale quando o JAR é um conector para formato que o runtime já lê nativamente, ou uma biblioteca de utilidade pequena.",
+          "Para manter a dependência -- remover `--enable-lakeformation-fine-grained-access` e mover o controle de acesso para o mecanismo que sobra, que é permissão IAM sobre o caminho S3 do runtime role. É controle mais grosso, e a diferença precisa ser registrada com quem responde pela governança, não absorvida em silêncio.",
+          "Conferir o classpath inteiro na mesma passada, e não só o JAR que motivou o achado -- `--extra-jars` costuma carregar mais de um artefato, e cada um é uma decisão separada de reescrever ou abandonar."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover `--enable-lakeformation-fine-grained-access` para manter o JAR AFROUXA o controle de acesso do job. Se havia permissão de coluna ou de linha concedida no Lake Formation contando com FGAC, ela deixa de ser aplicada na leitura, e o job passa a ler o que o runtime role puder ler.",
+          "Reescrever sem o JAR muda o caminho de leitura ou de escrita, e com ele o tratamento de tipo, de nulo e de encoding que a biblioteca fazia. A saída pode mudar de valor sem levantar erro.",
+          "Sob FGAC a escrita continua usando permissão IAM do runtime role, e não a concedida no Lake Formation. Quem remove FGAC esperando \"perder o controle de escrita\" está removendo algo que nunca controlou a escrita -- e quem o mantém esperando que ele cubra escrita está errado sobre metade do modelo."
+        ],
+        "tradeoffs": [
+          "Não há troca de configuração aqui, e é isso que torna a decisão arquitetural em vez de operacional. A escolha é entre FGAC e a dependência, e ela custa desenvolvimento (reescrever) de um lado e granularidade de governança do outro.",
+          "Separar o job em dois -- um sob FGAC lendo a tabela governada, outro sem FGAC usando o JAR sobre a saída intermediária -- preserva os dois, ao custo de uma etapa a mais, de um artefato intermediário e do controle de acesso sobre ele. Vale quando a tabela governada é a entrada e o JAR atua depois; não vale quando o JAR é o próprio leitor da tabela."
+        ],
+        "validation": [
+          "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de código que usava o JAR. Submissão bem-sucedida não é validação -- ela não carrega classe nenhuma.",
+          "Contagem total de linhas, contagem por chave e schema idênticos aos do run anterior sobre o mesmo lote de entrada, para separar \"roda\" de \"faz a mesma coisa\".",
+          "Se FGAC foi mantido -- consulta de controle com um principal que TEM e outro que NÃO TEM a permissão concedida no Lake Formation, conferindo que a projeção de coluna e o filtro de linha diferem entre os dois. Sem esse par, \"FGAC está ligado\" é uma afirmação sobre o argumento, não sobre o efeito.",
+          "Se FGAC foi removido -- inventário das permissões que existiam no Lake Formation sobre a tabela, e confirmação explícita de que o novo controle por IAM cobre cada uma, ou registro de qual deixou de ser coberta."
+        ],
+        "rollback": [
+          "Restaurar os `default_arguments` anteriores e reaplicar. É rollback de configuração, não de dado -- mas a saída produzida pelo run com o caminho novo precisa ser descartada ou reconciliada antes, se houve divergência de valor.",
+          "Rollback que reponha `--extra-jars` COM FGAC ligado devolve o job ao estado bloqueado. Só é rollback válido o que remove um dos dois."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+            "retrieved": "2026-08-22"
+          }
+        ],
+        "action": {
+          "kind": "dependency.remove_library",
+          "target": "glue.default_arguments",
+          "direction": "remove",
+          "requires_absent": [],
+          "moves": [
+            "dependency.delivered_artifacts",
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    }
+  ],
+  "gates": {
+    "compatibilidade": "PASS",
+    "lakeformation": "FAIL",
+    "consumidor": "BLOCKED",
+    "iam_kms": "PASS",
+    "rede": "PASS",
+    "cross_account": "BLOCKED",
+    "dados": "BLOCKED",
+    "performance": "BLOCKED",
+    "custo": "BLOCKED",
+    "canary": "BLOCKED"
+  },
+  "missing_evidence": {
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge_aws/consumers.yaml` (ver `sparkforge_aws/facts/consumers.py`)",
+    "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",
+    "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
+    "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
+    "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
+    "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
+  },
+  "recommendation": "NO_GO",
+  "coverage": {
+    "platform": "glue",
+    "platform_axis": "glue",
+    "source_runtime": "5.1",
+    "target_runtime": "6.0",
+    "steps": 1,
+    "catalog_rules": 221,
+    "version_guarded_rules": 26,
+    "unguarded_rules": 195,
+    "reachable_rules": 220,
+    "axes": [
+      {
+        "axis": "glue",
+        "catalog_rules": 21,
+        "reachable_rules": 21,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "iceberg",
+        "catalog_rules": 1,
+        "reachable_rules": 1,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "spark",
+        "catalog_rules": 5,
+        "reachable_rules": 4,
+        "runtime_key_present": true
+      }
+    ],
+    "activated_axes": [
+      "glue",
+      "iceberg",
+      "spark"
+    ],
+    "statement": "COBERTURA DECLARADA. Plataforma: AWS Glue. Caminho: 5.1 -> 6.0, 1 degrau(s). Catalogo: 221 regras, das quais 26 guardadas por versao (27 contagens por eixo -- uma regra com dois eixos conta nos dois) e 195 sem guarda, alcancaveis em qualquer runtime. Por eixo de `runtime_scope` -- `glue`: 21 no catalogo, 21 alcancadas por este caminho, chave de runtime presente; `iceberg`: 1 no catalogo, 1 alcancadas por este caminho, chave de runtime presente; `spark`: 5 no catalogo, 4 alcancadas por este caminho, chave de runtime presente. O eixo `glue` tem 21 regras neste catalogo, e este caminho alcancou 21 delas. Portanto: assessment sem achado significa `nenhuma das regras alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao cobre esta nomeado -- aqui, em `missing_evidence` e em `component_diff_unresolved` --, porque listar a recusa e a diferenca entre nao saber e nao ter perguntado."
+  },
+  "component_diff": [
+    {
+      "step": [
+        "5.1",
+        "6.0"
+      ],
+      "changed": [
+        {
+          "component": "iceberg",
+          "from": "1.10.0",
+          "to": "1.11.0"
+        },
+        {
+          "component": "python",
+          "from": "3.11",
+          "to": "3.13"
+        },
+        {
+          "component": "scala",
+          "from": "2.12.18",
+          "to": "2.13.17"
+        },
+        {
+          "component": "spark",
+          "from": "3.5.6",
+          "to": "4.1.1"
+        }
+      ],
+      "added": [
+        "java"
+      ],
+      "removed": [],
+      "unchanged": [],
+      "unresolved": {}
+    }
+  ],
+  "component_diff_unresolved": {
+    "compatibility_changes": "exige uma tabela de compatibilidade por release, com o par (componente, versao) e a consequencia declarada; hoje o que existe estruturado sobre compatibilidade e o CATALOGO DE REGRAS (rules/catalog/glue-migration.yaml, SF-MIG-*, com runtime_scope real), e consumi-lo aqui transformaria este verbo de leitor em juiz -- a D-6 da spec proibe regra neste sub-projeto. Em knowledge/ ha prosa (secao 2 de knowledge/glue/runtime-matrix.md, knowledge/runtime-compatibility.md), so para o Glue e nao por release",
+    "component.delta": "a fonte do AWS Glue nao publica `delta` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `delta` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hadoop": "a fonte do AWS Glue nao publica `hadoop` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hadoop` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hudi": "a fonte do AWS Glue nao publica `hudi` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hudi` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.python_installed": "a fonte do AWS Glue nao publica `python_installed` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `python_installed` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "default_changes": "exige as viradas de default declaradas por release e com fonte; hoje knowledge/glue/runtime-matrix.md as discute em PROSA e chaveadas por versao de Spark ('AQE e default desde Spark 3.2', 'ANSI mode e default no Spark 4.1'), e knowledge/emr/, knowledge/emr-eks/ e knowledge/emr-serverless/ nao tem nem a prosa. Destrava com knowledge/<plataforma>/default-changes.yaml, chaveado por release, com propriedade, valor antes, valor depois e fonte",
+    "deprecated": "exige release notes estruturadas por release; hoje knowledge/emr/, knowledge/emr-eks/, knowledge/emr-serverless/ e knowledge/glue/ tem prosa e tabela de COMPONENTES, nao changelog. Destrava com knowledge/<plataforma>/release-notes.yaml carregando, por release, entradas `deprecated: [{api, desde, substituto, source, retrieved}]`. Sem isso este verbo nao distingue 'a plataforma parou de embarcar' de 'a fonte parou de publicar', que e a mesma ausencia de celula vista de dois lados",
+    "performance_changes": "exige baseline medido dos dois lados, nao documento: mudanca de desempenho entre releases e diferenca de tempo e de recurso no MESMO workload, e nenhuma matriz de knowledge/ carrega medida de execucao. Destrava com dois conjuntos de facts de event log e o verbo `benchmark`, que ja existe neste motor para exatamente essa pergunta -- nao com uma coluna nova de knowledge/",
+    "security_changes": "exige boletim de seguranca por release, com CVE e componente afetado; hoje nenhuma das quatro paginas de knowledge/<plataforma>/runtime-matrix.md cita CVE, e as matrizes carregam versao de componente e nada mais. Destrava com knowledge/<plataforma>/security-bulletins.yaml chaveado por release, com CVE, componente, severidade e fonte oficial em knowledge/sources.lock.json"
+  }
+}

@@ -1,0 +1,16 @@
+name: progress_watermark_stalled
+artifact: progress
+runtime:
+  spark: "3.5.6"
+expects_rules:
+  - SF-STREAM-013
+  - SF-STREAM-014
+expects_kinds:
+  - env.runtime_signal
+  - streaming.progress.analyzed
+  - streaming.progress.batch
+  - streaming.progress.event_time
+  - streaming.progress.series
+  - streaming.progress.sink
+  - streaming.progress.source
+  - streaming.progress.state_operator

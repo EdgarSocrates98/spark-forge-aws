@@ -1,0 +1,7 @@
+artifact: dms
+expects_kinds:
+  - dms.analyzed
+  - dms.endpoint
+  - dms.mapping
+  - dms.stats
+  - dms.task

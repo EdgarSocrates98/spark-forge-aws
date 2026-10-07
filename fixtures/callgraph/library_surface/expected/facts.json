@@ -1,0 +1,500 @@
+[
+  {
+    "id": "f_743fa9",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 15,
+      "col": 0,
+      "symbol": "carrega",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 2,
+      "definition_count": 1,
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "opaque",
+      "referenced_in_other_module": true,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf1800",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 20,
+      "col": 0,
+      "symbol": "grava",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 1,
+      "spark_work_count": 2,
+      "definition_count": 1,
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "opaque",
+      "referenced_in_other_module": true,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_f8d88e",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "aplica_normalizacao",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 1,
+      "definition_count": 1,
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": true,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_d9ab13",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 30,
+      "col": 0,
+      "symbol": "_normaliza_linha",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_7f9cc3",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 36,
+      "col": 0,
+      "symbol": "esquema_do_contrato",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "opaque",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_fd8f7b",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 41,
+      "col": 0,
+      "symbol": "_rotina_abandonada",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": true
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_7a31a7",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 48,
+      "col": 0,
+      "symbol": "__init__",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "method",
+      "caller_visibility": "opaque",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_f7df05",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 51,
+      "col": 0,
+      "symbol": "executa",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 1,
+      "fan_in": 0,
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": false,
+      "is_defined": true,
+      "def_kind": "method",
+      "caller_visibility": "opaque",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_eb4c39",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 11,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 0,
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_83c8f9",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 15,
+      "col": 0,
+      "symbol": "carrega",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 0,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "carrega",
+      "work_kind": "pyspark.chain",
+      "via": [
+        "carrega"
+      ]
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_83c8f9",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 15,
+      "col": 0,
+      "symbol": "carrega",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 0,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "carrega",
+      "work_kind": "pyspark.read",
+      "via": [
+        "carrega"
+      ]
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_c75096",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "aplica_normalizacao",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 0,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "aplica_normalizacao",
+      "work_kind": "pyspark.action",
+      "via": [
+        "aplica_normalizacao"
+      ]
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_40d847",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 51,
+      "col": 0,
+      "symbol": "executa",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 1,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "executa",
+      "work_kind": "pyspark.chain",
+      "via": [
+        "executa",
+        "grava"
+      ]
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_40d847",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "biblioteca.py",
+      "line": 51,
+      "col": 0,
+      "symbol": "executa",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 1,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "executa",
+      "work_kind": "pyspark.write",
+      "via": [
+        "executa",
+        "grava"
+      ]
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_30defc",
+    "schema_version": 1,
+    "kind": "callgraph.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "library_surface",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "function_count": 9,
+      "defined_function_count": 9,
+      "edge_count": 1,
+      "entrypoint_count": 8,
+      "max_depth": 1,
+      "unreachable_from_entrypoint_count": 0,
+      "unreferenced_function_count": 1,
+      "opaque_caller_function_count": 5
+    },
+    "attrs": {
+      "entrypoints": [
+        "__init__",
+        "_normaliza_linha",
+        "_rotina_abandonada",
+        "aplica_normalizacao",
+        "carrega",
+        "esquema_do_contrato",
+        "executa",
+        "main"
+      ],
+      "has_cycle": false,
+      "unreferenced_functions": [
+        "_rotina_abandonada"
+      ],
+      "dynamic_dispatch_present": false
+    },
+    "provenance": {
+      "artifact": "library_surface",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "kind": "plan.join_side_stats",
+    "subject": {"type": "plan_node", "file": "plan.txt", "line": 2, "symbol": "Join Inner", "node_id": 0, "operator": "Join", "relation": ""},
+    "measures": {"left_bytes": 1181116006.4, "right_bytes": 25165824.0},
+    "attrs": {"join_type": "Inner", "left_has_stats": true, "right_has_stats": true, "left_node": "Filter", "right_node": "Filter"},
+    "provenance": {"extractor": "spark_plan@0.1.0", "artifact": "plan.txt"}
+  },
+  {
+    "kind": "spark.sql.broadcast_exchange",
+    "subject": {"type": "plan_node", "node_id": 2, "operator": "BroadcastExchange", "relation": "", "symbol": "0:2", "execution_id": 0},
+    "measures": {"data_size_bytes": 25165824, "collect_ms": 120, "build_ms": 80, "broadcast_ms": 40, "rows_output": 1000},
+    "attrs": {},
+    "provenance": {"extractor": "sql_metrics@0.1.0", "artifact": "eventlog.jsonl"}
+  }
+]

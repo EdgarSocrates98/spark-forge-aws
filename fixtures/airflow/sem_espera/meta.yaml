@@ -1,0 +1,13 @@
+name: sem_espera
+proves: >
+  O POSITIVO de SF-AIRFLOW-001. `wait_for_completion=False` e uma tarefa a jusante: a
+  task termina quando o Glue aceita o pedido, e `publicar` roda com o job ainda em
+  execucao. O EmptyOperator e registrado e nao julgado -- as regras julgam so o
+  GlueJobOperator. SF-AIRFLOW-003 fica calada porque a task NAO espera o job.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.dag, af.dependency, af.task]
+expects_rules: [SF-AIRFLOW-001]

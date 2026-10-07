@@ -1,0 +1,10 @@
+[
+  {"kind": "dq.ai.analyzed", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.recommendation", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.recommendation.unresolved", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.dqdl.unresolved", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.review.unresolved", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "athena.query_cost.unresolved", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.assessment", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.assessment.unresolved", "subject": {"type": "table", "symbol": "fixture"}}
+]

@@ -1,0 +1,96 @@
+schema_version: 1
+lab: spark-forge-digital-twin
+product:
+  registry: lab/versions.yaml
+  scenario_suite: lab/scenarios/golden.yaml
+  run_root: .sparkforge_aws/lab/runs
+  result_classifications: [PASS, FAIL, UNRESOLVED, INFRA_FAILURE, INVALID_SCENARIO]
+  fidelity:
+    L0: deterministic_fixture
+    L1: real_local_engine
+    L2: service_contract
+    L3: cloud_validation
+  modes: [lite, standard, deep]
+  profiles: [core, spark, kafka, streaming, flink, lakehouse, cdc, polaris, observability, chaos, full]
+  safety:
+    network: isolated
+    secrets: ephemeral_only
+    aws_default: refused
+    privileged: forbidden
+    host_network: forbidden
+    docker_socket_mount: forbidden
+components:
+  - id: postgres
+    kind: postgres
+    profile: cdc
+    image_env: LAB_POSTGRES_IMAGE
+    depends_on: []
+  - id: kafka
+    kind: kafka
+    profile: streaming
+    image_env: LAB_KAFKA_IMAGE
+    depends_on: []
+  - id: debezium
+    kind: debezium
+    profile: cdc
+    image_env: LAB_DEBEZIUM_IMAGE
+    depends_on: [kafka, postgres]
+  - id: flink
+    kind: flink
+    profile: streaming
+    image_env: LAB_FLINK_IMAGE
+    depends_on: [kafka]
+  - id: spark
+    kind: spark
+    profile: batch
+    image_env: LAB_SPARK_IMAGE
+    depends_on: [minio]
+  - id: iceberg_rest
+    kind: iceberg_rest
+    profile: lakehouse
+    image_env: LAB_ICEBERG_REST_IMAGE
+    depends_on: [minio]
+  - id: polaris
+    kind: polaris
+    profile: lakehouse
+    image_env: LAB_POLARIS_IMAGE
+    depends_on: [minio]
+  - id: minio
+    kind: minio
+    profile: lakehouse
+    image_env: LAB_MINIO_IMAGE
+    depends_on: []
+  - id: prometheus
+    kind: prometheus
+    profile: observability
+    image_env: LAB_PROMETHEUS_IMAGE
+    depends_on: []
+scenarios:
+  - id: broker_kill
+    target: kafka
+    action: stop one broker process while producer and consumer remain active
+    expected_evidence: [producer retry/backpressure, consumer error, recovery timestamp]
+  - id: skew
+    target: flink
+    action: inject hot key distribution in synthetic orders stream
+    expected_evidence: [partition imbalance, task duration spread, affected key]
+  - id: consumer_lag
+    target: kafka
+    action: pause consumer workload and resume after lag accumulation
+    expected_evidence: [consumer lag, throughput, catchup duration]
+  - id: checkpoint_failure
+    target: flink
+    action: make checkpoint storage unavailable for one checkpoint interval
+    expected_evidence: [checkpoint failure, restart count, state recovery]
+  - id: small_files
+    target: iceberg_rest
+    action: write many tiny data files into one synthetic table
+    expected_evidence: [file count, size distribution, manifest count]
+  - id: schema_evolution
+    target: iceberg_rest
+    action: add and remove a declared column across source and sink boundaries
+    expected_evidence: [schema version, compatibility result, impacted consumers]
+  - id: cdc_restart
+    target: debezium
+    action: restart connector after offset commit and compare duplicate handling
+    expected_evidence: [offset, duplicate count, source to sink reconciliation]

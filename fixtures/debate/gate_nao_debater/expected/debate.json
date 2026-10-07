@@ -1,0 +1,15 @@
+{
+  "trace": [
+    {
+      "op": "start",
+      "status": "refused",
+      "reason": "gate_nao_debater"
+    }
+  ],
+  "blackboard": {
+    "decisions": 0,
+    "debate_claims": 0,
+    "debate_objections": 0,
+    "debate_rebuttals": 0
+  }
+}

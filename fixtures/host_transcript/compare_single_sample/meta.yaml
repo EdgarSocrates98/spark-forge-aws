@@ -1,0 +1,5 @@
+name: compare_single_sample
+mode: compare
+proves: >
+  AT-018: baseline com uma execucao so. O compare roda e marca
+  single_sample true: 1/1 contra 3/3 nao separa mudanca de ruido.

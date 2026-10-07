@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "pipeline_id": "orders",
+  "nodes": [
+    {"id": "cdc", "selector": {"kind": "cdc.event", "attrs": {"topic": "orders"}}},
+    {"id": "transport", "selector": {"kind": "kafka.partition", "attrs": {"topic": "orders", "partition": 0}}},
+    {"id": "processor", "selector": {"kind": "flink.job", "attrs": {"job_name": "orders-job"}}},
+    {"id": "sink", "selector": {"kind": "iceberg.snapshots_summary", "attrs": {"table": "catalog.db.missing"}}}
+  ],
+  "edges": [
+    {"id": "cdc-to-kafka", "from": "cdc", "to": "transport"},
+    {"id": "kafka-to-flink", "from": "transport", "to": "processor"},
+    {"id": "flink-to-iceberg", "from": "processor", "to": "sink"}
+  ]
+}

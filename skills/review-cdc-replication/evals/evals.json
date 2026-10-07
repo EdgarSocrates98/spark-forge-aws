@@ -1,0 +1,7 @@
+{
+  "skill_name": "review-cdc-replication",
+  "evals": [
+    {"id": "seam", "prompt": "Review snapshot to CDC seam.", "expected_output": "anchor positions and preserve missing evidence.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "position"]},
+    {"id": "schema", "prompt": "Review schema compatibility and tombstones.", "expected_output": "separate declaration from consumer proof.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "consumer"]}
+  ]
+}

@@ -1,0 +1,10 @@
+name: broadcast_estourado
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'A razao da stage que falhou decide `broadcast`. Esta e a categoria que nao teria
+  evidencia nenhuma antes de `spark.stage.failure` existir: nem o estado do run nem a remocao
+  de executor a distinguem de um timeout de rede.'

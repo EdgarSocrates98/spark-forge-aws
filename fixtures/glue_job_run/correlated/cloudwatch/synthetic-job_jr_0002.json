@@ -1,0 +1,21 @@
+{
+  "job_name": "synthetic-job",
+  "job_run_id": "jr_0002",
+  "start": "2024-06-02T08:00:00+00:00",
+  "end": "2024-06-02T08:11:40+00:00",
+  "period_seconds": 60,
+  "metric_data_results": [
+    {
+      "Id": "m0",
+      "Label": "glue.driver.workerUtilization",
+      "Timestamps": ["2024-06-02T08:01:00+00:00", "2024-06-02T08:02:00+00:00"],
+      "Values": [0.71, 0.68]
+    },
+    {
+      "Id": "m1",
+      "Label": "glue.driver.memory.heap.used.percentage",
+      "Timestamps": [],
+      "Values": []
+    }
+  ]
+}

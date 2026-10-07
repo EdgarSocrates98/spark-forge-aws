@@ -1,0 +1,8 @@
+name: resolution_too_coarse
+job_name: etl_pedidos_diario
+job_run_id: jr_hoje_003
+proves: '28 runs comparaveis, todos dentro do SLA de 10 minutos (500s cada): reliability medida
+  e 100%, mas com n=28 a menor diferenca observavel e 1/28 = 3.6%. O alvo declarado de 99%
+  exigiria distinguir 1%, que este historico nao sustenta -- sao precisos ao menos 100 runs
+  (`math.ceil(1 / (1 - 0.99))`). O candidato e RECUSADO por `resolution_too_coarse`, nao aprovado
+  por coincidencia: medir que cabe e diferente de ter como saber que cabe.'

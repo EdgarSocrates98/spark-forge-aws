@@ -1,0 +1,21 @@
+name: retry_dentro_do_declarado
+proves: >
+  A FRONTEIRA de SF-SFNX-001, e o negativo dela. Duas tentativas observadas contra um
+  teto declarado de duas: o retry fez exatamente o que a definicao permite, e a regra
+  fica calada. E esta igualdade que faz a troca de `>` por `>=` na `expr` mudar este
+  golden -- por isso a area NAO precisa de entrada em `FRONTEIRA_SEM_GOLDEN`.
+  SF-SFN-002 dispara pelo lado da definicao, que e o mesmo ASL da fixture anterior.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.retry_observado
+  - sfn.state_machine
+  - sfn.task
+expects_rules: [SF-SFN-002]

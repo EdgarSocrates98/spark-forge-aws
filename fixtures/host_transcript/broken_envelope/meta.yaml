@@ -1,0 +1,7 @@
+name: broken_envelope
+mode: transcript
+question: q-mcp
+proves: >
+  AT-012: nenhuma mensagem de assistente legivel -- linha nao-JSON, linha sem
+  type, message em lista e em string. A pergunta sai ungraded com as lacunas
+  nomeadas, nunca wrong, e nenhuma excecao sobe.

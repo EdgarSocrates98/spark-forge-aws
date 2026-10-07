@@ -1,0 +1,7 @@
+description: >-
+  Tres chamadas reais de call_tool, duas pelo servidor MCP (canal medido, stdio) e uma sem canal. Sem transcript: nenhum gen_ai.usage no arquivo.
+run_id: run_otel_ok
+provider: null
+host_transcript: null
+origem:
+  - fixtures/pyspark/collect_unbounded/input (entrada do analyze_pyspark)

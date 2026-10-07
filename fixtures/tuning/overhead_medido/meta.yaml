@@ -1,0 +1,4 @@
+name: overhead_medido
+runtime:
+  glue: '5.0'
+proves: 'Dois executores com os picos de ProcessTree: o overhead e o piso do PIOR fora do heap (executor 2, off-heap mais Python = 1152 MiB), e o heap e o piso do pior no heap (executor 1, 3072 MiB). O efetivo padrao (max(384 MiB, 10% de 10g) = 1024 MiB) sai ao lado, e o piso medido passa dele.'

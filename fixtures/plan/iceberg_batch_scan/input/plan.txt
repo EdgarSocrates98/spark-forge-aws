@@ -1,0 +1,34 @@
+== Physical Plan ==
+AdaptiveSparkPlan (5)
++- * Project (4)
+   +- * SortMergeJoin Inner (3)
+      :- BatchScan glue_catalog.curated.pedidos (1)
+      +- BatchScan glue_catalog.curated.itens (2)
+
+
+(1) BatchScan glue_catalog.curated.pedidos
+Output [3]: [pedido_id#1, cliente_id#2, dt#3]
+Format: parquet
+Location: InMemoryFileIndex(1 paths)[s3://lake/curated/pedidos]
+PushedFilters: [IsNotNull(pedido_id)]
+ReadSchema: struct<pedido_id:bigint,cliente_id:bigint,dt:string>
+
+(2) BatchScan glue_catalog.curated.itens
+Output [2]: [pedido_id#10, sku#11]
+Format: parquet
+Location: InMemoryFileIndex(1 paths)[s3://lake/curated/itens]
+ReadSchema: struct<pedido_id:bigint,sku:string>
+
+(3) SortMergeJoin [codegen id : 3]
+Left keys [1]: [pedido_id#1]
+Right keys [1]: [pedido_id#10]
+Join type: Inner
+Join condition: None
+
+(4) Project [codegen id : 3]
+Output [3]: [pedido_id#1, cliente_id#2, sku#11]
+Input [5]: [pedido_id#1, cliente_id#2, dt#3, pedido_id#10, sku#11]
+
+(5) AdaptiveSparkPlan
+Output [3]: [pedido_id#1, cliente_id#2, sku#11]
+Arguments: isFinalPlan=false

@@ -1,0 +1,48 @@
+# SparkForge AWS — AWS Data Platform Capability Matrix (current boundary)
+
+A matriz histórica publicada em `a5b9e96` cruzava serviços AWS fundamentais de dados contra
+dimensões de engenharia, marcando um único check por célula. A auditoria
+registrada em `docs/claims.lock.json` não encontrou, para nenhum serviço
+listado, artefato que provasse a cobertura simultânea de todas as dimensões
+afirmadas — para vários serviços não existe nenhum código, coletor, agente ou
+teste dedicado no repositório. A matriz afirmava uma cobertura que o repositório
+não sustenta e foi removida pela auditoria; o motivo de cada linha está
+registrado no manifesto de alegações.
+
+## Lake Formation: matriz versionada com lastro
+
+A lane de arquitetura Lake Formation não usa esta matriz ampla de serviços como
+prova de suporte. Sua fonte operacional é
+`knowledge/lakeformation/capability-matrix.yaml`, com células por engine
+(`glue`, `emr_ec2`, `emr_serverless`), release, FGAC/FTA, formato e operação.
+O consumidor determinístico é
+`sparkforge_aws/lakeformation/capabilities.py`; capability não declarada retorna
+`unknown` e desbloqueio nomeado, nunca extrapolação.
+
+Ownership de catálogo, RAM, resource link, `GetDataAccess`, filesystem e grants
+continuam dimensões independentes no preflight. Use
+`sparkforge-aws lakeformation architect --input architecture.json` para obter a
+decisão estruturada antes de qualquer coleta ou recomendação.
+
+A matriz operacional inclui Hive/Parquet/Iceberg/Hudi/Delta e operações read,
+com operational review e runbook para validar uso real antes de declarar suporte,
+write, DDL/DML por release. Cada release tem células próprias; divergência entre
+fontes oficiais permanece `version_dependent`/`unknown`, nunca suporte por
+analogia.
+O decision engine aplica o status da célula: `not_supported` é bloqueio,
+`read_only` bloqueia escrita e `limited`/`version_dependent` exigem evidência
+específica. A composição usa `source_decision` e `target_decision`, portanto o
+formato e a operação da origem não são substituídos pelo destino. A rota
+cross-account pode ser resource link ou CatalogId explícito na integração Glue
+ETL; o payload deve declarar qual caminho foi provado.
+
+## Acceptance and observability closure
+
+The Lake Formation acceptance matrix is audited by
+`tests/test_lakeformation_prompt_acceptance.py`. The operational review exposes
+a bounded decision graph and requires separate CloudTrail evidence for consumer
+and producer in cross-account cases; missing evidence remains `unresolved`.
+The final matrix also covers Glue FTA Parquet, EMR Serverless/resource-link,
+Hybrid cross-account, LF-TBAC/RAM, a newer cross-account version and newer EMR
+FGAC DML as explicitly unresolved/version-dependent cases where no exact cell
+exists. A missing cell is not promoted to `not_supported`.

@@ -1,0 +1,7 @@
+description: >-
+  Finding tf_resource no main.tf de `infra/`, sem gate: sai 0 mesmo com P0.
+origem:
+  - fixtures/infra_code/fgac_com_fta_no_mesmo_job
+source_roots: [infra]
+fail_on: null
+category: null

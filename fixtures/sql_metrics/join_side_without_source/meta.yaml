@@ -1,0 +1,22 @@
+name: join_side_without_source
+proves: >
+  BroadcastHashJoin entre db.pedidos e um `Scan ExistingRDD`, Inner,
+  BuildLeft. O lado esquerdo (db.pedidos, build) tem fonte nomeavel e ganha a
+  aresta `spark.sql.join_input` normalmente. O lado direito le de
+  `Scan ExistingRDD` -- sem relation nomeavel, `_scan_of` nao o reconhece --
+  e por isso vira `spark.sql.unresolved` com razao `join_side_without_source`
+  em vez de uma aresta inventada. O lado esquerdo NAO desaparece: uma lacuna
+  de um lado nao apaga a aresta do outro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.execution
+  - spark.sql.scan
+  - spark.sql.join
+  - spark.sql.join_input
+  - spark.sql.unresolved
+  - spark.sql.analyzed
+expects_rules: []

@@ -1,0 +1,10 @@
+description: >-
+  Os findings, os facts e o repo de fixtures/sarif/misto com --source-freshness e um lock SINTETICO (input/sources.lock.json) e as_of fixo: a fonte de SF-ERR-006 mudou em 2026-09-01, depois da validacao de 2026-08-15 (stale); a de SF-PLAN-003 foi conferida ha 22 dias (aging); uma das fontes de SF-CTM-001 nunca foi conferida (unverified), e as outras duas estao frescas, uma delas com leituras em datas diferentes (conflicted).
+origem:
+  - fixtures/sarif/misto (findings, facts e repo copiados)
+source_roots: [a, b]
+fail_on: P0
+category: fixture-freshness
+source_freshness: true
+as_of: "2026-09-11"
+sources_lock: input/sources.lock.json

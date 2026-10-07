@@ -1,0 +1,8 @@
+schema_version: 1
+case_id: recovery-context-insufficient-replan
+failure: context_insufficient
+attempt: 0
+strategy_fingerprint: ci-001
+history: []
+profile: economy
+risk: low

@@ -1,0 +1,11 @@
+name: advanced_governed
+proves: ADVANCED path with compatible runtime, reviewed external DQDL, and observed Athena cost.
+runtime:
+  glue: "5.1"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.review
+  - dq.ai.analyzed
+  - dq.dqdl
+  - athena.query_cost
+expects_rules: []

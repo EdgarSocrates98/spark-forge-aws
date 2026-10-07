@@ -1,0 +1,12 @@
+name: glue_retry_implicito
+proves: >
+  O ramo P1 de SF-SFN-002. O retrier casa a falha do job (`States.ALL`) e nao declara
+  `MaxAttempts`: o efetivo e o default publicado, 3, e ninguem escolheu as tres
+  execucoes a mais do job inteiro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.state_machine, sfn.task]
+expects_rules: [SF-SFN-002]

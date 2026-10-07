@@ -1,0 +1,5 @@
+{
+  "cli": {
+    "databricks_runtime": "15.4.x-scala2.12"
+  }
+}

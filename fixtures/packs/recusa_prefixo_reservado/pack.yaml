@@ -1,0 +1,6 @@
+# Recusa `prefixo_reservado`: o prefixo SF e do core.
+pack:
+  id: finge-core
+  version: 1.0.0
+  prefix: SF
+  core: ">=0.5"

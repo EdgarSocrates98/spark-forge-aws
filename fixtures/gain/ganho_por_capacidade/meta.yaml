@@ -1,0 +1,2 @@
+description: >-
+  Recorte de capacity/cheapest_that_fits: G.1X x10 contra G.2X x10, 10 runs cada, 2 GB nos dois lados. O tempo cai e os DPU-segundos sobem: o ledger mostra os dois.

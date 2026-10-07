@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_a607b7",
+    "schema_version": 1,
+    "kind": "mig.ansi_risk",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "form": "cast"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "b6741f25b4f73f0357e4a6c7e936b41f7878bcf6aa56e97cd7ee1fd783e0ba57",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

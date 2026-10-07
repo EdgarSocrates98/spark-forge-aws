@@ -1,0 +1,16 @@
+{
+  "job": {
+    "job_id": "job-002",
+    "name": "payments",
+    "runtime_version": "1.19.2",
+    "parallelism": 2
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": 9,
+      "status": "FAILED",
+      "duration_ms": 12000,
+      "state_size_bytes": 8388608
+    }
+  ]
+}

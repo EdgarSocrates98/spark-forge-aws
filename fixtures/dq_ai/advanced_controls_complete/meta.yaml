@@ -1,0 +1,9 @@
+name: advanced_controls_complete
+proves: ADVANCED with observed sampling controls, geography and authorization evidence
+runtime:
+  glue: "5.1"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.review
+  - dq.ai.analyzed
+expects_rules: []

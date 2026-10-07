@@ -1,0 +1,15 @@
+{
+  "changes": [],
+  "diff": "",
+  "files": [],
+  "refused": [
+    {
+      "detail": "spark.sql.shuffle.partitions: pedida em 2 lugares: lib/job.py:2 (code), main.tf:13 (terraform)",
+      "key": "spark.sql.shuffle.partitions",
+      "reason": "procedencia_ambigua",
+      "unlock": "deixe a chave num lugar so (o codigo vence o Terraform em runtime) e extraia de novo"
+    }
+  ],
+  "rollback_diff": "",
+  "tune_refused": []
+}

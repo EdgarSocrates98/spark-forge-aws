@@ -1,0 +1,17 @@
+name: gzip_text_not_splittable
+proves: >
+  Dois arquivos `.json.gz` de 4 GB e 3 GB. Gzip nao e splitavel: cada arquivo
+  vira UMA task, independente de quantos executores existam, e o job inteiro
+  fica refem do maior deles. SF-PQ-003 dispara sobre `max_file_bytes`, que so
+  faz sentido junto com `format: text` e `compression: gzip` -- Parquet do
+  mesmo tamanho seria dividido normalmente e nao e achado nenhum.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.prefix_summary
+expects_rules:
+  - SF-PQ-003

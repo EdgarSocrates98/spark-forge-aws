@@ -1,0 +1,36 @@
+name: segredo_em_runtime_config
+proves: >
+  Os tres padroes de segredo que a heuristica reconhece, num payload so, e a
+  prova de que a REDACAO acontece antes de o fact existir: chave de acesso no
+  formato `AKIA`, senha embutida em URL de JDBC, e valor de alta entropia sob
+  chave que contem `password`. Nenhum dos tres pode sobreviver ao golden
+  commitado -- um golden com credencial real seria o analisador causando o dano
+  que a regra previne.
+  Os valores sao SINTETICOS por construcao: a chave e `AKIA` seguido de dezesseis
+  `X`, montada por concatenacao, e nao existe conta AWS por tras dela.
+  A entrada aninhada (`configurations` dentro de `spark-defaults`) existe porque
+  `Configuration` e recursivo na referencia de API e a classificacao do filho e a
+  que vale para as propriedades dele. Segredo escondido um nivel abaixo e
+  exatamente onde um extrator raso deixaria passar.
+  `spark.executor.cores: "4"` esta no mesmo bloco como par negativo: valor comum
+  nao pode ganhar `secret_pattern_match`.
+  O que a fonte NAO sustenta (D-5d-8): o bloco *Warning* que justifica o
+  SF-EMR-002 -- as APIs Describe/List devolvendo texto claro -- nao foi
+  encontrado na documentacao do Serverless. Regra desta area nao pode citar a URL
+  do EC2.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.configuration
+  - emrs.monitoring
+expects_rules:
+  - SF-EMRS-002

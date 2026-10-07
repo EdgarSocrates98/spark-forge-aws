@@ -1,0 +1,100 @@
+[
+  {
+    "id": "f_d6bef5",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "inventario.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 0,
+      "attempt_count": 0,
+      "job_run_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "inventario.json",
+      "artifact_sha256": "f259627ef21c76f5e91fb161cabb90988f0c6bf19ebc198c3b99023fd039a766",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_9532c7",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "quebrado.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 0,
+      "attempt_count": 0,
+      "job_run_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "quebrado.json",
+      "artifact_sha256": "355cdc4a713d760b5f6d1a65a8e5276928a7e7b07b55a8441dee783f38413dc3",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_84494a",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "inventario.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "not_an_execution_history"
+    },
+    "provenance": {
+      "artifact": "inventario.json",
+      "artifact_sha256": "f259627ef21c76f5e91fb161cabb90988f0c6bf19ebc198c3b99023fd039a766",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_dadc83",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "quebrado.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_json"
+    },
+    "provenance": {
+      "artifact": "quebrado.json",
+      "artifact_sha256": "355cdc4a713d760b5f6d1a65a8e5276928a7e7b07b55a8441dee783f38413dc3",
+      "extractor": "sfn_history@0.1.0"
+    }
+  }
+]

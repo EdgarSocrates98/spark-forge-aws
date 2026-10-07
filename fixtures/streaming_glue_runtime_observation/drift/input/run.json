@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "glue.job_run",
+    "subject": {"type": "job_run", "job_name": "orders-stream", "job_run_id": "jr-drift", "symbol": "jr-drift"},
+    "measures": {"number_of_workers": 2, "execution_time_s": 75},
+    "attrs": {"state": "SUCCEEDED", "glue_version": "5.0", "worker_type": "G.2X"},
+    "provenance": {"artifact": "jr-drift.json", "artifact_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "extractor": "glue_job_run@0.1.0"}
+  }
+]

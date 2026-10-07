@@ -1,0 +1,42 @@
+{
+  "id": "ERR-SPARK-006",
+  "signature": "java.lang.OutOfMemoryError: Java heap space",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The task dies with a Java stack, and the executor JVM reports the failure itself",
+    "The same job succeeded on a smaller input and fails as the input grows",
+    "One task fails repeatedly while the others in the same stage finish"
+  ],
+  "likely_causes": [
+    "A single task received far more data than its peers, so the heap that fits the others does not fit it",
+    "A broadcast join was chosen for a table that is no longer small",
+    "The job collects or materialises a large result on one side of the operation"
+  ],
+  "evidence_required": [
+    "spark.stage.task_input",
+    "spark.stage.task_duration"
+  ],
+  "diagnostic_steps": [
+    "Compare max and median input bytes per task in the failing stage: heap exhaustion with an even distribution is a sizing problem, and with an uneven one it is skew",
+    "Read the physical plan for the join strategy of the failing stage",
+    "Read the effective spark.executor.memory and spark.memory.fraction; the Spark defaults are 1g and 0.6, and the second sets aside the rest for internal metadata"
+  ],
+  "fixes": [
+    "Treat the skew when the input distribution is uneven, because more heap pays the cost of the largest task on every executor",
+    "Disable or correct the broadcast decision when a table that grew is still being broadcast",
+    "Raise spark.executor.memory only after the distribution has been measured and found even"
+  ],
+  "unsafe_fixes": [
+    "Raising spark.memory.fraction above the default: the Spark documentation recommends leaving it alone and warns that raising it requires tuning JVM garbage collection as well",
+    "Raising heap while skew is present, which moves the failure without touching the cause and costs on every executor"
+  ],
+  "verification": "Re-run with the same input volume and confirm the stage completes; publish max/median input bytes per task before and after",
+  "rollback": "Revert the memory override. If the fix changed the join key or the data distribution, the output has to be compared before the previous version is discarded",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

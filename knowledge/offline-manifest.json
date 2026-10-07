@@ -1,0 +1,357 @@
+{
+  "version": 1,
+  "mode": "offline-first",
+  "network_required": false,
+  "documents": [
+    {
+      "path": "knowledge/INDEX.md",
+      "title": "INDEX",
+      "sha256": "2756fd96eee77cc9c8a86b6de8f08ac60e6dca2604af796d8467eb79bda08989"
+    },
+    {
+      "path": "knowledge/agent-creation.md",
+      "title": "agent-creation",
+      "sha256": "75ccfc9dcbab70f9fd65c650c313df09edb0d3859ed7d4b56f46ba7c49d6c9f4"
+    },
+    {
+      "path": "knowledge/agent-evaluation.md",
+      "title": "agent-evaluation",
+      "sha256": "61465f598c89f5124fc13597e302cd814f4594c829b9cc39f3fb1aa9384922dd"
+    },
+    {
+      "path": "knowledge/agentic-engineering.md",
+      "title": "agentic-engineering",
+      "sha256": "1592c1e84d95fb5fc480c8e26b5045eeb29d7fc0d53a9d9049b0f5ce5df0ea0f"
+    },
+    {
+      "path": "knowledge/airflow-pipelines.md",
+      "title": "airflow-pipelines",
+      "sha256": "19094312373c54c4246534127af5c376b9b8a715700361e3ac97a7357006389a"
+    },
+    {
+      "path": "knowledge/airflow/glue-operator.md",
+      "title": "glue-operator",
+      "sha256": "199443058cf008701a46a6f1445e313cb0ed67df0b5eadcab15fc2761621a8af"
+    },
+    {
+      "path": "knowledge/anti-patterns.md",
+      "title": "anti-patterns",
+      "sha256": "56181cb43733a29cf722cb5d381952d60e07d9ce7f3e839aa8ab8f2b0a4953dd"
+    },
+    {
+      "path": "knowledge/athena/performance.md",
+      "title": "performance",
+      "sha256": "bc76127d18a4fbfc6e97ae538671b9f275fadd4d46f00c57ad9197d422e8a777"
+    },
+    {
+      "path": "knowledge/cdc-replication.md",
+      "title": "cdc-replication",
+      "sha256": "84bd7ca8ed6becdd6c180f1ae6ee7b977d888210bff4bf915909747a6b8bde91"
+    },
+    {
+      "path": "knowledge/controlm/automation-api-matrix.md",
+      "title": "automation-api-matrix",
+      "sha256": "fdaf69e4369f61fcc7cd1bf462e858fae818133561ec65f1f3cefa626efb62ff"
+    },
+    {
+      "path": "knowledge/cross-service-constraints.md",
+      "title": "cross-service-constraints",
+      "sha256": "9f2757d39746497317ad8ce7ddfbd64d0eeb4241a4b627dbdb5d45a6934c6f65"
+    },
+    {
+      "path": "knowledge/data-contracts-schema-evolution.md",
+      "title": "data-contracts-schema-evolution",
+      "sha256": "05eab6d789d87f336d927e79b32cc641d99aa028c10d409305e625787f746fae"
+    },
+    {
+      "path": "knowledge/data-lineage-impact.md",
+      "title": "data-lineage-impact",
+      "sha256": "1ebd29ef5e1666983a832946fb1a33350a037419cf2192beddbeee1be63f0ead"
+    },
+    {
+      "path": "knowledge/data-platform-architecture.md",
+      "title": "data-platform-architecture",
+      "sha256": "2193926022897c3cb4346ac04bb8421280e79159c3e948960667dc6bd7e88c25"
+    },
+    {
+      "path": "knowledge/data-platform-finops.md",
+      "title": "data-platform-finops",
+      "sha256": "103ccd4f62f8914c7d994fd68ccae6ce5f416276d944b2ad7e06cbfc025234f9"
+    },
+    {
+      "path": "knowledge/databricks/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "068c4a9a182c5b48601ea4e3a161563d12797b913a308a0d128231b17c0994e0"
+    },
+    {
+      "path": "knowledge/devin/agents-and-subagents.md",
+      "title": "agents-and-subagents",
+      "sha256": "49ca9b9ef95e25274c6eb7a46621f805e30f450ccbb392e02d0fb1b67b18608a"
+    },
+    {
+      "path": "knowledge/domain-tool-matrix.md",
+      "title": "domain-tool-matrix",
+      "sha256": "e48f074008310828188cbea7dbcc2d68b8fdc46ce6b3d16219821c991de58cde"
+    },
+    {
+      "path": "knowledge/dq/validation-frameworks.md",
+      "title": "validation-frameworks",
+      "sha256": "a43589da05716f40526327aef8ad68f5e61d4fa75d8b39429be39ea26de8e2bc"
+    },
+    {
+      "path": "knowledge/emr-eks/job-run-configuration.md",
+      "title": "job-run-configuration",
+      "sha256": "d107cf2c310ab6c52c892bb5e28764e2ae60366bafde7f96293643e227ec4d2d"
+    },
+    {
+      "path": "knowledge/emr-eks/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "d05b25f99422412d01962c475293602aa0340c6682272dd82994ebcb9729293c"
+    },
+    {
+      "path": "knowledge/emr-serverless/application-configuration.md",
+      "title": "application-configuration",
+      "sha256": "4b2fe40ba32aa556f8fc817031811ab8b717728b11a681a81a22be3814b66137"
+    },
+    {
+      "path": "knowledge/emr-serverless/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "bc6ed9a8812dc5af51f840eafe777b851f489aa41ddb11129a2465e297228afb"
+    },
+    {
+      "path": "knowledge/emr/cluster-configuration.md",
+      "title": "cluster-configuration",
+      "sha256": "f5cb49306e724ff947d04025125ce9ba21aff85ac7f7fb33048398cc632ddf19"
+    },
+    {
+      "path": "knowledge/emr/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "57b4d0d61021232a62fffe0fc4572a49afeb9ef47550ae0cd7fa91bf47e4fb43"
+    },
+    {
+      "path": "knowledge/event-driven-architecture.md",
+      "title": "event-driven-architecture",
+      "sha256": "87e703f670c3b74b5587862a43775902b482f4f4d1d8eaea569d7c3006f30464"
+    },
+    {
+      "path": "knowledge/flink-streaming.md",
+      "title": "flink-streaming",
+      "sha256": "66d684630ad4c04b911ee5bed04cd6ac9874b96e82e8221fe081350b00b12964"
+    },
+    {
+      "path": "knowledge/glue-streaming-rtm.md",
+      "title": "glue-streaming-rtm",
+      "sha256": "5eb043c269dbfbada123a5cedb4ff9e9575a6429dffa66997fb90d95019edc88"
+    },
+    {
+      "path": "knowledge/glue/dq-advanced-matrix.md",
+      "title": "dq-advanced-matrix",
+      "sha256": "5349bd3dbdecc72459ea1d48abe95156546057f8585c26484f4b84e20bf98cf8"
+    },
+    {
+      "path": "knowledge/glue/job-arguments.md",
+      "title": "job-arguments",
+      "sha256": "52c7109eeb424321284d54286be59d363b3f454f2d58052573f075e6d0cbcb3d"
+    },
+    {
+      "path": "knowledge/glue/lakeformation-fgac.md",
+      "title": "lakeformation-fgac",
+      "sha256": "862d55180c2d67b81477ad96fe84171351e39a7bfb4fa0ee56f41d363588a712"
+    },
+    {
+      "path": "knowledge/glue/lakeformation-index.md",
+      "title": "lakeformation-index",
+      "sha256": "a05ae80dacf039d3c0606ae8610079825bc6679af70d96fc46cb601b5830fe8a"
+    },
+    {
+      "path": "knowledge/glue/observability.md",
+      "title": "observability",
+      "sha256": "f0d016ae54a66876d870429c557cf3d1601275635068632fbd6db915290d0479"
+    },
+    {
+      "path": "knowledge/glue/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "cf96ed744c571e3173850e833a5d9a2d7e061470861b67fc0a7be146f9a9dff7"
+    },
+    {
+      "path": "knowledge/glue/workers-and-capacity.md",
+      "title": "workers-and-capacity",
+      "sha256": "37825df485504cc692273be964e6ce42cd22b1e6f6c0c890018dce0001ed690e"
+    },
+    {
+      "path": "knowledge/graph/availability.md",
+      "title": "availability",
+      "sha256": "2fa8d90ef292a228d902c5617eadc46a5d58ca09482ad16afa38132c809e4b5c"
+    },
+    {
+      "path": "knowledge/graph/graphframes-api.md",
+      "title": "graphframes-api",
+      "sha256": "72093a6e5adc479c00cde99ecb5a61eea65978b23761f8b57ff728f3115f43ce"
+    },
+    {
+      "path": "knowledge/graphs-neptune-dynamodb-athena.md",
+      "title": "graphs-neptune-dynamodb-athena",
+      "sha256": "89d24af7b9e10711e3ee5e679f38b94a9ae93f0e60514d0f24d2298e9e75aff4"
+    },
+    {
+      "path": "knowledge/iceberg-parquet-s3.md",
+      "title": "iceberg-parquet-s3",
+      "sha256": "b6a4d0688aa09f31afa3364a650d9df6f2e043a7c5c0e0a408e72de04a85ebf0"
+    },
+    {
+      "path": "knowledge/lake-governance.md",
+      "title": "lake-governance",
+      "sha256": "f8b7799c31bcedd8f43761b58cabecd2645ba78fc26a46e0f99bdbe858ee1c99"
+    },
+    {
+      "path": "knowledge/lakeformation/fgac-fta-improvements.md",
+      "title": "fgac-fta-improvements",
+      "sha256": "ce35a7f1b245b049310d2d274a18faa6f43f93e09cfb81ff02f4bde595bd8978"
+    },
+    {
+      "path": "knowledge/model-selection-observability.md",
+      "title": "model-selection-observability",
+      "sha256": "a308bfb93c52e8e9cfef97ef097e1819dedb5549f47e0f56710df77af52fa0ab"
+    },
+    {
+      "path": "knowledge/offline-policy.md",
+      "title": "offline-policy",
+      "sha256": "5c144f7573d8137089492a0eb6f7511f16ca75795502dff34ab5593f9a989561"
+    },
+    {
+      "path": "knowledge/performance-principles.md",
+      "title": "performance-principles",
+      "sha256": "0cc4bb1d436fa0f2b20c2d057028d7b044ced34831dcba62e65555de4a1e684e"
+    },
+    {
+      "path": "knowledge/runtime-compatibility.md",
+      "title": "runtime-compatibility",
+      "sha256": "1ba393b234e735fa607f39865751fd23c125840edb5431c9af2156b7ded581c3"
+    },
+    {
+      "path": "knowledge/spark/config-reference.md",
+      "title": "config-reference",
+      "sha256": "ed660e90d2b79fbd20d260634d7cadbce5477cabcdaed16d068b1f0dba3e8847"
+    },
+    {
+      "path": "knowledge/spark/execution-model.md",
+      "title": "execution-model",
+      "sha256": "dca5dbfb5570d1b1622d9ac980dffe17ce573d385293a5cfd3a81ff2542629a7"
+    },
+    {
+      "path": "knowledge/spark/memory-and-oom.md",
+      "title": "memory-and-oom",
+      "sha256": "7bd0bea7055af5475a4956e120bdae53a654c08b851df4b602ed563876c69d4a"
+    },
+    {
+      "path": "knowledge/spark/plan-reading.md",
+      "title": "plan-reading",
+      "sha256": "f319a7edbcd8462de771634f13c7edf0164202652d36fa1f02d894518345b1d1"
+    },
+    {
+      "path": "knowledge/spark/shuffle-join-skew.md",
+      "title": "shuffle-join-skew",
+      "sha256": "6965ae5d80fca0ef46fa79309960899b376d2283f88ade824aa4294aefc5de3f"
+    },
+    {
+      "path": "knowledge/spark/spark4-migration.md",
+      "title": "spark4-migration",
+      "sha256": "1c086749a2a97d9909df261f67cabb5f9d7088099312ad4f3787a4ebbf2c0feb"
+    },
+    {
+      "path": "knowledge/spark/sql-metrics.md",
+      "title": "sql-metrics",
+      "sha256": "9b1f2c75b250d1e45c4734d5d844813d9cb1279adb0da29045b153b0c4fcb4a7"
+    },
+    {
+      "path": "knowledge/stepfunctions/execution-history.md",
+      "title": "execution-history",
+      "sha256": "cdb8ea4fca2d7816a7a9d666a6b0f090e7a7a15c616a0408587164a50e4017ac"
+    },
+    {
+      "path": "knowledge/stepfunctions/glue-integration.md",
+      "title": "glue-integration",
+      "sha256": "8ba820bcafee94b4c9ef14fcda5f4bbfd422fa6172f2a5a05e034e48d735815b"
+    },
+    {
+      "path": "knowledge/storage/iceberg-catalog.md",
+      "title": "iceberg-catalog",
+      "sha256": "ddc347dfa70baa86db9750910adeb7a9c7f97809489f6a6e9316eca0d34b6725"
+    },
+    {
+      "path": "knowledge/storage/iceberg-performance.md",
+      "title": "iceberg-performance",
+      "sha256": "b5b13d36b4bc79de91135b95b7409584c0a0b0f0c7ba938d39e240817a09de6c"
+    },
+    {
+      "path": "knowledge/storage/iceberg-v3.md",
+      "title": "iceberg-v3",
+      "sha256": "afa890e6a68290e50077d69757055a271ad3481f6b54cb46537445dac72d2f7b"
+    },
+    {
+      "path": "knowledge/storage/parquet-layout.md",
+      "title": "parquet-layout",
+      "sha256": "871c8c2faa0ac33f2c663b7a482a45b2d88ae92dd1cd8a54f8c93f3061b5f191"
+    },
+    {
+      "path": "knowledge/streaming-format-serving-matrix.md",
+      "title": "streaming-format-serving-matrix",
+      "sha256": "e738b403769aa5ccc1765fe1a405ee552bd0f057251535a29c4bc0fc30fc00f0"
+    },
+    {
+      "path": "knowledge/streaming-integrations.md",
+      "title": "streaming-integrations",
+      "sha256": "7a1781e66316dbad6dd51a8f17e17be0c9952ae29e47ace7c0054e9647e53ac4"
+    },
+    {
+      "path": "knowledge/streaming-lakehouse-observability.md",
+      "title": "streaming-lakehouse-observability",
+      "sha256": "e5ea70b24d83c33a5d26e429dfe2d4f535d13c456bfc1f52d48bc850582ca5d0"
+    },
+    {
+      "path": "knowledge/streaming-operations.md",
+      "title": "streaming-operations",
+      "sha256": "0e2f141587a98c0c285e50d092d884f9d9e5f5e44f346b356fcccc76afe21cbf"
+    },
+    {
+      "path": "knowledge/streaming-pipeline-diagnostics.md",
+      "title": "streaming-pipeline-diagnostics",
+      "sha256": "502fae1da45b4fd2d24ba78fb91079ef2e5d48ebc6da12a43b24d27dc8ca88a0"
+    },
+    {
+      "path": "knowledge/streaming-realtime-candidate-matrix.md",
+      "title": "streaming-realtime-candidate-matrix",
+      "sha256": "65161fadf2031fb671630da960e35dc6094e679fb3c3069acdce43472180eea4"
+    },
+    {
+      "path": "knowledge/streaming-reliability.md",
+      "title": "streaming-reliability",
+      "sha256": "35c62c1f8e3a3e4692a1f2e10f0a6de52a89dfb1337c2749802c2d76f1e94981"
+    },
+    {
+      "path": "knowledge/streaming/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "4b0a06a6aad0087aa17cf44545c06dce8e74e5dca7aa41891772c6908325ffba"
+    },
+    {
+      "path": "knowledge/terraform-data-platform.md",
+      "title": "terraform-data-platform",
+      "sha256": "1c08c95844706dcc60c4f5f3b62e8977f6b2a8d9d86c19bc187c2e34a0fba782"
+    },
+    {
+      "path": "knowledge/token-economy.md",
+      "title": "token-economy",
+      "sha256": "8a5c07b19cf68434104c87ed1ae6c19b0b65ea51e5f235e8f5508c9ee3b6a9af"
+    },
+    {
+      "path": "knowledge/tool-specialization-matrix.md",
+      "title": "tool-specialization-matrix",
+      "sha256": "d161eb6344bf4be9820f5f58cc72943cb5e8664c5d5c9c1abadb2e9e6e255d3d"
+    },
+    {
+      "path": "knowledge/transport-diagnostics.md",
+      "title": "transport-diagnostics",
+      "sha256": "138e16765c6a661151510b02af9e62bd712edef936817e7d5b7a7438793e6c49"
+    }
+  ]
+}

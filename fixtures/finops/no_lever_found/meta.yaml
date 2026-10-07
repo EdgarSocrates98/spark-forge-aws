@@ -1,0 +1,5 @@
+name: no_lever_found
+job_name: etl_pedidos_diario
+proves: 'Oito runs de uma unica capacidade (G.2X x10), todos dentro do SLA de 15 minutos,
+  e nenhum achado de codigo. `levers.none_found` e True: nao e uma lacuna de analise,
+  e uma resposta -- a capacidade ja esta dimensionada e o codigo nao tem achado registrado.'

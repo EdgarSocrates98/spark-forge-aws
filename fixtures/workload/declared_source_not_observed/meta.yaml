@@ -1,0 +1,12 @@
+name: declared_source_not_observed
+job_name: etl_pedidos_diario
+job_run_id: jr_005
+proves: >
+  `workload.yaml` declara `primary_source: db.eventos`, mas o unico scan
+  medido em `input/facts.json` le `db.clientes` -- a declaracao nao bate
+  com o medido. `primary_input_class` sai `unknown` com
+  `missing: declared_source_not_observed`, e nao um valor calculado sobre
+  a fonte errada: nenhum scan casa com `db.eventos`, entao o eixo recusa em
+  vez de responder com o que sobrou. `file_pressure` continua medido a
+  partir do scan que existe, provando que a recusa e so do eixo declarado,
+  nao do fingerprint inteiro.

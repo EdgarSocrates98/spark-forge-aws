@@ -1,0 +1,43 @@
+{
+  "table": "analytics.pedidos_compactados",
+  "format_version": 2,
+  "properties": {
+    "write.distribution-mode": "hash",
+    "format-version": "2"
+  },
+  "files": [
+    {"file_path": "s3://bucket/t/data/f00.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f01.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f02.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f03.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f04.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f05.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f06.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f07.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f08.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f09.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f10.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f11.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f12.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f13.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f14.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f15.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f16.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f17.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f18.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f19.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f20.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f21.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f22.parquet", "file_size_in_bytes": 8388608, "record_count": 120000},
+    {"file_path": "s3://bucket/t/data/f23.parquet", "file_size_in_bytes": 8388608, "record_count": 120000}
+  ],
+  "snapshots": [
+    {"snapshot_id": 1, "committed_at": "2026-07-01T00:00:00Z", "operation": "append"},
+    {"snapshot_id": 2, "committed_at": "2026-07-08T00:00:00Z", "operation": "replace"},
+    {"snapshot_id": 3, "committed_at": "2026-07-15T00:00:00Z", "operation": "append"}
+  ],
+  "partition_spec": [
+    {"name": "dt", "transform": "day"}
+  ],
+  "sort_order": []
+}

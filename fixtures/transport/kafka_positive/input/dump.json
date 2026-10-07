@@ -1,0 +1,21 @@
+{
+  "cluster": {"cluster_id": "cluster-1", "version": "4.0.0", "security_protocol": "SASL_SSL"},
+  "topics": [
+    {
+      "name": "events",
+      "config": {"cleanup.policy": "compact", "retention.ms": "86400000"},
+      "partitions": [
+        {"partition": 0, "leader": 1, "replicas": [1, 2], "isr": [1, 2]},
+        {"partition": 1, "leader": 2, "replicas": [1, 2], "isr": [2]}
+      ]
+    }
+  ],
+  "consumer_groups": [
+    {
+      "group": "orders",
+      "state": "STABLE",
+      "members": 2,
+      "offsets": [{"topic": "events", "partition": 0, "current_offset": 10, "log_end_offset": 14, "lag": 4}]
+    }
+  ]
+}

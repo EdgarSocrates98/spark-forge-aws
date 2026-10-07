@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cavekit-marketplace",
+  "description": "Cavekit — compressed spec-driven development for Claude Code",
+  "owner": { "name": "Julius Brussee" },
+  "plugins": [
+    {
+      "name": "ck",
+      "description": "Full SDD loop (grill → spec → research → review → build) over one SPEC.md, caveman encoding, bug-to-spec backprop",
+      "source": "./",
+      "category": "development"
+    }
+  ]
+}

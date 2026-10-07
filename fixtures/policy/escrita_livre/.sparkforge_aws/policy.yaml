@@ -1,0 +1,6 @@
+version: 1
+bash:
+  - {rule: "terraform destroy *", decision: deny, reason: "destroi infraestrutura"}
+  - {rule: "aws s3 rm *", decision: deny, reason: "apaga objetos no S3"}
+paths:
+  - {rule: "rules/catalog/**", decision: deny, reason: "muda o catalogo de regras"}

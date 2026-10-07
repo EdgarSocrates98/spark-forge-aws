@@ -1,0 +1,144 @@
+[
+  {
+    "id": "f_113138",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application_nao_e_objeto.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 0,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application_nao_e_objeto.json",
+      "artifact_sha256": "472bcc35b0c97fb157370aff2cb907b7b4a6ae6a5f27d2fb18832b392e30cebe",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_3b39f4",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lista.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 0,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "lista.json",
+      "artifact_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf098f",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "sem_application_id.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 0,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "sem_application_id.json",
+      "artifact_sha256": "21a3badc933a906360aa94ef889e31664be617d776f4db51aaa03ff55216d009",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_301a7e",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application_nao_e_objeto.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "application"
+    },
+    "provenance": {
+      "artifact": "application_nao_e_objeto.json",
+      "artifact_sha256": "472bcc35b0c97fb157370aff2cb907b7b4a6ae6a5f27d2fb18832b392e30cebe",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a422e",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "lista.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json"
+    },
+    "provenance": {
+      "artifact": "lista.json",
+      "artifact_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf074a",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "sem_application_id.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_application_id"
+    },
+    "provenance": {
+      "artifact": "sem_application_id.json",
+      "artifact_sha256": "21a3badc933a906360aa94ef889e31664be617d776f4db51aaa03ff55216d009",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

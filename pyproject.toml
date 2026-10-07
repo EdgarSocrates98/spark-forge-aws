@@ -1,0 +1,208 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sparkforge-aws"
+version = "0.5.0"
+description = "Agent skills and deterministic analyzers for AWS Glue PySpark, Parquet, Iceberg and Athena performance engineering"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Edgar Socrates Caria" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "PyYAML>=6.0",
+    "jsonschema>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Repository = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
+
+[project.optional-dependencies]
+aws = ["boto3>=1.34"]
+# `parquet` e o TERCEIRO extra, e o primeiro fora de `aws`/`mcp`. Ele existe
+# porque `sparkforge_aws/collect/parquet_footer.py` le o RODAPE de arquivos Parquet,
+# e ler o footer exige um parser do formato -- nao ha caminho puro-Python
+# razoavel para isso. pyarrow entra sob demanda por `require_pyarrow()`, no
+# molde de `require_boto3()`: o nucleo determinístico continua com PyYAML +
+# jsonschema, e quem roda `judge` sobre um artefato ja coletado nao instala nada.
+#
+# `sparkforge-aws analyze parquet-footer` NAO precisa deste extra: ele parte do
+# artefato JSON, e e por isso que a leitura e a extracao sao dois modulos.
+# `>=23.0.1`, e o piso subiu por CVE -- duas faixas, medidas, sem intervalo
+# livre entre elas:
+#
+#   CVE-2023-47248   ate 14.0.0        RCE ao ler dados Arrow IPC/Parquet
+#   CVE-2024-52338   14.0.1 .. 16.1.0  RCE por desserializacao de IPC/Feather/
+#                                      PARQUET de fonte nao confiavel
+#   CVE-2026-25087   15.0.0 .. 23.0.0  use-after-free ao ler IPC com
+#                                      pre-buffering
+#
+# A primeira versao limpa e 23.0.1. Nao ha faixa intermediaria segura: a segunda
+# e a terceira se sobrepoem e cobrem tudo de 14.0.1 a 23.0.0.
+#
+# Os tres CVEs incidem no caminho DESTE extra: `collect parquet-footer` le o
+# rodape de arquivos que o operador aponta, e um prefixo de dado de terceiro E a
+# "fonte nao confiavel" que os avisos descrevem.
+#
+# Consequencia declarada: pyarrow >= 21 so publica wheel `manylinux_2_28`, entao
+# este piso obrigou `scripts/gen_lock.py` a subir a plataforma-alvo do lock. A
+# razao esta escrita la, e o custo tambem -- o ambiente reproduzivel passa a
+# exigir glibc >= 2.28.
+parquet = ["pyarrow>=23.0.1"]
+# `>=2,<3` desde 2026-09-11. O 2.x trocou os decoradores por handlers no
+# construtor e deixou de validar `arguments`/resultado contra os schemas das
+# tools; essas garantias moram agora em `adapters/mcp_envelope.py`, e
+# `tests/test_fixtures_golden_mcp_parity.py` compara o fio contra o golden do 1.29
+# (`fixtures/mcp_parity/`). O teto `<3` e o que sustenta a API privada que o
+# comparador usa para ler o fio cru (ver `scripts/mcp_parity.py`).
+# starlette e uvicorn sao do transporte HTTP (Devin Desktop); stdio nao precisa
+# de nenhum dos dois, mas separar em dois extras deixaria o caminho HTTP
+# instalavel pela metade, que e como ele chegou quebrado ate aqui.
+# `idna` e `python-dotenv` NAO sao usados pelo codigo deste projeto. Estao aqui
+# como PISO de versao para transitiva vulneravel, que e a unica forma de forcar
+# isso em extras de pyproject -- pip nao tem constraints declarativas aqui.
+#   idna          <3.15  CVE-2026-45409 ReDoS, via starlette -> anyio
+#   python-dotenv <1.2.2 CVE-2026-28684 symlink, via mcp -> pydantic-settings
+# Sao pisos (`>=`), nao pins (`==`): teto aqui congelaria a arvore de um pacote
+# que nao e nosso e quebraria resolucao quando starlette ou mcp subirem.
+# Remover quando starlette e mcp subirem os proprios pisos; o scan de SCA no CI
+# avisa se a remocao for cedo demais.
+mcp = [
+    "mcp>=2,<3",
+    "starlette>=0.37",
+    "uvicorn>=0.30",
+    "idna>=3.15",
+    "python-dotenv>=1.2.2",
+]
+# O extra `mcp` entra em `dev` para que o teste de construcao do servidor e do
+# app HTTP rode de verdade no CI. Sem isso ele viraria skip permanente -- e um
+# caminho pulado em silencio foi exatamente o defeito que o teste existe para
+# pegar.
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "defusedxml>=0.7",
+    "mcp>=2,<3",
+    "starlette>=0.37",
+    "uvicorn>=0.30",
+    "idna>=3.15",
+    "python-dotenv>=1.2.2",
+    # Sem isto, `pip install -e ".[dev]"` nao traz build, e
+    # tests/test_artifact_contents.py cai no pytest.skip em qualquer venv que
+    # so tenha o extra dev instalado -- inclusive no CI -- e os 5 testes do
+    # conteudo do wheel viram skip permanente em vez de pass.
+    "build>=1.0",
+]
+
+[project.scripts]
+sparkforge-aws = "sparkforge_aws.adapters.cli:main"
+# `sparkforge_aws/tools/cli.py` ja anuncia `prog="sparkforge-aws-tools"` e docs/agentic-expansion.md
+# documenta o comando. Sem esta entrada o nome nao existia depois do install: so
+# `python -m sparkforge_aws.tools.cli` funcionava, e a documentacao mentia.
+sparkforge-aws-tools = "sparkforge_aws.tools.cli:main"
+
+# Reprodutibilidade bit-a-bit do artefato. `reproducible = true` JA e o default
+# do hatchling -- esta declarado aqui porque default implicito nao e contrato:
+# nada no repositorio impedia que uma futura inversao do default, ou um
+# `reproducible = false` colado num target, tirasse a propriedade em silencio.
+#
+# O que a flag faz, e que sao os quatro eixos de nao-determinismo do zip/tar:
+#   1. timestamp -- toda entrada recebe `SOURCE_DATE_EPOCH`, com fallback para
+#      a constante 1580601600 (2020-02-02T00:00:00Z). O fallback e proposital:
+#      um epoch derivado do commit (`git log -1 --format=%ct`) so existe DENTRO
+#      de um checkout git, e `python -m build` constroi o wheel A PARTIR do
+#      sdist, onde nao ha `.git` -- o epoch mudaria entre os dois caminhos e
+#      quebraria justamente o que se quer garantir.
+#   2. permissao -- `normalize_file_permissions` colapsa o modo para 644/755
+#      conforme o bit de execucao, apagando a variacao de umask.
+#   3. dono -- o tar do sdist recebe uid/gid 0 e uname/gname vazios.
+#   4. ordem -- a caminhada do sistema de arquivos e ordenada antes de emitir,
+#      entao a ordem das entradas nao herda a ordem do diretorio.
+#
+# O que a flag NAO cobre, e que segue medido em `scripts/verify_wheel.py`:
+# a versao do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e o
+# fluxo de deflate depende da implementacao de zlib do interpretador (zlib
+# contra zlib-ng). Reproduzir um wheel publicado por hash exige o mesmo
+# hatchling -- que o proprio artefato declara -- e um zlib equivalente.
+[tool.hatch.build]
+reproducible = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["sparkforge_aws"]
+
+# `rules/catalog` e `knowledge` moram na RAIZ por decisao D-A da Fase 0: sao o
+# terceiro degrau da escada de portabilidade, o YAML que um agente sem Python
+# le direto. `force-include` os copia para dentro do pacote no momento do build,
+# sem duplicar arquivo em git -- que e a unica forma de servir o pip sem corroer
+# aquela decisao.
+[tool.hatch.build.targets.wheel.force-include]
+"rules/catalog" = "sparkforge_aws/rules/catalog"
+"knowledge" = "sparkforge_aws/knowledge"
+# `skills/` e `agents/` vao para `sparkforge_aws/integrate/bundle/`, e nao para
+# `sparkforge_aws/agents/`, que ja e pacote Python. `sparkforge-aws integrate` os le de la
+# quando nao ha repositorio (docs/sdd/INTEGRACAO_USUARIO/design.md, D3).
+"skills" = "sparkforge_aws/integrate/bundle/skills"
+"agents" = "sparkforge_aws/integrate/bundle/agents"
+
+# O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
+# realocar. `include` basta: preserva os dois onde o force-include do wheel
+# espera encontra-los quando o wheel e construido A PARTIR do sdist (o fluxo
+# padrao de `python -m build`, e o que `pip install` faz ao instalar por
+# sdist). Um `force-include` aqui tambem, como havia antes, MOVE os diretorios
+# para dentro de `sparkforge_aws/` dentro do proprio sdist -- e quando o backend
+# tenta construir o wheel a partir desse sdist, o `force-include` do target
+# `wheel` procura "knowledge" na raiz e nao acha mais, porque o sdist ja o
+# relocou. `python -m build` (sem `--wheel`) gera sdist e depois constroi o
+# wheel A PARTIR dele por padrao -- e foi esse caminho, exercitado pela
+# primeira vez pelo gate de paridade da Fase 3a, que expos o conflito.
+[tool.hatch.build.targets.sdist]
+include = [
+    "sparkforge_aws",
+    "rules/catalog",
+    "knowledge",
+    "skills",
+    "agents",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Torna o pacote importável independente de como o pytest é invocado. Sem isto,
+# `pytest` chamado como script (não `python -m pytest`) não põe o cwd no sys.path
+# e `import sparkforge_aws` falha sem que haja defeito no pacote.
+pythonpath = ["."]
+
+# Regras explícitas: lint de CI que depende do default do ruff quebra em upgrade.
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# fixtures/ contem PySpark deliberadamente defeituoso para golden tests;
+# lintar codigo de amostra ruim de proposito e ruido, nao sinal.
+# vendor/ e codigo de terceiro pinado byte a byte por vendor/MANIFEST.sha256:
+# corrigir lint ali quebraria o gate e mentiria sobre a procedencia.
+exclude = ["fixtures", "vendor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = [
+    "S101", # assert é o vocabulário do pytest
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell
+"scripts/verify_wheel.py" = ["S603"] # subprocess com argv fixo, sem shell
