@@ -15,7 +15,7 @@ DEBEZIUM = ROOT / "fixtures" / "cdc" / "debezium_valid" / "input" / "connector.j
 def test_cli_and_mcp_cdc_envelopes_match():
     expected = analyze_cdc(str(DEBEZIUM), artifact="debezium", limit=3)
     actual = call_tool(
-        "sparkforge_analyze_cdc",
+        "sparkforge_aws_analyze_cdc",
         {"path": str(DEBEZIUM), "artifact": "debezium", "limit": 3},
     )
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
@@ -46,7 +46,7 @@ def test_cli_and_mcp_cdc_envelopes_match():
 
 
 def test_cdc_tool_is_read_only_and_schema_declared():
-    spec = TOOLS["sparkforge_analyze_cdc"]
+    spec = TOOLS["sparkforge_aws_analyze_cdc"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["path", "artifact"]
     assert spec["inputSchema"]["properties"]["artifact"]["enum"] == [

@@ -42,7 +42,7 @@ permissão falta. Reportar `lakeformation.unresolved` faz parte da resposta.
 
 #### O eixo de versão vem ANTES de tudo, e é uma chamada
 
-`sparkforge_lakeformation_matrix` responde "este runtime escreve sob FGAC?",
+`sparkforge_aws_lakeformation_matrix` responde "este runtime escreve sob FGAC?",
 "qual é o filesystem S3 default?" com a **frase da fonte** por trás de cada
 célula. A página de considerações da AWS **não tem eixo de versão**, e aplicar a
 um Glue 5.1 uma limitação que era do 5.0 é o erro que mais engana nesta área.
@@ -105,7 +105,7 @@ catálogo Iceberg pelo lado do Apache — a classe em `spark_catalog`
 
 #### O caminho de acesso como grafo, e o `null` que ele publica
 
-`sparkforge_lakeformation_access_graph` monta o caminho — concessão do Lake
+`sparkforge_aws_lakeformation_access_graph` monta o caminho — concessão do Lake
 Formation, decisão **simulada** do IAM com a camada que negou, registro da
 localização S3 e **resource link** — e diz **onde ele parou**.
 
@@ -116,7 +116,7 @@ repositório os produz, e devolver `missing` para eles seria acusação a partir
 ausência de artefato.
 
 **Resource link saiu dessa lista em 2026-09-10**, com
-`sparkforge_collect_glue_resource_link`. A perna tem quatro saídas medidas:
+`sparkforge_aws_collect_glue_resource_link`. A perna tem quatro saídas medidas:
 `granted` (nome idêntico ao do recurso de origem, e a origem respondeu),
 `blocking` (nome divergente — limite de suporte declarado, não negação
 observada), `not_applicable` (o objeto consultado não é link) e `unresolved`
@@ -129,7 +129,7 @@ que faltou, é uma perna que não participa.
 
 #### Por onde começar quando há mais de um achado
 
-`sparkforge_root_cause` ordena os achados por consequência declarada e publica a
+`sparkforge_aws_root_cause` ordena os achados por consequência declarada e publica a
 **lacuna**: as regras que ficaram mudas por falta de artefato, com o kind que
 falta e o módulo que o emite. Nesta área isso é a metade da resposta — grant,
 registro de localização e decisão de IAM só existem se alguém rodou

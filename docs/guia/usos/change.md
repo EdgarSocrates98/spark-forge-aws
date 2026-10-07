@@ -245,5 +245,5 @@ Nada é gravado quando uma delas sai:
 
 ## Próximos passos
 
-- Referência: [`sparkforge-aws change`](../referencia/cli/change.md), [`sparkforge_change_plan`](../referencia/tools/sparkforge_change_plan.md), [`sparkforge_change_sandbox`](../referencia/tools/sparkforge_change_sandbox.md), [`sparkforge_change_propose`](../referencia/tools/sparkforge_change_propose.md) e a skill [`propose-change-pr`](../referencia/skills/propose-change-pr.md).
+- Referência: [`sparkforge-aws change`](../referencia/cli/change.md), [`sparkforge_aws_change_plan`](../referencia/tools/sparkforge_aws_change_plan.md), [`sparkforge_aws_change_sandbox`](../referencia/tools/sparkforge_aws_change_sandbox.md), [`sparkforge_aws_change_propose`](../referencia/tools/sparkforge_aws_change_propose.md) e a skill [`propose-change-pr`](../referencia/skills/propose-change-pr.md).
 - Depois de aplicar de verdade, prove o que a mudança fez: [Mudanças com prova](mudancas-com-prova.md).

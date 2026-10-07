@@ -7,7 +7,7 @@ Use quando revisar um Pull Request PySpark/AWS Glue e precisar classificar risco
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-pyspark-pr/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze pyspark', 'sparkforge-aws validate', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze pyspark', 'sparkforge-aws validate', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 
@@ -79,7 +79,7 @@ sparkforge-aws funcval plan \
   --out .sparkforge_aws/facts_funcval_plan.json
 ```
 
-Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório** — o plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob `--strict-gates`, e é a entrada de `sparkforge-aws funcval compare` / `sparkforge_funcval_compare`, que compara os dois resultados **depois** que alguém os mediu. O motor não executa consulta em nenhum dos dois verbos.
+Tool MCP: `sparkforge_aws_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório** — o plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob `--strict-gates`, e é a entrada de `sparkforge-aws funcval compare` / `sparkforge_aws_funcval_compare`, que compara os dois resultados **depois** que alguém os mediu. O motor não executa consulta em nenhum dos dois verbos.
 
 Num review, o que cabe aqui é o **plano**, não a comparação: `compare` precisa do lado `--before` medido antes de a mudança tocar o alvo, e num PR ainda não mergeado esse lado não existe. Anexar o plano ao review é o que transforma "teste a correção" em pedido verificável — `benchmark-pyspark-job` tem o procedimento completo dos dois verbos, para quando houver as duas execuções.
 

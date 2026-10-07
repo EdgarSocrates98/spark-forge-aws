@@ -7,7 +7,7 @@ Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lak
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/design-s3-data-lake/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/data-platform-architecture.md', '../../knowledge/cross-service-constraints.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws next-step']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/data-platform-architecture.md', '../../knowledge/cross-service-constraints.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws next-step']} |
 
 ## Procedimento (texto integral)
 

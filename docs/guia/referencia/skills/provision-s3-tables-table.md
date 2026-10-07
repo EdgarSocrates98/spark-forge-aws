@@ -7,7 +7,7 @@ Use quando for criar uma tabela Iceberg gerenciada por Amazon S3 Tables (o produ
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/provision-s3-tables-table/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cross-service-constraints.md', '../../knowledge/offline-policy.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws rules lookup']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cross-service-constraints.md', '../../knowledge/offline-policy.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws rules lookup']} |
 
 ## Procedimento (texto integral)
 

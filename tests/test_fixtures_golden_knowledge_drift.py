@@ -1,13 +1,13 @@
 """Golden do Knowledge Drift Radar (§17), de ponta a ponta pela CLI.
 
 Cada caso de `fixtures/knowledge_drift/` e um lock SINTETICO apontado por
-`SPARKFORGE_SOURCES_LOCK`; o catalogo, os documentos de `knowledge/`, os goldens,
+`SPARKFORGE_AWS_SOURCES_LOCK`; o catalogo, os documentos de `knowledge/`, os goldens,
 os evals, os agentes e as skills sao os reais. O golden muda quando um golden,
 eval, agente ou skill novo passa a citar uma regra do impacto -- e e isso que
 ele deve acusar.
 
 Regenerar depois de mudanca DELIBERADA:
-`SPARKFORGE_REGEN_DRIFT=1 pytest tests/test_fixtures_golden_knowledge_drift.py`.
+`SPARKFORGE_AWS_REGEN_DRIFT=1 pytest tests/test_fixtures_golden_knowledge_drift.py`.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "knowledge_drift"
-REGEN = os.environ.get("SPARKFORGE_REGEN_DRIFT") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_DRIFT") == "1"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.yaml").is_file())
 LF = "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
 
@@ -37,8 +37,8 @@ def _rodar(caso: str, monkeypatch, capsys, raiz: Path | None = ROOT) -> dict:
     # responderia `sem_repositorio` -- o comportamento certo para quem instala
     # por pip, e o caso que `test_sem_repositorio` prova de proposito.
     monkeypatch.setattr(knowledge_drift, "repo_root", lambda: raiz)
-    monkeypatch.delenv("SPARKFORGE_PACKS", raising=False)
-    monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(FIXTURES / caso / "lock.json"))
+    monkeypatch.delenv("SPARKFORGE_AWS_PACKS", raising=False)
+    monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(FIXTURES / caso / "lock.json"))
     assert main(["knowledge", "drift", "--as-of", "2026-09-13", *meta["args"]]) == 0
     return json.loads(capsys.readouterr().out)
 
@@ -80,12 +80,12 @@ def test_fixa_por_versao_nunca_entra(monkeypatch, capsys):
 
 
 def test_url_fora_do_lock_sai_2(monkeypatch, capsys):
-    monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(FIXTURES / "nada_mudou" / "lock.json"))
+    monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(FIXTURES / "nada_mudou" / "lock.json"))
     assert main(["knowledge", "drift", "--source", "https://nao.vigiada.invalid/"]) == 2
 
 
 def test_lock_ausente_e_unresolved(monkeypatch, capsys, tmp_path):
-    monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(tmp_path / "nao-existe.json"))
+    monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(tmp_path / "nao-existe.json"))
     assert main(["knowledge", "drift", "--as-of", "2026-09-13"]) == 0
     saida = json.loads(capsys.readouterr().out)
     assert saida["unresolved"][0]["field"] == "lock"

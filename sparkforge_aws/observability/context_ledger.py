@@ -96,7 +96,8 @@ PAYLOAD_BASIS = 'len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))'
 # O host define este nome quando quer que os spans de varias chamadas caiam na
 # mesma tarefa. Sem ele, cada processo tem o seu -- e a agregacao por tarefa
 # recusa por nome, em vez de somar spans de investigacoes diferentes.
-_ENV_RUN_ID = "SPARKFORGE_RUN_ID"
+_ENV_RUN_ID = "SPARKFORGE_AWS_RUN_ID"
+_LEGACY_ENV_RUN_ID = "SPARKFORGE_RUN_ID"
 
 
 def payload_bytes(resultado: dict[str, Any]) -> int:
@@ -143,7 +144,12 @@ class ContextLedger:
     def __init__(
         self, db_path: Path | str | None = None, run_id: str | None = None
     ) -> None:
-        self.run_id = run_id or os.environ.get(_ENV_RUN_ID) or f"run_{uuid.uuid4().hex[:12]}"
+        self.run_id = (
+            run_id
+            or os.environ.get(_ENV_RUN_ID)
+            or os.environ.get(_LEGACY_ENV_RUN_ID)
+            or f"run_{uuid.uuid4().hex[:12]}"
+        )
         self._db_path = db_path
         self._store: SQLiteTraceStore | None = None
         self._buffer: list[TraceSpan] = []

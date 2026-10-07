@@ -17,4 +17,4 @@ sparkforge-aws gain --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_gain`](../tools/sparkforge_gain.md)
+[`sparkforge_aws_gain`](../tools/sparkforge_aws_gain.md)

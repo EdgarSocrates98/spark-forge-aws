@@ -25,7 +25,7 @@ def test_lakehouse_catalog_contract_is_deterministic() -> None:
 
 def test_lakehouse_catalog_cli_and_mcp_share_contract() -> None:
     cli = _core.analyze_lakehouse_catalog(FIXTURE)
-    mcp = call_tool("sparkforge_analyze_lakehouse_catalog", {"path": str(FIXTURE)})
+    mcp = call_tool("sparkforge_aws_analyze_lakehouse_catalog", {"path": str(FIXTURE)})
 
     assert mcp["catalog"]["fingerprint"] == cli["catalog"]["fingerprint"]
     assert mcp["catalog"]["bindings"] == cli["catalog"]["bindings"]

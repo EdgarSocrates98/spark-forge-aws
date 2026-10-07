@@ -45,6 +45,11 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "nao repositorio de cliente"
     ),
     "case/playbook.py": "varre os agents embarcados no wheel",
+    "case/store.py": (
+        "varre o estado legado `.sparkforge/` na virada de ancora -- conjunto "
+        "fechado e pequeno que o proprio produto escreveu (journal, blackboard, "
+        "memory, debate), copia sem sobrescrever"
+    ),
     "integrate/sources.py": "varre skills/ e agents/ embarcados no wheel (o bundle)",
     "integrate/render.py": "varre os agents embarcados no wheel para as tabelas de despacho",
     "integrate/conflict.py": (

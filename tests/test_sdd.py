@@ -160,9 +160,9 @@ def test_evaluate_e_publico_e_da_o_relatorio_do_check(tmp_path):
 
 
 @pytest.mark.parametrize("nome,extra", [
-    ("sparkforge_sdd_check", {}),
-    ("sparkforge_sdd_status", {}),
-    ("sparkforge_sdd_stamp", {"path": "docs/sdd/F1/design.md"}),
+    ("sparkforge_aws_sdd_check", {}),
+    ("sparkforge_aws_sdd_status", {}),
+    ("sparkforge_aws_sdd_stamp", {"path": "docs/sdd/F1/design.md"}),
 ])
 def test_root_path_nulo_no_mcp_usa_o_padrao(tmp_path, nome, extra):
     feature_limpa(tmp_path)
@@ -1657,47 +1657,56 @@ def test_paridade_cli_mcp(tmp_path, capsys):
     main(["sdd", "check", "--repo", str(tmp_path)])
     pela_cli = json.loads(capsys.readouterr().out)
     pelo_mcp = _valida(
-        "sparkforge_sdd_check", call_tool("sparkforge_sdd_check", {"repo": str(tmp_path)})
+        "sparkforge_aws_sdd_check", call_tool("sparkforge_aws_sdd_check", {"repo": str(tmp_path)})
     )
     assert pelo_mcp == pela_cli
     assert pelo_mcp["refused"] and pelo_mcp["unresolved"]
     main(["sdd", "status", "--repo", str(tmp_path)])
     pelo_mcp = _valida(
-        "sparkforge_sdd_status", call_tool("sparkforge_sdd_status", {"repo": str(tmp_path)})
+        "sparkforge_aws_sdd_status", call_tool("sparkforge_aws_sdd_status", {"repo": str(tmp_path)})
     )
     assert pelo_mcp == json.loads(capsys.readouterr().out)
     assert [u["code"] for u in pelo_mcp["unresolved"]] == ["path_skipped"]
 
 
 def test_schemas_de_saida_cobrem_raiz_ausente_e_erro(tmp_path):
-    _valida("sparkforge_sdd_status", call_tool("sparkforge_sdd_status", {"repo": str(tmp_path)}))
-    _valida("sparkforge_sdd_check", call_tool("sparkforge_sdd_check", {"repo": str(tmp_path)}))
+    _valida(
+        "sparkforge_aws_sdd_status",
+        call_tool("sparkforge_aws_sdd_status", {"repo": str(tmp_path)}),
+    )
+    _valida(
+        "sparkforge_aws_sdd_check",
+        call_tool("sparkforge_aws_sdd_check", {"repo": str(tmp_path)}),
+    )
     ausente = {"repo": str(tmp_path / "nao-existe")}
-    for nome in ("sparkforge_sdd_check", "sparkforge_sdd_status"):
+    for nome in ("sparkforge_aws_sdd_check", "sparkforge_aws_sdd_status"):
         erro = _valida(nome, call_tool(nome, ausente))
         assert "sparkforge-aws" in erro["error"]
     feature_limpa(tmp_path)
     erro = _valida(
-        "sparkforge_sdd_stamp",
-        call_tool("sparkforge_sdd_stamp", {"repo": str(tmp_path), "path": "docs/sdd/F1/define.md"}),
+        "sparkforge_aws_sdd_stamp",
+        call_tool(
+            "sparkforge_aws_sdd_stamp",
+            {"repo": str(tmp_path), "path": "docs/sdd/F1/define.md"},
+        ),
     )
     assert erro["exit_code"] == 2
     assert "sparkforge-aws sdd stamp" in erro["error"]
     erro = _valida(
-        "sparkforge_sdd_check",
-        call_tool("sparkforge_sdd_check", {"repo": str(tmp_path), "feature": "NAO_HA"}),
+        "sparkforge_aws_sdd_check",
+        call_tool("sparkforge_aws_sdd_check", {"repo": str(tmp_path), "feature": "NAO_HA"}),
     )
     assert "sparkforge-aws sdd status" in erro["error"]
 
 
 def test_classes_das_tools():
-    assert TOOLS["sparkforge_sdd_check"]["annotations"]["readOnlyHint"] is True
-    assert TOOLS["sparkforge_sdd_status"]["annotations"]["readOnlyHint"] is True
-    assert TOOLS["sparkforge_sdd_stamp"]["annotations"]["readOnlyHint"] is False
-    assert "sparkforge_sdd_stamp" in journaled()
-    assert "sparkforge_sdd_check" not in journaled()
-    assert "sparkforge_sdd_status" not in journaled()
-    assert set(TOOLS["sparkforge_sdd_stamp"]["inputSchema"]["properties"]) == {
+    assert TOOLS["sparkforge_aws_sdd_check"]["annotations"]["readOnlyHint"] is True
+    assert TOOLS["sparkforge_aws_sdd_status"]["annotations"]["readOnlyHint"] is True
+    assert TOOLS["sparkforge_aws_sdd_stamp"]["annotations"]["readOnlyHint"] is False
+    assert "sparkforge_aws_sdd_stamp" in journaled()
+    assert "sparkforge_aws_sdd_check" not in journaled()
+    assert "sparkforge_aws_sdd_status" not in journaled()
+    assert set(TOOLS["sparkforge_aws_sdd_stamp"]["inputSchema"]["properties"]) == {
         "repo", "path", "root_path",
     }
 
@@ -1712,14 +1721,17 @@ def test_stamp_pelo_mcp_grava_no_journal(tmp_path):
     caminhos = feature_limpa(tmp_path)
     _reescreve(caminhos["build_report"], claims=[{"text": "t", "evidence_ref": "x"}])
     resposta = _valida(
-        "sparkforge_sdd_stamp",
-        call_tool("sparkforge_sdd_stamp", {"repo": str(tmp_path), "path": "docs/sdd/F1/ship.md"}),
+        "sparkforge_aws_sdd_stamp",
+        call_tool(
+            "sparkforge_aws_sdd_stamp",
+            {"repo": str(tmp_path), "path": "docs/sdd/F1/ship.md"},
+        ),
     )
     assert resposta["changed"] is True
     assert "journal" not in resposta
     eventos = _eventos(tmp_path)
     assert [e["event"] for e in eventos] == ["started", "finished"]
-    assert eventos[0]["tool"] == "sparkforge_sdd_stamp"
+    assert eventos[0]["tool"] == "sparkforge_aws_sdd_stamp"
     assert eventos[0]["port"] == "mcp"
     assert eventos[1]["outcome"] == "ok"
     ship = caminhos["ship"].read_bytes()

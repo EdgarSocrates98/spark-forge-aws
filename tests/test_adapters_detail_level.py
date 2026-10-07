@@ -322,9 +322,9 @@ class TestSuperficieMCP:
         # `code_status`) usam o mesmo mecanismo desta flag, e por isso nao
         # aparecem aqui -- elas nao declaram `limit`.
         assert sem_flag == {
-            "sparkforge_judge",
-            "sparkforge_rules_lookup",
-            "sparkforge_code_search",
+            "sparkforge_aws_judge",
+            "sparkforge_aws_rules_lookup",
+            "sparkforge_aws_code_search",
         }
 
     def test_nenhuma_superficie_promete_buscar_fato_por_id(self):
@@ -332,7 +332,7 @@ class TestSuperficieMCP:
         no help da CLI, na `description` das 20 tools e num comentario: 21
         superficies oferecendo uma afordancia que NAO EXISTE. Nenhuma das 44
         tools aceita id de fact -- o unico `id` do catalogo e o de REGRA, em
-        `sparkforge_rules_lookup`."""
+        `sparkforge_aws_rules_lookup`."""
         from sparkforge_aws.adapters.cli import _DETAIL_LEVEL_HELP
         from sparkforge_aws.adapters.tools import _DETAIL_LEVEL_DESC, TOOLS
 
@@ -341,7 +341,7 @@ class TestSuperficieMCP:
             for nome, spec in TOOLS.items()
             if "id" in spec["inputSchema"].get("properties", {})
         }
-        assert por_id == {"sparkforge_rules_lookup"}
+        assert por_id == {"sparkforge_aws_rules_lookup"}
 
         for texto in (_DETAIL_LEVEL_HELP, _DETAIL_LEVEL_DESC):
             assert "NAO existe" in texto, "o texto tem que dizer que o verbo nao existe"
@@ -354,9 +354,9 @@ class TestSuperficieMCP:
         from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
         resultado = call_tool(
-            "sparkforge_analyze_pyspark", {"path": FIXTURE, "detail_level": nivel}
+            "sparkforge_aws_analyze_pyspark", {"path": FIXTURE, "detail_level": nivel}
         )
-        jsonschema.validate(resultado, TOOLS["sparkforge_analyze_pyspark"]["outputSchema"])
+        jsonschema.validate(resultado, TOOLS["sparkforge_aws_analyze_pyspark"]["outputSchema"])
 
     def test_o_schema_de_full_ainda_exige_o_fato_inteiro(self):
         """Baixar `required` para o que os tres niveis tem em comum deixaria
@@ -367,8 +367,8 @@ class TestSuperficieMCP:
 
         from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
-        schema = TOOLS["sparkforge_analyze_pyspark"]["outputSchema"]
-        resultado = call_tool("sparkforge_analyze_pyspark", {"path": FIXTURE})
+        schema = TOOLS["sparkforge_aws_analyze_pyspark"]["outputSchema"]
+        resultado = call_tool("sparkforge_aws_analyze_pyspark", {"path": FIXTURE})
         jsonschema.validate(resultado, schema)
 
         mutilado = json.loads(json.dumps(resultado))
@@ -389,7 +389,7 @@ class TestSuperficieMCP:
         from sparkforge_aws.adapters.tools import call_tool
 
         resultado = call_tool(
-            "sparkforge_analyze_pyspark", {"path": FIXTURE, "detail_level": "nao_existe"}
+            "sparkforge_aws_analyze_pyspark", {"path": FIXTURE, "detail_level": "nao_existe"}
         )
         assert resultado["exit_code"] == 2
         assert "detail_level" in resultado["error"]
@@ -547,7 +547,7 @@ class TestControlmDescribeDetailLevel:
         )
         cli_payload = json.loads(proc.stdout)
         mcp_payload = call_tool(
-            "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
+            "sparkforge_aws_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
         )
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
@@ -561,21 +561,21 @@ class TestControlmDescribeDetailLevel:
         from sparkforge_aws.adapters.tools import TOOLS, call_tool
 
         resultado = call_tool(
-            "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
+            "sparkforge_aws_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
         )
-        jsonschema.validate(resultado, TOOLS["sparkforge_controlm_describe"]["outputSchema"])
+        jsonschema.validate(resultado, TOOLS["sparkforge_aws_controlm_describe"]["outputSchema"])
 
     def test_a_tool_declara_detail_level_com_os_tres_niveis_proprios(self):
         from sparkforge_aws.adapters.tools import TOOLS
 
-        propriedade = TOOLS["sparkforge_controlm_describe"]["inputSchema"]["properties"]
+        propriedade = TOOLS["sparkforge_aws_controlm_describe"]["inputSchema"]["properties"]
         assert propriedade["detail_level"]["enum"] == ["minimal", "compact", "full"]
 
     def test_detail_level_invalido_vira_erro_estruturado_e_nao_excecao_no_mcp(self):
         from sparkforge_aws.adapters.tools import call_tool
 
         resultado = call_tool(
-            "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": "normal"}
+            "sparkforge_aws_controlm_describe", {"version": self.VERSAO, "detail_level": "normal"}
         )
         assert resultado["exit_code"] == 2
         assert "detail_level" in resultado["error"]

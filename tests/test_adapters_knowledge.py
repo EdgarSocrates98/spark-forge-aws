@@ -78,14 +78,14 @@ class TestCli:
 
 class TestMcpTool:
     def test_the_tool_is_declared(self):
-        assert "sparkforge_knowledge_path" in TOOLS
+        assert "sparkforge_aws_knowledge_path" in TOOLS
 
     def test_the_tool_answers(self):
-        payload = call_tool("sparkforge_knowledge_path", {})
+        payload = call_tool("sparkforge_aws_knowledge_path", {})
         assert Path(payload["root"]).is_dir()
 
 
 class TestManifestsAgree:
     def test_manifest_lists_the_new_tool(self):
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        assert "sparkforge_knowledge_path" in manifest["tools"]
+        assert "sparkforge_aws_knowledge_path" in manifest["tools"]

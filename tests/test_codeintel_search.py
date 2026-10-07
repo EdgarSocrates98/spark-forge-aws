@@ -417,7 +417,7 @@ class TestCli:
         # sair por `_core.code_status`, que responde no vocabulario da SPEC 64
         # (`files`, `symbols`, `edges`, `unresolved`). O numero e o mesmo -- o
         # que mudou foi o nome do campo no contrato, e ele agora e o mesmo que
-        # `sparkforge_code_status` devolve pelo MCP.
+        # `sparkforge_aws_code_status` devolve pelo MCP.
         assert estado["symbols"] == 1
         assert estado["created_at"]
         assert estado["initialized"] is True

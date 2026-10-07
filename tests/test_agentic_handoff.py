@@ -205,7 +205,7 @@ class TestConfusedDeputy:
         sender = RoleContextPlan(
             role="sf-extractor",
             allowed_context=("fact",),
-            tool_access=("sparkforge_analyze_pyspark",),
+            tool_access=("sparkforge_aws_analyze_pyspark",),
         )
         h = _handoff(
             facts=("f",),
@@ -219,12 +219,12 @@ class TestConfusedDeputy:
 
     def test_sender_sem_restricao_de_tool_nao_e_deputado(self):
         sender = RoleContextPlan(role="sf-extractor", allowed_context=("fact",))
-        h = _handoff(facts=("f",), requested_action="sparkforge_judge")
+        h = _handoff(facts=("f",), requested_action="sparkforge_aws_judge")
         adm = admit_handoff(h, sender_plan=sender, tool_names=TOOL_SURFACE)
         assert adm.decision == HandoffDecision.ALLOW
 
     def test_pedido_de_tool_sem_plano_do_sender_e_review(self):
-        h = _handoff(facts=("f",), requested_action="sparkforge_judge")
+        h = _handoff(facts=("f",), requested_action="sparkforge_aws_judge")
         adm = admit_handoff(h, tool_names=TOOL_SURFACE)
 
         assert adm.decision == HandoffDecision.REVIEW
@@ -234,9 +234,9 @@ class TestConfusedDeputy:
         receiver = RoleContextPlan(
             role="sf-judge",
             allowed_context=("fact",),
-            tool_access=("sparkforge_judge",),
+            tool_access=("sparkforge_aws_judge",),
         )
-        h = _handoff(facts=("f",), requested_action="sparkforge_finops")
+        h = _handoff(facts=("f",), requested_action="sparkforge_aws_finops")
         adm = admit_handoff(h, plan=receiver, tool_names=TOOL_SURFACE)
 
         assert adm.decision == HandoffDecision.REVIEW

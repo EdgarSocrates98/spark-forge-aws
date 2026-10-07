@@ -130,7 +130,7 @@ class TestMaliciousToolOutput:
 
     def test_call_tool_real_marca_taint_no_resultado(self):
         env = tool_result_envelope(
-            json.dumps({"items": INJECTION}), origin="tool:sparkforge_rules_lookup"
+            json.dumps({"items": INJECTION}), origin="tool:sparkforge_aws_rules_lookup"
         )
         d = env.to_dict()
         assert d["trust"] == "TOOL_OUTPUT"

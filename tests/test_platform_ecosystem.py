@@ -43,7 +43,7 @@ def test_ecosystem_preserves_unresolved_and_optional_radar() -> None:
 
 def test_ecosystem_surfaces_share_contract() -> None:
     cli = _core.analyze_platform_ecosystem(FIXTURE)
-    mcp = call_tool("sparkforge_analyze_platform_ecosystem", {"path": str(FIXTURE)})
+    mcp = call_tool("sparkforge_aws_analyze_platform_ecosystem", {"path": str(FIXTURE)})
 
     assert cli["ecosystem"]["fingerprint"] == mcp["ecosystem"]["fingerprint"]
 

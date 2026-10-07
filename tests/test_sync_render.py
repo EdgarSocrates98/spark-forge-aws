@@ -589,7 +589,7 @@ class TestQuemDespacha:
         ]
         assert not vazias, vazias
 
-    def test_sparkforge_diagnose_nao_despacha(self):
+    def test_sparkforge_aws_diagnose_nao_despacha(self):
         """Ela abre o case e roteia. Despachar jogaria o ciclo de vida do case
         para um contexto que NAO VOLTA -- o subagente nao herda o historico do
         pai, e a saida dele e texto livre que o pai resume (pesquisa, secao 6). E

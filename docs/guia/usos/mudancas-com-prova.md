@@ -88,7 +88,7 @@ Saída real do passo 1 da receita:
   "appeared": [],
   "refused": [
     {"field": "performance_prediction", "reason": "spill_e_tempo_nao_sao_fact_de_configuracao"},
-    {"field": "dependency_incompatibility", "reason": "use_sparkforge_migration_assess"},
+    {"field": "dependency_incompatibility", "reason": "use_sparkforge_aws_migration_assess"},
     {"field": "execution_graph", "reason": "nao_e_previsivel_a_partir_de_configuracao"}
   ],
   "fact_count": 43
@@ -385,10 +385,10 @@ Estados possíveis de cada parte: `match`, `diverged`, `missing`, `not_rechecked
   [`benchmark`](../referencia/cli/benchmark.md), [`proof`](../referencia/cli/proof.md),
   [`gain`](../referencia/cli/gain.md), [`report`](../referencia/cli/report.md),
   [`receipt`](../referencia/cli/receipt.md); tools
-  [`sparkforge_simulate`](../referencia/tools/sparkforge_simulate.md),
-  [`sparkforge_funcval_plan`](../referencia/tools/sparkforge_funcval_plan.md),
-  [`sparkforge_benchmark`](../referencia/tools/sparkforge_benchmark.md),
-  [`sparkforge_proof`](../referencia/tools/sparkforge_proof.md),
-  [`sparkforge_gain`](../referencia/tools/sparkforge_gain.md),
-  [`sparkforge_report_sign`](../referencia/tools/sparkforge_report_sign.md),
-  [`sparkforge_receipt_emit`](../referencia/tools/sparkforge_receipt_emit.md).
+  [`sparkforge_aws_simulate`](../referencia/tools/sparkforge_aws_simulate.md),
+  [`sparkforge_aws_funcval_plan`](../referencia/tools/sparkforge_aws_funcval_plan.md),
+  [`sparkforge_aws_benchmark`](../referencia/tools/sparkforge_aws_benchmark.md),
+  [`sparkforge_aws_proof`](../referencia/tools/sparkforge_aws_proof.md),
+  [`sparkforge_aws_gain`](../referencia/tools/sparkforge_aws_gain.md),
+  [`sparkforge_aws_report_sign`](../referencia/tools/sparkforge_aws_report_sign.md),
+  [`sparkforge_aws_receipt_emit`](../referencia/tools/sparkforge_aws_receipt_emit.md).

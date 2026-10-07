@@ -271,7 +271,7 @@ def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsy
     first_client = FakeManagedFlink()
     monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(first_client))
     mcp = call_tool(
-        "sparkforge_collect_managed_flink",
+        "sparkforge_aws_collect_managed_flink",
         {
             "repo": str(tmp_path / "mcp"),
             "application_name": "orders",
@@ -326,7 +326,7 @@ def test_cli_and_mcp_managed_flink_temporal_collection_match(monkeypatch, tmp_pa
     first_client = FakeManagedFlink()
     monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(first_client))
     mcp = call_tool(
-        "sparkforge_collect_managed_flink",
+        "sparkforge_aws_collect_managed_flink",
         {"repo": str(tmp_path / "mcp"), **common},
     )
     assert capsys.readouterr().err == ""
@@ -454,7 +454,7 @@ def test_managed_flink_temporal_docs_state_window_and_limits():
         (root / "knowledge/streaming/runtime-matrix.md").read_text(encoding="utf-8"),
         (root / "docs/guia/03-cli.md").read_text(encoding="utf-8"),
         (root / "docs/guia/04-mcp.md").read_text(encoding="utf-8"),
-        (root / "docs/guia/referencia/tools/sparkforge_collect_managed_flink.md").read_text(
+        (root / "docs/guia/referencia/tools/sparkforge_aws_collect_managed_flink.md").read_text(
             encoding="utf-8"
         ),
         (root / "docs/streaming/prompt-coverage.md").read_text(encoding="utf-8"),

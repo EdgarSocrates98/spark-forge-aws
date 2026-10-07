@@ -210,7 +210,7 @@ class TestGuia:
     def setup_class(cls):
         cls.GUIA = _read("GUIA_DE_USO.md")
 
-    def test_documents_sparkforge_resume(self):
+    def test_documents_sparkforge_aws_resume(self):
         assert "sparkforge-aws resume" in self.GUIA
 
     def test_documents_what_is_committed_versus_not(self):

@@ -150,7 +150,7 @@ def test_a_ordem_das_arestas_tambem(tmp_path):
     assert pares == sorted(pares)
 
 
-def test_a_comunidade_viaja_em_sparkforge_e_nao_no_topo(tmp_path):
+def test_a_comunidade_viaja_em_sparkforge_aws_e_nao_no_topo(tmp_path):
     """`community` nao e campo que a fonte nomeie no formato de extracao."""
     dados = exportar(_banco(tmp_path))
     for no in dados["nodes"]:

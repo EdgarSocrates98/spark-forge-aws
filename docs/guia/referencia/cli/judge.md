@@ -31,4 +31,4 @@ sparkforge-aws judge --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_judge`](../tools/sparkforge_judge.md)
+[`sparkforge_aws_judge`](../tools/sparkforge_aws_judge.md)

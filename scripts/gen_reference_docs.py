@@ -342,7 +342,7 @@ def _render_tools(tool_para_cli: dict[str, set[str]],
         paginas[DEST / "tools" / f"{nome}.md"] = _pagina_tool(
             nome, TOOLS[nome], tool_para_cli, tool_para_capacidade
         )
-        familia = nome.removeprefix("sparkforge_").split("_")[0]
+        familia = nome.removeprefix("sparkforge_aws_").split("_")[0]
         familias.setdefault(familia, []).append(nome)
     indice = [
         AVISO + "# Referência das tools MCP\n",

@@ -23,7 +23,7 @@ relatorio um dia entrar num caminho quente chamado por span. Isto e decisao de
 desenho (o relatorio existe para dar o quadro inteiro), nao descuido.
 
 OS NUMEROS DE `detail_level_effect` SAO DESTA FIXTURE, NESTA MAQUINA. Uma
-chamada de `sparkforge_analyze_pyspark` sobre o job de teste do
+chamada de `sparkforge_aws_analyze_pyspark` sobre o job de teste do
 `tests/test_economy_report.py` mediu 1599 bytes em `full` contra 849 em
 `summary` -- primeira medicao real da alegacao "detail_level reduz o
 payload". Nao sao constantes do sistema: outro job, outro path, outra versao

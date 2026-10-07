@@ -2,7 +2,7 @@
 name: sdd-plan
 description: "Use quando o design.md da feature está ready e falta quebrar a construção em tarefas pequenas, com teste e código, que outra sessão execute sem contexto — \\\"escreve o plano\\\", \\\"quebra em tarefas\\\", \\\"fase plan\\\"."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -133,10 +133,10 @@ cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o design | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| confirmar um nome | `sparkforge-aws code search <nome>` | `sparkforge_code_search` |
-| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/plan.md` | `sparkforge_sdd_stamp` |
-| cascata | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
+| conferir o design | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| confirmar um nome | `sparkforge-aws code search <nome>` | `sparkforge_aws_code_search` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/plan.md` | `sparkforge_aws_sdd_stamp` |
+| cascata | `sparkforge-aws sdd status --repo .` | `sparkforge_aws_sdd_status` |
 
 Recusas desta fase: `phase_out_of_order`, `task_without_test`,
 `acceptance_uncovered`, `upstream_stale`, `moved_not_observed` (operator).

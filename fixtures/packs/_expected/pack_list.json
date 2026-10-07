@@ -1,5 +1,5 @@
 {
-  "env": "SPARKFORGE_PACKS",
+  "env": "SPARKFORGE_AWS_PACKS",
   "installed_core": "<core>",
   "active": [
     {

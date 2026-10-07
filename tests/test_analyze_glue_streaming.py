@@ -14,7 +14,7 @@ GLUE = ROOT / "fixtures" / "glue_streaming" / "rtm_valid" / "input" / "job.json"
 
 def test_cli_and_mcp_glue_streaming_envelopes_match():
     expected = analyze_glue_streaming(str(GLUE), limit=3)
-    actual = call_tool("sparkforge_analyze_glue_streaming", {"path": str(GLUE), "limit": 3})
+    actual = call_tool("sparkforge_aws_analyze_glue_streaming", {"path": str(GLUE), "limit": 3})
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -41,6 +41,6 @@ def test_cli_and_mcp_glue_streaming_envelopes_match():
 
 
 def test_glue_streaming_tool_is_read_only_and_schema_declared():
-    spec = TOOLS["sparkforge_analyze_glue_streaming"]
+    spec = TOOLS["sparkforge_aws_analyze_glue_streaming"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["path"]

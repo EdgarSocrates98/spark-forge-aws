@@ -21,4 +21,4 @@ sparkforge-aws fuse --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_fuse`](../tools/sparkforge_fuse.md)
+[`sparkforge_aws_fuse`](../tools/sparkforge_aws_fuse.md)

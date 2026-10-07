@@ -2,7 +2,7 @@
 name: diagnose-oom
 description: "Use quando um job Glue falha com OutOfMemory, \\\"Container killed by YARN\\\", \\\"GC overhead limit exceeded\\\", ExecutorLostFailure, estouro de Python worker/pandas_udf, ou frases como \\\"o job morreu depois de 3 horas\\\" e \\\"aumentei a memória e continuou\\\". Use para classificar se é heap de driver, heap de executor, overhead de container, broadcast, metadata/plan explosion ou Python worker antes de mitigar. Se você está prestes a estimar heap e GC no olho, rode `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log` e `sparkforge-aws judge` em vez disso — o fact `spark.executor.lost` já vem com `heap_oom_in_log`: executor removido sem OOM de heap no log é estouro de container fora do heap (a correção é `memoryOverhead`, não `memory`), e é o OOM mais mal diagnosticado que existe."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -92,8 +92,8 @@ recomendando.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

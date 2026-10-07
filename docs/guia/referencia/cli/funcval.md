@@ -34,7 +34,7 @@ sparkforge-aws funcval compare --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_funcval_compare`](../tools/sparkforge_funcval_compare.md)
+[`sparkforge_aws_funcval_compare`](../tools/sparkforge_aws_funcval_compare.md)
 
 ## `sparkforge-aws funcval plan`
 
@@ -58,4 +58,4 @@ sparkforge-aws funcval plan --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_funcval_plan`](../tools/sparkforge_funcval_plan.md)
+[`sparkforge_aws_funcval_plan`](../tools/sparkforge_aws_funcval_plan.md)

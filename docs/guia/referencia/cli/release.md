@@ -28,7 +28,7 @@ sparkforge-aws release describe --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_release_describe`](../tools/sparkforge_release_describe.md)
+[`sparkforge_aws_release_describe`](../tools/sparkforge_aws_release_describe.md)
 
 ## `sparkforge-aws release diff`
 
@@ -49,4 +49,4 @@ sparkforge-aws release diff --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_release_diff`](../tools/sparkforge_release_diff.md)
+[`sparkforge_aws_release_diff`](../tools/sparkforge_aws_release_diff.md)

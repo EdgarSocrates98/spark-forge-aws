@@ -2,7 +2,7 @@
 name: optimize-iceberg-table
 description: "Use quando tabelas Apache Iceberg no Glue Data Catalog degradam por excesso de data files pequenos, delete files acumulados, snapshots ou manifests crescendo sem parar, partition spec inadequado ou write.distribution-mode incoerente com particionamento — e for preciso decidir entre compaction, rewrite manifests e expire snapshots com evidência, não por rotina. Use também quando a pergunta for \\\"essa tabela Iceberg tá lenta para consultar\\\", \\\"o Athena demora para planejar essa tabela\\\" ou \\\"quantos snapshots essa tabela já acumulou\\\", mesmo que ninguém fale em metadata table. Se você está prestes a rodar `SELECT * FROM db.tabela.files` no olho para contar arquivo pequeno, rode `sparkforge-aws collect iceberg-metadata` e `sparkforge-aws analyze iceberg` em vez disso — o extrator resume files, delete files, snapshots, manifests e partições deterministicamente, e o catálogo aplica os limiares versionados."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -131,8 +131,8 @@ Por isso o plano se define **antes** do procedimento, e não depois.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

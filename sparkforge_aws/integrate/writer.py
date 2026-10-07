@@ -727,7 +727,7 @@ def apply_json_config(
     presentes = [k for k in _SERVIDOR_KEYS if servidores_d and k in servidores_d]
     if presentes and servidores_d is not None:
         if registro is None:
-            return _recusa(relativo, "sparkforge_ja_configurado")
+            return _recusa(relativo, "sparkforge_aws_ja_configurado")
         for chave in presentes:
             if _editado(registro, _sha_entrada(servidores_d[chave])):
                 return _recusa(relativo, "editado_pelo_usuario")
@@ -754,14 +754,14 @@ def apply_json_config(
 # O SparkForge nao reescreve o arquivo -- so poe, troca ou tira o bloco entre os
 # dois marcadores, que so contam no inicio da linha. `sparkforge-aws` definido fora do
 # bloco, em qualquer forma que o TOML aceita, foi escrito por outra pessoa e sai
-# recusa `sparkforge_ja_configurado`. Marcador sem par, ou dois blocos, sai recusa
+# recusa `sparkforge_aws_ja_configurado`. Marcador sem par, ou dois blocos, sai recusa
 # `bloco_toml_quebrado`: nao da para saber onde o bloco termina.
 #
 # Com `tomllib` (Python 3.11+), o texto fora do bloco e LIDO como TOML para decidir,
 # e o arquivo final e validado antes de gravar: TOML invalido, antes ou depois, sai
 # `config_invalida` e nada e gravado. No Python 3.10 nao ha leitor de TOML na
 # biblioteca padrao e o projeto nao tem essa dependencia: a decisao e por texto
-# (`_sparkforge_por_texto`), que cobre tabela (`[mcp_servers.sparkforge-aws]`, com
+# (`_sparkforge_por_texto_aws`), que cobre tabela (`[mcp_servers.sparkforge-aws]`, com
 # aspas, com espacos, e as subtabelas como `.env`), chave pontuada na raiz e chave
 # (inline ou pontuada) sob `[mcp_servers]`. LACUNA declarada do 3.10: uma linha que
 # comeca com `[` dentro de string ou array multilinha e lida como cabecalho, e o
@@ -787,7 +787,7 @@ _CHAVE_SF_NA_RAIZ = re.compile(rf"^\s*{_MCP}\s*\.\s*{_SF}\s*[.=]")
 _CHAVE_SF = re.compile(rf"^\s*{_SF}\s*[.=]")
 
 
-def _sparkforge_por_texto(texto: str) -> bool:
+def _sparkforge_por_texto_aws(texto: str) -> bool:
     """`sparkforge-aws` sob `mcp_servers` pelo texto, sem leitor de TOML (Python 3.10)."""
     tabela: str | None = None
     for linha in texto.splitlines():
@@ -804,10 +804,10 @@ def _sparkforge_por_texto(texto: str) -> bool:
     return False
 
 
-def _sparkforge_em(texto: str) -> bool | None:
+def _sparkforge_em_aws(texto: str) -> bool | None:
     """`sparkforge-aws` sob `mcp_servers` em `texto`; `None` se nao e TOML valido."""
     if _tomllib is None:
-        return _sparkforge_por_texto(texto)
+        return _sparkforge_por_texto_aws(texto)
     try:
         dados = _tomllib.loads(texto)
     except _tomllib.TOMLDecodeError:
@@ -878,11 +878,11 @@ def apply_toml_config(
     if limites == "quebrado":
         return _recusa(relativo, "bloco_toml_quebrado")
     fora = texto if limites is None else texto[: limites[0]] + texto[limites[1]:]
-    ja_definido = _sparkforge_em(fora)
+    ja_definido = _sparkforge_em_aws(fora)
     if ja_definido is None:
         return _recusa(relativo, "config_invalida")
     if ja_definido:
-        return _recusa(relativo, "sparkforge_ja_configurado")
+        return _recusa(relativo, "sparkforge_aws_ja_configurado")
     if limites is None:
         base = texto.rstrip("\n")
         novo = (base + "\n\n" if base else "") + bloco
@@ -985,7 +985,7 @@ def revert_toml_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, A
         return {"path": relativo, "status": "absent"}
     antes = texto[: limites[0]].rstrip("\n")
     depois = texto[limites[1]:].lstrip("\n")
-    if _editado(registro, _sha_bloco(texto[limites[0]:limites[1]])) or _sparkforge_em(
+    if _editado(registro, _sha_bloco(texto[limites[0]:limites[1]])) or _sparkforge_em_aws(
         antes + "\n" + depois
     ):
         return _recusa(relativo, "editado_pelo_usuario")

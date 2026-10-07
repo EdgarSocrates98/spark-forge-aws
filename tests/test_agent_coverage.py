@@ -245,7 +245,7 @@ class TestEMRonEKSTemDespachoCompleto:
     """
 
     AREA = "SF-EMRK"
-    TOOLS_DA_AREA = ("sparkforge_analyze_emr_eks", "sparkforge_collect_emr_eks")
+    TOOLS_DA_AREA = ("sparkforge_aws_analyze_emr_eks", "sparkforge_aws_collect_emr_eks")
 
     def _routing(self) -> dict:
         path = ROOT / "rules" / "catalog" / "routing.yaml"
@@ -308,7 +308,7 @@ class TestAAreaSF_CTM_TemRotaCoordenadorETool:
     2. a rota aponta para um coordenador que DECLARA a area em `rule_areas`;
     3. a tool de `Jobs-as-Code` e alcancavel a partir de algum coordenador.
 
-    A tool de CONSULTA (`sparkforge_controlm_describe`) entra na lista junto, e
+    A tool de CONSULTA (`sparkforge_aws_controlm_describe`) entra na lista junto, e
     nao sozinha: as duas respondem lados opostos da mesma pergunta -- uma diz o
     que a versao alvo TEM, a outra diz o que o job USA -- e o achado de
     `SF-CTM-001` manda explicitamente consultar a primeira. Uma alcancavel sem a
@@ -316,7 +316,7 @@ class TestAAreaSF_CTM_TemRotaCoordenadorETool:
     """
 
     AREA = "SF-CTM"
-    TOOLS_DA_AREA = ("sparkforge_analyze_controlm_jobs", "sparkforge_controlm_describe")
+    TOOLS_DA_AREA = ("sparkforge_aws_analyze_controlm_jobs", "sparkforge_aws_controlm_describe")
 
     def _routing(self) -> dict:
         path = ROOT / "rules" / "catalog" / "routing.yaml"

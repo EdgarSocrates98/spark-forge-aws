@@ -1,4 +1,4 @@
-"""Intake de evidencia estrangeira: o documento `sparkforge/upstream-facts/v1`.
+"""Intake de evidencia estrangeira: o documento `sparkforge_aws/upstream-facts/v1`.
 
 Quando um orquestrador (The Forge) encadeia um diagnostico de outro motor neste
 analisador, o handoff chega traduzido para este contrato: uma lista de facts no
@@ -36,7 +36,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
 
-UPSTREAM_SCHEMA = "sparkforge/upstream-facts/v1"
+UPSTREAM_SCHEMA = "sparkforge_aws/upstream-facts/v1"
 UPSTREAM_EXTRACTOR = "theforge/handoff"
 UPSTREAM_ID_PREFIX = "upstream:"
 UPSTREAM_KIND_PREFIX = "upstream."
@@ -84,7 +84,7 @@ _FACT_MAP_FIELDS = ("subject", "measures", "attrs", "provenance")
 
 
 class UpstreamError(Exception):
-    """O documento de upstream nao e `sparkforge/upstream-facts/v1` valido."""
+    """O documento de upstream nao e `sparkforge_aws/upstream-facts/v1` valido."""
 
 
 def _normalized_key(key: object) -> str:
@@ -160,7 +160,7 @@ def _check_fact(index: int, fact: object, document: Path) -> dict[str, Any]:
 
 
 def read_upstream_facts(path: str | Path) -> list[dict[str, Any]]:
-    """Facts de um documento `sparkforge/upstream-facts/v1`, validados e com a
+    """Facts de um documento `sparkforge_aws/upstream-facts/v1`, validados e com a
     procedencia do intake gravada. Ordem do documento preservada (ja e a ordem
     do handoff, que e deterministica)."""
     document = Path(path)

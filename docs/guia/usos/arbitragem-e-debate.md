@@ -382,8 +382,8 @@ gravam decisão e **nunca** aplicam mudança.
 - Referência: [`arbitrate`](../referencia/cli/arbitrate.md), [`blackboard`](../referencia/cli/blackboard.md),
   [`decisions`](../referencia/cli/decisions.md), [`budget`](../referencia/cli/budget.md),
   [`autonomy`](../referencia/cli/autonomy.md), [`debate`](../referencia/cli/debate.md); tools
-  [`sparkforge_arbitrate`](../referencia/tools/sparkforge_arbitrate.md),
-  [`sparkforge_debate_start`](../referencia/tools/sparkforge_debate_start.md),
-  [`sparkforge_debate_next`](../referencia/tools/sparkforge_debate_next.md),
-  [`sparkforge_debate_submit`](../referencia/tools/sparkforge_debate_submit.md),
-  [`sparkforge_debate_referee`](../referencia/tools/sparkforge_debate_referee.md).
+  [`sparkforge_aws_arbitrate`](../referencia/tools/sparkforge_aws_arbitrate.md),
+  [`sparkforge_aws_debate_start`](../referencia/tools/sparkforge_aws_debate_start.md),
+  [`sparkforge_aws_debate_next`](../referencia/tools/sparkforge_aws_debate_next.md),
+  [`sparkforge_aws_debate_submit`](../referencia/tools/sparkforge_aws_debate_submit.md),
+  [`sparkforge_aws_debate_referee`](../referencia/tools/sparkforge_aws_debate_referee.md).

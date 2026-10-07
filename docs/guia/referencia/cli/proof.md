@@ -27,4 +27,4 @@ sparkforge-aws proof --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_proof`](../tools/sparkforge_proof.md)
+[`sparkforge_aws_proof`](../tools/sparkforge_aws_proof.md)

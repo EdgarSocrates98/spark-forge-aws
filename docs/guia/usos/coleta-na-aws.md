@@ -304,8 +304,8 @@ artefato bruto for versionado.
 - Referência dos comandos: [`collect`](../referencia/cli/collect.md),
   [`analyze`](../referencia/cli/analyze.md).
 - Tools MCP equivalentes, por exemplo
-  [`sparkforge_collect_lakeformation`](../referencia/tools/sparkforge_collect_lakeformation.md)
-  e [`sparkforge_collect_verify`](../referencia/tools/sparkforge_collect_verify.md).
+  [`sparkforge_aws_collect_lakeformation`](../referencia/tools/sparkforge_aws_collect_lakeformation.md)
+  e [`sparkforge_aws_collect_verify`](../referencia/tools/sparkforge_aws_collect_verify.md).
   A lista completa está em [tools](../referencia/tools/README.md).
 
 ## Próximos passos

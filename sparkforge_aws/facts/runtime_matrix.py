@@ -38,7 +38,7 @@ sparkforge_aws.facts.runtime_detect` -> `FileNotFoundError` em
 `sparkforge_aws/knowledge_ref.py` ja resolve exatamente este problema, para
 exatamente este diretorio, desde a Fase 3a -- "knowledge/ passou a ser
 embarcado no artefato e nenhum codigo sabia encontra-lo". A ordem de
-precedencia (env var `SPARKFORGE_KNOWLEDGE` -> raiz do repo -> `parent` do
+precedencia (env var `SPARKFORGE_AWS_KNOWLEDGE` -> raiz do repo -> `parent` do
 proprio modulo dentro do pacote) e a MESMA que `sparkforge_aws/rules/loader.py`
 usa para `rules/catalog`, e tem teste dedicado para o caso de pacote
 instalado (`tests/test_knowledge_ref.py::

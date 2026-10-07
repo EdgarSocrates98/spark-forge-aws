@@ -29,12 +29,12 @@ def knowledge_dir() -> Path:
     comportamento e identico ao de sempre; instalado por pip, so o fallback
     existe.
     """
-    override = os.environ.get("SPARKFORGE_KNOWLEDGE")
+    override = os.environ.get("SPARKFORGE_AWS_KNOWLEDGE") or os.environ.get("SPARKFORGE_KNOWLEDGE")
     if override:
         resolved = Path(override).expanduser().resolve()
         if not resolved.is_dir():
             raise KnowledgeError(
-                f"SPARKFORGE_KNOWLEDGE aponta para {resolved}, que nao e um diretorio existente"
+                f"SPARKFORGE_AWS_KNOWLEDGE aponta para {resolved}, que nao e um diretorio existente"
             )
         return resolved
 

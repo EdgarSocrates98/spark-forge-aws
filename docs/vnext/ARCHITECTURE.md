@@ -75,7 +75,7 @@ ownership de job, conta local, catálogo de origem e catálogo de destino sem
 colar `glue.id` a `glue.account-id`; `architecture.py` compõe capability,
 operação, credential vending e cross-account em `consistent`, `unresolved` ou
 `blocked`. A superfície é `sparkforge-aws lakeformation architect` e
-`sparkforge_lakeformation_architect`, ambos offline e sem mutação AWS.
+`sparkforge_aws_lakeformation_architect`, ambos offline e sem mutação AWS.
 
 A mesma lane expõe `review`: operational review que compõe facts de PySpark/Terraform, detecta
 configuração tardia, explica caminhos metadata/data, classifica credential

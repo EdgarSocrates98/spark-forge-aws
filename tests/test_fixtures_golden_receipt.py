@@ -6,7 +6,7 @@ O case e montado em `tmp_path` a cada teste, pelas mesmas portas do produto:
 gravado e o mesmo em qualquer maquina -- o que o golden prova byte a byte.
 
 Para regenerar o golden depois de mudanca DELIBERADA de formato:
-`SPARKFORGE_REGEN_RECEIPT=1 pytest tests/test_fixtures_golden_receipt.py`.
+`SPARKFORGE_AWS_REGEN_RECEIPT=1 pytest tests/test_fixtures_golden_receipt.py`.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ FIXTURES = ROOT / "fixtures" / "receipt"
 CASO = FIXTURES / "uniao_debate"
 META = yaml.safe_load((CASO / "meta.yaml").read_text(encoding="utf-8"))
 ESPERADO = CASO / "expected" / "receipt.json"
-REGEN = os.environ.get("SPARKFORGE_REGEN_RECEIPT") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_RECEIPT") == "1"
 
 
 def montar(repo: Path) -> list[str]:

@@ -2,7 +2,7 @@
 name: optimize-variable-volume-job
 description: "Use quando o mesmo job Glue roda de dezenas de registros a centenas de milhões e um único perfil configurado para o pior caso fica caro em microcarga e ainda inadequado no full. Use também quando a pergunta for \\\"por que a carga vazia demora 5 minutos\\\", \\\"o job de teste custa quase igual ao de produção\\\" ou \\\"ficou mais lento essa semana\\\" num job cujo volume varia muito entre execuções. Se você está prestes a comparar runs de volumes diferentes só de cabeça, rode `sparkforge-aws analyze event-log` em cada run e `sparkforge-aws analyze pyspark` no código em vez disso — subparalelismo (SF-UI-006) que é esperado numa carga micro é sintoma real numa carga full, e o catálogo não distingue os dois perfis sozinho; quem separa é você."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -74,8 +74,8 @@ conteúdo do run anterior, e nenhum alarme dispara.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

@@ -7,7 +7,7 @@ Use quando alguém pergunta \"dá para subir esse job para o Glue 6.0?\", \"o qu
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/migrate-glue-6/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws migrate glue', 'sparkforge-aws glue dependency-audit', 'sparkforge-aws benchmark']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws migrate glue', 'sparkforge-aws glue dependency-audit', 'sparkforge-aws benchmark']} |
 
 ## Procedimento (texto integral)
 

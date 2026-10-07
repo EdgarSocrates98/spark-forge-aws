@@ -530,7 +530,7 @@ rules:
   # `SF-CTM` VAI PARA O ESPECIALISTA DE RUNTIME, e a razão é a mesma que já leva
   # `SF-MIG` e `SF-SPARK4` para lá: a pergunta é de **compatibilidade entre
   # versões**, e o que muda é o produto, não o tipo de pergunta. O coordenador
-  # declara a área em `rule_areas` e já cita `sparkforge_controlm_describe` — o
+  # declara a área em `rule_areas` e já cita `sparkforge_aws_controlm_describe` — o
   # verbo que responde o outro lado da mesma pergunta ("o que a versão alvo tem?").
   #
   # ROTA PRÓPRIA, e não uma linha a mais na AGENT-007 (infraestrutura EMR). Ali o

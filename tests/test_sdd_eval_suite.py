@@ -111,7 +111,7 @@ def test_runner_conhece_a_suite_sdd():
     assert "fixtures" in runner.WORKSPACE_DIRS and "evals" not in runner.WORKSPACE_DIRS
     negadas = runner._negadas(load_suite(runner._suite_dir("sdd")), "suite")
     visiveis = set(TOOLS) - {n.removeprefix(runner.MCP_PREFIX) for n in negadas}
-    assert visiveis == {"sparkforge_sdd_check", "sparkforge_sdd_status"}
+    assert visiveis == {"sparkforge_aws_sdd_check", "sparkforge_aws_sdd_status"}
 
 
 def test_notas_de_hash_e_de_baseline():

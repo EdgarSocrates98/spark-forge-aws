@@ -1,8 +1,8 @@
 ---
 name: run-debate
-description: "Use quando `sparkforge-aws arbitrate` devolver `debate.unresolved` com um `debate_plan` para um par de regras e o operador quiser conduzir o debate na sessão — \\\"roda o debate entre SF-X e SF-Y\\\", \\\"qual das duas ações fica?\\\", \\\"o arbitrate parou em debate, e agora?\\\". A sessão faz o papel de cada lado, pede o brief ao executor com `sparkforge_debate_next`, escreve a submissão e a entrega com `sparkforge_debate_submit`, até o executor devolver `done`. O fechamento é sempre do `referee`, nunca da sessão."
+description: "Use quando `sparkforge-aws arbitrate` devolver `debate.unresolved` com um `debate_plan` para um par de regras e o operador quiser conduzir o debate na sessão — \\\"roda o debate entre SF-X e SF-Y\\\", \\\"qual das duas ações fica?\\\", \\\"o arbitrate parou em debate, e agora?\\\". A sessão faz o papel de cada lado, pede o brief ao executor com `sparkforge_aws_debate_next`, escreve a submissão e a entrega com `sparkforge_aws_debate_submit`, até o executor devolver `done`. O fechamento é sempre do `referee`, nunca da sessão."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -25,13 +25,13 @@ O executor de debate do SparkForge é uma máquina de estados **determinística*
 
 1. O case precisa declarar `budget:` com `max_rounds` no `.sparkforge_aws/case.yaml`. Sem isso o `start` recusa com `budget_undeclared` — declare o teto com o operador, nunca o invente.
 2. Rode `sparkforge-aws arbitrate --findings <findings.json> --facts <a> --facts <b> --repo .` com a **união** dos facts do case (a mesma que `judge` recebeu). O debate só existe para o par que sair em `debate_plans`.
-3. `sparkforge_debate_start` (ou `sparkforge-aws debate start --rules A,B`) com os **mesmos** insumos do `arbitrate`. Guarde o `debate_id`.
+3. `sparkforge_aws_debate_start` (ou `sparkforge-aws debate start --rules A,B`) com os **mesmos** insumos do `arbitrate`. Guarde o `debate_id`.
 
 ## O laço
 
-1. `sparkforge_debate_next` com o `debate_id`. Se vier `status: done`, pare e relate a `Decision`.
+1. `sparkforge_aws_debate_next` com o `debate_id`. Se vier `status: done`, pare e relate a `Decision`.
 2. Se vier `status: brief`, você é o lado `brief.side` na rodada `brief.round`: defende `brief.defends` e se opõe a `brief.opposes`.
-3. Escreva a submissão no schema de `brief.submission_schema` e entregue com `sparkforge_debate_submit`.
+3. Escreva a submissão no schema de `brief.submission_schema` e entregue com `sparkforge_aws_debate_submit`.
 4. `refused` volta com `reason` e `detail`: corrija **aquilo** e reenvie. `accepted` já traz o próximo passo em `next`.
 
 Prefira um subagente por lado, cada um recebendo só o brief da vez: um lado que lê o raciocínio privado do outro não está debatendo. Sem subagente, trate cada vez como se só existisse o brief.
@@ -61,10 +61,10 @@ Prefira um subagente por lado, cada um recebendo só o brief da vez: um lado que
 
 | Passo | Tool MCP | CLI |
 |---|---|---|
-| congelar o plano | `sparkforge_debate_start` | `sparkforge-aws debate start --rules A,B --findings ... --facts ... --repo .` |
-| brief da vez ou `done` | `sparkforge_debate_next` | `sparkforge-aws debate next --debate <id> --repo .` |
-| entregar a submissão | `sparkforge_debate_submit` | `sparkforge-aws debate submit --debate <id> --file <json> --repo .` |
-| conferir o fechamento | `sparkforge_debate_referee` | `sparkforge-aws debate referee --repo .` |
+| congelar o plano | `sparkforge_aws_debate_start` | `sparkforge-aws debate start --rules A,B --findings ... --facts ... --repo .` |
+| brief da vez ou `done` | `sparkforge_aws_debate_next` | `sparkforge-aws debate next --debate <id> --repo .` |
+| entregar a submissão | `sparkforge_aws_debate_submit` | `sparkforge-aws debate submit --debate <id> --file <json> --repo .` |
+| conferir o fechamento | `sparkforge_aws_debate_referee` | `sparkforge-aws debate referee --repo .` |
 
 Recusas nomeadas mais comuns: `out_of_turn` (lado ou rodada errados), `invalid_schema` (chave desconhecida, rodada 1 sem claim), `claim_without_evidence`, `dangling_evidence_ref`, `dangling_target_ref`, `extractor_not_allowed`, `artifact_outside_case`, `artifact_not_found`.
 

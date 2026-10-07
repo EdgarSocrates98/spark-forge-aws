@@ -7,7 +7,7 @@ Use quando o pedido for genérico e amplo — \"meu job Glue tá lento\", \"por 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sparkforge-aws-diagnose/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws next-step', 'sparkforge-aws runtime detect', 'sparkforge-aws analyze terraform']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws next-step', 'sparkforge-aws runtime detect', 'sparkforge-aws analyze terraform']} |
 
 ## Procedimento (texto integral)
 

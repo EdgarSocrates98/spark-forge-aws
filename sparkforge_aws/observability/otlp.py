@@ -153,7 +153,7 @@ def _ordenados(spans: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(spans, key=lambda s: (int(s["startTimeUnixNano"]), s["spanId"]))
 
 
-def _span_sparkforge(
+def _span_sparkforge_aws(
     span: Mapping[str, Any], trace_id: str
 ) -> tuple[dict[str, Any], int, int, str, str | None] | None:
     inicio = nanos_de_epoch(span.get("start_time"))
@@ -266,7 +266,7 @@ def projetar(
                 }
             )
             continue
-        montado = _span_sparkforge(span, trace_sf)
+        montado = _span_sparkforge_aws(span, trace_sf)
         if montado is None:
             recusados.append(
                 {
@@ -380,7 +380,7 @@ def projetar(
         traces={"resourceSpans": resource_spans} if resource_spans else None,
         metrics={"resourceMetrics": resource_metrics} if resource_metrics else None,
         counts={
-            "sparkforge_spans": len(spans),
+            "sparkforge_aws_spans": len(spans),
             "host_agent": host_agente,
             "host_tool_calls": host_tool_calls,
             "exported": exportados,

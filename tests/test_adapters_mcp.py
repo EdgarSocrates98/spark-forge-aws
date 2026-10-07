@@ -141,14 +141,14 @@ class TestCallTool:
 
     def test_a_successful_call_returns_structured_content(self, server):
         # `{"repo": ROOT}` ate a fase da superficie de codigo, e era ARGUMENTO
-        # INVENTADO: `sparkforge_runtime_detect` nunca declarou `repo` no
+        # INVENTADO: `sparkforge_aws_runtime_detect` nunca declarou `repo` no
         # `inputSchema` e `_h_runtime_detect` nunca o leu -- ele era descartado
         # em silencio e o teste passava por acaso, exercitando a tool com zero
         # entrada. Fechar o schema (SPEC 68, `additionalProperties: false`) fez
         # o SDK recusar, que e o gate funcionando: o argumento errado agora
         # aparece em vez de sumir. `glue` e declarado, e lido, e deriva a versao
         # de Spark que a asercao abaixo confere.
-        result = _call(server, "sparkforge_runtime_detect", {"glue": "5.0"})
+        result = _call(server, "sparkforge_aws_runtime_detect", {"glue": "5.0"})
         assert result.is_error is not True
         assert result.structured_content is not None
         assert "spark" in result.structured_content
@@ -157,13 +157,13 @@ class TestCallTool:
         """`mcp_envelope.validar_saida` confere `structuredContent` contra o
         `outputSchema` do tool -- no 1.x quem conferia era o SDK. Passar aqui e
         a prova de que os dois nao divergiram."""
-        result = _call(server, "sparkforge_rules_lookup", {"id": ["SF-PQ-002"]})
+        result = _call(server, "sparkforge_aws_rules_lookup", {"id": ["SF-PQ-002"]})
         assert result.is_error is not True
         assert [r["id"] for r in result.structured_content["rules"]] == ["SF-PQ-002"]
 
     def test_invalid_arguments_are_refused_before_the_tool_runs(self, server):
         """O SDK 2.x nao valida `arguments`; o envelope valida, com o texto do 1.x."""
-        result = _call(server, "sparkforge_release_describe", {"release": "5.0"})
+        result = _call(server, "sparkforge_aws_release_describe", {"release": "5.0"})
         assert result.is_error is True
 
 
@@ -174,7 +174,7 @@ class TestCallTool:
     def test_text_content_still_carries_the_json(self, server):
         """O cliente que so le texto nao pode regredir: o JSON continua em
         `content`, alem de `structuredContent`."""
-        result = _call(server, "sparkforge_runtime_detect", {"glue": "5.0"})
+        result = _call(server, "sparkforge_aws_runtime_detect", {"glue": "5.0"})
         assert result.content
         assert '"spark"' in result.content[0].text
 
@@ -182,12 +182,12 @@ class TestCallTool:
         """Erro de fronteira sai como `isError`, com o texto do adapter. Se
         fosse devolvido como dict, ele nao casaria com o `outputSchema` e a
         validacao do SDK trocaria a mensagem util por uma queixa de schema."""
-        result = _call(server, "sparkforge_analyze_plan", {"path": "/nao/existe.txt"})
+        result = _call(server, "sparkforge_aws_analyze_plan", {"path": "/nao/existe.txt"})
         assert result.is_error is True
         assert "nao encontrado" in result.content[0].text
 
     def test_unknown_tool_is_an_error_not_a_crash(self, server):
-        result = _call(server, "sparkforge_nao_existe", {})
+        result = _call(server, "sparkforge_aws_nao_existe", {})
         assert result.is_error is True
 
 
@@ -208,7 +208,7 @@ class TestCompactSurface:
             compact_server,
             "execute_read",
             {
-                "capability": "sparkforge_runtime_detect",
+                "capability": "sparkforge_aws_runtime_detect",
                 "arguments": {"glue": "5.0"},
             },
         )
@@ -217,9 +217,9 @@ class TestCompactSurface:
 
     def test_full_tool_names_are_not_published_or_callable(self, compact_server):
         listed = {tool.name for tool in _list(compact_server).tools}
-        assert "sparkforge_runtime_detect" not in listed
+        assert "sparkforge_aws_runtime_detect" not in listed
 
-        result = _call(compact_server, "sparkforge_runtime_detect", {"glue": "5.0"})
+        result = _call(compact_server, "sparkforge_aws_runtime_detect", {"glue": "5.0"})
         assert result.is_error is True
         assert "modo 'compact'" in result.content[0].text
 
@@ -280,7 +280,7 @@ class TestSpec71OTransporteHttpNaoServeFonte:
 
         servidas = tools_do_transporte("http")
         assert set(TOOLS) - set(servidas) == set(TOOLS_COM_FONTE)
-        assert "sparkforge_code_read" not in servidas
+        assert "sparkforge_aws_code_read" not in servidas
 
     def test_a_lista_literal_bate_com_quem_declara_snippet(self):
         """A metade que impede a lista de envelhecer.
@@ -308,7 +308,7 @@ class TestSpec71OTransporteHttpNaoServeFonte:
         atendido -- e saber o nome e trivial: ele esta na documentacao.
         """
         servidor = build_server("http")
-        resultado = _call(servidor, "sparkforge_code_read", {"repo": "."})
+        resultado = _call(servidor, "sparkforge_aws_code_read", {"repo": "."})
         assert resultado.is_error is True
         assert "--transport stdio" in resultado.content[0].text
 
@@ -321,7 +321,7 @@ def test_a_chamada_pelo_servidor_mcp_grava_o_canal_no_span(server, tmp_path, mon
     ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_mcp")
     monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
-    _call(server, "sparkforge_case_get", {"repo": str(tmp_path)})
+    _call(server, "sparkforge_aws_case_get", {"repo": str(tmp_path)})
 
     spans = ledger.spans_of("run_mcp")
     assert [s["metadata"] for s in spans] == [

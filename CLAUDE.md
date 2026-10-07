@@ -9,13 +9,13 @@ no olho vem depois do verbo, para conferir, nunca no lugar dele.
 
 | Pergunta sobre | Tool MCP |
 |---|---|
-| código PySpark | `sparkforge_analyze_pyspark`, depois `sparkforge_judge` |
-| plano físico (`explain`) | `sparkforge_analyze_plan`, depois `sparkforge_judge` |
-| event log do Spark | `sparkforge_analyze_event_log`, depois `sparkforge_judge` |
-| regra do catálogo | `sparkforge_rules_lookup` |
-| versão e runtime | `sparkforge_runtime_detect` ou `sparkforge_release_describe` |
-| custo de um run | `sparkforge_finops` |
-| antes e depois entre dois runs | `sparkforge_benchmark` |
+| código PySpark | `sparkforge_aws_analyze_pyspark`, depois `sparkforge_aws_judge` |
+| plano físico (`explain`) | `sparkforge_aws_analyze_plan`, depois `sparkforge_aws_judge` |
+| event log do Spark | `sparkforge_aws_analyze_event_log`, depois `sparkforge_aws_judge` |
+| regra do catálogo | `sparkforge_aws_rules_lookup` |
+| versão e runtime | `sparkforge_aws_runtime_detect` ou `sparkforge_aws_release_describe` |
+| custo de um run | `sparkforge_aws_finops` |
+| antes e depois entre dois runs | `sparkforge_aws_benchmark` |
 
 Ao trabalhar em código PySpark destinado ao AWS Glue:
 
@@ -138,7 +138,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**143 tools, 52 com `detail_level`** (recontado em 2026-10-04). Os niveis sao `summary`,
+**143 tools, 52 com `detail_level`** (recontado 2026-10-04). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
@@ -150,14 +150,14 @@ vez de copiar o número — cópia envelhece sem que nada acuse.
 
 | Pergunta | Tool |
 |---|---|
-| onde esta X definido | `sparkforge_code_search` |
-| quem chama X, e o que quebra se eu mudar | `sparkforge_code_symbol` |
-| **como** X chega em Y | `sparkforge_code_path` |
-| como este codigo esta organizado | `sparkforge_code_shape` |
-| o pacote de contexto dentro de um teto de bytes | `sparkforge_code_context` |
-| o trecho de fonte, com rotulo de conteudo nao confiavel | `sparkforge_code_read` |
-| o indice esta fresco | `sparkforge_code_status` / `_sync` |
-| o grafo no formato de extracao do Graphify | `sparkforge_code_export` |
+| onde esta X definido | `sparkforge_aws_code_search` |
+| quem chama X, e o que quebra se eu mudar | `sparkforge_aws_code_symbol` |
+| **como** X chega em Y | `sparkforge_aws_code_path` |
+| como este codigo esta organizado | `sparkforge_aws_code_shape` |
+| o pacote de contexto dentro de um teto de bytes | `sparkforge_aws_code_context` |
+| o trecho de fonte, com rotulo de conteudo nao confiavel | `sparkforge_aws_code_read` |
+| o indice esta fresco | `sparkforge_aws_code_status` / `_sync` |
+| o grafo no formato de extracao do Graphify | `sparkforge_aws_code_export` |
 
 **O denominador decide o sinal, e ele precisa sair junto.** Contra ler os arquivos o
 índice economiza muito; contra um `grep` pelo nome, bem menos; contra um `grep`
@@ -195,7 +195,7 @@ validado por `python scripts/check_token_efficient_bench.py`.
 O caminho padrão é determinístico/offline: planner, Code Intelligence incremental,
 workspace graph, query expansion e compiler. Specialist/reviewer/debate exigem
 triggers; relações e claims ausentes ficam `unresolved`. Archive:
-`.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
+`.claude/sdd/archive/SPARKFORGE_AWS_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
 
 ### Plane
 

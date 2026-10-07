@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1291** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening após `sparkforge_aws/agentic/handoff.py` e `tests/test_agentic_handoff.py` entrarem no corpus).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1293** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening após `sparkforge_aws/agentic/handoff.py` e `tests/test_agentic_handoff.py` entrarem no corpus).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -212,12 +212,12 @@ lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` e
 |---|---|---|---|---|---|
 | `iter_source_files` | 2 | 470 | 897126 | 14540 | 106 |
 | `looks_like_secret` | 2 | 470 | 198815 | 2790 | 89 |
-| `project_items` | 1 | 197 | 407442 | 2248 | 56 |
-| `tool_class` | 1 | 191 | 432184 | 3609 | 77 |
-| `authorize` | 3 | 611 | 567359 | 4479 | 123 |
+| `project_items` | 1 | 197 | 408362 | 2248 | 56 |
+| `tool_class` | 1 | 191 | 433112 | 3621 | 77 |
+| `authorize` | 3 | 611 | 569480 | 4479 | 123 |
 
-Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2502926**;
-a saída do `grep` pelo nome, **27666**; a saída do `grep` pela definição, **451**.
+Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2506895**;
+a saída do `grep` pelo nome, **27678**; a saída do `grep` pela definição, **451**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
 `scripts/check_vnext_claims.py` não auditava: quatro dígitos entre 1900 e 2099 estão na lista de
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1290.8 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1292.9 vezes.** Contra a saída de um `grep`
 pelo nome, **14.3** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.3** vezes o que aquele `grep` custaria.
 
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
 `buscar(banco, "source")` devolve **50** símbolos em **11567** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **388789** bytes (remedido em 2026-10-06 após o `_trust` entrar em
+  no mesmo corpus, tem **388853** bytes (remedido em 2026-10-06 após o `_trust` entrar em
   `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
 (**16122** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
@@ -303,10 +303,10 @@ que omite o símbolo necessário é falha, não sucesso.
 | Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as tools de coleta são de mundo aberto, e toda tool de mundo aberto também escreve localmente | `tests/test_adapters_tools.py` |
 | Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma usa objeto nu | `tests/test_adapters_tools.py` |
 | Entrada fechada a propriedade desconhecida | NÃO EXISTE | Nenhum dos schemas de entrada declara `additionalProperties: false`, que é uma constraint explícita da tool principal da SPEC. Argumento não previsto entra sem erro | — |
-| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **143** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
+| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **143** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_aws_judge` devolve findings e `sparkforge_aws_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
 | Projeção de campo na resposta | NÃO EXISTE | Medido no catálogo carregado, e não por leitura: `fields` aparece em **zero** das tools. A fase J1 entregou `detail_level`, que é a linha **acima** desta e é outra coisa — ele escolhe entre três formas fixas de item, e projeção é pedir os campos que interessam. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
-| As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |
+| As tools `sparkforge_aws_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |
 | Subcomando `code` no CLI | EXISTE, com teste | `sparkforge-aws code index`, `sparkforge-aws code search <termo>` e `sparkforge-aws code status`, em `sparkforge_aws/adapters/cli.py`. É a única entrada do CLI cujo payload não vem de `_core` — só o tipo de erro vem —, e a razão está escrita ao lado dela: o índice não devolve fato nem achado, e atravessar o núcleo obrigaria a inventar procedência para uma linha que só tem caminho e número de linha. O banco default é `.sparkforge_aws/local/codeintel/graph.sqlite3`, já ignorado pelo git | `tests/test_codeintel_search.py` |
 | Comandos `code init`, `code doctor`, `code purge` | NÃO EXISTE | Nenhum dos três que a SPEC nomeia. `init` e `purge` supõem ciclo de vida que este índice não tem — ele é descartável e se reconstrói numa passada; `doctor` supõe manifesto de tool, que é a linha abaixo | — |
 | Hash canônico do catálogo de tools | NÃO EXISTE | Nenhum `tool-manifest.sha256`, e nenhum `doctor` que compare runtime com manifesto | — |
@@ -353,9 +353,9 @@ de cada item.
 
 | `detail_level` | Envelope | Procedência dentro dos itens |
 |---|---|---|
-| `full` (default) | **4583 bytes** | **1144 bytes**, ou **25,0%** do envelope |
-| `normal` | **3649 bytes** | nenhuma; declarada uma vez em `provenance` |
-| `summary` | **1664 bytes** | nenhuma; declarada uma vez em `provenance` |
+| `full` (default) | **4601 bytes** | **1144 bytes**, ou **24,9%** do envelope |
+| `normal` | **3667 bytes** | nenhuma; declarada uma vez em `provenance` |
+| `summary` | **1682 bytes** | nenhuma; declarada uma vez em `provenance` |
 
 `normal` encolhe o envelope tirando dos itens o que se **repete** — a procedência, referenciada
 por `provenance_ref`, e o `schema_version`. Os dois saem pelo mesmo caminho e pela mesma razão;
@@ -729,7 +729,7 @@ E a fase carrega o que mede se ela deu certo, que também não existe:
 
 Praticamente intocada, e boa parte disso é decisão, não pendência.
 
-- **As tools `sparkforge_code_*`** — nenhuma das onze, e a ausência está registrada com razão:
+- **As tools `sparkforge_aws_code_*`** — nenhuma das onze, e a ausência está registrada com razão:
   toda tool do catálogo é sem estado, e estas dependeriam de um índice que envelhece sem avisar.
   Fechar a linha de staleness é pré-condição desta.
 - **Projeção de campo na resposta** — ausente, medido no catálogo carregado.

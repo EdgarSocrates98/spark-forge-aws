@@ -240,7 +240,7 @@ Quando a sessão cai no meio de um verbo, sobra um `started` sem `finished`. O
 `resume` lê esse evento e preenche `in_flight` sozinho:
 
 ```json
-"in_flight": "sparkforge_arbitrate (cli, seq 5) sem finished",
+"in_flight": "sparkforge_aws_arbitrate (cli, seq 5) sem finished",
 "in_flight_source": "journal"
 ```
 
@@ -350,6 +350,6 @@ relatório.
 - Referência: [`case`](../referencia/cli/case.md), [`next-step`](../referencia/cli/next-step.md),
   [`handoff`](../referencia/cli/handoff.md), [`resume`](../referencia/cli/resume.md),
   [`playbook`](../referencia/cli/playbook.md); tools
-  [`sparkforge_case_open`](../referencia/tools/sparkforge_case_open.md),
-  [`sparkforge_case_update`](../referencia/tools/sparkforge_case_update.md),
-  [`sparkforge_resume`](../referencia/tools/sparkforge_resume.md).
+  [`sparkforge_aws_case_open`](../referencia/tools/sparkforge_aws_case_open.md),
+  [`sparkforge_aws_case_update`](../referencia/tools/sparkforge_aws_case_update.md),
+  [`sparkforge_aws_resume`](../referencia/tools/sparkforge_aws_resume.md).

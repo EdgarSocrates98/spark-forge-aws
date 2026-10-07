@@ -3,7 +3,7 @@
 `plan_digest` monta o bloco que o `judge` publica: ordem, restricoes de
 sequenciamento, contradicoes, objecoes e lacunas, mais o lastro por achado.
 
-Ele NAO cria entidade e NAO toca o disco. `sparkforge_judge` e `READ_ONLY` e
+Ele NAO cria entidade e NAO toca o disco. `sparkforge_aws_judge` e `READ_ONLY` e
 continua sendo -- faze-lo gravar mudaria a cadeia de autorizacao de uma tool que
 muitas skills chamam, e faria um verbo de leitura escrever no repositorio do
 operador. O registro auditavel (blackboard, ADR, decisoes, `DebatePlan`

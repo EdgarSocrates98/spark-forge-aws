@@ -28,7 +28,7 @@ sparkforge-aws knowledge drift --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_knowledge_drift`](../tools/sparkforge_knowledge_drift.md)
+[`sparkforge_aws_knowledge_drift`](../tools/sparkforge_aws_knowledge_drift.md)
 
 ## `sparkforge-aws knowledge path`
 
@@ -48,4 +48,4 @@ sparkforge-aws knowledge path --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_knowledge_path`](../tools/sparkforge_knowledge_path.md)
+[`sparkforge_aws_knowledge_path`](../tools/sparkforge_aws_knowledge_path.md)

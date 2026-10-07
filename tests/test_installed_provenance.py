@@ -1,7 +1,7 @@
 # tests/test_installed_provenance.py
 """Afirma que `sparkforge-aws` veio do pacote instalado, nao do repositorio.
 
-Opt-in por `SPARKFORGE_VERIFY_INSTALLED=1`. Sem isto o gate de paridade e
+Opt-in por `SPARKFORGE_AWS_VERIFY_INSTALLED=1`. Sem isto o gate de paridade e
 teatro: se o repositorio estiver no sys.path, `import sparkforge_aws` pega o
 codigo-fonte, os goldens batem com eles mesmos, e o teste passa sem provar que
 o ARTEFATO funciona.
@@ -19,7 +19,7 @@ import sparkforge_aws
 ROOT = Path(__file__).resolve().parents[1]
 
 pytestmark = pytest.mark.skipif(
-    os.environ.get("SPARKFORGE_VERIFY_INSTALLED") != "1",
+    os.environ.get("SPARKFORGE_AWS_VERIFY_INSTALLED") != "1",
     reason="so roda sob o gate do artefato (scripts/verify_wheel.py)",
 )
 
@@ -30,7 +30,7 @@ def _package_root() -> Path:
 
 
 class TestProvenance:
-    def test_sparkforge_is_not_imported_from_the_repository(self):
+    def test_sparkforge_aws_is_not_imported_from_the_repository(self):
         """Falha so quando o pacote E o diretorio-fonte do repositorio, nao
         quando o pacote so esta *hospedado* dentro dele.
 
@@ -51,7 +51,7 @@ class TestProvenance:
             f"pacote foi instalado a partir do wheel (nao `pip install -e .`)."
         )
 
-    def test_sparkforge_lives_in_site_packages(self):
+    def test_sparkforge_aws_lives_in_site_packages(self):
         package = _package_root()
         assert "site-packages" in package.parts, (
             f"sparkforge-aws veio de {package}, fora de site-packages. Isso indica "

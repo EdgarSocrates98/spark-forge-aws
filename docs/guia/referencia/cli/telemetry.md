@@ -29,4 +29,4 @@ sparkforge-aws telemetry export --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_telemetry_export`](../tools/sparkforge_telemetry_export.md)
+[`sparkforge_aws_telemetry_export`](../tools/sparkforge_aws_telemetry_export.md)

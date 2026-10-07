@@ -141,7 +141,7 @@ def test_spans_todos_presentes_conferem(tmp_path):
 def test_spans_depois_do_emit_nao_entram_na_comparacao(tmp_path):
     montar_case(tmp_path)
     doc = emitir(tmp_path, run_id="run_1", spans=SPANS)
-    depois = [*SPANS, {"span_id": "span_emit", "name": "sparkforge_receipt_emit"}]
+    depois = [*SPANS, {"span_id": "span_emit", "name": "sparkforge_aws_receipt_emit"}]
     tools = conferir(doc, tmp_path, spans_of_run=depois)["checks"]["tools"]
     assert tools["state"] == "match"
     assert tools["spans_after_emit"] == 1

@@ -464,13 +464,13 @@ class TestOsDoisVerbosNosTresAdaptadores:
             "report_path": _report(tmp_path),
             "findings_path": _findings(tmp_path),
         }
-        assinado = call_tool("sparkforge_report_sign", args)
+        assinado = call_tool("sparkforge_aws_report_sign", args)
         assert SIGNATURE_RE.match(assinado["signature"])
-        assert call_tool("sparkforge_report_verify", args)["valid"] is True
+        assert call_tool("sparkforge_aws_report_verify", args)["valid"] is True
 
     def test_a_tool_mcp_devolve_erro_estruturado_em_vez_de_excecao(self, tmp_path):
         resultado = call_tool(
-            "sparkforge_report_verify",
+            "sparkforge_aws_report_verify",
             {"report_path": str(tmp_path / "x.md"), "findings_path": "y.json"},
         )
         assert resultado["exit_code"] == 2
@@ -483,7 +483,7 @@ class TestOsDoisVerbosNosTresAdaptadores:
             _report(tmp_path, name="a.md"), _findings(tmp_path)
         )["signature"]
         pela_tool = call_tool(
-            "sparkforge_report_sign",
+            "sparkforge_aws_report_sign",
             {
                 "report_path": _report(tmp_path, name="b.md"),
                 "findings_path": _findings(tmp_path),

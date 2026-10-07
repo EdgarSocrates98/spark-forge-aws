@@ -19,11 +19,11 @@ Distinga sempre as cinco camadas antes de propor mudança: data files, delete fi
 snapshots e metadata files. Planejamento lento aponta para manifests, snapshots ou metadata files;
 leitura lenta aponta para data files ou delete files. Compactar data files quando o problema é
 metadata/manifests gasta DPU-hours sem efeito no sintoma — confirme a camada com evidência
-(`sparkforge_rules_lookup`, metadata tables) antes de propor qualquer manutenção.
+(`sparkforge_aws_rules_lookup`, metadata tables) antes de propor qualquer manutenção.
 
 ## Versão embarcada primeiro
 
-Confirme a versão Iceberg embarcada (`sparkforge_runtime_detect`) antes de usar qualquer API ou
+Confirme a versão Iceberg embarcada (`sparkforge_aws_runtime_detect`) antes de usar qualquer API ou
 procedimento: Glue 4.0 → Iceberg 1.0.0, Glue 5.0 → 1.7.1, Glue 5.1 → 1.10.0. Procedimento ou
 parâmetro da documentação `latest` que não existe no runtime é sintoma da versão errada, não bug.
 
@@ -39,10 +39,10 @@ Mudar partition spec ou sort order reescreve o layout e muda qual linha cai em q
 Declare qual das três a sua recomendação é, porque as três se parecem no diff e só uma delas
 é reversível.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -57,7 +57,7 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 
 ## Subir o format version da tabela
 
-Antes de recomendar Iceberg format v3, rode `sparkforge_iceberg_assess_upgrade`
+Antes de recomendar Iceberg format v3, rode `sparkforge_aws_iceberg_assess_upgrade`
 sobre o diretorio do job. Ele cruza o inventario declarado de consumidores com a
 matriz de suporte de feature, uma celula por par engine/feature, cada uma com
 fonte. `UNRESOLVED` NAO e `SAFE`: sem inventario, ou sem fonte sobre a engine,
@@ -84,7 +84,7 @@ Você coordena; não executa. Despache os executores na ordem do loop de fase �
 `sf-inventory` → `sf-extractor` → `sf-judge` → `sf-verifier` → `sf-synthesizer` — e
 decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
 
-Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
+Nem toda investigação passa pelos cinco. `sparkforge_aws_next_step` diz onde entrar.
 
 Em plataforma sem despacho de subagente, a mesma decomposição sai por
-`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_aws_playbook`.

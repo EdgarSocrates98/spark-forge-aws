@@ -30,7 +30,7 @@ sparkforge-aws sdd check --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_sdd_check`](../tools/sparkforge_sdd_check.md), [`sparkforge_sdd_status`](../tools/sparkforge_sdd_status.md)
+[`sparkforge_aws_sdd_check`](../tools/sparkforge_aws_sdd_check.md), [`sparkforge_aws_sdd_status`](../tools/sparkforge_aws_sdd_status.md)
 
 ## `sparkforge-aws sdd stamp`
 
@@ -50,7 +50,7 @@ sparkforge-aws sdd stamp --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_sdd_stamp`](../tools/sparkforge_sdd_stamp.md)
+[`sparkforge_aws_sdd_stamp`](../tools/sparkforge_aws_sdd_stamp.md)
 
 ## `sparkforge-aws sdd status`
 
@@ -69,4 +69,4 @@ sparkforge-aws sdd status --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_sdd_check`](../tools/sparkforge_sdd_check.md), [`sparkforge_sdd_status`](../tools/sparkforge_sdd_status.md)
+[`sparkforge_aws_sdd_check`](../tools/sparkforge_aws_sdd_check.md), [`sparkforge_aws_sdd_status`](../tools/sparkforge_aws_sdd_status.md)

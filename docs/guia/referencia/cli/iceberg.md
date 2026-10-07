@@ -28,4 +28,4 @@ sparkforge-aws iceberg assess-upgrade --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_iceberg_assess_upgrade`](../tools/sparkforge_iceberg_assess_upgrade.md)
+[`sparkforge_aws_iceberg_assess_upgrade`](../tools/sparkforge_aws_iceberg_assess_upgrade.md)

@@ -30,7 +30,7 @@ SAIRAM_SKILLS = (
     "design-neptune-graph",
     "token-efficient-agent",
 )
-SDD_TOOLS = ("sparkforge_sdd_check", "sparkforge_sdd_status", "sparkforge_sdd_stamp")
+SDD_TOOLS = ("sparkforge_aws_sdd_check", "sparkforge_aws_sdd_status", "sparkforge_aws_sdd_stamp")
 
 SECAO = "## Critério de domínio: artefato antes de nome"
 VIVOS = (

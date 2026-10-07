@@ -38,7 +38,7 @@ def test_orchestration_preserves_unresolved_controls() -> None:
 
 def test_orchestration_surfaces_share_contract() -> None:
     cli = _core.analyze_orchestration(FIXTURE)
-    mcp = call_tool("sparkforge_analyze_orchestration", {"path": str(FIXTURE)})
+    mcp = call_tool("sparkforge_aws_analyze_orchestration", {"path": str(FIXTURE)})
 
     assert cli["orchestration"]["fingerprint"] == mcp["orchestration"]["fingerprint"]
 

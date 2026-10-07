@@ -24,21 +24,21 @@ Revisao de codigo PySpark - PR, biblioteca ou job - correlacionando fonte, plano
 **Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
 Quando o caso cruza engenharia analítica e lakehouse, use
-`sparkforge_analyze_dbt_artifacts`, `sparkforge_analyze_duckdb_microscope` e
-`sparkforge_analyze_lakehouse_catalog` para ler manifests, consultas e bindings
+`sparkforge_aws_analyze_dbt_artifacts`, `sparkforge_aws_analyze_duckdb_microscope` e
+`sparkforge_aws_analyze_lakehouse_catalog` para ler manifests, consultas e bindings
 declarados. Esses analyzers são offline e não comprovam execução nem credenciais.
 
 #### Três leituras do mesmo código
 
-**Fonte** — `sparkforge_analyze_pyspark`. AST estático, nunca importa nem executa o código
+**Fonte** — `sparkforge_aws_analyze_pyspark`. AST estático, nunca importa nem executa o código
 analisado. Achado aqui é `structural`: o padrão costuma custar caro, mas o Catalyst pode
 ter descartado aquele ramo.
 
-**Plano** — `sparkforge_analyze_plan`. O que sobreviveu à otimização. Achado aqui é
+**Plano** — `sparkforge_aws_analyze_plan`. O que sobreviveu à otimização. Achado aqui é
 `confirmed`: o nó está no caminho que vai executar. Quando as duas leituras concordam, a
 segunda é a evidência forte.
 
-**Estrutura** — `sparkforge_analyze_call_graph`. Onde o trabalho é disparado. Uma action
+**Estrutura** — `sparkforge_aws_analyze_call_graph`. Onde o trabalho é disparado. Uma action
 isolada é barata; a mesma action dentro de um ciclo de chamadas é ilimitada — e recursão
 mútua é a forma que passa despercebida em revisão, porque nenhuma das funções envolvidas
 parece recursiva sozinha.
@@ -59,7 +59,7 @@ em vez de fingir que olhou. Reporte esses pontos — "312 nós resolvidos, 7 nã
 
 #### `SF-GRAPH` é sua, e o número que decidiu isso
 
-`sparkforge_analyze_graph` lê o mesmo `.py` uma quarta vez e emite `graph.*`, que
+`sparkforge_aws_analyze_graph` lê o mesmo `.py` uma quarta vez e emite `graph.*`, que
 alimenta `SF-GRAPH`. São quatro regras: `connectedComponents` sem diretório de
 checkpoint (P0 — o algoritmo levanta `IOException` na primeira iteração, não degrada),
 GraphFrames importado num Spark sem artefato publicado, arestas não persistidas e
@@ -124,8 +124,8 @@ nada. O que decide é a **pergunta**, e o teste é o mesmo dos dois lados:
 
 O que torna a divisão verificável, e não jurisprudência: os dois lados saem de **extratores
 diferentes sobre a mesma AST**, com namespaces de fact disjuntos.
-`sparkforge_analyze_pyspark` emite `pyspark.*` e alimenta `SF-PY`, `SF-PLAN` e `SF-CG`;
-`sparkforge_analyze_data_quality` emite `dq.*` e alimenta `SF-DQ`. Nenhuma regra de uma área
+`sparkforge_aws_analyze_pyspark` emite `pyspark.*` e alimenta `SF-PY`, `SF-PLAN` e `SF-CG`;
+`sparkforge_aws_analyze_data_quality` emite `dq.*` e alimenta `SF-DQ`. Nenhuma regra de uma área
 lê fact da outra, e nenhuma se cala quando a outra fala.
 
 **As duas áreas podem falar da mesma linha dizendo coisas diferentes, e isso não é
@@ -151,10 +151,10 @@ e com ela o que `dropDuplicates`, `first`, `collect_list` e `monotonically_incre
 devolvem — **sem mudar contagem nenhuma**. Reescrita que preserva a contagem e troca a linha
 passa nos quatro eixos, e é por isso que o limite deles entra no seu texto.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -182,29 +182,29 @@ Antes de ler arquivo, consulte o índice local. Ele responde onde um símbolo
 está, quem o chama e o que quebra se ele mudar, sem que ninguém leia o arquivo
 inteiro — que é o que torna a revisão estrutural barata.
 
-- `sparkforge_code_status` — o índice está fresco? Nunca confie em grafo antigo
+- `sparkforge_aws_code_status` — o índice está fresco? Nunca confie em grafo antigo
   em silêncio; a resposta diz o que mudou desde a última sincronização.
-- `sparkforge_code_sync` — sincroniza o índice quando `status` acusar defasagem.
-- `sparkforge_code_search` — acha símbolo por nome ou parte dele.
-- `sparkforge_code_symbol` — quem chama, o que chama, e o impacto de mudar.
-- `sparkforge_code_export` — o grafo no formato de **extração** que a fonte do Graphify
+- `sparkforge_aws_code_sync` — sincroniza o índice quando `status` acusar defasagem.
+- `sparkforge_aws_code_search` — acha símbolo por nome ou parte dele.
+- `sparkforge_aws_code_symbol` — quem chama, o que chama, e o impacto de mudar.
+- `sparkforge_aws_code_export` — o grafo no formato de **extração** que a fonte do Graphify
   publica. O formato do `graph.json` **final** dele não é publicado, então não há
   importação — e o artefato diz isso em `sparkforge_aws.not_implemented`. Nada aqui
   depende de `graphifyy`: a compatibilidade é de formato, nunca de código.
-- `sparkforge_code_shape` — a **forma** do grafo: comunidades e nós de maior grau.
+- `sparkforge_aws_code_shape` — a **forma** do grafo: comunidades e nós de maior grau.
   Não é julgamento. Comunidade não é módulo nem sugestão de refatoração, e grau alto
   não é defeito — um símbolo chamado de trinta lugares pode ser um utilitário bem
   fatorado. `communities.algorithm` vem no corpo porque a partição é **reproduzível
   e não única**: propagação de rótulo não tem resposta canônica.
-- `sparkforge_code_path` — **como** um símbolo chega em outro, não só se chega.
+- `sparkforge_aws_code_path` — **como** um símbolo chega em outro, não só se chega.
   Quando não há caminho, `reason` separa três casos que não querem dizer o mesmo:
   `node_not_indexed`, `depth_exhausted` (recusa por teto — subir `depth` pode mudar
   a resposta) e `no_resolved_path`. Leia `graph.resolution_rate` antes de concluir
   ausência: num índice que resolve 36% das chamadas, "não há caminho" pesa pouco.
-- `sparkforge_code_context` — monta o pacote de contexto com teto em bytes
+- `sparkforge_aws_code_context` — monta o pacote de contexto com teto em bytes
   declarado. Ele **recusa** a seção que não sabe preencher, com a razão, em vez
   de devolver lista vazia.
-- `sparkforge_code_read` — trecho de fonte, com rótulo de conteúdo não confiável
+- `sparkforge_aws_code_read` — trecho de fonte, com rótulo de conteúdo não confiável
   e teto duro de tamanho.
 
 **Medido, e vale saber antes de escolher:** para "onde está X definido", um
@@ -229,4 +229,4 @@ Uma revisão é reversível exatamente porque ninguém a aplicou ainda.
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
 
 Em plataforma sem despacho de subagente: `sparkforge-aws playbook pyspark-code-reviewer` (CLI) ou
-a tool MCP `sparkforge_playbook`.
+a tool MCP `sparkforge_aws_playbook`.

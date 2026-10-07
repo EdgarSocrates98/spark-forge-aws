@@ -82,7 +82,10 @@ UNRESOLVED_REASONS = frozenset(
 )
 
 _ANSWER = re.compile(r"^\s*ANSWER:\s*(?P<valor>.*?)\s*$")
-_MCP = re.compile(r"^mcp__.+__sparkforge_(?P<verbo>[a-z0-9_]+)$")
+# `sparkforge_aws|sparkforge` cobre transcripts gravados antes do rename
+# `sparkforge_*` -> `sparkforge_aws_*`: um historico antigo continua
+# resolvendo o mesmo verbo.
+_MCP = re.compile(r"^mcp__.+__(?:sparkforge_aws|sparkforge)_(?P<verbo>[a-z0-9_]+)$")
 _SEPARADORES = re.compile(r"&&|\|\||;|\|")
 _PREFIXOS = (("rtk",), ("uv", "run"), ("python", "-m"))
 _PALAVRA = re.compile(r"^[a-z][a-z-]*$")

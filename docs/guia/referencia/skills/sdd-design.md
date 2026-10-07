@@ -7,7 +7,7 @@ Use quando o define.md da feature está ready e falta decidir como construir —
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-design/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws code search', 'sparkforge-aws code symbol']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws code search', 'sparkforge-aws code symbol']} |
 
 ## Procedimento (texto integral)
 
@@ -97,14 +97,14 @@ pergunta "está certo?" antes de seguir. Depois
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| achar o arquivo | `sparkforge-aws code search <nome>` | `sparkforge_code_search` |
-| quem chama, o que quebra | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
-| como X chega em Y | `sparkforge-aws code path <origem> <destino>` | `sparkforge_code_path` |
-| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
-| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/design.md` | `sparkforge_sdd_stamp` |
-| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| diff do job (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
+| achar o arquivo | `sparkforge-aws code search <nome>` | `sparkforge_aws_code_search` |
+| quem chama, o que quebra | `sparkforge-aws code symbol <node_id>` | `sparkforge_aws_code_symbol` |
+| como X chega em Y | `sparkforge-aws code path <origem> <destino>` | `sparkforge_aws_code_path` |
+| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_aws_rules_lookup` |
+| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_aws_knowledge_path` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/design.md` | `sparkforge_aws_sdd_stamp` |
+| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| diff do job (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_aws_change_plan` |
 
 Recusas desta fase: `phase_out_of_order`, `manifest_path_unknown`,
 `rollback_missing`, `acceptance_uncovered`, `upstream_stale`.

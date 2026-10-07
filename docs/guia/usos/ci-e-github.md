@@ -253,7 +253,7 @@ spans para OTLP/JSON, que um Collector do OpenTelemetry lê.
 
 ```bash
 # o processo que chama as tools grava com um run_id conhecido
-export SPARKFORGE_RUN_ID=run_sessao_42
+export SPARKFORGE_AWS_RUN_ID=run_sessao_42
 # ... use as tools (servidor MCP ou qualquer chamada a call_tool) ...
 
 # depois, no mesmo diretório
@@ -267,7 +267,7 @@ Se o run não tem spans, o verbo avisa e sai com código 2. Saída real num
 diretório vazio:
 
 ```text
-run 'run_exemplo' sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo que chamou as tools e rode, no diretorio onde ele gravou .sparkforge_aws/traces.db: sparkforge-aws telemetry export --run-id <run_id>
+run 'run_exemplo' sem spans no ledger. Confira o SPARKFORGE_AWS_RUN_ID do processo que chamou as tools e rode, no diretorio onde ele gravou .sparkforge_aws/traces.db: sparkforge-aws telemetry export --run-id <run_id>
 ```
 
 Duas opções mudam o que sai:
@@ -387,7 +387,7 @@ confere as fontes, atualiza o lock e abre um PR para uma pessoa revisar.
 - **Versionar `.sparkforge_aws/report/`.** São arquivos gerados; ponha no
   `.gitignore`.
 - **Rodar `telemetry export` em outro diretório.** Rode onde o processo gravou
-  `.sparkforge_aws/traces.db`, com o mesmo `SPARKFORGE_RUN_ID`.
+  `.sparkforge_aws/traces.db`, com o mesmo `SPARKFORGE_AWS_RUN_ID`.
 
 ## Para ir além
 
@@ -398,9 +398,9 @@ confere as fontes, atualiza o lock e abre um PR para uma pessoa revisar.
   [`telemetry`](../referencia/cli/telemetry.md), [`knowledge`](../referencia/cli/knowledge.md).
 - Tools MCP equivalentes (elas devolvem o conteúdo, mas **não gravam**; gravar é
   da CLI):
-  [`sparkforge_report_github`](../referencia/tools/sparkforge_report_github.md),
-  [`sparkforge_telemetry_export`](../referencia/tools/sparkforge_telemetry_export.md),
-  [`sparkforge_knowledge_drift`](../referencia/tools/sparkforge_knowledge_drift.md).
+  [`sparkforge_aws_report_github`](../referencia/tools/sparkforge_aws_report_github.md),
+  [`sparkforge_aws_telemetry_export`](../referencia/tools/sparkforge_aws_telemetry_export.md),
+  [`sparkforge_aws_knowledge_drift`](../referencia/tools/sparkforge_aws_knowledge_drift.md).
 - Skill [`aws-observability`](../referencia/skills/aws-observability.md): se o
   seu backend de telemetria é o CloudWatch ou o X-Ray.
 

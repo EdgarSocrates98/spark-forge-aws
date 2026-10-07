@@ -260,7 +260,7 @@ class TestJudge:
         cli = json.loads(output)["plan"]
 
         mcp = call_tool(
-            "sparkforge_judge", {"facts_path": str(facts_path), "glue": "5.0"}
+            "sparkforge_aws_judge", {"facts_path": str(facts_path), "glue": "5.0"}
         )["plan"]
         assert cli == mcp
         assert cli["persisted"] is False
@@ -613,13 +613,13 @@ class TestCaseOpenNaoApagaRigorEmSilencio:
 
         self._estrito_com_override(repo, capsys)
         recusa = call_tool(
-            "sparkforge_case_open",
+            "sparkforge_aws_case_open",
             {"repo": str(repo), "case_id": "c1", "now": self.NOW},
         )
         assert recusa["exit_code"] == 2
         assert "reopen" in recusa["error"]
         reaberto = call_tool(
-            "sparkforge_case_open",
+            "sparkforge_aws_case_open",
             {"repo": str(repo), "case_id": "c1", "now": self.NOW, "reopen": True},
         )
         assert reaberto["strict_gates"] is True
@@ -1028,7 +1028,7 @@ class TestAnalyzePlan:
         plan_path.write_text(PLAN_TEXT, encoding="utf-8")
         _, output = run(["analyze", "plan", "--path", str(plan_path), "--limit", "50"], capsys)
         from_cli = json.loads(output)
-        from_mcp = call_tool("sparkforge_analyze_plan", {"path": str(plan_path)})
+        from_mcp = call_tool("sparkforge_aws_analyze_plan", {"path": str(plan_path)})
         assert from_cli["items"] == from_mcp["items"]
 
 
@@ -2029,7 +2029,7 @@ class TestCliMcpEquivalence:
         _, output = run(["analyze", "terraform", "--path", str(tf_path)], capsys)
         cli_payload = json.loads(output)
 
-        mcp_payload = call_tool("sparkforge_analyze_terraform", {"path": str(tf_path)})
+        mcp_payload = call_tool("sparkforge_aws_analyze_terraform", {"path": str(tf_path)})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp_payload.pop("_trust", None)
@@ -2042,7 +2042,7 @@ class TestCliMcpEquivalence:
         _, output = run(["analyze", "athena-workgroup", "--path", str(wg_path)], capsys)
         cli_payload = json.loads(output)
 
-        mcp_payload = call_tool("sparkforge_analyze_athena_workgroup", {"path": str(wg_path)})
+        mcp_payload = call_tool("sparkforge_aws_analyze_athena_workgroup", {"path": str(wg_path)})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp_payload.pop("_trust", None)
@@ -2055,7 +2055,7 @@ class TestCliMcpEquivalence:
         _, output = run(["analyze", "sql", "--path", str(sql_path)], capsys)
         cli_payload = json.loads(output)
 
-        mcp_payload = call_tool("sparkforge_analyze_sql", {"path": str(sql_path)})
+        mcp_payload = call_tool("sparkforge_aws_analyze_sql", {"path": str(sql_path)})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp_payload.pop("_trust", None)
@@ -2065,7 +2065,7 @@ class TestCliMcpEquivalence:
         _, output = run(["rules", "lookup", "--id", "SF-ENV-001"], capsys)
         cli_payload = json.loads(output)
 
-        mcp_payload = call_tool("sparkforge_rules_lookup", {"id": ["SF-ENV-001"]})
+        mcp_payload = call_tool("sparkforge_aws_rules_lookup", {"id": ["SF-ENV-001"]})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp_payload.pop("_trust", None)
@@ -2081,7 +2081,7 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool(
-            "sparkforge_playbook", {"coordinator": "glue-infra-reviewer", "repo": str(repo)}
+            "sparkforge_aws_playbook", {"coordinator": "glue-infra-reviewer", "repo": str(repo)}
         )
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
@@ -2094,7 +2094,7 @@ class TestCliMcpEquivalence:
         cli_message = capsys.readouterr().err.strip()
 
         mcp_payload = call_tool(
-            "sparkforge_playbook", {"coordinator": "nao-existe", "repo": str(repo)}
+            "sparkforge_aws_playbook", {"coordinator": "nao-existe", "repo": str(repo)}
         )
         assert "error" in mcp_payload
         assert cli_message == mcp_payload["error"]
@@ -2104,7 +2104,7 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool(
-            "sparkforge_knowledge_path", {"file": "glue/runtime-matrix.md"}
+            "sparkforge_aws_knowledge_path", {"file": "glue/runtime-matrix.md"}
         )
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
@@ -2119,7 +2119,7 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool(
-            "sparkforge_release_describe", {"platform": "emr_eks", "release": "emr-7.7.0"}
+            "sparkforge_aws_release_describe", {"platform": "emr_eks", "release": "emr-7.7.0"}
         )
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
@@ -2136,7 +2136,7 @@ class TestCliMcpEquivalence:
         cli_payload = json.loads(output)
 
         mcp_payload = call_tool(
-            "sparkforge_controlm_describe", {"version": "9.0.22.010"}
+            "sparkforge_aws_controlm_describe", {"version": "9.0.22.010"}
         )
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
@@ -2175,7 +2175,7 @@ class TestCliMcpEquivalence:
         cli_message = capsys.readouterr().err.strip()
 
         mcp_payload = call_tool(
-            "sparkforge_controlm_describe", {"version": "9.0.22.125"}
+            "sparkforge_aws_controlm_describe", {"version": "9.0.22.125"}
         )
         assert "error" in mcp_payload
         assert cli_message == mcp_payload["error"].strip()
@@ -2199,7 +2199,7 @@ class TestCliMcpEquivalence:
         )
         cli_payload = json.loads(output)
 
-        mcp_payload = call_tool("sparkforge_release_diff", argumentos)
+        mcp_payload = call_tool("sparkforge_aws_release_diff", argumentos)
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp_payload.pop("_trust", None)
@@ -2221,7 +2221,7 @@ class TestCliMcpEquivalence:
         cli_message = capsys.readouterr().err.strip()
 
         mcp_payload = call_tool(
-            "sparkforge_release_describe", {"platform": "glue", "release": "99.9"}
+            "sparkforge_aws_release_describe", {"platform": "glue", "release": "99.9"}
         )
         assert "error" in mcp_payload
         assert cli_message == mcp_payload["error"].strip()
@@ -2252,7 +2252,7 @@ class TestCliMcpEquivalence:
         _, output = run(["collect", "verify", "--repo", str(repo)], capsys)
         cli_payload = json.loads(output)
 
-        mcp_payload = call_tool("sparkforge_collect_verify", {"repo": str(repo)})
+        mcp_payload = call_tool("sparkforge_aws_collect_verify", {"repo": str(repo)})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp_payload.pop("_trust", None)
@@ -2296,7 +2296,7 @@ class TestEmrFlag:
 
     def test_cli_and_mcp_agree(self, capsys):
         _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
-        mcp = call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})
+        mcp = call_tool("sparkforge_aws_runtime_detect", {"emr": "emr-7.5.0"})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         mcp.pop("_trust", None)
@@ -2904,7 +2904,7 @@ class TestEconomyReportCommand:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
 
         # nenhum flush aqui -- o span segue so no buffer em memoria.
         code = main(["economy", "report", "--run-id", run_id])
@@ -2912,7 +2912,7 @@ class TestEconomyReportCommand:
         assert code == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["by_tool"] != {}
-        assert payload["by_tool"]["sparkforge_analyze_pyspark"]["calls"] == 1
+        assert payload["by_tool"]["sparkforge_aws_analyze_pyspark"]["calls"] == 1
         assert not any(
             item.get("reason") == "run_unresolved" for item in payload["unresolved"]
         )

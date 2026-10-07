@@ -10,13 +10,13 @@ mudou.
 ```bash
 sparkforge-aws receipt emit --repo . --facts facts/pyspark.json --facts facts/tf.json \
   --findings findings.json --report report.md --now 2026-09-12T00:00:00Z \
-  --run-id "$SPARKFORGE_RUN_ID" --host-transcript ~/.claude/projects/<p>/<sessao>.jsonl \
+  --run-id "$SPARKFORGE_AWS_RUN_ID" --host-transcript ~/.claude/projects/<p>/<sessao>.jsonl \
   --provider anthropic
 sparkforge-aws receipt verify --repo . --receipt .sparkforge_aws/receipts/<receipt_id>.json
 ```
 
-As tools MCP são `sparkforge_receipt_emit` (`LOCAL_MUTATION`) e
-`sparkforge_receipt_verify` (`READ_ONLY`). O executor `sf-synthesizer` emite o
+As tools MCP são `sparkforge_aws_receipt_emit` (`LOCAL_MUTATION`) e
+`sparkforge_aws_receipt_verify` (`READ_ONLY`). O executor `sf-synthesizer` emite o
 recibo no fim da sessão, depois de `report_sign` e `telemetry_export`.
 
 ## O que o recibo prova, e o que ele recusa

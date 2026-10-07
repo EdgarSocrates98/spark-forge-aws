@@ -82,7 +82,7 @@ PLATFORM_BY_MIRROR_ROOT = {
 # disco (instalacao editavel), e o gate deixaria de conferir o renderizador
 # commitado. `render.py` so importa a biblioteca padrao, e por isso carrega sozinho.
 _RENDER_PATH = ROOT / "sparkforge_aws" / "integrate" / "render.py"
-_RENDER_SPEC = importlib.util.spec_from_file_location("_sparkforge_render", _RENDER_PATH)
+_RENDER_SPEC = importlib.util.spec_from_file_location("_sparkforge_aws_render", _RENDER_PATH)
 if _RENDER_SPEC is None or _RENDER_SPEC.loader is None:
     raise ImportError(f"renderizador nao encontrado: {_RENDER_PATH}")
 _render = importlib.util.module_from_spec(_RENDER_SPEC)

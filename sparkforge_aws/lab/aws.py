@@ -44,7 +44,7 @@ def required_tags(
         raise LabContractError("run_id, owner and ttl are required for AWS tags")
     timestamp = created_at or datetime.now().astimezone().isoformat()
     return {
-        "sparkforge_lab": "true",
+        "sparkforge_aws_lab": "true",
         "run_id": run_id,
         "ttl": ttl,
         "owner": owner,

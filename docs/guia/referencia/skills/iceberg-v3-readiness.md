@@ -7,7 +7,7 @@ Use quando alguém pergunta \"posso subir essa tabela para Iceberg format v3?\",
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/iceberg-v3-readiness/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/storage/iceberg-performance.md', '../../knowledge/storage/iceberg-catalog.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws iceberg assess-upgrade']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/storage/iceberg-performance.md', '../../knowledge/storage/iceberg-catalog.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws iceberg assess-upgrade']} |
 
 ## Procedimento (texto integral)
 

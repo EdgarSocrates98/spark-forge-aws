@@ -2,7 +2,7 @@
 name: review-structured-streaming
 description: "Use quando houver código Structured Streaming, StreamingQueryProgress ou metadados de checkpoint e for preciso separar declaração estática, medida temporal, runtime e resultado funcional."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

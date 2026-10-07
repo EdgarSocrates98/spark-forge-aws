@@ -7,7 +7,7 @@ Use quando houver código Structured Streaming, StreamingQueryProgress ou metada
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-structured-streaming/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-reliability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze streaming', 'sparkforge-aws analyze pyspark', 'sparkforge-aws analyze streaming-integrations', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-reliability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze streaming', 'sparkforge-aws analyze pyspark', 'sparkforge-aws analyze streaming-integrations', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 

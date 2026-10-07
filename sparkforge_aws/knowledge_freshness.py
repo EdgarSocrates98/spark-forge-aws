@@ -51,7 +51,8 @@ AGING_BASIS = (
     "(refresh-knowledge.yml, cron segunda 06:00 UTC)"
 )
 LOCK_NAME = "sources.lock.json"
-LOCK_ENV = "SPARKFORGE_SOURCES_LOCK"
+LOCK_ENV = "SPARKFORGE_AWS_SOURCES_LOCK"
+LEGACY_LOCK_ENV = "SPARKFORGE_SOURCES_LOCK"
 ESTADOS = ("unresolved", "fixed", "stale", "unverified", "aging", "fresh")
 
 
@@ -88,14 +89,14 @@ def data(valor: Any) -> date | None:
 def carregar_lock(root: Path | None) -> tuple[dict[str, Any] | None, str | None]:
     """As entradas do lock, ou `None` com o motivo (`lock_ausente`/`lock_ilegivel`).
 
-    `SPARKFORGE_SOURCES_LOCK` aponta um lock avulso e vence `root`: e o que deixa
+    `SPARKFORGE_AWS_SOURCES_LOCK` aponta um lock avulso e vence `root`: e o que deixa
     um golden usar lock sintetico sem trocar a raiz de knowledge inteira -- trocar
-    `SPARKFORGE_KNOWLEDGE` quebraria toda outra leitura de knowledge no caminho
+    `SPARKFORGE_AWS_KNOWLEDGE` quebraria toda outra leitura de knowledge no caminho
     (a matriz do Control-M, por exemplo), medido no caso `fixtures/sarif/freshness`.
     """
-    avulso = os.environ.get(LOCK_ENV)
+    avulso = os.environ.get(LOCK_ENV) or os.environ.get(LEGACY_LOCK_ENV)
     if avulso:
-        # So LEITURA, e da mesma confianca de `SPARKFORGE_KNOWLEDGE`: variavel do
+        # So LEITURA, e da mesma confianca de `SPARKFORGE_AWS_KNOWLEDGE`: variavel do
         # operador. Mesmo assim o caminho e resolvido e so um `.json` existente e
         # aceito -- qualquer outra coisa vira `lock_ilegivel`, com nome, e nao uma
         # leitura de arquivo arbitrario.

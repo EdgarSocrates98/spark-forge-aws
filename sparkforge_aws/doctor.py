@@ -68,7 +68,7 @@ def avaliar_mcp(extra: bool, tools: int | None, erro: str | None) -> Checagem:
 def avaliar_catalogo(regras: int | None, erro: str | None) -> Checagem:
     if erro:
         return Checagem("catalogo", FAIL, f"catalogo invalido: {erro}",
-                        "confira SPARKFORGE_CATALOG ou reinstale o pacote")
+                        "confira SPARKFORGE_AWS_CATALOG ou reinstale o pacote")
     return Checagem("catalogo", OK, f"{regras} regras carregadas")
 
 
@@ -80,7 +80,7 @@ def avaliar_packs(saida: Mapping[str, Any] | None, erro: str | None) -> Checagem
     # `env` e o NOME da variavel, sempre presente; o que diz se ha pack
     # configurado e haver algum ativo ou recusado.
     if not saida.get("active") and not recusados:
-        return Checagem("packs", SKIP, "nenhum pack configurado (SPARKFORGE_PACKS vazia)")
+        return Checagem("packs", SKIP, "nenhum pack configurado (SPARKFORGE_AWS_PACKS vazia)")
     if recusados:
         motivos = sorted({str(r.get("reason")) for r in recusados if isinstance(r, Mapping)})
         return Checagem("packs", WARN,

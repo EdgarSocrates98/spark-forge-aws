@@ -1,4 +1,4 @@
-"""Resolucao de `SPARKFORGE_PACKS` e carga das regras de cada pack.
+"""Resolucao de `SPARKFORGE_AWS_PACKS` e carga das regras de cada pack.
 
 Um pack e SO DADO: regras YAML, knowledge e fixtures. Nada dele e importado --
 so `yaml.safe_load` e leitura de texto --, e todo caminho passa por
@@ -7,8 +7,8 @@ so `yaml.safe_load` e leitura de texto --, e todo caminho passa por
 Pack com defeito sai INTEIRO, com o motivo nomeado (regra 20): carregar as
 regras boas de um pack meio quebrado daria resultado que ninguem explica. E o
 core nunca cai por causa de pack. A unica excecao que levanta e diretorio de
-`SPARKFORGE_PACKS` que nao existe: e erro de configuracao do operador, no molde
-de `SPARKFORGE_CATALOG`.
+`SPARKFORGE_AWS_PACKS` que nao existe: e erro de configuracao do operador, no molde
+de `SPARKFORGE_AWS_CATALOG`.
 """
 from __future__ import annotations
 
@@ -31,7 +31,8 @@ from sparkforge_aws.packs.manifest import (
 from sparkforge_aws.paths import resolve_within
 from sparkforge_aws.rules.loader import CatalogError, _json_safe, validate_rule
 
-ENV = "SPARKFORGE_PACKS"
+ENV = "SPARKFORGE_AWS_PACKS"
+LEGACY_ENV = "SPARKFORGE_PACKS"
 
 
 @dataclass(frozen=True)
@@ -70,8 +71,8 @@ class PackSet:
 
 
 def pack_dirs() -> list[Path]:
-    """Os diretorios de `SPARKFORGE_PACKS`, resolvidos e exigidos existentes."""
-    bruto = os.environ.get(ENV, "")
+    """Os diretorios de `SPARKFORGE_AWS_PACKS`, resolvidos e exigidos existentes."""
+    bruto = os.environ.get(ENV) or os.environ.get(LEGACY_ENV) or ""
     dirs: list[Path] = []
     for parte in bruto.split(os.pathsep):
         if not parte.strip():
@@ -173,7 +174,7 @@ def load_pack(
 
 
 def resolve(dirs: list[Path] | None = None) -> PackSet:
-    """Os packs de `dirs` (padrao: `SPARKFORGE_PACKS`), ativos e recusados."""
+    """Os packs de `dirs` (padrao: `SPARKFORGE_AWS_PACKS`), ativos e recusados."""
     alvos = pack_dirs() if dirs is None else dirs
     ativos: list[Pack] = []
     recusados: list[dict[str, Any]] = []

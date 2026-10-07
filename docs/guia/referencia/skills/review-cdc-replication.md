@@ -7,7 +7,7 @@ Use quando houver dump local de eventos CDC, Debezium/Kafka Connect, AWS DMS ou 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-cdc-replication/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md', '../../knowledge/schema-registry-data-contracts.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze cdc', 'sparkforge-aws analyze schema-registry', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md', '../../knowledge/schema-registry-data-contracts.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze cdc', 'sparkforge-aws analyze schema-registry', 'sparkforge-aws judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -37,7 +37,7 @@ Debezium com evento CDC ou tarefa DMS.
    sparkforge-aws judge --facts .sparkforge_aws/facts_cdc.json --show-skipped
    ```
 
-   Em MCP, a extração é `sparkforge_analyze_cdc`.
+   Em MCP, a extração é `sparkforge_aws_analyze_cdc`.
    Para contrato/evolução de schema:
 
    ```bash
@@ -45,7 +45,7 @@ Debezium com evento CDC ou tarefa DMS.
    sparkforge-aws judge --facts .sparkforge_aws/facts_schema.json --show-skipped
    ```
 
-   Em MCP, a extração é `sparkforge_analyze_schema_registry`.
+   Em MCP, a extração é `sparkforge_aws_analyze_schema_registry`.
 4. Correlacione posição e chave por entidade, transação, snapshot/CDC seam,
    delete/tombstone, schema history, compatibilidade e evolução de contrato,
    table mappings, endpoints e estatísticas.
@@ -70,7 +70,7 @@ recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`,
 ### Protocolo
 
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
-`sparkforge_next_step`, use `sparkforge_rules_lookup` para regra e fonte,
+`sparkforge_aws_next_step`, use `sparkforge_aws_rules_lookup` para regra e fonte,
 valide a saída, não executa manutenção destrutiva e sobe qualquer mutação ao
 operador.
 

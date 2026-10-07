@@ -2,7 +2,7 @@
 name: optimize-pyspark-code
 description: "Use quando revisar, refatorar ou otimizar código PySpark/Spark SQL para AWS Glue — script, função, módulo, PR ou trecho de DataFrame — suspeito de UDF Python evitável, collect/toPandas, join sem redução prévia, cache indevido, coalesce(1), repartition arbitrário, explode sem controle, sequência longa de withColumn, dropDuplicates sem chave explícita ou spark.conf.set em runtime. Use também quando a pergunta for \\\"por que esse código está lento\\\", \\\"isso vai escalar\\\", \\\"tem algo errado nesse DataFrame\\\" ou \\\"como eu melhoro isso\\\", mesmo que ninguém cite UDF, shuffle ou cardinalidade pelo nome. Use também quando o job constrói `GraphFrame` e chama `connectedComponents`, `pageRank`, `aggregateMessages` ou `pregel` — é o mesmo `.py`, lido por `sparkforge-aws analyze graph`. Se você está prestes a ler o arquivo linha a linha procurando esses padrões, rode `sparkforge-aws analyze pyspark` em vez disso — ele varre a árvore inteira, não uma amostra, e ancora cada achado em file:line:col."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -147,8 +147,8 @@ eixos.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

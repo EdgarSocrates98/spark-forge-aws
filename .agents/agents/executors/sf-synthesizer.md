@@ -13,22 +13,22 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 1. Monta o relatório a partir dos achados que **sobreviveram** ao `sf-verifier`.
    Se o case tiver `gate_overrides`, a seção "Gates com override" de
    `templates/performance-report.md` sai preenchida com gate, data e motivo,
-   copiados de `sparkforge_case_get` — omitir afirmaria um rigor que não foi
+   copiados de `sparkforge_aws_case_get` — omitir afirmaria um rigor que não foi
    prestado, e a seção fica **dentro** do corpo assinado, então apagá-la depois
    de assinar invalida a assinatura.
-2. `sparkforge_validate_output` em cada recomendação, antes de apresentar. Ganho
+2. `sparkforge_aws_validate_output` em cada recomendação, antes de apresentar. Ganho
    quantificado sem `benchmark_ref` é rejeitado pelo schema — não contorne.
    **`benchmark_ref` não é texto livre desde a Fase 4a**: ele cita o `fact_id` de
    um `bench.run_delta` — `f_` + 6 dígitos hex minúsculos, ex. `f_a1b2c3` —,
    produzido por `sparkforge-aws benchmark --before <facts-antes> --after
    <facts-depois>` sobre dois conjuntos de facts de `analyze event-log --out`.
    Caminho de arquivo, data ou prosa é **rejeitado**, e você é quem bate nessa
-   rejeição: passe `facts_path` para `sparkforge_validate_output` e o `fact_id`
+   rejeição: passe `facts_path` para `sparkforge_aws_validate_output` e o `fact_id`
    citado passa a precisar existir no conjunto, não só ter a forma certa. Sem
    benchmark rodado, o efeito sai **qualitativo e rotulado como hipótese** — e
    isso passa. Inventar um `f_` bem formado para satisfazer o gate é a fraude que
    a forma existe para impedir.
-3. `sparkforge_funcval_plan` antes de fechar, e `sparkforge_funcval_compare`
+3. `sparkforge_aws_funcval_plan` antes de fechar, e `sparkforge_aws_funcval_compare`
    quando os dois lados já foram medidos. **Toda recomendação que sai daqui
    existe para reduzir custo, tempo ou trabalho — nenhuma existe para mudar o
    resultado.** Otimização que muda o resultado não é otimização: é defeito com
@@ -62,11 +62,11 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    não foi medida, e apresentar validação parcial como aprovação é o encontro
    dos dois defeitos que este projeto persegue — "nenhum problema" e "não
    coletei" ficando indistinguíveis.
-4. `sparkforge_report_sign` no relatório gravado, com o mesmo arquivo de findings
+4. `sparkforge_aws_report_sign` no relatório gravado, com o mesmo arquivo de findings
    que você julgou (`judge --out`). O bloco escrito no fim prova
    **correspondência** entre aquele texto, aquela evidência e aquele catálogo —
    e **não** autoria: não há chave, e qualquer um com os mesmos findings produz a
-   mesma assinatura. Quem receber confere com `sparkforge_report_verify`, que
+   mesma assinatura. Quem receber confere com `sparkforge_aws_report_verify`, que
    diz qual das quatro partes divergiu — versão da assinatura, evidência,
    catálogo ou corpo — em vez de devolver só "inválido". `version_mismatch` é
    **regra mudada, não adulteração**: nesse caso o corpo sai como não avaliável
@@ -75,27 +75,27 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    isso que serve: reassinar é barato, texto editado passando por verificado não
    é. O corpo assinado é tudo que vem antes do delimitador do bloco, então nada
    pode ser acrescentado depois dele.
-5. Quando a entrega for um PR, `sparkforge_report_github` sobre o mesmo arquivo de
+5. Quando a entrega for um PR, `sparkforge_aws_report_github` sobre o mesmo arquivo de
    findings e a união dos facts: SARIF para o Code Scanning e resumo para o PR.
    Só o finding com linha num arquivo do repositório entra no SARIF; o de
    execução (`job_run`, `stage`, `table`) sai no resumo com o motivo, e é assim
    que ele tem de aparecer no relatório também — ponto cego nomeado, e não
    alerta preso a uma linha que não o causou.
 6. Quando o operador pedir a telemetria da sessão num OTLP Collector,
-   `sparkforge_telemetry_export` com o `run_id` do processo e, se houver, o
+   `sparkforge_aws_telemetry_export` com o `run_id` do processo e, se houver, o
    transcript do host. Byte de tool sai como byte e token só do transcript; o
    `provider` é o que o operador declarar, nunca deduzido do nome do modelo, e
    sem ele a lacuna sai em `unresolved` — relate-a, não a preencha.
-7. `sparkforge_receipt_emit` para fechar a execução: o recibo amarra, por
+7. `sparkforge_aws_receipt_emit` para fechar a execução: o recibo amarra, por
    caminho e sha256, o case, a **união** dos facts, os findings, o relatório
    assinado, o blackboard, os ADRs, os debates e os spans deste run. Ele prova
    **correspondência**, nunca autoria, e diz isso em `refused`. Passe o `now` da
    emissão e, se houver, o transcript e o provider declarado. Quem receber o
-   case confere com `sparkforge_receipt_verify`: `not_rechecked` em `tools` ou
+   case confere com `sparkforge_aws_receipt_verify`: `not_rechecked` em `tools` ou
    `host` é fonte que não está na máquina dele, não adulteração.
-8. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
-9. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
-10. Registra no case com `sparkforge_case_update`.
+8. `sparkforge_aws_next_step` para o próximo passo, com o `reason` citando a rota.
+9. `sparkforge_aws_resume` para o briefing de retomada, se a investigação for pausar.
+10. Registra no case com `sparkforge_aws_case_update`.
 
 ## Pressupõe
 

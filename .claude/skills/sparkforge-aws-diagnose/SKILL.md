@@ -2,7 +2,7 @@
 name: sparkforge-aws-diagnose
 description: "Use quando o pedido for genérico e amplo — \\\"meu job Glue tá lento\\\", \\\"por que esse pipeline ficou caro\\\", \\\"não sei por onde começar\\\" — e ainda não há gargalo isolado nem skill específica escolhida. Use também como a primeira skill de qualquer investigação nova, antes de ter event log, plano físico ou qualquer fact coletado. Esta skill não analisa: ela abre o case, coleta o que está disponível, e deixa `sparkforge-aws next-step` decidir a rota. Se você está prestes a escolher a próxima skill \\\"pelo que parece óbvio\\\", pare — rode `sparkforge-aws next-step` em vez disso: a árvore de decisão vive em `rules/catalog/routing.yaml`, e escolher por julgamento próprio é exatamente o que a regra 2 do AGENT_PROTOCOL.md proíbe."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

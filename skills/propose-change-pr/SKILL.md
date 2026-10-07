@@ -1,8 +1,8 @@
 ---
 name: propose-change-pr
-description: "Use quando o operador quiser levar ao repositório uma mudança de configuração que já passou pelo sandbox — \\\"abre o PR dessa mudança\\\", \\\"propõe essa troca\\\", \\\"o sandbox passou, e agora?\\\". A sessão monta o pacote com `sparkforge_change_propose` e roda os comandos git/gh do `commands.md` passo a passo, PARANDO para confirmação explícita antes de `git push` e de `gh pr create`. O pacote nunca roda git; quem roda é a sessão, com aprovação humana."
+description: "Use quando o operador quiser levar ao repositório uma mudança de configuração que já passou pelo sandbox — \\\"abre o PR dessa mudança\\\", \\\"propõe essa troca\\\", \\\"o sandbox passou, e agora?\\\". A sessão monta o pacote com `sparkforge_aws_change_propose` e roda os comandos git/gh do `commands.md` passo a passo, PARANDO para confirmação explícita antes de `git push` e de `gh pr create`. O pacote nunca roda git; quem roda é a sessão, com aprovação humana."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -23,13 +23,13 @@ O L3 do §15 é "propor para produção": abrir o PR, anexar a evidência e pedi
 
 ## Antes de começar
 
-1. Tenha um sandbox que aplicou: `sparkforge_change_sandbox` (ou `sparkforge-aws change sandbox --repo . --diff <arquivo>`) com `applied: true`. Guarde o `id`.
+1. Tenha um sandbox que aplicou: `sparkforge_aws_change_sandbox` (ou `sparkforge-aws change sandbox --repo . --diff <arquivo>`) com `applied: true`. Guarde o `id`.
 2. Leia `new` e `resolved` do sandbox. Achado novo P0/P1 faz o `propose` recusar; não contorne.
 3. Se houver medida de verdade (dois runs no `benchmark`, um `funcval compare`), tenha os arquivos de facts à mão. Sem eles, o PR sai com a medida PENDENTE — e está certo sair assim.
 
 ## O laço
 
-1. `sparkforge_change_propose` com `repo`, `sandbox_id`, `now` (instante ISO 8601) e, se houver, `benchmark_paths` e `funcval_path`.
+1. `sparkforge_aws_change_propose` com `repo`, `sandbox_id`, `now` (instante ISO 8601) e, se houver, `benchmark_paths` e `funcval_path`.
 2. `refused` não vazio: relate `reason`, `detail` e `unlock` ao operador e pare. `sandbox_desatualizado` pede um sandbox novo sobre a árvore atual; `achado_novo_bloqueante` pede corrigir a mudança.
 3. Com o pacote gravado, mostre ao operador o `pr_body.md` e o `change.patch`.
 4. Rode o `commands.md` na ordem, um passo por vez: `git switch -c`, `git apply --check`, `git apply`, `git add`, `git commit -F`.
@@ -43,17 +43,17 @@ Se um passo falhar (`git apply --check` recusa, conflito, branch que já existe)
 
 - Sem sandbox que aplicou: comece por `sparkforge-aws change plan` e `sparkforge-aws change sandbox`.
 - Para aplicar a mudança direto na branch principal ou em produção: isso é L4, e não existe aqui.
-- Para decidir o valor da configuração: isso é `sparkforge_tune` (ou o operador), e o valor já está no diff validado.
+- Para decidir o valor da configuração: isso é `sparkforge_aws_tune` (ou o operador), e o valor já está no diff validado.
 - Para afirmar ganho: o PR não mede desempenho; a diferença de achados não é ganho.
 
 ## Referência rápida
 
 | Passo | Tool MCP | CLI |
 |---|---|---|
-| diff de configuração | `sparkforge_change_plan` | `sparkforge-aws change plan --facts ... --repo . --set k=v --out d.patch` |
-| diff numa cópia | `sparkforge_change_sandbox` | `sparkforge-aws change sandbox --repo . --diff d.patch` |
-| pacote do PR | `sparkforge_change_propose` | `sparkforge-aws change propose --sandbox <id> --repo .` |
-| conferir o corpo | `sparkforge_report_verify` | `sparkforge-aws report verify --report pr_body.md --findings <after>/.sparkforge_aws/scan/findings.json` |
+| diff de configuração | `sparkforge_aws_change_plan` | `sparkforge-aws change plan --facts ... --repo . --set k=v --out d.patch` |
+| diff numa cópia | `sparkforge_aws_change_sandbox` | `sparkforge-aws change sandbox --repo . --diff d.patch` |
+| pacote do PR | `sparkforge_aws_change_propose` | `sparkforge-aws change propose --sandbox <id> --repo .` |
+| conferir o corpo | `sparkforge_aws_report_verify` | `sparkforge-aws report verify --report pr_body.md --findings <after>/.sparkforge_aws/scan/findings.json` |
 
 Recusas do `propose`: `sandbox_inexistente`, `sandbox_nao_aplicado`, `sandbox_desatualizado`, `achado_novo_bloqueante`, `caminho_fora_da_raiz`.
 

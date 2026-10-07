@@ -8,7 +8,7 @@ do produto (`analyze_pyspark`) -- e o `--applied`. O teste compara a saida com
 um golden regenerado as cegas nao pode esconder um desfecho errado.
 
 Regenerar depois de mudanca DELIBERADA:
-`SPARKFORGE_REGEN_PROOF=1 pytest tests/test_fixtures_golden_proof.py`.
+`SPARKFORGE_AWS_REGEN_PROOF=1 pytest tests/test_fixtures_golden_proof.py`.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "proof"
-REGEN = os.environ.get("SPARKFORGE_REGEN_PROOF") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_PROOF") == "1"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.yaml").is_file())
 
 

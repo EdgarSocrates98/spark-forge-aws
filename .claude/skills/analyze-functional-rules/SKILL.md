@@ -5,7 +5,7 @@ name: analyze-functional-rules
 description: "Use quando for necessario estudar regras funcionais, contratos, estados, excecoes e criterios de aceite."
 
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

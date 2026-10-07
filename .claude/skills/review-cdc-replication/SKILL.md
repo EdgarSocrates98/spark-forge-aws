@@ -2,7 +2,7 @@
 name: review-cdc-replication
 description: "Use quando houver dump local de eventos CDC, Debezium/Kafka Connect, AWS DMS ou Schema Registry e for preciso revisar chaves, posições, transações, snapshot/CDC seam, deletes, tombstones, schema history, compatibilidade, contratos e pontos cegos sem chamar serviços externos."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -46,7 +46,7 @@ Debezium com evento CDC ou tarefa DMS.
    sparkforge-aws judge --facts .sparkforge_aws/facts_cdc.json --show-skipped
    ```
 
-   Em MCP, a extração é `sparkforge_analyze_cdc`.
+   Em MCP, a extração é `sparkforge_aws_analyze_cdc`.
    Para contrato/evolução de schema:
 
    ```bash
@@ -54,7 +54,7 @@ Debezium com evento CDC ou tarefa DMS.
    sparkforge-aws judge --facts .sparkforge_aws/facts_schema.json --show-skipped
    ```
 
-   Em MCP, a extração é `sparkforge_analyze_schema_registry`.
+   Em MCP, a extração é `sparkforge_aws_analyze_schema_registry`.
 4. Correlacione posição e chave por entidade, transação, snapshot/CDC seam,
    delete/tombstone, schema history, compatibilidade e evolução de contrato,
    table mappings, endpoints e estatísticas.
@@ -79,7 +79,7 @@ recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`,
 ## Protocolo
 
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
-`sparkforge_next_step`, use `sparkforge_rules_lookup` para regra e fonte,
+`sparkforge_aws_next_step`, use `sparkforge_aws_rules_lookup` para regra e fonte,
 valide a saída, não executa manutenção destrutiva e sobe qualquer mutação ao
 operador.
 

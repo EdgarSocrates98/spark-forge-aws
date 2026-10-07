@@ -125,8 +125,8 @@ def _compact_spec(
 
 def compact_catalog() -> dict[str, dict[str, Any]]:
     """Return the seven published compact operation definitions in stable order."""
-    context_start = TOOLS["sparkforge_context_start"]
-    context_expand = TOOLS["sparkforge_context_expand"]
+    context_start = TOOLS["sparkforge_aws_context_start"]
+    context_expand = TOOLS["sparkforge_aws_context_expand"]
     read_only = deepcopy(context_start.get("annotations", {}))
     execute_read_annotations = {
         "readOnlyHint": True,
@@ -271,10 +271,10 @@ class CompactRouter:
             return _refusal(str(exc), "CONTEXT_REF_INVALID")
 
     def _context_start(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
-        return self._existing_tool("sparkforge_context_start", arguments)
+        return self._existing_tool("sparkforge_aws_context_start", arguments)
 
     def _context_expand(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
-        return self._existing_tool("sparkforge_context_expand", arguments)
+        return self._existing_tool("sparkforge_aws_context_expand", arguments)
 
     def _existing_tool(self, name: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         result = self.execute_full(name, dict(arguments))

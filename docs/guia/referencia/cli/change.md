@@ -32,7 +32,7 @@ sparkforge-aws change plan --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_propose`](../tools/sparkforge_change_propose.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
+[`sparkforge_aws_change_plan`](../tools/sparkforge_aws_change_plan.md), [`sparkforge_aws_change_propose`](../tools/sparkforge_aws_change_propose.md), [`sparkforge_aws_change_sandbox`](../tools/sparkforge_aws_change_sandbox.md)
 
 ## `sparkforge-aws change propose`
 
@@ -54,7 +54,7 @@ sparkforge-aws change propose --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_propose`](../tools/sparkforge_change_propose.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
+[`sparkforge_aws_change_plan`](../tools/sparkforge_aws_change_plan.md), [`sparkforge_aws_change_propose`](../tools/sparkforge_aws_change_propose.md), [`sparkforge_aws_change_sandbox`](../tools/sparkforge_aws_change_sandbox.md)
 
 ## `sparkforge-aws change sandbox`
 
@@ -74,4 +74,4 @@ sparkforge-aws change sandbox --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_propose`](../tools/sparkforge_change_propose.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
+[`sparkforge_aws_change_plan`](../tools/sparkforge_aws_change_plan.md), [`sparkforge_aws_change_propose`](../tools/sparkforge_aws_change_propose.md), [`sparkforge_aws_change_sandbox`](../tools/sparkforge_aws_change_sandbox.md)

@@ -5,7 +5,7 @@
       "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
       "env": {
         "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}",
-        "SPARKFORGE_CATALOG": "${CLAUDE_PLUGIN_ROOT}/rules/catalog"
+        "SPARKFORGE_AWS_CATALOG": "${CLAUDE_PLUGIN_ROOT}/rules/catalog"
       }
     }
   }

@@ -2,7 +2,7 @@
 name: design-realtime-data-architecture
 description: "Use quando houver requisitos de workload streaming e for necessário comparar candidatos por constraints, preservando assumptions, unresolved e ADR sem fabricar vencedor."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

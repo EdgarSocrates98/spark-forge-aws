@@ -47,15 +47,15 @@ SKILLS_QUE_SAIRAM = (
     "verify-agent-evidence",
 )
 CODE_TOOLS = (
-    "sparkforge_code_status",
-    "sparkforge_code_sync",
-    "sparkforge_code_search",
-    "sparkforge_code_symbol",
-    "sparkforge_code_export",
-    "sparkforge_code_shape",
-    "sparkforge_code_path",
-    "sparkforge_code_context",
-    "sparkforge_code_read",
+    "sparkforge_aws_code_status",
+    "sparkforge_aws_code_sync",
+    "sparkforge_aws_code_search",
+    "sparkforge_aws_code_symbol",
+    "sparkforge_aws_code_export",
+    "sparkforge_aws_code_shape",
+    "sparkforge_aws_code_path",
+    "sparkforge_aws_code_context",
+    "sparkforge_aws_code_read",
 )
 
 
@@ -68,7 +68,7 @@ def test_conteudo_real_muda_de_dono():
     faltam = [t for t in CODE_TOOLS if t not in revisor]
     assert not faltam, faltam
     iceberg = AGENTS / "iceberg-performance-engineer.md"
-    assert "sparkforge_iceberg_assess_upgrade" in iceberg.read_text(encoding="utf-8")
+    assert "sparkforge_aws_iceberg_assess_upgrade" in iceberg.read_text(encoding="utf-8")
     assert "iceberg-v3-readiness" in (_front(iceberg).get("skills") or [])
     dq = _front(AGENTS / "data-quality-reviewer.md")
     assert "analyze-functional-rules" in (dq.get("skills") or [])

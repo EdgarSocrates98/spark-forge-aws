@@ -151,7 +151,7 @@ Qual coordenador usar é dado, não julgamento: as **31** rotas `AGENT-*` (de 51
 total, recontadas em 2026-09-19; os ids não são contínuos desde a remoção das 54 rotas
 `AGENT-017..025, 029..070, 072..074` na feature `docs/sdd/SF_STUBS/`) de
 `rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
-coordenador certo, e `sparkforge_next_step`/`sparkforge-aws next-step` as consulta.
+coordenador certo, e `sparkforge_aws_next_step`/`sparkforge-aws next-step` as consulta.
 
 ### Despacho por plataforma
 
@@ -181,7 +181,7 @@ declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara, no p
 texto, que não executa manutenção destrutiva.
 
 **O `playbook` é o piso das cinco plataformas, não um degrau que o despacho substitui.**
-**`sparkforge-aws playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_playbook` devolve a
+**`sparkforge-aws playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_aws_playbook` devolve a
 mesma decomposição em passos sequenciais, lendo os mesmos arquivos de `agents/`: perde o
 paralelismo do despacho, mantém o método. Ele é o **único** caminho em Codex e Copilot CI
 — nenhuma pesquisa de fontes mediu despacho de subagente nas duas, e afirmar sem medir é o
@@ -393,10 +393,10 @@ PySpark; a lista completa está na [referência de skills](referencia/skills/REA
 
 - **`next-step`** lê o estado do case e as rotas de `rules/catalog/routing.yaml`. Ele
   devolve `recommended_skill` e, quando uma rota de agent casa, `recommended_agent`.
-  No MCP, a tool é [`sparkforge_next_step`](referencia/tools/sparkforge_next_step.md).
+  No MCP, a tool é [`sparkforge_aws_next_step`](referencia/tools/sparkforge_aws_next_step.md).
 - **`playbook`** devolve os passos de um coordenador, na ordem, com o que cada
   executor faz (`does`) e não faz (`does_not`). No MCP, a tool é
-  [`sparkforge_playbook`](referencia/tools/sparkforge_playbook.md).
+  [`sparkforge_aws_playbook`](referencia/tools/sparkforge_aws_playbook.md).
 
 Trecho real de `sparkforge-aws playbook spark-performance-architect --repo .`:
 

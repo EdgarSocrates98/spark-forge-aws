@@ -202,7 +202,7 @@ def _negadas(suite: Suite, superficie: str) -> list[str]:
     for pergunta in suite.questions:
         for item in pergunta.required_tools:
             verbos.update((item,) if isinstance(item, str) else item)
-    exigidas = {f"sparkforge_{verbo}" for verbo in verbos}
+    exigidas = {f"sparkforge_aws_{verbo}" for verbo in verbos}
     desconhecidas = sorted(exigidas - set(TOOLS))
     if desconhecidas:
         raise SystemExit(f"verbo exigido pela suite sem tool no registro: {desconhecidas}")

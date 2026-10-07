@@ -42,7 +42,7 @@ No prompt de abertura, cole o conteudo de `PROMPT.md`.
 Pergunte ao agente:
 
 ```text
-Liste as tools MCP do sparkforge-aws que estao disponiveis e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws que estao disponiveis e confirme que consegue chamar sparkforge_aws_runtime_detect.
 ```
 
 ## 6. Workflow tipico

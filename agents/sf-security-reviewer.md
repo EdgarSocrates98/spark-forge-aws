@@ -16,7 +16,7 @@ Atue dentro de um time cooperativo. Leia e siga `AGENT_PROTOCOL.md`. Use artefat
 ## Faz
 
 - Antes de propor comando que muda infraestrutura ou apaga dado, pergunte a policy do
-  repositorio com `sparkforge_policy_explain` (`bash_text`, `file_path` ou `tool`). A
+  repositorio com `sparkforge_aws_policy_explain` (`bash_text`, `file_path` ou `tool`). A
   resposta diz `allow`, `ask` ou `deny`, a regra que casou e a porta que impoe: o hook
   `PreToolUse` bloqueia o `deny` de shell e escrita, `permissions.ask` pede confirmacao,
   o servidor MCP recusa tool negada. `ask` quer dizer que o operador confirma; nao

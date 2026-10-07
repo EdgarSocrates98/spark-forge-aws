@@ -301,7 +301,9 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert codigo == 0
     pela_cli = json.loads(saida.read_text(encoding="utf-8"))
 
-    pela_tool = call_tool("sparkforge_analyze_airflow_dag", {"path": str(entrada), "limit": 1000})
+    pela_tool = call_tool(
+        "sparkforge_aws_analyze_airflow_dag", {"path": str(entrada), "limit": 1000}
+    )
     assert "error" not in pela_tool, pela_tool
     assert pela_tool["total_count"] == len(pela_cli)
     assert pela_tool["items"] == pela_cli
@@ -309,7 +311,7 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     assert pela_tool["by_kind"]["af.dependency"] == 2
     assert pela_tool["unresolved"] == 1
 
-    erro = call_tool("sparkforge_analyze_airflow_dag", {"path": str(tmp_path / "nao-existe")})
+    erro = call_tool("sparkforge_aws_analyze_airflow_dag", {"path": str(tmp_path / "nao-existe")})
     assert "sparkforge-aws analyze airflow-dag" in erro["error"]
 
 

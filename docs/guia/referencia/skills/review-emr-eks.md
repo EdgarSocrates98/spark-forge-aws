@@ -7,7 +7,7 @@ Use quando revisar a execução de um job Amazon EMR on EKS pelo par `describe-v
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-emr-eks/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/emr/runtime-matrix.md', '../../knowledge/emr/cluster-configuration.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze emr-eks', 'sparkforge-aws judge', 'sparkforge-aws collect emr-eks']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/emr/runtime-matrix.md', '../../knowledge/emr/cluster-configuration.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze emr-eks', 'sparkforge-aws judge', 'sparkforge-aws collect emr-eks']} |
 
 ## Procedimento (texto integral)
 
@@ -74,7 +74,7 @@ chaves de topo que o coletor grava:
 | `describe-virtual-cluster` | `virtualCluster` | `emrc.virtual_cluster` — identidade, estado, e o namespace ao qual o cluster virtual mapeia |
 | `describe-job-run` | `jobRun` | tudo o mais: `emrc.job_run`, `emrc.configuration`, `emrc.spark_submit_parameters`, `emrc.monitoring`, e as quatro regras |
 
-Tool MCP equivalente: `sparkforge_collect_emr_eks`, com `virtual_cluster_id`, `job_run_id`, `repo` e `now`.
+Tool MCP equivalente: `sparkforge_aws_collect_emr_eks`, com `virtual_cluster_id`, `job_run_id`, `repo` e `now`.
 
 **Os dois ids são obrigatórios, e nome não serve.** `DescribeJobRun` exige o
 `virtual_cluster_id` junto do `job_run_id` — a própria API não aceita um job run sem o cluster
@@ -91,7 +91,7 @@ sparkforge-aws analyze emr-eks --path <arquivo ou diretório com os dumps> \
   --out .sparkforge_aws/facts_emr_eks.json
 ```
 
-Tool MCP equivalente: `sparkforge_analyze_emr_eks`. Ela **não** chama a API do `emr-containers` — só lê o JSON já salvo em disco.
+Tool MCP equivalente: `sparkforge_aws_analyze_emr_eks`. Ela **não** chama a API do `emr-containers` — só lê o JSON já salvo em disco.
 
 Oito kinds saem daqui, e três deles são declaração de limite, não observação:
 
@@ -351,8 +351,8 @@ conjunto de linhas escrito, e é exatamente isso que precisa ser provado — nã
 repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu **antes**
 de a mudança tocar o alvo.
 

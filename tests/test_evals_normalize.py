@@ -10,11 +10,13 @@ import pytest
 
 from sparkforge_aws.facts.host_transcript import canonical_verb
 
-PLUGIN = "mcp__plugin_x_sparkforge__sparkforge_analyze_pyspark"
+PLUGIN = "mcp__plugin_x_sparkforge__sparkforge_aws_analyze_pyspark"
 CADEIA = "cd x && rtk sparkforge-aws analyze pyspark lib/"
 UV = "uv run sparkforge-aws rules lookup --rule-id SF-PY-005"
 
 CASOS = [
+    ("mcp__sparkforge-aws__sparkforge_aws_judge", {}, ("mcp", "judge")),
+    # transcript gravado antes do rename `sparkforge_*` -> `sparkforge_aws_*`
     ("mcp__sparkforge__sparkforge_judge", {}, ("mcp", "judge")),
     (PLUGIN, {}, ("mcp", "analyze_pyspark")),
     ("mcp__outro__outro_judge", {}, ("other", None)),

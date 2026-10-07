@@ -6,13 +6,13 @@ equipe que quer padrões próprios sobre os mesmos artefatos sem fazer fork do
 SparkForge.
 
 ```bash
-export SPARKFORGE_PACKS=/caminho/acme-platform        # vários: separados por os.pathsep
+export SPARKFORGE_AWS_PACKS=/caminho/acme-platform        # vários: separados por os.pathsep
 sparkforge-aws pack list                                  # ativos, recusados, prefixo -> pack
 sparkforge-aws pack check /caminho/acme-platform          # exit 1 se uma regra não dispara
 sparkforge-aws judge --facts terraform.json               # regras do core + do pack
 ```
 
-A tool MCP é `sparkforge_pack_list` (`READ_ONLY`, sem parâmetro). `pack check`
+A tool MCP é `sparkforge_aws_pack_list` (`READ_ONLY`, sem parâmetro). `pack check`
 é só da CLI, porque é tarefa de quem escreve o pack. O dono no despacho é o
 `spark-performance-architect`.
 
@@ -70,15 +70,15 @@ seguem.
 | `id_fora_do_prefixo` | `id` que não casa `<PREFIX>-<AREA>-NNN` |
 | `id_duplicado` | Dois `id` iguais dentro do pack |
 
-Um diretório de `SPARKFORGE_PACKS` que não existe é erro do operador, e não
+Um diretório de `SPARKFORGE_AWS_PACKS` que não existe é erro do operador, e não
 recusa: sai com código 2 e o caminho.
 
 ## Confiança: a variável é do operador
 
-`SPARKFORGE_PACKS` escolhe diretórios em qualquer lugar do disco, por desenho.
-Ela tem a mesma confiança de `SPARKFORGE_CATALOG` e de `SPARKFORGE_KNOWLEDGE`:
+`SPARKFORGE_AWS_PACKS` escolhe diretórios em qualquer lugar do disco, por desenho.
+Ela tem a mesma confiança de `SPARKFORGE_AWS_CATALOG` e de `SPARKFORGE_AWS_KNOWLEDGE`:
 só o operador a define, no ambiente ou no `.mcp.json`. Nenhuma tool a recebe
-como parâmetro, e por isso `sparkforge_pack_list` não declara caminho.
+como parâmetro, e por isso `sparkforge_aws_pack_list` não declara caminho.
 
 Dentro do pack, o confinamento é duro. `rules/` é resolvido e exigido dentro do
 diretório do pack **antes** de qualquer varredura, então um `rules` que seja
@@ -88,7 +88,7 @@ Nada é importado nem executado.
 
 Um SAST (Snyk, `python/PT`, low) aponta o fluxo variável → `os.walk`. Esse fluxo
 é o próprio desenho: não existe base confiável contra a qual confinar um
-diretório que o operador escolheu. É o mesmo fluxo que `SPARKFORGE_CATALOG` já
+diretório que o operador escolheu. É o mesmo fluxo que `SPARKFORGE_AWS_CATALOG` já
 fazia até o `glob` do loader. O operador decidiu em 2026-09-12 aceitar esse risco
 em vez de restringir os packs a uma raiz fixa.
 

@@ -54,7 +54,7 @@ Abra um novo chat no Devin Desktop e cole o conteudo de `PROMPT.md`.
 Pergunte ao agente:
 
 ```text
-Liste as tools MCP do sparkforge-aws que estao disponiveis e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws que estao disponiveis e confirme que consegue chamar sparkforge_aws_runtime_detect.
 ```
 
 ## 8. Workflow tipico

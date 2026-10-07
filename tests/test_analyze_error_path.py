@@ -157,8 +157,8 @@ class TestAsDuasTools:
         from sparkforge_aws.adapters import tools
 
         novas = {
-            "sparkforge_analyze_cloudwatch_logs",
-            "sparkforge_analyze_error_signatures",
+            "sparkforge_aws_analyze_cloudwatch_logs",
+            "sparkforge_aws_analyze_error_signatures",
         }
         assert novas <= set(tools.TOOLS)
         assert novas <= set(tools._HANDLERS)
@@ -169,8 +169,8 @@ class TestAsDuasTools:
         from sparkforge_aws.adapters.tools import TOOLS
 
         for nome in (
-            "sparkforge_analyze_cloudwatch_logs",
-            "sparkforge_analyze_error_signatures",
+            "sparkforge_aws_analyze_cloudwatch_logs",
+            "sparkforge_aws_analyze_error_signatures",
         ):
             anotacoes = TOOLS[nome]["annotations"]
             assert anotacoes["readOnlyHint"] is True, nome
@@ -181,6 +181,6 @@ class TestAsDuasTools:
         metade dos facts nao devolve metade das respostas."""
         from sparkforge_aws.adapters.tools import TOOLS
 
-        descricao = TOOLS["sparkforge_analyze_error_signatures"]["description"]
+        descricao = TOOLS["sparkforge_aws_analyze_error_signatures"]["description"]
         assert "UNIAO" in descricao or "UNIÃO" in descricao
         assert "confidence" in descricao

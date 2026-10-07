@@ -20,7 +20,7 @@ class TestOsCamposNovos:
             span_id="span_1",
             run_id="run_1",
             parent_span_id=None,
-            name="sparkforge_analyze_pyspark",
+            name="sparkforge_aws_analyze_pyspark",
             component_type="tool",
             start_time=0.0,
             payload_bytes=1234,
@@ -38,7 +38,7 @@ class TestOsCamposNovos:
             span_id="span_1",
             run_id="run_1",
             parent_span_id=None,
-            name="sparkforge_case_get",
+            name="sparkforge_aws_case_get",
             component_type="tool",
             start_time=0.0,
         )
@@ -131,7 +131,7 @@ class TestMigracaoDeBancoAntigo:
 
         tracker = AgentOpsTracker()
         trace = tracker.start_trace("t")
-        span = tracker.start_span(trace, "sparkforge_case_get", "tool")
+        span = tracker.start_span(trace, "sparkforge_aws_case_get", "tool")
         span.payload_bytes = 42
         tracker.end_span(span)
         tracker.finish_trace(trace)
@@ -175,13 +175,13 @@ class TestOSpanDaChamada:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        resultado = tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        resultado = tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
 
         spans = ledger.spans_of("run_teste")
         assert len(spans) == 1
         esperado = len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
         assert spans[0]["payload_bytes"] == esperado
-        assert spans[0]["name"] == "sparkforge_analyze_pyspark"
+        assert spans[0]["name"] == "sparkforge_aws_analyze_pyspark"
         assert spans[0]["component_type"] == "tool"
         assert spans[0]["outcome"] == "ok"
 
@@ -197,7 +197,7 @@ class TestOSpanDaChamada:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        resultado = tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        resultado = tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
 
         span = ledger.spans_of("run_teste")[0]
         assert span["item_count"] == resultado["returned_count"]
@@ -215,7 +215,7 @@ class TestOSpanDaChamada:
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
         tools.call_tool(
-            "sparkforge_analyze_pyspark",
+            "sparkforge_aws_analyze_pyspark",
             {"path": str(origem), "detail_level": "summary"},
         )
 
@@ -235,7 +235,7 @@ class TestOSpanDaChamada:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
 
         span = ledger.spans_of("run_teste")[0]
         assert span["input_tokens"] == 0
@@ -258,7 +258,7 @@ class TestOsTresCaminhosDeErro:
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         resultado = tools.call_tool(
-            "sparkforge_analyze_pyspark", {"path": str(tmp_path / "nao_existe")}
+            "sparkforge_aws_analyze_pyspark", {"path": str(tmp_path / "nao_existe")}
         )
 
         assert "error" in resultado
@@ -279,12 +279,12 @@ class TestOsTresCaminhosDeErro:
 
         politica = CallPolicy(
             agent="sf-runtime-specialist",
-            allowed_tools=["sparkforge_case_get"],
+            allowed_tools=["sparkforge_aws_case_get"],
             profile=ExecutionProfile.ECO,
             root=tmp_path,
         )
         resultado = tools.call_tool(
-            "sparkforge_analyze_pyspark", {"path": str(tmp_path)}, policy=politica
+            "sparkforge_aws_analyze_pyspark", {"path": str(tmp_path)}, policy=politica
         )
 
         assert resultado.get("error_code") == "UNAUTHORIZED"
@@ -304,7 +304,7 @@ class TestOsTresCaminhosDeErro:
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         with pytest.raises(KeyError):
-            tools.call_tool("sparkforge_inexistente", {})
+            tools.call_tool("sparkforge_aws_inexistente", {})
 
         assert ledger.spans_of("run_teste") == []
 
@@ -329,7 +329,7 @@ class TestLedgerQuebradoNaoQuebraATool:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        resultado = tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        resultado = tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
 
         assert "items" in resultado
         assert "error" not in resultado
@@ -347,7 +347,7 @@ class TestLedgerQuebradoNaoQuebraATool:
         ledger = ContextLedger(db_path=impossivel / "traces.db", run_id="run_teste")
 
         ledger.record(
-            name="sparkforge_case_get",
+            name="sparkforge_aws_case_get",
             resultado={"ok": True},
             detail_level="",
             outcome="ok",
@@ -374,7 +374,7 @@ class TestPayloadNaoSerializavelNaoDerrubaAChamada:
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
 
         ledger.record(
-            name="sparkforge_qualquer",
+            name="sparkforge_aws_qualquer",
             resultado={"quando": datetime.datetime.now()},
             detail_level="",
             outcome="ok",
@@ -415,7 +415,7 @@ class TestBufferEFlush:
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         ledger.record(
-            name="sparkforge_case_get",
+            name="sparkforge_aws_case_get",
             resultado={"ok": True},
             detail_level="",
             outcome="ok",
@@ -615,7 +615,7 @@ class TestSuiteNaoEscreveNoRepositorioReal:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
         # forca o descarregamento que so aconteceria no fim da sessao, para
         # o teste nao depender do atexit rodar antes de checar o resultado.
         context_ledger.shared_ledger().flush()
@@ -644,7 +644,7 @@ class TestIdaEVoltaEntreInstancias:
 
         ledger_de_escrita = ContextLedger(db_path=db_path, run_id="run_teste")
         ledger_de_escrita.record(
-            name="sparkforge_case_get",
+            name="sparkforge_aws_case_get",
             resultado={"ok": True},
             detail_level="",
             outcome="ok",
@@ -660,7 +660,7 @@ class TestIdaEVoltaEntreInstancias:
         spans = ledger_de_leitura.spans_of("run_teste")
 
         assert len(spans) == 1
-        assert spans[0]["name"] == "sparkforge_case_get"
+        assert spans[0]["name"] == "sparkforge_aws_case_get"
 
     def test_um_ledger_novo_apontando_para_disco_vazio_ainda_devolve_lista_vazia(
         self, tmp_path
@@ -687,7 +687,7 @@ class TestOCanalMedido:
         ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
-        tools.call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
+        tools.call_tool("sparkforge_aws_case_get", {"repo": str(tmp_path)})
 
         meta = ledger.spans_of("run_teste")[0]["metadata"]
         # Sem canal declarado, nenhuma chave de transporte aparece -- vazio
@@ -704,7 +704,7 @@ class TestOCanalMedido:
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         tools.call_tool(
-            "sparkforge_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio"
+            "sparkforge_aws_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio"
         )
 
         assert ledger.spans_of("run_teste")[0]["metadata"] == {
@@ -722,7 +722,7 @@ class TestOCanalMedido:
 
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         ledger.record(
-            name="sparkforge_case_get",
+            name="sparkforge_aws_case_get",
             resultado={"ok": True},
             detail_level="",
             outcome="ok",
@@ -743,7 +743,7 @@ class TestOCanalMedido:
         ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
         monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
-        esperado = tools.call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
+        esperado = tools.call_tool("sparkforge_aws_case_get", {"repo": str(tmp_path)})
 
         def quebra(*_a, **_k):
             raise RuntimeError("span impossivel")
@@ -752,7 +752,7 @@ class TestOCanalMedido:
         assert tracer.TraceSpan is not quebra
 
         resultado = tools.call_tool(
-            "sparkforge_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio"
+            "sparkforge_aws_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio"
         )
 
         assert resultado == esperado

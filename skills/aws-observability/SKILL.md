@@ -2,7 +2,7 @@
 name: aws-observability
 description: "Use quando for configurar, depurar ou otimizar observabilidade AWS com CloudWatch (Log Insights, Metrics, Alarms, Dashboards, EMF), X-Ray, CloudTrail e ADOT (AWS Distro for OpenTelemetry), ou habilitar/onboardar um serviço em Application Signals via ADOT auto-instrumentation SDKs. Aplica-se a alarms (métrico, composto, anomalia), dashboards, custom metrics/EMF, tracing e sampling, config de ADOT collector, CloudTrail auditing, synthetics/canaries e Dynamic Instrumentation. NÃO use para logging de aplicação ou detecção de ameaças de segurança."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

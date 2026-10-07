@@ -31,7 +31,7 @@ sparkforge-aws migrate controlm --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_migration_assess`](../tools/sparkforge_migration_assess.md)
+[`sparkforge_aws_migration_assess`](../tools/sparkforge_aws_migration_assess.md)
 
 ## `sparkforge-aws migrate emr`
 
@@ -53,7 +53,7 @@ sparkforge-aws migrate emr --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_migration_assess`](../tools/sparkforge_migration_assess.md)
+[`sparkforge_aws_migration_assess`](../tools/sparkforge_aws_migration_assess.md)
 
 ## `sparkforge-aws migrate glue`
 
@@ -74,4 +74,4 @@ sparkforge-aws migrate glue --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_migration_assess`](../tools/sparkforge_migration_assess.md)
+[`sparkforge_aws_migration_assess`](../tools/sparkforge_aws_migration_assess.md)

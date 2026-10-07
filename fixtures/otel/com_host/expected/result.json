@@ -1,6 +1,6 @@
 {
   "counts": {
-    "sparkforge_spans": 2,
+    "sparkforge_aws_spans": 2,
     "host_agent": 1,
     "host_tool_calls": 2,
     "exported": 5,

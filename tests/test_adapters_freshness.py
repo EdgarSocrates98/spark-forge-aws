@@ -45,15 +45,15 @@ def _urls_das_fontes(itens: list[dict]) -> set[str]:
 
 class TestRulesLookup:
     def test_sem_a_flag_nada_muda(self):
-        resultado = call_tool("sparkforge_rules_lookup", {"id": ["SF-ENV-001"]})
+        resultado = call_tool("sparkforge_aws_rules_lookup", {"id": ["SF-ENV-001"]})
         assert not CAMPOS & set(resultado)
 
     def test_com_a_flag_cobre_so_as_fontes_da_pagina(self):
         resultado = call_tool(
-            "sparkforge_rules_lookup",
+            "sparkforge_aws_rules_lookup",
             {"id": ["SF-ENV-001", "SF-TIMEOUT-002"], "source_freshness": True, "as_of": AS_OF},
         )
-        _valida("sparkforge_rules_lookup", resultado)
+        _valida("sparkforge_aws_rules_lookup", resultado)
         assert set(resultado["source_freshness"]) == _urls_das_fontes(resultado["rules"])
         politica = resultado["freshness_policy"]
         assert politica["as_of"] == AS_OF
@@ -63,13 +63,13 @@ class TestRulesLookup:
 
     def test_mesmo_as_of_mesma_resposta(self):
         args = {"id": ["SF-ENV-001"], "source_freshness": True, "as_of": AS_OF}
-        assert call_tool("sparkforge_rules_lookup", args) == call_tool(
-            "sparkforge_rules_lookup", args
+        assert call_tool("sparkforge_aws_rules_lookup", args) == call_tool(
+            "sparkforge_aws_rules_lookup", args
         )
 
     def test_as_of_invalido_e_erro_de_uso(self):
         resultado = call_tool(
-            "sparkforge_rules_lookup",
+            "sparkforge_aws_rules_lookup",
             {"id": ["SF-ENV-001"], "source_freshness": True, "as_of": "2026-13-45"},
         )
         assert resultado["exit_code"] == 2
@@ -79,7 +79,7 @@ class TestRulesLookup:
         sem_lock = tmp_path / "knowledge"
         shutil.copytree(ROOT / "knowledge", sem_lock)
         (sem_lock / "sources.lock.json").unlink()
-        monkeypatch.setenv("SPARKFORGE_KNOWLEDGE", str(sem_lock))
+        monkeypatch.setenv("SPARKFORGE_AWS_KNOWLEDGE", str(sem_lock))
         resultado = _core.rules_lookup(id=["SF-ENV-001"], source_freshness=True, as_of=AS_OF)
         estados = {e["state"] for e in resultado["source_freshness"].values()}
         assert estados == {"unresolved"}
@@ -91,9 +91,9 @@ class TestJudge:
     FACTS = ROOT / "fixtures" / "pyspark" / "collect_unbounded" / "expected" / "facts.json"
 
     def test_sem_a_flag_os_findings_sao_os_de_antes(self):
-        base = call_tool("sparkforge_judge", {"facts_path": str(self.FACTS), "glue": "5.0"})
+        base = call_tool("sparkforge_aws_judge", {"facts_path": str(self.FACTS), "glue": "5.0"})
         com = call_tool(
-            "sparkforge_judge",
+            "sparkforge_aws_judge",
             {
                 "facts_path": str(self.FACTS),
                 "glue": "5.0",
@@ -103,7 +103,7 @@ class TestJudge:
         )
         assert not CAMPOS & set(base)
         assert com["items"] == base["items"]
-        _valida("sparkforge_judge", com)
+        _valida("sparkforge_aws_judge", com)
         assert set(com["source_freshness"]) == _urls_das_fontes(com["items"])
 
     def test_cli_e_tool_concordam_com_a_flag(self, capsys):
@@ -122,7 +122,7 @@ class TestJudge:
         assert cli.main(argv) == 0
         pela_cli = json.loads(capsys.readouterr().out)
         pela_tool = call_tool(
-            "sparkforge_judge",
+            "sparkforge_aws_judge",
             {
                 "facts_path": [str(self.FACTS)],
                 "glue": "5.0",
@@ -136,7 +136,7 @@ class TestJudge:
 
 class TestKnowledgePath:
     def test_sem_a_flag_nada_muda(self):
-        payload = call_tool("sparkforge_knowledge_path", {})
+        payload = call_tool("sparkforge_aws_knowledge_path", {})
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         payload.pop("_trust", None)
@@ -144,17 +144,17 @@ class TestKnowledgePath:
 
     def test_documento_usa_a_data_que_ele_declara(self):
         resultado = call_tool(
-            "sparkforge_knowledge_path",
+            "sparkforge_aws_knowledge_path",
             {"file": "glue/workers-and-capacity.md", "source_freshness": True, "as_of": AS_OF},
         )
-        _valida("sparkforge_knowledge_path", resultado)
+        _valida("sparkforge_aws_knowledge_path", resultado)
         assert resultado["source_freshness"]
         assert all("state" in e for e in resultado["source_freshness"].values())
 
     def test_sem_file_conta_por_documento(self):
         resultado = call_tool(
-            "sparkforge_knowledge_path", {"source_freshness": True, "as_of": AS_OF}
+            "sparkforge_aws_knowledge_path", {"source_freshness": True, "as_of": AS_OF}
         )
-        _valida("sparkforge_knowledge_path", resultado)
+        _valida("sparkforge_aws_knowledge_path", resultado)
         assert "knowledge/glue/workers-and-capacity.md" in resultado["freshness_by_doc"]
         assert "source_freshness" not in resultado

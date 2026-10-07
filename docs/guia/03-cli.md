@@ -11,7 +11,7 @@ que já vem no repositório.
 
 ```bash
 # 1. Uma pasta temporária para as saídas
-export TMP=/tmp/sparkforge_guia && mkdir -p "$TMP"
+export TMP=/tmp/sparkforge_aws_guia && mkdir -p "$TMP"
 
 # 2. Extrair fatos do código (troque pelo caminho do seu job)
 sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
@@ -54,12 +54,12 @@ deixe que ele chame as tools. O resultado é o mesmo.
   `$TMP`. Crie a sua, por exemplo:
 
   ```bash
-  export TMP=/tmp/sparkforge_guia     # Linux/macOS
+  export TMP=/tmp/sparkforge_aws_guia     # Linux/macOS
   mkdir -p "$TMP"
   ```
 
   ```powershell
-  $env:TMP_GUIA = "$env:TEMP\sparkforge_guia"   # Windows PowerShell
+  $env:TMP_GUIA = "$env:TEMP\sparkforge_aws_guia"   # Windows PowerShell
   New-Item -ItemType Directory -Force $env:TMP_GUIA
   ```
 

@@ -2,7 +2,7 @@
 name: sdd-design
 description: "Use quando o define.md da feature está ready e falta decidir como construir — \\\"desenha a solução\\\", \\\"quais arquivos mudam?\\\", \\\"como desfazer?\\\", \\\"fase design\\\" — no SparkForge ou num job do operador."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -105,14 +105,14 @@ pergunta "está certo?" antes de seguir. Depois
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| achar o arquivo | `sparkforge-aws code search <nome>` | `sparkforge_code_search` |
-| quem chama, o que quebra | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
-| como X chega em Y | `sparkforge-aws code path <origem> <destino>` | `sparkforge_code_path` |
-| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
-| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/design.md` | `sparkforge_sdd_stamp` |
-| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| diff do job (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
+| achar o arquivo | `sparkforge-aws code search <nome>` | `sparkforge_aws_code_search` |
+| quem chama, o que quebra | `sparkforge-aws code symbol <node_id>` | `sparkforge_aws_code_symbol` |
+| como X chega em Y | `sparkforge-aws code path <origem> <destino>` | `sparkforge_aws_code_path` |
+| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_aws_rules_lookup` |
+| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_aws_knowledge_path` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/design.md` | `sparkforge_aws_sdd_stamp` |
+| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| diff do job (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_aws_change_plan` |
 
 Recusas desta fase: `phase_out_of_order`, `manifest_path_unknown`,
 `rollback_missing`, `acceptance_uncovered`, `upstream_stale`.

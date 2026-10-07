@@ -25,7 +25,7 @@ def test_cli_full_mcp_and_compact_read_share_canonical_result(tmp_path, capsys):
     )
     cli_payload = json.loads(capsys.readouterr().out)
     full = call_tool(
-        "sparkforge_decision_evaluate",
+        "sparkforge_aws_decision_evaluate",
         {
             "repo": str(Path.cwd()),
             "contract": "kernel.synthetic",
@@ -40,7 +40,7 @@ def test_cli_full_mcp_and_compact_read_share_canonical_result(tmp_path, capsys):
     ).call(
         "execute_read",
         {
-            "capability": "sparkforge_decision_evaluate",
+            "capability": "sparkforge_aws_decision_evaluate",
             "arguments": {
                 "repo": str(Path.cwd()),
                 "contract": "kernel.synthetic",

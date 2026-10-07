@@ -7,7 +7,7 @@ Use quando precisar comprovar — não estimar — o efeito de uma mudança de p
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/benchmark-pyspark-job/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws validate', 'sparkforge-aws benchmark', 'sparkforge-aws collect event-log']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws validate', 'sparkforge-aws benchmark', 'sparkforge-aws collect event-log']} |
 
 ## Procedimento (texto integral)
 
@@ -29,7 +29,7 @@ O campo tem produtor desde a Fase 4a, e por isso deixou de ser texto livre: `ben
    ```
 
    Leia `divergences`: **vazio é a condição de aceite** desta etapa. Se os dois runs rodaram em versões diferentes, aparece uma linha nomeando o componente e o valor de cada artefato (`spark: valores divergentes entre fontes (event_log:<a>=..., event_log:<b>=...)`), e a comparação está invalidada na origem — nenhum percentual medido depois disso vale como `benchmark_ref`. `detected_from` diz de quais fontes a detecção saiu; passe `--glue 5.1` apenas se souber a versão de fonte confiável e quiser preencher o eixo que o event log não preenche — o log declara `spark`, não `glue`, porque a matriz de compatibilidade deriva do Glue para o Spark e não o inverso.
-5. **Compare os dois lados com o comparador, não no olho.** `sparkforge-aws benchmark` (tool MCP `sparkforge_benchmark`) recebe os dois arquivos de facts e emite os cinco kinds `bench.*`:
+5. **Compare os dois lados com o comparador, não no olho.** `sparkforge-aws benchmark` (tool MCP `sparkforge_aws_benchmark`) recebe os dois arquivos de facts e emite os cinco kinds `bench.*`:
 
    ```bash
    sparkforge-aws benchmark \
@@ -107,7 +107,7 @@ sparkforge-aws funcval plan \
   --out .sparkforge_aws/facts_funcval_plan.json
 ```
 
-Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` (`analyze pyspark`) e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório**, ao contrário do `--out` dos verbos de `analyze`: o plano é a entrada do `compare` e a evidência do gate, não uma conveniência. Sai um `funcval.plan` por alvo distinto, mais `funcval.unresolved` para o que ele não conseguiu resolver — nunca alvo adivinhado por sufixo.
+Tool MCP: `sparkforge_aws_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` (`analyze pyspark`) e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório**, ao contrário do `--out` dos verbos de `analyze`: o plano é a entrada do `compare` e a evidência do gate, não uma conveniência. Sai um `funcval.plan` por alvo distinto, mais `funcval.unresolved` para o que ele não conseguiu resolver — nunca alvo adivinhado por sufixo.
 
 `--key` é a **chave de negócio declarada**, e a vírgula faz chave **composta**: `--key loja_id,pedido_id` é uma chave de duas colunas, não duas chaves. Ela não é derivável — nenhum dos 106 kinds do vocabulário nomeia chave de negócio, e partição foi medida como proxy e **rejeitada** (em `catalog/glue_table_schema`, `db.eventos` tem `distinct_values = partition_count` sobre `dt`, e um check de unicidade ali acusaria dado correto). Sem `--key`, o plano não inventa: escreve o eixo em `undeclared_axes` com a razão, e todo check derivado carrega `origin: derived` com o `fact_id`, enquanto o declarado carrega `origin: declared` e `derived_from: []`.
 
@@ -143,7 +143,7 @@ sparkforge-aws funcval compare \
   --out .sparkforge_aws/facts_funcval.json
 ```
 
-Tool MCP: `sparkforge_funcval_compare`, com `out_path`. Antes contra depois, **nunca** observado contra catálogo.
+Tool MCP: `sparkforge_aws_funcval_compare`, com `out_path`. Antes contra depois, **nunca** observado contra catálogo.
 
 `--out` grava a lista **completa** de facts, no formato que `judge --facts` lê — não o envelope, e nunca a página. `--limit` corta o stdout e não toca o arquivo, então não há `next_cursor` a conferir entre um passo e outro. É opcional, ao contrário do `--out` do `plan`: aquele é obrigatório porque o plano é artefato consumido por outro verbo e é a evidência de um gate; este é conveniência, do mesmo tipo que `benchmark` e os verbos de `analyze` oferecem. Sem ele a comparação sai só no stdout, e aí julgar exige extrair `items` do envelope à mão — com a conferência de `next_cursor` por sua conta, porque julgar a primeira página e chamar de comparação é o mesmo defeito que `SF-FVAL-005` acusa no dado.
 

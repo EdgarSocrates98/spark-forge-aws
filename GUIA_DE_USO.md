@@ -127,7 +127,7 @@ sparkforge-aws analyze schema-registry --path .sparkforge_aws/artifacts/schema_r
 
 Definição ausente, inválida ou acima do limite é `unresolved`, não contrato
 inventado. Veja [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md)
-e a [referência da tool MCP](referencia/tools/sparkforge_collect_schema_registry.md).
+e a [referência da tool MCP](referencia/tools/sparkforge_aws_collect_schema_registry.md).
 
 Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
 de correlacionar com checkpoint, operator e transporte:
@@ -365,19 +365,19 @@ devin mcp list
 **Não conte com o `.mcp.json` da raiz para isto, e a razão é medida.** O Devin importa
 configuração de MCP do Claude Code (`read_config_from.claude`, default `true`, e a tabela
 de importação lista `.mcp.json`). Mas o `.mcp.json` deste repositório é o do **plugin do
-Claude Code**: ele parametriza `PYTHONPATH` e `SPARKFORGE_CATALOG` por
+Claude Code**: ele parametriza `PYTHONPATH` e `SPARKFORGE_AWS_CATALOG` por
 `${CLAUDE_PLUGIN_ROOT}`, que é variável do carregador de plugin do Claude Code e que
 nenhuma página do Devin documenta expandir. Sem expansão, o servidor sobe e morre na
 primeira leitura do catálogo, com a mensagem certa e o motivo errado:
 
 ```text
-CatalogError: SPARKFORGE_CATALOG aponta para .../${CLAUDE_PLUGIN_ROOT}/rules/catalog,
+CatalogError: SPARKFORGE_AWS_CATALOG aponta para .../${CLAUDE_PLUGIN_ROOT}/rules/catalog,
 que nao e um diretorio existente
 ```
 
 Por isso a configuração acima **não** declara `env`: com o pacote instalado por `pip`, o
 `PYTHONPATH` é desnecessário e o catálogo resolve de dentro do próprio pacote. Só declare
-`SPARKFORGE_CATALOG` se quiser apontar para um catálogo fora dele — e aí com caminho de
+`SPARKFORGE_AWS_CATALOG` se quiser apontar para um catálogo fora dele — e aí com caminho de
 verdade, nunca com uma variável de outra ferramenta.
 
 **Devin Desktop — HTTP.** O Desktop configura MCP por `serverUrl`, e o servidor tem o
@@ -479,7 +479,7 @@ nenhum desses comandos chama AWS ou provider.
 Apos conectar:
 
 ```text
-Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_aws_runtime_detect.
 ```
 
 Ou, sem depender do agente, teste o stdio diretamente:
@@ -505,7 +505,7 @@ ativo. Um `connection refused` indica que o servidor nao subiu ou a porta esta e
 | `ModuleNotFoundError: mcp` | extra `[mcp]` nao instalado | `pip install "sparkforge-aws[mcp]"` |
 | `devin mcp list` nao mostra `sparkforge-aws` | arquivo no escopo global em vez de projeto | confira se `.devin/mcp_config.json` existe na raiz do repo |
 | Desktop nao conecta ao `serverUrl` | servidor HTTP nao rodando ou porta errada | suba com `python -m sparkforge_aws.adapters.mcp --transport http ...` e verifique o endereco |
-| Tools aparecem, mas chamadas falham com `CatalogError` | `SPARKFORGE_CATALOG` aponta para caminho inexistente | remova a variavel ou aponte para um diretorio real |
+| Tools aparecem, mas chamadas falham com `CatalogError` | `SPARKFORGE_AWS_CATALOG` aponta para caminho inexistente | remova a variavel ou aponte para um diretorio real |
 
 Para reinstalar do zero:
 
@@ -529,7 +529,7 @@ Ou selecione o agente **Glue Incremental Performance Architect**.
 ## 5. Coordenador e playbook: como entrar sem escolher à mão
 
 Qual coordenador usar não é escolha manual. `sparkforge-aws next-step` (CLI) ou
-`sparkforge_next_step` (MCP) consulta as rotas `AGENT-*` de
+`sparkforge_aws_next_step` (MCP) consulta as rotas `AGENT-*` de
 `rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
 fase da investigação e área do achado dominante. Há 14 coordenadores, cada um com
 executores declarados: ver a tabela em `AGENTS.md`.
@@ -549,7 +549,7 @@ despacha os cinco executores (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-ve
 `sf-synthesizer`) como subagentes, na ordem do loop de fase — ver a seção 3 para onde os
 perfis moram no Devin.
 
-`sparkforge-aws playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook` devolve a
+`sparkforge-aws playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_aws_playbook` devolve a
 mesma decomposição em passos sequenciais: o que cada executor faz, não faz, pressupõe e
 entrega, na ordem certa. Ele é o **piso das cinco plataformas**, não um substituto de
 segunda classe: é o único caminho em Codex e Copilot CI, onde despacho de subagente não

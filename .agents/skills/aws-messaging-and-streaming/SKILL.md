@@ -2,7 +2,7 @@
 name: aws-messaging-and-streaming
 description: "Use quando for raciocinar sobre padrões de mensageria e streaming na AWS — escolher entre SQS, SNS, EventBridge, Amazon MQ, Kinesis Data Streams, Data Firehose, Managed Service for Apache Flink e MSK, ou decidir qual padrão (mensageria vs. streaming) cabe a um workload. Use também para identificar qual serviço AWS possui cada canal de comunicação com cliente (e-mail via SES; WhatsApp, SMS, MMS, RCS, voice e mobile push via AWS End User Messaging) e rotear à skill especializada. NÃO use para perguntas detalhadas de MSK ou Managed Service for Apache Flink — prefira skills específicas. Não configura canais de comunicação com cliente; adia às skills especializadas."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

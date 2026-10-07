@@ -257,10 +257,10 @@ O SparkForge só recomenda. Ele não roda manutenção.
   [iceberg-v3-readiness](../referencia/skills/iceberg-v3-readiness.md).
 - Referência dos comandos: [analyze](../referencia/cli/analyze.md), [iceberg](../referencia/cli/iceberg.md),
   [judge](../referencia/cli/judge.md), [collect](../referencia/cli/collect.md).
-- Tools MCP: [sparkforge_analyze_iceberg](../referencia/tools/sparkforge_analyze_iceberg.md),
-  [sparkforge_analyze_parquet_footer](../referencia/tools/sparkforge_analyze_parquet_footer.md),
-  [sparkforge_analyze_s3_listing](../referencia/tools/sparkforge_analyze_s3_listing.md),
-  [sparkforge_iceberg_assess_upgrade](../referencia/tools/sparkforge_iceberg_assess_upgrade.md).
+- Tools MCP: [sparkforge_aws_analyze_iceberg](../referencia/tools/sparkforge_aws_analyze_iceberg.md),
+  [sparkforge_aws_analyze_parquet_footer](../referencia/tools/sparkforge_aws_analyze_parquet_footer.md),
+  [sparkforge_aws_analyze_s3_listing](../referencia/tools/sparkforge_aws_analyze_s3_listing.md),
+  [sparkforge_aws_iceberg_assess_upgrade](../referencia/tools/sparkforge_aws_iceberg_assess_upgrade.md).
 
 ## Próximos passos
 

@@ -2,7 +2,7 @@
 name: aws-serverless
 description: "Use quando precisar construir, deployar, gerenciar, debugar, configurar ou otimizar aplicacoes serverless na AWS com Lambda, API Gateway, Step Functions, EventBridge e SAM/CDK. Cobre cold starts, CORS, event source mappings, troubleshooting, concorrencia, SnapStart, Powertools, Function URLs, EventBridge Scheduler, Lambda layers e production readiness. Aplica quando alguem menciona Lambda, API Gateway, Step Functions, SAM templates, CDK serverless stacks, triggers de DynamoDB Stream, SQS event sources, cold starts, timeouts, erros 502/504, throttling, concorrencia, CORS, Powertools ou qualquer arquitetura event-driven na AWS, mesmo sem a palavra \\\"serverless\\\". NAO use para EC2, containers ECS/Fargate ou Amplify hosting."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

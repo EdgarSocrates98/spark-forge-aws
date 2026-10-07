@@ -26,4 +26,4 @@ sparkforge-aws root-cause --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_root_cause`](../tools/sparkforge_root_cause.md)
+[`sparkforge_aws_root_cause`](../tools/sparkforge_aws_root_cause.md)

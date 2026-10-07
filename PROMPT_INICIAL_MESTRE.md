@@ -32,10 +32,10 @@ Não trate este trabalho como uma simples revisão de código. Conduza uma inves
 Nesta ordem, sempre:
 
 1. **Detecte o runtime primeiro** (`sparkforge-aws runtime detect` ou
-   `sparkforge_runtime_detect`). Divergência entre fontes é `SF-ENV-001` em
+   `sparkforge_aws_runtime_detect`). Divergência entre fontes é `SF-ENV-001` em
    P0 e invalida qualquer limiar citado depois — não cite API nem
    propriedade de versão antes de resolver a divergência.
-2. **Abra o case** (`sparkforge-aws case open` ou `sparkforge_case_open`) com um
+2. **Abra o case** (`sparkforge-aws case open` ou `sparkforge_aws_case_open`) com um
    timestamp ISO 8601 explícito. Investigação sem `.sparkforge_aws/case.yaml`
    não é retomável em outra ferramenta ou sessão.
 3. **Leia `AGENT_PROTOCOL.md`.** Skills e agentes apenas APONTAM para ele;
@@ -52,7 +52,7 @@ Nesta ordem, sempre:
    (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`)
    como subagentes — no Devin, pelos perfis que este repositório publica em
    `.agents/agents/` e `.claude/agents/`. **`sparkforge-aws playbook <coordenador>`
-   (CLI) ou a tool MCP `sparkforge_playbook` é o piso das cinco**: é o único
+   (CLI) ou a tool MCP `sparkforge_aws_playbook` é o piso das cinco**: é o único
    caminho em Codex e Copilot CI, onde nenhuma pesquisa de fontes mediu
    despacho, e é o caminho nas três quando o despacho está desligado
    (`subagents_enabled: false` é escolha do usuário, e a opção *None* de

@@ -35,7 +35,7 @@ sparkforge-aws report github --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_report_github`](../tools/sparkforge_report_github.md)
+[`sparkforge_aws_report_github`](../tools/sparkforge_aws_report_github.md)
 
 ## `sparkforge-aws report sign`
 
@@ -54,7 +54,7 @@ sparkforge-aws report sign --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_report_sign`](../tools/sparkforge_report_sign.md), [`sparkforge_report_verify`](../tools/sparkforge_report_verify.md)
+[`sparkforge_aws_report_sign`](../tools/sparkforge_aws_report_sign.md), [`sparkforge_aws_report_verify`](../tools/sparkforge_aws_report_verify.md)
 
 ## `sparkforge-aws report verify`
 
@@ -73,4 +73,4 @@ sparkforge-aws report verify --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_report_sign`](../tools/sparkforge_report_sign.md), [`sparkforge_report_verify`](../tools/sparkforge_report_verify.md)
+[`sparkforge_aws_report_sign`](../tools/sparkforge_aws_report_sign.md), [`sparkforge_aws_report_verify`](../tools/sparkforge_aws_report_verify.md)

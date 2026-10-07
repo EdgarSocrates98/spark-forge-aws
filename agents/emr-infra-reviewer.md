@@ -117,23 +117,23 @@ que um stage específico demora.
 
 ## O que você olha
 
-`sparkforge_collect_emr_cluster` baixa os **seis** dumps de um cluster e grava a união deles
-num artefato; `sparkforge_analyze_emr_cluster` lê esse artefato e emite os facts. A coleta
+`sparkforge_aws_collect_emr_cluster` baixa os **seis** dumps de um cluster e grava a união deles
+num artefato; `sparkforge_aws_analyze_emr_cluster` lê esse artefato e emite os facts. A coleta
 manual serve igual — o shape é PascalCase, idêntico ao que sai de `aws emr ...` —, e é o
 caminho quando o cluster está em outra conta ou já foi terminado e o dump veio de alguém.
 
-Cruze com execução quando a recomendação for de dimensionamento: `sparkforge_analyze_event_log`
+Cruze com execução quando a recomendação for de dimensionamento: `sparkforge_aws_analyze_event_log`
 sobre o event log do run, porque nenhuma decisão de executor se sustenta em `describe-cluster`
 sozinho.
 
-Em EMR on EKS são **duas** chamadas num artefato só: `sparkforge_collect_emr_eks` exige
+Em EMR on EKS são **duas** chamadas num artefato só: `sparkforge_aws_collect_emr_eks` exige
 `virtual_cluster_id` **e** `job_run_id` — a própria API não aceita job run sem o cluster
-virtual que o contém, e nome não serve —, e `sparkforge_analyze_emr_eks` lê o arquivo com as
+virtual que o contém, e nome não serve —, e `sparkforge_aws_analyze_emr_eks` lê o arquivo com as
 duas respostas juntas. O procedimento está em `review-emr-eks`.
 
-Em Serverless são **uma** chamada e um artefato: `sparkforge_collect_emr_serverless` exige o
+Em Serverless são **uma** chamada e um artefato: `sparkforge_aws_collect_emr_serverless` exige o
 `applicationId` — nunca o nome, que é opcional na API e cuja unicidade a documentação não
-declara — e `sparkforge_analyze_emr_serverless` lê o dump de `get-application`, que já traz
+declara — e `sparkforge_aws_analyze_emr_serverless` lê o dump de `get-application`, que já traz
 capacidade inicial, capacidade máxima, auto-start/stop, `runtimeConfiguration` e
 `monitoringConfiguration` juntos. Use `--out`: uma application real estoura a página default
 do verbo, e quem lê pela tela vê metade da configuração sem saber.
@@ -192,10 +192,10 @@ Configuração de cluster não pede licença ao código. Toda recomendação sua
 `Configurations` diz o que ela faz com o dado dos jobs que já rodavam — e a própria
 `SF-EMR-005` mostra a forma, cobrando contagem **por partição** e não só o total.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -229,4 +229,4 @@ Você coordena; não executa. Despache os executores na ordem do loop de fase e 
 um e outro, se o achado justifica seguir ou se falta coleta.
 
 Em plataforma sem despacho de subagente: `sparkforge-aws playbook emr-infra-reviewer` (CLI) ou a
-tool MCP `sparkforge_playbook`.
+tool MCP `sparkforge_aws_playbook`.

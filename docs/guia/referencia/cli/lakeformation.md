@@ -30,7 +30,7 @@ sparkforge-aws lakeformation access-graph --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_lakeformation_access_graph`](../tools/sparkforge_lakeformation_access_graph.md)
+[`sparkforge_aws_lakeformation_access_graph`](../tools/sparkforge_aws_lakeformation_access_graph.md)
 
 ## `sparkforge-aws lakeformation architect`
 
@@ -48,7 +48,7 @@ sparkforge-aws lakeformation architect --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_lakeformation_architect`](../tools/sparkforge_lakeformation_architect.md)
+[`sparkforge_aws_lakeformation_architect`](../tools/sparkforge_aws_lakeformation_architect.md)
 
 ## `sparkforge-aws lakeformation matrix`
 
@@ -68,4 +68,4 @@ sparkforge-aws lakeformation matrix --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_lakeformation_matrix`](../tools/sparkforge_lakeformation_matrix.md)
+[`sparkforge_aws_lakeformation_matrix`](../tools/sparkforge_aws_lakeformation_matrix.md)

@@ -3,7 +3,7 @@
     "span_id": "span_muso00",
     "run_id": "run_otel_semuso",
     "parent_span_id": null,
-    "name": "sparkforge_analyze_pyspark",
+    "name": "sparkforge_aws_analyze_pyspark",
     "component_type": "tool",
     "start_time": 1757592000.0,
     "end_time": 1757592000.042,

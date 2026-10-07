@@ -1,8 +1,8 @@
 """O SDD no perfil operator (features SDD_OPERATOR e SDD_OPERATOR_DURAVEL).
 
-O fluxo ponta a ponta usa as tools reais: `sparkforge_case_open` grava o case,
-`sparkforge_change_sandbox` cria o sandbox cujo id vira `change_id`,
-`sparkforge_change_propose` monta o pacote e `sparkforge_analyze_pyspark` da os
+O fluxo ponta a ponta usa as tools reais: `sparkforge_aws_case_open` grava o case,
+`sparkforge_aws_change_sandbox` cria o sandbox cujo id vira `change_id`,
+`sparkforge_aws_change_propose` monta o pacote e `sparkforge_aws_analyze_pyspark` da os
 facts. Nada de `.sparkforge_aws/` fabricado a mao -- isso o teste do nucleo ja faz.
 
 A spec do operador mora em `.sparkforge_aws/sdd` (`--root`), porque a varredura do
@@ -80,7 +80,7 @@ def _evidencias(repo: Path, raiz: str) -> Path:
     """Facts reais do job e a comparacao do funcval, na pasta da feature."""
     pasta = repo / raiz / FEATURE
     pasta.mkdir(parents=True, exist_ok=True)
-    fatos = call_tool("sparkforge_analyze_pyspark", {"path": str(repo / "lib")})
+    fatos = call_tool("sparkforge_aws_analyze_pyspark", {"path": str(repo / "lib")})
     assert "pyspark.conf_set" in {f["kind"] for f in fatos["items"]}, fatos
     (pasta / "facts.json").write_bytes(json.dumps({"items": fatos["items"]}).encode("utf-8"))
     comparacao = pasta / "compare.json"
@@ -209,9 +209,13 @@ def _ship_done_sem_evidencia(repo: Path) -> None:
 def test_fluxo_operator_ponta_a_ponta(tmp_path):
     repo = tmp_path / "repo"
     diff = _repositorio_do_operador(repo)
-    caso = call_tool("sparkforge_case_open", {"repo": str(repo), "case_id": "C-42", "now": _NOW})
+    caso = call_tool(
+        "sparkforge_aws_case_open", {"repo": str(repo), "case_id": "C-42", "now": _NOW}
+    )
     assert caso.get("case_id") == "C-42", caso
-    sandbox = call_tool("sparkforge_change_sandbox", {"repo": str(repo), "diff_path": str(diff)})
+    sandbox = call_tool(
+        "sparkforge_aws_change_sandbox", {"repo": str(repo), "diff_path": str(diff)}
+    )
     change_id = sandbox.get("id")
     assert change_id and (repo / ".sparkforge_aws" / "sandbox" / change_id).is_dir(), sandbox
     assert REGRA in {r["rule_id"] for r in sandbox["resolved"]}, sandbox
@@ -225,7 +229,7 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert relatorio["ok"] is True
 
     # a spec em .sparkforge_aws/sdd nao desatualiza a copia validada
-    proposta = call_tool("sparkforge_change_propose",
+    proposta = call_tool("sparkforge_aws_change_propose",
                          {"repo": str(repo), "sandbox_id": change_id, "now": _NOW})
     assert proposta["refused"] == [], proposta
     assert (repo / ".sparkforge_aws" / "proposal" / change_id).is_dir()
@@ -240,14 +244,14 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     comparacao.write_bytes(json.dumps({"items": [_DELTA]}).encode("utf-8"))
 
     # sandbox limpo: o pacote de proposal guarda o id e o relatorio
-    call_tool("sparkforge_change_sandbox", {"repo": str(repo), "clean": True})
+    call_tool("sparkforge_aws_change_sandbox", {"repo": str(repo), "clean": True})
     assert not (repo / ".sparkforge_aws" / "sandbox" / change_id).exists()
     assert _check(repo) == ([], [])
 
     # sem nenhum dos dois e com outro case: o ship done deixa as referencias
     # historicas, sustentadas pelo hash que ele gravou
     shutil.rmtree(repo / ".sparkforge_aws" / "proposal" / change_id)
-    outro = call_tool("sparkforge_case_open",
+    outro = call_tool("sparkforge_aws_case_open",
                       {"repo": str(repo), "case_id": "C-43", "now": _NOW, "reopen": True})
     assert outro.get("case_id") == "C-43", outro
     assert _check(repo) == ([], [])
@@ -265,11 +269,15 @@ def test_spec_em_docs_sdd_desatualiza_o_sandbox(tmp_path):
     """O contraste de D1: a mesma spec em docs/sdd muda a arvore que o sandbox copiou."""
     repo = tmp_path / "repo"
     diff = _repositorio_do_operador(repo)
-    caso = call_tool("sparkforge_case_open", {"repo": str(repo), "case_id": "C-42", "now": _NOW})
-    sandbox = call_tool("sparkforge_change_sandbox", {"repo": str(repo), "diff_path": str(diff)})
+    caso = call_tool(
+        "sparkforge_aws_case_open", {"repo": str(repo), "case_id": "C-42", "now": _NOW}
+    )
+    sandbox = call_tool(
+        "sparkforge_aws_change_sandbox", {"repo": str(repo), "diff_path": str(diff)}
+    )
     _evidencias(repo, "docs/sdd")
     _feature_operator(repo, caso["case_id"], sandbox["id"], raiz="docs/sdd")
-    proposta = call_tool("sparkforge_change_propose",
+    proposta = call_tool("sparkforge_aws_change_propose",
                          {"repo": str(repo), "sandbox_id": sandbox["id"], "now": _NOW})
     assert [r["reason"] for r in proposta["refused"]] == ["sandbox_desatualizado"], proposta
 

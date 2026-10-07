@@ -198,7 +198,7 @@ Trust Lab ── 32 ataques determinísticos contra defesas reais
 - `provider_usage_coverage` em `inspect_run.models`: `measured`/`total`,
   `unresolved` sem span de modelo.
 - Superfícies: `agentops timeline`/`critical-path` no CLI +
-  `sparkforge_agentops_timeline`/`sparkforge_agentops_critical_path` MCP —
+  `sparkforge_aws_agentops_timeline`/`sparkforge_aws_agentops_critical_path` MCP —
   141→143 tools declarados em `parity.yaml`, golden-allowlist, surface lock,
   STATUS e docs de referência regeneradas.
 

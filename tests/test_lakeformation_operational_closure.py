@@ -230,7 +230,7 @@ def test_cli_and_mcp_operational_review_parity(tmp_path, capsys):
     payload_path.write_text(json.dumps(payload), encoding="utf-8")
     assert main(["lakeformation", "architect", "--input", str(payload_path)]) == 0
     cli_result = json.loads(capsys.readouterr().out)
-    mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+    mcp_result = call_tool("sparkforge_aws_lakeformation_architect", {"payload": payload})
     # `_trust` e aditivo de call_tool (FASE 3); formato travado em
     # tests/test_runtime_convergence_trust.py
     mcp_result.pop("_trust", None)

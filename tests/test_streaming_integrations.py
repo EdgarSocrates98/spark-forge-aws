@@ -58,7 +58,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
     )
     expected = analyze_streaming_integrations(str(source), limit=20)
     actual = call_tool(
-        "sparkforge_analyze_streaming_integrations", {"path": str(source), "limit": 20}
+        "sparkforge_aws_analyze_streaming_integrations", {"path": str(source), "limit": 20}
     )
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
@@ -87,6 +87,6 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
 
 
 def test_tool_is_read_only_and_declared():
-    spec = TOOLS["sparkforge_analyze_streaming_integrations"]
+    spec = TOOLS["sparkforge_aws_analyze_streaming_integrations"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["path"]

@@ -24,7 +24,7 @@ case rodado, `blackboard summary` deixa de devolver zero.
 
 Quando a arbitragem não fecha, o `arbitrate` emite um `DebatePlan` e para, com
 `debate.unresolved`. Desde 2026-09-11 esse plano tem executor:
-`sparkforge-aws debate start|next|submit` (tools `sparkforge_debate_start|next|submit`).
+`sparkforge-aws debate start|next|submit` (tools `sparkforge_aws_debate_start|next|submit`).
 É uma máquina de estados L0 que diz de quem é a vez, recusa por nome a submissão fora
 do protocolo e só aceita evidência nova **reextraída** por extrator da allowlist. O
 fechamento é sempre do `referee`. O argumento é escrito pelo host, pela skill
@@ -170,8 +170,8 @@ AWS ou provider.
 `--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO dos
 facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles findings.
 Alimentá-lo com um subconjunto fabrica claim desancorada que a execução real não
-produz. A tool MCP equivalente é `sparkforge_arbitrate`, e ela é `LOCAL_MUTATION`,
-como as três `sparkforge_debate_start|next|submit`.
+produz. A tool MCP equivalente é `sparkforge_aws_arbitrate`, e ela é `LOCAL_MUTATION`,
+como as três `sparkforge_aws_debate_start|next|submit`.
 
 Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que falta:
 [`docs/agentic-evolution-report.md`](../agentic-evolution-report.md).

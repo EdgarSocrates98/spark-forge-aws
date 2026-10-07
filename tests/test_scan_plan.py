@@ -119,7 +119,7 @@ def test_manifesto_ilegivel_e_erro(tmp_path):
         plan(tmp_path)
 
 
-def test_varredura_pula_sparkforge_e_relata(tmp_path):
+def test_varredura_pula_sparkforge_aws_e_relata(tmp_path):
     _grava(tmp_path, f"{ART}/eventlog/x.jsonl", "{}\n")
     plano = plan(tmp_path)
     assert not plano.entradas
@@ -138,6 +138,6 @@ def test_todo_kind_emitido_pelos_coletores_esta_no_mapa():
 def test_recusas_declaradas_na_tool_sao_as_do_modulo():
     from sparkforge_aws.adapters.tools import TOOLS
 
-    esquema = TOOLS["sparkforge_scan"]["outputSchema"]
+    esquema = TOOLS["sparkforge_aws_scan"]["outputSchema"]
     texto = json.dumps(esquema)
     assert all(r in texto for r in RECUSAS)

@@ -54,10 +54,13 @@ def test_caminho():
 
 
 def test_tool():
-    politica = Politica(denied=("sparkforge_scan",), ask_classes=("CLOUD_MUTATION",))
-    assert decidir_tool("sparkforge_scan", "LOCAL_MUTATION", politica).decision == DENY
-    assert decidir_tool("sparkforge_collect_glue_job", "CLOUD_MUTATION", politica).decision == ASK
-    assert decidir_tool("sparkforge_judge", "READ_ONLY", politica).decision == ALLOW
+    politica = Politica(denied=("sparkforge_aws_scan",), ask_classes=("CLOUD_MUTATION",))
+    assert decidir_tool("sparkforge_aws_scan", "LOCAL_MUTATION", politica).decision == DENY
+    assert (
+        decidir_tool("sparkforge_aws_collect_glue_job", "CLOUD_MUTATION", politica).decision
+        == ASK
+    )
+    assert decidir_tool("sparkforge_aws_judge", "READ_ONLY", politica).decision == ALLOW
 
 
 @pytest.mark.parametrize("dados", [
@@ -142,12 +145,16 @@ def test_regras_ask():
     politica = Politica(
         bash=(Regra("terraform destroy *", ASK), Regra("rm -rf *", DENY)),
         paths=(Regra("**/*.tf", ASK),),
-        ask_classes=("CLOUD_MUTATION",), ask_names=("sparkforge_scan",), denied=("sparkforge_x",),
+        ask_classes=("CLOUD_MUTATION",),
+        ask_names=("sparkforge_aws_scan",),
+        denied=("sparkforge_aws_x",),
     )
-    regras = regras_ask(politica, {"CLOUD_MUTATION": ["sparkforge_x", "sparkforge_collect_a"]})
+    regras = regras_ask(
+        politica, {"CLOUD_MUTATION": ["sparkforge_aws_x", "sparkforge_aws_collect_a"]}
+    )
     assert regras == [
         "Bash(terraform destroy *)", "Edit(**/*.tf)", "Write(**/*.tf)",
-        "mcp__sparkforge-aws__sparkforge_collect_a", "mcp__sparkforge-aws__sparkforge_scan",
+        "mcp__sparkforge-aws__sparkforge_aws_collect_a", "mcp__sparkforge-aws__sparkforge_aws_scan",
     ]
 
 

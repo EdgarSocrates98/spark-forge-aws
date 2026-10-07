@@ -49,4 +49,4 @@ sparkforge-aws economy report --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_economy_report`](../tools/sparkforge_economy_report.md)
+[`sparkforge_aws_economy_report`](../tools/sparkforge_aws_economy_report.md)

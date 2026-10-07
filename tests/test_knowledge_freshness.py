@@ -156,19 +156,19 @@ class TestLock:
         assert carregar_lock(tmp_path) == (None, "lock_ilegivel")
 
     def test_lock_avulso_por_variavel_vence_a_raiz(self, tmp_path, monkeypatch):
-        """`SPARKFORGE_SOURCES_LOCK` troca so o lock, e nao a raiz de knowledge."""
+        """`SPARKFORGE_AWS_SOURCES_LOCK` troca so o lock, e nao a raiz de knowledge."""
         avulso = tmp_path / "outro.json"
         avulso.write_text(json.dumps({"sources": _lock(pinned=True)}), encoding="utf-8")
-        monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(avulso))
+        monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(avulso))
         fontes, motivo = carregar_lock(tmp_path / "nao-existe")
         assert motivo is None and fontes[U]["pinned"] is True
 
     def test_lock_avulso_que_nao_e_json_existente_e_recusado(self, tmp_path, monkeypatch):
         outro = tmp_path / "segredo.txt"
         outro.write_text("nada", encoding="utf-8")
-        monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(outro))
+        monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(outro))
         assert carregar_lock(tmp_path) == (None, "lock_ilegivel")
-        monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(tmp_path / "nao-existe.json"))
+        monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(tmp_path / "nao-existe.json"))
         assert carregar_lock(tmp_path) == (None, "lock_ilegivel")
 
     def test_legivel(self, tmp_path):

@@ -7,7 +7,7 @@ Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e p
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-spark-plan/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze plan', 'sparkforge-aws analyze pyspark', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze plan', 'sparkforge-aws analyze pyspark', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 

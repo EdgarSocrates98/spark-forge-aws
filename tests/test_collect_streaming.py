@@ -281,7 +281,7 @@ def test_cli_and_mcp_streaming_temporal_collection_match(monkeypatch, tmp_path, 
     cli_code = main(["collect", "streaming-integrations", "--repo", str(tmp_path / "cli"), *common])
     cli_payload = json.loads(capsys.readouterr().out)
     mcp_payload = call_tool(
-        "sparkforge_collect_streaming_integrations",
+        "sparkforge_aws_collect_streaming_integrations",
         {
             "repo": str(tmp_path / "mcp"),
             "kinesis_stream_name": "orders",

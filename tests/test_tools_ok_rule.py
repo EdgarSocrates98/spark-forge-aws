@@ -21,7 +21,7 @@ def _bloco(arquivo: str, marca: str) -> tuple[str, int, str]:
 
 
 def _tools(bloco: str) -> set[str]:
-    return set(re.findall(r"`(sparkforge_[a-z_]+)`", bloco))
+    return set(re.findall(r"`(sparkforge_aws_[a-z_]+)`", bloco))
 
 
 def test_claude_md_abre_com_a_regra_de_prova():
@@ -49,7 +49,7 @@ def test_verbos_da_regra_existem_e_cobrem_a_suite():
     for pergunta in suite["questions"]:
         for item in pergunta["required_tools"]:
             alternativas = item if isinstance(item, list) else [item]
-            assert any(f"sparkforge_{a}" in citadas for a in alternativas), (
+            assert any(f"sparkforge_aws_{a}" in citadas for a in alternativas), (
                 pergunta["id"],
                 alternativas,
             )

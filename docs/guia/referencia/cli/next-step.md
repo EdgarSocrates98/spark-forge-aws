@@ -17,4 +17,4 @@ sparkforge-aws next-step --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_next_step`](../tools/sparkforge_next_step.md)
+[`sparkforge_aws_next_step`](../tools/sparkforge_aws_next_step.md)

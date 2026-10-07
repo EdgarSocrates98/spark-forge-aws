@@ -18,4 +18,4 @@ sparkforge-aws finops --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_capacity`](../tools/sparkforge_capacity.md), [`sparkforge_finops`](../tools/sparkforge_finops.md)
+[`sparkforge_aws_capacity`](../tools/sparkforge_aws_capacity.md), [`sparkforge_aws_finops`](../tools/sparkforge_aws_finops.md)

@@ -7,7 +7,7 @@ Use quando o job Glue chama uma biblioteca Python com múltiplos módulos, facto
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-library-call-graph/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/graph/graphframes-api.md', '../../knowledge/graph/availability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze pyspark', 'sparkforge-aws analyze call-graph']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/graph/graphframes-api.md', '../../knowledge/graph/availability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze pyspark', 'sparkforge-aws analyze call-graph']} |
 
 ## Procedimento (texto integral)
 

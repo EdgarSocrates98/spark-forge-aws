@@ -80,7 +80,7 @@ sparkforge-aws analyze airflow-dag --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_airflow_dag`](../tools/sparkforge_analyze_airflow_dag.md)
+[`sparkforge_aws_analyze_airflow_dag`](../tools/sparkforge_aws_analyze_airflow_dag.md)
 
 ## `sparkforge-aws analyze athena-workgroup`
 
@@ -103,7 +103,7 @@ sparkforge-aws analyze athena-workgroup --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_athena_workgroup`](../tools/sparkforge_analyze_athena_workgroup.md)
+[`sparkforge_aws_analyze_athena_workgroup`](../tools/sparkforge_aws_analyze_athena_workgroup.md)
 
 ## `sparkforge-aws analyze call-graph`
 
@@ -126,7 +126,7 @@ sparkforge-aws analyze call-graph --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_call_graph`](../tools/sparkforge_analyze_call_graph.md)
+[`sparkforge_aws_analyze_call_graph`](../tools/sparkforge_aws_analyze_call_graph.md)
 
 ## `sparkforge-aws analyze catalog-schema`
 
@@ -149,7 +149,7 @@ sparkforge-aws analyze catalog-schema --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_catalog_schema`](../tools/sparkforge_analyze_catalog_schema.md)
+[`sparkforge_aws_analyze_catalog_schema`](../tools/sparkforge_aws_analyze_catalog_schema.md)
 
 ## `sparkforge-aws analyze cdc`
 
@@ -173,7 +173,7 @@ sparkforge-aws analyze cdc --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cdc`](../tools/sparkforge_analyze_cdc.md)
+[`sparkforge_aws_analyze_cdc`](../tools/sparkforge_aws_analyze_cdc.md)
 
 ## `sparkforge-aws analyze cloudwatch`
 
@@ -196,7 +196,7 @@ sparkforge-aws analyze cloudwatch --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
+[`sparkforge_aws_analyze_cloudwatch`](../tools/sparkforge_aws_analyze_cloudwatch.md), [`sparkforge_aws_analyze_event_log`](../tools/sparkforge_aws_analyze_event_log.md), [`sparkforge_aws_analyze_glue_job_runs`](../tools/sparkforge_aws_analyze_glue_job_runs.md), [`sparkforge_aws_analyze_sql_metrics`](../tools/sparkforge_aws_analyze_sql_metrics.md)
 
 ## `sparkforge-aws analyze cloudwatch-logs`
 
@@ -219,7 +219,7 @@ sparkforge-aws analyze cloudwatch-logs --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cloudwatch_logs`](../tools/sparkforge_analyze_cloudwatch_logs.md), [`sparkforge_analyze_error_signatures`](../tools/sparkforge_analyze_error_signatures.md)
+[`sparkforge_aws_analyze_cloudwatch_logs`](../tools/sparkforge_aws_analyze_cloudwatch_logs.md), [`sparkforge_aws_analyze_error_signatures`](../tools/sparkforge_aws_analyze_error_signatures.md)
 
 ## `sparkforge-aws analyze consumers`
 
@@ -242,7 +242,7 @@ sparkforge-aws analyze consumers --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_consumers`](../tools/sparkforge_analyze_consumers.md)
+[`sparkforge_aws_analyze_consumers`](../tools/sparkforge_aws_analyze_consumers.md)
 
 ## `sparkforge-aws analyze controlm-jobs`
 
@@ -266,7 +266,7 @@ sparkforge-aws analyze controlm-jobs --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_controlm_jobs`](../tools/sparkforge_analyze_controlm_jobs.md)
+[`sparkforge_aws_analyze_controlm_jobs`](../tools/sparkforge_aws_analyze_controlm_jobs.md)
 
 ## `sparkforge-aws analyze data-observability`
 
@@ -285,7 +285,7 @@ sparkforge-aws analyze data-observability --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_data_observability`](../tools/sparkforge_analyze_data_observability.md)
+[`sparkforge_aws_analyze_data_observability`](../tools/sparkforge_aws_analyze_data_observability.md)
 
 ## `sparkforge-aws analyze data-quality`
 
@@ -308,7 +308,7 @@ sparkforge-aws analyze data-quality --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_data_quality`](../tools/sparkforge_analyze_data_quality.md)
+[`sparkforge_aws_analyze_data_quality`](../tools/sparkforge_aws_analyze_data_quality.md)
 
 ## `sparkforge-aws analyze dbt-artifacts`
 
@@ -327,7 +327,7 @@ sparkforge-aws analyze dbt-artifacts --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_dbt_artifacts`](../tools/sparkforge_analyze_dbt_artifacts.md)
+[`sparkforge_aws_analyze_dbt_artifacts`](../tools/sparkforge_aws_analyze_dbt_artifacts.md)
 
 ## `sparkforge-aws analyze dq-ai`
 
@@ -350,7 +350,7 @@ sparkforge-aws analyze dq-ai --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_dq_ai`](../tools/sparkforge_analyze_dq_ai.md), [`sparkforge_dq_ai_assess`](../tools/sparkforge_dq_ai_assess.md)
+[`sparkforge_aws_analyze_dq_ai`](../tools/sparkforge_aws_analyze_dq_ai.md), [`sparkforge_aws_dq_ai_assess`](../tools/sparkforge_aws_dq_ai_assess.md)
 
 ## `sparkforge-aws analyze duckdb-microscope`
 
@@ -369,7 +369,7 @@ sparkforge-aws analyze duckdb-microscope --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_duckdb_microscope`](../tools/sparkforge_analyze_duckdb_microscope.md)
+[`sparkforge_aws_analyze_duckdb_microscope`](../tools/sparkforge_aws_analyze_duckdb_microscope.md)
 
 ## `sparkforge-aws analyze emr-cluster`
 
@@ -392,7 +392,7 @@ sparkforge-aws analyze emr-cluster --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_emr_cluster`](../tools/sparkforge_analyze_emr_cluster.md)
+[`sparkforge_aws_analyze_emr_cluster`](../tools/sparkforge_aws_analyze_emr_cluster.md)
 
 ## `sparkforge-aws analyze emr-eks`
 
@@ -415,7 +415,7 @@ sparkforge-aws analyze emr-eks --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_emr_eks`](../tools/sparkforge_analyze_emr_eks.md)
+[`sparkforge_aws_analyze_emr_eks`](../tools/sparkforge_aws_analyze_emr_eks.md)
 
 ## `sparkforge-aws analyze emr-serverless`
 
@@ -438,7 +438,7 @@ sparkforge-aws analyze emr-serverless --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_emr_serverless`](../tools/sparkforge_analyze_emr_serverless.md)
+[`sparkforge_aws_analyze_emr_serverless`](../tools/sparkforge_aws_analyze_emr_serverless.md)
 
 ## `sparkforge-aws analyze error-signatures`
 
@@ -461,7 +461,7 @@ sparkforge-aws analyze error-signatures --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cloudwatch_logs`](../tools/sparkforge_analyze_cloudwatch_logs.md), [`sparkforge_analyze_error_signatures`](../tools/sparkforge_analyze_error_signatures.md)
+[`sparkforge_aws_analyze_cloudwatch_logs`](../tools/sparkforge_aws_analyze_cloudwatch_logs.md), [`sparkforge_aws_analyze_error_signatures`](../tools/sparkforge_aws_analyze_error_signatures.md)
 
 ## `sparkforge-aws analyze event-driven`
 
@@ -484,7 +484,7 @@ sparkforge-aws analyze event-driven --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_event_driven`](../tools/sparkforge_analyze_event_driven.md)
+[`sparkforge_aws_analyze_event_driven`](../tools/sparkforge_aws_analyze_event_driven.md)
 
 ## `sparkforge-aws analyze event-log`
 
@@ -507,7 +507,7 @@ sparkforge-aws analyze event-log --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
+[`sparkforge_aws_analyze_cloudwatch`](../tools/sparkforge_aws_analyze_cloudwatch.md), [`sparkforge_aws_analyze_event_log`](../tools/sparkforge_aws_analyze_event_log.md), [`sparkforge_aws_analyze_glue_job_runs`](../tools/sparkforge_aws_analyze_glue_job_runs.md), [`sparkforge_aws_analyze_sql_metrics`](../tools/sparkforge_aws_analyze_sql_metrics.md)
 
 ## `sparkforge-aws analyze flink`
 
@@ -531,7 +531,7 @@ sparkforge-aws analyze flink --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_flink`](../tools/sparkforge_analyze_flink.md)
+[`sparkforge_aws_analyze_flink`](../tools/sparkforge_aws_analyze_flink.md)
 
 ## `sparkforge-aws analyze forge-lab`
 
@@ -550,7 +550,7 @@ sparkforge-aws analyze forge-lab --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_forge_lab`](../tools/sparkforge_analyze_forge_lab.md)
+[`sparkforge_aws_analyze_forge_lab`](../tools/sparkforge_aws_analyze_forge_lab.md)
 
 ## `sparkforge-aws analyze glue-job-runs`
 
@@ -575,7 +575,7 @@ sparkforge-aws analyze glue-job-runs --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
+[`sparkforge_aws_analyze_cloudwatch`](../tools/sparkforge_aws_analyze_cloudwatch.md), [`sparkforge_aws_analyze_event_log`](../tools/sparkforge_aws_analyze_event_log.md), [`sparkforge_aws_analyze_glue_job_runs`](../tools/sparkforge_aws_analyze_glue_job_runs.md), [`sparkforge_aws_analyze_sql_metrics`](../tools/sparkforge_aws_analyze_sql_metrics.md)
 
 ## `sparkforge-aws analyze glue-resource-link`
 
@@ -598,7 +598,7 @@ sparkforge-aws analyze glue-resource-link --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
+[`sparkforge_aws_analyze_glue_resource_link`](../tools/sparkforge_aws_analyze_glue_resource_link.md), [`sparkforge_aws_analyze_iam_access`](../tools/sparkforge_aws_analyze_iam_access.md), [`sparkforge_aws_analyze_lakeformation_grants`](../tools/sparkforge_aws_analyze_lakeformation_grants.md)
 
 ## `sparkforge-aws analyze glue-streaming`
 
@@ -621,7 +621,7 @@ sparkforge-aws analyze glue-streaming --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_glue_streaming`](../tools/sparkforge_analyze_glue_streaming.md)
+[`sparkforge_aws_analyze_glue_streaming`](../tools/sparkforge_aws_analyze_glue_streaming.md)
 
 ## `sparkforge-aws analyze graph`
 
@@ -644,7 +644,7 @@ sparkforge-aws analyze graph --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_graph`](../tools/sparkforge_analyze_graph.md)
+[`sparkforge_aws_analyze_graph`](../tools/sparkforge_aws_analyze_graph.md)
 
 ## `sparkforge-aws analyze iam-access`
 
@@ -667,7 +667,7 @@ sparkforge-aws analyze iam-access --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
+[`sparkforge_aws_analyze_glue_resource_link`](../tools/sparkforge_aws_analyze_glue_resource_link.md), [`sparkforge_aws_analyze_iam_access`](../tools/sparkforge_aws_analyze_iam_access.md), [`sparkforge_aws_analyze_lakeformation_grants`](../tools/sparkforge_aws_analyze_lakeformation_grants.md)
 
 ## `sparkforge-aws analyze iceberg`
 
@@ -690,7 +690,7 @@ sparkforge-aws analyze iceberg --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_iceberg`](../tools/sparkforge_analyze_iceberg.md)
+[`sparkforge_aws_analyze_iceberg`](../tools/sparkforge_aws_analyze_iceberg.md)
 
 ## `sparkforge-aws analyze lakeformation-grants`
 
@@ -713,7 +713,7 @@ sparkforge-aws analyze lakeformation-grants --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
+[`sparkforge_aws_analyze_glue_resource_link`](../tools/sparkforge_aws_analyze_glue_resource_link.md), [`sparkforge_aws_analyze_iam_access`](../tools/sparkforge_aws_analyze_iam_access.md), [`sparkforge_aws_analyze_lakeformation_grants`](../tools/sparkforge_aws_analyze_lakeformation_grants.md)
 
 ## `sparkforge-aws analyze lakehouse-catalog`
 
@@ -732,7 +732,7 @@ sparkforge-aws analyze lakehouse-catalog --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_lakehouse_catalog`](../tools/sparkforge_analyze_lakehouse_catalog.md)
+[`sparkforge_aws_analyze_lakehouse_catalog`](../tools/sparkforge_aws_analyze_lakehouse_catalog.md)
 
 ## `sparkforge-aws analyze orchestration`
 
@@ -751,7 +751,7 @@ sparkforge-aws analyze orchestration --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_orchestration`](../tools/sparkforge_analyze_orchestration.md)
+[`sparkforge_aws_analyze_orchestration`](../tools/sparkforge_aws_analyze_orchestration.md)
 
 ## `sparkforge-aws analyze parquet-footer`
 
@@ -774,7 +774,7 @@ sparkforge-aws analyze parquet-footer --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_parquet_footer`](../tools/sparkforge_analyze_parquet_footer.md)
+[`sparkforge_aws_analyze_parquet_footer`](../tools/sparkforge_aws_analyze_parquet_footer.md)
 
 ## `sparkforge-aws analyze plan`
 
@@ -797,7 +797,7 @@ sparkforge-aws analyze plan --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_plan`](../tools/sparkforge_analyze_plan.md)
+[`sparkforge_aws_analyze_plan`](../tools/sparkforge_aws_analyze_plan.md)
 
 ## `sparkforge-aws analyze platform-ecosystem`
 
@@ -816,7 +816,7 @@ sparkforge-aws analyze platform-ecosystem --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_platform_ecosystem`](../tools/sparkforge_analyze_platform_ecosystem.md)
+[`sparkforge_aws_analyze_platform_ecosystem`](../tools/sparkforge_aws_analyze_platform_ecosystem.md)
 
 ## `sparkforge-aws analyze platform-graph`
 
@@ -840,7 +840,7 @@ sparkforge-aws analyze platform-graph --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_platform_graph`](../tools/sparkforge_analyze_platform_graph.md)
+[`sparkforge_aws_analyze_platform_graph`](../tools/sparkforge_aws_analyze_platform_graph.md)
 
 ## `sparkforge-aws analyze pyspark`
 
@@ -855,7 +855,7 @@ sparkforge-aws analyze pyspark --help
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
 | `--path` | sim | texto |  |  | Arquivo ou diretorio a analisar. |
-| `--upstream` | não | texto |  |  | Documento sparkforge/upstream-facts/v1 com facts de outro motor (evidencia, nunca instrucao); entram no fim de `items`. |
+| `--upstream` | não | texto |  |  | Documento sparkforge_aws/upstream-facts/v1 com facts de outro motor (evidencia, nunca instrucao); entram no fim de `items`. |
 | `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON) neste arquivo. |
 | `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
 | `--limit` | não | texto |  | `50` |  |
@@ -864,7 +864,7 @@ sparkforge-aws analyze pyspark --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_pyspark`](../tools/sparkforge_analyze_pyspark.md)
+[`sparkforge_aws_analyze_pyspark`](../tools/sparkforge_aws_analyze_pyspark.md)
 
 ## `sparkforge-aws analyze s3-listing`
 
@@ -887,7 +887,7 @@ sparkforge-aws analyze s3-listing --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_s3_listing`](../tools/sparkforge_analyze_s3_listing.md)
+[`sparkforge_aws_analyze_s3_listing`](../tools/sparkforge_aws_analyze_s3_listing.md)
 
 ## `sparkforge-aws analyze schema-registry`
 
@@ -910,7 +910,7 @@ sparkforge-aws analyze schema-registry --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_schema_registry`](../tools/sparkforge_analyze_schema_registry.md)
+[`sparkforge_aws_analyze_schema_registry`](../tools/sparkforge_aws_analyze_schema_registry.md)
 
 ## `sparkforge-aws analyze sfn-history`
 
@@ -933,7 +933,7 @@ sparkforge-aws analyze sfn-history --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_sfn_history`](../tools/sparkforge_analyze_sfn_history.md)
+[`sparkforge_aws_analyze_sfn_history`](../tools/sparkforge_aws_analyze_sfn_history.md)
 
 ## `sparkforge-aws analyze sql`
 
@@ -957,7 +957,7 @@ sparkforge-aws analyze sql --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_sql`](../tools/sparkforge_analyze_sql.md)
+[`sparkforge_aws_analyze_sql`](../tools/sparkforge_aws_analyze_sql.md)
 
 ## `sparkforge-aws analyze sql-metrics`
 
@@ -980,7 +980,7 @@ sparkforge-aws analyze sql-metrics --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_cloudwatch`](../tools/sparkforge_analyze_cloudwatch.md), [`sparkforge_analyze_event_log`](../tools/sparkforge_analyze_event_log.md), [`sparkforge_analyze_glue_job_runs`](../tools/sparkforge_analyze_glue_job_runs.md), [`sparkforge_analyze_sql_metrics`](../tools/sparkforge_analyze_sql_metrics.md)
+[`sparkforge_aws_analyze_cloudwatch`](../tools/sparkforge_aws_analyze_cloudwatch.md), [`sparkforge_aws_analyze_event_log`](../tools/sparkforge_aws_analyze_event_log.md), [`sparkforge_aws_analyze_glue_job_runs`](../tools/sparkforge_aws_analyze_glue_job_runs.md), [`sparkforge_aws_analyze_sql_metrics`](../tools/sparkforge_aws_analyze_sql_metrics.md)
 
 ## `sparkforge-aws analyze step-functions`
 
@@ -1003,7 +1003,7 @@ sparkforge-aws analyze step-functions --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_step_functions`](../tools/sparkforge_analyze_step_functions.md)
+[`sparkforge_aws_analyze_step_functions`](../tools/sparkforge_aws_analyze_step_functions.md)
 
 ## `sparkforge-aws analyze streaming`
 
@@ -1027,7 +1027,7 @@ sparkforge-aws analyze streaming --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_streaming`](../tools/sparkforge_analyze_streaming.md)
+[`sparkforge_aws_analyze_streaming`](../tools/sparkforge_aws_analyze_streaming.md)
 
 ## `sparkforge-aws analyze streaming-composition`
 
@@ -1057,7 +1057,7 @@ sparkforge-aws analyze streaming-composition --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_streaming_composition`](../tools/sparkforge_analyze_streaming_composition.md)
+[`sparkforge_aws_analyze_streaming_composition`](../tools/sparkforge_aws_analyze_streaming_composition.md)
 
 ## `sparkforge-aws analyze streaming-integrations`
 
@@ -1080,7 +1080,7 @@ sparkforge-aws analyze streaming-integrations --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_streaming_integrations`](../tools/sparkforge_analyze_streaming_integrations.md)
+[`sparkforge_aws_analyze_streaming_integrations`](../tools/sparkforge_aws_analyze_streaming_integrations.md)
 
 ## `sparkforge-aws analyze streaming-ops`
 
@@ -1103,7 +1103,7 @@ sparkforge-aws analyze streaming-ops --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_streaming_ops`](../tools/sparkforge_analyze_streaming_ops.md)
+[`sparkforge_aws_analyze_streaming_ops`](../tools/sparkforge_aws_analyze_streaming_ops.md)
 
 ## `sparkforge-aws analyze terraform`
 
@@ -1126,7 +1126,7 @@ sparkforge-aws analyze terraform --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_terraform`](../tools/sparkforge_analyze_terraform.md)
+[`sparkforge_aws_analyze_terraform`](../tools/sparkforge_aws_analyze_terraform.md)
 
 ## `sparkforge-aws analyze terraform-diff`
 
@@ -1150,7 +1150,7 @@ sparkforge-aws analyze terraform-diff --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_terraform_diff`](../tools/sparkforge_analyze_terraform_diff.md)
+[`sparkforge_aws_analyze_terraform_diff`](../tools/sparkforge_aws_analyze_terraform_diff.md)
 
 ## `sparkforge-aws analyze transport`
 
@@ -1174,7 +1174,7 @@ sparkforge-aws analyze transport --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_transport`](../tools/sparkforge_analyze_transport.md)
+[`sparkforge_aws_analyze_transport`](../tools/sparkforge_aws_analyze_transport.md)
 
 ## `sparkforge-aws analyze workload`
 
@@ -1197,4 +1197,4 @@ sparkforge-aws analyze workload --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_workload`](../tools/sparkforge_analyze_workload.md)
+[`sparkforge_aws_analyze_workload`](../tools/sparkforge_aws_analyze_workload.md)

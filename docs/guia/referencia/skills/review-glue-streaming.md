@@ -7,7 +7,7 @@ Use quando houver dump JSON/JSONL de AWS Glue Streaming ou Real-Time Mode e for 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-glue-streaming/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/glue-streaming-rtm.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze glue-streaming', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/glue-streaming-rtm.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze glue-streaming', 'sparkforge-aws judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -66,7 +66,7 @@ que permaneça unresolved.
 ### Protocolo
 
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
-`sparkforge_next_step`, valide a saída, não executa manutenção destrutiva e
+`sparkforge_aws_next_step`, valide a saída, não executa manutenção destrutiva e
 sobe mutações ao operador.
 
 ### Quando NÃO usar

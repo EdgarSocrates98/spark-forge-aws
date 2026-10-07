@@ -7,7 +7,7 @@
 # parcial, e as perguntas cuja resposta certa e RECUSAR.
 #
 # `required_tools`: cada item e um verbo canonico (o nome da tool MCP sem o
-# prefixo `sparkforge_`, ou o verbo da CLI com `-` virando `_`), ou uma LISTA de
+# prefixo `sparkforge_aws_`, ou o verbo da CLI com `-` virando `_`), ou uma LISTA de
 # verbos dos quais basta um. `order`: pares [antes, depois] sobre a primeira
 # ocorrencia de cada verbo.
 #

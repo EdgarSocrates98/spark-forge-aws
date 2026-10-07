@@ -9,7 +9,7 @@ sparkforge-aws policy check
 # 2. O que ela decide para um comando, um caminho ou uma tool?
 sparkforge-aws policy explain --bash "cd infra && terraform destroy -auto-approve"
 sparkforge-aws policy explain --path rules/catalog/pyspark.yaml
-sparkforge-aws policy explain --tool sparkforge_collect_glue_job
+sparkforge-aws policy explain --tool sparkforge_aws_collect_glue_job
 
 # 3. Depois de editar a policy, gere as regras de confirmação do Claude Code
 sparkforge-aws policy sync-settings
@@ -94,5 +94,5 @@ Regra de shell compara o **texto** do comando, não o programa que roda. Um alia
 
 ## Próximos passos
 
-- Referência: [`sparkforge-aws policy`](../referencia/cli/policy.md) e [`sparkforge_policy_explain`](../referencia/tools/sparkforge_policy_explain.md).
+- Referência: [`sparkforge-aws policy`](../referencia/cli/policy.md) e [`sparkforge_aws_policy_explain`](../referencia/tools/sparkforge_aws_policy_explain.md).
 - O modelo de ameaça que isto cobre: `docs/harness/THREAT-MODEL.md`, item T-024.

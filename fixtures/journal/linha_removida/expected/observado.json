@@ -8,17 +8,17 @@
         "at": "2026-09-15T10:00:00Z",
         "port": "cli",
         "seq": 1,
-        "tool": "sparkforge_case_open"
+        "tool": "sparkforge_aws_case_open"
       }
     ],
     "torn_tail": false
   },
   "handoff_em_voo": [
-    "- `sparkforge_case_open` (cli, seq 1) sem finished (caiu ou ainda roda)",
+    "- `sparkforge_aws_case_open` (cli, seq 1) sem finished (caiu ou ainda roda)",
     "- journal: cadeia quebrada no seq 2 — confira com `sparkforge-aws journal verify`"
   ],
   "resume": {
-    "in_flight": "sparkforge_case_open (cli, seq 1) sem finished",
+    "in_flight": "sparkforge_aws_case_open (cli, seq 1) sem finished",
     "in_flight_source": "journal",
     "journal": {
       "broken_at": 2,
@@ -29,7 +29,7 @@
           "at": "2026-09-15T10:00:00Z",
           "port": "cli",
           "seq": 1,
-          "tool": "sparkforge_case_open"
+          "tool": "sparkforge_aws_case_open"
         }
       ],
       "torn_tail": false

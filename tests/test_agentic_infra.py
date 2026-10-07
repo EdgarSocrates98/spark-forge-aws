@@ -94,8 +94,8 @@ class TestCaseBudget:
 class TestDetectWaste:
     def test_duplicate_tool_calls(self):
         calls = [
-            {"tool": "sparkforge_analyze", "args": "pyspark"},
-            {"tool": "sparkforge_analyze", "args": "pyspark"},
+            {"tool": "sparkforge_aws_analyze", "args": "pyspark"},
+            {"tool": "sparkforge_aws_analyze", "args": "pyspark"},
         ]
         report = detect_waste(calls, [], {}, [], [], [])
         assert len(report.duplicate_tool_calls) == 1

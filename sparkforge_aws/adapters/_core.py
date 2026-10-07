@@ -1011,7 +1011,7 @@ def analyze_pyspark(
     upstream: str | None = None,
 ) -> dict[str, Any]:
     if upstream is not None:
-        # Evidencia estrangeira (sparkforge/upstream-facts/v1): validada antes
+        # Evidencia estrangeira (sparkforge_aws/upstream-facts/v1): validada antes
         # da varredura — um documento malformado nao custa um walk do FS. Os
         # facts vao ao fim da lista — o mesmo filtro de `kind` vale — e nunca
         # entram em `unresolved`, que mede ponto cego do extrator local.
@@ -2777,7 +2777,7 @@ def migration_assess(
     """Julga a migracao de um job entre um par de versoes, pelo catalogo.
 
     PARAMETRO NOVO, TOOL A MESMA (D-4 da spec de EMR). Medido antes de decidir:
-    `sparkforge_migration_assess` ja compunha os artefatos, ja expandia o par em
+    `sparkforge_aws_migration_assess` ja compunha os artefatos, ja expandia o par em
     degraus e ja agregava com gates; o que ela nao aceitava era a PLATAFORMA.
     Uma tool nova duplicaria as tres coisas para trocar uma matriz, e cada tool
     nova entra em quatro gates de paridade e la fica -- a §70 manda expandir em
@@ -5224,7 +5224,7 @@ def _arquivos_de(raiz: Path) -> list[str]:
 
 
 def pack_list() -> dict[str, Any]:
-    """Os packs de `SPARKFORGE_PACKS`: ativos, recusados com o motivo, e o mapa
+    """Os packs de `SPARKFORGE_AWS_PACKS`: ativos, recusados com o motivo, e o mapa
     prefixo -> pack que diz a origem de um finding (§5).
 
     Nao le artefato de job nem julga: so resolve a variavel e os manifestos.
@@ -5453,7 +5453,7 @@ def judge_findings(
     # coube. Ordem parcial apresentada como ordem e a familia de afirmacao que
     # este projeto recusa -- por isso `scope` carrega a contagem.
     #
-    # `plan_digest` CALCULA e nao grava: `sparkforge_judge` e READ_ONLY e
+    # `plan_digest` CALCULA e nao grava: `sparkforge_aws_judge` e READ_ONLY e
     # continua sendo. O registro auditavel e `sparkforge-aws arbitrate`.
     #
     # Import local pelo mesmo motivo que `arbitrate_findings` usa: o subsistema
@@ -5939,7 +5939,7 @@ def _resolve_knowledge_refs(
 
     O cache e um dict local passado pelo chamador, nunca um `lru_cache` de
     modulo: `root` pode mudar entre chamadas de processo longo (servidor MCP
-    com `SPARKFORGE_KNOWLEDGE` trocada, ou uma reinstalacao no meio da sessao),
+    com `SPARKFORGE_AWS_KNOWLEDGE` trocada, ou uma reinstalacao no meio da sessao),
     e um cache de processo teria que ser invalidado manualmente para nao
     devolver `path` obsoleto. Escopar o cache a uma unica chamada de
     `rules_lookup` (ou de `knowledge_refs_of`, que cria o seu proprio) elimina
@@ -5984,7 +5984,7 @@ def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
     Uma imprecisao da primeira versao desta docstring: no cenario mais comum
     de raiz ausente -- pacote instalado por pip sem `knowledge/` embarcado --
     o `path: None` NAO vem deste `except KnowledgeError` em torno de
-    `knowledge_dir()`. `knowledge_dir()` so levanta quando `SPARKFORGE_KNOWLEDGE`
+    `knowledge_dir()`. `knowledge_dir()` so levanta quando `SPARKFORGE_AWS_KNOWLEDGE`
     aponta para um caminho invalido; o fallback para o pacote (linha final de
     `knowledge_dir()`) devolve um `Path` sem checar `is_dir()`, entao `root`
     fica preenchido mesmo sem o diretorio existir. O `None` nesse caso vem do
@@ -6147,7 +6147,7 @@ def _knowledge_root_missing(cause: str) -> AdapterError:
         f"{cause}\n"
         f"  Se voce tem o repositorio sparkforge-aws clonado, aponte para a "
         f"pasta knowledge/ dele:\n"
-        f"    SPARKFORGE_KNOWLEDGE=<caminho-do-repo>/knowledge\n"
+        f"    SPARKFORGE_AWS_KNOWLEDGE=<caminho-do-repo>/knowledge\n"
         f"  Sem o repositorio, reinstale o pacote -- a wheel >=0.5.0 embarca "
         f"knowledge/ dentro do site-packages:\n"
         f"    pip install --force-reinstall sparkforge-aws",
@@ -6620,7 +6620,7 @@ def _existe_sob(repo: Path):
     return existe
 
 
-def _versao_sparkforge() -> str:
+def _versao_sparkforge_aws() -> str:
     from importlib.metadata import PackageNotFoundError, version
 
     try:
@@ -6665,7 +6665,7 @@ def report_github(
         facts_por_id,
         raizes,
         _existe_sob(raiz),
-        versao=_versao_sparkforge(),
+        versao=_versao_sparkforge_aws(),
         category=category,
         fail_on=fail_on,
         freshness=frescor["source_freshness"] if frescor else None,
@@ -6776,7 +6776,7 @@ def telemetry_payload(
 
     if not spans:
         raise AdapterError(
-            f"run {run_id!r} sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo "
+            f"run {run_id!r} sem spans no ledger. Confira o SPARKFORGE_AWS_RUN_ID do processo "
             "que chamou as tools e rode, no diretorio onde ele gravou "
             ".sparkforge_aws/traces.db: sparkforge-aws telemetry export --run-id <run_id>",
             exit_code=2,
@@ -6791,7 +6791,9 @@ def telemetry_payload(
                 exit_code=2,
             )
         host = [fact.to_dict() for fact in extract_host_transcript_path(host_transcript)]
-    projecao = projetar(spans, host, run_id=run_id, provider=provider, versao=_versao_sparkforge())
+    projecao = projetar(
+        spans, host, run_id=run_id, provider=provider, versao=_versao_sparkforge_aws()
+    )
     return {
         "run_id": run_id,
         "traces": projecao.traces,
@@ -8318,14 +8320,14 @@ CODE_CLUSTER_PARA_CATEGORIA: dict[str, str] = {
 # template de buracos preservados. A recusa mudou de NIVEL -- era da secao
 # inteira, agora e do item --, e nao desapareceu.
 #
-# `snippets` continua recusado: trecho de fonte sai por `sparkforge_code_read`,
+# `snippets` continua recusado: trecho de fonte sai por `sparkforge_aws_code_read`,
 # que tem os tetos duros da secao 60. Aceitar o valor e devolver vazio ensinaria
 # o chamador que a arvore nao tem trecho, que e afirmacao diferente de "este
 # pacote nao o carrega".
 CODE_CONTEXT_INCLUDE = ("symbols", "relationships", "lineage", "rules", "unresolved")
 CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO = {
     "snippets": (
-        "trecho de fonte sai por `sparkforge_code_read`, que aplica os tetos "
+        "trecho de fonte sai por `sparkforge_aws_code_read`, que aplica os tetos "
         "duros de 250 linhas / 32 KiB / 4096 tokens"
     ),
 }
@@ -8449,7 +8451,7 @@ def _code_no(banco: Path, node_id: str) -> dict[str, Any]:
     if linha is None:
         raise AdapterError(
             f"node_id inexistente no indice: {node_id!r}. "
-            "Use `sparkforge_code_search` para obter um id atual.",
+            "Use `sparkforge_aws_code_search` para obter um id atual.",
             exit_code=2,
         )
     return {
@@ -9002,7 +9004,7 @@ def code_symbol(
 
     CORPO DE FONTE NUNCA SAI DAQUI, em nenhum `detail_level` -- a secao 59 e
     literal ("Source body nao vem por default") e este modulo le isso como
-    "nao vem, ponto": fonte sai por `sparkforge_code_read`, que e a unica
+    "nao vem, ponto": fonte sai por `sparkforge_aws_code_read`, que e a unica
     superficie com os tetos duros da secao 60 e com o objeto de confianca da
     16.3. Fonte atras de uma flag de verbosidade seria conteudo nao confiavel
     chegando por um caminho que nao carrega o rotulo.
@@ -9134,7 +9136,7 @@ def code_shape(
     `_normalizar` chamado de trinta lugares tem grau trinta porque foi bem
     fatorado. O que o numero diz e que mudar aquele no toca muita coisa --
     para 'o que quebra se eu mudar isto', a resposta com nome e
-    `sparkforge_code_symbol` com `depth`.
+    `sparkforge_aws_code_symbol` com `depth`.
 
     ## O ponto cego sai junto, e com tamanho
 
@@ -9251,7 +9253,7 @@ def code_path(
 
     `detail_level`: `summary` traz so o veredito e as contagens; `normal` e
     `full` acrescentam os nos do caminho. CORPO DE FONTE NUNCA SAI DAQUI, pela
-    mesma razao de `code_symbol` -- fonte sai por `sparkforge_code_read`, que e
+    mesma razao de `code_symbol` -- fonte sai por `sparkforge_aws_code_read`, que e
     a unica superficie com os tetos duros e o objeto de confianca.
     """
     if detail_level not in NIVEIS_DE_DETALHE:
@@ -9406,7 +9408,7 @@ def code_context(
     `context.montar` deste repositorio nao tem manopla de profundidade -- ele
     ancora em sementes e usa a distancia como componente de escore. Aceitar o
     parametro e ignora-lo seria uma superficie que mente sobre o que controla.
-    Quem quer profundidade tem `sparkforge_code_symbol` com `depth`.
+    Quem quer profundidade tem `sparkforge_aws_code_symbol` com `depth`.
 
     `include` seleciona entre as secoes que este motor sabe PREENCHER
     (`CODE_CONTEXT_INCLUDE`), `lineage` agora entre elas. So `snippets` continua
@@ -9729,17 +9731,17 @@ def agentic_doctor(repo: str = ".") -> dict[str, Any]:
 
 # Os nomes das tools de Code Intelligence, num lugar so. `doctor` confere o
 # catalogo contra esta lista, e ela e literal de proposito: derivar por prefixo
-# faria o gate afirmar `sparkforge_code_* == sparkforge_code_*`.
+# faria o gate afirmar `sparkforge_aws_code_* == sparkforge_aws_code_*`.
 CODE_TOOLS = (
-    "sparkforge_code_context",
-    "sparkforge_code_search",
-    "sparkforge_code_symbol",
-    "sparkforge_code_path",
-    "sparkforge_code_shape",
-    "sparkforge_code_export",
-    "sparkforge_code_read",
-    "sparkforge_code_status",
-    "sparkforge_code_sync",
+    "sparkforge_aws_code_context",
+    "sparkforge_aws_code_search",
+    "sparkforge_aws_code_symbol",
+    "sparkforge_aws_code_path",
+    "sparkforge_aws_code_shape",
+    "sparkforge_aws_code_export",
+    "sparkforge_aws_code_read",
+    "sparkforge_aws_code_status",
+    "sparkforge_aws_code_sync",
 )
 
 

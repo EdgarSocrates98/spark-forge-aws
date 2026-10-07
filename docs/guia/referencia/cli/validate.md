@@ -17,4 +17,4 @@ sparkforge-aws validate --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_validate_output`](../tools/sparkforge_validate_output.md)
+[`sparkforge_aws_validate_output`](../tools/sparkforge_aws_validate_output.md)

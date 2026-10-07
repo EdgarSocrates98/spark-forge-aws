@@ -21,27 +21,27 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 
 | Artefato | Tool |
 |---|---|
-| código PySpark | `sparkforge_analyze_pyspark` |
-| grafo de chamadas | `sparkforge_analyze_call_graph` |
-| plano físico | `sparkforge_analyze_plan` |
-| Spark event log | `sparkforge_analyze_event_log` |
-| Spark event log, custo por FONTE | `sparkforge_analyze_sql_metrics` |
-| Terraform | `sparkforge_analyze_terraform` |
-| diff de Terraform (PR) | `sparkforge_analyze_terraform_diff` |
-| metadata Iceberg | `sparkforge_analyze_iceberg` |
-| SQL literal | `sparkforge_analyze_sql` |
-| schema do Glue Catalog | `sparkforge_analyze_catalog_schema` |
-| workgroup Athena | `sparkforge_analyze_athena_workgroup` |
-| application EMR Serverless | `sparkforge_analyze_emr_serverless` |
-| processamento de grafo (GraphFrames) | `sparkforge_analyze_graph` |
-| listagem S3 | `sparkforge_analyze_s3_listing` |
-| inventário de consumidores | `sparkforge_analyze_consumers` |
-| SLA e fonte primária declarados (`workload.yaml`) | `sparkforge_analyze_workload` |
-| LOG do run no CloudWatch | `sparkforge_analyze_cloudwatch_logs` |
-| footer de arquivos Parquet | `sparkforge_analyze_parquet_footer` |
+| código PySpark | `sparkforge_aws_analyze_pyspark` |
+| grafo de chamadas | `sparkforge_aws_analyze_call_graph` |
+| plano físico | `sparkforge_aws_analyze_plan` |
+| Spark event log | `sparkforge_aws_analyze_event_log` |
+| Spark event log, custo por FONTE | `sparkforge_aws_analyze_sql_metrics` |
+| Terraform | `sparkforge_aws_analyze_terraform` |
+| diff de Terraform (PR) | `sparkforge_aws_analyze_terraform_diff` |
+| metadata Iceberg | `sparkforge_aws_analyze_iceberg` |
+| SQL literal | `sparkforge_aws_analyze_sql` |
+| schema do Glue Catalog | `sparkforge_aws_analyze_catalog_schema` |
+| workgroup Athena | `sparkforge_aws_analyze_athena_workgroup` |
+| application EMR Serverless | `sparkforge_aws_analyze_emr_serverless` |
+| processamento de grafo (GraphFrames) | `sparkforge_aws_analyze_graph` |
+| listagem S3 | `sparkforge_aws_analyze_s3_listing` |
+| inventário de consumidores | `sparkforge_aws_analyze_consumers` |
+| SLA e fonte primária declarados (`workload.yaml`) | `sparkforge_aws_analyze_workload` |
+| LOG do run no CloudWatch | `sparkforge_aws_analyze_cloudwatch_logs` |
+| footer de arquivos Parquet | `sparkforge_aws_analyze_parquet_footer` |
 
 Depois de ter o event log E o log do CloudWatch no mesmo arquivo de facts,
-`sparkforge_analyze_error_signatures` — ele casa as assinaturas de
+`sparkforge_aws_analyze_error_signatures` — ele casa as assinaturas de
 `knowledge/errors/` contra as duas fontes e emite `error.signature_match` com
 `matched_on` (`exception_class`, `caused_by` ou `log_line`). **A UNIÃO é o
 contrato**: alimentá-lo com metade dos facts não devolve metade das respostas,
@@ -49,10 +49,10 @@ devolve um ponto cego que não aparece — a recusa dele é por ESCOPO, não por
 linha. Ele não julga; quem julga são as regras `SF-ERR-001` a `SF-ERR-006`, e
 cada uma exige, além do match, o companheiro que a assinatura declara.
 
-Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
+Depois, `sparkforge_aws_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.
 
-Depois de facts sobre scan, shuffle, spill e join, `sparkforge_workload` — perfila o
+Depois de facts sobre scan, shuffle, spill e join, `sparkforge_aws_workload` — perfila o
 job por eixo (`scan_intensity`, `shuffle_intensity`, `skew_risk`, `memory_pressure`,
 `join_intensity`, ...) a partir de facts JÁ extraídos: não é outro extrator da tabela
 acima, é o único mecanismo que classifica o que eles já mediram. Existe porque volume de
@@ -62,26 +62,26 @@ própria `confidence` (`measured`/`declared`/`unknown`) e nunca aplica limiar un
 sem `--history` do próprio job, os eixos de escala saem `unknown` de propósito, em vez
 de um default inventado.
 
-Sobre capacidade — worker type e número de workers —, `sparkforge_capacity` é o par de
-`sparkforge_workload` e não outro extrator: o perfil DESCREVE o job por eixo, esta tool
+Sobre capacidade — worker type e número de workers —, `sparkforge_aws_capacity` é o par de
+`sparkforge_aws_workload` e não outro extrator: o perfil DESCREVE o job por eixo, esta tool
 ESCOLHE, entre as capacidades que o job JÁ RODOU, a mais barata que cumpre o SLA. A
 escolha sai sempre `safety: "REVIEW"` — nada aqui aplica a mudança, e worker count
 continua decisão de quem pode ser perguntado.
 
-`sparkforge_finops` consome os MESMOS facts que `sparkforge_capacity` e reúne o
+`sparkforge_aws_finops` consome os MESMOS facts que `sparkforge_aws_capacity` e reúne o
 relatório financeiro inteiro — custo por capacidade observada, custo por
 desfecho dentro do SLA, e os achados do `judge` agrupados sob o eixo
 financeiro (`levers.code` vs. `levers.capacity`). Ele existe ao lado de
-`sparkforge_capacity`, não no lugar dela, porque capacidade e código são
+`sparkforge_aws_capacity`, não no lugar dela, porque capacidade e código são
 alavancas DIFERENTES e a conta sozinha não diz qual delas é a certa: um job
-caro por variar worker count tem solução em `sparkforge_capacity`; um job caro
+caro por variar worker count tem solução em `sparkforge_aws_capacity`; um job caro
 porque varre dez vezes o que precisa continua caro em qualquer capacidade, e
 essa distinção é exatamente o que `levers` separa.
 
-**`sparkforge_analyze_sql_metrics` não é o mesmo dado que `sparkforge_analyze_event_log`
+**`sparkforge_aws_analyze_sql_metrics` não é o mesmo dado que `sparkforge_aws_analyze_event_log`
 sobre o mesmo arquivo.** O event log agrega tudo que cai num stage — se duas fontes
 compartilham stage, o custo delas soma num número só, e não há como separar a fonte cara da
-barata. `sparkforge_analyze_sql_metrics` atribui bytes e arquivos ao NÓ DO PLANO que os
+barata. `sparkforge_aws_analyze_sql_metrics` atribui bytes e arquivos ao NÓ DO PLANO que os
 leu, medido pelo próprio Spark (`SparkListenerSQLExecutionStart`/
 `SparkListenerDriverAccumUpdates`), não por stage. Use-o quando a pergunta for "qual fonte
 custou" e `analyze event-log` só responder "qual stage custou".

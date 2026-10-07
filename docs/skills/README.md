@@ -5,7 +5,7 @@
 
 The catalog currently contains 52 skills. Every skill now publishes:
 
-- `metadata.sparkforge_contract: v1` with primary verbs and local references;
+- `metadata.sparkforge_aws_contract: v1` with primary verbs and local references;
 - a shared evidence-first delivery contract in its `SKILL.md`;
 - `references/README.md` linking the shared contract and versioned repository
   knowledge;

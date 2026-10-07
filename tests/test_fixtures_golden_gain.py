@@ -4,7 +4,7 @@ Cada caso de `fixtures/gain/` tem `baseline/` e `candidate/` com arquivos de
 facts de runs, recortados dos fixtures reais de `capacity` e `finops`.
 
 Regenerar depois de mudanca DELIBERADA:
-`SPARKFORGE_REGEN_GAIN=1 pytest tests/test_fixtures_golden_gain.py`.
+`SPARKFORGE_AWS_REGEN_GAIN=1 pytest tests/test_fixtures_golden_gain.py`.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "gain"
-REGEN = os.environ.get("SPARKFORGE_REGEN_GAIN") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_GAIN") == "1"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.yaml").is_file())
 
 

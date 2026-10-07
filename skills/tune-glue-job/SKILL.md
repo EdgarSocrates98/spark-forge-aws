@@ -2,7 +2,7 @@
 name: tune-glue-job
 description: "Use quando for ajustar workers, worker type, Auto Scaling, execution class ou argumentos de um job Glue depois de já ter um gargalo comprovado — não para descobri-lo. Use também quando a pergunta for \\\"aumenta os workers?\\\", \\\"põe mais DPU\\\", \\\"troca pra worker maior\\\" ou \\\"liga Auto Scaling\\\", mesmo sem esse vocabulário. Se você está prestes a recomendar mais workers a partir só do código ou de instinto, rode `sparkforge-aws analyze terraform`, `sparkforge-aws collect glue-job` e `sparkforge-aws judge` em vez disso — o catálogo SF-GLUE-* aponta contradição de max_capacity com worker_type/number_of_workers, observabilidade ausente e retry sobre escrita não idempotente antes de qualquer decisão de capacidade, e a tabela de decisão em knowledge/glue/workers-and-capacity.md tem capacidade como resposta errada em metade dos casos."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -81,8 +81,8 @@ contagem idêntica. Declare em qual das duas metades a sua recomendação está.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

@@ -3,7 +3,7 @@
     "id": "search_capabilities",
     "operation": "search",
     "arguments": {
-      "query": "sparkforge",
+      "query": "sparkforge_aws",
       "limit": 2
     },
     "expected_status": "ok",
@@ -13,7 +13,7 @@
     "id": "get_runtime_capability",
     "operation": "get",
     "arguments": {
-      "id": "sparkforge_runtime_detect"
+      "id": "sparkforge_aws_runtime_detect"
     },
     "expected_status": "ok",
     "parity_class": "semantic_equal"
@@ -22,7 +22,7 @@
     "id": "execute_runtime_capability",
     "operation": "execute_read",
     "arguments": {
-      "capability": "sparkforge_runtime_detect",
+      "capability": "sparkforge_aws_runtime_detect",
       "arguments": {
         "glue": "5.0"
       }
@@ -34,7 +34,7 @@
     "id": "refuse_unknown_capability",
     "operation": "execute_read",
     "arguments": {
-      "capability": "sparkforge_not_real",
+      "capability": "sparkforge_aws_not_real",
       "arguments": {}
     },
     "expected_status": "error",

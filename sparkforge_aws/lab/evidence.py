@@ -115,7 +115,7 @@ def finalize_receipt(
         "scenario": run_record["scenario"],
         "scenario_version": run_record["scenario_version"],
         "scenario_fingerprint": run_record["scenario_fingerprint"],
-        "sparkforge_commit": "unresolved_without_host_commit",
+        "sparkforge_aws_commit": "unresolved_without_host_commit",
         "lab_commit": "unresolved_without_host_commit",
         "environment": _read_json(run_path / "environment.json"),
         "versions": _read_json(run_path / "versions.json"),

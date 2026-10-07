@@ -51,7 +51,7 @@ def test_componente_fora_do_vocabulario_estoura(tmp_path, monkeypatch):
     (conhecimento / "sources.lock.json").write_text('{"sources": {}}', encoding="utf-8")
     modulo = pacote / "knowledge_ref.py"
     modulo.touch()
-    monkeypatch.delenv("SPARKFORGE_KNOWLEDGE", raising=False)
+    monkeypatch.delenv("SPARKFORGE_AWS_KNOWLEDGE", raising=False)
     monkeypatch.setattr(kr, "__file__", str(modulo))
     runtime_matrix.load_databricks.cache_clear()
     try:

@@ -27,4 +27,4 @@ sparkforge-aws scan --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_scan`](../tools/sparkforge_scan.md)
+[`sparkforge_aws_scan`](../tools/sparkforge_aws_scan.md)

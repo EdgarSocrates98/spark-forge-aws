@@ -63,7 +63,7 @@ Terraform e a avaliação de migração.
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
 | Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE, com teste | `knowledge/spark/spark4-migration.md`, confirmado contra o SQL migration guide e o Upgrading PySpark do Spark 4.1.1: configs renomeadas, APIs de pandas-on-Spark removidas, pisos de dependência e as mudanças de comportamento sem sinal no código. As três primeiras viraram regra em `rules/catalog/spark4.yaml` | `tests/test_spark4_rules.py`, `tests/test_offline_expansion.py` |
-| `sparkforge_spark4_migration_scan` (§11) | ABSORVIDA na fase H1 | A tool dedicada **não** foi criada, e a decisão está registrada: `sparkforge_migration_assess` devolve o que ela devolveria, porque as regras de `SF-SPARK4` estão no mesmo catálogo e saem no mesmo assessment. A §70 manda expandir em vez de multiplicar, e cada tool nova entra em quatro gates de paridade e lá fica. O vocabulário que a sustenta continua sendo `mig.renamed_conf` e `mig.removed_api` | `tests/test_facts_migration.py`, `tests/test_spark4_rules.py` |
+| `sparkforge_aws_spark4_migration_scan` (§11) | ABSORVIDA na fase H1 | A tool dedicada **não** foi criada, e a decisão está registrada: `sparkforge_aws_migration_assess` devolve o que ela devolveria, porque as regras de `SF-SPARK4` estão no mesmo catálogo e saem no mesmo assessment. A §70 manda expandir em vez de multiplicar, e cada tool nova entra em quatro gates de paridade e lá fica. O vocabulário que a sustenta continua sendo `mig.renamed_conf` e `mig.removed_api` | `tests/test_facts_migration.py`, `tests/test_spark4_rules.py` |
 | Skills `spark-4-*` (§12) | EXISTE PARCIAL | Fase H6: existe **uma**, `skills/spark4-compatibility/`, não a família `spark-4-*` que a seção enumera. O critério foi o mesmo que governou as outras três: skill só onde há conhecimento por trás **e** consumidor. Uma família de skills por sub-tópico de Spark 4 multiplicaria superfície de paridade sem conhecimento novo por baixo | `tests/test_skill_content.py`, `tests/test_sync_render.py` |
 
 ## 5. Compatibilidade binária: Scala, Java e JAR (§13, §14)
@@ -71,7 +71,7 @@ Terraform e a avaliação de migração.
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
 | Observação de JAR no job | EXISTE, com teste | `mig.jar_binary` carrega `scala` e `scala_minor` derivados do sufixo do nome do artefato, e `SF-SPARK4-004` julga em P0 quem estiver abaixo de Scala 2.13 sob Spark 4. Limite declarado: o fact observa todo `.jar` da árvore, inclusive um que seja recurso de teste fora do classpath do job — separar exigiria um fact sobre `--extra-jars`, que não existe | `tests/test_spark4_rules.py`, `tests/test_facts_migration.py` |
-| `sparkforge_jar_compatibility_scan` (§13) | ABSORVIDA nas fases H1 e H4 | A tool dedicada **não** foi criada. `sparkforge_migration_assess` já julga binário de Scala pelo catálogo (`mig.jar_binary.scala_minor`), e `sparkforge_glue_dependency_audit` devolve a listagem de cada `.jar` ao lado do achado que ele produziu — que é a outra metade do que a seção pede. Mesma razão da §11: expandir em vez de multiplicar | `tests/test_cli_h4.py`, `tests/test_adapters_tools.py` |
+| `sparkforge_aws_jar_compatibility_scan` (§13) | ABSORVIDA nas fases H1 e H4 | A tool dedicada **não** foi criada. `sparkforge_aws_migration_assess` já julga binário de Scala pelo catálogo (`mig.jar_binary.scala_minor`), e `sparkforge_aws_glue_dependency_audit` devolve a listagem de cada `.jar` ao lado do achado que ele produziu — que é a outra metade do que a seção pede. Mesma razão da §11: expandir em vez de multiplicar | `tests/test_cli_h4.py`, `tests/test_adapters_tools.py` |
 | Golden de JAR Scala antigo em Glue 6.0 (§14) | EXISTE, com teste | `fixtures/migration/spark4_jar_scala_212/` dispara `SF-SPARK4-004`; `fixtures/migration/jar_binary/` é o par negativo **por versão** — mesmo artefato, runtime abaixo do Spark 4. Os vereditos nomeados pela §14 (`RECOMPILE_REQUIRED`, `BLOCKED`) continuam sem existir como vocabulário próprio | `tests/test_fixtures_golden_migration.py` |
 
 ## 6. Python e dependências (§15, §16)
@@ -137,7 +137,7 @@ Terraform e a avaliação de migração.
 |---|---|---|---|
 | Modo offline com manifesto e checksum | EXISTE, com teste | `knowledge/offline-manifest.json` mais `scripts/verify_offline_bundle.py`: conhecimento novo precisa entrar no manifesto e o checksum é verificado | `tests/test_offline_expansion.py` |
 | Paridade entre repo, wheel, MCP e plugin | EXISTE, com teste | `parity.yaml`, `scripts/sync_skills.py --check` e `manifest.json` | `tests/test_capability_parity.py`, `tests/test_agents_parity.py` |
-| Tools MCP a expandir em vez de multiplicar (§70) | EXISTE, com teste | `sparkforge_aws/adapters/tools.py:TOOLS` já expõe `sparkforge_runtime_detect`, `sparkforge_analyze_iceberg`, `sparkforge_analyze_terraform_diff`, `sparkforge_analyze_consumers` e `sparkforge_rules_lookup` | `tests/test_adapters_tools.py`, `tests/test_adapters_mcp.py` |
+| Tools MCP a expandir em vez de multiplicar (§70) | EXISTE, com teste | `sparkforge_aws/adapters/tools.py:TOOLS` já expõe `sparkforge_aws_runtime_detect`, `sparkforge_aws_analyze_iceberg`, `sparkforge_aws_analyze_terraform_diff`, `sparkforge_aws_analyze_consumers` e `sparkforge_aws_rules_lookup` | `tests/test_adapters_tools.py`, `tests/test_adapters_mcp.py` |
 | `CapabilityRegistry` com chave por capacidade (§74) | NÃO EXISTE — **fora de escopo declarado** | Já medido em [`CURRENT-HARNESS-GAP.md`](CURRENT-HARNESS-GAP.md): `sparkforge_aws/registry/loader.py` indexa por tipo, não por capacidade. O plano [`2026-08-22-fechar-o-eixo-glue.md`](../superpowers/plans/2026-08-22-fechar-o-eixo-glue.md) o deixou de fora com razão escrita: nada o consultaria hoje, e é camada nova que os gates de paridade cobram para sempre | — |
 | Skills de Glue 6 com disclosure progressivo (§9, §72) | EXISTE, com teste | Fase H6: quatro skills — `migrate-glue-6`, `spark4-compatibility`, `iceberg-v3-readiness` e `lakeformation-fgac-guard` —, cada uma um `SKILL.md` curto com referência sob demanda para `knowledge/` e `docs/aws/glue/6.0/`. A decisão de despacho de cada uma é declarada, nunca default: `iceberg-v3-readiness` é **não despachável**, porque exige o inventário de consumidores, que é conhecimento da organização e não derivável de artefato | `tests/test_skill_content.py`, `tests/test_sync_render.py` |
 | Agent especialista em migração (§8) | EXISTE PARCIAL | `agents/sf-runtime-specialist.md` declara compatibilidade entre versões numa migração. Não existe `sf-glue-migration-specialist`, e a §8 manda evoluir o especialista existente antes de criar outro | `tests/test_agents_parity.py` |
@@ -190,7 +190,7 @@ prompt".
 
 | Linha | Antes | Depois |
 |---|---|---|
-| Porta de entrada da migração (§31, §32) | `assess()` só alcançável em Python | `sparkforge-aws migrate glue` e `sparkforge_migration_assess`; `collect()` compõe os artefatos |
+| Porta de entrada da migração (§31, §32) | `assess()` só alcançável em Python | `sparkforge-aws migrate glue` e `sparkforge_aws_migration_assess`; `collect()` compõe os artefatos |
 | `forge glue dependency-audit` (§16) | NÃO EXISTE | CLI e tool, com `--glue` obrigatório |
 | `forge iceberg assess-upgrade` (§24) | NÃO EXISTE | CLI e tool, com veredito em vocabulário fechado |
 | Bloqueio por consumidor incompatível (§25) | NÃO EXISTE | Gate que cruza inventário com a matriz, sem duplicar `SF-ENV-002` |
@@ -198,8 +198,8 @@ prompt".
 | Benchmark por versão de runtime (§52) | NÃO EXISTE | `bench.runtime_pair`, e os dois modos de recusa |
 | Skills de Glue 6 (§9, §72) | NÃO EXISTE | Quatro, com decisão de despacho declarada |
 | Conhecimento de erro (§79) | NÃO EXISTE | Três entradas, com texto exato de fonte oficial |
-| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | ABSORVIDA — sem tool nova |
-| `sparkforge_jar_compatibility_scan` (§13) | NÃO EXISTE | ABSORVIDA — sem tool nova |
+| `sparkforge_aws_spark4_migration_scan` (§11) | EXISTE PARCIAL | ABSORVIDA — sem tool nova |
+| `sparkforge_aws_jar_compatibility_scan` (§13) | NÃO EXISTE | ABSORVIDA — sem tool nova |
 
 Continuam **fora de escopo, com razão escrita** no plano: `RuntimeChangeGraph` (§41),
 `CapabilityRegistry` por capacidade (§74) e TTL por domínio (§44). Os três são camada nova sem

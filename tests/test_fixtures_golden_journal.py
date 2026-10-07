@@ -6,7 +6,7 @@ Cada caso de `fixtures/journal/` traz `input/` (a raiz de um case sintetico, com
 blackboard e do debate devolvem sobre ela. A entrada e copiada para `tmp_path`
 antes de qualquer leitura -- o journal e commitavel, e a arvore nao pode mudar.
 
-Regravar: `SPARKFORGE_REGEN_JOURNAL=1 pytest tests/test_fixtures_golden_journal.py`.
+Regravar: `SPARKFORGE_AWS_REGEN_JOURNAL=1 pytest tests/test_fixtures_golden_journal.py`.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from sparkforge_aws.journal.record import recording
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "journal"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if p.is_dir())
-REGRAVAR = os.environ.get("SPARKFORGE_REGEN_JOURNAL") == "1"
+REGRAVAR = os.environ.get("SPARKFORGE_AWS_REGEN_JOURNAL") == "1"
 
 
 def _copiar(caso: str, tmp_path: Path) -> Path:
@@ -95,7 +95,7 @@ def test_cli_verify_sai_1_so_na_quebra(caso: str, tmp_path: Path, capsys) -> Non
 
 def test_append_depois_da_cauda_cortada_continua_a_cadeia(tmp_path: Path) -> None:
     raiz = _copiar("cauda_cortada", tmp_path)
-    with recording("sparkforge_case_update", "cli", {"repo": str(raiz)}) as registro:
+    with recording("sparkforge_aws_case_update", "cli", {"repo": str(raiz)}) as registro:
         registro.finish({}, "ok")
     assert verify(raiz)["status"] == "intact"
     assert journal_path(raiz).with_name("journal.jsonl.torn").is_file()

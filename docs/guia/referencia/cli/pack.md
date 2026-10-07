@@ -2,7 +2,7 @@
 
 # `sparkforge-aws pack`
 
-Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_PACKS).
+Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_AWS_PACKS).
 
 ## Subcomandos
 
@@ -27,7 +27,7 @@ sparkforge-aws pack check --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_pack_list`](../tools/sparkforge_pack_list.md)
+[`sparkforge_aws_pack_list`](../tools/sparkforge_aws_pack_list.md)
 
 ## `sparkforge-aws pack list`
 
@@ -43,4 +43,4 @@ Este comando não recebe opções.
 
 ### Tool MCP equivalente
 
-[`sparkforge_pack_list`](../tools/sparkforge_pack_list.md)
+[`sparkforge_aws_pack_list`](../tools/sparkforge_aws_pack_list.md)

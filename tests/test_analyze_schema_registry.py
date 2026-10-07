@@ -14,7 +14,9 @@ CONTRACT = ROOT / "fixtures" / "schema_registry" / "schema_compatible" / "input"
 
 def test_cli_and_mcp_schema_registry_envelopes_match():
     expected = analyze_schema_registry(str(CONTRACT), limit=4)
-    actual = call_tool("sparkforge_analyze_schema_registry", {"path": str(CONTRACT), "limit": 4})
+    actual = call_tool(
+        "sparkforge_aws_analyze_schema_registry", {"path": str(CONTRACT), "limit": 4}
+    )
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -41,6 +43,6 @@ def test_cli_and_mcp_schema_registry_envelopes_match():
 
 
 def test_schema_registry_tool_is_read_only_and_declared():
-    spec = TOOLS["sparkforge_analyze_schema_registry"]
+    spec = TOOLS["sparkforge_aws_analyze_schema_registry"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["path"]

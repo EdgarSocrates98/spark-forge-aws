@@ -18,4 +18,4 @@ sparkforge-aws tune --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_tune`](../tools/sparkforge_tune.md)
+[`sparkforge_aws_tune`](../tools/sparkforge_aws_tune.md)

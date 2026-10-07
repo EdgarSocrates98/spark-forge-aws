@@ -2,7 +2,7 @@
 name: diagnose-lakeformation-access
 description: "Use quando um job Glue lê tabela governada e falha ao escrever, ou quando alguém pergunta \\\"por que a leitura passa e a escrita não?\\\", \\\"tomo AccessDenied e já dei SELECT\\\", \\\"troquei writeTo/insertInto/INSERT INTO e continua igual\\\", \\\"migrei de Glue 4.0 e nada funciona\\\", ou quando é preciso descobrir QUAL permissão falta em vez de em qual plano a operação parou. É o procedimento que ORDENA os quatro coletores de governança de acesso; para a pergunta \\\"esta configuração é suportada?\\\" isolada, use `lakeformation-fgac-guard`."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

@@ -118,5 +118,5 @@ class TestProcedenciaDoCatalogoDeAssinaturas:
 
         vazio = tmp_path / "knowledge"
         (vazio / "errors").mkdir(parents=True)
-        monkeypatch.setenv("SPARKFORGE_KNOWLEDGE", str(vazio))
+        monkeypatch.setenv("SPARKFORGE_AWS_KNOWLEDGE", str(vazio))
         assert DeterministicErrorMatcher().signatures == []

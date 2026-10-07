@@ -42,7 +42,7 @@ sparkforge-aws code context --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_context`](../tools/sparkforge_code_context.md)
+[`sparkforge_aws_code_context`](../tools/sparkforge_aws_code_context.md)
 
 ## `sparkforge-aws code doctor`
 
@@ -82,7 +82,7 @@ sparkforge-aws code export --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_export`](../tools/sparkforge_code_export.md)
+[`sparkforge_aws_code_export`](../tools/sparkforge_aws_code_export.md)
 
 ## `sparkforge-aws code index`
 
@@ -141,7 +141,7 @@ sparkforge-aws code path --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_path`](../tools/sparkforge_code_path.md)
+[`sparkforge_aws_code_path`](../tools/sparkforge_aws_code_path.md)
 
 ## `sparkforge-aws code purge`
 
@@ -185,7 +185,7 @@ sparkforge-aws code read --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_read`](../tools/sparkforge_code_read.md), [`sparkforge_code_symbol`](../tools/sparkforge_code_symbol.md)
+[`sparkforge_aws_code_read`](../tools/sparkforge_aws_code_read.md), [`sparkforge_aws_code_symbol`](../tools/sparkforge_aws_code_symbol.md)
 
 ## `sparkforge-aws code search`
 
@@ -208,7 +208,7 @@ sparkforge-aws code search --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_search`](../tools/sparkforge_code_search.md)
+[`sparkforge_aws_code_search`](../tools/sparkforge_aws_code_search.md)
 
 ## `sparkforge-aws code shape`
 
@@ -229,7 +229,7 @@ sparkforge-aws code shape --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_shape`](../tools/sparkforge_code_shape.md)
+[`sparkforge_aws_code_shape`](../tools/sparkforge_aws_code_shape.md)
 
 ## `sparkforge-aws code status`
 
@@ -249,7 +249,7 @@ sparkforge-aws code status --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_status`](../tools/sparkforge_code_status.md), [`sparkforge_code_sync`](../tools/sparkforge_code_sync.md)
+[`sparkforge_aws_code_status`](../tools/sparkforge_aws_code_status.md), [`sparkforge_aws_code_sync`](../tools/sparkforge_aws_code_sync.md)
 
 ## `sparkforge-aws code symbol`
 
@@ -271,7 +271,7 @@ sparkforge-aws code symbol --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_read`](../tools/sparkforge_code_read.md), [`sparkforge_code_symbol`](../tools/sparkforge_code_symbol.md)
+[`sparkforge_aws_code_read`](../tools/sparkforge_aws_code_read.md), [`sparkforge_aws_code_symbol`](../tools/sparkforge_aws_code_symbol.md)
 
 ## `sparkforge-aws code sync`
 
@@ -290,4 +290,4 @@ sparkforge-aws code sync --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_code_status`](../tools/sparkforge_code_status.md), [`sparkforge_code_sync`](../tools/sparkforge_code_sync.md)
+[`sparkforge_aws_code_status`](../tools/sparkforge_aws_code_status.md), [`sparkforge_aws_code_sync`](../tools/sparkforge_aws_code_sync.md)

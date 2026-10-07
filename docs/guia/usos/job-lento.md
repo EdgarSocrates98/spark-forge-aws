@@ -467,9 +467,9 @@ devolve zero achados. Até isso mudar, faça a leitura à mão: se `SF-UI-001` (
   [root-cause](../referencia/cli/root-cause.md), [tune](../referencia/cli/tune.md),
   [fuse](../referencia/cli/fuse.md), [runtime](../referencia/cli/runtime.md),
   [collect](../referencia/cli/collect.md).
-- As mesmas operações como tools MCP: [sparkforge_judge](../referencia/tools/sparkforge_judge.md),
-  [sparkforge_root_cause](../referencia/tools/sparkforge_root_cause.md),
-  [sparkforge_tune](../referencia/tools/sparkforge_tune.md).
+- As mesmas operações como tools MCP: [sparkforge_aws_judge](../referencia/tools/sparkforge_aws_judge.md),
+  [sparkforge_aws_root_cause](../referencia/tools/sparkforge_aws_root_cause.md),
+  [sparkforge_aws_tune](../referencia/tools/sparkforge_aws_tune.md).
 
 ## Próximos passos
 

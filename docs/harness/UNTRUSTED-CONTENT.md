@@ -49,7 +49,7 @@ compara a medida com a lista escrita aqui.
 Isso não quer dizer que `terraform` não carregue texto de terceiro — carrega,
 por outro campo: `subject.symbol` (o nome do recurso, escrito por quem escreveu
 o `.tf`) e `attrs.value` (o valor lido, um caminho de S3 ou o texto de um
-`--conf`). O aviso na `description` de `sparkforge_analyze_terraform` cita esses
+`--conf`). O aviso na `description` de `sparkforge_aws_analyze_terraform` cita esses
 campos, e não o `snippet`.
 
 ## O invariante, e por que ele não é sanitização
@@ -86,9 +86,9 @@ segunda existe para impedir a correção errada.
 
 Invariante só protege quem sabe dele. A frase está na `description` das **4**
 tools `analyze_*` que devolvem `subject.snippet` não vazio, na de
-`sparkforge_analyze_terraform` — que carrega o texto de terceiro por
+`sparkforge_aws_analyze_terraform` — que carrega o texto de terceiro por
 `subject.symbol` e `attrs.value`, e cujo aviso cita esses campos —, e na de
-`sparkforge_judge`, a única que devolve `Finding`, e portanto o único lugar em
+`sparkforge_aws_judge`, a única que devolve `Finding`, e portanto o único lugar em
 que o `snippet` do artefato aparece **ao lado** do `explanation` do catálogo,
 que é exatamente a situação que o invariante descreve.
 

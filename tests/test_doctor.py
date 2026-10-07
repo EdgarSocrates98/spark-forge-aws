@@ -59,7 +59,7 @@ def test_catalogo():
 def test_packs():
     assert dr.avaliar_packs(None, "erro").status == dr.FAIL
     # `env` e o nome da variavel e vem sempre (medido: pack_list sem a variavel).
-    vazio = {"env": "SPARKFORGE_PACKS", "active": [], "refused": []}
+    vazio = {"env": "SPARKFORGE_AWS_PACKS", "active": [], "refused": []}
     assert dr.avaliar_packs(vazio, None).status == dr.SKIP
     recusado = {**vazio, "refused": [{"reason": "prefixo_reservado"}]}
     assert dr.avaliar_packs(recusado, None).status == dr.WARN
@@ -138,7 +138,7 @@ def test_cli_sai_1_com_catalogo_invalido(tmp_path, monkeypatch, capsys):
     vazio = tmp_path / "catalogo_vazio"
     vazio.mkdir()
     (vazio / "quebrado.yaml").write_text("- id: [nao fecha\n", encoding="utf-8")
-    monkeypatch.setenv("SPARKFORGE_CATALOG", str(vazio))
+    monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(vazio))
     assert main(["doctor", "--repo", str(tmp_path)]) == 1
     saida = json.loads(capsys.readouterr().out)
     [catalogo] = [c for c in saida["checks"] if c["id"] == "catalogo"]
@@ -153,7 +153,7 @@ def test_cli_sai_0_sem_fail(tmp_path, home_isolado, capsys):
 def test_tool_nunca_recebe_online():
     from sparkforge_aws.adapters.tools import TOOLS
 
-    tool = TOOLS["sparkforge_doctor"]
+    tool = TOOLS["sparkforge_aws_doctor"]
     assert "online" not in (tool["inputSchema"].get("properties") or {})
     assert tool["annotations"]["openWorldHint"] is False
     assert tool["annotations"]["readOnlyHint"] is True

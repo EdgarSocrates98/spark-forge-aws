@@ -51,7 +51,7 @@ _INSTALL_HINT = (
 # porta seria criar um segundo lugar onde a verdade pode divergir do codigo.
 # `tests/test_adapters_mcp.py` cobra que a lista bate com quem de fato tem
 # `snippet` no `outputSchema`.
-TOOLS_COM_FONTE = ("sparkforge_code_read",)
+TOOLS_COM_FONTE = ("sparkforge_aws_code_read",)
 
 # Carregado pelo cliente junto do handshake. Curto de proposito: aponta o mapa
 # em vez de repeti-lo, porque cada byte aqui entra no contexto de TODA sessao.

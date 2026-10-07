@@ -7,7 +7,7 @@
 # gate sobre a fixture citada e reprova se o valor divergir.
 #
 # `required_tools` segue o vocabulario de `evals/agentic/fase0/suite.yaml`: o
-# nome da tool MCP sem o prefixo `sparkforge_`, ou o verbo da CLI com espaco
+# nome da tool MCP sem o prefixo `sparkforge_aws_`, ou o verbo da CLI com espaco
 # virando `_` (`sparkforge-aws sdd check` -> `sdd_check`).
 schema_version: 1
 id: sdd

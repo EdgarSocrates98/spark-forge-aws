@@ -97,8 +97,8 @@ def test_o_corpus_tem_os_quatro_casos():
     assert [p.name for p in _casos()] == [
         "com_host",
         "host_sem_usage",
-        "sparkforge_erro",
-        "sparkforge_ok",
+        "sparkforge_aws_erro",
+        "sparkforge_aws_ok",
     ]
 
 
@@ -123,11 +123,15 @@ class TestCaso:
     def test_nenhum_span_some(self, caso):
         resultado = json.loads(_texto(caso / "expected" / "result.json"))
         contagem = resultado["counts"]
-        total = contagem["sparkforge_spans"] + contagem["host_agent"] + contagem["host_tool_calls"]
+        total = (
+            contagem["sparkforge_aws_spans"]
+            + contagem["host_agent"]
+            + contagem["host_tool_calls"]
+        )
         assert contagem["exported"] + contagem["refused"] == total
         assert contagem["exported"] == len(_spans(caso))
         assert contagem["refused"] == len(resultado["refused"])
-        assert contagem["sparkforge_spans"] == len(
+        assert contagem["sparkforge_aws_spans"] == len(
             json.loads(_texto(caso / "input" / "spans.json"))
         )
 
@@ -165,7 +169,7 @@ class TestCaso:
         from sparkforge_aws.observability.tracer import ExecutionTrace, TraceSpan
 
         regen = _regen()
-        monkeypatch.setattr(_core, "_versao_sparkforge", lambda: regen.SARIF_GOLDEN_VERSION)
+        monkeypatch.setattr(_core, "_versao_sparkforge_aws", lambda: regen.SARIF_GOLDEN_VERSION)
         meta = _meta(caso)
         run_id = meta["run_id"]
         db = tmp_path / ".sparkforge_aws" / "traces.db"

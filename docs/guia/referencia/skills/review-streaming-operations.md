@@ -7,7 +7,7 @@ Use quando houver um contrato declarativo de streaming e for necessário revisar
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-streaming-operations/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-operations.md', '../../knowledge/streaming-format-serving-matrix.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze streaming-ops', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-operations.md', '../../knowledge/streaming-format-serving-matrix.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze streaming-ops', 'sparkforge-aws judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)

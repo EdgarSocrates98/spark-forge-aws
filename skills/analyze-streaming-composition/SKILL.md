@@ -2,7 +2,7 @@
 name: analyze-streaming-composition
 description: "Use quando houver facts já extraídos de Structured Streaming e de Iceberg, Kafka ou Kinesis e for preciso correlacionar progresso, snapshots ou backlog sem escolher causa por intuição."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

@@ -45,7 +45,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
         "limit": 20,
     }
     expected = analyze_streaming_composition(**args)
-    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    actual = call_tool("sparkforge_aws_analyze_streaming_composition", args)
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -80,7 +80,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
 
 
 def test_tool_is_read_only_and_declared():
-    spec = TOOLS["sparkforge_analyze_streaming_composition"]
+    spec = TOOLS["sparkforge_aws_analyze_streaming_composition"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["facts_paths", "mode"]
 
@@ -143,7 +143,7 @@ def test_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
         "limit": 20,
     }
     expected = analyze_streaming_composition(**args)
-    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    actual = call_tool("sparkforge_aws_analyze_streaming_composition", args)
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -251,7 +251,7 @@ def test_iceberg_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
         "limit": 20,
     }
     expected = analyze_streaming_composition(**args)
-    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    actual = call_tool("sparkforge_aws_analyze_streaming_composition", args)
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -349,7 +349,7 @@ def test_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         "limit": 20,
     }
     expected = analyze_streaming_composition(**args)
-    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    actual = call_tool("sparkforge_aws_analyze_streaming_composition", args)
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -442,7 +442,7 @@ def test_transport_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         "limit": 20,
     }
     expected = analyze_streaming_composition(**args)
-    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    actual = call_tool("sparkforge_aws_analyze_streaming_composition", args)
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -561,7 +561,7 @@ def test_sink_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         "limit": 20,
     }
     expected = analyze_streaming_composition(**args)
-    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    actual = call_tool("sparkforge_aws_analyze_streaming_composition", args)
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.

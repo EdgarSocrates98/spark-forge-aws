@@ -38,9 +38,11 @@ def test_duckdb_microscope_is_read_only_and_structured() -> None:
 
 def test_analytics_surfaces_share_contracts() -> None:
     dbt_cli = _core.analyze_dbt_artifacts(DBT_FIXTURE)
-    dbt_mcp = call_tool("sparkforge_analyze_dbt_artifacts", {"path": str(DBT_FIXTURE)})
+    dbt_mcp = call_tool("sparkforge_aws_analyze_dbt_artifacts", {"path": str(DBT_FIXTURE)})
     duckdb_cli = _core.analyze_duckdb_microscope(DUCKDB_FIXTURE)
-    duckdb_mcp = call_tool("sparkforge_analyze_duckdb_microscope", {"path": str(DUCKDB_FIXTURE)})
+    duckdb_mcp = call_tool(
+        "sparkforge_aws_analyze_duckdb_microscope", {"path": str(DUCKDB_FIXTURE)}
+    )
 
     assert dbt_cli["dbt"]["fingerprint"] == dbt_mcp["dbt"]["fingerprint"]
     assert duckdb_cli["duckdb"]["fingerprint"] == duckdb_mcp["duckdb"]["fingerprint"]

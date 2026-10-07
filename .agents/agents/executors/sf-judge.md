@@ -10,13 +10,13 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 
 ## Faz
 
-1. `sparkforge_judge` sobre os facts, com o runtime confirmado.
+1. `sparkforge_aws_judge` sobre os facts, com o runtime confirmado.
 2. Agrupa por severidade e por `rule_id`.
-3. Para cada achado, consulta `sparkforge_rules_lookup` — limiar, guarda de versão, fonte
+3. Para cada achado, consulta `sparkforge_aws_rules_lookup` — limiar, guarda de versão, fonte
    com data, e `knowledge_refs` com o caminho **resolvido** dos arquivos citados. Abra por
    ali, nunca pelo caminho relativo do texto: num pacote instalado por pip o arquivo está
-   dentro do `site-packages`. Fora de uma regra, use `sparkforge_knowledge_path`.
-4. Registra no case com `sparkforge_case_update`.
+   dentro do `site-packages`. Fora de uma regra, use `sparkforge_aws_knowledge_path`.
+4. Registra no case com `sparkforge_aws_case_update`.
 
 ## Pressupõe
 

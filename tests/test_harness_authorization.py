@@ -19,9 +19,9 @@ from sparkforge_aws.agents.autonomy import (
 )
 from sparkforge_aws.registry.models import ExecutionProfile
 
-UMA_LEITURA_LOCAL = "sparkforge_analyze_pyspark"
-UMA_DE_REDE = "sparkforge_collect_glue_job"
-UMA_MUTACAO_LOCAL = "sparkforge_case_open"
+UMA_LEITURA_LOCAL = "sparkforge_aws_analyze_pyspark"
+UMA_DE_REDE = "sparkforge_aws_collect_glue_job"
+UMA_MUTACAO_LOCAL = "sparkforge_aws_case_open"
 
 
 def catalogo_falso(monkeypatch, **anotacoes_por_tool):
@@ -118,7 +118,7 @@ class TestClasseDerivadaDaAnotacao:
         default. Default permissivo para o desconhecido e como uma tool nova
         entra sem classe."""
         with pytest.raises(KeyError):
-            tool_class("sparkforge_tool_que_nao_existe")
+            tool_class("sparkforge_aws_tool_que_nao_existe")
 
 
 class TestCadeiaDeAutorizacao:
@@ -562,8 +562,8 @@ class TestArgumentoEntraNaDecisao:
     def test_a_verificacao_nao_e_so_do_parametro_chamado_path(self, tmp_path, chave):
         """As 43 tools nomeiam o caminho de sete jeitos diferentes.
 
-        Verificar so `path` deixaria `sparkforge_report_verify` (`report_path`,
-        `findings_path`) e `sparkforge_analyze_terraform_diff` (`before`,
+        Verificar so `path` deixaria `sparkforge_aws_report_verify` (`report_path`,
+        `findings_path`) e `sparkforge_aws_analyze_terraform_diff` (`before`,
         `after`) inteiramente de fora -- e as duas leem arquivo.
         """
         decisao = authorize(
@@ -579,7 +579,7 @@ class TestArgumentoEntraNaDecisao:
         assert chave in decisao.reason
 
     def test_lista_de_caminhos_e_verificada_item_a_item(self, tmp_path):
-        """`facts_paths` de `sparkforge_fuse` e lista, nao string.
+        """`facts_paths` de `sparkforge_aws_fuse` e lista, nao string.
 
         Verificar so `isinstance(valor, str)` deixaria a lista inteira passar
         sem checagem nenhuma -- e ela e o argumento principal daquela tool.
@@ -799,26 +799,26 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     bounded sem artefato escolhido pelo chamador -- nenhuma casa com o
     predicado.
     Eram 43 de 44 ate a superficie de Code Intelligence entrar: as SEIS tools
-    de `sparkforge_code_*` declaram `repo`, que e a raiz fora da qual nada e
+    de `sparkforge_aws_code_*` declaram `repo`, que e a raiz fora da qual nada e
     lido (INV-002), entao todas as seis caem do lado certo do predicado.
-    `sparkforge_workload` fechou o proprio gate assim: `facts` sozinho NAO
+    `sparkforge_aws_workload` fechou o proprio gate assim: `facts` sozinho NAO
     e reconhecido pelo predicado, e a tool foi renomeada para `facts_path` /
     `history_path` -- os mesmos sufixos que o resto do catalogo ja usa --
-    em vez de entrar na lista de excecao. `sparkforge_capacity` nasceu ja com
+    em vez de entrar na lista de excecao. `sparkforge_aws_capacity` nasceu ja com
     `facts_path`/`history_path`, sem passar pela mesma renomeacao, e
-    `sparkforge_finops` seguiu a mesma forma com `facts_path` sozinho. Se uma
+    `sparkforge_aws_finops` seguiu a mesma forma com `facts_path` sozinho. Se uma
     tool nova entrar com um caminho batizado de outro jeito (`caminho`,
     `origem`, `destino`), a contagem muda e este teste cai -- que e o ponto.
     O predicado nao adivinha; ele reconhece nomes, e nome novo tem de passar
     por decisao de alguem, nao por default silencioso.
 
-    A fase de EMR on EKS levou 59 para 61: `sparkforge_analyze_emr_eks` declara
-    `path` e `sparkforge_collect_emr_eks` declara `out_dir`, entao as duas caem
+    A fase de EMR on EKS levou 59 para 61: `sparkforge_aws_analyze_emr_eks` declara
+    `path` e `sparkforge_aws_collect_emr_eks` declara `out_dir`, entao as duas caem
     do lado certo do predicado e o conjunto de excecao NAO mudou. Foi este
     teste que mediu isso -- ele caiu na contagem, e nao no conjunto.
 
     A frente D do sub-projeto `ReleaseDiff` foi o caso inverso, e o primeiro:
-    `sparkforge_release_describe` e `sparkforge_release_diff` entram no conjunto
+    `sparkforge_aws_release_describe` e `sparkforge_aws_release_diff` entram no conjunto
     de EXCECAO, e a contagem de 59 nao se move. Nao e caminho batizado de outro
     jeito -- e a AUSENCIA de caminho, e ela e correta: os dois verbos nao leem
     artefato nenhum do operador, so as matrizes de `knowledge/` que o proprio
@@ -827,12 +827,12 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     QUATRO, e este teste e o lugar onde essa decisao fica escrita.
 
     A entrega de Control-M repete o caso, e pelo mesmo motivo:
-    `sparkforge_controlm_describe` recebe uma VERSAO e le a matriz de
+    `sparkforge_aws_controlm_describe` recebe uma VERSAO e le a matriz de
     `knowledge/controlm/` -- artefato do operador, nenhum. O conjunto sai de
     quatro para CINCO e a contagem de 59 nao se move.
 
     O incremento de `Jobs-as-Code` e o caso OPOSTO da mesma entrega, e vale ler
-    os dois lado a lado: `sparkforge_analyze_controlm_jobs` le artefato -- a
+    os dois lado a lado: `sparkforge_aws_analyze_controlm_jobs` le artefato -- a
     definicao de job versionada no repositorio do cliente -- e por isso declara
     `path`, cai do lado certo do predicado, e move a CONTAGEM de 59 para 60 sem
     tocar no conjunto de excecao. Foi este teste que mediu isso: ele caiu na
@@ -840,9 +840,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     NAO e caminho e nao entra na conta -- ela e declaracao do operador, e o
     predicado reconhece nome de caminho, nao qualquer parametro.
 
-    `sparkforge_arbitrate` (executor agentico, 2026-09-08) e o caso em que a
+    `sparkforge_aws_arbitrate` (executor agentico, 2026-09-08) e o caso em que a
     escolha de nome MUDA a autorizacao, e por isso vale escrito. Ela recebe
-    findings e facts, como `sparkforge_judge`, e podia te-los batizado so
+    findings e facts, como `sparkforge_aws_judge`, e podia te-los batizado so
     `findings` e `facts` -- inline, sem caminho nenhum. Nesse desenho ela cairia
     no conjunto de EXCECAO, e a excecao seria falsa: ao contrario de
     `release_describe` e `controlm_describe`, que so leem matriz do proprio
@@ -852,7 +852,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     Ela declara os TRES: `repo` (a raiz onde grava), `findings_path` e
     `facts_path`. Move a CONTAGEM de 63 para 64 e nao toca no conjunto.
 
-    `sparkforge_collect_cloudwatch_logs` (T5 de `stacktrace-intelligence`,
+    `sparkforge_aws_collect_cloudwatch_logs` (T5 de `stacktrace-intelligence`,
     2026-09-09) e o caso simples, e vale registrado porque a tentacao era a
     outra: ela COLETA DE API AWS VIVA e grava no disco do operador, entao e
     `CLOUD_MUTATION` pela mesma anotacao `_WRITE_LOCAL_OPEN_WORLD` das outras
@@ -866,11 +866,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
 
     SEM_CAMINHO = frozenset(
         {
-            "sparkforge_rules_lookup",
-            "sparkforge_economy_report",
-            "sparkforge_release_describe",
-            "sparkforge_release_diff",
-            "sparkforge_controlm_describe",
+            "sparkforge_aws_rules_lookup",
+            "sparkforge_aws_economy_report",
+            "sparkforge_aws_release_describe",
+            "sparkforge_aws_release_diff",
+            "sparkforge_aws_controlm_describe",
             # `lakeformation_matrix` (2026-09-09) entra aqui pela MESMA razao das
             # cinco de cima, e a razao e o que este conjunto guarda: a entrada
             # dela nao e artefato do operador, e CONHECIMENTO VERSIONADO que
@@ -880,26 +880,26 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # a `knowledge/` -- nao ha caminho a autorizar porque nao ha caminho
             # que o chamador escolha. Aceitar um `path` aqui seria abrir uma
             # superficie que a tool nao precisa.
-            "sparkforge_lakeformation_matrix",
+            "sparkforge_aws_lakeformation_matrix",
             # `context_inspect` (2026-10-04) inspeciona referências já
             # selecionadas pelo Context Gateway; não recebe caminho de
             # artefato e não deve abrir uma fronteira nova de leitura.
-            "sparkforge_context_inspect",
+            "sparkforge_aws_context_inspect",
             # `pack_list` (2026-09-12, Forge Pack) nao recebe caminho: le
-            # `SPARKFORGE_PACKS`, variavel do operador da mesma confianca de
-            # `SPARKFORGE_CATALOG`. Aceitar diretorio pela tool abriria uma
+            # `SPARKFORGE_AWS_PACKS`, variavel do operador da mesma confianca de
+            # `SPARKFORGE_AWS_CATALOG`. Aceitar diretorio pela tool abriria uma
             # leitura que o host escolhe; checar pack arbitrario e da CLI
             # (`sparkforge-aws pack check`).
-            "sparkforge_pack_list",
+            "sparkforge_aws_pack_list",
             # `knowledge_drift` (2026-09-13, §17) le o lock de `knowledge_dir()`
-            # (ou `SPARKFORGE_SOURCES_LOCK`, variavel do operador) e o proprio
+            # (ou `SPARKFORGE_AWS_SOURCES_LOCK`, variavel do operador) e o proprio
             # repositorio -- conhecimento versionado, como a matriz de Lake
             # Formation. Nenhum caminho e escolhido pelo chamador.
-            "sparkforge_knowledge_drift",
+            "sparkforge_aws_knowledge_drift",
             # `lakeformation_architect` (2026-10-01) recebe contrato JSON
             # declarativo e lê apenas matriz versionada; nenhum caminho do
             # chamador é aceito.
-            "sparkforge_lakeformation_architect",
+            "sparkforge_aws_lakeformation_architect",
         }
     )
 
@@ -1191,9 +1191,9 @@ class TestAImposicaoNoDespacho:
 
         politica = CallPolicy(
             agent="a",
-            allowed_tools=["sparkforge_tool_que_nao_existe"],
+            allowed_tools=["sparkforge_aws_tool_que_nao_existe"],
             profile=ExecutionProfile.ECO,
             root=tmp_path,
         )
         with pytest.raises(KeyError):
-            call_tool("sparkforge_tool_que_nao_existe", {}, policy=politica)
+            call_tool("sparkforge_aws_tool_que_nao_existe", {}, policy=politica)

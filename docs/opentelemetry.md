@@ -19,7 +19,7 @@ quem envia e o Collector.
 
 ```bash
 # o processo que chama as tools grava com um run_id conhecido
-export SPARKFORGE_RUN_ID=run_sessao_42
+export SPARKFORGE_AWS_RUN_ID=run_sessao_42
 python -m sparkforge_aws.adapters.mcp --transport stdio   # ou qualquer chamada a call_tool
 
 # depois, no mesmo diretorio
@@ -38,7 +38,7 @@ O stdout traz as contagens, as recusas e as lacunas. Exportar o mesmo run duas
 vezes da o mesmo arquivo, byte a byte: os ids sao `sha256` do id local, e o
 backend nao duplica o trace.
 
-A tool MCP `sparkforge_telemetry_export` devolve o mesmo conteudo e **nao
+A tool MCP `sparkforge_aws_telemetry_export` devolve o mesmo conteudo e **nao
 grava**: gravar e da CLI.
 
 ## Collector

@@ -24,4 +24,4 @@ sparkforge-aws benchmark --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_benchmark`](../tools/sparkforge_benchmark.md)
+[`sparkforge_aws_benchmark`](../tools/sparkforge_aws_benchmark.md)

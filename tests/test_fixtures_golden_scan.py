@@ -5,7 +5,7 @@ Cada caso de `fixtures/scan/` tem um `repo/` sintetico (codigo e, quando cabe,
 COPIA em `tmp_path`, porque ele grava em `<repo>/.sparkforge_aws/scan/`.
 
 Regenerar depois de mudanca DELIBERADA:
-`SPARKFORGE_REGEN_SCAN=1 pytest tests/test_fixtures_golden_scan.py`.
+`SPARKFORGE_AWS_REGEN_SCAN=1 pytest tests/test_fixtures_golden_scan.py`.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "scan"
-REGEN = os.environ.get("SPARKFORGE_REGEN_SCAN") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_SCAN") == "1"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.yaml").is_file())
 
 

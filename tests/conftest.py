@@ -16,7 +16,7 @@ rodar — nos dois sistemas operacionais da matriz.
 caminho só resolve o que não existe no artefato. E o que impede isso de virar
 teatro não é a ordem em si — configuração se perde em refactor — e sim
 `tests/test_installed_provenance.py`, que roda no mesmo processo sob
-`SPARKFORGE_VERIFY_INSTALLED=1` e falha se `sparkforge-aws` tiver vindo do
+`SPARKFORGE_AWS_VERIFY_INSTALLED=1` e falha se `sparkforge-aws` tiver vindo do
 diretório-fonte.
 
 **Por que não copiar `with_plan_ref` para dentro do teste:** o docstring dele

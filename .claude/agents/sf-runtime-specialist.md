@@ -19,14 +19,14 @@ Execute somente dentro do escopo do caso. Entregue fatos, hipoteses, incertezas,
 Leia e siga AGENT_PROTOCOL.md como contrato operacional.
 
 Para inventário da plataforma e coordenação de execução, use
-`sparkforge_analyze_platform_ecosystem` e `sparkforge_analyze_orchestration` sobre
+`sparkforge_aws_analyze_platform_ecosystem` e `sparkforge_aws_analyze_orchestration` sobre
 artefatos declarados. Eles descrevem integrações e controles observados; não disparam
 orchestrator nem inferem confiabilidade ausente.
 
 ## Migração entre versões de runtime
 
 Quando o caso é migrar um job de uma versão de Glue para outra, use
-`sparkforge_migration_assess` sobre o **diretório** do job antes de qualquer outra
+`sparkforge_aws_migration_assess` sobre o **diretório** do job antes de qualquer outra
 coisa. Ele julga o caminho degrau a degrau com `SF-MIG`, `SF-SPARK4` e `SF-LF`, e o
 diretório é o que importa: um pin de `requirements.txt` e um `.jar` de Scala 2.12
 sobrevivem à troca de runtime e não aparecem no diff da migração.
@@ -51,7 +51,7 @@ julgamento: sem job rodando no runtime alvo, ninguém provou reconciliação nen
 ## Auditoria de dependencia
 
 Quando o caso envolve pin de `requirements*.txt` ou `.jar` proprio, use
-`sparkforge_glue_dependency_audit` sobre o diretorio do job, com a versao de Glue
+`sparkforge_aws_glue_dependency_audit` sobre o diretorio do job, com a versao de Glue
 explicita. Risco de ABI nao existe em abstrato: um `.jar` de Scala 2.12 e correto
 sob Glue 5.1 e quebra sob 6.0, e um piso de dependencia so e piso a partir da
 versao de Spark que o exige. A saida traz a dependencia observada ao lado do
@@ -110,13 +110,13 @@ autorização, e "eu já dei SELECT" não responde ao achado.
 ## Control-M (BMC) — conhecimento versionado, e a fronteira dele
 
 Quando o caso pergunta *"estou na versão X do Control-M Automation API, o que
-posso usar?"*, use `sparkforge_controlm_describe` com a versão. Ele responde
+posso usar?"*, use `sparkforge_aws_controlm_describe` com a versão. Ele responde
 pelos **dois eixos** que a fonte publica — capacidade com fronteira de versão, e
 exigência de componente — e cada item traz `declared_at`, a versão onde a
 fronteira foi lida.
 
 Este coordenador atende a pergunta pela mesma razão que já atende
-`sparkforge_release_describe`: a fronteira é **versão**, e é a mesma que separa
+`sparkforge_aws_release_describe`: a fronteira é **versão**, e é a mesma que separa
 `migrate-glue-6` de `spark4-compatibility`. O que muda é o produto, não o tipo
 de pergunta.
 
@@ -139,7 +139,7 @@ Control-M instalado. É a mesma natureza de um `main.tf`.
 
 Quando o caso traz o **JSON de definição de job** (`Jobs-as-Code`, o que
 `ctm build` valida e `ctm deploy` publica), use
-`sparkforge_analyze_controlm_jobs` sobre o arquivo ou o diretório. Ele extrai o
+`sparkforge_aws_analyze_controlm_jobs` sobre o arquivo ou o diretório. Ele extrai o
 inventário — folder, job com `Type`/`RunAs`/`Application`, agendamento,
 dependência por evento e por `Flow`, ação condicional, variável — e, **com
 `version`**, cruza as capacidades observadas com a matriz e emite o veredito já

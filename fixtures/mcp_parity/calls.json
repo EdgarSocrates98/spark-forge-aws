@@ -4,7 +4,7 @@
       "path": "nao/existe.py"
     },
     "motivo": "AdapterError vira {error, exit_code}: envelope compacto",
-    "name": "sparkforge_analyze_pyspark",
+    "name": "sparkforge_aws_analyze_pyspark",
     "result": {
       "content": [
         {
@@ -19,11 +19,11 @@
   "fora_do_catalogo_http": {
     "arguments": {},
     "motivo": "SPEC 71: tool de fonte escondida e recusada no transporte http",
-    "name": "sparkforge_code_read",
+    "name": "sparkforge_aws_code_read",
     "result": {
       "content": [
         {
-          "text": "{\"error\":\"ferramenta indisponivel no transporte 'http': sparkforge_code_read. Use --transport stdio.\",\"exit_code\":2}",
+          "text": "{\"error\":\"ferramenta indisponivel no transporte 'http': sparkforge_aws_code_read. Use --transport stdio.\",\"exit_code\":2}",
           "type": "text"
         }
       ],
@@ -36,7 +36,7 @@
       "release": "5.0"
     },
     "motivo": "campo obrigatorio ausente: Input validation error do 1.x",
-    "name": "sparkforge_release_describe",
+    "name": "sparkforge_aws_release_describe",
     "result": {
       "content": [
         {
@@ -53,7 +53,7 @@
       "id": "SF-TIMEOUT-002"
     },
     "motivo": "string onde o inputSchema pede array: Input validation error do 1.x",
-    "name": "sparkforge_rules_lookup",
+    "name": "sparkforge_aws_rules_lookup",
     "result": {
       "content": [
         {
@@ -68,11 +68,11 @@
   "nome_desconhecido": {
     "arguments": {},
     "motivo": "nome fora de qualquer catalogo: mesma porta do transporte",
-    "name": "sparkforge_nao_existe",
+    "name": "sparkforge_aws_nao_existe",
     "result": {
       "content": [
         {
-          "text": "{\"error\":\"ferramenta indisponivel no transporte 'stdio': sparkforge_nao_existe. Use --transport stdio.\",\"exit_code\":2}",
+          "text": "{\"error\":\"ferramenta indisponivel no transporte 'stdio': sparkforge_aws_nao_existe. Use --transport stdio.\",\"exit_code\":2}",
           "type": "text"
         }
       ],
@@ -85,7 +85,7 @@
       "path": "action_in_loop/input"
     },
     "motivo": "extrator puro sobre fixture versionada; caminhos relativos na saida",
-    "name": "sparkforge_analyze_pyspark",
+    "name": "sparkforge_aws_analyze_pyspark",
     "result": {
       "content": [
         {
@@ -261,7 +261,7 @@
       "repo": "."
     },
     "motivo": "unico collect com caminho offline deterministico: confere o manifesto local",
-    "name": "sparkforge_collect_verify",
+    "name": "sparkforge_aws_collect_verify",
     "result": {
       "content": [
         {
@@ -285,7 +285,7 @@
       "repo": "consenso_com_vencedor/input"
     },
     "motivo": "familia debate, so leitura sobre caso de fixtures/debate/",
-    "name": "sparkforge_debate_referee",
+    "name": "sparkforge_aws_debate_referee",
     "result": {
       "content": [
         {
@@ -376,7 +376,7 @@
       ]
     },
     "motivo": "le o catalogo de regras, sem I/O de AWS",
-    "name": "sparkforge_rules_lookup",
+    "name": "sparkforge_aws_rules_lookup",
     "result": {
       "content": [
         {
@@ -471,7 +471,7 @@
       "release": "5.0"
     },
     "motivo": "le a matriz de releases, sem I/O de AWS",
-    "name": "sparkforge_release_describe",
+    "name": "sparkforge_aws_release_describe",
     "result": {
       "content": [
         {

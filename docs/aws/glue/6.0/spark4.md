@@ -49,8 +49,8 @@ inclusive um que seja recurso de teste fora do classpath do job, e um JAR cujo n
 codifica a versão de Scala não recebe o campo e não é acusado — ele pode ser Java puro, que
 não tem versão de Scala nenhuma para estar errada.
 
-Não existe tool MCP dedicada a varredura de Spark 4. `sparkforge_analyze_pyspark` seguido de
-`sparkforge_judge` entrega o mesmo resultado sem superfície nova — ver
+Não existe tool MCP dedicada a varredura de Spark 4. `sparkforge_aws_analyze_pyspark` seguido de
+`sparkforge_aws_judge` entrega o mesmo resultado sem superfície nova — ver
 [`known-unknowns.md`](known-unknowns.md).
 
 ## O que só aparece em execução

@@ -20,9 +20,9 @@ def _ledger_com_chamadas(tmp_path, monkeypatch):
     origem = tmp_path / "job"
     origem.mkdir()
     (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-    tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+    tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
     tools.call_tool(
-        "sparkforge_analyze_pyspark",
+        "sparkforge_aws_analyze_pyspark",
         {"path": str(origem), "detail_level": "summary"},
     )
     return ledger
@@ -33,7 +33,7 @@ class TestORelatorio:
         ledger = _ledger_com_chamadas(tmp_path, monkeypatch)
         relatorio = build_context_report(ledger, run_id="run_teste")
 
-        por_tool = relatorio["by_tool"]["sparkforge_analyze_pyspark"]
+        por_tool = relatorio["by_tool"]["sparkforge_aws_analyze_pyspark"]
         assert por_tool["calls"] == 2
         assert por_tool["payload_bytes"] > 0
 
@@ -48,7 +48,7 @@ class TestORelatorio:
         ledger = _ledger_com_chamadas(tmp_path, monkeypatch)
         relatorio = build_context_report(ledger, run_id="run_teste")
 
-        efeito = relatorio["detail_level_effect"]["sparkforge_analyze_pyspark"]
+        efeito = relatorio["detail_level_effect"]["sparkforge_aws_analyze_pyspark"]
         assert "" in efeito
         assert "summary" in efeito
         assert all(isinstance(v, int) for v in efeito.values())
@@ -76,7 +76,7 @@ class TestORelatorio:
         )
 
         assert relatorio["host_usage"]["input_tokens"] == 500
-        assert "input_tokens" not in relatorio["by_tool"]["sparkforge_analyze_pyspark"]
+        assert "input_tokens" not in relatorio["by_tool"]["sparkforge_aws_analyze_pyspark"]
 
 
 class TestRecusas:
@@ -103,7 +103,7 @@ class TestRecusas:
         fica de fora de proposito: `by_name` dentro dela e nomenclatura
         EXTERNA (nome de tool, de skill, de documento de knowledge) que este
         modulo so repassa sem medir. Descricoes reais ja tem "cost"/"custo"
-        (`sparkforge_finops`, `sparkforge_capacity`, entre outras) sem que
+        (`sparkforge_aws_finops`, `sparkforge_aws_capacity`, entre outras) sem que
         isso seja numero em dolar reportado -- varrer `surface` faria este
         teste quebrar por uma mudanca de nomenclatura alheia ao relatorio, e
         nao por uma regressao real na invariante que ele protege.
@@ -147,13 +147,13 @@ class TestConsultaDentroDoMesmoProcesso:
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
-        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        tools.call_tool("sparkforge_aws_analyze_pyspark", {"path": str(origem)})
 
         # nenhum flush aqui -- o span segue so no buffer em memoria.
         relatorio = _core.economy_report("run_teste")
 
         assert relatorio["by_tool"] != {}
-        assert relatorio["by_tool"]["sparkforge_analyze_pyspark"]["calls"] == 1
+        assert relatorio["by_tool"]["sparkforge_aws_analyze_pyspark"]["calls"] == 1
         assert not any(
             item.get("reason") == "run_unresolved" for item in relatorio["unresolved"]
         )

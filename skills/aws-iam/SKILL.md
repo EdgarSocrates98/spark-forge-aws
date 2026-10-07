@@ -2,7 +2,7 @@
 name: aws-iam
 description: "Use quando precisar corrigir comportamentos de IAM que agentes frequentemente erram — avaliação de policy, trust policies, limites de STS, Organizations, SAML/MFA — ou for criar roles de serviço, gerar policies baseline a partir de código-fonte ou Terraform plan JSON, configurar confused deputy protection, ou escrever policies com condition operators (ForAnyValue/ForAllValues com Null checks). Aplica-se a criação de roles IAM, escrita de IAM/bucket policies, trabalho com STS, Organizations ou condition operators. NÃO use para autorização não-IAM (Cognito user-pool policies, RBAC app-level)."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

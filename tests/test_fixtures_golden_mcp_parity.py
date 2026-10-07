@@ -72,125 +72,139 @@ ENVELOPE_DA_ERA = ("_meta", "resultType", "ttlMs", "cacheScope")
 # cobre so as tools que ele conhece. Uma tool nova FORA desta lista derruba
 # `test_toda_tool_nova_esta_declarada`.
 NOVAS_DEPOIS_DO_GOLDEN = {
-    "sparkforge_analyze_dq_ai": (
+    "sparkforge_aws_analyze_dq_ai": (
         "2026-09-20: avaliacao deterministica de qualidade para casos AI/DQ"
     ),
-    "sparkforge_dq_ai_assess": (
+    "sparkforge_aws_dq_ai_assess": (
         "2026-09-20: composicao de assessment AI/DQ sobre fatos extraidos"
     ),
-    "sparkforge_agentops_timeline": (
+    "sparkforge_aws_agentops_timeline": (
         "2026-10-05: linha do tempo do run por lane de componente (FASE 10)"
     ),
-    "sparkforge_agentops_critical_path": (
+    "sparkforge_aws_agentops_critical_path": (
         "2026-10-05: maiores duracoes, retries e waiting medidos do run (FASE 10)"
     ),
-    "sparkforge_context_start": (
+    "sparkforge_aws_context_start": (
         "2026-09-26: descoberta seletiva de contexto sob limite deterministico"
     ),
-    "sparkforge_context_expand": "2026-09-26: expansao sob demanda de referencias de contexto",
-    "sparkforge_report_github": "2026-09-11: projecao de findings para SARIF e resumo de PR",
-    "sparkforge_telemetry_export": "2026-09-11: spans de tool e transcript do host em OTLP/JSON",
-    "sparkforge_receipt_emit": "2026-09-12: recibo content-addressed da execucao do case (§14)",
-    "sparkforge_receipt_verify": "2026-09-12: verificacao do recibo parte por parte (§14)",
-    "sparkforge_proof": "2026-09-12: obrigacoes de prova de uma mudanca aplicada (§20)",
-    "sparkforge_simulate": "2026-09-12: o que uma mudanca de configuracao move (§19)",
-    "sparkforge_pack_list": "2026-09-12: Forge Packs ativos, recusados e o mapa de prefixo (§5)",
-    "sparkforge_knowledge_drift": "2026-09-13: o que uma fonte vigiada que mudou arrasta (§17)",
-    "sparkforge_gain": "2026-09-13: o ganho observado entre runs medidos (§21)",
-    "sparkforge_scan": "2026-09-13: os analyzes que cabem num repositorio, julgados (§22)",
-    "sparkforge_doctor": "2026-09-13: o ambiente esta pronto? treze checagens (§22)",
-    "sparkforge_policy_explain": "2026-09-13: o que a policy decide, e por qual porta (§16)",
-    "sparkforge_change_plan": "2026-09-13: o diff e o rollback de um valor de configuracao (§15)",
-    "sparkforge_change_sandbox": "2026-09-13: um diff numa copia isolada, e o que ele move (§15)",
-    "sparkforge_analyze_workload": "2026-09-14: o SLA declarado em workload.yaml (porta publica)",
-    "sparkforge_collect_parquet_footer": "2026-09-14: a porta do coletor de footer Parquet",
-    "sparkforge_change_propose": "2026-09-14: o pacote de PR montado a partir do sandbox (§15 L3)",
-    "sparkforge_sdd_check": "2026-09-16: gates do SDD proprio sobre docs/sdd",
-    "sparkforge_sdd_status": "2026-09-16: fase e bloqueio de cada feature do SDD",
-    "sparkforge_sdd_stamp": "2026-09-16: hash do upstream de um artefato SDD",
-    "sparkforge_analyze_step_functions": "2026-09-19: definicao ASL do AWS Step Functions",
-    "sparkforge_analyze_airflow_dag": "2026-09-19: arquivo .py de um DAG do Apache Airflow",
-    "sparkforge_analyze_sfn_history": "2026-09-20: historico de execucao do AWS Step Functions",
-    "sparkforge_decision_evaluate": "2026-09-28: avaliacao bounded de contrato de decisao offline",
-    "sparkforge_lakeformation_architect": (
+    "sparkforge_aws_context_expand": "2026-09-26: expansao sob demanda de referencias de contexto",
+    "sparkforge_aws_report_github": "2026-09-11: projecao de findings para SARIF e resumo de PR",
+    "sparkforge_aws_telemetry_export": (
+        "2026-09-11: spans de tool e transcript do host em OTLP/JSON"
+    ),
+    "sparkforge_aws_receipt_emit": "2026-09-12: recibo content-addressed da execucao do case (§14)",
+    "sparkforge_aws_receipt_verify": "2026-09-12: verificacao do recibo parte por parte (§14)",
+    "sparkforge_aws_proof": "2026-09-12: obrigacoes de prova de uma mudanca aplicada (§20)",
+    "sparkforge_aws_simulate": "2026-09-12: o que uma mudanca de configuracao move (§19)",
+    "sparkforge_aws_pack_list": (
+        "2026-09-12: Forge Packs ativos, recusados e o mapa de prefixo (§5)"
+    ),
+    "sparkforge_aws_knowledge_drift": "2026-09-13: o que uma fonte vigiada que mudou arrasta (§17)",
+    "sparkforge_aws_gain": "2026-09-13: o ganho observado entre runs medidos (§21)",
+    "sparkforge_aws_scan": "2026-09-13: os analyzes que cabem num repositorio, julgados (§22)",
+    "sparkforge_aws_doctor": "2026-09-13: o ambiente esta pronto? treze checagens (§22)",
+    "sparkforge_aws_policy_explain": "2026-09-13: o que a policy decide, e por qual porta (§16)",
+    "sparkforge_aws_change_plan": (
+        "2026-09-13: o diff e o rollback de um valor de configuracao (§15)"
+    ),
+    "sparkforge_aws_change_sandbox": (
+        "2026-09-13: um diff numa copia isolada, e o que ele move (§15)"
+    ),
+    "sparkforge_aws_analyze_workload": (
+        "2026-09-14: o SLA declarado em workload.yaml (porta publica)"
+    ),
+    "sparkforge_aws_collect_parquet_footer": "2026-09-14: a porta do coletor de footer Parquet",
+    "sparkforge_aws_change_propose": (
+        "2026-09-14: o pacote de PR montado a partir do sandbox (§15 L3)"
+    ),
+    "sparkforge_aws_sdd_check": "2026-09-16: gates do SDD proprio sobre docs/sdd",
+    "sparkforge_aws_sdd_status": "2026-09-16: fase e bloqueio de cada feature do SDD",
+    "sparkforge_aws_sdd_stamp": "2026-09-16: hash do upstream de um artefato SDD",
+    "sparkforge_aws_analyze_step_functions": "2026-09-19: definicao ASL do AWS Step Functions",
+    "sparkforge_aws_analyze_airflow_dag": "2026-09-19: arquivo .py de um DAG do Apache Airflow",
+    "sparkforge_aws_analyze_sfn_history": "2026-09-20: historico de execucao do AWS Step Functions",
+    "sparkforge_aws_decision_evaluate": (
+        "2026-09-28: avaliacao bounded de contrato de decisao offline"
+    ),
+    "sparkforge_aws_lakeformation_architect": (
         "2026-10-01: contrato offline de arquitetura Lake Formation FGAC/FTA"
     ),
-    "sparkforge_analyze_streaming": (
+    "sparkforge_aws_analyze_streaming": (
         "2026-10-01: facts offline de Structured Streaming e StreamingQueryProgress"
     ),
-    "sparkforge_analyze_transport": (
+    "sparkforge_aws_analyze_transport": (
         "2026-10-02: facts offline de dumps Kafka, MSK e Kinesis"
     ),
-    "sparkforge_analyze_flink": (
+    "sparkforge_aws_analyze_flink": (
         "2026-10-02: facts offline de dumps Apache Flink e Managed Flink"
     ),
-    "sparkforge_analyze_glue_streaming": (
+    "sparkforge_aws_analyze_glue_streaming": (
         "2026-10-02: facts offline de dumps AWS Glue Streaming e Real-Time Mode"
     ),
-    "sparkforge_analyze_cdc": (
+    "sparkforge_aws_analyze_cdc": (
         "2026-10-02: facts offline de eventos CDC, Debezium e AWS DMS"
     ),
-    "sparkforge_analyze_schema_registry": (
+    "sparkforge_aws_analyze_schema_registry": (
         "2026-10-02: facts offline de contratos e evolução de Schema Registry"
     ),
-    "sparkforge_analyze_data_observability": (
+    "sparkforge_aws_analyze_data_observability": (
         "2026-10-02: SLO, incidentes, dependências e blast radius offline"
     ),
-    "sparkforge_analyze_dbt_artifacts": (
+    "sparkforge_aws_analyze_dbt_artifacts": (
         "2026-10-02: lineage, catalog e run results de artifacts dbt"
     ),
-    "sparkforge_analyze_duckdb_microscope": (
+    "sparkforge_aws_analyze_duckdb_microscope": (
         "2026-10-02: objetos, queries e comparações read-only de DuckDB"
     ),
-    "sparkforge_analyze_event_driven": (
+    "sparkforge_aws_analyze_event_driven": (
         "2026-10-02: topologia declarada de EventBridge, SQS e SNS"
     ),
-    "sparkforge_analyze_forge_lab": (
+    "sparkforge_aws_analyze_forge_lab": (
         "2026-10-02: topologia declarativa offline do Forge Lab"
     ),
-    "sparkforge_analyze_lakehouse_catalog": (
+    "sparkforge_aws_analyze_lakehouse_catalog": (
         "2026-10-02: bindings declarados de catálogos e engines lakehouse"
     ),
-    "sparkforge_analyze_orchestration": (
+    "sparkforge_aws_analyze_orchestration": (
         "2026-10-02: controles de confiabilidade de orquestração"
     ),
-    "sparkforge_analyze_platform_ecosystem": (
+    "sparkforge_aws_analyze_platform_ecosystem": (
         "2026-10-02: inventário de serving, ingestion, AI e radar"
     ),
-    "sparkforge_analyze_platform_graph": (
+    "sparkforge_aws_analyze_platform_graph": (
         "2026-10-02: impacto e caminhos do grafo de plataforma"
     ),
-    "sparkforge_analyze_streaming_composition": (
+    "sparkforge_aws_analyze_streaming_composition": (
         "2026-10-02: composição offline de streaming, transporte e Iceberg"
     ),
-    "sparkforge_analyze_streaming_integrations": (
+    "sparkforge_aws_analyze_streaming_integrations": (
         "2026-10-02: contratos offline de integrações streaming"
     ),
-    "sparkforge_analyze_streaming_ops": (
+    "sparkforge_aws_analyze_streaming_ops": (
         "2026-10-02: SLO, FinOps, segurança, serving e lakehouse streaming"
     ),
-    "sparkforge_collect_streaming_integrations": (
+    "sparkforge_aws_collect_streaming_integrations": (
         "2026-10-02: coleta AWS declarada para integrações streaming"
     ),
-    "sparkforge_collect_schema_registry": (
+    "sparkforge_aws_collect_schema_registry": (
         "2026-10-03: coleta read-only do Glue Schema Registry com latest version e manifesto"
     ),
-    "sparkforge_collect_managed_flink": (
+    "sparkforge_aws_collect_managed_flink": (
         "2026-10-03: coleta read-only de DescribeApplication do Managed Flink com unresolved"
     ),
-    "sparkforge_context_inspect": (
+    "sparkforge_aws_context_inspect": (
         "2026-10-04: inspeção bounded de qualidade e referências do Context Gateway"
     ),
-    "sparkforge_agentops_inspect": (
+    "sparkforge_aws_agentops_inspect": (
         "2026-10-04: inspeção local read-only de traces e métricas AgentOps"
     ),
-    "sparkforge_agentops_compare": (
+    "sparkforge_aws_agentops_compare": (
         "2026-10-04: comparação determinística de janelas locais AgentOps"
     ),
-    "sparkforge_agentops_baseline": (
+    "sparkforge_aws_agentops_baseline": (
         "2026-10-04: baseline local explícito para observabilidade AgentOps"
     ),
-    "sparkforge_doctor_agentic": (
+    "sparkforge_aws_doctor_agentic": (
         "2026-10-04: diagnóstico local dos contratos do Agentic OS v2"
     ),
 }
@@ -216,7 +230,7 @@ PADROES_ALARGADOS = {
 # existente continua derrubando o teste. As chamadas gravadas continuam byte a
 # byte, porque nenhuma delas pede o campo novo.
 ALTERADAS_DEPOIS_DO_GOLDEN = {
-    "sparkforge_judge": (
+    "sparkforge_aws_judge": (
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
         "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma. "
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
@@ -224,59 +238,59 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
-    "sparkforge_rules_lookup": (
+    "sparkforge_aws_rules_lookup": (
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
         "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma"
     ),
-    "sparkforge_knowledge_path": (
+    "sparkforge_aws_knowledge_path": (
         "2026-09-11: `source_freshness`/`as_of` opcionais; estado das fontes do "
         "documento, ou contagem por documento (frente de freshness)"
     ),
-    "sparkforge_tune": (
+    "sparkforge_aws_tune": (
         "2026-09-14: `headroom` opcional (folga declarada sobre o piso do overhead); "
         "sem ele a resposta e a mesma"
     ),
-    "sparkforge_resume": (
+    "sparkforge_aws_resume": (
         "2026-09-15: `journal` e `in_flight_source` na saida (checkpoint/resume/event "
         "journal, §31 P0 item 7), so em `properties`, fora de `required`. "
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
         "T2), so em `properties`, fora de `required`"
     ),
-    "sparkforge_case_get": (
+    "sparkforge_aws_case_get": (
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
         "T2), so em `properties`, fora de `required`"
     ),
-    "sparkforge_case_open": (
+    "sparkforge_aws_case_open": (
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
         "T2), so em `properties`, fora de `required`. "
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
-    "sparkforge_case_update": (
+    "sparkforge_aws_case_update": (
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
         "T2), so em `properties`, fora de `required`"
     ),
-    "sparkforge_runtime_detect": (
+    "sparkforge_aws_runtime_detect": (
         "2026-09-17: `databricks` e `photon` na saida (DATABRICKS_SPARK T2), so em "
         "`properties`, fora de `required`. "
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
-    "sparkforge_arbitrate": (
+    "sparkforge_aws_arbitrate": (
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
-    "sparkforge_debate_start": (
+    "sparkforge_aws_debate_start": (
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
-    "sparkforge_root_cause": (
+    "sparkforge_aws_root_cause": (
         "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
         "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
-    "sparkforge_analyze_pyspark": (
+    "sparkforge_aws_analyze_pyspark": (
         "2026-10-24: `upstream` opcional na entrada (documento "
-        "sparkforge/upstream-facts/v1 de outro motor) e `filters_applied.upstream` "
+        "sparkforge_aws/upstream-facts/v1 de outro motor) e `filters_applied.upstream` "
         "na saida; sem ele a resposta e a mesma"
     ),
 }
@@ -285,51 +299,51 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
 # antigos na frente, na mesma ordem -- tirar ou reordenar valor continua derrubando
 # `test_so_o_type_do_output_schema_difere`.
 REESCRITAS_DEPOIS_DO_GOLDEN = {
-    ("sparkforge_tune", "description"): (
+    ("sparkforge_aws_tune", "description"): (
         "2026-09-14: `tune` passou a derivar memoryOverhead, executor.memory, "
         "maxPartitionBytes e autoBroadcastJoinThreshold; a descricao antiga dizia que so "
         "o shuffle era derivado, e publicaria uma afirmacao falsa"
     ),
     (
-        "sparkforge_tune",
+        "sparkforge_aws_tune",
         "outputSchema.oneOf[0].properties.properties.items.properties.explanation.description",
     ): "2026-09-14: `explanation` deixou de ser so do shuffle",
     (
-        "sparkforge_tune",
+        "sparkforge_aws_tune",
         "outputSchema.oneOf[0].properties.refused.items.properties.reason.enum",
     ): (
         "2026-09-14: onze recusas nomeadas das quatro propriedades novas (regra 20); "
         "2026-09-18: `shuffle_partitions_auto`, a recusa do `auto` do Databricks "
         "(DATABRICKS_SPARK R1)"
     ),
-    ("sparkforge_arbitrate", "description"): (
+    ("sparkforge_aws_arbitrate", "description"): (
         "2026-09-14: Debate ROI Gate (§11) -- cada plano de debate traz `debate_gate`, e a "
         "descricao antiga nao dizia o que o veredito significa"
     ),
-    ("sparkforge_debate_start", "description"): (
+    ("sparkforge_aws_debate_start", "description"): (
         "2026-09-14: Debate ROI Gate (§11) -- o `start` recusa o par cujo veredito nao e "
         "`debater`, antes do budget"
     ),
     (
-        "sparkforge_debate_start",
+        "sparkforge_aws_debate_start",
         "outputSchema.oneOf[1].properties.reason.enum",
     ): "2026-09-14: tres recusas nomeadas do Debate ROI Gate (regra 20)",
     (
-        "sparkforge_debate_next",
+        "sparkforge_aws_debate_next",
         "outputSchema.oneOf[2].properties.reason.enum",
     ): (
         "2026-09-14: o enum de recusa do debate e UM so (`_DEBATE_REFUSAL_REASONS`), "
         "e cresceu com as tres recusas do gate"
     ),
     (
-        "sparkforge_debate_submit",
+        "sparkforge_aws_debate_submit",
         "outputSchema.oneOf[1].properties.reason.enum",
     ): (
         "2026-09-14: o enum de recusa do debate e UM so (`_DEBATE_REFUSAL_REASONS`), "
         "e cresceu com as tres recusas do gate"
     ),
     (
-        "sparkforge_judge",
+        "sparkforge_aws_judge",
         "outputSchema.oneOf[0].properties.skipped.items.properties.reason.enum",
     ): (
         "2026-09-18: `databricks.photon.unresolved`, o pulo do engine sob Photon "
@@ -337,7 +351,7 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "(DATABRICKS_SPARK T9)"
     ),
     (
-        "sparkforge_judge",
+        "sparkforge_aws_judge",
         "outputSchema.oneOf[0].properties.skipped.items.properties.reason.description",
     ): (
         "2026-09-18: a descricao nomeia o motivo novo do enum (DATABRICKS_SPARK T9); "
@@ -349,37 +363,37 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
 # pelos analyzers; o enum do contrato MCP ficou atrasado. A expansao e declarada
 # por tool porque o golden legado precisa continuar congelado.
 _FACT_SUBJECT_SNAPSHOT_TOOLS = (
-    "sparkforge_analyze_athena_workgroup",
-    "sparkforge_analyze_call_graph",
-    "sparkforge_analyze_catalog_schema",
-    "sparkforge_analyze_cloudwatch",
-    "sparkforge_analyze_cloudwatch_logs",
-    "sparkforge_analyze_consumers",
-    "sparkforge_analyze_controlm_jobs",
-    "sparkforge_analyze_data_quality",
-    "sparkforge_analyze_emr_cluster",
-    "sparkforge_analyze_emr_eks",
-    "sparkforge_analyze_emr_serverless",
-    "sparkforge_analyze_error_signatures",
-    "sparkforge_analyze_event_log",
-    "sparkforge_analyze_glue_job_runs",
-    "sparkforge_analyze_glue_resource_link",
-    "sparkforge_analyze_graph",
-    "sparkforge_analyze_iam_access",
-    "sparkforge_analyze_iceberg",
-    "sparkforge_analyze_lakeformation_grants",
-    "sparkforge_analyze_parquet_footer",
-    "sparkforge_analyze_plan",
-    "sparkforge_analyze_pyspark",
-    "sparkforge_analyze_s3_listing",
-    "sparkforge_analyze_sql",
-    "sparkforge_analyze_sql_metrics",
-    "sparkforge_analyze_terraform",
-    "sparkforge_analyze_terraform_diff",
-    "sparkforge_benchmark",
-    "sparkforge_funcval_compare",
-    "sparkforge_funcval_plan",
-    "sparkforge_fuse",
+    "sparkforge_aws_analyze_athena_workgroup",
+    "sparkforge_aws_analyze_call_graph",
+    "sparkforge_aws_analyze_catalog_schema",
+    "sparkforge_aws_analyze_cloudwatch",
+    "sparkforge_aws_analyze_cloudwatch_logs",
+    "sparkforge_aws_analyze_consumers",
+    "sparkforge_aws_analyze_controlm_jobs",
+    "sparkforge_aws_analyze_data_quality",
+    "sparkforge_aws_analyze_emr_cluster",
+    "sparkforge_aws_analyze_emr_eks",
+    "sparkforge_aws_analyze_emr_serverless",
+    "sparkforge_aws_analyze_error_signatures",
+    "sparkforge_aws_analyze_event_log",
+    "sparkforge_aws_analyze_glue_job_runs",
+    "sparkforge_aws_analyze_glue_resource_link",
+    "sparkforge_aws_analyze_graph",
+    "sparkforge_aws_analyze_iam_access",
+    "sparkforge_aws_analyze_iceberg",
+    "sparkforge_aws_analyze_lakeformation_grants",
+    "sparkforge_aws_analyze_parquet_footer",
+    "sparkforge_aws_analyze_plan",
+    "sparkforge_aws_analyze_pyspark",
+    "sparkforge_aws_analyze_s3_listing",
+    "sparkforge_aws_analyze_sql",
+    "sparkforge_aws_analyze_sql_metrics",
+    "sparkforge_aws_analyze_terraform",
+    "sparkforge_aws_analyze_terraform_diff",
+    "sparkforge_aws_benchmark",
+    "sparkforge_aws_funcval_compare",
+    "sparkforge_aws_funcval_plan",
+    "sparkforge_aws_fuse",
 )
 _FACT_SUBJECT_SNAPSHOT_PATH = (
     "outputSchema.oneOf[0].properties.items.items.properties.subject.properties.type.enum"
@@ -405,7 +419,7 @@ _MOTIVO_TRUST = (
 CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
     "sucesso_analyze": (
         "2026-10-24: `filters_applied.upstream` entrou na saida do "
-        "analyze_pyspark (intake sparkforge/upstream-facts/v1) — a chamada "
+        "analyze_pyspark (intake sparkforge_aws/upstream-facts/v1) — a chamada "
         "gravada nao pede o documento, entao o filtro vem nulo. "
         + _MOTIVO_TRUST
     ),
@@ -637,7 +651,7 @@ class TestHandshakeLegado:
             )
             for t in ("stdio", "http")
         }
-        # 16 -> 23 em 2026-09-15: `sparkforge_rules_lookup` ganhou `severity`,
+        # 16 -> 23 em 2026-09-15: `sparkforge_aws_rules_lookup` ganhou `severity`,
         # `runtime` e `index` na entrada, os tres em `filters_applied` na saida, e
         # `rules_index`. Sete chaves novas, nenhuma removida ou alterada.
         # 23 -> 35 em 2026-09-17: `databricks` e `photon` no contexto de runtime
@@ -647,7 +661,7 @@ class TestHandshakeLegado:
         # tools (judge, case_open, runtime_detect, arbitrate, debate_start,
         # root_cause), espelho das flags da CLI, fora de `required`. Doze chaves.
         # 47 -> 48 em 2026-10-24: `upstream` opcional na entrada de
-        # `sparkforge_analyze_pyspark` (intake upstream-facts/v1). Uma chave.
+        # `sparkforge_aws_analyze_pyspark` (intake upstream-facts/v1). Uma chave.
         assert aditivas == {"stdio": 48, "http": 48}
         reescritas = {
             t: sum(

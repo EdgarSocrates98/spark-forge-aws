@@ -96,7 +96,7 @@ class TestCaso:
         from sparkforge_aws.adapters import _core, cli
 
         regen = _regen()
-        monkeypatch.setattr(_core, "_versao_sparkforge", lambda: regen.SARIF_GOLDEN_VERSION)
+        monkeypatch.setattr(_core, "_versao_sparkforge_aws", lambda: regen.SARIF_GOLDEN_VERSION)
         meta = yaml.safe_load(_texto(caso / "meta.yaml"))
         repo = tmp_path / "repo"
         shutil.copytree(caso / "input" / "repo", repo)
@@ -115,7 +115,7 @@ class TestCaso:
         if meta.get("source_freshness"):
             argv += ["--source-freshness", "--as-of", meta["as_of"]]
         if meta.get("sources_lock"):
-            monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(caso / meta["sources_lock"]))
+            monkeypatch.setenv("SPARKFORGE_AWS_SOURCES_LOCK", str(caso / meta["sources_lock"]))
 
         codigo = cli.main(argv)
         saida = capsys.readouterr()

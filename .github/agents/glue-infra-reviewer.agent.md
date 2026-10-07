@@ -14,25 +14,25 @@ executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 
 ## O que você olha
 
-Infraestrutura declarada, não código. `sparkforge_analyze_terraform` sobre o HCL, e
-`sparkforge_analyze_terraform_diff` quando o alvo é um PR — ele compara dois diretórios e
+Infraestrutura declarada, não código. `sparkforge_aws_analyze_terraform` sobre o HCL, e
+`sparkforge_aws_analyze_terraform_diff` quando o alvo é um PR — ele compara dois diretórios e
 devolve só o lado DEPOIS, porque acusar o estado antigo é acusar o que ninguém pode mais
 consertar.
 
-Cruze com execução: `sparkforge_collect_glue_job` para os argumentos reais do job, e
-`sparkforge_collect_cloudwatch` para as métricas do Glue.
+Cruze com execução: `sparkforge_aws_collect_glue_job` para os argumentos reais do job, e
+`sparkforge_aws_collect_cloudwatch` para as métricas do Glue.
 
-Capacidade declarada não é capacidade exercida. `sparkforge_analyze_glue_job_runs`
+Capacidade declarada não é capacidade exercida. `sparkforge_aws_analyze_glue_job_runs`
 lê o histórico já coletado e devolve a distribuição de duração por capacidade e estado
 terminal, mais a contagem de desfecho — é o que distingue worker mal dimensionado de
-job que sempre foi assim. `sparkforge_analyze_cloudwatch` faz a ponte para as métricas
+job que sempre foi assim. `sparkforge_aws_analyze_cloudwatch` faz a ponte para as métricas
 do mesmo run: série vazia vira lacuna declarada, nunca zero, porque observabilidade
 desligada e janela sem dado são causas diferentes.
 
 ## Quem dispara o job: Step Functions
 
 A definição do job não diz quem o chama nem quantas vezes. Quando o job roda sob uma
-state machine do AWS Step Functions, `sparkforge_analyze_step_functions` lê a definição
+state machine do AWS Step Functions, `sparkforge_aws_analyze_step_functions` lê a definição
 ASL — o `.asl.json` do repositório, ou a saída salva de `aws stepfunctions
 describe-state-machine` — e devolve um `sfn.task` por estado `Task`: o padrão de
 integração (`request_response`, `sync`, `callback`), o `JobName` literal ou a marca de
@@ -41,14 +41,14 @@ omitido), o `Catch` e o `TimeoutSeconds`. Um `.asl.json` não carrega o tipo do 
 sem a saída de `describe-state-machine`, o tipo sai `undeclared`, nunca `STANDARD`.
 
 A área `SF-SFN` julga esses facts. Com o Terraform do mesmo job no case,
-`sparkforge_fuse` liga o `Task` ao `aws_glue_job` de mesmo `name` (`sfn.glue_job_link`),
+`sparkforge_aws_fuse` liga o `Task` ao `aws_glue_job` de mesmo `name` (`sfn.glue_job_link`),
 e é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o retrier
 do Step Functions. A composição das duas não é documentada — afirme que as duas existem,
 nunca quantas vezes o job roda numa falha.
 
 ## Quem dispara o job: Airflow
 
-Quando quem chama o job é um DAG do Apache Airflow, `sparkforge_analyze_airflow_dag` lê
+Quando quem chama o job é um DAG do Apache Airflow, `sparkforge_aws_analyze_airflow_dag` lê
 o arquivo `.py` por AST — **nunca o importa nem o executa** — e devolve um `af.task` por
 operador instanciado. Para o `GlueJobOperator`, três defaults decidem o que acontece com
 o job e nenhum aparece no código PySpark nem no event log: `wait_for_completion` (default
@@ -58,7 +58,7 @@ f-string, `{{ jinja }}`) sai ausente e a lacuna sai nomeada em `af.unresolved`, 
 como o default.
 
 A área `SF-AIRFLOW` julga esses facts. Com o Terraform do mesmo job no case,
-`sparkforge_fuse` liga a task ao `aws_glue_job` de mesmo `name` (`af.glue_job_link`), e
+`sparkforge_aws_fuse` liga a task ao `aws_glue_job` de mesmo `name` (`af.glue_job_link`), e
 é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o `retries`
 do Airflow. A composição das duas não é documentada — afirme que as duas existem, nunca
 quantas vezes o job roda numa falha. E lembre do que a leitura estática **não** alcança:
@@ -68,16 +68,16 @@ razão, e nenhuma regra dispara sobre eles.
 ### E o que aconteceu de verdade: o histórico de execução
 
 A definição diz quantas vezes o job **pode** ser reagendado; só o histórico diz quantas
-vezes ele **foi**. `sparkforge_analyze_sfn_history` lê a saída salva de `aws
+vezes ele **foi**. `sparkforge_aws_analyze_sfn_history` lê a saída salva de `aws
 stepfunctions get-execution-history` e devolve um `sfn.attempt` por tentativa de Task —
 nome do estado, ordem, resultado, duração, erro e `cause` — e um `sfn.job_run` com o
 `JobRunId` que cada tentativa produziu. Com a definição ASL no mesmo case, `fuse`
 confronta os dois e emite `sfn.retry_observado`: tentativas observadas contra o teto
 declarado. O histórico não traz custo, e nenhum achado o atribui — o que ele traz é o
-`JobRunId`, que é por onde `sparkforge_finops` responde custo com `dpu_seconds` medido.
+`JobRunId`, que é por onde `sparkforge_aws_finops` responde custo com `dpu_seconds` medido.
 
 A API **não** suporta state machine EXPRESS, e o histórico dela vai para o CloudWatch
-Logs: nesse caso, `sparkforge_analyze_cloudwatch_logs`.
+Logs: nesse caso, `sparkforge_aws_analyze_cloudwatch_logs`.
 
 ## Três armadilhas que a infraestrutura esconde
 
@@ -106,10 +106,10 @@ conjunto que o job lê no próximo run, e o sintoma é lacuna ou duplicata, não
 alterado em default argument alcança o Spark do job inteiro pelo mesmo caminho. Capacidade
 não move o dado; essas duas movem, e as três chegam como a mesma linha de Terraform.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -151,4 +151,4 @@ Você coordena; não executa. Despache os executores na ordem do loop de fase e 
 entre um e outro, se o achado justifica seguir ou se falta coleta.
 
 Em plataforma sem despacho de subagente: `sparkforge-aws playbook glue-infra-reviewer` (CLI) ou
-a tool MCP `sparkforge_playbook`.
+a tool MCP `sparkforge_aws_playbook`.

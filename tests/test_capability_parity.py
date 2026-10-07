@@ -125,7 +125,7 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         # payload de `_core.resume_case`): `handoff` so acrescenta a escrita
         # de um markdown em disco para commit no git, o que nao faz sentido
         # para um cliente MCP -- ele ja recebe o payload estruturado direto
-        # via `sparkforge_resume`, sem precisar de um artefato em arquivo.
+        # via `sparkforge_aws_resume`, sem precisar de um artefato em arquivo.
         "handoff": (
             "mesma capacidade que 'resume'; escreve markdown em disco, sem uso "
             "para um cliente MCP."
@@ -133,19 +133,19 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         # `journal verify` e auditoria da cadeia do `.sparkforge_aws/journal.jsonl`.
         # O estado que o cliente MCP precisa (o que ficou sem `finished`, a
         # cadeia intacta ou quebrada) ja chega pelo bloco `journal` de
-        # `sparkforge_resume`; uma tool so para conferir a cadeia nao cabia no
+        # `sparkforge_aws_resume`; uma tool so para conferir a cadeia nao cabia no
         # recorte do §31 P0 item 7 (cortada por YAGNI no brainstorm).
         "journal verify": (
             "auditoria da cadeia do journal; o estado ja chega pelo bloco `journal` "
-            "de sparkforge_resume."
+            "de sparkforge_aws_resume."
         ),
         # CLI `validate` valida um ARQUIVO de findings (JSON no disco);
-        # `sparkforge_validate_output` valida um finding inline -- mesma
+        # `sparkforge_aws_validate_output` valida um finding inline -- mesma
         # `_core.validate_output` por baixo, granularidade de I/O diferente
         # porque um cliente MCP ja tem o finding em mao, nunca um arquivo no
         # disco do lado do host MCP.
         "validate": (
-            "mesma _core.validate_output que sparkforge_validate_output, so que "
+            "mesma _core.validate_output que sparkforge_aws_validate_output, so que "
             "sobre arquivo."
         ),
         # DESVIO REGISTRADO SOBRE O PARAGRAFO QUE ESTAVA AQUI (fase da
@@ -165,7 +165,7 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         # antes ou depois de haver o que consultar, e nao sobre o grafo.
         "code init": (
             "preparo de estado local (SPEC 74): preflight, diretorio, "
-            ".gitignore, banco. `sparkforge_code_sync` ja constroi o indice "
+            ".gitignore, banco. `sparkforge_aws_code_sync` ja constroi o indice "
             "para um cliente MCP -- init acrescenta so o que e do disco de quem "
             "chama."
         ),
@@ -544,9 +544,9 @@ class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
 
     # verbo da CLI -> tool MCP que espelha a mesma funcao de `_core`.
     VERBS = {
-        ("judge",): "sparkforge_judge",
-        ("case", "open"): "sparkforge_case_open",
-        ("runtime", "detect"): "sparkforge_runtime_detect",
+        ("judge",): "sparkforge_aws_judge",
+        ("case", "open"): "sparkforge_aws_case_open",
+        ("runtime", "detect"): "sparkforge_aws_runtime_detect",
     }
 
     def _runtime_axes(self):
@@ -640,14 +640,14 @@ class TestOsControlesDeGateChegamAosTresAdaptadores:
 
     def test_case_open_declara_o_rigor_nos_dois(self):
         flags = self._flags(("case", "open"))
-        properties = self._properties("sparkforge_case_open")
+        properties = self._properties("sparkforge_aws_case_open")
         for flag, prop in self.OPEN.items():
             assert flag in flags, flag
             assert prop in properties, prop
 
     def test_case_update_declara_override_motivo_e_evidencia_nos_dois(self):
         flags = self._flags(("case", "update"))
-        properties = self._properties("sparkforge_case_update")
+        properties = self._properties("sparkforge_aws_case_update")
         for flag, prop in self.UPDATE.items():
             assert flag in flags, flag
             assert prop in properties, prop
@@ -827,7 +827,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         axes = self._axes()
         named = self._named_in_the_reader()
         produced = {axis for axis, keys in self._raw_keys_by_axis().items() if keys & named}
-        declared = set(TOOLS["sparkforge_judge"]["inputSchema"]["properties"]) & axes
+        declared = set(TOOLS["sparkforge_aws_judge"]["inputSchema"]["properties"]) & axes
         # Eixo so-declarado entra do lado do produtor por construcao: ele NAO
         # tem produtor, e ainda assim tem que ser declaravel pela flag.
         expected = produced | set(self.AXES_DECLARED_ONLY)
@@ -940,7 +940,7 @@ class TestEmrEksAlcancaAsQuatroSuperficies:
     passar calado.
     """
 
-    TOOLS_ESPERADAS = ("sparkforge_analyze_emr_eks", "sparkforge_collect_emr_eks")
+    TOOLS_ESPERADAS = ("sparkforge_aws_analyze_emr_eks", "sparkforge_aws_collect_emr_eks")
     VERBOS_ESPERADOS = ("analyze emr-eks", "collect emr-eks")
 
     def _leaf_cli_verbs(self):

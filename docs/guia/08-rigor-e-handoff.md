@@ -75,8 +75,8 @@ registrada, e vai escrito na própria mensagem de bloqueio.
 `report sign` escreve um bloco no fim do
 relatório; `report verify` confere e diz **qual** das quatro partes divergiu —
 versão da assinatura, evidência, catálogo ou corpo — em vez de devolver só
-"inválido". Os dois existem na CLI e como tool MCP (`sparkforge_report_sign`,
-`sparkforge_report_verify`):
+"inválido". Os dois existem na CLI e como tool MCP (`sparkforge_aws_report_sign`,
+`sparkforge_aws_report_verify`):
 
 ```bash
 sparkforge-aws report sign   --report relatorio.md --findings .sparkforge_aws/findings.json
@@ -136,12 +136,12 @@ no commit é o manifesto: ele registra `sha256`, `source` (origem) e
 que uma sessão que retome em outra ferramenta saiba exatamente o que falta e
 como coletar de novo.
 
-## Evidência estrangeira: `sparkforge/upstream-facts/v1`
+## Evidência estrangeira: `sparkforge_aws/upstream-facts/v1`
 
 Quando um orquestrador (The Forge) encadeia o diagnóstico de outro motor neste
 analisador, o handoff chega a `analyze pyspark` por `--upstream <arquivo>` (ou o
-argumento `upstream` da tool `sparkforge_analyze_pyspark`): um documento JSON
-`{"schema": "sparkforge/upstream-facts/v1", "facts": [...]}` cujos facts têm o
+argumento `upstream` da tool `sparkforge_aws_analyze_pyspark`): um documento JSON
+`{"schema": "sparkforge_aws/upstream-facts/v1", "facts": [...]}` cujos facts têm o
 shape nativo (`id`, `schema_version`, `kind`, `subject`, `measures`, `attrs`,
 `provenance`) com identidade estrangeira obrigatória:
 

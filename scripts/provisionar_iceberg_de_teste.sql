@@ -35,7 +35,7 @@
 -- ---------------------------------------------------------------------------
 -- aws s3 mb s3://<BUCKET> --region us-east-1 --profile sparkforge-aws
 -- aws athena start-query-execution \
---   --query-string "CREATE DATABASE IF NOT EXISTS sparkforge_teste" \
+--   --query-string "CREATE DATABASE IF NOT EXISTS sparkforge_aws_teste" \
 --   --result-configuration OutputLocation=s3://<BUCKET>/athena-results/ \
 --   --region us-east-1 --profile sparkforge-aws
 
@@ -45,7 +45,7 @@
 -- v2 e o caso que o corpus ja cobre em 9 fixtures, e o objetivo aqui e
 -- comparar o SHAPE do dump, nao exercitar v3. Uma segunda tabela em v3 e
 -- trabalho a parte, e so vale depois que o shape de v2 estiver conferido.
-CREATE TABLE sparkforge_teste.pedidos (
+CREATE TABLE sparkforge_aws_teste.pedidos (
   id            bigint,
   cliente       string,
   valor         double,
@@ -70,18 +70,18 @@ TBLPROPERTIES (
 -- Rode um de cada vez. Cada um gera snapshot, manifest e data files proprios.
 
 -- 3:
-INSERT INTO sparkforge_teste.pedidos VALUES
+INSERT INTO sparkforge_aws_teste.pedidos VALUES
   (1, 'ana',   100.0, DATE '2026-01-01'),
   (2, 'bruno', 250.5, DATE '2026-01-01'),
   (3, 'carla',  75.2, DATE '2026-01-02');
 
 -- 4:
-INSERT INTO sparkforge_teste.pedidos VALUES
+INSERT INTO sparkforge_aws_teste.pedidos VALUES
   (4, 'diego', 310.0, DATE '2026-01-02'),
   (5, 'elena',  42.9, DATE '2026-01-03');
 
 -- 5:
-INSERT INTO sparkforge_teste.pedidos VALUES
+INSERT INTO sparkforge_aws_teste.pedidos VALUES
   (6, 'fabio', 999.9, DATE '2026-01-03');
 
 -- ---------------------------------------------------------------------------
@@ -90,7 +90,7 @@ INSERT INTO sparkforge_teste.pedidos VALUES
 -- E o passo que produz a secao `.delete_files` do dump -- sem ele,
 -- `iceberg.delete_files_summary` sai com contagem zero e o censo por `content`
 -- (position vs equality) nao tem o que separar.
-DELETE FROM sparkforge_teste.pedidos WHERE id = 2;
+DELETE FROM sparkforge_aws_teste.pedidos WHERE id = 2;
 
 -- ---------------------------------------------------------------------------
 -- PASSO 7: conferir o que as metadata tables devolvem
@@ -99,11 +99,11 @@ DELETE FROM sparkforge_teste.pedidos WHERE id = 2;
 -- Rode cada uma e compare as COLUNAS com o que `fixtures/iceberg/*/input/
 -- dump.json` assume. A divergencia de shape e o achado que este roteiro busca.
 
-SELECT * FROM "sparkforge_teste"."pedidos$files"        LIMIT 20;
-SELECT * FROM "sparkforge_teste"."pedidos$delete_files" LIMIT 20;
-SELECT * FROM "sparkforge_teste"."pedidos$snapshots"    LIMIT 20;
-SELECT * FROM "sparkforge_teste"."pedidos$manifests"    LIMIT 20;
-SELECT * FROM "sparkforge_teste"."pedidos$partitions"   LIMIT 20;
+SELECT * FROM "sparkforge_aws_teste"."pedidos$files"        LIMIT 20;
+SELECT * FROM "sparkforge_aws_teste"."pedidos$delete_files" LIMIT 20;
+SELECT * FROM "sparkforge_aws_teste"."pedidos$snapshots"    LIMIT 20;
+SELECT * FROM "sparkforge_aws_teste"."pedidos$manifests"    LIMIT 20;
+SELECT * FROM "sparkforge_aws_teste"."pedidos$partitions"   LIMIT 20;
 
 -- A coluna `content` de `$delete_files` e o que o censo de 2026-09-02 le:
 -- 1 = position, 2 = equality. Este roteiro produz POSITION (o DELETE acima),
@@ -111,14 +111,14 @@ SELECT * FROM "sparkforge_teste"."pedidos$partitions"   LIMIT 20;
 -- simples. Se `content` nao aparecer aqui, o censo nunca teria dado outra
 -- coisa alem de `content_unresolved` em producao.
 SELECT content, count(*) AS n
-FROM "sparkforge_teste"."pedidos$delete_files"
+FROM "sparkforge_aws_teste"."pedidos$delete_files"
 GROUP BY content;
 
 -- ---------------------------------------------------------------------------
 -- LIMPEZA -- parte do roteiro, nao extra
 -- ---------------------------------------------------------------------------
--- DROP TABLE sparkforge_teste.pedidos;
--- DROP DATABASE sparkforge_teste;
+-- DROP TABLE sparkforge_aws_teste.pedidos;
+-- DROP DATABASE sparkforge_aws_teste;
 -- aws s3 rb s3://<BUCKET> --force --region us-east-1 --profile sparkforge-aws
 --
 -- O `DROP TABLE` de tabela Iceberg no Athena remove os dados do S3. O

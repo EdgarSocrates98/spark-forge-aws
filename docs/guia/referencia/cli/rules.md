@@ -34,4 +34,4 @@ sparkforge-aws rules lookup --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_rules_lookup`](../tools/sparkforge_rules_lookup.md)
+[`sparkforge_aws_rules_lookup`](../tools/sparkforge_aws_rules_lookup.md)

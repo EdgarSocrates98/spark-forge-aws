@@ -36,7 +36,7 @@ def test_observability_preserves_incidents_dependencies_and_blast_radius() -> No
 
 def test_observability_surfaces_share_contract() -> None:
     cli = _core.analyze_data_observability(FIXTURE)
-    mcp = call_tool("sparkforge_analyze_data_observability", {"path": str(FIXTURE)})
+    mcp = call_tool("sparkforge_aws_analyze_data_observability", {"path": str(FIXTURE)})
 
     assert cli["observability"]["fingerprint"] == mcp["observability"]["fingerprint"]
 

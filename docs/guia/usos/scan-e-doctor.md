@@ -47,7 +47,7 @@ Saída real (encurtada), numa máquina sem `boto3`:
      "unlock": "pip install \"sparkforge-aws[aws]\""},
     ...
     {"id": "packs", "status": "skip",
-     "detail": "nenhum pack configurado (SPARKFORGE_PACKS vazia)", "unlock": null},
+     "detail": "nenhum pack configurado (SPARKFORGE_AWS_PACKS vazia)", "unlock": null},
     ...
     {"id": "credencial_aws", "status": "skip", "detail": "boto3 ausente",
      "unlock": "pip install \"sparkforge-aws[aws]\""}
@@ -152,5 +152,5 @@ O scan sempre diz o que não rodou e por quê. Isso é informação, não erro:
 
 ## Próximos passos
 
-- Referência: [`sparkforge-aws scan`](../referencia/cli/scan.md), [`sparkforge-aws doctor`](../referencia/cli/doctor.md), [`sparkforge_scan`](../referencia/tools/sparkforge_scan.md) e [`sparkforge_doctor`](../referencia/tools/sparkforge_doctor.md).
+- Referência: [`sparkforge-aws scan`](../referencia/cli/scan.md), [`sparkforge-aws doctor`](../referencia/cli/doctor.md), [`sparkforge_aws_scan`](../referencia/tools/sparkforge_aws_scan.md) e [`sparkforge_aws_doctor`](../referencia/tools/sparkforge_aws_doctor.md).
 - Levar o scan para o PR: [CI e GitHub](ci-e-github.md).

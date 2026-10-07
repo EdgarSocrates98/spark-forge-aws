@@ -5,7 +5,7 @@
 que se contradizem, grava no blackboard do case e devolve o pacote.
 
 A ordenacao ele NAO calcula: ela vem de `digest.plan_digest`, que e o mesmo
-calculo que `sparkforge_judge` publica. Duas implementacoes da mesma ordem
+calculo que `sparkforge_aws_judge` publica. Duas implementacoes da mesma ordem
 divergiriam com o tempo, e o operador leria uma ordem no `judge` e outra no
 `arbitrate` sobre o mesmo case.
 
@@ -205,7 +205,7 @@ def run_executor(
     claims, evidences = claims_from_findings(findings_validos, facts_unicos, mapa, contexto)
 
     # A ordenacao vem do digest, e nao de `order_actions` chamado aqui. E o
-    # mesmo calculo que `sparkforge_judge` publica: duas implementacoes da mesma
+    # mesmo calculo que `sparkforge_aws_judge` publica: duas implementacoes da mesma
     # ordem divergiriam com o tempo -- cada uma com o seu teste passando -- e o
     # operador veria o `judge` afirmar uma ordem e o `arbitrate` gravar outra
     # sobre o MESMO case. O `authority_map` ja carregado viaja junto para o

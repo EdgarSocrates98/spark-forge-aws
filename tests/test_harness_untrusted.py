@@ -195,7 +195,7 @@ def extratores_com_snippet() -> set[str]:
     entrada. A distincao e material e nao cosmetica: `fusion.fuse` devolve os
     facts de entrada junto com o que deriva, entao sem o desconto ele apareceria
     como produtor de snippet por carregar os snippets alheios. Ele repassa; nao
-    escreve. (Que o payload de `sparkforge_fuse` carregue snippet de outro
+    escreve. (Que o payload de `sparkforge_aws_fuse` carregue snippet de outro
     extrator continua verdade, e o invariante de separacao de campo vale la do
     mesmo jeito -- o que se mede aqui e quem escreve.)
 

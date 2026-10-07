@@ -2,7 +2,7 @@
 name: review-emr-cluster
 description: "Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for \\\"por que esse cluster custa isso\\\", \\\"o cluster subiu e não desce\\\", \\\"esse cluster morreu no bootstrap\\\" ou \\\"cadê os logs do cluster que terminou\\\", mesmo sem falar em regra. Em vez de ler `describe-cluster` no olho, rode `sparkforge-aws analyze emr-cluster` e `sparkforge-aws judge`: o extrator normaliza grupos e frotas num kind só e o catálogo aplica SF-EMR. Cobre também EMR Serverless: se o dump é `get-application`, o verbo é `sparkforge-aws analyze emr-serverless` e a área é SF-EMRS."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -255,8 +255,8 @@ Nenhuma das duas direções é neutra, e o sintoma não é falha: é resultado e
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

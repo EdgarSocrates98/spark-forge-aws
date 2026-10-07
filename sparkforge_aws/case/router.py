@@ -34,7 +34,7 @@ _MISSING = object()
 def routing_path(directory: Path | None = None) -> Path:
     """Onde o `routing.yaml` que o runtime carrega REALMENTE mora.
 
-    Existe porque `SPARKFORGE_CATALOG` move o catálogo: quem recusa um contrato
+    Existe porque `SPARKFORGE_AWS_CATALOG` move o catálogo: quem recusa um contrato
     de gate incompleto precisa dizer em qual arquivo o bloco faltante deveria
     estar, e "no `routing.yaml`" não localiza nada quando há uma cópia do
     catálogo apontada por variável de ambiente.

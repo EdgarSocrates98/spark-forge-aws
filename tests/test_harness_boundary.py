@@ -117,7 +117,7 @@ def _cruzamentos(raiz: Path = RAIZ, runtime: Path = RUNTIME) -> list[str]:
 
 
 class TestORuntimeNaoDependeDaAvaliacao:
-    def test_nenhum_modulo_de_runtime_importa_sparkforge_evals(self):
+    def test_nenhum_modulo_de_runtime_importa_sparkforge_aws_evals(self):
         cruzaram = _cruzamentos()
         assert cruzaram == [], (
             f"estes modulos de RUNTIME importam a AVALIACAO: {cruzaram}.\n"

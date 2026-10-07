@@ -21,7 +21,7 @@ TIMEOUT_48H = ROOT / "fixtures" / "terraform" / "max_capacity_conflict" / "expec
 @pytest.fixture
 def sem_pack(monkeypatch):
     monkeypatch.delenv(ENV, raising=False)
-    monkeypatch.delenv("SPARKFORGE_SOURCES_LOCK", raising=False)
+    monkeypatch.delenv("SPARKFORGE_AWS_SOURCES_LOCK", raising=False)
 
 
 @pytest.fixture

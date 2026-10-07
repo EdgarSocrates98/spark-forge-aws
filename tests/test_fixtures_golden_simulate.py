@@ -7,7 +7,7 @@ o que o `expect` declara: um golden regenerado as cegas nao pode esconder um
 achado que devia sumir e nao sumiu.
 
 Regenerar depois de mudanca DELIBERADA:
-`SPARKFORGE_REGEN_SIMULATE=1 pytest tests/test_fixtures_golden_simulate.py`.
+`SPARKFORGE_AWS_REGEN_SIMULATE=1 pytest tests/test_fixtures_golden_simulate.py`.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from sparkforge_aws.adapters.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "simulate"
-REGEN = os.environ.get("SPARKFORGE_REGEN_SIMULATE") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_SIMULATE") == "1"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.yaml").is_file())
 
 

@@ -15,7 +15,7 @@ para nao mentir acaba desligado.
 O que ele cobre, e por que os TRES registros (2026-09-20): a primeira versao conferia so
 `config/agentic-expansion.yaml` -- exatamente o que o D1 do design rejeitou por escrito,
 "resolveria hoje e deixaria o proximo registro sem trava". Duas provas de que a lacuna era
-real: `config/agents.yaml` declarava `sparkforge_inventory`, ausente de `TOOLS`; e os tres
+real: `config/agents.yaml` declarava `sparkforge_aws_inventory`, ausente de `TOOLS`; e os tres
 `handoffs` que a propria T2 quebrou em `config/teams-expansion.yaml` passaram batido.
 
 Declarar e obrigatorio, nao opcional: `test_toda_chave_de_lista_do_registro_tem_veredito`
@@ -42,13 +42,13 @@ REGISTROS = tuple(sorted(ROOT.glob("config/*.yaml")) + sorted(ROOT.glob("config/
 # As sete que a feature `docs/sdd/CONFIG_OCA/` removeu de `config/agentic-expansion.yaml`:
 # nenhuma existia em `TOOLS`, e nenhuma tinha artefato coletavel definido.
 TOOLS_QUE_SAIRAM = (
-    "sparkforge_context_pack",
-    "sparkforge_cost_estimate",
-    "sparkforge_eval_golden_case",
-    "sparkforge_lineage_extract",
-    "sparkforge_offline_knowledge_search",
-    "sparkforge_offline_knowledge_verify",
-    "sparkforge_schema_compare",
+    "sparkforge_aws_context_pack",
+    "sparkforge_aws_cost_estimate",
+    "sparkforge_aws_eval_golden_case",
+    "sparkforge_aws_lineage_extract",
+    "sparkforge_aws_offline_knowledge_search",
+    "sparkforge_aws_offline_knowledge_verify",
+    "sparkforge_aws_schema_compare",
 )
 
 
@@ -241,17 +241,19 @@ def test_forma_inesperada_levanta_em_vez_de_passar_calado():
     """`tools` virando mapping passava com lista vazia, e o gate ficava verde a toa."""
     # Forma que nao e nome nenhum: levanta em vez de devolver [].
     with pytest.raises(FormaInesperada):
-        _colher({"tools": {"sparkforge_x": {"ref": "y"}}}, ("tools",), "<memoria>")
+        _colher({"tools": {"sparkforge_aws_x": {"ref": "y"}}}, ("tools",), "<memoria>")
     with pytest.raises(FormaInesperada):
         _colher({"tools": None}, ("tools",), "<memoria>")
     # Lista com item que nao e nome: levanta em vez de virar nome por `str()`.
     with pytest.raises(FormaInesperada):
-        _colher({"tools": [{"name": "sparkforge_x"}]}, ("tools",), "<memoria>")
+        _colher({"tools": [{"name": "sparkforge_aws_x"}]}, ("tools",), "<memoria>")
     # Chave AUSENTE continua legitima: o D2 removeu o bloco inteiro de proposito.
     assert _colher({}, ("tools",), "<memoria>") == []
     # Nome unico e forma legitima, e e conferido: `teams[].coordinator` e escalar.
     assert _colher({"coordinator": "sf-x"}, ("coordinator",), "<memoria>") == ["sf-x"]
-    assert _colher({"tools": ["sparkforge_judge"]}, ("tools",), "<memoria>") == ["sparkforge_judge"]
+    assert _colher({"tools": ["sparkforge_aws_judge"]}, ("tools",), "<memoria>") == [
+        "sparkforge_aws_judge"
+    ]
 
 
 def test_toda_tool_declarada_existe():

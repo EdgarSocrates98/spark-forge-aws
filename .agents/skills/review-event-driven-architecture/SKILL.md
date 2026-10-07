@@ -2,7 +2,7 @@
 name: review-event-driven-architecture
 description: "Use quando houver dump de EventBridge, EventBridge Pipes, SQS ou SNS e for preciso revisar entrega, retry, DLQ, redrive e pontos cegos sem confundir configuração com prova de execução."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

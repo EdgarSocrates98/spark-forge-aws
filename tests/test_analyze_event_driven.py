@@ -18,7 +18,7 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
         encoding="utf-8",
     )
     expected = analyze_event_driven(str(dump), limit=20)
-    actual = call_tool("sparkforge_analyze_event_driven", {"path": str(dump), "limit": 20})
+    actual = call_tool("sparkforge_aws_analyze_event_driven", {"path": str(dump), "limit": 20})
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
     # do envelope e comparado sem ele, e o formato e travado em
     # tests/test_runtime_convergence_trust.py.
@@ -45,6 +45,6 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
 
 
 def test_tool_is_read_only_and_declared():
-    spec = TOOLS["sparkforge_analyze_event_driven"]
+    spec = TOOLS["sparkforge_aws_analyze_event_driven"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["path"]

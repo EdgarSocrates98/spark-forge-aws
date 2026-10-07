@@ -115,7 +115,7 @@ def _tools_com_detail_level() -> int:
 
     total = 0
     for nome in _tools():
-        funcao = getattr(_core, nome.replace("sparkforge_", ""), None)
+        funcao = getattr(_core, nome.replace("sparkforge_aws_", ""), None)
         if funcao is None:
             continue
         try:

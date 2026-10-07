@@ -28,7 +28,7 @@ devin
 Verifique que as tools estao disponiveis:
 
 ```text
-Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_aws_runtime_detect.
 ```
 
 Ou, na CLI:

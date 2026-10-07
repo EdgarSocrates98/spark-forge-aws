@@ -26,4 +26,4 @@ sparkforge-aws arbitrate --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_arbitrate`](../tools/sparkforge_arbitrate.md)
+[`sparkforge_aws_arbitrate`](../tools/sparkforge_aws_arbitrate.md)

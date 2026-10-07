@@ -2,7 +2,7 @@
 name: lakeformation-architecture
 description: "Use quando avaliar arquitetura AWS Lake Formation antes de recomendar FGAC, Full Table Access, migração Glue 4/5, EMR EC2/Serverless ou acesso cross-account. Exige separar engine/runtime, formato, operação, ownership de catálogo, RAM/resource link, credential vending e permissões; falha fechado quando capability ou evidência não está declarada."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -45,7 +45,7 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
    sparkforge-aws lakeformation architect --input architecture.json
    ```
 
-   Ou use a tool `sparkforge_lakeformation_architect` com `payload` igual ao
+   Ou use a tool `sparkforge_aws_lakeformation_architect` com `payload` igual ao
    objeto JSON. CLI e MCP chamam o mesmo núcleo e devem retornar o mesmo shape.
 
 5. Leia `status`, `checks` e `decision.required_verification`. Leia também
@@ -135,7 +135,7 @@ operador responsável pela governança. O verbo é offline e não concede acesso
 - Matriz: `knowledge/lakeformation/capability-matrix.yaml`.
 - Contrato: `knowledge/lakeformation/architecture.md`.
 - CLI: `sparkforge-aws lakeformation architect --input architecture.json`.
-- MCP: `sparkforge_lakeformation_architect` com `payload` declarativo.
+- MCP: `sparkforge_aws_lakeformation_architect` com `payload` declarativo.
 
 ## Red flags
 

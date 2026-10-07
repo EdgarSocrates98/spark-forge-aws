@@ -7,7 +7,7 @@ Use quando for necessario estudar regras funcionais, contratos, estados, excecoe
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-functional-rules/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/dq/validation-frameworks.md', '../../knowledge/data-contracts-schema-evolution.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze data-quality']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/dq/validation-frameworks.md', '../../knowledge/data-contracts-schema-evolution.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze data-quality']} |
 
 ## Procedimento (texto integral)
 

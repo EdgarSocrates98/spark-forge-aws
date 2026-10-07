@@ -2,7 +2,7 @@
 name: glue-incremental-performance-architect
 description: "Use quando investigar de ponta a ponta uma biblioteca PySpark no AWS Glue com fluxos full e incremental, latest-per-key sobre tabela Iceberg bilionária, batching por lote, OOM que só aparece depois de horas, ou carga que varia de dezenas a milhões de registros — e for preciso orquestrar as skills especializadas em vez de mexer isoladamente num sintoma. Use também quando a pergunta for \\\"o job incremental tá tão lento quanto o full\\\", \\\"o job só morre de memória depois de um bom tempo rodando\\\" ou \\\"esse job tem dois jeitos de rodar e não sei qual tá causando o problema\\\", mesmo que ninguém fale em full/incremental. Se você está prestes a mexer em workers, shuffle partitions ou cache antes de mapear a biblioteca inteira, pare — é exatamente isso que este documento existe para evitar. Leia `PROMPT_INICIAL_MESTRE.md` primeiro."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -120,8 +120,8 @@ linha que ficou.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

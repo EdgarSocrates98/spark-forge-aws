@@ -51,19 +51,19 @@ def test_token_waste_detector():
     events = [
         {
             "type": "tool_call",
-            "name": "sparkforge_analyze_pyspark",
+            "name": "sparkforge_aws_analyze_pyspark",
             "args": {"path": "job.py"},
             "tokens": 500,
         },
         {
             "type": "tool_call",
-            "name": "sparkforge_analyze_pyspark",
+            "name": "sparkforge_aws_analyze_pyspark",
             "args": {"path": "job.py"},
             "tokens": 500,
         },
         {
             "type": "tool_call",
-            "name": "sparkforge_analyze_pyspark",
+            "name": "sparkforge_aws_analyze_pyspark",
             "args": {"path": "job.py"},
             "tokens": 500,
         },

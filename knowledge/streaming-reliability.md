@@ -32,7 +32,7 @@ sparkforge-aws analyze streaming --artifact source --path <job.py-or-dir>
 sparkforge-aws analyze streaming --artifact progress --path <progress.jsonl-or-dir>
 ```
 
-The MCP equivalent is `sparkforge_analyze_streaming` with the same `path`,
+The MCP equivalent is `sparkforge_aws_analyze_streaming` with the same `path`,
 `artifact`, `kind`, `limit`, `cursor` and `detail_level` contract. The first
 rules are deliberately evidence-gated:
 

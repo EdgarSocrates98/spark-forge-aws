@@ -7,7 +7,7 @@ Use quando avaliar arquitetura AWS Lake Formation antes de recomendar FGAC, Full
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/lakeformation-architecture/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md', '../../knowledge/data-platform-architecture.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws lakeformation architect']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md', '../../knowledge/data-platform-architecture.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws lakeformation architect']} |
 
 ## Procedimento (texto integral)
 
@@ -37,7 +37,7 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
    sparkforge-aws lakeformation architect --input architecture.json
    ```
 
-   Ou use a tool `sparkforge_lakeformation_architect` com `payload` igual ao
+   Ou use a tool `sparkforge_aws_lakeformation_architect` com `payload` igual ao
    objeto JSON. CLI e MCP chamam o mesmo núcleo e devem retornar o mesmo shape.
 
 5. Leia `status`, `checks` e `decision.required_verification`. Leia também
@@ -127,7 +127,7 @@ operador responsável pela governança. O verbo é offline e não concede acesso
 - Matriz: `knowledge/lakeformation/capability-matrix.yaml`.
 - Contrato: `knowledge/lakeformation/architecture.md`.
 - CLI: `sparkforge-aws lakeformation architect --input architecture.json`.
-- MCP: `sparkforge_lakeformation_architect` com `payload` declarativo.
+- MCP: `sparkforge_aws_lakeformation_architect` com `payload` declarativo.
 
 ### Red flags
 

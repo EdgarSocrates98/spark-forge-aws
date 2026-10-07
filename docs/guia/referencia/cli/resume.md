@@ -19,4 +19,4 @@ sparkforge-aws resume --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_resume`](../tools/sparkforge_resume.md)
+[`sparkforge_aws_resume`](../tools/sparkforge_aws_resume.md)

@@ -1,6 +1,6 @@
 """Intake de evidencia estrangeira (`analyze pyspark --upstream` / arg `upstream`).
 
-Um documento `sparkforge/upstream-facts/v1` leva facts no shape nativo, mas com
+Um documento `sparkforge_aws/upstream-facts/v1` leva facts no shape nativo, mas com
 identidade estrangeira: `id`/`kind` nos namespaces `upstream:`/`upstream.`, um
 `provenance.extractor` que NUNCA e um extrator nativo e `attrs.upstream` com a
 procedencia do motor de origem. O intake e transporte de evidencia — jamais de
@@ -21,7 +21,7 @@ from sparkforge_aws.adapters.cli import main
 from sparkforge_aws.adapters.tools import call_tool
 
 JOB = "def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n"
-SCHEMA = "sparkforge/upstream-facts/v1"
+SCHEMA = "sparkforge_aws/upstream-facts/v1"
 EXTRACTOR = "theforge/handoff"
 
 
@@ -128,7 +128,7 @@ class TestForeignIdentity:
         with pytest.raises(upstream.UpstreamError, match="upstream."):
             upstream.read_upstream_facts(path)
 
-    @pytest.mark.parametrize("extractor", ["pyspark_ast", "sparkforge", "", None])
+    @pytest.mark.parametrize("extractor", ["pyspark_ast", "sparkforge_aws", "", None])
     def test_native_or_missing_extractor_is_laundering(self, tmp_path, extractor):
         fact = _fact(provenance={"extractor": extractor})
         path = _write(tmp_path, _doc([fact]))
@@ -282,7 +282,7 @@ class TestToolSurface:
     def test_tool_accepts_upstream_argument(self, repo, tmp_path):
         doc = _write(tmp_path, _doc([_fact()]))
         payload = call_tool(
-            "sparkforge_analyze_pyspark", {"path": str(repo / "lib"), "upstream": str(doc)}
+            "sparkforge_aws_analyze_pyspark", {"path": str(repo / "lib"), "upstream": str(doc)}
         )
         assert "error" not in payload
         assert "upstream.data.diagnostic-evidence" in payload["by_kind"]
@@ -290,7 +290,7 @@ class TestToolSurface:
     def test_tool_refusal_is_an_error_envelope(self, repo, tmp_path):
         doc = _write(tmp_path, _doc([_fact(provenance={})]))
         payload = call_tool(
-            "sparkforge_analyze_pyspark", {"path": str(repo / "lib"), "upstream": str(doc)}
+            "sparkforge_aws_analyze_pyspark", {"path": str(repo / "lib"), "upstream": str(doc)}
         )
         assert payload.get("exit_code") == 2
         assert "upstream" in payload["error"]
@@ -298,6 +298,6 @@ class TestToolSurface:
     def test_tool_schema_declares_upstream(self):
         from sparkforge_aws.adapters.tools import TOOLS
 
-        schema = TOOLS["sparkforge_analyze_pyspark"]["inputSchema"]
+        schema = TOOLS["sparkforge_aws_analyze_pyspark"]["inputSchema"]
         assert "upstream" in schema["properties"]
         assert "upstream" not in schema["required"]

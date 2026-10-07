@@ -18,7 +18,7 @@ sparkforge-aws gain \
 
 Cada arquivo é um conjunto de facts de run, na forma que
 `sparkforge-aws analyze glue-job-runs --out <arquivo>` produz — o mesmo histórico
-que `capacity` e `workload` leem. A tool MCP é `sparkforge_gain`
+que `capacity` e `workload` leem. A tool MCP é `sparkforge_aws_gain`
 (`READ_ONLY`), com `baseline_paths` e `candidate_paths`.
 
 ## O que sai

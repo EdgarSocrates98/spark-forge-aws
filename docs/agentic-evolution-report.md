@@ -26,12 +26,12 @@ tipos, níveis de autonomia L0-L5 e Agent Execution Graph.
 `sparkforge_aws/agentic/executor/` — 7 módulos, 163 testes — lê os findings que
 `judge` produziu e a UNIÃO dos facts do case, e escreve `Claim`, `Evidence`,
 `Contradiction`, `Unknown` e `Decision` no blackboard. Exposto por
-`sparkforge-aws arbitrate` e pela tool `sparkforge_arbitrate`.
+`sparkforge-aws arbitrate` e pela tool `sparkforge_aws_arbitrate`.
 
 **Em 2026-09-11 o `DebatePlan` passou a ter executor, e ele também é
 determinístico.** `executor/debate_run.py` é uma máquina de estados L0 sobre
 arquivos do case: `sparkforge-aws debate start|next|submit` (tools
-`sparkforge_debate_start|next|submit`) congela o plano do par, diz de quem é a
+`sparkforge_aws_debate_start|next|submit`) congela o plano do par, diz de quem é a
 vez, recusa por nome a submissão que fere o protocolo e fecha **sempre** pelo
 `referee`. A geração do argumento fica fora do pacote, no host: a skill
 `run-debate` (interativa) ou `scripts/run_debate.py` (`claude -p`, headless).
@@ -123,7 +123,7 @@ gera fingerprint de contrato/estado e retorna `accepted`, `abstain`, `unresolved
 | Runtime e cache bounded | `sparkforge_aws/decision/{runtime,cache,state,fingerprint}.py` | IMPLEMENTED, offline | `tests/test_decision_kernel_runtime.py`, `tests/test_decision_kernel_cache.py` |
 | Receipts compactos | `sparkforge_aws/decision/receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_kernel_receipts.py` |
 | Compatibilidade legado | `sparkforge_aws/economy/decision_kernel_bridge.py` | IMPLEMENTED, seed preservado | `tests/test_decision_engine.py`, `tests/test_decision_evaluation.py` |
-| CLI/MCP parity | `decision evaluate`, `sparkforge_decision_evaluate` | IMPLEMENTED, read-only | `tests/test_decision_kernel_adapters.py` |
+| CLI/MCP parity | `decision evaluate`, `sparkforge_aws_decision_evaluate` | IMPLEMENTED, read-only | `tests/test_decision_kernel_adapters.py` |
 | Baseline sintético | `evals/token_efficient/fixtures/decision_kernel_cases.yaml` | IMPLEMENTED, 10/10 casos | `scripts/benchmark_decision_kernel.py`, `tests/test_decision_kernel_baseline.py` |
 
 O baseline mede somente `latency_ns` e `payload_bytes` localmente. Sem transcript do host,
@@ -301,7 +301,7 @@ O subpacote `executor/`, medido em 2026-09-08 (`wc -l` sobre os arquivos,
 | `executor/ordering.py` | 320 | 31 | IMPLEMENTED | `run.py` |
 | `executor/unknowns.py` | 306 | 24 | IMPLEMENTED | `run.py` |
 | `executor/plan.py` | 290 | 19 | IMPLEMENTED | `run.py` |
-| `executor/run.py` | 1005 | 19 | IMPLEMENTED | CLI (`arbitrate`) e MCP (`sparkforge_arbitrate`) |
+| `executor/run.py` | 1005 | 19 | IMPLEMENTED | CLI (`arbitrate`) e MCP (`sparkforge_aws_arbitrate`) |
 
 `executor/__init__.py` tem 19 linhas. Total do subpacote: **2573 linhas em 8
 arquivos**, **105 810 bytes**, **163 testes**. Com ele, o `debate.py` continua
@@ -314,7 +314,7 @@ fica como registro; `digest.py` (101 linhas) entrou depois dela e antes desta.
 
 | Módulo | Linhas | Testes | Status | Quem consome hoje |
 |---|---|---|---|---|
-| `executor/debate_run.py` | 1100 | 24 unidade + 47 golden | IMPLEMENTED | CLI (`debate start/next/submit`) e MCP (`sparkforge_debate_start/next/submit`) |
+| `executor/debate_run.py` | 1100 | 24 unidade + 47 golden | IMPLEMENTED | CLI (`debate start/next/submit`) e MCP (`sparkforge_aws_debate_start/next/submit`) |
 | `executor/debate_evidence.py` | 263 | 41 | IMPLEMENTED | `debate_run.py` |
 
 Total do subpacote hoje: **4185 linhas em 11 arquivos**, **168 889 bytes**.

@@ -38,13 +38,13 @@ _CASE_YAML = f"{CASE_DIR}/{CASE_FILE}"
 _MANIFESTO = f"{CASE_DIR}/artifacts/manifest.json"
 
 _SAIDAS_FIXAS: dict[str, tuple[str, ...]] = {
-    "sparkforge_case_open": (_CASE_YAML,),
-    "sparkforge_case_update": (_CASE_YAML,),
+    "sparkforge_aws_case_open": (_CASE_YAML,),
+    "sparkforge_aws_case_update": (_CASE_YAML,),
 }
 _SAIDAS_POR_CHAVE: dict[str, tuple[str, ...]] = {
-    "sparkforge_scan": ("outputs",),
-    "sparkforge_receipt_emit": ("receipt_path",),
-    "sparkforge_sdd_stamp": ("path",),
+    "sparkforge_aws_scan": ("outputs",),
+    "sparkforge_aws_receipt_emit": ("receipt_path",),
+    "sparkforge_aws_sdd_stamp": ("path",),
 }
 
 
@@ -142,7 +142,7 @@ def _sha256_arquivo(caminho: Path | None) -> str | None:
 def _caminhos_de_saida(tool: str, resultado: Any) -> list[str]:
     caminhos = list(_SAIDAS_FIXAS.get(tool, ()))
     dados = resultado if isinstance(resultado, Mapping) else {}
-    if tool.startswith("sparkforge_collect_"):
+    if tool.startswith("sparkforge_aws_collect_"):
         caminhos.append(_MANIFESTO)
         if isinstance(dados.get("path"), str):
             caminhos.append(dados["path"])
@@ -152,7 +152,7 @@ def _caminhos_de_saida(tool: str, resultado: Any) -> list[str]:
             caminhos.append(valor)
         elif isinstance(valor, list):
             caminhos.extend(item for item in valor if isinstance(item, str))
-    if tool == "sparkforge_debate_start" and isinstance(dados.get("state_dir"), str):
+    if tool == "sparkforge_aws_debate_start" and isinstance(dados.get("state_dir"), str):
         caminhos.append(str(Path(dados["state_dir"]) / "plan.json"))
     return caminhos
 

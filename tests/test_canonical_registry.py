@@ -25,7 +25,7 @@ def test_agent_manifest_creation_and_dict():
         purpose="PySpark tuning and diagnosis",
         role="specialist",
         domains=["pyspark", "aws-glue"],
-        allowed_tools=["sparkforge_analyze_pyspark", "sparkforge_analyze_plan"],
+        allowed_tools=["sparkforge_aws_analyze_pyspark", "sparkforge_aws_analyze_plan"],
         risk_level=RiskLevel.READ_ONLY,
         model_policy=ModelPolicy(tier=ModelTier.TIER_4_SPECIALIST),
     )
@@ -52,8 +52,8 @@ def test_skill_manifest_validation():
 
 def test_tool_manifest_validation():
     tool = ToolManifest(
-        id="sparkforge_analyze_pyspark",
-        name="sparkforge_analyze_pyspark",
+        id="sparkforge_aws_analyze_pyspark",
+        name="sparkforge_aws_analyze_pyspark",
         namespace="sparkforge_aws.facts",
         description="Extract deterministic AST facts from PySpark code",
         input_schema={"type": "object", "properties": {"path": {"type": "string"}}},

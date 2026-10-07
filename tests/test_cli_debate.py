@@ -31,7 +31,7 @@ UNIAO = (
     RAIZ / "fixtures" / "infra_code" / "fgac_com_jar_extra" / "expected",
 )
 REGRAS = "SF-GRAPH-005,SF-LF-001"
-TRES = ("sparkforge_debate_start", "sparkforge_debate_next", "sparkforge_debate_submit")
+TRES = ("sparkforge_aws_debate_start", "sparkforge_aws_debate_next", "sparkforge_aws_debate_submit")
 BUDGET = {"max_debates": 1, "max_rounds": 3}
 
 A1 = {
@@ -280,7 +280,7 @@ class TestMcpEACli:
     def test_mcp_chega_ao_mesmo_debate_e_ao_mesmo_brief(self, caso, capsys):
         _, pela_cli = _run(_start_argv(caso), capsys)
         pelo_mcp = call_tool(
-            "sparkforge_debate_start",
+            "sparkforge_aws_debate_start",
             {
                 "repo": str(caso["repo"]),
                 "rules": ["SF-GRAPH-005", "SF-LF-001"],
@@ -295,7 +295,7 @@ class TestMcpEACli:
         debate_id = pela_cli["debate_id"]
         _, brief_cli = _next(caso, debate_id, capsys)
         brief_mcp = call_tool(
-            "sparkforge_debate_next", {"repo": str(caso["repo"]), "debate_id": debate_id}
+            "sparkforge_aws_debate_next", {"repo": str(caso["repo"]), "debate_id": debate_id}
         )
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
@@ -305,7 +305,7 @@ class TestMcpEACli:
     def test_submit_inline_pelo_mcp_passa_a_recusa_sem_traducao(self, caso, capsys):
         _, started = _run(_start_argv(caso), capsys)
         recusa = call_tool(
-            "sparkforge_debate_submit",
+            "sparkforge_aws_debate_submit",
             {
                 "repo": str(caso["repo"]),
                 "debate_id": started["debate_id"],

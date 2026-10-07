@@ -2,7 +2,7 @@
 name: sdd-ship
 description: "Use quando o build_report.md da feature está pronto e é hora de entregar — \\\"entrega a feature\\\", \\\"fecha o ciclo\\\", \\\"fase ship\\\", \\\"posso abrir o PR?\\\", \\\"posso fazer merge?\\\" — no SparkForge ou num job do operador."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -162,12 +162,12 @@ substituída depois vira `status: superseded`.
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o build | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
-| estado geral | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
-| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
-| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
-| PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
+| conferir o build | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_aws_sdd_stamp` |
+| estado geral | `sparkforge-aws sdd status --repo .` | `sparkforge_aws_sdd_status` |
+| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_aws_funcval_compare` |
+| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_aws_benchmark` |
+| PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_aws_change_propose` |
 
 Gates que aparecem em quase toda entrega de dev:
 

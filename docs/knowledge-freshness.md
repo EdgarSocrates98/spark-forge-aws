@@ -36,14 +36,14 @@ catalogo em qualquer dia, que e o que o `rules_lookup` promete.
 
 | Verbo | Flag | O que ganha |
 |---|---|---|
-| `sparkforge-aws judge` / `sparkforge_judge` | `--source-freshness` / `source_freshness: true` | `source_freshness` (so as URLs citadas na pagina) e `freshness_policy` |
-| `sparkforge-aws rules lookup` / `sparkforge_rules_lookup` | idem | idem, para as regras da pagina |
-| `sparkforge-aws knowledge path` / `sparkforge_knowledge_path` | idem | Com `--file`, o estado de cada URL da secao `Fontes` do documento; sem `--file`, `freshness_by_doc` (contagem por estado) |
+| `sparkforge-aws judge` / `sparkforge_aws_judge` | `--source-freshness` / `source_freshness: true` | `source_freshness` (so as URLs citadas na pagina) e `freshness_policy` |
+| `sparkforge-aws rules lookup` / `sparkforge_aws_rules_lookup` | idem | idem, para as regras da pagina |
+| `sparkforge-aws knowledge path` / `sparkforge_aws_knowledge_path` | idem | Com `--file`, o estado de cada URL da secao `Fontes` do documento; sem `--file`, `freshness_by_doc` (contagem por estado) |
 | `sparkforge-aws report github` | `--source-freshness` | Secao "Fontes que pedem releitura" no resumo do PR |
 
 Detalhes que valem para todos:
 - `--as-of AAAA-MM-DD` fixa o dia de referencia; sem ele, e hoje em UTC.
-- `SPARKFORGE_SOURCES_LOCK` aponta um lock avulso sem trocar a raiz de knowledge. E assim que o golden `fixtures/sarif/freshness` usa lock sintetico.
+- `SPARKFORGE_AWS_SOURCES_LOCK` aponta um lock avulso sem trocar a raiz de knowledge. E assim que o golden `fixtures/sarif/freshness` usa lock sintetico.
 - O resumo do PR lista um por um so os findings com fonte `stale` ou `aging`. Os que citam fonte `unverified` saem numa linha so, com a contagem: com a maioria das fontes nesse estado, lista-los afogaria o resumo.
 - O executor `sf-verifier` pede o estado na checagem 6. Um achado com fonte `stale` fica `open`, com "fonte mudou em X, depois da validacao de Y", e nao sai confirmado sem alguem reler.
 
@@ -99,7 +99,7 @@ O filtro chama `source`, e nao `url`, de proposito: o INV-009 recusa argumento
 de tool com `url` no nome, porque tool nenhuma acessa a rede. O valor e so a
 chave de uma entrada do lock, comparada por igualdade.
 
-A tool MCP e `sparkforge_knowledge_drift` (`READ_ONLY`, sem parametro de
+A tool MCP e `sparkforge_aws_knowledge_drift` (`READ_ONLY`, sem parametro de
 caminho). O dono e o `sf-verifier` (checagem 8). Para cada fonte do lock com
 `changed_at` e que nao e fixa por versao:
 

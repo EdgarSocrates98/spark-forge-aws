@@ -28,14 +28,14 @@ Custo ou latencia na consulta Athena e nao no job - bytes escaneados, pruning de
 Athena cobra por **bytes escaneados**. O caminho da evidência tem três pernas, e nenhuma
 responde sozinha:
 
-1. `sparkforge_analyze_sql` — a consulta: projeção, predicado, `LIMIT`.
-2. `sparkforge_analyze_catalog_schema` — o schema e as partições declaradas no Glue Catalog.
-3. `sparkforge_fuse` — correlaciona as duas. **As regras SF-ATH só disparam sobre facts
+1. `sparkforge_aws_analyze_sql` — a consulta: projeção, predicado, `LIMIT`.
+2. `sparkforge_aws_analyze_catalog_schema` — o schema e as partições declaradas no Glue Catalog.
+3. `sparkforge_aws_fuse` — correlaciona as duas. **As regras SF-ATH só disparam sobre facts
    fundidos**, porque "a consulta filtra a coluna de partição?" exige saber quais colunas
    são de partição, e isso está no catálogo, não na query.
 
-Some `sparkforge_analyze_athena_workgroup` (versão do engine, limites) e
-`sparkforge_analyze_s3_listing` (o que está de fato no prefixo).
+Some `sparkforge_aws_analyze_athena_workgroup` (versão do engine, limites) e
+`sparkforge_aws_analyze_s3_listing` (o que está de fato no prefixo).
 
 #### `LIMIT` não é filtro
 
@@ -46,7 +46,7 @@ não ver, porque a consulta volta rápido.
 #### Quem consome também decide
 
 Antes de recomendar mudança de formato ou de versão, leia
-`knowledge/cross-service-constraints.md` e rode `sparkforge_analyze_consumers`. Glue 5.1
+`knowledge/cross-service-constraints.md` e rode `sparkforge_aws_analyze_consumers`. Glue 5.1
 escreve Iceberg **format V3**, e **Athena não lê V3** — a migração passa no job e quebra
 silenciosamente no consumidor dias depois.
 
@@ -57,10 +57,10 @@ recriar a tabela, e tabela recriada é dado reescrito. Trocar `SELECT *` por col
 muda o schema do resultado por construção, e trocar a engine version troca a implementação que
 avalia a expressão. A mais barata das três é a que mais parece neutra.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -92,4 +92,4 @@ sabia da migração.
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
 
 Em plataforma sem despacho de subagente: `sparkforge-aws playbook athena-query-optimizer` (CLI) ou
-a tool MCP `sparkforge_playbook`.
+a tool MCP `sparkforge_aws_playbook`.

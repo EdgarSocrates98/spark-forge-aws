@@ -7,7 +7,7 @@ Use quando for analisar custos AWS, encontrar economias, gerenciar budgets, aval
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/aws-billing-and-cost-management/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cross-service-constraints.md', '../../knowledge/offline-policy.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws finops']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cross-service-constraints.md', '../../knowledge/offline-policy.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws finops']} |
 
 ## Procedimento (texto integral)
 

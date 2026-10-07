@@ -2,7 +2,7 @@
 name: diagnose-data-skew
 description: "Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou desenhar o experimento de mitigação (broadcast, AQE skew join, salting). Use também quando a pergunta for \\\"uma task não termina\\\", \\\"uma chave concentra tudo\\\", \\\"o job trava numa partição só\\\" ou \\\"uma partição ficou gigante\\\", mesmo sem citar SF-UI-001. Se você está prestes a aplicar salting ou repartition por instinto, rode `sparkforge-aws collect event-log`, `sparkforge-aws analyze event-log` e `sparkforge-aws judge --show-skipped` em vez disso — cruzar SF-UI-001 com SF-UI-002 diz se é skew de dados (tratável na chave) ou de computação (repartition não muda nada, e é o erro mais caro desta análise)."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -89,8 +89,8 @@ por construção. Aqui a exigência ganha o produtor que lhe faltava.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

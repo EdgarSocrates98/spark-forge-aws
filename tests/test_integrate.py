@@ -355,7 +355,7 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     texto = json.dumps({"mcpServers": {"sparkforge-aws": {"command": "meu"}}})
     alheio.write_text(texto, encoding="utf-8")
     recusado = integrate("devin", home=tmp_path / "home_alheia", windows=False)
-    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
+    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_aws_ja_configurado"]
     assert alheio.read_text(encoding="utf-8") == texto
 
     quebrado = tmp_path / "home_quebrada" / ".config" / "devin" / "mcp_config.json"
@@ -460,7 +460,7 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
     alheia.parent.mkdir(parents=True)
     alheia.write_text('[mcp_servers.sparkforge]\ncommand = "meu"\n', encoding="utf-8")
     recusado = integrate("codex", home=tmp_path / "alheia")
-    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
+    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_aws_ja_configurado"]
     assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge]\ncommand = "meu"\n'
 
 
@@ -491,22 +491,22 @@ def test_codex_recusa_sparkforge_a_mao_em_qualquer_forma(tmp_path, forma):
     texto = FORMAS_TOML[forma]
     home, config = _home_codex(tmp_path / "home", texto)
     recusado = integrate("codex", home=home, root=_raiz_minima(tmp_path))
-    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
+    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_aws_ja_configurado"]
     assert config.read_bytes() == texto.encode("utf-8")
     # O caminho do Python 3.10 (sem tomllib) reconhece a mesma forma pelo texto.
-    assert writer._sparkforge_por_texto(texto), forma
+    assert writer._sparkforge_por_texto_aws(texto), forma
 
 
 @pytest.mark.parametrize("texto", [
     '[mcp_servers.outro]\nnota = "sparkforge-aws"\n',
     '# [mcp_servers.sparkforge]\nmodel = "x"\n',
-    '[mcp_servers.sparkforge_x]\ncommand = "y"\n',
+    '[mcp_servers.sparkforge_aws_x]\ncommand = "y"\n',
     '[outra]\nsparkforge = 1\n',
 ])
 def test_regex_do_310_nao_acusa_o_que_nao_e_sparkforge(texto):
     from sparkforge_aws.integrate import writer
 
-    assert not writer._sparkforge_por_texto(texto)
+    assert not writer._sparkforge_por_texto_aws(texto)
 
 
 def test_marcador_so_conta_no_inicio_da_linha(tmp_path):

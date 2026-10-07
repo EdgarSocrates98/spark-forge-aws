@@ -2,7 +2,7 @@
 name: review-glue-streaming
 description: "Use quando houver dump JSON/JSONL de AWS Glue Streaming ou Real-Time Mode e for preciso validar runtime, restrições, capacidade observada e lacunas sem chamar AWS."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -73,7 +73,7 @@ que permaneça unresolved.
 ## Protocolo
 
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
-`sparkforge_next_step`, valide a saída, não executa manutenção destrutiva e
+`sparkforge_aws_next_step`, valide a saída, não executa manutenção destrutiva e
 sobe mutações ao operador.
 
 ## Quando NÃO usar

@@ -18,4 +18,4 @@ sparkforge-aws playbook --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_playbook`](../tools/sparkforge_playbook.md)
+[`sparkforge_aws_playbook`](../tools/sparkforge_aws_playbook.md)

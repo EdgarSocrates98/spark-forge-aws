@@ -130,7 +130,7 @@ def test_collector_cache_is_offline_and_manifested(monkeypatch, tmp_path):
 def test_cli_and_mcp_schema_registry_collection_match(monkeypatch, tmp_path, capsys):
     first_glue = FakeGlueSchemaRegistry()
     monkeypatch.setattr(schema_registry, "require_boto3", lambda: FakeBoto3(first_glue))
-    mcp = call_tool("sparkforge_collect_schema_registry", _args(tmp_path / "mcp"))
+    mcp = call_tool("sparkforge_aws_collect_schema_registry", _args(tmp_path / "mcp"))
     first_output = capsys.readouterr()
 
     second_glue = FakeGlueSchemaRegistry()

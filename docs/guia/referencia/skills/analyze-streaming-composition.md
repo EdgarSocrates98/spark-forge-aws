@@ -7,7 +7,7 @@ Use quando houver facts já extraídos de Structured Streaming e de Iceberg, Kaf
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-streaming-composition/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-lakehouse-observability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze streaming-composition', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/streaming-lakehouse-observability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze streaming-composition', 'sparkforge-aws judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)

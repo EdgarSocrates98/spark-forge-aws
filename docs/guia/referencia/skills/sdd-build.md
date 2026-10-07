@@ -7,7 +7,7 @@ Use quando o plan.md da feature está ready e é hora de construir — \"executa
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-build/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws code symbol']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws code symbol']} |
 
 ## Procedimento (texto integral)
 
@@ -217,14 +217,14 @@ exit 0. A suíte inteira roda em lotes, um por vez
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o plan | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| quem chama | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
-| carimbar o relatório | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/build_report.md` | `sparkforge_sdd_stamp` |
-| diff (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
-| sandbox (operator) | `sparkforge-aws change sandbox --repo . --diff d.patch` | `sparkforge_change_sandbox` |
-| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
-| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
-| pacote do PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
+| conferir o plan | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| quem chama | `sparkforge-aws code symbol <node_id>` | `sparkforge_aws_code_symbol` |
+| carimbar o relatório | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/build_report.md` | `sparkforge_aws_sdd_stamp` |
+| diff (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_aws_change_plan` |
+| sandbox (operator) | `sparkforge-aws change sandbox --repo . --diff d.patch` | `sparkforge_aws_change_sandbox` |
+| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_aws_funcval_compare` |
+| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_aws_benchmark` |
+| pacote do PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_aws_change_propose` |
 
 Recusas desta fase: `red_not_declared`, `acceptance_never_red`, `claim_without_evidence`,
 `change_missing`, `moved_not_observed`, `moved_change_mismatch`,

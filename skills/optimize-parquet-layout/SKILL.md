@@ -2,7 +2,7 @@
 name: optimize-parquet-layout
 description: "Use quando datasets Parquet no S3 (fora do Iceberg) sofrem com small files, listing lento, milhares de objetos por prefixo, arquivo por chave na escrita, ou leitura que não faz partition/predicate pushdown. Use também quando a pergunta for \\\"o S3 tá cheio de arquivinho\\\", \\\"a leitura desse dataset demora antes mesmo da primeira task rodar\\\" ou \\\"cada execução gera um arquivo por cliente\\\", mesmo que ninguém fale em Parquet. Se você está prestes a contar arquivo com `aws s3 ls` no olho, salve `aws s3api list-objects-v2` num arquivo e rode `sparkforge-aws analyze s3-listing` — ele emite `s3.prefix_summary` e o `judge` aplica `SF-PQ-001`, `SF-PQ-003` e `SF-PQ-005`. Para o lado da leitura, `sparkforge-aws analyze plan` emite `plan.file_scan` e cobre `SF-PQ-002` e `SF-PQ-004`; `analyze pyspark` e `analyze catalog-schema` fecham escrita e cardinalidade."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -152,8 +152,8 @@ meio é a única que não move o dado.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

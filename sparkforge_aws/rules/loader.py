@@ -1,6 +1,6 @@
 """Descoberta, parsing e validacao estrutural do catalogo de regras.
 
-Resolucao de path, em ordem: env var SPARKFORGE_CATALOG -> raiz do repo
+Resolucao de path, em ordem: env var SPARKFORGE_AWS_CATALOG -> raiz do repo
 (rules/catalog) -> fallback relativo ao pacote. Desvio deliberado da spec secao
 14: o catalogo e dado consultavel e e o terceiro degrau da escada de
 portabilidade, entao fica na raiz e nao enterrado no pacote.
@@ -41,18 +41,18 @@ class CatalogError(ValueError):
 def catalog_dir() -> Path:
     """Diretorio do catalogo, resolvido a partir de env var, raiz do repo ou pacote.
 
-    O valor de SPARKFORGE_CATALOG vem do ambiente — em plugin instalado ele e
+    O valor de SPARKFORGE_AWS_CATALOG vem do ambiente — em plugin instalado ele e
     escrito por configuracao externa (`.mcp.json`). Resolvemos para caminho
     absoluto e exigimos que seja um diretorio existente antes de qualquer leitura,
     para que um valor com `..` ou apontando para um arquivo nao vire uma leitura
     arbitraria de sistema de arquivos.
     """
-    override = os.environ.get("SPARKFORGE_CATALOG")
+    override = os.environ.get("SPARKFORGE_AWS_CATALOG") or os.environ.get("SPARKFORGE_CATALOG")
     if override:
         resolved = Path(override).expanduser().resolve()
         if not resolved.is_dir():
             raise CatalogError(
-                f"SPARKFORGE_CATALOG aponta para {resolved}, que nao e um diretorio existente"
+                f"SPARKFORGE_AWS_CATALOG aponta para {resolved}, que nao e um diretorio existente"
             )
         return resolved
 
@@ -326,7 +326,7 @@ def load_catalog(
             rules.append(rule)
 
     # So sem `directory`: quem aponta um catalogo explicito (teste, `pack check`)
-    # quer aquele catalogo e nada mais. Sem `SPARKFORGE_PACKS`, `resolve()` nao
+    # quer aquele catalogo e nada mais. Sem `SPARKFORGE_AWS_PACKS`, `resolve()` nao
     # toca o disco e a lista e a de sempre. Import tardio porque `packs` usa
     # `validate_rule` deste modulo.
     if directory is None:

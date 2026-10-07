@@ -19,8 +19,8 @@
       "other": 0
     },
     "tool_result_bytes_by_tool": {
-      "mcp__sparkforge__sparkforge_judge": 55,
-      "mcp__sparkforge__sparkforge_analyze_pyspark": 31
+      "mcp__sparkforge-aws__sparkforge_aws_judge": 55,
+      "mcp__sparkforge-aws__sparkforge_aws_analyze_pyspark": 31
     },
     "tokens": {
       "input": 30,

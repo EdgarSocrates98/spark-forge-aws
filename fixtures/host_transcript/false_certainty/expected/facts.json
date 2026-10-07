@@ -16,7 +16,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
-      "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
+      "artifact_sha256": "4d54f66e3ccc06888c1b657fddeea196244bc204d19d30b085eb4a044eb8f45c"
     }
   },
   {
@@ -35,7 +35,7 @@
     },
     "attrs": {
       "channel": "mcp",
-      "tool": "mcp__sparkforge__sparkforge_finops",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_finops",
       "verb": "finops",
       "call_id": "toolu_fin",
       "started_at": "2026-09-10T00:00:02.000Z",
@@ -45,7 +45,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
-      "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
+      "artifact_sha256": "4d54f66e3ccc06888c1b657fddeea196244bc204d19d30b085eb4a044eb8f45c"
     }
   },
   {
@@ -75,7 +75,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
-      "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
+      "artifact_sha256": "4d54f66e3ccc06888c1b657fddeea196244bc204d19d30b085eb4a044eb8f45c"
     }
   },
   {
@@ -98,7 +98,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
-      "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
+      "artifact_sha256": "4d54f66e3ccc06888c1b657fddeea196244bc204d19d30b085eb4a044eb8f45c"
     }
   }
 ]

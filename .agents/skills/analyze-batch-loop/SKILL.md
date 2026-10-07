@@ -2,7 +2,7 @@
 name: analyze-batch-loop
 description: "Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração. Use também quando perguntarem \\\"por que esse batch demora mais a cada lote\\\", \\\"por que tem tantos commits/snapshots\\\" ou \\\"o job cresce com o número de lotes\\\", mesmo sem mencionar loop explicitamente. Se você está prestes a contar iterações e estimar custo acumulado de cabeça, rode `sparkforge-aws analyze pyspark` e filtre por `pyspark.loop` em vez disso — cada ocorrência já vem marcada com se contém action, write e a profundidade de aninhamento."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -98,8 +98,8 @@ nenhum dos quatro eixos mede isso — eles comparam o estado final.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

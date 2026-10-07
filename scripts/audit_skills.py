@@ -94,8 +94,8 @@ def audit_skill(skill_dir: Path) -> list[Finding]:
         findings.append(Finding(name, "error", "contrato não explicita fact_id e unresolved"))
     if "validation" not in text or "rollback" not in text:
         findings.append(Finding(name, "error", "contrato não explicita validation e rollback"))
-    if "metadata:" not in front or "sparkforge_contract: v1" not in front:
-        findings.append(Finding(name, "error", "metadata.sparkforge_contract v1 ausente"))
+    if "metadata:" not in front or "sparkforge_aws_contract: v1" not in front:
+        findings.append(Finding(name, "error", "metadata.sparkforge_aws_contract v1 ausente"))
     for relative in ("evals/evals.json", "references/README.md", "scripts/validate_evidence.py"):
         if not (skill_dir / relative).is_file():
             findings.append(Finding(name, "error", f"asset ausente: {relative}"))

@@ -13,11 +13,11 @@ Da raiz do repositório:
 ```bash
 mkdir -p /tmp/sf-guia && cp -r fixtures/pyspark/coalesce_one /tmp/sf-guia/job_exemplo
 cd /tmp/sf-guia
-export SPARKFORGE_RUN_ID=run_guia_demo
+export SPARKFORGE_AWS_RUN_ID=run_guia_demo
 python -c "
 from sparkforge_aws.adapters.tools import call_tool
 for nivel in ('full', 'normal', 'summary'):
-    call_tool('sparkforge_analyze_pyspark', {'path': 'job_exemplo', 'detail_level': nivel, 'limit': 2})
+    call_tool('sparkforge_aws_analyze_pyspark', {'path': 'job_exemplo', 'detail_level': nivel, 'limit': 2})
 "
 sparkforge-aws economy report --run-id run_guia_demo
 ```
@@ -25,12 +25,12 @@ sparkforge-aws economy report --run-id run_guia_demo
 1. Copia um exemplo sintético de job PySpark para uma pasta de teste.
 2. Entra na pasta. As medições são gravadas em `.sparkforge_aws/traces.db` da pasta
    **atual**.
-3. `SPARKFORGE_RUN_ID` dá um nome ao **run** (a sua sessão de medição), para as
+3. `SPARKFORGE_AWS_RUN_ID` dá um nome ao **run** (a sua sessão de medição), para as
    chamadas caírem juntas.
 4. Chama a mesma tool nos três níveis de `detail_level`.
 5. `economy report` soma o que foi medido.
 
-No PowerShell, o passo 3 é `$env:SPARKFORGE_RUN_ID = "run_guia_demo"`.
+No PowerShell, o passo 3 é `$env:SPARKFORGE_AWS_RUN_ID = "run_guia_demo"`.
 
 Saída real do passo 5, encurtada:
 
@@ -38,10 +38,10 @@ Saída real do passo 5, encurtada:
 {
  "run_id": "run_guia_demo",
  "by_tool": {
-  "sparkforge_analyze_pyspark": {"calls": 3, "payload_bytes": 3529, "outcomes": {"ok": 3}}
+  "sparkforge_aws_analyze_pyspark": {"calls": 3, "payload_bytes": 3529, "outcomes": {"ok": 3}}
  },
  "detail_level_effect": {
-  "sparkforge_analyze_pyspark": {"full": 1382, "normal": 1290, "summary": 857}
+  "sparkforge_aws_analyze_pyspark": {"full": 1382, "normal": 1290, "summary": 857}
  },
  "surface": { ... },
  "host_usage": null,
@@ -72,7 +72,7 @@ preço (ver [Byte, token e dólar](#byte-token-e-dólar-não-se-misturam)).
 
 ### 1. Dê um nome ao run
 
-Sem `SPARKFORGE_RUN_ID`, cada processo ganha um nome aleatório, e o relatório
+Sem `SPARKFORGE_AWS_RUN_ID`, cada processo ganha um nome aleatório, e o relatório
 não sabe juntar suas chamadas. No servidor MCP, ponha a variável no `env` da
 configuração do servidor.
 
@@ -89,7 +89,7 @@ sparkforge-aws economy report --run-id run_guia_demo
 sparkforge-aws economy report --run-id run_guia_demo --out relatorio.json
 ```
 
-A tool equivalente é `sparkforge_economy_report`, com `run_id` e, opcionalmente,
+A tool equivalente é `sparkforge_aws_economy_report`, com `run_id` e, opcionalmente,
 `host_transcript`.
 
 ### 4. Acrescente o transcript do host, se tiver
@@ -278,7 +278,7 @@ Saída real, rodada na pasta de teste:
     ".sparkforge_aws/telemetry/run_guia_demo.metrics.jsonl",
     ".sparkforge_aws/telemetry/run_guia_demo.traces.jsonl"
   ],
-  "counts": {"sparkforge_spans": 6, "host_agent": 0, "host_tool_calls": 0, "exported": 6, "refused": 0},
+  "counts": {"sparkforge_aws_spans": 6, "host_agent": 0, "host_tool_calls": 0, "exported": 6, "refused": 0},
   "refused": [],
   "unresolved": [],
   ...
@@ -287,7 +287,7 @@ Saída real, rodada na pasta de teste:
 
 Com `--host-transcript`, a sessão do host entra também. Com `--provider`
 (`anthropic`, `aws.bedrock` ou `gcp.vertex_ai`), o provedor fica declarado e a
-métrica de token sai. A tool `sparkforge_telemetry_export` devolve o mesmo
+métrica de token sai. A tool `sparkforge_aws_telemetry_export` devolve o mesmo
 conteúdo, mas não grava arquivo. A configuração do Collector e a lista de
 recusas estão em [`docs/opentelemetry.md`](../../opentelemetry.md).
 
@@ -332,7 +332,7 @@ para economizar é defeito, e não compressão. Mais detalhes em
 
 | Sintoma | Causa | Como resolver |
 |---|---|---|
-| `by_tool` vazio e `run_unresolved` | O `run_id` não bate, ou você está em outra pasta | Use o mesmo `SPARKFORGE_RUN_ID` e rode na pasta onde as chamadas aconteceram |
+| `by_tool` vazio e `run_unresolved` | O `run_id` não bate, ou você está em outra pasta | Use o mesmo `SPARKFORGE_AWS_RUN_ID` e rode na pasta onde as chamadas aconteceram |
 | Chamadas pela CLI não aparecem | O registro é feito por `call_tool` (MCP ou Python) | Meça pelo servidor MCP ou por `call_tool` |
 | `tokens_unresolved` | Não há transcript do host | Passe `--host-transcript`, se tiver. Senão, a lacuna é a resposta certa |
 | Apareceu `.sparkforge_aws/traces.db` no projeto | O processo que chamou as tools rodou na raiz do projeto | É o lugar esperado. Para testes, rode numa pasta temporária |
@@ -342,4 +342,4 @@ para economizar é defeito, e não compressão. Mais detalhes em
 
 - [Servidor MCP](../04-mcp.md), incluindo `detail_level` e paginação
 - [Code intelligence](code-intelligence.md) e a honestidade das medidas de economia
-- Referência: [`economy`](../referencia/cli/economy.md), [`telemetry`](../referencia/cli/telemetry.md), [`sparkforge_economy_report`](../referencia/tools/sparkforge_economy_report.md)
+- Referência: [`economy`](../referencia/cli/economy.md), [`telemetry`](../referencia/cli/telemetry.md), [`sparkforge_aws_economy_report`](../referencia/tools/sparkforge_aws_economy_report.md)

@@ -7,7 +7,7 @@ Use quando o design.md da feature está ready e falta quebrar a construção em 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-plan/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws code search', 'sparkforge-aws sdd stamp']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws code search', 'sparkforge-aws sdd stamp']} |
 
 ## Procedimento (texto integral)
 
@@ -125,10 +125,10 @@ cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o design | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| confirmar um nome | `sparkforge-aws code search <nome>` | `sparkforge_code_search` |
-| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/plan.md` | `sparkforge_sdd_stamp` |
-| cascata | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
+| conferir o design | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| confirmar um nome | `sparkforge-aws code search <nome>` | `sparkforge_aws_code_search` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/plan.md` | `sparkforge_aws_sdd_stamp` |
+| cascata | `sparkforge-aws sdd status --repo .` | `sparkforge_aws_sdd_status` |
 
 Recusas desta fase: `phase_out_of_order`, `task_without_test`,
 `acceptance_uncovered`, `upstream_stale`, `moved_not_observed` (operator).

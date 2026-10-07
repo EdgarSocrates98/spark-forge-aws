@@ -2,7 +2,7 @@
 name: tool-specialist-routing
 description: "Use quando for necessario escolher, validar ou autorizar ferramentas por especializacao, risco e contrato."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

@@ -11,7 +11,7 @@ O mapa e LISTA FECHADA. Nome fora dele nao recebe palpite: quem chama recebe
 
 Caminho: `_MAP_PATH` vem de `knowledge_dir()` (`sparkforge_aws.knowledge_ref`), o
 mesmo helper que resolve `knowledge/` para todo o pacote -- variavel de
-ambiente `SPARKFORGE_KNOWLEDGE`, depois raiz do repo, depois o fallback
+ambiente `SPARKFORGE_AWS_KNOWLEDGE`, depois raiz do repo, depois o fallback
 embarcado ao lado do pacote quando instalado como wheel. Contar `parents[N]`
 a mao aqui duplicaria essa resolucao e divergiria dela na primeira mudanca de
 layout.

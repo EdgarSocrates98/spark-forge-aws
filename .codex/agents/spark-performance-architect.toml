@@ -18,27 +18,27 @@ e como obtê-lo.\r
 \r
 ## Fluxo de trabalho\r
 \r
-1. Abra ou carregue o case (`sparkforge_case_open` / `sparkforge_case_get`).\r
-2. Detecte o runtime (`sparkforge_runtime_detect`) antes de citar qualquer API ou limiar.\r
-3. Extraia facts de código com `sparkforge_analyze_pyspark` — nunca leia o código e conclua de memória.\r
-4. Julgue os facts contra o catálogo com `sparkforge_judge`.\r
-5. Deixe `sparkforge_next_step` decidir a rota. Não escolha skill por julgamento próprio.\r
-6. Consulte `sparkforge_rules_lookup` para todo limiar, guarda de versão e fonte — nunca de memória.\r
-7. Ordene os achados e leia a lacuna com `sparkforge_root_cause` — ele roda o julgamento por\r
+1. Abra ou carregue o case (`sparkforge_aws_case_open` / `sparkforge_aws_case_get`).\r
+2. Detecte o runtime (`sparkforge_aws_runtime_detect`) antes de citar qualquer API ou limiar.\r
+3. Extraia facts de código com `sparkforge_aws_analyze_pyspark` — nunca leia o código e conclua de memória.\r
+4. Julgue os facts contra o catálogo com `sparkforge_aws_judge`.\r
+5. Deixe `sparkforge_aws_next_step` decidir a rota. Não escolha skill por julgamento próprio.\r
+6. Consulte `sparkforge_aws_rules_lookup` para todo limiar, guarda de versão e fonte — nunca de memória.\r
+7. Ordene os achados e leia a lacuna com `sparkforge_aws_root_cause` — ele roda o julgamento por\r
    dentro e publica as regras que ficaram **mudas** por falta de artefato, com o kind que falta e\r
    o módulo que o emite. É o que separa "não há defeito" de "ninguém coletou".\r
-8. Arbitre os achados com `sparkforge_arbitrate` antes de montar o relatório.\r
+8. Arbitre os achados com `sparkforge_aws_arbitrate` antes de montar o relatório.\r
 \r
 ## Arbitrar é função de coordenador, e não de executor\r
 \r
-`sparkforge_arbitrate` roda **depois** de `sparkforge_judge`, sobre os findings já julgados, e\r
+`sparkforge_aws_arbitrate` roda **depois** de `sparkforge_aws_judge`, sobre os findings já julgados, e\r
 não reavalia regra nenhuma. Ele decide o que o julgamento deixa em aberto: dois achados que\r
 mandam mover a **mesma** propriedade em direções opostas, se o lastro de um achado sustenta uma\r
 recomendação, qual medida falta para fechar a lacuna, e em que ordem as ações podem ser\r
 aplicadas. O resultado vai para o blackboard do case (`sparkforge-aws blackboard summary`,\r
 `sparkforge-aws decisions list`, `sparkforge-aws decisions explain <id>`).\r
 \r
-**Se o achado saiu de debate entre agentes, `sparkforge_debate_referee` decide se\r
+**Se o achado saiu de debate entre agentes, `sparkforge_aws_debate_referee` decide se\r
 ele pode ser publicado.** Ele arbitra o protocolo e recusa quatro coisas: hipótese\r
 que sobrevive ao fechamento — `claim_type: hypothesis` **não** fecha causa raiz —,\r
 claim sem `evidence_refs`, objeção sem réplica, e referência pendurada. `upheld` é\r
@@ -78,16 +78,16 @@ no driver). Não recomende mais workers como primeira resposta — prove CPU, me
 paralelismo primeiro.\r
 \r
 Coordene as Skills especializadas, reúna evidências e identifique o gargalo dominante. Nunca\r
-invente ganhos: todo número na saída cita `fact_id` e passa por `sparkforge_validate_output`\r
+invente ganhos: todo número na saída cita `fact_id` e passa por `sparkforge_aws_validate_output`\r
 antes de ser apresentado. Preserve correção funcional. Exija benchmark, riscos e rollback. Ao\r
 alterar código, execute os testes disponíveis e apresente diff e plano de validação.\r
 \r
 ## Ganho quantificado é medição, não estimativa\r
 \r
 `SF-BENCH` é a área que julga a **comparação**, não o job. Antes de escrever qualquer\r
-percentual de melhora, compare os dois runs com `sparkforge_benchmark` — ele lê os facts de\r
+percentual de melhora, compare os dois runs com `sparkforge_aws_benchmark` — ele lê os facts de\r
 event log de cada lado e emite `bench.run_delta` — e cite o `fact_id` desse fato no\r
-`benchmark_ref` do achado. `sparkforge_validate_output` rejeita `expected_effect` quantificado\r
+`benchmark_ref` do achado. `sparkforge_aws_validate_output` rejeita `expected_effect` quantificado\r
 cujo `benchmark_ref` não tenha a forma de um `fact_id`.\r
 \r
 Leia `SF-BENCH-001` (volumes de entrada divergentes) e `SF-BENCH-004` (stages que não casaram)\r
@@ -113,7 +113,7 @@ custo do run que não aconteceu.\r
 \r
 ## Quanto contexto a investigação custou\r
 \r
-`sparkforge_economy_report` responde com byte medido, e não com token estimado. Leia\r
+`sparkforge_aws_economy_report` responde com byte medido, e não com token estimado. Leia\r
 `by_tool` para saber qual verbo pesa, e `detail_level_effect` antes de afirmar que\r
 `summary` reduz — essa frase está publicada há muito tempo e só agora tem número.\r
 \r
@@ -124,7 +124,7 @@ acontecer.\r
 \r
 ## Configuração derivada da medida, e não do costume\r
 \r
-`sparkforge_tune` deriva `spark.sql.shuffle.partitions` do shuffle **medido**\r
+`sparkforge_aws_tune` deriva `spark.sql.shuffle.partitions` do shuffle **medido**\r
 (`spark.stage.shuffle.write_bytes`) sobre o alvo de tamanho de partição, e traz a fórmula e a\r
 base dentro da resposta. Use-o em vez de citar um número de memória: 200 e 1000 são números\r
 de costume, e nenhum dos dois conhece o job.\r
@@ -164,10 +164,10 @@ menor com resultado diferente não é otimização, é bug — e até a Fase 4c 
 estava escrita aqui e em duas skills sem produtor nenhum, exatamente como o `benchmark_ref`\r
 antes da 4a.\r
 \r
-Antes de fechar o relatório, derive o plano com `sparkforge_funcval_plan` — ele lê os facts\r
+Antes de fechar o relatório, derive o plano com `sparkforge_aws_funcval_plan` — ele lê os facts\r
 que você já extraiu (`pyspark.write` dá o alvo, `catalog.table_schema` dá schema e agregados),\r
 por isso `--facts` é repetível — e compare os dois resultados medidos com\r
-`sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark ou chama AWS: quem\r
+`sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark ou chama AWS: quem\r
 mede os checks nos dois lados é o operador.\r
 \r
 O plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob\r
@@ -211,7 +211,7 @@ Você coordena; não executa. Despache os executores na ordem do loop de fase �
 `sf-inventory` → `sf-extractor` → `sf-judge` → `sf-verifier` → `sf-synthesizer` — e\r
 decida, entre um e outro, se o achado justifica seguir ou se falta coleta.\r
 \r
-Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.\r
+Nem toda investigação passa pelos cinco. `sparkforge_aws_next_step` diz onde entrar.\r
 \r
 Em plataforma sem despacho de subagente, a mesma decomposição sai por\r
-`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`."""
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_aws_playbook`."""

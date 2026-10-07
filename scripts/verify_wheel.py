@@ -17,7 +17,7 @@ nao tem invariante que a defenda; quem quiser o numero de hoje roda
 `ls -d fixtures/*/*/ | wc -l`.
 
 A guarda que sustenta tudo esta em `tests/test_installed_provenance.py`, ligada
-aqui por `SPARKFORGE_VERIFY_INSTALLED=1`. Sem ela, um `sys.path` errado faria o
+aqui por `SPARKFORGE_AWS_VERIFY_INSTALLED=1`. Sem ela, um `sys.path` errado faria o
 pytest importar o repositorio e comparar o codigo-fonte consigo mesmo.
 
 O gate tambem constroi DUAS vezes a mesma arvore e compara os artefatos por
@@ -259,7 +259,7 @@ def _reproduce_line(command: list, cwd: str | None, env: dict[str, str] | None) 
     So o argv nao bastava: um revisor copiou o comando `pytest` impresso numa
     corrida com `--keep`, rodou do repositorio (sem o `cwd` do gate) e obteve
     "90 passed, 5 skipped" -- os 5 testes de procedencia pulados em silencio
-    porque `SPARKFORGE_VERIFY_INSTALLED` nao estava setado. Reproduziu OUTRA
+    porque `SPARKFORGE_AWS_VERIFY_INSTALLED` nao estava setado. Reproduziu OUTRA
     chamada, nao a que falhou.
 
     Formato `cd <dir> && VAR=val cmd`: dialeto POSIX (bash/Git Bash), o mesmo
@@ -268,7 +268,7 @@ def _reproduce_line(command: list, cwd: str | None, env: dict[str, str] | None) 
     nesses shells adapta a mao, mas o conteudo que faltava era o `cwd` e QUAIS
     variaveis mudaram em relacao ao ambiente herdado, nao a sintaxe exata de
     um shell especifico. Variaveis REMOVIDAS (`env.pop` no chamador) tambem
-    entram, como `unset` -- reproduzir sem tirar `SPARKFORGE_CATALOG` do
+    entram, como `unset` -- reproduzir sem tirar `SPARKFORGE_AWS_CATALOG` do
     ambiente e reproduzir um gate que pode passar escondendo o defeito que
     ele existe para pegar (ver comentario no chamador).
     """
@@ -432,9 +432,9 @@ def main(argv: list[str] | None = None) -> int:
         # `cwd` fora do repositorio e a primeira guarda; a assercao de
         # procedencia e a que sustenta. As duas, porque configuracao se perde.
         env = dict(os.environ)
-        env["SPARKFORGE_VERIFY_INSTALLED"] = "1"
+        env["SPARKFORGE_AWS_VERIFY_INSTALLED"] = "1"
         env["PYTHONSAFEPATH"] = "1"
-        # Remover SPARKFORGE_CATALOG/SPARKFORGE_KNOWLEDGE nao e limpeza de
+        # Remover SPARKFORGE_AWS_CATALOG/SPARKFORGE_AWS_KNOWLEDGE nao e limpeza de
         # ambiente -- e a segunda metade da guarda de procedencia. `.mcp.json`
         # deste repositorio seta as duas, entao um shell de dev que rode este
         # gate plausivelmente as herda apontando para `rules/catalog` e
@@ -449,8 +449,8 @@ def main(argv: list[str] | None = None) -> int:
         # exatamente o defeito que ele existe para pegar. Remover as duas
         # variaveis fecha esse buraco: o codigo instalado so pode enxergar o
         # que veio dentro do artefato.
-        env.pop("SPARKFORGE_CATALOG", None)
-        env.pop("SPARKFORGE_KNOWLEDGE", None)
+        env.pop("SPARKFORGE_AWS_CATALOG", None)
+        env.pop("SPARKFORGE_AWS_KNOWLEDGE", None)
 
         result = _run(pytest_command(python, ROOT), cwd=str(workdir), env=env)
         if result.returncode:

@@ -50,7 +50,7 @@ def test_platform_graph_impact_preserves_paths_and_unresolved() -> None:
 def test_platform_graph_cli_and_mcp_share_contract() -> None:
     cli = _core.analyze_platform_graph(FIXTURE, changed_node="postgres.orders")
     mcp = call_tool(
-        "sparkforge_analyze_platform_graph",
+        "sparkforge_aws_analyze_platform_graph",
         {"path": str(FIXTURE), "changed_node": "postgres.orders"},
     )
 
@@ -61,4 +61,4 @@ def test_platform_graph_cli_and_mcp_share_contract() -> None:
 def test_platform_graph_reference_is_registered() -> None:
     from sparkforge_aws.adapters.tools import TOOLS
 
-    assert "sparkforge_analyze_platform_graph" in TOOLS
+    assert "sparkforge_aws_analyze_platform_graph" in TOOLS

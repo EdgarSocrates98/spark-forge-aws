@@ -7,7 +7,7 @@ Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-explore/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd status', 'sparkforge-aws code search']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd status', 'sparkforge-aws code search']} |
 
 ## Procedimento (texto integral)
 
@@ -97,13 +97,13 @@ atribui é T5 na escala de autoridade e não sustenta decisão sozinho.
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| features existentes | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
-| o que o código já tem | `sparkforge-aws code search <termo>` | `sparkforge_code_search` |
-| quem chama um símbolo | `sparkforge-aws code symbol <node_id>` | `sparkforge_code_symbol` |
-| regra do catálogo | `sparkforge-aws rules lookup --category <área>` | `sparkforge_rules_lookup` |
-| documento de conhecimento | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| case do operador | `sparkforge-aws case get --repo .` | `sparkforge_case_get` |
-| conferir a fase | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
+| features existentes | `sparkforge-aws sdd status --repo .` | `sparkforge_aws_sdd_status` |
+| o que o código já tem | `sparkforge-aws code search <termo>` | `sparkforge_aws_code_search` |
+| quem chama um símbolo | `sparkforge-aws code symbol <node_id>` | `sparkforge_aws_code_symbol` |
+| regra do catálogo | `sparkforge-aws rules lookup --category <área>` | `sparkforge_aws_rules_lookup` |
+| documento de conhecimento | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_aws_knowledge_path` |
+| case do operador | `sparkforge-aws case get --repo .` | `sparkforge_aws_case_get` |
+| conferir a fase | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
 
 Template: `docs/sdd/templates/explore.md`. Contrato: `sparkforge_aws/sdd/schema/explore.json`.
 Visão geral do ciclo: `docs/sdd/README.md`.

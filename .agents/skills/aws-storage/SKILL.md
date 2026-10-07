@@ -2,7 +2,7 @@
 name: aws-storage
 description: "Use quando precisar escolher, comparar ou operar servicos de armazenamento AWS — S3 (General Purpose, Express One Zone, Tables, Vectors, Files), EFS, FSx (Lustre, ONTAP, OpenZFS, Windows), EBS, DataSync, Transfer Family, Storage Gateway, AWS Backup. Cobre selecao de servico por workload, custo, performance, configuracao, seguranca, troubleshooting e migracao de dados. Aplica quando alguem pergunta onde armazenar ou arquivar dados, qual servico de storage escolher, como comparar dois, como migrar de on-premises ou entre servicos AWS, como proteger/replicar/recuperar dados, como otimizar custo de storage, onde deployar NFS/SMB/POSIX compartilhado, onde guardar vector embeddings ou dados tabulares, ou como um servico de storage AWS funciona. NAO use para motores de consulta SQL (Athena, Spark, Redshift, EMR), ETL (Glue), streaming (Kafka, MSK, Kinesis) ou bancos gerenciados (RDS, Aurora, DynamoDB)."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

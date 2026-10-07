@@ -143,8 +143,8 @@ def _e_chave_de_caminho(nome: str) -> bool:
 def _caminhos_declarados(arguments: dict[str, Any]) -> Iterator[tuple[str, str]]:
     """Os pares (parametro, valor) que a decisao precisa confinar.
 
-    Lista e percorrida item a item porque `facts_paths` de `sparkforge_fuse` e
-    `sparkforge_funcval_plan` E uma lista -- verificar so `isinstance(valor,
+    Lista e percorrida item a item porque `facts_paths` de `sparkforge_aws_fuse` e
+    `sparkforge_aws_funcval_plan` E uma lista -- verificar so `isinstance(valor,
     str)` deixaria o argumento principal daquelas duas passar sem checagem
     nenhuma.
 

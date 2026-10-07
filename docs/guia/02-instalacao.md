@@ -449,7 +449,7 @@ tocado, com qualquer `--on-conflict`. O `doctor` pula os mesmos casos.
 |---|---|---|
 | `claude_cli_ausente` | O binário `claude` não está no PATH. O plugin fica montado em `~/.sparkforge_aws/claude/` e a recusa traz os comandos. | Instale o Claude Code e rode os dois comandos `claude plugin` acima, ou rode o `integrate claude` de novo. |
 | `claude_cli_falhou` / `claude_cli_timeout` | Um comando `claude plugin` saiu com erro ou passou de 120 segundos. A recusa traz o comando e o fim da saída. | Rode o comando mostrado à mão e depois o `integrate` de novo. |
-| `sparkforge_ja_configurado` | A config de usuário já tem um `sparkforge-aws` que você mesmo escreveu. O arquivo não é tocado. | Tire a sua entrada, ou mantenha-a e ignore a recusa. |
+| `sparkforge_aws_ja_configurado` | A config de usuário já tem um `sparkforge-aws` que você mesmo escreveu. O arquivo não é tocado. | Tire a sua entrada, ou mantenha-a e ignore a recusa. |
 | `config_invalida` / `bloco_toml_quebrado` | A config de usuário não se lê como JSON, ou o bloco marcado do `config.toml` perdeu um dos marcadores. | Conserte o arquivo e rode de novo. |
 | `editado_pelo_usuario` | O arquivo (ou a entrada de config) mudou depois do `integrate`. | Nada: ele fica. Para trocar pela versão do pacote, apague-o e rode o `integrate`. |
 | `arquivo_do_usuario` | Já existe no destino um arquivo diferente que o SparkForge nunca gravou. | Renomeie ou apague o seu, se quiser o do pacote. |
@@ -647,7 +647,7 @@ outro caminho (AWS CLI ou console) e registrá-lo, sem instalar o extra.
 ### A pasta `knowledge/` não é encontrada
 
 A mensagem diz a causa e mostra duas saídas: apontar a variável de ambiente
-`SPARKFORGE_KNOWLEDGE` para a pasta `knowledge/` do clone, ou reinstalar o
+`SPARKFORGE_AWS_KNOWLEDGE` para a pasta `knowledge/` do clone, ou reinstalar o
 pacote com `pip install --force-reinstall sparkforge-aws` (o pacote a partir
 da versão 0.5.0 embarca `knowledge/`).
 

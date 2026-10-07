@@ -7,7 +7,7 @@ Use quando um job Glue lÃª tabela governada e falha ao escrever, ou quando alguÃ
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/diagnose-lakeformation-access/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze terraform', 'sparkforge-aws judge', 'sparkforge-aws root-cause']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws analyze terraform', 'sparkforge-aws judge', 'sparkforge-aws root-cause']} |
 
 ## Procedimento (texto integral)
 

@@ -2,7 +2,7 @@
 name: optimize-latest-per-key
 description: "Use quando o job calcula o registro mais recente por chave (row_number/Window, max_by, max(struct), join-back) sobre tabelas Spark/Iceberg grandes, e suspeitar de Window global sem partitionBy, sort/shuffle de todo o histórico, empates por timestamp mal tratados, late data ou recomputação a cada ciclo. Use também quando perguntarem \\\"por que o latest demora tanto\\\", \\\"isso escala com o histórico inteiro\\\" ou \\\"o resultado muda entre execuções\\\", mesmo sem citar Window ou row_number. Se você está prestes a inspecionar a chamada de Window de cabeça, rode `sparkforge-aws analyze pyspark` e filtre por `pyspark.window` e `pyspark.chain` em vez disso — eles dizem se a Window tem partitionBy e onde o join entra na cadeia, mas não decidem se a chave escolhida é a correta: isso é julgamento seu."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -108,8 +108,8 @@ coberto.
 é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
 `catalog.table_schema` —, e `sparkforge-aws funcval compare --plan <plano.json> --before
 <antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
-dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
-`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_aws_funcval_plan` e
+`sparkforge_aws_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
 `ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
 

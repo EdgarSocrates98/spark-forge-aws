@@ -25,4 +25,4 @@ sparkforge-aws simulate --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_simulate`](../tools/sparkforge_simulate.md)
+[`sparkforge_aws_simulate`](../tools/sparkforge_aws_simulate.md)

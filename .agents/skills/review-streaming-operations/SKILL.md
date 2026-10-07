@@ -2,7 +2,7 @@
 name: review-streaming-operations
 description: "Use quando houver um contrato declarativo de streaming e for necessário revisar SLO, FinOps, segurança, serving e lakehouse sem inventar medição, preço ou eficácia operacional."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md

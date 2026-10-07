@@ -355,9 +355,9 @@ Detalhes em [docs/realized-gain.md](../../realized-gain.md).
 - Referência dos comandos: [capacity](../referencia/cli/capacity.md), [finops](../referencia/cli/finops.md),
   [workload](../referencia/cli/workload.md), [gain](../referencia/cli/gain.md),
   [analyze](../referencia/cli/analyze.md), [collect](../referencia/cli/collect.md).
-- Tools MCP: [sparkforge_capacity](../referencia/tools/sparkforge_capacity.md),
-  [sparkforge_finops](../referencia/tools/sparkforge_finops.md),
-  [sparkforge_gain](../referencia/tools/sparkforge_gain.md).
+- Tools MCP: [sparkforge_aws_capacity](../referencia/tools/sparkforge_aws_capacity.md),
+  [sparkforge_aws_finops](../referencia/tools/sparkforge_aws_finops.md),
+  [sparkforge_aws_gain](../referencia/tools/sparkforge_aws_gain.md).
 
 ## Próximos passos
 

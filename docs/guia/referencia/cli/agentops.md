@@ -34,7 +34,7 @@ sparkforge-aws agentops baseline --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
+[`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
 
 ## `sparkforge-aws agentops compare`
 
@@ -55,7 +55,7 @@ sparkforge-aws agentops compare --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
+[`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
 
 ## `sparkforge-aws agentops critical-path`
 
@@ -75,7 +75,7 @@ sparkforge-aws agentops critical-path --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
+[`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
 
 ## `sparkforge-aws agentops inspect`
 
@@ -95,7 +95,7 @@ sparkforge-aws agentops inspect --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
+[`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
 
 ## `sparkforge-aws agentops timeline`
 
@@ -115,4 +115,4 @@ sparkforge-aws agentops timeline --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_agentops_baseline`](../tools/sparkforge_agentops_baseline.md), [`sparkforge_agentops_compare`](../tools/sparkforge_agentops_compare.md), [`sparkforge_agentops_critical_path`](../tools/sparkforge_agentops_critical_path.md), [`sparkforge_agentops_inspect`](../tools/sparkforge_agentops_inspect.md), [`sparkforge_agentops_timeline`](../tools/sparkforge_agentops_timeline.md), [`sparkforge_context_inspect`](../tools/sparkforge_context_inspect.md), [`sparkforge_doctor_agentic`](../tools/sparkforge_doctor_agentic.md)
+[`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)

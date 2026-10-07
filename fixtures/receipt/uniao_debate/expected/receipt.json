@@ -94,7 +94,7 @@
     "tests": []
   },
   "proves": "correspondencia entre este recibo e estes artefatos -- nunca autoria",
-  "receipt_id": "rcpt_a6df37f31e9625c1ffbb24fdb51c1f14eec46c0c1284d258177624fe38f14f37",
+  "receipt_id": "rcpt_c1fba1cd6cdb2398b1b9bc77e63340fee8964b18ab6091300bb440e5fb9a2f78",
   "receipt_version": 1,
   "refused": [
     {
@@ -109,7 +109,7 @@
   "tools": {
     "excluded": [
       {
-        "name": "sparkforge_receipt_emit",
+        "name": "sparkforge_aws_receipt_emit",
         "reason": "gravado_depois_do_handler"
       }
     ],

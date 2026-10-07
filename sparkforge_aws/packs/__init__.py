@@ -2,7 +2,7 @@
 
 Um pack e um diretorio com `pack.yaml` (`id`, `version`, `prefix`, `core`) e
 conteudo em lugar fixo: `rules/*.yaml`, `knowledge/**`, `fixtures/<caso>/`. Ele
-e ativado por `SPARKFORGE_PACKS` (diretorios separados por `os.pathsep`) e
+e ativado por `SPARKFORGE_AWS_PACKS` (diretorios separados por `os.pathsep`) e
 entra em `rules.loader.load_catalog()`. O prefixo `SF` e do core; o prefixo do
 pack e o que identifica a origem de um finding.
 

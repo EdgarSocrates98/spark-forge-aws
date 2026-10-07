@@ -401,12 +401,12 @@ três proibições do projeto sobre versão.
   [`iceberg`](../referencia/cli/iceberg.md), [`runtime`](../referencia/cli/runtime.md),
   [`analyze`](../referencia/cli/analyze.md).
 - Tools MCP equivalentes:
-  [`sparkforge_migration_assess`](../referencia/tools/sparkforge_migration_assess.md),
-  [`sparkforge_release_describe`](../referencia/tools/sparkforge_release_describe.md),
-  [`sparkforge_release_diff`](../referencia/tools/sparkforge_release_diff.md),
-  [`sparkforge_glue_dependency_audit`](../referencia/tools/sparkforge_glue_dependency_audit.md),
-  [`sparkforge_iceberg_assess_upgrade`](../referencia/tools/sparkforge_iceberg_assess_upgrade.md),
-  [`sparkforge_runtime_detect`](../referencia/tools/sparkforge_runtime_detect.md).
+  [`sparkforge_aws_migration_assess`](../referencia/tools/sparkforge_aws_migration_assess.md),
+  [`sparkforge_aws_release_describe`](../referencia/tools/sparkforge_aws_release_describe.md),
+  [`sparkforge_aws_release_diff`](../referencia/tools/sparkforge_aws_release_diff.md),
+  [`sparkforge_aws_glue_dependency_audit`](../referencia/tools/sparkforge_aws_glue_dependency_audit.md),
+  [`sparkforge_aws_iceberg_assess_upgrade`](../referencia/tools/sparkforge_aws_iceberg_assess_upgrade.md),
+  [`sparkforge_aws_runtime_detect`](../referencia/tools/sparkforge_aws_runtime_detect.md).
 - O que o projeto **ainda não cobre** numa migração de Glue está mapeado em
   [MIGRATIONS-GLUE-GAP](../../harness/MIGRATIONS-GLUE-GAP.md).
 

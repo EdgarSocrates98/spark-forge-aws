@@ -20,7 +20,7 @@
     },
     "tool_result_bytes_by_tool": {
       "Bash": 111,
-      "mcp__sparkforge__sparkforge_judge": 30
+      "mcp__sparkforge-aws__sparkforge_aws_judge": 30
     },
     "tokens": {
       "input": 50,

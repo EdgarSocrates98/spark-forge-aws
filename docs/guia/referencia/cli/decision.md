@@ -75,7 +75,7 @@ sparkforge-aws decision evaluate --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_decision_evaluate`](../tools/sparkforge_decision_evaluate.md)
+[`sparkforge_aws_decision_evaluate`](../tools/sparkforge_aws_decision_evaluate.md)
 
 ## `sparkforge-aws decision receipt`
 

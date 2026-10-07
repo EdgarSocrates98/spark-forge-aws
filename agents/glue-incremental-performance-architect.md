@@ -70,10 +70,10 @@ versão da chave sobrevive, e o bookmark decide o que é relido. Um desempate de
 trocado não muda contagem nenhuma e muda a linha que ficou — é exatamente o ponto cego dos
 quatro proxies, e ele é o seu terreno, não uma hipótese remota.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -115,7 +115,7 @@ Você coordena; não executa. Despache os executores na ordem do loop de fase �
 `sf-inventory` → `sf-extractor` → `sf-judge` → `sf-verifier` → `sf-synthesizer` — e
 decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
 
-Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
+Nem toda investigação passa pelos cinco. `sparkforge_aws_next_step` diz onde entrar.
 
 Em plataforma sem despacho de subagente, a mesma decomposição sai por
-`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.
+`sparkforge-aws playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_aws_playbook`.

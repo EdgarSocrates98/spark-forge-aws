@@ -289,11 +289,11 @@ class TestSanitizeEnvironment:
         """
         monkeypatch.setenv("PATH_INOFENSIVO", "x")
         monkeypatch.setenv("LANG", "pt_BR.UTF-8")
-        monkeypatch.setenv("SPARKFORGE_ROOT", "raiz-qualquer")
+        monkeypatch.setenv("SPARKFORGE_AWS_ROOT", "raiz-qualquer")
         removidos = security.sanitize_environment()
         assert "PATH_INOFENSIVO" not in removidos
         assert "LANG" not in removidos
-        assert "SPARKFORGE_ROOT" not in removidos
+        assert "SPARKFORGE_AWS_ROOT" not in removidos
         assert os.environ["LANG"] == "pt_BR.UTF-8"
 
     def test_mapa_proprio_nao_toca_o_ambiente_do_processo(self, monkeypatch):

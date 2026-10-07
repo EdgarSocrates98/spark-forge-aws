@@ -14,8 +14,8 @@ class TestAMedidaEstatica:
         medida = measure_surface()
         por_tool = medida["tools"]["by_name"]
 
-        assert "sparkforge_analyze_pyspark" in por_tool
-        assert por_tool["sparkforge_analyze_pyspark"] > 0
+        assert "sparkforge_aws_analyze_pyspark" in por_tool
+        assert por_tool["sparkforge_aws_analyze_pyspark"] > 0
 
     def test_the_catalogue_total_is_the_sum_of_its_tools(self):
         medida = measure_surface()

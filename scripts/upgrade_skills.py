@@ -211,7 +211,7 @@ def domain_refs(name: str) -> list[str]:
 
 def metadata_block(name: str, verbs: list[str], refs: list[str]) -> str:
     data = {
-        "sparkforge_contract": "v1",
+        "sparkforge_aws_contract": "v1",
         "evals": "evals/evals.json",
         "references": ["references/README.md", *refs],
         "scripts": ["scripts/validate_evidence.py"],

@@ -28,7 +28,7 @@ sparkforge-aws policy check --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_policy_explain`](../tools/sparkforge_policy_explain.md)
+[`sparkforge_aws_policy_explain`](../tools/sparkforge_aws_policy_explain.md)
 
 ## `sparkforge-aws policy explain`
 
@@ -49,7 +49,7 @@ sparkforge-aws policy explain --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_policy_explain`](../tools/sparkforge_policy_explain.md)
+[`sparkforge_aws_policy_explain`](../tools/sparkforge_aws_policy_explain.md)
 
 ## `sparkforge-aws policy sync-settings`
 
@@ -68,4 +68,4 @@ sparkforge-aws policy sync-settings --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_policy_explain`](../tools/sparkforge_policy_explain.md)
+[`sparkforge_aws_policy_explain`](../tools/sparkforge_aws_policy_explain.md)

@@ -21,8 +21,8 @@ tombstone, schema history, endpoint, mapping, compatibilidade e unresolved.
 
 `cdc.*` descreve eventos e semântica observada. `debezium.*`, `dms.*` e
 `schema.*` mantêm namespaces próprios; um não prova o comportamento do outro.
-Use `sparkforge_analyze_cdc` com o `artifact` correspondente e depois
-`sparkforge_judge`. A ferramenta só lê dumps locais.
+Use `sparkforge_aws_analyze_cdc` com o `artifact` correspondente e depois
+`sparkforge_aws_judge`. A ferramenta só lê dumps locais.
 
 ## Ciclo de investigação
 

@@ -265,9 +265,9 @@ aparece como `"severity": "gain"` e todos os degraus saem `compatible`.
   [`controlm`](../referencia/cli/controlm.md), [`migrate`](../referencia/cli/migrate.md),
   [`judge`](../referencia/cli/judge.md), [`rules`](../referencia/cli/rules.md).
 - Tools MCP equivalentes:
-  [`sparkforge_analyze_controlm_jobs`](../referencia/tools/sparkforge_analyze_controlm_jobs.md),
-  [`sparkforge_controlm_describe`](../referencia/tools/sparkforge_controlm_describe.md),
-  [`sparkforge_migration_assess`](../referencia/tools/sparkforge_migration_assess.md).
+  [`sparkforge_aws_analyze_controlm_jobs`](../referencia/tools/sparkforge_aws_analyze_controlm_jobs.md),
+  [`sparkforge_aws_controlm_describe`](../referencia/tools/sparkforge_aws_controlm_describe.md),
+  [`sparkforge_aws_migration_assess`](../referencia/tools/sparkforge_aws_migration_assess.md).
 
 ## Próximos passos
 

@@ -47,7 +47,7 @@ chamam `get_object`, `get_job`, `get_metric_data`, `SELECT`/`get_work_group`. Ma
 `readOnlyHint` **não tem lado**: ele afirma que a tool não modifica o ambiente
 dela, e os sete modificam o ambiente **local**. Todos terminam em
 `sparkforge_aws.collect.aws._write_and_register`, que grava o artefato e depois grava
-o manifesto `path` + `sha256` que `sparkforge_collect_verify` confere — e cuja
+o manifesto `path` + `sha256` que `sparkforge_aws_collect_verify` confere — e cuja
 entrada de mesmo `path` é substituída a cada coleta. Medido executando
 `_write_and_register` num diretório vazio: **zero arquivos antes, dois depois**.
 
@@ -175,14 +175,14 @@ sistema de arquivos, com a classe derivada por `tool_class()`:
 
 Medido: **90** das tools `READ_ONLY` declaram algum argumento de caminho
 (`path`, `repo`, `facts_path`, `before`/`after`, `file`, `report_path`,
-`findings_path`), e as **dez** exceções são `sparkforge_rules_lookup`, que só
-aceita `category`, `id`, `limit` e `cursor`; `sparkforge_economy_report`, que lê
+`findings_path`), e as **dez** exceções são `sparkforge_aws_rules_lookup`, que só
+aceita `category`, `id`, `limit` e `cursor`; `sparkforge_aws_economy_report`, que lê
 o ledger pelo `run_id` e aceita `host_transcript`;
-`sparkforge_release_describe`, `sparkforge_release_diff`,
-`sparkforge_controlm_describe`, `sparkforge_pack_list`,
-`sparkforge_knowledge_drift`, `sparkforge_gain` e
-`sparkforge_telemetry_export`, que leem MATRIZ de versão, ledger ou
-transcript e não artefato; e `sparkforge_lakeformation_matrix` (2026-09-09) —
+`sparkforge_aws_release_describe`, `sparkforge_aws_release_diff`,
+`sparkforge_aws_controlm_describe`, `sparkforge_aws_pack_list`,
+`sparkforge_aws_knowledge_drift`, `sparkforge_aws_gain` e
+`sparkforge_aws_telemetry_export`, que leem MATRIZ de versão, ledger ou
+transcript e não artefato; e `sparkforge_aws_lakeformation_matrix` (2026-09-09) —
 nenhuma das dez nomeia caminho de arquivo. (A prosa dizia "as duas exceções"
 enquanto `tests/test_harness_authorization.py::SEM_CAMINHO` já listava cinco;
 o texto ficou para trás das três últimas e foi relido em 2026-09-09.)
@@ -195,7 +195,7 @@ na frase de contagem abaixo.
 
 **A décima é diferente das nove, e a diferença vale registrar.** As outras
 recebem um IDENTIFICADOR — `run_id`, `id` de regra, versão de release, versão do
-Control-M — e vão buscar o dado com ele. `sparkforge_lakeformation_matrix` **não
+Control-M — e vão buscar o dado com ele. `sparkforge_aws_lakeformation_matrix` **não
 recebe nada que aponte para fora**: `runtime` e `axis` filtram o que ela já
 carrega, e o que ela carrega é conhecimento versionado que viaja no próprio
 pacote (`knowledge/glue/lakeformation-matrix.yaml`, por `safe_knowledge_file`).

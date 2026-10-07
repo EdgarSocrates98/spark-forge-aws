@@ -71,5 +71,5 @@ def journaled() -> frozenset[str]:
         nome
         for nome, spec in TOOLS.items()
         if not (spec.get("annotations") or {}).get("readOnlyHint", True)
-        and not nome.startswith("sparkforge_code_")
+        and not nome.startswith("sparkforge_aws_code_")
     )

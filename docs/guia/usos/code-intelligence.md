@@ -55,19 +55,19 @@ de `sparkforge_aws/capacity` da receita.
 
 | Pergunta | CLI | Tool MCP |
 |---|---|---|
-| Onde está X definido | `sparkforge-aws code search` | `sparkforge_code_search` |
-| Quem chama X, e o que quebra se eu mudar | `sparkforge-aws code symbol` | `sparkforge_code_symbol` |
-| **Como** X chega em Y | `sparkforge-aws code path` | `sparkforge_code_path` |
-| Como este código está organizado | `sparkforge-aws code shape` | `sparkforge_code_shape` |
-| O pacote de contexto dentro de um teto | `sparkforge-aws code context` | `sparkforge_code_context` |
-| O trecho de fonte | `sparkforge-aws code read` | `sparkforge_code_read` |
-| O índice está em dia | `sparkforge-aws code status` / `code sync` | `sparkforge_code_status` / `_sync` |
-| O grafo para outra ferramenta | `sparkforge-aws code export` | `sparkforge_code_export` |
+| Onde está X definido | `sparkforge-aws code search` | `sparkforge_aws_code_search` |
+| Quem chama X, e o que quebra se eu mudar | `sparkforge-aws code symbol` | `sparkforge_aws_code_symbol` |
+| **Como** X chega em Y | `sparkforge-aws code path` | `sparkforge_aws_code_path` |
+| Como este código está organizado | `sparkforge-aws code shape` | `sparkforge_aws_code_shape` |
+| O pacote de contexto dentro de um teto | `sparkforge-aws code context` | `sparkforge_aws_code_context` |
+| O trecho de fonte | `sparkforge-aws code read` | `sparkforge_aws_code_read` |
+| O índice está em dia | `sparkforge-aws code status` / `code sync` | `sparkforge_aws_code_status` / `_sync` |
+| O grafo para outra ferramenta | `sparkforge-aws code export` | `sparkforge_aws_code_export` |
 
 Flags exatas de cada subcomando: [`referencia/cli/code.md`](../referencia/cli/code.md).
 Argumentos de cada tool: [índice de tools](../referencia/tools/README.md). Os
 nomes podem mudar entre CLI e tool. Na CLI é `--root` e o termo solto; na tool
-`sparkforge_code_search` são `repo` e `query`.
+`sparkforge_aws_code_search` são `repo` e `query`.
 
 ### 1. Onde está X definido
 
@@ -233,7 +233,7 @@ O rótulo `untrusted_repository_content` avisa o assistente que aquilo é
 não deve ser obedecido. `instruction_like_content_detected` liga quando o trecho
 parece conter esse tipo de texto.
 
-Pelo MCP, `sparkforge_code_read` só existe no transporte `stdio`.
+Pelo MCP, `sparkforge_aws_code_read` só existe no transporte `stdio`.
 
 ### 7. O índice está em dia
 
@@ -327,4 +327,4 @@ um pacote que omite o símbolo pedido pelo nome é falha, e não economia.
 - [Servidor MCP](../04-mcp.md), para usar tudo isso de dentro do assistente
 - [Economia de contexto](economia-de-contexto.md), para medir quanto cada resposta pesa
 - [Referência do comando `code`](../referencia/cli/code.md)
-- [`sparkforge_code_search`](../referencia/tools/sparkforge_code_search.md) e o [índice de tools](../referencia/tools/README.md)
+- [`sparkforge_aws_code_search`](../referencia/tools/sparkforge_aws_code_search.md) e o [índice de tools](../referencia/tools/README.md)

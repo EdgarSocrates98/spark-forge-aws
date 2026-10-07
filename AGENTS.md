@@ -9,16 +9,16 @@ artifact directly comes after the verb, to double-check, never instead of it.
 
 | Question about | MCP tool |
 |---|---|
-| PySpark code | `sparkforge_analyze_pyspark`, then `sparkforge_judge` |
-| physical plan (`explain`) | `sparkforge_analyze_plan`, then `sparkforge_judge` |
-| Spark event log | `sparkforge_analyze_event_log`, then `sparkforge_judge` |
-| catalog rule | `sparkforge_rules_lookup` |
-| version and runtime | `sparkforge_runtime_detect` or `sparkforge_release_describe` |
-| cost of a run | `sparkforge_finops` |
-| before and after between two runs | `sparkforge_benchmark` |
+| PySpark code | `sparkforge_aws_analyze_pyspark`, then `sparkforge_aws_judge` |
+| physical plan (`explain`) | `sparkforge_aws_analyze_plan`, then `sparkforge_aws_judge` |
+| Spark event log | `sparkforge_aws_analyze_event_log`, then `sparkforge_aws_judge` |
+| catalog rule | `sparkforge_aws_rules_lookup` |
+| version and runtime | `sparkforge_aws_runtime_detect` or `sparkforge_aws_release_describe` |
+| cost of a run | `sparkforge_aws_finops` |
+| before and after between two runs | `sparkforge_aws_benchmark` |
 
 This repository contains reusable Agent Skills for PySpark data engineering on AWS —
-performance on AWS Glue and on Amazon EMR — both on EC2 and Serverless — plus the placement and cost of data
+performance on AWS Glue and Amazon EMR (EC2 and Serverless), plus placement and cost of data
 validation inside the job.
 
 This file is loaded on every session, so it keeps **rules and pointers**, not history.
@@ -84,7 +84,7 @@ declares `rule_areas`, the `skills` it draws on, and the five `executors` it dis
 `agents/executors/*.md`, each with an explicit `## Não faz` boundary and a
 `## Pressupõe`/`## Entrega` handoff contract). A coordinator does not execute: it reads
 the case, decides which executor runs next, and records which one ran
-(`sparkforge_case_update` with `skills_used`; see `AGENT_PROTOCOL.md` rule 6).
+(`sparkforge_aws_case_update` with `skills_used`; see `AGENT_PROTOCOL.md` rule 6).
 
 | Coordinator | Use quando… | `rule_areas` |
 |---|---|---|
@@ -100,24 +100,24 @@ the case, decides which executor runs next, and records which one ran
 | `cdc-contract-reviewer` | revisão de eventos CDC, Debezium/Kafka Connect, AWS DMS e contratos de mudança com posição, chave, seam, tombstone, schema history e mappings | SF-CDC, SF-DEBEZIUM, SF-DMS, SF-SCHEMA |
 
 Which coordinator to use is data, not judgment: routes in `rules/catalog/routing.yaml`
-map the case's phase and dominant finding area to a `recommended_agent`;
-`sparkforge_next_step` / `sparkforge-aws next-step` reads them — never pick by inspection.
+map case phase and dominant finding area to a `recommended_agent`;
+`sparkforge_aws_next_step` / `sparkforge-aws next-step` reads them — never pick by inspection.
 
 **Three platforms dispatch**: Claude Code, the Devin CLI and the Devin Local agent. Devin
 reads `.agents/agents/` natively and imports `.claude/agents/*.md` — both are generated
 mirrors of `agents/`, so the fourteen coordinators are subagent profiles there. The five
-executors are not at a documented discovery layout (`executors/` is neither flat nor
-`agents/<name>/AGENT.md`), so do not presume they are published. A coordinator dispatched
+executors sit at no documented discovery layout (`executors/` is neither flat nor
+`agents/<name>/AGENT.md`) — do not presume they are published. A coordinator dispatched
 as a subagent does **not** dispatch the executors: subagents cannot spawn subagents, so
 the decomposition runs inline. The `.agents/` mirror drops `tools:` (the value mapping is
 undocumented) and never gains `model:`; **dropping `tools:` is not a security boundary** —
-omitting is the most permissive option. What carries the boundary is the `## Não faz`
+omission is most permissive. What carries the boundary is the `## Não faz`
 prose, byte-identical in both mirrors. Sources: `knowledge/devin/agents-and-subagents.md`.
 
 **`playbook` is the floor on all five platforms.** `sparkforge-aws playbook <coordinator>`
-(or `sparkforge_playbook`) returns the same decomposition as a sequence of steps. It is
-the **only** path on Codex and Copilot CI, and stays the path on the three that dispatch
-whenever dispatch is off (`subagents_enabled: false`, or an admin choosing *None*).
+(or `sparkforge_aws_playbook`) returns the same decomposition as a sequence of steps. It is
+the **only** path on Codex and Copilot CI, and stays the path when dispatch is off
+(`subagents_enabled: false`, or an admin choosing *None*).
 
 ### How to actually invoke it
 
@@ -133,7 +133,7 @@ The authoritative list of dispatchable skills is `DISPATCHABLE_SKILLS` in
 `scripts/sync_skills.py`. The floor, needing no dispatch:
 
 ```bash
-sparkforge-aws playbook emr-infra-reviewer --repo .   # or the sparkforge_playbook MCP tool
+sparkforge-aws playbook emr-infra-reviewer --repo .   # or the sparkforge_aws_playbook MCP tool
 ```
 
 Start a Devin session with: `Read PROMPT_INICIAL_MESTRE.md and use the
@@ -143,7 +143,7 @@ glue-incremental-performance-architect skill.`
 
 **143 tools, 52 with `detail_level`** (recounted 2026-10-04) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
-anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
+anything*. `sparkforge_aws_economy_report` returns `detail_level_effect` with the bytes of
 each level and does not conclude for you.
 
 Nine Code Intelligence tools exist so that nobody has to open a file: `code_search`,
@@ -188,7 +188,7 @@ Code Intelligence refresh is incremental and fingerprinted. Workspace and
 semantic graph relationships are declared, missing evidence is `unresolved`,
 and query expansion/knowledge compilation are deterministic and lazy. The
 implementation report and archived SDD artifacts live under
-`.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
+`.claude/sdd/archive/SPARKFORGE_AWS_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
 
 ### Decision Plane shadow mode
 

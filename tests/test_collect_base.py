@@ -78,7 +78,7 @@ class TestArtifactEntryValidation:
 
 
 class TestManifestPath:
-    def test_manifest_path_is_under_sparkforge_artifacts(self, tmp_path):
+    def test_manifest_path_is_under_sparkforge_aws_artifacts(self, tmp_path):
         path = manifest_path(tmp_path)
         assert path == tmp_path / ".sparkforge_aws" / "artifacts" / "manifest.json"
 

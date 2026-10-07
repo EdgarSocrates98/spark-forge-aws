@@ -34,7 +34,7 @@ class TestMcpConfig:
     def _config(self):
         return json.loads((ROOT / ".mcp.json").read_text(encoding="utf-8"))
 
-    def test_declares_the_sparkforge_server(self):
+    def test_declares_the_sparkforge_aws_server(self):
         assert "sparkforge-aws" in self._config()["mcpServers"]
 
     def test_uses_plugin_root_variable_never_an_absolute_path(self):

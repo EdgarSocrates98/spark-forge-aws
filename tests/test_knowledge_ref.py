@@ -20,18 +20,18 @@ class TestResolution:
         assert knowledge_dir() == ROOT / "knowledge"
 
     def test_env_var_overrides(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("SPARKFORGE_KNOWLEDGE", str(tmp_path))
+        monkeypatch.setenv("SPARKFORGE_AWS_KNOWLEDGE", str(tmp_path))
         assert knowledge_dir() == tmp_path.resolve()
 
     def test_env_var_pointing_at_a_file_is_rejected(self, tmp_path, monkeypatch):
         target = tmp_path / "nao-e-diretorio.md"
         target.write_text("x", encoding="utf-8")
-        monkeypatch.setenv("SPARKFORGE_KNOWLEDGE", str(target))
+        monkeypatch.setenv("SPARKFORGE_AWS_KNOWLEDGE", str(target))
         with pytest.raises(KnowledgeError, match="diretorio"):
             knowledge_dir()
 
     def test_env_var_pointing_nowhere_is_rejected(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("SPARKFORGE_KNOWLEDGE", str(tmp_path / "ausente"))
+        monkeypatch.setenv("SPARKFORGE_AWS_KNOWLEDGE", str(tmp_path / "ausente"))
         with pytest.raises(KnowledgeError, match="diretorio"):
             knowledge_dir()
 
@@ -52,7 +52,7 @@ class TestResolution:
         sem `knowledge/` na raiz simulada (o equivalente a `parents[1]` cair fora
         do repositorio real).
         """
-        monkeypatch.delenv("SPARKFORGE_KNOWLEDGE", raising=False)
+        monkeypatch.delenv("SPARKFORGE_AWS_KNOWLEDGE", raising=False)
 
         fake_package_dir = tmp_path / "site-packages" / "sparkforge_aws"
         fake_knowledge_dir = fake_package_dir / "knowledge"

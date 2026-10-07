@@ -38,7 +38,7 @@ class TestCatalogDiscovery:
         assert catalog_dir() == ROOT / "rules" / "catalog"
 
     def test_env_var_overrides(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(tmp_path))
         assert catalog_dir() == tmp_path
 
 
@@ -141,7 +141,7 @@ class TestLoadCommittedCatalog:
 class TestRejections:
     def _write(self, tmp_path, monkeypatch, name, body):
         (tmp_path / name).write_text(body, encoding="utf-8")
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(tmp_path))
 
     def test_duplicate_id_raises(self, tmp_path, monkeypatch):
         one = (
@@ -368,26 +368,26 @@ class TestRejections:
 
 
 class TestCatalogPathIsContained:
-    """SPARKFORGE_CATALOG vem do ambiente — em plugin instalado e escrito por
+    """SPARKFORGE_AWS_CATALOG vem do ambiente — em plugin instalado e escrito por
     configuracao externa (.mcp.json). Sem contencao, um valor com `..` ou um
     symlink apontando para fora vira leitura arbitraria de sistema de arquivos."""
 
     def test_env_var_pointing_at_a_file_is_rejected(self, tmp_path, monkeypatch):
         target = tmp_path / "nao-e-diretorio.txt"
         target.write_text("x", encoding="utf-8")
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(target))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(target))
         with pytest.raises(CatalogError, match="nao e um diretorio"):
             catalog_dir()
 
     def test_env_var_pointing_at_a_missing_dir_is_rejected(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path / "inexistente"))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(tmp_path / "inexistente"))
         with pytest.raises(CatalogError, match="nao e um diretorio"):
             catalog_dir()
 
     def test_env_var_is_resolved_to_an_absolute_path(self, tmp_path, monkeypatch):
         nested = tmp_path / "a" / ".." / "a"
         (tmp_path / "a").mkdir()
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(nested))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(nested))
         resolved = catalog_dir()
         assert resolved.is_absolute()
         assert ".." not in resolved.parts

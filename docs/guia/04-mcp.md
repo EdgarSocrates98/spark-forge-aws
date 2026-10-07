@@ -30,7 +30,7 @@ claude mcp list
 Depois, dentro de uma sessão do Claude Code, peça:
 
 ```text
-Liste as tools MCP do sparkforge-aws e chame sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e chame sparkforge_aws_runtime_detect.
 ```
 
 O que cada passo faz:
@@ -75,7 +75,7 @@ dois (`sparkforge_aws/adapters/mcp.py`):
 
 Os padrões do `http` são `--host 127.0.0.1` e `--port 8765`.
 
-Diferença importante: no `http`, a tool `sparkforge_code_read` **não é
+Diferença importante: no `http`, a tool `sparkforge_aws_code_read` **não é
 publicada**. Ela devolve trecho de código-fonte, e uma porta de rede sem
 autenticação que devolve código seria um vazamento. Se precisar dela, use `stdio`.
 
@@ -97,7 +97,7 @@ Há dois caminhos.
         "args": ["-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"],
         "env": {
           "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}",
-          "SPARKFORGE_CATALOG": "${CLAUDE_PLUGIN_ROOT}/rules/catalog"
+          "SPARKFORGE_AWS_CATALOG": "${CLAUDE_PLUGIN_ROOT}/rules/catalog"
         }
       }
     }
@@ -106,7 +106,7 @@ Há dois caminhos.
 
   `${CLAUDE_PLUGIN_ROOT}` é preenchida pelo carregador de plugin. Fora dele, o
   valor pode chegar sem ser expandido. Se o servidor morrer com
-  `CatalogError: SPARKFORGE_CATALOG aponta para .../${CLAUDE_PLUGIN_ROOT}/...`,
+  `CatalogError: SPARKFORGE_AWS_CATALOG aponta para .../${CLAUDE_PLUGIN_ROOT}/...`,
   use o cadastro manual.
 
 ### Devin CLI (stdio)
@@ -165,13 +165,13 @@ Variáveis de ambiente opcionais:
 
 | Variável | Para que serve |
 |---|---|
-| `SPARKFORGE_CATALOG` | Usar um catálogo de regras fora do pacote. Aponte para um diretório real |
-| `SPARKFORGE_PACKS` | Carregar Forge Packs. Ver [packs e conhecimento](usos/packs-e-conhecimento.md) |
-| `SPARKFORGE_RUN_ID` | Agrupar as chamadas numa medição. Ver [economia de contexto](usos/economia-de-contexto.md) |
+| `SPARKFORGE_AWS_CATALOG` | Usar um catálogo de regras fora do pacote. Aponte para um diretório real |
+| `SPARKFORGE_AWS_PACKS` | Carregar Forge Packs. Ver [packs e conhecimento](usos/packs-e-conhecimento.md) |
+| `SPARKFORGE_AWS_RUN_ID` | Agrupar as chamadas numa medição. Ver [economia de contexto](usos/economia-de-contexto.md) |
 
 ## Exemplo: SLO observado de streaming
 
-Use a tool `sparkforge_analyze_streaming_composition` com o mesmo contrato da
+Use a tool `sparkforge_aws_analyze_streaming_composition` com o mesmo contrato da
 CLI. O servidor não consulta AWS, Kafka, Kinesis ou Spark; ele compõe os facts
 que o cliente já salvou:
 
@@ -195,13 +195,13 @@ publica `observed_p95` por nearest-rank; `freshness_ms` exige
 `timestamp` + `eventTime.max`. O modo não agrega partições, shards ou sinks e
 não prova saúde end-to-end.
 A mesma chamada pode usar `query_name` para progress Structured Streaming; detalhes de campos
-estão na [referência MCP](referencia/tools/sparkforge_analyze_streaming_composition.md).
+estão na [referência MCP](referencia/tools/sparkforge_aws_analyze_streaming_composition.md).
 
 ### Glue Streaming efetivo e Terraform
 
 Não há uma ferramenta MCP nova para essa correlação. Use a ferramenta existente
-`sparkforge_fuse` com `facts_paths` contendo os dois resultados de análise, e
-depois `sparkforge_judge`:
+`sparkforge_aws_fuse` com `facts_paths` contendo os dois resultados de análise, e
+depois `sparkforge_aws_judge`:
 
 ```json
 {
@@ -217,7 +217,7 @@ O compositor publica `glue.streaming.terraform_link` quando encontra um
 `SF-GLUESTREAM-005`. A correlação é offline e não prova estado aplicado na AWS.
 
 Para observar execução terminal sem nova ferramenta MCP, passe também o arquivo
-de facts produzido por `analyze glue-job-runs` ao mesmo `sparkforge_fuse`:
+de facts produzido por `analyze glue-job-runs` ao mesmo `sparkforge_aws_fuse`:
 
 ```json
 {
@@ -233,7 +233,7 @@ ou corretude funcional.
 
 ### Glue Streaming: source e sink
 
-`sparkforge_analyze_glue_streaming` continua sendo a única ferramenta MCP.
+`sparkforge_aws_analyze_glue_streaming` continua sendo a única ferramenta MCP.
 Quando o dump traz `stream.sources`/`source` e `stream.sinks`/`sink`, o envelope
 preserva `glue.streaming.source` e `glue.streaming.sink` com atributos
 escalares e medidas presentes. Ausência ou shape inválido aparece como
@@ -242,7 +242,7 @@ saúde ou semântica exactly-once.
 
 ### Apache Flink: source e sink
 
-Use a ferramenta existente `sparkforge_analyze_flink`; a evolução não adiciona
+Use a ferramenta existente `sparkforge_aws_analyze_flink`; a evolução não adiciona
 tool MCP. Para Apache Flink, informe `artifact: flink` e analise o mesmo dump
 offline:
 
@@ -284,14 +284,14 @@ Qualquer código HTTP prova que o servidor está no ar. `connection refused` que
 dizer que ele não subiu ou que a porta está errada.
 
 **Dentro do assistente.** Peça para listar as tools do `sparkforge-aws` e chamar
-`sparkforge_runtime_detect`.
+`sparkforge_aws_runtime_detect`.
 
 ## Tool e comando da CLI são o mesmo código
 
 As regras de negócio moram em `sparkforge_aws/adapters/_core.py`. A CLI
 (`cli.py`) e as tools (`tools.py`) são cascas finas em volta dele.
 
-O nome segue um padrão: `sparkforge-aws code search` vira `sparkforge_code_search`.
+O nome segue um padrão: `sparkforge-aws code search` vira `sparkforge_aws_code_search`.
 Os **nomes dos argumentos** podem mudar. Exemplo real:
 
 | CLI | Tool |
@@ -300,7 +300,7 @@ Os **nomes dos argumentos** podem mudar. Exemplo real:
 
 Na dúvida, veja a página da tool em
 [`referencia/tools/`](referencia/tools/README.md), por exemplo
-[`sparkforge_code_search`](referencia/tools/sparkforge_code_search.md).
+[`sparkforge_aws_code_search`](referencia/tools/sparkforge_aws_code_search.md).
 
 ## O que as anotações de cada tool querem dizer
 
@@ -373,7 +373,7 @@ Tools que devolvem listas respondem por **página**:
 | `next_cursor` | O valor para pedir a próxima página. `null` na última |
 
 Para a próxima página, repita a chamada com `cursor` igual ao `next_cursor`.
-Trecho real de `sparkforge_analyze_pyspark` com `limit: 2`:
+Trecho real de `sparkforge_aws_analyze_pyspark` com `limit: 2`:
 
 ```json
 {
@@ -425,7 +425,7 @@ sparkforge-aws code init --root capacity
 python -c "
 import json
 from sparkforge_aws.adapters.tools import call_tool
-r = call_tool('sparkforge_code_search', {'repo': 'capacity', 'query': 'capacity'})
+r = call_tool('sparkforge_aws_code_search', {'repo': 'capacity', 'query': 'capacity'})
 print(json.dumps(r, indent=1))
 "
 ```
@@ -450,11 +450,11 @@ Saída real, encurtada:
 ```
 
 Um nome de tool que não existe levanta `KeyError` com a lista das válidas:
-`ferramenta desconhecida: 'sparkforge_nao_existe'. Validas: ...`.
+`ferramenta desconhecida: 'sparkforge_aws_nao_existe'. Validas: ...`.
 
 ## Famílias de tools
 
-Toda tool começa com `sparkforge_`. A lista completa, com entrada e saída de cada
+Toda tool começa com `sparkforge_aws_`. A lista completa, com entrada e saída de cada
 uma, está no [índice de tools](referencia/tools/README.md).
 
 | Família | O que faz |
@@ -475,7 +475,7 @@ uma, está no [índice de tools](referencia/tools/README.md).
 ### Glue Schema Registry
 
 O comando correspondente é `collect schema-registry`; a tool
-`sparkforge_collect_schema_registry` é read-only: chama apenas operações
+`sparkforge_aws_collect_schema_registry` é read-only: chama apenas operações
 `list/get` do Glue Schema Registry, grava o artifact local e registra manifesto
 com cache/offline-first. A coleta busca a versão mais recente observada e aceita
 `registry_name`, `schema_name` ou `schema_arn`; `max_schemas` e
@@ -485,7 +485,7 @@ criação, registro, atualização ou exclusão é oferecida.
 
 ### Managed Flink
 
-`sparkforge_collect_managed_flink` chama somente
+`sparkforge_aws_collect_managed_flink` chama somente
 `kinesisanalyticsv2.DescribeApplication` com `IncludeAdditionalDetails=false`.
 Recebe `repo`, `application_name`, `region_name` opcional, `metrics_start`,
 `metrics_end`, `metrics_period` e `now`; grava artifact local
@@ -500,7 +500,7 @@ replay, benchmark, SLO e causalidade continuam fora.
 
 ### Métricas temporais Kinesis
 
-`sparkforge_collect_streaming_integrations` aceita `metrics_start`,
+`sparkforge_aws_collect_streaming_integrations` aceita `metrics_start`,
 `metrics_end` e `metrics_period` junto de `kinesis_stream_name`. A janela é
 obrigatória nas duas pontas; o período padrão é 60 segundos e deve ser múltiplo
 de 60 entre 60 e 86400. O mesmo handler usado pela CLI chama somente
@@ -518,9 +518,9 @@ ou SLO automático.
 |---|---|---|
 | `SDK do MCP nao instalado` ou `ModuleNotFoundError: mcp` | Extra `mcp` não instalado | `pip install -e ".[mcp]"` na raiz do repositório |
 | `CatalogError: ... ${CLAUDE_PLUGIN_ROOT} ...` | O `.mcp.json` do plugin foi usado fora do plugin | Cadastre com `claude mcp add` ou `devin mcp add`, sem `env` |
-| `CatalogError` com um caminho real | `SPARKFORGE_CATALOG` aponta para pasta que não existe | Remova a variável ou aponte para um diretório real |
+| `CatalogError` com um caminho real | `SPARKFORGE_AWS_CATALOG` aponta para pasta que não existe | Remova a variável ou aponte para um diretório real |
 | O cliente não mostra as tools | Servidor não cadastrado no escopo certo, ou não aprovado | `claude mcp list` ou `devin mcp list`, e aprove o servidor se ele aparecer como pendente |
-| `sparkforge_code_read` não aparece | Você está no transporte `http` | Use `stdio` |
+| `sparkforge_aws_code_read` não aparece | Você está no transporte `http` | Use `stdio` |
 | Devin Desktop não conecta | Servidor HTTP parado ou porta errada | Suba de novo com `--transport http` e confira a URL `/mcp` |
 | `devin mcp list` vazio ou sem `sparkforge-aws` | O escopo do `mcp_config.json` pode ser global em vez de projeto | Confira `.devin/mcp_config.json` |
 

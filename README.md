@@ -309,7 +309,7 @@ sparkforge-aws analyze schema-registry --path .sparkforge_aws/artifacts/schema_r
 ```
 
 Detalhes em [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md),
-na [referência CLI](docs/guia/referencia/cli/collect.md) e na [referência MCP](docs/guia/referencia/tools/sparkforge_collect_schema_registry.md).
+na [referência CLI](docs/guia/referencia/cli/collect.md) e na [referência MCP](docs/guia/referencia/tools/sparkforge_aws_collect_schema_registry.md).
 
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:

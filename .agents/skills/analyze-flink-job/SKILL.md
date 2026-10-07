@@ -2,7 +2,7 @@
 name: analyze-flink-job
 description: "Use quando houver dump JSON/JSONL de job Apache Flink ou Managed Flink e for preciso separar checkpoint, backpressure, state, configuração e métricas observadas sem inventar capacidade, limiar ou exatamente-once."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -62,7 +62,7 @@ capacidade, versão ou comportamento do outro.
    sparkforge-aws judge --facts .sparkforge_aws/facts_flink.json --show-skipped
    ```
 
-   Em MCP, a mesma extração é `sparkforge_analyze_flink`.
+   Em MCP, a mesma extração é `sparkforge_aws_analyze_flink`.
 
    `SF-FLINK-001` só reage a status de checkpoint explicitamente `FAILED`.
    `SF-FLINK-002` só reage a medida positiva de backpressure. A ausência da
@@ -96,11 +96,11 @@ precisa ser coletado.
 
 ## Protocolo
 
-Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte `sparkforge_next_step`,
-use `sparkforge_rules_lookup` para regra e fonte, valide a saída e encaminhe
+Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte `sparkforge_aws_next_step`,
+use `sparkforge_aws_rules_lookup` para regra e fonte, valide a saída e encaminhe
 qualquer mutação ao operador. A skill não executa manutenção destrutiva; sobe
 a decisão ao operador. Para correlacionar transporte, use
-`sparkforge_analyze_transport` quando houver dump compatível.
+`sparkforge_aws_analyze_transport` quando houver dump compatível.
 
 ## Quando NÃO usar
 

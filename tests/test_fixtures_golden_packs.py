@@ -6,7 +6,7 @@ recusa (`recusa_*`) e um pack valido cuja regra nunca dispara
 mesmo tempo -- e a prova de que um pack recusado nao derruba os outros.
 
 Regenerar depois de mudanca DELIBERADA:
-`SPARKFORGE_REGEN_PACKS=1 pytest tests/test_fixtures_golden_packs.py`.
+`SPARKFORGE_AWS_REGEN_PACKS=1 pytest tests/test_fixtures_golden_packs.py`.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from sparkforge_aws.packs import ENV, installed_version
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "packs"
-REGEN = os.environ.get("SPARKFORGE_REGEN_PACKS") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_PACKS") == "1"
 ESPERADO = FIXTURES / "_expected" / "pack_list.json"
 ATIVADOS = [FIXTURES / "acme-platform"] + sorted(
     p for p in FIXTURES.iterdir() if p.name.startswith("recusa_")
@@ -32,7 +32,7 @@ def _relativo(valor: str) -> str:
 
 
 def _pack_list(monkeypatch, capsys) -> dict:
-    monkeypatch.delenv("SPARKFORGE_SOURCES_LOCK", raising=False)
+    monkeypatch.delenv("SPARKFORGE_AWS_SOURCES_LOCK", raising=False)
     monkeypatch.setenv(ENV, os.pathsep.join(str(p) for p in ATIVADOS))
     assert main(["pack", "list"]) == 0
     saida = json.loads(capsys.readouterr().out)
@@ -55,7 +55,7 @@ def test_golden_pack_list(monkeypatch, capsys):
 
 def test_toda_recusa_do_schema_tem_pack_de_fixture(monkeypatch, capsys):
     saida = _pack_list(monkeypatch, capsys)
-    schema = TOOLS["sparkforge_pack_list"]["outputSchema"]
+    schema = TOOLS["sparkforge_aws_pack_list"]["outputSchema"]
     ramo = next(r for r in schema["oneOf"] if "refused" in r.get("properties", {}))
     motivos = set(ramo["properties"]["refused"]["items"]["properties"]["reason"]["enum"])
     assert {r["reason"] for r in saida["refused"]} == motivos

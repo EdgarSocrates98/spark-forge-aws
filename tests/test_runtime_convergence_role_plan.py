@@ -118,11 +118,11 @@ class TestRolePlanNaSelecao:
 
     def test_tool_access_filtra_capabilities_descobertas(self):
         # A descoberta e dirigida por intent: para "Glue job" a capability
-        # `sparkforge_analyze_glue_job_runs` sai sempre. O plano so deixa ela
+        # `sparkforge_aws_analyze_glue_job_runs` sai sempre. O plano so deixa ela
         # passar -- as outras descobertas somem todas.
         plan = RoleContextPlan(
             role="sf-extractor",
-            tool_access=("sparkforge_analyze_glue_job_runs",),
+            tool_access=("sparkforge_aws_analyze_glue_job_runs",),
         )
         request = _request(
             [], intent="diagnose Glue job", role_plan=plan.to_dict()
@@ -130,7 +130,7 @@ class TestRolePlanNaSelecao:
         result = ContextGateway(TOOLS).start(request)
 
         nomes = {c["name"] for c in result["capabilities"]}
-        assert nomes == {"sparkforge_analyze_glue_job_runs"}
+        assert nomes == {"sparkforge_aws_analyze_glue_job_runs"}
 
     def test_sem_plano_a_selecao_e_exatamente_a_de_hoje(self):
         items = [{"fact_id": "f1", "kind": "fact"}, {"id": "x", "kind": "tool_output"}]

@@ -7,7 +7,7 @@ Use quando um job Glue declara `--enable-lakeformation-fine-grained-access` ou c
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/lakeformation-fgac-guard/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws migrate glue', 'sparkforge-aws rules lookup', 'sparkforge-aws collect lakeformation']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws migrate glue', 'sparkforge-aws rules lookup', 'sparkforge-aws collect lakeformation']} |
 
 ## Procedimento (texto integral)
 
@@ -134,7 +134,7 @@ Três chamadas, e cada uma responde uma pergunta que nenhum artefato do job resp
 | `describe_resource` | a localização S3 está **registrada**, e com qual role |
 | `get_data_lake_settings` | se a conta permite query engine de terceiro sem validação de session tag — o passo de **conta** que precede qualquer grant sob FTA |
 
-As tools MCP de mesmo nome são `sparkforge_collect_lakeformation` e `sparkforge_analyze_lakeformation_grants`.
+As tools MCP de mesmo nome são `sparkforge_aws_collect_lakeformation` e `sparkforge_aws_analyze_lakeformation_grants`.
 
 **`--catalog-id` é obrigatório em cross-account**: a mesma `db.tabela` existe em contas diferentes, e sem ele as duas coletas se sobrescrevem no manifesto.
 
@@ -151,7 +151,7 @@ sparkforge-aws collect iam-access --role-arn <runtime-role>     --resource-arn <
 sparkforge-aws analyze iam-access --path .sparkforge_aws/artifacts/iam_access/
 ```
 
-Tools MCP: `sparkforge_collect_iam_access` e `sparkforge_analyze_iam_access`.
+Tools MCP: `sparkforge_aws_collect_iam_access` e `sparkforge_aws_analyze_iam_access`.
 
 **Simular e não parsear**, e a diferença decide o conselho. `iam:SimulatePrincipalPolicy` devolve a resposta da AWS com permission boundary, service control policy, `Deny` explícito e `Condition` já resolvidos. Parsear o documento do role devolve uma opinião sobre um JSON, e erra exatamente nos quatro casos que importam — porque nenhum deles aparece nesse documento.
 
@@ -175,7 +175,7 @@ sparkforge-aws collect glue-resource-link --database <banco-na-conta-consumidora
 sparkforge-aws analyze glue-resource-link --path .sparkforge_aws/artifacts/glue_resource_link/
 ```
 
-Tools MCP: `sparkforge_collect_glue_resource_link` e `sparkforge_analyze_glue_resource_link`.
+Tools MCP: `sparkforge_aws_collect_glue_resource_link` e `sparkforge_aws_analyze_glue_resource_link`.
 
 Ele dá **fact medido** à afirmação da §1 que antes vivia só em prosa: *cross-account só por resource link, e o link precisa ter o mesmo nome do recurso na conta de origem*. `SF-XACC-002` julga sobre isso.
 

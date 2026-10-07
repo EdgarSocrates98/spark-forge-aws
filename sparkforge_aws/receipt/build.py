@@ -49,7 +49,7 @@ SPAN_COLUMNS: tuple[str, ...] = (
     "end_time",
 )
 
-EMIT_TOOL = "sparkforge_receipt_emit"
+EMIT_TOOL = "sparkforge_aws_receipt_emit"
 EXCLUDED_EMIT = {"name": EMIT_TOOL, "reason": "gravado_depois_do_handler"}
 
 PROOF_KINDS: tuple[tuple[str, str, str], ...] = (

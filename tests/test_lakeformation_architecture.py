@@ -261,7 +261,7 @@ def test_cli_and_mcp_architecture_parity(tmp_path, capsys):
 
     assert main(["lakeformation", "architect", "--input", str(input_path)]) == 0
     cli_result = json.loads(capsys.readouterr().out)
-    mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+    mcp_result = call_tool("sparkforge_aws_lakeformation_architect", {"payload": payload})
 
     # `_trust` e aditivo de call_tool (FASE 3); formato travado em
     # tests/test_runtime_convergence_trust.py
@@ -289,7 +289,7 @@ def test_architecture_docs_and_vnext_are_anchored():
 
     guide = (root / "docs/guia/usos/lake-formation-e-acesso.md").read_text(encoding="utf-8")
     assert "lakeformation architect" in guide
-    assert "sparkforge_lakeformation_architect" in guide
+    assert "sparkforge_aws_lakeformation_architect" in guide
 
     for path in (
         "docs/vnext/ARCHITECTURE.md",

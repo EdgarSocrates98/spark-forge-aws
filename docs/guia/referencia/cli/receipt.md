@@ -34,7 +34,7 @@ sparkforge-aws receipt emit --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_receipt_emit`](../tools/sparkforge_receipt_emit.md), [`sparkforge_receipt_verify`](../tools/sparkforge_receipt_verify.md)
+[`sparkforge_aws_receipt_emit`](../tools/sparkforge_aws_receipt_emit.md), [`sparkforge_aws_receipt_verify`](../tools/sparkforge_aws_receipt_verify.md)
 
 ## `sparkforge-aws receipt verify`
 
@@ -54,4 +54,4 @@ sparkforge-aws receipt verify --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_receipt_emit`](../tools/sparkforge_receipt_emit.md), [`sparkforge_receipt_verify`](../tools/sparkforge_receipt_verify.md)
+[`sparkforge_aws_receipt_emit`](../tools/sparkforge_aws_receipt_emit.md), [`sparkforge_aws_receipt_verify`](../tools/sparkforge_aws_receipt_verify.md)

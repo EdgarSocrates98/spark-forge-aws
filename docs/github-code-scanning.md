@@ -125,5 +125,5 @@ arquivos gerados a cada execucao.
   mais caro" seria heuristica, e fica fora ate haver criterio medido.
 - O verbo nao filtra "so os findings novos do PR": o proprio Code Scanning
   compara com a analise da base e marca o que o PR introduziu.
-- A tool MCP `sparkforge_report_github` devolve o mesmo SARIF, resumo e
+- A tool MCP `sparkforge_aws_report_github` devolve o mesmo SARIF, resumo e
   anotacoes, mas **nao grava**: gravar e da CLI.

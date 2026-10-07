@@ -12,8 +12,8 @@ executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 
 **Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
-Para governança de recomendações Glue Data Quality, use `sparkforge_analyze_dq_ai` para
-extrair somente metadados do artefato e `sparkforge_dq_ai_assess` para compor avaliação,
+Para governança de recomendações Glue Data Quality, use `sparkforge_aws_analyze_dq_ai` para
+extrair somente metadados do artefato e `sparkforge_aws_dq_ai_assess` para compor avaliação,
 findings e relatório. DQDL é entrada externa validada; nunca gere regra, envie linha de
 dados ou invoque provedor.
 
@@ -38,8 +38,8 @@ que se aplica sem adivinhar:
 
 O que torna a divisão verificável, e não jurisprudência: os dois lados saem de **extratores
 diferentes sobre a mesma AST**, com namespaces de fact disjuntos.
-`sparkforge_analyze_pyspark` emite `pyspark.*` e alimenta `SF-PY`, `SF-PLAN` e `SF-CG`;
-`sparkforge_analyze_data_quality` emite `dq.*` e alimenta `SF-DQ`. Se a resposta que você
+`sparkforge_aws_analyze_pyspark` emite `pyspark.*` e alimenta `SF-PY`, `SF-PLAN` e `SF-CG`;
+`sparkforge_aws_analyze_data_quality` emite `dq.*` e alimenta `SF-DQ`. Se a resposta que você
 procura mora num fact `dq.*`, é sua; se mora num `pyspark.*`, é dele. Nenhuma regra de uma
 área lê fact da outra.
 
@@ -63,10 +63,10 @@ que deixa de rodar deixa de rejeitar linha, e um check que muda de lugar passa a
 outra. Reduzir passadas sobre o dado é ganho legítimo; reduzir o que é reprovado é mudança de
 regra de negócio vestida de tuning, e as duas saem no mesmo diff.
 
-Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
+Derive o plano com `sparkforge_aws_funcval_plan` — na CLI, `sparkforge-aws funcval plan --facts
 <facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
 `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
-lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+lados medidos com `sparkforge_aws_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
 ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
 **antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
 `functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
@@ -112,7 +112,7 @@ varreduras para responder a uma pergunta.
 
 ## O que você olha
 
-`sparkforge_analyze_data_quality` lê o `.py` do repositório e emite quatro kinds. O artefato
+`sparkforge_aws_analyze_data_quality` lê o `.py` do repositório e emite quatro kinds. O artefato
 é o código; não vem de API da AWS, então a coleta é o próprio checkout.
 
 - **`dq.check`** — um ponto de validação, com as correlações já decididas pelo extrator:
@@ -181,4 +181,4 @@ Você coordena; não executa. Despache os executores na ordem do loop de fase e 
 um e outro, se o achado justifica seguir ou se falta recorte.
 
 Em plataforma sem despacho de subagente: `sparkforge-aws playbook data-quality-reviewer` (CLI)
-ou a tool MCP `sparkforge_playbook`.
+ou a tool MCP `sparkforge_aws_playbook`.

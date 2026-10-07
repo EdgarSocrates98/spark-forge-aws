@@ -59,7 +59,7 @@ class TestTokenStatusDoSpan:
     def test_tool_span_without_tokens_is_not_applicable_not_zero(self):
         tracker = AgentOpsTracker()
         trace = tracker.start_trace("t")
-        span = tracker.start_span(trace, "sparkforge_case_get", "tool")
+        span = tracker.start_span(trace, "sparkforge_aws_case_get", "tool")
         tracker.end_span(span)
         assert span.resolved_tokens_status() == "not_applicable"
 

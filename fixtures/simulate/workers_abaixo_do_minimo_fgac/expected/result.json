@@ -32,7 +32,7 @@
     },
     {
       "field": "dependency_incompatibility",
-      "reason": "use_sparkforge_migration_assess"
+      "reason": "use_sparkforge_aws_migration_assess"
     },
     {
       "field": "execution_graph",

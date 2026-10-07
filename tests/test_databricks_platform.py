@@ -189,7 +189,7 @@ def test_tune_pelo_mcp_aceita_a_recusa_auto(tmp_path):
     # O fio MCP valida a saida contra o outputSchema (`envelope_da_chamada`, o mesmo
     # caminho de `adapters/mcp.py`): uma recusa fora do enum de `refused[].reason`
     # vira erro no fio, e o verbo passa na CLI mas falha no MCP.
-    # `sparkforge_tune` nao aceita `databricks` na entrada (nem `emr`, D6): o runtime
+    # `sparkforge_aws_tune` nao aceita `databricks` na entrada (nem `emr`, D6): o runtime
     # sai dos facts, e a recusa `auto` nao depende dele.
     fatos = [
         _conf("spark.sql.shuffle.partitions", "auto"),
@@ -203,7 +203,7 @@ def test_tune_pelo_mcp_aceita_a_recusa_auto(tmp_path):
     arquivo = tmp_path / "facts.json"
     arquivo.write_text(json.dumps([f.to_dict() for f in fatos]), encoding="utf-8")
     envelope = envelope_da_chamada(
-        "sparkforge_tune", {"facts_path": str(arquivo)}, tools.TOOLS, "stdio", tools.call_tool
+        "sparkforge_aws_tune", {"facts_path": str(arquivo)}, tools.TOOLS, "stdio", tools.call_tool
     )
     assert not envelope.is_error, envelope.text
     assert "shuffle_partitions_auto" in {r["reason"] for r in envelope.structured["refused"]}
@@ -304,7 +304,7 @@ def test_flags_seguem_o_emr(capsys):
     assert cli.main(["runtime", "detect", "--databricks", "15.4", "--photon", "on"]) == 0
     saida = json.loads(capsys.readouterr().out)
     assert (saida["databricks"], saida["spark"], saida["photon"]) == ("15.4", "3.5.0", "on")
-    mcp = tools.call_tool("sparkforge_runtime_detect", {"databricks": "15.4", "photon": "off"})
+    mcp = tools.call_tool("sparkforge_aws_runtime_detect", {"databricks": "15.4", "photon": "off"})
     assert (mcp["databricks"], mcp["photon"]) == ("15.4", "off")
 
 

@@ -5,7 +5,7 @@ antes de rodar: o sandbox grava `.sparkforge_aws/sandbox/` na raiz), `input/requ
 (o que pedir), `input/facts.json` (para o plano, extraido do repo pelo extrator
 real) e, para o sandbox, o `host.patch` escrito como um host o escreveria.
 
-`SPARKFORGE_REGEN_CHANGE=1` regrava os `expected.json` em vez de comparar.
+`SPARKFORGE_AWS_REGEN_CHANGE=1` regrava os `expected.json` em vez de comparar.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from sparkforge_aws.change import apply_patches, parse_unified_diff
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "change"
 CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "input" / "request.json").is_file())
-REGEN = os.environ.get("SPARKFORGE_REGEN_CHANGE") == "1"
+REGEN = os.environ.get("SPARKFORGE_AWS_REGEN_CHANGE") == "1"
 CAMPOS_DO_SANDBOX = (
     "applied", "refused", "id", "sandbox", "files_changed", "new", "resolved", "kept_count",
     "moved_candidates", "proof_obligations", "next_steps", "copy_skipped", "scan_refused",

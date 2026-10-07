@@ -2,7 +2,7 @@
 name: sdd-define
 description: "Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — \\\"define os requisitos\\\", \\\"quais os critérios de aceite?\\\", \\\"fase define\\\" — para uma mudança no SparkForge ou num job do operador."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -136,13 +136,13 @@ seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| estado das features | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
-| carimbar o upstream | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/define.md` | `sparkforge_sdd_stamp` |
-| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_rules_lookup` |
-| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_knowledge_path` |
-| case (operator) | `sparkforge-aws case open --repo . --case-id <id> --now <ISO>` | `sparkforge_case_open` |
-| semântica (operator) | `sparkforge-aws funcval plan --facts <f> --key <k> --out <p>` | `sparkforge_funcval_plan` |
+| estado das features | `sparkforge-aws sdd status --repo .` | `sparkforge_aws_sdd_status` |
+| carimbar o upstream | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/define.md` | `sparkforge_aws_sdd_stamp` |
+| conferir | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| regra citada | `sparkforge-aws rules lookup --id <SF-...>` | `sparkforge_aws_rules_lookup` |
+| documento citado | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_aws_knowledge_path` |
+| case (operator) | `sparkforge-aws case open --repo . --case-id <id> --now <ISO>` | `sparkforge_aws_case_open` |
+| semântica (operator) | `sparkforge-aws funcval plan --facts <f> --key <k> --out <p>` | `sparkforge_aws_funcval_plan` |
 
 Recusas desta fase: `schema_invalid`, `success_without_source`, `case_missing`,
 `funcval_not_comparison`, `upstream_missing`, `upstream_stale`. Template: `docs/sdd/templates/define.md`.

@@ -16,7 +16,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "97118ea0db22e34ee5f264bbab9d93c386119cba666b4b1dddc7da5db26fe400"
+      "artifact_sha256": "69c51195ffc67e8c6e0fb0248dd6935792550d6abf0ff9fadb95b8de841cb5e7"
     }
   },
   {
@@ -35,7 +35,7 @@
     },
     "attrs": {
       "channel": "mcp",
-      "tool": "mcp__sparkforge__sparkforge_analyze_pyspark",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_analyze_pyspark",
       "verb": "analyze_pyspark",
       "call_id": "toolu_ap",
       "started_at": "2026-09-10T00:00:02.000Z",
@@ -45,7 +45,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "97118ea0db22e34ee5f264bbab9d93c386119cba666b4b1dddc7da5db26fe400"
+      "artifact_sha256": "69c51195ffc67e8c6e0fb0248dd6935792550d6abf0ff9fadb95b8de841cb5e7"
     }
   },
   {
@@ -64,7 +64,7 @@
     },
     "attrs": {
       "channel": "mcp",
-      "tool": "mcp__sparkforge__sparkforge_judge",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_judge",
       "verb": "judge",
       "call_id": "toolu_judge",
       "started_at": "2026-09-10T00:00:04.000Z",
@@ -74,7 +74,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "97118ea0db22e34ee5f264bbab9d93c386119cba666b4b1dddc7da5db26fe400"
+      "artifact_sha256": "69c51195ffc67e8c6e0fb0248dd6935792550d6abf0ff9fadb95b8de841cb5e7"
     }
   },
   {
@@ -104,7 +104,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "97118ea0db22e34ee5f264bbab9d93c386119cba666b4b1dddc7da5db26fe400"
+      "artifact_sha256": "69c51195ffc67e8c6e0fb0248dd6935792550d6abf0ff9fadb95b8de841cb5e7"
     }
   },
   {
@@ -127,7 +127,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "97118ea0db22e34ee5f264bbab9d93c386119cba666b4b1dddc7da5db26fe400"
+      "artifact_sha256": "69c51195ffc67e8c6e0fb0248dd6935792550d6abf0ff9fadb95b8de841cb5e7"
     }
   }
 ]

@@ -27,4 +27,4 @@ sparkforge-aws glue dependency-audit --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_glue_dependency_audit`](../tools/sparkforge_glue_dependency_audit.md)
+[`sparkforge_aws_glue_dependency_audit`](../tools/sparkforge_aws_glue_dependency_audit.md)

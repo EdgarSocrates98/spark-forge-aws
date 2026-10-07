@@ -316,7 +316,7 @@
     {
       "path": "knowledge/streaming-pipeline-diagnostics.md",
       "title": "streaming-pipeline-diagnostics",
-      "sha256": "546c4c321887bb49de9588b23ede321ab3a2da53591bde8a3a533eae8748f968"
+      "sha256": "502fae1da45b4fd2d24ba78fb91079ef2e5d48ebc6da12a43b24d27dc8ca88a0"
     },
     {
       "path": "knowledge/streaming-realtime-candidate-matrix.md",
@@ -326,7 +326,7 @@
     {
       "path": "knowledge/streaming-reliability.md",
       "title": "streaming-reliability",
-      "sha256": "6e2b8394d3bb22000a0bdf50d0ebeb62487caf63621007a80c7ed3f54fb8fc8b"
+      "sha256": "35c62c1f8e3a3e4692a1f2e10f0a6de52a89dfb1337c2749802c2d76f1e94981"
     },
     {
       "path": "knowledge/streaming/runtime-matrix.md",

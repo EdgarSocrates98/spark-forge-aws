@@ -34,4 +34,4 @@ sparkforge-aws dq-ai assess --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_analyze_dq_ai`](../tools/sparkforge_analyze_dq_ai.md), [`sparkforge_dq_ai_assess`](../tools/sparkforge_dq_ai_assess.md)
+[`sparkforge_aws_analyze_dq_ai`](../tools/sparkforge_aws_analyze_dq_ai.md), [`sparkforge_aws_dq_ai_assess`](../tools/sparkforge_aws_dq_ai_assess.md)

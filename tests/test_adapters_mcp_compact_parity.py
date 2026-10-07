@@ -38,10 +38,10 @@ def test_execute_payload_matches_full_dispatch_semantics(tmp_path):
 
     compact = router.call(
         "execute_read",
-        {"capability": "sparkforge_runtime_detect", "arguments": arguments},
+        {"capability": "sparkforge_aws_runtime_detect", "arguments": arguments},
     )
     direct = call_tool(
-        "sparkforge_runtime_detect",
+        "sparkforge_aws_runtime_detect",
         arguments,
         channel="mcp",
         transport="stdio",
@@ -56,7 +56,7 @@ def test_execute_refusal_preserves_structured_error_semantics(tmp_path):
 
     compact = router.call(
         "execute_read",
-        {"capability": "sparkforge_not_real", "arguments": {}},
+        {"capability": "sparkforge_aws_not_real", "arguments": {}},
     )
 
     assert compact["error_code"] == "COMPACT_REFUSED"

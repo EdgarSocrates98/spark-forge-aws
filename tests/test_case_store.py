@@ -546,7 +546,7 @@ class TestStrictGates:
             ),
             encoding="utf-8",
         )
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(tmp_path))
         with pytest.raises(CaseError, match="baseline_capturd"):
             set_phase(self._case(), PHASE_GUARDADA, fact_kinds=set())
 
@@ -585,7 +585,7 @@ _CONTRATO_COMPLETO = {
 class TestContratoIncompletoSobRigor:
     """Contrato ausente ou incompleto e ERRO sob rigor, nunca permissao.
 
-    Medido antes da correcao, com `SPARKFORGE_CATALOG` apontando para uma copia
+    Medido antes da correcao, com `SPARKFORGE_AWS_CATALOG` apontando para uma copia
     do catalogo: sem o bloco `gates`, `set_phase(case, "report", fact_kinds=set())`
     **transitava** num case com `strict_gates: true`. Idem com `gates: {}`, e
     idem removendo so `flows_mapped` e pedindo `hypothesis`. O unico guarda era
@@ -605,14 +605,14 @@ class TestContratoIncompletoSobRigor:
 
     def test_contrato_ausente_sob_rigor_e_erro(self, tmp_path, monkeypatch):
         monkeypatch.setenv(
-            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, None))
+            "SPARKFORGE_AWS_CATALOG", str(_catalogo_com_gates(tmp_path, None))
         )
         with pytest.raises(CaseError) as exc:
             set_phase(self._case(), "report", fact_kinds=set())
         assert "flows_mapped" in str(exc.value)
 
     def test_contrato_vazio_sob_rigor_e_erro(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, {})))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(_catalogo_com_gates(tmp_path, {})))
         with pytest.raises(CaseError) as exc:
             set_phase(self._case(), "report", fact_kinds=set())
         assert "flows_mapped" in str(exc.value)
@@ -621,7 +621,7 @@ class TestContratoIncompletoSobRigor:
         """Sem `flows_mapped` no bloco, `hypothesis` deixava de ser guardada."""
         parcial = {k: v for k, v in _CONTRATO_COMPLETO.items() if k != "flows_mapped"}
         monkeypatch.setenv(
-            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, parcial))
+            "SPARKFORGE_AWS_CATALOG", str(_catalogo_com_gates(tmp_path, parcial))
         )
         with pytest.raises(CaseError, match="flows_mapped"):
             set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
@@ -637,7 +637,7 @@ class TestContratoIncompletoSobRigor:
         )
         mensagens = {}
         for nome, caminho in (("vazio", vazio), ("parcial", parcial)):
-            monkeypatch.setenv("SPARKFORGE_CATALOG", str(caminho))
+            monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(caminho))
             with pytest.raises(CaseError) as exc:
                 set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
             mensagens[nome] = str(exc.value)
@@ -659,7 +659,7 @@ class TestContratoIncompletoSobRigor:
         self, tmp_path, monkeypatch
     ):
         monkeypatch.setenv(
-            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, None))
+            "SPARKFORGE_AWS_CATALOG", str(_catalogo_com_gates(tmp_path, None))
         )
         with pytest.raises(CaseError) as exc:
             set_phase(self._case(), "report", fact_kinds=set())
@@ -674,7 +674,7 @@ class TestContratoIncompletoSobRigor:
     ):
         """A recusa e por contrato FALTANTE, nao por catalogo de fora do repo."""
         monkeypatch.setenv(
-            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, _CONTRATO_COMPLETO))
+            "SPARKFORGE_AWS_CATALOG", str(_catalogo_com_gates(tmp_path, _CONTRATO_COMPLETO))
         )
         assert set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds={KIND_FLOWS})[
             "phase"
@@ -685,7 +685,7 @@ class TestContratoIncompletoSobRigor:
     def test_sem_rigor_o_contrato_faltante_nao_muda_nada(self, tmp_path, monkeypatch):
         """Criterio 5: sem a flag, `set_phase` sequer le o catalogo."""
         monkeypatch.setenv(
-            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, None))
+            "SPARKFORGE_AWS_CATALOG", str(_catalogo_com_gates(tmp_path, None))
         )
         assert set_phase(self._case(strict=False), "report")["phase"] == "report"
 
@@ -799,7 +799,7 @@ class TestSemRigorNadaMuda:
 
     def test_sem_rigor_o_catalogo_nem_e_lido(self, tmp_path, monkeypatch):
         """Prova por ausencia: catalogo vazio quebraria a leitura, e nao quebra."""
-        monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path))
+        monkeypatch.setenv("SPARKFORGE_AWS_CATALOG", str(tmp_path))
         assert set_phase(self._case(), PHASE_GUARDADA)["phase"] == PHASE_GUARDADA
 
 

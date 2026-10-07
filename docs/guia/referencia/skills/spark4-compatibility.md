@@ -7,7 +7,7 @@ Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e algu
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/spark4-compatibility/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws migrate glue', 'sparkforge-aws glue dependency-audit', 'sparkforge-aws judge']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws migrate glue', 'sparkforge-aws glue dependency-audit', 'sparkforge-aws judge']} |
 
 ## Procedimento (texto integral)
 

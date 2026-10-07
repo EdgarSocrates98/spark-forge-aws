@@ -13,7 +13,7 @@ sparkforge-aws analyze platform-graph \
   --max-depth 5
 ```
 
-The same operation is exposed as `sparkforge_analyze_platform_graph`.
+The same operation is exposed as `sparkforge_aws_analyze_platform_graph`.
 
 ## Contract
 

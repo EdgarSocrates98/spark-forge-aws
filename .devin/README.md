@@ -65,7 +65,7 @@ key policy do KMS e Glue resource policy são avaliação separada.
 Apos iniciar uma sessao Devin neste repositorio, pergunte:
 
 ```text
-Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_runtime_detect.
+Liste as tools MCP do sparkforge-aws e confirme que consegue chamar sparkforge_aws_runtime_detect.
 ```
 
 Ou, no Devin CLI:
@@ -171,16 +171,16 @@ e o titulo descreve DEFEITO.
 
 | Pergunta | Tool MCP | CLI |
 |---|---|---|
-| onde esta X | `sparkforge_code_search` | `code search` |
-| quem chama X | `sparkforge_code_symbol` | `code symbol` |
-| **como** X chega em Y | `sparkforge_code_path` | `code path` |
-| como o codigo esta organizado | `sparkforge_code_shape` | `code shape` |
-| contexto dentro de um teto de bytes | `sparkforge_code_context` | `code context` |
-| fonte, com rotulo de nao confiavel | `sparkforge_code_read` | `code read` |
-| o indice esta fresco | `sparkforge_code_status` | `code status` |
-| grafo no formato do Graphify | `sparkforge_code_export` | `code export` |
+| onde esta X | `sparkforge_aws_code_search` | `code search` |
+| quem chama X | `sparkforge_aws_code_symbol` | `code symbol` |
+| **como** X chega em Y | `sparkforge_aws_code_path` | `code path` |
+| como o codigo esta organizado | `sparkforge_aws_code_shape` | `code shape` |
+| contexto dentro de um teto de bytes | `sparkforge_aws_code_context` | `code context` |
+| fonte, com rotulo de nao confiavel | `sparkforge_aws_code_read` | `code read` |
+| o indice esta fresco | `sparkforge_aws_code_status` | `code status` |
+| grafo no formato do Graphify | `sparkforge_aws_code_export` | `code export` |
 
-`sparkforge_economy_report` mede quanto contexto a execucao consumiu, e
+`sparkforge_aws_economy_report` mede quanto contexto a execucao consumiu, e
 `detail_level_effect` mostra os bytes de cada nivel. Byte de payload e token de
 provider **nunca se somam**: o primeiro e medido, o segundo so existe com
 transcript do host — sem ele sai `tokens_unresolved`.

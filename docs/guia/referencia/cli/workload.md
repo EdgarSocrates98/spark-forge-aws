@@ -20,4 +20,4 @@ sparkforge-aws workload --help
 
 ## Tool MCP equivalente
 
-[`sparkforge_workload`](../tools/sparkforge_workload.md)
+[`sparkforge_aws_workload`](../tools/sparkforge_aws_workload.md)

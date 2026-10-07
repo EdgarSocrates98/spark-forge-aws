@@ -16,7 +16,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   },
   {
@@ -35,7 +35,7 @@
     },
     "attrs": {
       "channel": "mcp",
-      "tool": "mcp__sparkforge__sparkforge_analyze_pyspark",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_analyze_pyspark",
       "verb": "analyze_pyspark",
       "call_id": "toolu_ap",
       "started_at": "2026-09-10T00:00:02.000Z",
@@ -45,7 +45,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   },
   {
@@ -64,7 +64,7 @@
     },
     "attrs": {
       "channel": "mcp",
-      "tool": "mcp__sparkforge__sparkforge_rules_lookup",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_rules_lookup",
       "verb": "rules_lookup",
       "call_id": "toolu_rl",
       "started_at": "2026-09-10T00:00:04.000Z",
@@ -74,7 +74,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   },
   {
@@ -103,7 +103,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   },
   {
@@ -122,7 +122,7 @@
     },
     "attrs": {
       "channel": "mcp",
-      "tool": "mcp__sparkforge__sparkforge_judge",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_judge",
       "verb": "judge",
       "call_id": "toolu_judge",
       "started_at": "2026-09-10T00:00:08.000Z",
@@ -132,7 +132,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   },
   {
@@ -162,7 +162,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   },
   {
@@ -185,7 +185,7 @@
     "provenance": {
       "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
-      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+      "artifact_sha256": "22c9b3b47e244287c845687281d92927ecfc7dcd5e4925a463fa02ff56ae6644"
     }
   }
 ]

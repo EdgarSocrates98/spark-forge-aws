@@ -28,7 +28,7 @@ sparkforge-aws case get --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_case_get`](../tools/sparkforge_case_get.md), [`sparkforge_case_open`](../tools/sparkforge_case_open.md), [`sparkforge_case_update`](../tools/sparkforge_case_update.md)
+[`sparkforge_aws_case_get`](../tools/sparkforge_aws_case_get.md), [`sparkforge_aws_case_open`](../tools/sparkforge_aws_case_open.md), [`sparkforge_aws_case_update`](../tools/sparkforge_aws_case_update.md)
 
 ## `sparkforge-aws case open`
 
@@ -59,7 +59,7 @@ sparkforge-aws case open --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_case_get`](../tools/sparkforge_case_get.md), [`sparkforge_case_open`](../tools/sparkforge_case_open.md), [`sparkforge_case_update`](../tools/sparkforge_case_update.md)
+[`sparkforge_aws_case_get`](../tools/sparkforge_aws_case_get.md), [`sparkforge_aws_case_open`](../tools/sparkforge_aws_case_open.md), [`sparkforge_aws_case_update`](../tools/sparkforge_aws_case_update.md)
 
 ## `sparkforge-aws case update`
 
@@ -92,4 +92,4 @@ sparkforge-aws case update --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_case_get`](../tools/sparkforge_case_get.md), [`sparkforge_case_open`](../tools/sparkforge_case_open.md), [`sparkforge_case_update`](../tools/sparkforge_case_update.md)
+[`sparkforge_aws_case_get`](../tools/sparkforge_aws_case_get.md), [`sparkforge_aws_case_open`](../tools/sparkforge_aws_case_open.md), [`sparkforge_aws_case_update`](../tools/sparkforge_aws_case_update.md)

@@ -34,4 +34,4 @@ sparkforge-aws runtime detect --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_runtime_detect`](../tools/sparkforge_runtime_detect.md)
+[`sparkforge_aws_runtime_detect`](../tools/sparkforge_aws_runtime_detect.md)

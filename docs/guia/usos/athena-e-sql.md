@@ -235,11 +235,11 @@ Antes de subir o format version, rode também `sparkforge-aws iceberg assess-upg
   [optimize-parquet-layout](../referencia/skills/optimize-parquet-layout.md).
 - Referência dos comandos: [analyze](../referencia/cli/analyze.md), [fuse](../referencia/cli/fuse.md),
   [judge](../referencia/cli/judge.md), [collect](../referencia/cli/collect.md).
-- Tools MCP: [sparkforge_analyze_sql](../referencia/tools/sparkforge_analyze_sql.md),
-  [sparkforge_analyze_catalog_schema](../referencia/tools/sparkforge_analyze_catalog_schema.md),
-  [sparkforge_analyze_athena_workgroup](../referencia/tools/sparkforge_analyze_athena_workgroup.md),
-  [sparkforge_analyze_consumers](../referencia/tools/sparkforge_analyze_consumers.md),
-  [sparkforge_fuse](../referencia/tools/sparkforge_fuse.md).
+- Tools MCP: [sparkforge_aws_analyze_sql](../referencia/tools/sparkforge_aws_analyze_sql.md),
+  [sparkforge_aws_analyze_catalog_schema](../referencia/tools/sparkforge_aws_analyze_catalog_schema.md),
+  [sparkforge_aws_analyze_athena_workgroup](../referencia/tools/sparkforge_aws_analyze_athena_workgroup.md),
+  [sparkforge_aws_analyze_consumers](../referencia/tools/sparkforge_aws_analyze_consumers.md),
+  [sparkforge_aws_fuse](../referencia/tools/sparkforge_aws_fuse.md).
 
 ## Próximos passos
 

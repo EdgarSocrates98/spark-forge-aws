@@ -13,7 +13,7 @@ from sparkforge_aws.simulate.patch import Mudanca, SimulateError, apply_sets, pa
 
 REFUSED: tuple[dict[str, str], ...] = (
     {"field": "performance_prediction", "reason": "spill_e_tempo_nao_sao_fact_de_configuracao"},
-    {"field": "dependency_incompatibility", "reason": "use_sparkforge_migration_assess"},
+    {"field": "dependency_incompatibility", "reason": "use_sparkforge_aws_migration_assess"},
     {"field": "execution_graph", "reason": "nao_e_previsivel_a_partir_de_configuracao"},
 )
 

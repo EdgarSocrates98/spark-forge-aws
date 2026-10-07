@@ -10,7 +10,7 @@ sparkforge-aws proof --findings findings.json \
   --applied SF-PY-002
 ```
 
-A tool MCP é `sparkforge_proof` (`READ_ONLY`). O dono é o `sf-verifier`
+A tool MCP é `sparkforge_aws_proof` (`READ_ONLY`). O dono é o `sf-verifier`
 (checagem 7).
 
 ## As obrigações

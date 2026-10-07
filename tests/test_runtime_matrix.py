@@ -98,7 +98,7 @@ class TestResolucaoDeCaminhoNoPacoteInstalado:
     """
 
     def test_le_a_matriz_do_layout_de_pacote_instalado(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("SPARKFORGE_KNOWLEDGE", raising=False)
+        monkeypatch.delenv("SPARKFORGE_AWS_KNOWLEDGE", raising=False)
 
         fake_package_dir = tmp_path / "site-packages" / "sparkforge_aws"
         fake_knowledge_dir = fake_package_dir / "knowledge"
@@ -189,7 +189,7 @@ def _matriz_sintetica(tmp_path, monkeypatch, corpo: str):
     (conhecimento / "sources.lock.json").write_text('{"sources": {}}', encoding="utf-8")
     modulo = pacote / "knowledge_ref.py"
     modulo.touch()
-    monkeypatch.delenv("SPARKFORGE_KNOWLEDGE", raising=False)
+    monkeypatch.delenv("SPARKFORGE_AWS_KNOWLEDGE", raising=False)
     monkeypatch.setattr(kr, "__file__", str(modulo))
     _limpa_caches()
 

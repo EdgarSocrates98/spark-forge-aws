@@ -15,7 +15,7 @@ KAFKA = ROOT / "fixtures" / "transport" / "kafka_positive" / "input" / "dump.jso
 def test_cli_and_mcp_transport_envelopes_match():
     expected = analyze_transport(str(KAFKA), artifact="kafka", limit=4)
     actual = call_tool(
-        "sparkforge_analyze_transport",
+        "sparkforge_aws_analyze_transport",
         {"path": str(KAFKA), "artifact": "kafka", "limit": 4},
     )
     # `_trust` e aditivo em todo resultado de call_tool (FASE 3); o contrato
@@ -46,7 +46,7 @@ def test_cli_and_mcp_transport_envelopes_match():
 
 
 def test_transport_tool_is_read_only_and_schema_declared():
-    spec = TOOLS["sparkforge_analyze_transport"]
+    spec = TOOLS["sparkforge_aws_analyze_transport"]
     assert spec["annotations"]["readOnlyHint"] is True
     assert spec["inputSchema"]["required"] == ["path", "artifact"]
     assert spec["inputSchema"]["properties"]["artifact"]["enum"] == [

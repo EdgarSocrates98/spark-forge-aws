@@ -699,7 +699,7 @@ cross-account, RAM, resource link e `lakeformation:GetDataAccess` são evidênci
 independentes; `required_verification` lista o que ainda precisa ser medido.
 
 O mesmo contrato está disponível em
-[`sparkforge_lakeformation_architect`](../referencia/tools/sparkforge_lakeformation_architect.md).
+[`sparkforge_aws_lakeformation_architect`](../referencia/tools/sparkforge_aws_lakeformation_architect.md).
 Depois do preflight, siga os quatro coletores abaixo para fechar as lacunas do
 case e rode `fuse`/`judge` normalmente.
 
@@ -745,12 +745,12 @@ case e rode `fuse`/`judge` normalmente.
   [`lakeformation`](../referencia/cli/lakeformation.md),
   [`fuse`](../referencia/cli/fuse.md), [`judge`](../referencia/cli/judge.md).
 - Tools MCP equivalentes:
-  [`sparkforge_analyze_lakeformation_grants`](../referencia/tools/sparkforge_analyze_lakeformation_grants.md),
-  [`sparkforge_analyze_iam_access`](../referencia/tools/sparkforge_analyze_iam_access.md),
-  [`sparkforge_analyze_glue_resource_link`](../referencia/tools/sparkforge_analyze_glue_resource_link.md),
-  [`sparkforge_lakeformation_access_graph`](../referencia/tools/sparkforge_lakeformation_access_graph.md),
-  [`sparkforge_lakeformation_matrix`](../referencia/tools/sparkforge_lakeformation_matrix.md),
-  [`sparkforge_lakeformation_architect`](../referencia/tools/sparkforge_lakeformation_architect.md).
+  [`sparkforge_aws_analyze_lakeformation_grants`](../referencia/tools/sparkforge_aws_analyze_lakeformation_grants.md),
+  [`sparkforge_aws_analyze_iam_access`](../referencia/tools/sparkforge_aws_analyze_iam_access.md),
+  [`sparkforge_aws_analyze_glue_resource_link`](../referencia/tools/sparkforge_aws_analyze_glue_resource_link.md),
+  [`sparkforge_aws_lakeformation_access_graph`](../referencia/tools/sparkforge_aws_lakeformation_access_graph.md),
+  [`sparkforge_aws_lakeformation_matrix`](../referencia/tools/sparkforge_aws_lakeformation_matrix.md),
+  [`sparkforge_aws_lakeformation_architect`](../referencia/tools/sparkforge_aws_lakeformation_architect.md).
 
 ## Próximos passos
 

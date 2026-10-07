@@ -15,7 +15,7 @@ Da raiz do repositório:
 ```bash
 sparkforge-aws rules lookup --id SF-TIMEOUT-001 --source-freshness
 sparkforge-aws knowledge path --file glue/lakeformation-fgac.md --source-freshness
-export SPARKFORGE_PACKS=fixtures/packs/acme-platform
+export SPARKFORGE_AWS_PACKS=fixtures/packs/acme-platform
 sparkforge-aws pack list
 sparkforge-aws pack check fixtures/packs/acme-platform
 ```
@@ -23,7 +23,7 @@ sparkforge-aws pack check fixtures/packs/acme-platform
 1. Mostra uma regra inteira e o estado da fonte que ela cita.
 2. Mostra onde está um documento de conhecimento e o estado de cada fonte dele.
 3. Ativa um pack sintético de exemplo. No PowerShell:
-   `$env:SPARKFORGE_PACKS = "fixtures/packs/acme-platform"`.
+   `$env:SPARKFORGE_AWS_PACKS = "fixtures/packs/acme-platform"`.
 4. Lista os packs ativos e os recusados.
 5. Confere se cada regra do pack dispara no exemplo que a acompanha.
 
@@ -78,7 +78,7 @@ Trecho real da busca por id:
 ```
 
 A resposta é paginada: se `next_cursor` não for `null`, repita com
-`--cursor <valor>`. A tool equivalente é `sparkforge_rules_lookup`. Flags
+`--cursor <valor>`. A tool equivalente é `sparkforge_aws_rules_lookup`. Flags
 completas em [`referencia/cli/rules.md`](../referencia/cli/rules.md).
 
 ## Saber se uma fonte envelheceu
@@ -223,12 +223,12 @@ pack:
 
 ### Ativar
 
-Aponte a variável `SPARKFORGE_PACKS` para a pasta do pack. Para vários packs,
+Aponte a variável `SPARKFORGE_AWS_PACKS` para a pasta do pack. Para vários packs,
 separe com `;` no Windows e `:` no Linux e no macOS. Só o operador define essa
 variável. Nenhuma tool a recebe como parâmetro.
 
 ```bash
-export SPARKFORGE_PACKS=fixtures/packs/acme-platform
+export SPARKFORGE_AWS_PACKS=fixtures/packs/acme-platform
 sparkforge-aws pack list
 ```
 
@@ -236,7 +236,7 @@ Saída real:
 
 ```json
 {
-  "env": "SPARKFORGE_PACKS",
+  "env": "SPARKFORGE_AWS_PACKS",
   "installed_core": "0.5.0",
   "active": [
     {
@@ -254,7 +254,7 @@ Saída real:
 A partir daí, o `judge` passa a aplicar as regras do pack junto com as do core,
 e os documentos do pack aparecem em `knowledge path`, na chave `packs`. Para ler
 um deles, peça `--file packs/acme-platform/padroes-de-plataforma.md`. Pelo MCP,
-a tool é `sparkforge_pack_list`, sem parâmetros.
+a tool é `sparkforge_aws_pack_list`, sem parâmetros.
 
 ### Conferir o pack
 
@@ -331,7 +331,7 @@ Dois comandos vizinhos, sem aprofundar:
 
 | Sintoma | Causa | Como resolver |
 |---|---|---|
-| `SPARKFORGE_PACKS aponta para ..., que nao e um diretorio existente` (código 2) | Caminho errado na variável | Corrija o caminho. Isso é erro do operador, e não recusa de pack |
+| `SPARKFORGE_AWS_PACKS aponta para ..., que nao e um diretorio existente` (código 2) | Caminho errado na variável | Corrija o caminho. Isso é erro do operador, e não recusa de pack |
 | Pack em `refused` | Um dos motivos da tabela | Leia `reason` e `detail` |
 | `pack check` sai com 1 | Uma regra não disparou no exemplo dela | Compare `expected` com `fired`, e confira a condição `when` da regra |
 | Regra do tipo "job **sem** o atributo X" não dispara | A condição `absent` só confere o tipo de fact | Não é escrevível num pack. Exige um fact derivado no core (regra 33 do `CLAUDE.md`) |
@@ -342,4 +342,4 @@ Dois comandos vizinhos, sem aprofundar:
 - [Glossário](../01-conceitos.md)
 - [Servidor MCP](../04-mcp.md)
 - Referência: [`rules`](../referencia/cli/rules.md), [`knowledge`](../referencia/cli/knowledge.md), [`pack`](../referencia/cli/pack.md), [`judge`](../referencia/cli/judge.md)
-- Tools: [`sparkforge_rules_lookup`](../referencia/tools/sparkforge_rules_lookup.md), [`sparkforge_pack_list`](../referencia/tools/sparkforge_pack_list.md), [`sparkforge_knowledge_drift`](../referencia/tools/sparkforge_knowledge_drift.md)
+- Tools: [`sparkforge_aws_rules_lookup`](../referencia/tools/sparkforge_aws_rules_lookup.md), [`sparkforge_aws_pack_list`](../referencia/tools/sparkforge_aws_pack_list.md), [`sparkforge_aws_knowledge_drift`](../referencia/tools/sparkforge_aws_knowledge_drift.md)

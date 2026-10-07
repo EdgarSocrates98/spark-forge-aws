@@ -8,16 +8,16 @@
         "at": null,
         "port": "cli",
         "seq": 5,
-        "tool": "sparkforge_arbitrate"
+        "tool": "sparkforge_aws_arbitrate"
       }
     ],
     "torn_tail": false
   },
   "handoff_em_voo": [
-    "- `sparkforge_arbitrate` (cli, seq 5) sem finished (caiu ou ainda roda)"
+    "- `sparkforge_aws_arbitrate` (cli, seq 5) sem finished (caiu ou ainda roda)"
   ],
   "resume": {
-    "in_flight": "sparkforge_arbitrate (cli, seq 5) sem finished",
+    "in_flight": "sparkforge_aws_arbitrate (cli, seq 5) sem finished",
     "in_flight_source": "journal",
     "journal": {
       "broken_at": null,
@@ -28,7 +28,7 @@
           "at": null,
           "port": "cli",
           "seq": 5,
-          "tool": "sparkforge_arbitrate"
+          "tool": "sparkforge_aws_arbitrate"
         }
       ],
       "torn_tail": false

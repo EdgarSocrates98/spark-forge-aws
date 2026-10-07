@@ -7,7 +7,7 @@ Use quando o build_report.md da feature está pronto e é hora de entregar — \
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-ship/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws change propose']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws change propose']} |
 
 ## Procedimento (texto integral)
 
@@ -154,12 +154,12 @@ substituída depois vira `status: superseded`.
 
 | Passo | CLI | Tool MCP |
 |---|---|---|
-| conferir o build | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
-| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
-| estado geral | `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` |
-| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
-| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
-| PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
+| conferir o build | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| carimbar | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_aws_sdd_stamp` |
+| estado geral | `sparkforge-aws sdd status --repo .` | `sparkforge_aws_sdd_status` |
+| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_aws_funcval_compare` |
+| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_aws_benchmark` |
+| PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_aws_change_propose` |
 
 Gates que aparecem em quase toda entrega de dev:
 

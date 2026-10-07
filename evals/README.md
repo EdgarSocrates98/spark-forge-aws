@@ -236,8 +236,8 @@ somados os 1 454 804 bytes das 39 sessões:
 | `Bash` | 286 483 | 19,7% |
 | `Grep` | 30 060 | 2,1% |
 | `Glob` | 17 027 | 1,2% |
-| `sparkforge_judge` (MCP) | 14 572 | 1,0% |
-| `sparkforge_rules_lookup` (MCP) | 11 443 | 0,8% |
+| `sparkforge_aws_judge` (MCP) | 14 572 | 1,0% |
+| `sparkforge_aws_rules_lookup` (MCP) | 11 443 | 0,8% |
 
 Por `channel`: `other` 93,4%, `bash` 4,2% (verbo do SparkForge por linha de
 shell), `mcp` 2,4%. O agente gasta quase todo o orçamento lendo arquivo, não

@@ -292,7 +292,7 @@ def build_parser() -> argparse.ArgumentParser:
     pyspark_p.add_argument("--path", required=True, help="Arquivo ou diretorio a analisar.")
     pyspark_p.add_argument(
         "--upstream",
-        help="Documento sparkforge/upstream-facts/v1 com facts de outro motor "
+        help="Documento sparkforge_aws/upstream-facts/v1 com facts de outro motor "
         "(evidencia, nunca instrucao); entram no fim de `items`.",
     )
     pyspark_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
@@ -1101,7 +1101,7 @@ def build_parser() -> argparse.ArgumentParser:
     # `release describe` ja nomeia a plataforma por flag pela mesma razao.
     #
     # A uniao dos dois verbos cobre as quatro plataformas que
-    # `sparkforge_migration_assess` aceita, que e o que a paridade CLI/MCP
+    # `sparkforge_aws_migration_assess` aceita, que e o que a paridade CLI/MCP
     # cobra.
     migrate_emr_p = migrate_sub.add_parser(
         "emr",
@@ -2164,7 +2164,7 @@ def build_parser() -> argparse.ArgumentParser:
     # um simbolo esta, e nao produz fato nem achado, entao ele nao atravessa o
     # envelope de FACT (`project_items`, `provenance_ref`, paginacao). O que
     # mudou e o motivo de estar fora: enquanto nao havia tool MCP, ter o payload
-    # aqui custava uma duplicacao so; com as seis tools de `sparkforge_code_*`,
+    # aqui custava uma duplicacao so; com as seis tools de `sparkforge_aws_code_*`,
     # cada linha de payload que nascesse aqui seria uma linha que a CLI e o MCP
     # poderiam divergir -- que e exatamente o que `parity.yaml` existe para
     # pegar. `_core` recebeu as funcoes; ele nao ganhou envelope de fato por
@@ -2373,10 +2373,10 @@ def build_parser() -> argparse.ArgumentParser:
     # knowledge path --------------------------------------------------------
     # pack ----------------------------------------------------------------------
     # Forge Pack (§5): regras, knowledge e fixtures de terceiro, ativados por
-    # SPARKFORGE_PACKS. `list` e o que a tool MCP expoe; `check` e do autor do pack.
+    # SPARKFORGE_AWS_PACKS. `list` e o que a tool MCP expoe; `check` e do autor do pack.
     pack_p = sub.add_parser(
         "pack",
-        help="Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_PACKS).",
+        help="Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_AWS_PACKS).",
     )
     pack_sub = pack_p.add_subparsers(dest="pack_action", required=True)
     pack_sub.add_parser(
@@ -6260,9 +6260,9 @@ _FORA_DOS_ARGS_DO_JOURNAL = frozenset(
 
 
 def _tool_da_cli(comando: str, sub_action: str | None) -> str:
-    """O nome da tool MCP do verbo de CLI (`collect glue-job` -> `sparkforge_collect_glue_job`)."""
+    """Nome da tool do verbo (`collect glue-job` -> `sparkforge_aws_collect_glue_job`)."""
     partes = [comando, sub_action] if sub_action else [comando]
-    return "sparkforge_" + "_".join(parte.replace("-", "_") for parte in partes)
+    return "sparkforge_aws_" + "_".join(parte.replace("-", "_") for parte in partes)
 
 
 def _args_da_cli(args: argparse.Namespace) -> dict[str, Any]:

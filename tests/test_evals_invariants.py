@@ -148,13 +148,13 @@ def test_braco_suite_da_superficie_nega_so_o_que_o_gabarito_nao_exige():
     assert all(nome.startswith(runner.MCP_PREFIX) for nome in negadas)
     visiveis = set(TOOLS) - {nome.removeprefix(runner.MCP_PREFIX) for nome in negadas}
     assert visiveis == {
-        "sparkforge_analyze_event_log",
-        "sparkforge_analyze_plan",
-        "sparkforge_analyze_pyspark",
-        "sparkforge_benchmark",
-        "sparkforge_finops",
-        "sparkforge_judge",
-        "sparkforge_release_describe",
-        "sparkforge_rules_lookup",
-        "sparkforge_runtime_detect",
+        "sparkforge_aws_analyze_event_log",
+        "sparkforge_aws_analyze_plan",
+        "sparkforge_aws_analyze_pyspark",
+        "sparkforge_aws_benchmark",
+        "sparkforge_aws_finops",
+        "sparkforge_aws_judge",
+        "sparkforge_aws_release_describe",
+        "sparkforge_aws_rules_lookup",
+        "sparkforge_aws_runtime_detect",
     }

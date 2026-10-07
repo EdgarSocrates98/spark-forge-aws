@@ -38,7 +38,7 @@ sparkforge-aws analyze streaming-composition \
 ```
 
 The same contract is available through
-`sparkforge_analyze_streaming_composition` with `pipeline_path`. CLI and MCP
+`sparkforge_aws_analyze_streaming_composition` with `pipeline_path`. CLI and MCP
 call the same core and preserve `detail_level`, pagination and fact ids.
 
 ## What this proves

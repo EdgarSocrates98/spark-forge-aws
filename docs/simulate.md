@@ -8,7 +8,7 @@ job, e nenhum número de desempenho sai daqui.
 sparkforge-aws simulate --facts terraform.json --set tf:max_concurrent_runs=1
 ```
 
-A tool MCP é `sparkforge_simulate` (`READ_ONLY`). O dono é o
+A tool MCP é `sparkforge_aws_simulate` (`READ_ONLY`). O dono é o
 `spark-performance-architect`.
 
 ## O `--set`

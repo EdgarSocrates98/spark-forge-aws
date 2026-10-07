@@ -30,7 +30,7 @@ sparkforge-aws debate next --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_debate_next`](../tools/sparkforge_debate_next.md), [`sparkforge_debate_start`](../tools/sparkforge_debate_start.md), [`sparkforge_debate_submit`](../tools/sparkforge_debate_submit.md)
+[`sparkforge_aws_debate_next`](../tools/sparkforge_aws_debate_next.md), [`sparkforge_aws_debate_start`](../tools/sparkforge_aws_debate_start.md), [`sparkforge_aws_debate_submit`](../tools/sparkforge_aws_debate_submit.md)
 
 ## `sparkforge-aws debate referee`
 
@@ -48,7 +48,7 @@ sparkforge-aws debate referee --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_debate_referee`](../tools/sparkforge_debate_referee.md)
+[`sparkforge_aws_debate_referee`](../tools/sparkforge_aws_debate_referee.md)
 
 ## `sparkforge-aws debate start`
 
@@ -77,7 +77,7 @@ sparkforge-aws debate start --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_debate_next`](../tools/sparkforge_debate_next.md), [`sparkforge_debate_start`](../tools/sparkforge_debate_start.md), [`sparkforge_debate_submit`](../tools/sparkforge_debate_submit.md)
+[`sparkforge_aws_debate_next`](../tools/sparkforge_aws_debate_next.md), [`sparkforge_aws_debate_start`](../tools/sparkforge_aws_debate_start.md), [`sparkforge_aws_debate_submit`](../tools/sparkforge_aws_debate_submit.md)
 
 ## `sparkforge-aws debate submit`
 
@@ -97,4 +97,4 @@ sparkforge-aws debate submit --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_debate_next`](../tools/sparkforge_debate_next.md), [`sparkforge_debate_start`](../tools/sparkforge_debate_start.md), [`sparkforge_debate_submit`](../tools/sparkforge_debate_submit.md)
+[`sparkforge_aws_debate_next`](../tools/sparkforge_aws_debate_next.md), [`sparkforge_aws_debate_start`](../tools/sparkforge_aws_debate_start.md), [`sparkforge_aws_debate_submit`](../tools/sparkforge_aws_debate_submit.md)

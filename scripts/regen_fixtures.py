@@ -988,13 +988,13 @@ def saidas_sarif(directory: Path) -> dict[str, str]:
     from sparkforge_aws.adapters import _core
 
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
-    real = _core._versao_sparkforge
-    _core._versao_sparkforge = lambda: SARIF_GOLDEN_VERSION
+    real = _core._versao_sparkforge_aws
+    _core._versao_sparkforge_aws = lambda: SARIF_GOLDEN_VERSION
     # Caso com `source_freshness`: o lock e SINTETICO, em `meta["sources_lock"]`, e
     # `as_of` e fixo -- senao o golden dependeria do lock real e do dia.
-    lock_antes = os.environ.get("SPARKFORGE_SOURCES_LOCK")
+    lock_antes = os.environ.get("SPARKFORGE_AWS_SOURCES_LOCK")
     if meta.get("sources_lock"):
-        os.environ["SPARKFORGE_SOURCES_LOCK"] = str(directory / meta["sources_lock"])
+        os.environ["SPARKFORGE_AWS_SOURCES_LOCK"] = str(directory / meta["sources_lock"])
     try:
         payload = _core.report_github(
             str(directory / "input" / "findings.json"),
@@ -1007,11 +1007,11 @@ def saidas_sarif(directory: Path) -> dict[str, str]:
             as_of=meta.get("as_of"),
         )
     finally:
-        _core._versao_sparkforge = real
+        _core._versao_sparkforge_aws = real
         if lock_antes is None:
-            os.environ.pop("SPARKFORGE_SOURCES_LOCK", None)
+            os.environ.pop("SPARKFORGE_AWS_SOURCES_LOCK", None)
         else:
-            os.environ["SPARKFORGE_SOURCES_LOCK"] = lock_antes
+            os.environ["SPARKFORGE_AWS_SOURCES_LOCK"] = lock_antes
     textos = _core.report_github_textos(payload)
     resultado = {
         "counts": payload["counts"],
@@ -1048,8 +1048,8 @@ def saidas_otel(directory: Path) -> dict[str, str]:
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     spans = json.loads((directory / "input" / "spans.json").read_text(encoding="utf-8"))
     transcript = meta.get("host_transcript")
-    real = _core._versao_sparkforge
-    _core._versao_sparkforge = lambda: SARIF_GOLDEN_VERSION
+    real = _core._versao_sparkforge_aws
+    _core._versao_sparkforge_aws = lambda: SARIF_GOLDEN_VERSION
     try:
         payload = _core.telemetry_payload(
             meta["run_id"],
@@ -1058,7 +1058,7 @@ def saidas_otel(directory: Path) -> dict[str, str]:
             provider=meta.get("provider"),
         )
     finally:
-        _core._versao_sparkforge = real
+        _core._versao_sparkforge_aws = real
     textos = _core.telemetry_export_textos(payload)
     resultado = {
         "counts": payload["counts"],

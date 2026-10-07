@@ -27,4 +27,4 @@ sparkforge-aws controlm describe --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_controlm_describe`](../tools/sparkforge_controlm_describe.md)
+[`sparkforge_aws_controlm_describe`](../tools/sparkforge_aws_controlm_describe.md)

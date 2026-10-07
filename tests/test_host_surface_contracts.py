@@ -14,7 +14,7 @@ def test_full_and_compact_surfaces_have_declared_sizes() -> None:
 
 def test_gateway_envelope_is_shared_and_provider_tokens_remain_separate() -> None:
     payload = call_tool(
-        "sparkforge_context_start",
+        "sparkforge_aws_context_start",
         {"intent": "Glue FGAC", "profile": "economy", "max_bytes": 6000},
     )
     assert payload["schema_version"] == 1
@@ -22,4 +22,4 @@ def test_gateway_envelope_is_shared_and_provider_tokens_remain_separate() -> Non
     assert "context_tree" in payload
     assert payload["context_tree"]["tokens"]["status"] == "unresolved"
     assert payload["provider_tokens"] is None
-    assert "sparkforge_context_start" in TOOLS
+    assert "sparkforge_aws_context_start" in TOOLS

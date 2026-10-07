@@ -2,7 +2,7 @@
 name: compare-releases
 description: "Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — \\\"vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter\\\", \\\"o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?\\\", \\\"que versão de Python o Glue 5.1 publica\\\" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge-aws release describe` e `sparkforge-aws release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge-aws migrate glue` e `sparkforge-aws migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`."
 metadata:
-  sparkforge_contract: v1
+  sparkforge_aws_contract: v1
   evals: evals/evals.json
   references:
   - references/README.md
@@ -25,7 +25,7 @@ metadata:
 fonte. Um diff que diga *"Iceberg foi de 1.6.1 para 1.7.1"* não afirma nada sobre o seu job:
 não sabe que API você chama, não leu o seu código, não consultou regra nenhuma. A pergunta
 "o que quebra" é do `MigrationAssessment` — `sparkforge-aws migrate glue` e
-`sparkforge-aws migrate emr`, tool `sparkforge_migration_assess` com `platform` —, que julga o
+`sparkforge-aws migrate emr`, tool `sparkforge_aws_migration_assess` com `platform` —, que julga o
 caminho degrau a degrau contra o catálogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`). Ele
 cobre as **quatro** plataformas desde 2026-09-01, e cobre com a cobertura DECLARADA: para
 EMR o catálogo tem **zero** regras guardadas por versão de plataforma, e o campo
@@ -75,7 +75,7 @@ sparkforge-aws release describe --platform emr_ec2 --release 7.7.0
 sparkforge-aws release describe --platform emr_eks --release emr-7.7.0
 ```
 
-Tool MCP equivalente: `sparkforge_release_describe`, com `platform` e `release`.
+Tool MCP equivalente: `sparkforge_aws_release_describe`, com `platform` e `release`.
 
 As quatro plataformas são `glue`, `emr_ec2`, `emr_serverless` e `emr_eks`. O rótulo entra com
 ou sem o prefixo `emr-` e sai numa grafia só — a chave que indexa a matriz. Duas grafias na
@@ -101,7 +101,7 @@ sparkforge-aws release diff \
   --right-platform emr_eks --right-release 7.7.0
 ```
 
-Tool MCP equivalente: `sparkforge_release_diff`, com `left_platform`, `left_release`,
+Tool MCP equivalente: `sparkforge_aws_release_diff`, com `left_platform`, `left_release`,
 `right_platform` e `right_release`.
 
 **Quatro argumentos, dois pares `(plataforma, release)`.** Não é `--platform` mais duas

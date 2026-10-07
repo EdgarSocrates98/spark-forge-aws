@@ -72,7 +72,7 @@ def test_compact_router_enforces_execution_mode_from_target_annotation(tmp_path)
         cache=ArtifactCache(tmp_path / "cache"),
     )
     arguments = {
-        "capability": "sparkforge_case_open",
+        "capability": "sparkforge_aws_case_open",
         "arguments": {"repo": ".", "case_id": "case-1", "now": "2026-09-27T00:00:00Z"},
     }
 
@@ -82,7 +82,7 @@ def test_compact_router_enforces_execution_mode_from_target_annotation(tmp_path)
     assert refused["error_code"] == "COMPACT_REFUSED"
     assert "read-only" in refused["error"]
     assert accepted["status"] == "ok"
-    assert calls == [("sparkforge_case_open", arguments["arguments"])]
+    assert calls == [("sparkforge_aws_case_open", arguments["arguments"])]
 
 
 def test_compact_catalog_matches_its_golden_fixture():
@@ -104,13 +104,13 @@ def test_full_catalog_remains_declared_and_http_compact_has_no_source_tool():
     assert len(tools_do_transporte("http", "full")) == 142
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
-    assert "sparkforge_code_read" not in tools_do_transporte("http", "compact")
+    assert "sparkforge_aws_code_read" not in tools_do_transporte("http", "compact")
 
 
 def test_search_get_execute_and_next_are_deterministic(tmp_path):
     router = _router(tmp_path)
 
-    search = router.call("search", {"query": "sparkforge", "limit": 1})
+    search = router.call("search", {"query": "sparkforge_aws", "limit": 1})
     assert search["status"] == "ok"
     assert search["items"][0]["kind"] == "tool"
     assert search["next_cursor"]
@@ -120,17 +120,20 @@ def test_search_get_execute_and_next_are_deterministic(tmp_path):
     assert next_page["items"]
     assert next_page["items"][0]["id"] != search["items"][0]["id"]
 
-    capability = router.call("get", {"id": "sparkforge_runtime_detect"})
+    capability = router.call("get", {"id": "sparkforge_aws_runtime_detect"})
     assert capability["status"] == "ok"
-    assert capability["item"]["id"] == "sparkforge_runtime_detect"
-    assert capability["item"]["inputSchema"] == TOOLS["sparkforge_runtime_detect"]["inputSchema"]
+    assert capability["item"]["id"] == "sparkforge_aws_runtime_detect"
+    assert (
+        capability["item"]["inputSchema"]
+        == TOOLS["sparkforge_aws_runtime_detect"]["inputSchema"]
+    )
 
     executed = router.call(
         "execute_read",
-        {"capability": "sparkforge_runtime_detect", "arguments": {"glue": "5.0"}},
+        {"capability": "sparkforge_aws_runtime_detect", "arguments": {"glue": "5.0"}},
     )
     assert executed["status"] == "ok"
-    assert executed["capability"] == "sparkforge_runtime_detect"
+    assert executed["capability"] == "sparkforge_aws_runtime_detect"
     assert executed["result"]["spark"]
 
 
@@ -162,7 +165,7 @@ def test_compact_router_refuses_unknown_capability_and_cursor():
     router = CompactRouter(TOOLS, lambda name, arguments: {})
 
     unknown = router.call(
-        "execute_read", {"capability": "sparkforge_not_real", "arguments": {}}
+        "execute_read", {"capability": "sparkforge_aws_not_real", "arguments": {}}
     )
     cursor = router.call("next", {"cursor": "cursor://v1/not-a-digest"})
 
@@ -186,7 +189,7 @@ def test_execute_validates_selected_capability_schema_before_dispatch(tmp_path):
     result = router.call(
         "execute_read",
         {
-            "capability": "sparkforge_release_describe",
+            "capability": "sparkforge_aws_release_describe",
             "arguments": {"release": "5.0"},
         },
     )
@@ -209,7 +212,7 @@ def test_compact_envelope_validates_before_router_execution(tmp_path):
 def test_compact_envelope_has_mode_specific_unknown_tool_message(tmp_path):
     router = _router(tmp_path)
     envelope = envelope_da_chamada(
-        "sparkforge_runtime_detect",
+        "sparkforge_aws_runtime_detect",
         {},
         compact_catalog(),
         "stdio",

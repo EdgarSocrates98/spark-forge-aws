@@ -14,7 +14,7 @@ do repositório clonado, com o SparkForge instalado
 
 ```bash
 # 1. Uma pasta temporária para as saídas
-export TMP=/tmp/sparkforge_guia && mkdir -p "$TMP"
+export TMP=/tmp/sparkforge_aws_guia && mkdir -p "$TMP"
 
 # 2. Extrair fatos de um código PySpark de exemplo
 sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
@@ -434,7 +434,7 @@ fixtures) carregado junto do catálogo principal. Serve para a sua equipe ter
 regras próprias sem copiar o projeto. O pack declara um prefixo próprio (por
 exemplo `ACME`), e o prefixo `SF` é reservado ao catálogo principal.
 
-Exemplo: com a variável de ambiente `SPARKFORGE_PACKS` apontando para o
+Exemplo: com a variável de ambiente `SPARKFORGE_AWS_PACKS` apontando para o
 diretório do pack, `sparkforge-aws pack list` mostra os packs ativos e os
 recusados, com o motivo. Detalhes em `docs/forge-pack.md` e na
 [referência do `pack`](referencia/cli/pack.md).
@@ -504,7 +504,7 @@ diz qual) ou `runtime_scope` (a regra vale para outra versão). É outra forma d
 o projeto dizer o que não sabe.
 
 Referência: [`judge` na CLI](referencia/cli/judge.md) e
-[tool `sparkforge_judge`](referencia/tools/sparkforge_judge.md).
+[tool `sparkforge_aws_judge`](referencia/tools/sparkforge_aws_judge.md).
 
 ### Knowledge e fontes vigiadas
 
@@ -641,9 +641,9 @@ Lista: [referência de skills](referencia/skills/README.md).
 ### Tool
 
 Uma tool é uma função exposta pelo servidor MCP. Cada tool corresponde a uma
-operação da CLI e tem nome com o prefixo `sparkforge_`, por exemplo
-`sparkforge_judge` ou `sparkforge_analyze_pyspark`. A maioria só lê; as poucas
-que gravam no disco local (como `sparkforge_arbitrate`) são marcadas como
+operação da CLI e tem nome com o prefixo `sparkforge_aws_`, por exemplo
+`sparkforge_aws_judge` ou `sparkforge_aws_analyze_pyspark`. A maioria só lê; as poucas
+que gravam no disco local (como `sparkforge_aws_arbitrate`) são marcadas como
 `LOCAL_MUTATION`.
 
 Lista e parâmetros: [referência de tools](referencia/tools/README.md).

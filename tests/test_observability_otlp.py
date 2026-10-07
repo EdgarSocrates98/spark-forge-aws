@@ -32,7 +32,7 @@ T0 = 1_757_600_000.0
 
 def _span(
     span_id: str,
-    name: str = "sparkforge_judge",
+    name: str = "sparkforge_aws_judge",
     *,
     inicio: float | None = T0,
     fim: float | None = T0 + 0.5,
@@ -81,7 +81,7 @@ def _chamada(
 ) -> dict[str, Any]:
     attrs = {
         "channel": "mcp",
-        "tool": "mcp__sparkforge__sparkforge_judge",
+        "tool": "mcp__sparkforge-aws__sparkforge_aws_judge",
         "verb": "judge",
         "is_error": erro,
         "call_id": call_id,
@@ -165,11 +165,11 @@ class TestIdsETempo:
 class TestSpanDoSparkForge:
     def test_sem_canal_e_execute_tool_interno(self):
         (s,) = _todos_spans(_projetar([_span("a")]))
-        assert s["name"] == "execute_tool sparkforge_judge"
+        assert s["name"] == "execute_tool sparkforge_aws_judge"
         assert s["kind"] == KIND_INTERNAL
         attrs = _attrs(s)
         assert attrs["gen_ai.operation.name"] == "execute_tool"
-        assert attrs["gen_ai.tool.name"] == "sparkforge_judge"
+        assert attrs["gen_ai.tool.name"] == "sparkforge_aws_judge"
         assert "mcp.method.name" not in attrs
         assert "status" not in s
 
@@ -177,7 +177,7 @@ class TestSpanDoSparkForge:
         (s,) = _todos_spans(
             _projetar([_span("a", metadata={"channel": "mcp", "transport": "stdio"})])
         )
-        assert s["name"] == "tools/call sparkforge_judge"
+        assert s["name"] == "tools/call sparkforge_aws_judge"
         assert s["kind"] == KIND_SERVER
         attrs = _attrs(s)
         assert attrs["mcp.method.name"] == "tools/call"
@@ -237,7 +237,11 @@ class TestRecusa:
         host = [_transcript(), _chamada("c1"), _chamada("c2", fim=None), _uso()]
         p = _projetar([_span("a")], host, provider="anthropic")
         assert {"origin": "host", "id": "c2", "reason": "host_sem_horario"} in p.recusados
-        total = p.counts["sparkforge_spans"] + p.counts["host_agent"] + p.counts["host_tool_calls"]
+        total = (
+            p.counts["sparkforge_aws_spans"]
+            + p.counts["host_agent"]
+            + p.counts["host_tool_calls"]
+        )
         assert p.counts["exported"] + p.counts["refused"] == total
 
     def test_transcript_sem_horario_recusa_o_agente_e_os_filhos_saem_sem_pai(self):
