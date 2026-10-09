@@ -43,6 +43,7 @@ def _spec() -> kit.ForgeSpec:
         mcp_command=(sys.executable, "-m", "sparkforge_aws.adapters.mcp",
                      "--transport", "stdio"),
         mcp_server_name="sparkforge-aws",
+        mcp_verify_tool="sparkforge_aws_runtime_detect",
         marker_files=("AGENTS.md", "CLAUDE.md"),
         marker_body=(
             "**Spark Forge AWS** esta instalado neste projeto.\n\n"
@@ -303,7 +304,8 @@ def doctor(*, scope: str = "project", root: Path | None = None,
             python_spec=PYTHON_SPEC, state_dir=STATE_DIR,
             mcp_command=(sys.executable, "-m", "sparkforge_aws.adapters.mcp",
                          "--transport", "stdio"),
-            mcp_server_name="sparkforge-aws")))
+            mcp_server_name="sparkforge-aws",
+            mcp_verify_tool="sparkforge_aws_runtime_detect")))
     overall = st["status"]
     if any(c["status"] == "FAIL" for c in checks):
         overall = "degraded" if st["ledger_entries"] else "broken"
