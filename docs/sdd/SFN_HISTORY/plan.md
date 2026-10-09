@@ -3611,7 +3611,7 @@ Escreva `knowledge/stepfunctions/execution-history.md` (arquivo novo, inteiro):
 
 > **Lido em 2026-09-19.** A página de referência da API `GetExecutionHistory`, mais as
 > três páginas do guia já citadas em
-> [`glue-integration.md`](glue-integration.md). Quem consome: o extrator
+> [`glue-integration.md`](../../../knowledge/stepfunctions/glue-integration.md). Quem consome: o extrator
 > `sparkforge_aws/facts/sfn_history.py` e as três regras de
 > `rules/catalog/sfn-history.yaml`. Frase entre aspas é citação literal; o resto é
 > leitura nossa, e diz de qual frase veio.
@@ -3697,7 +3697,7 @@ com `dpu_seconds` medido.
 3. **A composição dos retries continua aberta.** Esta feature mede quantas vezes o
    **Task** foi agendado; ela não mede quantos **JobRuns** uma falha produziu, porque o
    `MaxRetries` do próprio job é outra camada. Ver a lacuna 1 de
-   [`glue-integration.md`](glue-integration.md). O que destrava: o par entre um
+   [`glue-integration.md`](../../../knowledge/stepfunctions/glue-integration.md). O que destrava: o par entre um
    histórico real com falha e os JobRuns do mesmo intervalo
    (`sparkforge-aws collect glue-job-runs`) — e o `sfn.job_run` desta feature é metade dele.
 4. **Histórico real não observado.** O corpus `fixtures/sfn_history/` é sintético,
@@ -3754,7 +3754,7 @@ por
    oficial que a descreva.
 
    **Metade disso já é mecanismo, desde 2026-09-20.**
-   [`execution-history.md`](execution-history.md) e o verbo `analyze sfn-history` leem o
+   [`execution-history.md`](../../../knowledge/stepfunctions/execution-history.md) e o verbo `analyze sfn-history` leem o
    histórico salvo e entregam o número de agendamentos do Task e o `JobRunId` de cada
    um; `SF-SFNX-001` confronta esse número com o teto declarado aqui. O que continua
    faltando é o **outro lado**: os JobRuns do mesmo intervalo, que dizem quantas vezes
@@ -3788,8 +3788,8 @@ por
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`stepfunctions/glue-integration.md`](stepfunctions/glue-integration.md) | Como uma state machine do AWS Step Functions dispara o job Glue: padrões de integração, `.sync`, retry declarado, os defaults publicados e as seis lacunas |
-| [`stepfunctions/execution-history.md`](stepfunctions/execution-history.md) | O que o **histórico de execução** prova: a forma de cada evento, como uma tentativa é pareada pelo encadeamento, o `JobRunId` do Glue, e o que as regras `SF-SFNX` afirmam — e o que elas recusam afirmar |
+| [`stepfunctions/glue-integration.md`](../../../knowledge/stepfunctions/glue-integration.md) | Como uma state machine do AWS Step Functions dispara o job Glue: padrões de integração, `.sync`, retry declarado, os defaults publicados e as seis lacunas |
+| [`stepfunctions/execution-history.md`](../../../knowledge/stepfunctions/execution-history.md) | O que o **histórico de execução** prova: a forma de cada evento, como uma tentativa é pareada pelo encadeamento, o `JobRunId` do Glue, e o que as regras `SF-SFNX` afirmam — e o que elas recusam afirmar |
 
 ### Transversal
 ```

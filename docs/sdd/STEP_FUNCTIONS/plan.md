@@ -3265,9 +3265,9 @@ intervalo (`sparkforge-aws collect glue-job-runs`).
 
 ## Referência
 
-- As frases citadas e as lacunas: [`knowledge/stepfunctions/glue-integration.md`](../../knowledge/stepfunctions/glue-integration.md).
-- As regras: [`rules/catalog/stepfunctions.yaml`](../../rules/catalog/stepfunctions.yaml).
-- O corpus: [`fixtures/stepfunctions/`](../../fixtures/stepfunctions/).
+- As frases citadas e as lacunas: [`knowledge/stepfunctions/glue-integration.md`](../../../knowledge/stepfunctions/glue-integration.md).
+- As regras: [`rules/catalog/stepfunctions.yaml`](../../../rules/catalog/stepfunctions.yaml).
+- O corpus: [`fixtures/stepfunctions/`](../../../fixtures/stepfunctions/).
 ~~~~
 
 Superfície (documento de `knowledge/` novo move o lock — regra 26):

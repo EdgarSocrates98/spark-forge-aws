@@ -4472,10 +4472,10 @@ por
 
 | Comando | O que faz | Referência |
 |---|---|---|
-| `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user`, `--dry-run`, `--on-conflict`. | [integrate](referencia/cli/integrate.md) |
-| `detach` | Remove a integração de usuário: só o que `~/.sparkforge_aws/integrations.json` registrou e ainda tem o sha256 gravado. | [detach](referencia/cli/detach.md) |
+| `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user`, `--dry-run`, `--on-conflict`. | [integrate](../../guia/referencia/cli/integrate.md) |
+| `detach` | Remove a integração de usuário: só o que `~/.sparkforge_aws/integrations.json` registrou e ainda tem o sha256 gravado. | [detach](../../guia/referencia/cli/detach.md) |
 
-Sem tool MCP de propósito: escrever no HOME é decisão do operador. O detalhe está em [Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
+Sem tool MCP de propósito: escrever no HOME é decisão do operador. O detalhe está em [Instalação](../../guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 
 ### Inteligência de código
 ```
@@ -4483,13 +4483,13 @@ Sem tool MCP de propósito: escrever no HOME é decisão do operador. O detalhe 
 Em `README.md`, troque
 
 ````markdown
-a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cli.md).
+a anatomia de cada comando e um fluxo rodado de verdade em [CLI](../../guia/03-cli.md).
 ````
 
 por
 
 ````markdown
-a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cli.md).
+a anatomia de cada comando e um fluxo rodado de verdade em [CLI](../../guia/03-cli.md).
 
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele, integre uma vez por host:
 
@@ -4498,7 +4498,7 @@ sparkforge-aws integrate all --scope user   # Claude Code, Devin, Codex e Copilo
 sparkforge-aws detach all                   # desfaz, removendo só o que foi escrito
 ```
 
-Os caminhos de cada host e a cópia em dobro no repositório estão em [Instalação](docs/guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
+Os caminhos de cada host e a cópia em dobro no repositório estão em [Instalação](../../guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
 ````
 
 Em `docs/superpowers/STATUS.md`, acrescente ao fim do arquivo, depois da seção de

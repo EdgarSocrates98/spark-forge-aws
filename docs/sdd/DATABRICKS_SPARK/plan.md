@@ -161,7 +161,7 @@ versions:
 
 Esta página responde uma pergunta: dado o número do Databricks Runtime de um
 cluster ou job, qual Apache Spark ele roda? O espelho executável é
-[`runtime-matrix.yaml`](runtime-matrix.yaml), com a coluna `spark` e nada mais.
+[`runtime-matrix.yaml`](../../../knowledge/databricks/runtime-matrix.yaml), com a coluna `spark` e nada mais.
 
 ## 1. O que a fonte publica
 
