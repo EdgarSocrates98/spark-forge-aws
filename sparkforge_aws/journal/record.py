@@ -18,6 +18,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import os
 from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
@@ -103,10 +104,8 @@ def raiz_do_journal(args: Mapping[str, Any]) -> tuple[Path | None, str | None]:
 def _ancestral_com_case(caminho: Path) -> Path | None:
     inicio = caminho.resolve().parent
     for diretorio in (inicio, *inicio.parents):
-        if (diretorio / CASE_DIR / CASE_FILE).is_file():
-            return diretorio
-        # Case aberto antes do rename do diretorio de estado.
-        if (diretorio / LEGACY_CASE_DIR / CASE_FILE).is_file():
+        from sparkforge_aws.case.store import case_read_path
+        if case_read_path(diretorio).is_file():
             return diretorio
     return None
 
@@ -124,6 +123,21 @@ def _encadear(evento: dict[str, Any]) -> Callable[[str | None], str]:
 
 def _relativo(raiz: Path, caminho: str) -> tuple[str, Path | None]:
     bruto = Path(caminho)
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        from sparkforge_aws.case.store import state_dir, state_path
+        owned = state_dir(raiz)
+        if (
+            not bruto.is_absolute()
+            and bruto.parts
+            and bruto.parts[0] in (CASE_DIR, LEGACY_CASE_DIR)
+        ):
+            real = resolve_within(owned, state_path(raiz, bruto))
+            if real is not None:
+                return f'{CASE_DIR}/' + real.relative_to(owned.resolve()).as_posix(), real
+        elif bruto.is_absolute():
+            real = resolve_within(owned, bruto)
+            if real is not None:
+                return f'{CASE_DIR}/' + real.relative_to(owned.resolve()).as_posix(), real
     candidato = bruto if bruto.is_absolute() else raiz / bruto
     if not bruto.is_absolute() and not candidato.exists() and bruto.exists():
         candidato = bruto.resolve()

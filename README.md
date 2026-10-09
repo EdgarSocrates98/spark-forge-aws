@@ -473,3 +473,9 @@ e [Política de segurança](docs/guia/usos/politica-de-seguranca.md).
 
 > Não ajustar por intuição. Medir, formular hipótese, testar isoladamente e validar o
 > resultado funcional.
+
+## Distribuição portátil
+
+Instalação do usuário, estado externo, workspace virtual e contexto local:
+[guia portátil](docs/guides/SPARKFORGE_AWS_PORTABLE.pt-BR.md) ·
+[English](docs/guides/SPARKFORGE_AWS_PORTABLE.md).

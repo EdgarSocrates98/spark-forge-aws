@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 from sparkforge_aws.decision.models import DecisionResult
+from sparkforge_aws.distribution.paths import resolve_paths
 
 
 class CacheKind(str, Enum):
@@ -164,7 +165,7 @@ class ArtifactCache(_NamespacedCache[Any]):
         self.cache_dir = (
             Path(cache_dir).expanduser()
             if cache_dir is not None
-            else Path.cwd() / ".sparkforge_aws" / "cache"
+            else resolve_paths(Path.cwd()).cache_root
         )
         self.default_ttl_seconds = default_ttl_seconds
 

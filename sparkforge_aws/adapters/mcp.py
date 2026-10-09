@@ -37,6 +37,7 @@ from typing import Any
 from sparkforge_aws.adapters.mcp_compact import CompactRouter, compact_catalog
 from sparkforge_aws.adapters.mcp_envelope import envelope_da_chamada
 from sparkforge_aws.adapters.tools import TOOLS, call_tool
+from sparkforge_aws.distribution.paths import resolve_paths as resolve_portable_paths
 
 _INSTALL_HINT = (
     "SDK do MCP nao instalado. Rode `pip install 'sparkforge-aws[mcp]'` para usar o "
@@ -185,7 +186,7 @@ def build_server(
         router = CompactRouter(
             tools_do_transporte(transport, "full"),
             executar_full,
-            cache=ArtifactCache(authorized_root / ".sparkforge_aws" / "cache"),
+            cache=ArtifactCache(resolve_portable_paths(authorized_root).cache_root),
             authorized_root=authorized_root,
         )
         executar = router.call

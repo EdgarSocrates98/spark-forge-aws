@@ -26,6 +26,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws decision`](decision.md) | Valida e observa decisões declarativas sem alterar o dispatch atual. |
 | [`sparkforge-aws decisions`](decisions.md) | Lista e explica decisões registradas. |
 | [`sparkforge-aws detach`](detach.md) | Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge_aws/integrations.json registrou e ainda tem o sha256 gravado. |
+| [`sparkforge-aws distribution`](distribution.md) | Inspeção e inicialização portátil offline. |
 | [`sparkforge-aws doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. |
 | [`sparkforge-aws dq-ai`](dq-ai.md) | Avalia governanca Glue DQ ADVANCED sobre facts e artefatos observados. |
 | [`sparkforge-aws economy`](economy.md) | O que a execucao poe na janela de contexto: byte medido, nunca token estimado. |
@@ -62,3 +63,4 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws tune`](tune.md) | Configuracao Spark derivada da medida, com a procedencia de cada propriedade. |
 | [`sparkforge-aws validate`](validate.md) | Valida findings contra o JSON Schema e a regra de ganho sem benchmark_ref. |
 | [`sparkforge-aws workload`](workload.md) | Perfil de workload por eixos, a partir de facts ja extraidos. |
+| [`sparkforge-aws workspace`](workspace.md) | Workspace virtual declarado e descoberta limitada. |

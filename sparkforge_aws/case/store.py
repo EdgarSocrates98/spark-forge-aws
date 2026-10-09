@@ -11,6 +11,7 @@ Isto mantém o módulo puro e reprodutível, e impede um LLM de inventar hora.
 from __future__ import annotations
 
 import copy
+import os
 import shutil
 from collections.abc import Iterable
 from pathlib import Path
@@ -54,6 +55,9 @@ LEGACY_CASE_DIR = ".sparkforge"
 
 
 def case_path(root: Path | str) -> Path:
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        from sparkforge_aws.distribution.paths import resolve_paths
+        return resolve_paths(root).state_root / CASE_FILE
     return Path(root) / CASE_DIR / CASE_FILE
 
 
@@ -62,6 +66,8 @@ def case_read_path(root: Path | str) -> Path:
     quando so ele existe. E o diretorio que ancora o resto do estado do case
     (journal, artefatos): quem le estado do case deve resolve-lo por aqui."""
     novo = case_path(root)
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        return novo
     if novo.is_file():
         return novo
     legado = Path(root) / LEGACY_CASE_DIR / CASE_FILE
@@ -92,6 +98,11 @@ def state_path(root: Path | str, rel: Path | str) -> Path:
     rel = Path(rel)
     partes = rel.parts
     tail = Path(*partes[1:]) if partes and partes[0] in (CASE_DIR, LEGACY_CASE_DIR) else rel
+    if tail.is_absolute() or '..' in tail.parts:
+        raise CaseError('state path must be relative and confined')
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        from sparkforge_aws.distribution.paths import resolve_paths
+        return resolve_paths(root).state_root / tail
     novo = Path(root) / CASE_DIR / tail
     if novo.exists():
         return novo
@@ -212,7 +223,11 @@ def save_case(case: dict[str, Any], root: Path | str) -> Path:
     e a checagem custa um `is_file` por gravacao.
     """
     path = case_path(root)
-    virada = not path.is_file() and _mesmo_case_legado(Path(root), case)
+    virada = (
+        'SPARKFORGE_AWS_HOME' not in os.environ
+        and not path.is_file()
+        and _mesmo_case_legado(Path(root), case)
+    )
     if virada:
         # Copia ANTES de gravar o case: falha aqui nao toca nada, e as copias
         # sao ancoradas no case — invisiveis ate ele existir no diretorio novo

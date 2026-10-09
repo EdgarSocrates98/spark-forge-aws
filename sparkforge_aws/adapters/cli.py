@@ -1563,6 +1563,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Descobre capabilities e empacota contexto deterministico sob limite explicito.",
     )
     context_sub = context_p.add_subparsers(dest="context_action", required=True)
+    from sparkforge_aws.distribution.cli import register
+    register(sub, context_sub)
     context_start_p = context_sub.add_parser(
         "start", help="Inicia descoberta, selecao, reducao e materializacao de contexto."
     )
@@ -6292,6 +6294,11 @@ def _com_journal(tool: str, handler: Any, args: argparse.Namespace) -> int:
 
 
 def _dispatch(args: argparse.Namespace) -> int:
+    if args.command in ('distribution', 'workspace') or (
+        args.command == 'context' and args.context_action == 'resolve'
+    ):
+        from sparkforge_aws.distribution.cli import dispatch
+        return dispatch(args)
     sub_action = (
         getattr(args, "lab_action", None)
         or getattr(args, "analyze_target", None)
@@ -6343,11 +6350,15 @@ def main(argv: list[str] | None = None) -> int:
     _ensure_utf8_streams()
     parser = build_parser()
     args = parser.parse_args(argv)
+    from sparkforge_aws.distribution.config import PortableError
     try:
         return _dispatch(args)
     except _core.AdapterError as exc:
         print(exc.message, file=sys.stderr)
         return exc.exit_code
+    except PortableError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":  # pragma: no cover

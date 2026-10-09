@@ -80,6 +80,7 @@ from sparkforge_aws.controlm.matrix import (
     covers as controlm_covered_range,
 )
 from sparkforge_aws.diagnosis import rank_root_causes
+from sparkforge_aws.distribution.paths import resolve_paths as resolve_portable_paths
 from sparkforge_aws.dq_ai.assessment import build_assessment_facts
 from sparkforge_aws.dqdl.validator import validate_dqdl_path
 from sparkforge_aws.economy.provider_cost import provider_cost as build_provider_cost
@@ -9604,7 +9605,7 @@ def context_gateway_start(
         )
         response = ContextGateway(
             catalog,
-            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge_aws" / "cache"),
+            cache=ArtifactCache(resolve_portable_paths(repo).cache_root),
             authorized_root=Path(repo).resolve(),
         ).start(request)
     except (TypeError, ValueError, OSError) as exc:
@@ -9622,7 +9623,7 @@ def context_gateway_expand(
     try:
         return ContextGateway(
             catalog,
-            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge_aws" / "cache"),
+            cache=ArtifactCache(resolve_portable_paths(repo).cache_root),
             authorized_root=Path(repo).resolve(),
         ).expand(
             uri,

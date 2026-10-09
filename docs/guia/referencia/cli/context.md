@@ -10,6 +10,7 @@ Descobre capabilities e empacota contexto deterministico sob limite explicito.
 |---|---|
 | [`sparkforge-aws context expand`](#sparkforge-aws-context-expand) | Expande uma referencia ctx://v1 sob budget. |
 | [`sparkforge-aws context inspect`](#sparkforge-aws-context-inspect) | Inspeciona qualidade de contexto sem inferir tokens por bytes. |
+| [`sparkforge-aws context resolve`](#sparkforge-aws-context-resolve) | Resolve locality repo/workspace/target sem ler fontes. |
 | [`sparkforge-aws context start`](#sparkforge-aws-context-start) | Inicia descoberta, selecao, reducao e materializacao de contexto. |
 
 ## `sparkforge-aws context expand`
@@ -50,6 +51,27 @@ sparkforge-aws context inspect --help
 ### Tool MCP equivalente
 
 [`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
+
+## `sparkforge-aws context resolve`
+
+Resolve locality repo/workspace/target sem ler fontes.
+
+```bash
+sparkforge-aws context resolve --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--root` | não | texto |  | `.` |  |
+| `--scope` | não | `repo`, `workspace`, `target` |  |  |  |
+| `--target` | não | texto |  |  |  |
+| `--impact` | não | `direct`, `transitive`, `all` |  | `all` |  |
+
+### Tool MCP equivalente
+
+Nenhuma: este verbo existe só na CLI.
 
 ## `sparkforge-aws context start`
 

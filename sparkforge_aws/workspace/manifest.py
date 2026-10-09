@@ -75,7 +75,16 @@ class WorkspaceManifest:
 def load_manifest(path: str | Path) -> WorkspaceManifest:
     """Load and validate a manifest without discovering undeclared repos."""
 
-    manifest_path = Path(path).expanduser().resolve()
+    original_path = Path(path).expanduser()
+    manifest_path = original_path.resolve()
+    if manifest_path.name == 'workspace.yaml' and manifest_path.parent.name == '.sparkforge_aws':
+        from sparkforge_aws.distribution.config import PortableError, read_mapping
+        try:
+            if 'portable_version' in read_mapping(original_path):
+                from sparkforge_aws.workspace.portable import load_workspace
+                return load_workspace(original_path)
+        except PortableError as exc:
+            raise WorkspaceManifestError(str(exc)) from exc
     try:
         raw = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     except OSError as exc:
