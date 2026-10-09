@@ -4059,7 +4059,7 @@ reler o valor efetivo.**
 ## SFCI — as doze fases da SPEC, e o que a execução ensinou (2026-08-24)
 
 Mapa: [`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md) ·
-ADR: [`docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md`](../../vnext/adrs/ADR-010-code-intelligence-indice-local.md) ·
+ADR: [`docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md`](../vnext/adrs/ADR-010-code-intelligence-indice-local.md) ·
 threat model: [`docs/harness/THREAT-MODEL.md`](../harness/THREAT-MODEL.md).
 
 O subsistema existe: **15 módulos** em `sparkforge_aws/codeintel/`, **14 arquivos de

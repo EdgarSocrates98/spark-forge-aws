@@ -37,12 +37,14 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws glue`](glue.md) | Comandos especificos do runtime AWS Glue. |
 | [`sparkforge-aws handoff`](handoff.md) | Escreve .sparkforge_aws/handoff.md e imprime o payload. |
 | [`sparkforge-aws iceberg`](iceberg.md) | Comandos especificos de Apache Iceberg. |
+| [`sparkforge-aws install`](install.md) | Instala o SparkForge no projeto/workspace (--scope) ou no HOME (--scope user, delegado ao integrate). |
 | [`sparkforge-aws integrate`](integrate.md) | Instala skills, agents e o MCP do SparkForge nos diretorios de USUARIO do host (Claude Code por marketplace local; Devin, Codex e Copilot CLI), a partir do pacote instalado. |
 | [`sparkforge-aws journal`](journal.md) | Journal de eventos do case (.sparkforge_aws/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash. |
 | [`sparkforge-aws judge`](judge.md) | Aplica o catalogo de regras versionado sobre facts ja extraidos. |
 | [`sparkforge-aws knowledge`](knowledge.md) | Localiza os arquivos de conhecimento versionado. |
 | [`sparkforge-aws lab`](lab.md) | Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita. |
 | [`sparkforge-aws lakeformation`](lakeformation.md) | Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, nao versao de componente. |
+| [`sparkforge-aws mcp`](mcp.md) | Operacoes do servidor MCP. |
 | [`sparkforge-aws migrate`](migrate.md) | Avalia migracao entre versoes de runtime com o catalogo. |
 | [`sparkforge-aws next-step`](next-step.md) | Rota deterministica a partir de routing.yaml (nunca julgamento do agente). |
 | [`sparkforge-aws pack`](pack.md) | Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_AWS_PACKS). |
@@ -51,6 +53,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws proof`](proof.md) | Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra deixou de disparar no depois?) e um eixo por item de action.moves (funcval, benchmark ou sem comparador). |
 | [`sparkforge-aws receipt`](receipt.md) | Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o recibo e os artefatos, nunca autoria. |
 | [`sparkforge-aws release`](release.md) | O que uma release publica, e o que muda entre duas. |
+| [`sparkforge-aws repair`](repair.md) | Regrava assets gerenciados que sumiram ou mudaram. |
 | [`sparkforge-aws report`](report.md) | Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi derivado daquela evidencia com aquele catalogo. |
 | [`sparkforge-aws resume`](resume.md) | Payload de rehidratacao do case. |
 | [`sparkforge-aws root-cause`](root-cause.md) | Ordena os achados por consequencia declarada e nomeia a lacuna. |
@@ -59,8 +62,11 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws scan`](scan.md) | Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge_aws/scan/. |
 | [`sparkforge-aws sdd`](sdd.md) | Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o que nao fecha, sem julgar a prosa. |
 | [`sparkforge-aws simulate`](simulate.md) | O que uma mudanca de configuracao move, estruturalmente: altera o valor de facts que ja existem, rederiva e julga os dois lados, e diz que achados somem e aparecem. |
+| [`sparkforge-aws status`](status.md) | Estado da instalacao (ledger + drift + health doc). |
 | [`sparkforge-aws telemetry`](telemetry.md) | Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector. |
 | [`sparkforge-aws tune`](tune.md) | Configuracao Spark derivada da medida, com a procedencia de cada propriedade. |
+| [`sparkforge-aws uninstall`](uninstall.md) | Remove so o que o manifesto declara como gerenciado. |
+| [`sparkforge-aws update`](update.md) | Atualiza o runtime instalado pelo bootstrap. |
 | [`sparkforge-aws validate`](validate.md) | Valida findings contra o JSON Schema e a regra de ganho sem benchmark_ref. |
 | [`sparkforge-aws workload`](workload.md) | Perfil de workload por eixos, a partir de facts ja extraidos. |
 | [`sparkforge-aws workspace`](workspace.md) | Workspace virtual declarado e descoberta limitada. |

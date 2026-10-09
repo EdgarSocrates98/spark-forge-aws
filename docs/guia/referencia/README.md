@@ -6,7 +6,7 @@ Gerada do código a cada mudança; os guias em `docs/guia/` explicam como usar.
 
 | Seção | Páginas |
 |---|---|
-| [Comandos da CLI](cli/README.md) | 58 comandos de topo |
+| [Comandos da CLI](cli/README.md) | 64 comandos de topo |
 | [Tools MCP](tools/README.md) | 143 tools |
 | [Agents](agents/README.md) | 19 agents |
 | [Skills](skills/README.md) | 60 skills |

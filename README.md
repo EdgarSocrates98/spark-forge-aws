@@ -1,3 +1,6 @@
+
+> Instalação portátil: [`docs/installation/quickstart.md`](docs/installation/quickstart.md) — clone → setup → install.
+> Docs: [commands](docs/reference/commands.md) · [skills](docs/reference/skills.md) · [agents](docs/reference/agents.md) · [tutorial](docs/tutorials/first-run.md) · [economy](docs/economy.md) · [troubleshooting](docs/installation/troubleshooting.md)
 <p align="center">
   <img src="docs/assets/spark-forge-logo.jpg" alt="SparkForge AWS" width="420">
 </p>
