@@ -3113,6 +3113,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true", help="Lista o que seria removido, sem remover."
     )
 
+    # install / lifecycle -------------------------------------------------------
+    # PORTABLE_INSTALL: `install --scope project|workspace` escreve os mesmos
+    # assets do integrate nos diretorios de host DENTRO do repositorio, com
+    # manifesto em `.sparkforge_aws/integrations.json` e receipts `forge/*` em
+    # `.sparkforge_aws/install/receipts/`. `--scope user` delega ao integrate.
+    from sparkforge_aws.install import cli as _install_cli
+
+    _install_cli.add_parsers(sub)
+
     # policy ------------------------------------------------------------------
     # §16: `.sparkforge_aws/policy.yaml`, imposta pelo servidor MCP, pelo hook
     # PreToolUse (deny) e por `permissions.ask` gerado (ask).
@@ -6298,6 +6307,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         args.command == 'context' and args.context_action == 'resolve'
     ):
         from sparkforge_aws.distribution.cli import dispatch
+        return dispatch(args)
+    if args.command in ('install', 'status', 'repair', 'update', 'uninstall', 'mcp'):
+        from sparkforge_aws.install.cli import dispatch
         return dispatch(args)
     sub_action = (
         getattr(args, "lab_action", None)
