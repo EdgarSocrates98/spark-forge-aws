@@ -3,202 +3,27 @@
   "cli": "sparkforge-aws",
   "documented_missing": [
     {
-      "file": "spark-forge-aws\\docs\\sdd\\SDD_SKILLS\\define.md",
-      "line": "-",
-      "problem": "`sparkforge-aws citada` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `citada` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\SDD_SKILLS\\build_report.md",
-      "line": "-",
-      "problem": "`sparkforge-aws citado` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `citado` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\define.md; spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\explore.md",
-      "line": "-",
-      "problem": "`sparkforge-aws claude` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `claude` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\SDD_SKILLS_REVISAO\\plan.md",
-      "line": "-",
-      "problem": "`sparkforge-aws command` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `command` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\explore.md",
-      "line": "-",
-      "problem": "`sparkforge-aws devin` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `devin` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\SDD_SKILLS_REVISAO\\define.md",
-      "line": "-",
-      "problem": "`sparkforge-aws entre` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `entre` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\archive\\agentspec\\features\\BRAINSTORM_AGENTIC_EVAL_HARNESS.md; spark-forge-aws\\docs\\sdd\\archive\\agentspec\\features\\DEFINE_AGENTIC_EVAL_HARNESS.md; spark-forge-aws\\docs\\sdd\\archive\\agentspec\\features\\DESIGN_AGENTIC_EVAL_HARNESS.md; spark-forge-aws\\docs\\sdd\\archive\\agentspec\\reports\\BUILD_REPORT_AGENTIC_EVAL_HARNESS.md",
+      "file": "spark-forge-aws\\docs\\sdd\\archive\\agentspec\\features\\DESIGN_AGENTIC_EVAL_HARNESS.md:565",
       "line": "-",
       "problem": "`sparkforge-aws eval` documented but not a real command",
       "impact": "user runs a command that fails",
       "fix": "remove or rename the `eval` mention"
     },
     {
-      "file": "spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md",
+      "file": "spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:390; spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:391",
       "line": "-",
       "problem": "`sparkforge-aws evidence` documented but not a real command",
       "impact": "user runs a command that fails",
       "fix": "remove or rename the `evidence` mention"
     },
     {
-      "file": "spark-forge-aws\\docs\\vnext\\ARCHITECTURE.md; spark-forge-aws\\docs\\vnext\\adrs\\ADR-002-platform-adapter-compiler.md",
-      "line": "-",
-      "problem": "`sparkforge-aws export` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `export` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-07-31-sparkforge-aws-fase3a-pip.md",
-      "line": "-",
-      "problem": "`sparkforge-aws foi` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `foi` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\STATUS.md; spark-forge-aws\\docs\\superpowers\\plans\\2026-09-08-stacktrace-intelligence.md",
-      "line": "-",
-      "problem": "`sparkforge-aws forge` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `forge` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\define.md; spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\plan.md",
-      "line": "-",
-      "problem": "`sparkforge-aws instalado` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `instalado` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\plan.md",
-      "line": "-",
-      "problem": "`sparkforge-aws into` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `into` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-07-31-sparkforge-aws-fase4-agentes.md",
-      "line": "-",
-      "problem": "`sparkforge-aws manifest` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `manifest` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\installation\\troubleshooting.md",
-      "line": "-",
-      "problem": "`sparkforge-aws mcp-verify` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `mcp-verify` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\simulate.md",
-      "line": "-",
-      "problem": "`sparkforge-aws migration` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `migration` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\vnext\\ARCHITECTURE.md; spark-forge-aws\\docs\\vnext\\adrs\\ADR-003-token-economy-and-model-routing.md",
-      "line": "-",
-      "problem": "`sparkforge-aws optimize` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `optimize` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-07-29-sparkforge-aws-fase0.md",
-      "line": "-",
-      "problem": "`sparkforge-aws package` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `package` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\audit\\FORGE-KERNEL-READINESS.md",
-      "line": "-",
-      "problem": "`sparkforge-aws protocols` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `protocols` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-07-29-sparkforge-aws-fase0.md",
-      "line": "-",
-      "problem": "`sparkforge-aws pyproject` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `pyproject` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\INTEGRACAO_USUARIO\\define.md",
-      "line": "-",
-      "problem": "`sparkforge-aws retiradas` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `retiradas` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\sdd\\AGENTIC_ECONOMY_COMPLETION\\ship.md",
-      "line": "-",
-      "problem": "`sparkforge-aws scripts` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `scripts` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-07-31-sparkforge-aws-fase3a-pip.md",
-      "line": "-",
-      "problem": "`sparkforge-aws sem` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `sem` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\guia\\02-instalacao.md",
-      "line": "-",
-      "problem": "`sparkforge-aws sozinho` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `sozinho` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\vnext\\ARCHITECTURE.md",
-      "line": "-",
-      "problem": "`sparkforge-aws sync` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `sync` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-08-01-sparkforge-aws-fase5a2-dividas.md; spark-forge-aws\\docs\\superpowers\\plans\\2026-08-01-sparkforge-aws-fase5b-emr.md",
-      "line": "-",
-      "problem": "`sparkforge-aws tests` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `tests` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md",
+      "file": "spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:395",
       "line": "-",
       "problem": "`sparkforge-aws tokens` documented but not a real command",
       "impact": "user runs a command that fails",
       "fix": "remove or rename the `tokens` mention"
-    },
-    {
-      "file": "spark-forge-aws\\docs\\superpowers\\plans\\2026-07-31-sparkforge-aws-fase3a-pip.md",
-      "line": "-",
-      "problem": "`sparkforge-aws veio` documented but not a real command",
-      "impact": "user runs a command that fails",
-      "fix": "remove or rename the `veio` mention"
     }
   ],
   "undocumented_commands": [],
-  "generated_at": "2026-10-09T22:28:00Z"
+  "generated_at": "2026-10-09T22:45:16Z"
 }
