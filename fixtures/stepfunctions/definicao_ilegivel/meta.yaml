@@ -1,0 +1,12 @@
+name: definicao_ilegivel
+proves: >
+  O ponto cego contado. Um arquivo que nao abre como JSON (`invalid_json`) e um JSON
+  que nao e state machine (`not_a_state_machine`): os dois viram `sfn.unresolved`
+  nomeado, com uma sentinela por arquivo, e nenhum achado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.unresolved]
+expects_rules: []

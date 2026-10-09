@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.heartbeatInterval"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.heartbeatInterval",
+      "value": "10s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.network.timeout"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.network.timeout",
+      "value": "120s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.executor.lost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "3"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "ExecutorLostFailure (executor 3 exited caused by one of the running tasks) Reason: Executor heartbeat timed out after 130000 ms",
+      "heap_oom_in_log": false
+    }
+  }
+]

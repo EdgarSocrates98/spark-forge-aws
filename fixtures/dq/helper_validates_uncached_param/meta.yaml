@@ -1,0 +1,37 @@
+name: helper_validates_uncached_param
+proves: >
+  A metade que impede a Fase 5c.2 de trocar uma cegueira por outra: a heranca
+  do chamador resolve CONTRA a persistencia, e nao so a favor.
+  `valida_e_publica` recebe `entregas` e valida; `main` carrega e chama, e nao
+  cacheia. E o espelho exato de `helper_validates_cached_param` -- o mesmo job,
+  menos uma linha -- e o par existe porque uma heranca que so soubesse dizer
+  `true` faria `SF-DQ-003` nunca mais disparar sobre helper nenhum, com todos
+  os goldens verdes e a regra morta em silencio.
+  O `dq.check` sai com attrs.target_persisted `false`, e o `false` e HERDADO:
+  dentro do helper nao ha `cache`/`persist`/`unpersist` sobre o parametro, e a
+  evidencia que produz o valor mora no escopo de `main`. O call site e unico, e
+  por nome, e o argumento e um `ast.Name` -- as tres condicoes da heranca. Com
+  attrs.action_after_check `true` pelo write posterior dentro do helper,
+  `SF-DQ-003` dispara: o lineage roda duas vezes, uma para contar e outra para
+  escrever.
+  Antes desta fase o mesmo arquivo saia SEM a chave, e a regra nao avaliava o
+  check -- o defeito era real e invisivel. E a subnotificacao que o D-5c-11
+  registrou como preco, e esta fixture e a prova de que o preco foi pago de
+  volta.
+  Das quatro regras SF-DQ so esta dispara, e as outras tres nao por motivo
+  proprio: SF-DQ-001 nao, porque a validacao vem antes do write
+  (position_vs_write == before_write, medido dentro do helper); SF-DQ-002 nao,
+  porque ha `dq.enforcement` (form: raise) sobre o mesmo subject; SF-DQ-004
+  nao, porque ha um unico check (checks_on_target == 1). O achado e o da
+  persistencia ausente, e nada mais.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-003

@@ -1,0 +1,23 @@
+{
+  "workgroups": [
+    {
+      "name": "legacy-etl",
+      "engine_version": {
+        "effective_engine_version": "Athena engine version 2",
+        "selected_engine_version": "Athena engine version 2"
+      },
+      "state": "ENABLED",
+      "bytes_scanned_cutoff": 10995116277760,
+      "output_location": "s3://lake-athena-results/legacy-etl/"
+    },
+    {
+      "name": "primary",
+      "engine_version": {
+        "effective_engine_version": "Athena engine version 3",
+        "selected_engine_version": "AUTO"
+      },
+      "state": "ENABLED",
+      "output_location": "s3://lake-athena-results/primary/"
+    }
+  ]
+}

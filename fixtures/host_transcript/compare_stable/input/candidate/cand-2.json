@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "suite": {
+    "id": "host_transcript_fixtures",
+    "sha256": "1ff6e7851af4f6780a9927399812b5aa0921fb4e75003944b2062ee6c5c8a803"
+  },
+  "run": {
+    "id": "cand-2",
+    "models": [
+      "synthetic-model-a"
+    ],
+    "host_versions": [
+      "2.1.268"
+    ]
+  },
+  "questions": [
+    {
+      "id": "q-mcp",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 2,
+        "other_calls": 0,
+        "tool_errors": 0,
+        "tool_result_bytes": 86,
+        "tokens": {
+          "input": 30,
+          "output": 60,
+          "cache_read": 300,
+          "cache_creation": 15
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "q-abst",
+      "status": "graded",
+      "answer": null,
+      "abstention": "abstained",
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 1,
+        "other_calls": 0,
+        "tool_errors": 0,
+        "tool_result_bytes": 46,
+        "tokens": {
+          "input": 20,
+          "output": 40,
+          "cache_read": 200,
+          "cache_creation": 10
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "q-alt",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 1,
+        "other_calls": 0,
+        "tool_errors": 0,
+        "tool_result_bytes": 38,
+        "tokens": null,
+        "tokens_unresolved": true
+      },
+      "unresolved": [
+        {
+          "reason": "usage_field_absent",
+          "count": 2
+        }
+      ]
+    }
+  ],
+  "unmatched_transcripts": [],
+  "totals": {
+    "questions": 3,
+    "graded": 3,
+    "ungraded": 0,
+    "correct": 2,
+    "wrong": 0,
+    "answer_absent": 0,
+    "over_abstention": 0,
+    "abstention_total": 1,
+    "abstained": 1,
+    "false_certainty": 0,
+    "tools_ok": 3,
+    "tokens_unresolved_questions": 1,
+    "cost": {
+      "tool_calls": {
+        "median_low": 1,
+        "max": 2
+      },
+      "tool_result_bytes": {
+        "median_low": 46,
+        "max": 86
+      },
+      "output_tokens": {
+        "median_low": 40,
+        "max": 60
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "https://api.github.com/repos/graphframes/graphframes/releases": {
+      "changed_at": "2026-09-01",
+      "checked_at": "2026-09-01",
+      "docs": [],
+      "pinned": false,
+      "retrieved": [],
+      "rules": [],
+      "sha256": "sintetico"
+    }
+  }
+}

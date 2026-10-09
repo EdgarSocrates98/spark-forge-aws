@@ -1,0 +1,320 @@
+[
+  {
+    "id": "f_715a03",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 3,
+      "configuration_count": 3,
+      "bootstrap_action_count": 1,
+      "unapplied_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_d680a2",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/application/Hadoop"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Hadoop",
+      "version": "3.3.6-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_97c1f6",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.4.1-amzn-2"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a83601",
+    "schema_version": 1,
+    "kind": "emr.bootstrap_action",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/bootstrap/0/instala-dependencias"
+    },
+    "measures": {
+      "arg_count": 2,
+      "position": 0
+    },
+    "attrs": {
+      "name": "instala-dependencias",
+      "path": "s3://lake-emr-scripts/bootstrap.sh",
+      "args": [
+        "--repo",
+        "interno"
+      ]
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_814b5a",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO"
+    },
+    "measures": {
+      "release_major": 6,
+      "release_minor": 15
+    },
+    "attrs": {
+      "cluster_id": "j-7CUSTOACIMADETEMPO",
+      "name": "reprocessamento-historico",
+      "release_label": "emr-6.15.0",
+      "release": "6.15.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": "TERMINATE_AT_TASK_COMPLETION",
+      "auto_terminate": true,
+      "unhealthy_node_replacement": null,
+      "state": "TERMINATED",
+      "state_change_reason_code": "ALL_STEPS_COMPLETED"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_c41bde",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/configuration/spark/maximizeResourceAllocation"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "spark",
+      "key": "maximizeResourceAllocation",
+      "value": "true",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_d1664d",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/configuration/yarn-site/yarn.node-labels.am.default-node-label-expression"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "yarn-site",
+      "key": "yarn.node-labels.am.default-node-label-expression",
+      "value": "CORE",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_83aaad",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/configuration/yarn-site/yarn.node-labels.enabled"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "yarn-site",
+      "key": "yarn.node-labels.enabled",
+      "value": "true",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_32ed7b",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/ig-CORE"
+    },
+    "measures": {
+      "requested_instance_count": 6,
+      "running_instance_count": 6
+    },
+    "attrs": {
+      "id": "ig-CORE",
+      "cluster_id": "j-7CUSTOACIMADETEMPO",
+      "role": "CORE",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "SPOT",
+      "has_spot_capacity": true,
+      "has_on_demand_capacity": false,
+      "instance_types": [
+        "r5.2xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_e73c52",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/ig-MASTER"
+    },
+    "measures": {
+      "requested_instance_count": 1,
+      "running_instance_count": 1
+    },
+    "attrs": {
+      "id": "ig-MASTER",
+      "cluster_id": "j-7CUSTOACIMADETEMPO",
+      "role": "MASTER",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "SPOT",
+      "has_spot_capacity": true,
+      "has_on_demand_capacity": false,
+      "instance_types": [
+        "m5.xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_3d59a5",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/ig-TASK"
+    },
+    "measures": {
+      "requested_instance_count": 20,
+      "running_instance_count": 18
+    },
+    "attrs": {
+      "id": "ig-TASK",
+      "cluster_id": "j-7CUSTOACIMADETEMPO",
+      "role": "TASK",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "SPOT",
+      "has_spot_capacity": true,
+      "has_on_demand_capacity": false,
+      "instance_types": [
+        "r5.2xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_3837ef",
+    "schema_version": 1,
+    "kind": "emr.yarn.am_node_label",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/yarn/am-node-label"
+    },
+    "measures": {},
+    "attrs": {
+      "cluster_id": "j-7CUSTOACIMADETEMPO",
+      "decision": "pinned",
+      "reason": null,
+      "enabled": "true",
+      "expression": "CORE",
+      "known_expression": true,
+      "scoped_overrides": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

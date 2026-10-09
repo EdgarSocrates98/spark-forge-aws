@@ -1,0 +1,146 @@
+[
+  {
+    "id": "f_fce966",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 23,
+      "col": 21,
+      "end_line": 23,
+      "symbol": "por_dia",
+      "snippet": "saida.append(g.connectedComponents())"
+    },
+    "measures": {
+      "line": 23
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": true,
+      "receiver": "g",
+      "checkpoint_required": true,
+      "checkpoint_configured_in_module": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a3887262b165611cdd9812335a356fc50966270a860c96b84110a81addeeaee7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_8c12a4",
+    "schema_version": 1,
+    "kind": "graph.checkpoint_dir",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 17,
+      "col": 4,
+      "end_line": 17,
+      "symbol": "por_dia",
+      "snippet": "spark.sparkContext.setCheckpointDir(\"s3://checkpoints/grafo/\")"
+    },
+    "measures": {
+      "line": 17
+    },
+    "attrs": {
+      "form": "set_checkpoint_dir",
+      "literal": "s3://checkpoints/grafo/",
+      "receiver": "spark"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a3887262b165611cdd9812335a356fc50966270a860c96b84110a81addeeaee7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_82be01",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 12,
+      "end_line": 22,
+      "symbol": "por_dia",
+      "snippet": "g = GF(v, e)"
+    },
+    "measures": {
+      "line": 22
+    },
+    "attrs": {
+      "constructor": "GF",
+      "inside_loop": true,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a3887262b165611cdd9812335a356fc50966270a860c96b84110a81addeeaee7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_54726e",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 8,
+      "end_line": 13,
+      "symbol": "por_dia",
+      "snippet": "from graphframes import GraphFrame as GF"
+    },
+    "measures": {
+      "line": 13
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "function",
+      "guarded": true,
+      "alias": "GF"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a3887262b165611cdd9812335a356fc50966270a860c96b84110a81addeeaee7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_eee1e1",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 1,
+      "algorithm_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a3887262b165611cdd9812335a356fc50966270a860c96b84110a81addeeaee7",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

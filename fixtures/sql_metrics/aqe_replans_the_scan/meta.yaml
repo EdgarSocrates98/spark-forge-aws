@@ -1,0 +1,18 @@
+name: aqe_replans_the_scan
+proves: >
+  Execucao com Adaptive Query Execution: `SparkListenerSQLExecutionStart`
+  publica uma arvore inicial do scan sobre db.eventos, e
+  `SparkListenerSQLAdaptiveExecutionUpdate` publica a arvore final com um
+  `accumulatorId` DISTINTO para a mesma metrica. So o valor do acumulador
+  final e publicado; o extrator reporta `plan_source: final_aqe` e atribui a
+  measure ao no da arvore final, nunca da inicial.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.scan
+  - spark.sql.execution
+  - spark.sql.analyzed
+expects_rules: []

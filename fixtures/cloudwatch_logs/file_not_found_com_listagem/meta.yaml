@@ -1,0 +1,26 @@
+name: file_not_found_com_listagem
+proves: >
+  O POSITIVO de `SF-ERR-023`. `FileNotFoundException`, com a listagem do prefixo que o plano leu.
+
+  O arquivo sumiu entre a listagem e a leitura -- escritor concorrente,
+  compactacao, ou retencao. Reexecutar as vezes funciona, e essa e a armadilha.
+
+  O que esta fixture existe para prender e o IRMAO SILENCIOSO: se o arquivo
+  some ANTES da listagem, nao ha excecao nenhuma e o job termina com sucesso
+  tendo lido menos dado. Por isso a validacao da regra e contagem de linhas
+  contra a origem, e nao 'o job voltou a rodar'.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - s3.analyzed
+  - s3.prefix_summary
+expects_rules:
+  - SF-ERR-023

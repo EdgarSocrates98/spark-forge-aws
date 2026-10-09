@@ -1,0 +1,25 @@
+{
+  "Cluster": {
+    "Id": "j-5MALFORMADO",
+    "ReleaseLabel": "emr-7.5.0",
+    "InstanceCollectionType": "INSTANCE_GROUP",
+    "LogUri": "s3://lake-emr-logs/elasticmapreduce/",
+    "AutoTerminate": false,
+    "Status": {"State": "RUNNING"},
+    "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}, "Hadoop"],
+    "Configurations": [
+      {"Properties": {"spark.executor.cores": "4"}},
+      {"Classification": "spark-defaults", "Properties": "nao-e-objeto"}
+    ]
+  },
+  "InstanceGroups": [
+    "nao-e-objeto",
+    {"Id": "ig-SEM-MARKET", "InstanceGroupType": "TASK", "InstanceType": "r5.xlarge"},
+    {"Id": "ig-SEM-PAPEL", "Market": "SPOT", "InstanceType": "r5.xlarge"}
+  ],
+  "InstanceFleets": [
+    {"Id": "if-SEM-CAPACIDADE", "InstanceFleetType": "TASK", "TargetSpotCapacity": 4}
+  ],
+  "BootstrapActions": [{"ScriptBootstrapAction": {"Path": "s3://b/sem-nome.sh"}}],
+  "ManagedScalingPolicy": {"PolicyType": "MANAGED"}
+}

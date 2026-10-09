@@ -1,0 +1,13 @@
+{
+  "requirements": {
+    "source": "kinesis",
+    "stateful": false,
+    "for_each_batch": true,
+    "output_mode": "complete",
+    "aws_managed_only": true,
+    "engine_api": "spark"
+  },
+  "assumptions": {
+    "latency_target_ms": 5000
+  }
+}

@@ -1,0 +1,18 @@
+name: scan_iceberg_batchscan
+proves: >
+  BatchScan (DataSource V2) sobre db.pedidos, formato Iceberg, com uma
+  metrica do mapa canonico (numero de output rows, medida) ao lado de uma
+  metrica real do BatchScan que NAO esta no mapa (`scan time`). O scan sai
+  com a measure medida presente e a metrica desconhecida some como
+  `spark.sql.unresolved`, nunca como um palpite dentro do scan.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.scan
+  - spark.sql.execution
+  - spark.sql.unresolved
+  - spark.sql.analyzed
+expects_rules: []

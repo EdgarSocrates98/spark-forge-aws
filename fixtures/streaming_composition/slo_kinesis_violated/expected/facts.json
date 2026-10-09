@@ -1,0 +1,271 @@
+[
+  {
+    "id": "f_19063f",
+    "schema_version": 1,
+    "kind": "kinesis.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kinesis"
+    },
+    "provenance": {
+      "artifact": "kinesis.json",
+      "artifact_sha256": "fb7a16c6d88e2bb02c30b7ec25995f01a9faee9a7bed33426605d714d3e75cb7",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_002554",
+    "schema_version": 1,
+    "kind": "kinesis.shard",
+    "subject": {
+      "type": "source_location",
+      "file": "kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "iterator_age_ms": 1200
+    },
+    "attrs": {
+      "shard_id": "shard-000",
+      "stream_name": "clicks-stream",
+      "observed_at": "2026-10-01T00:10:00Z"
+    },
+    "provenance": {
+      "artifact": "kinesis.json",
+      "artifact_sha256": "fb7a16c6d88e2bb02c30b7ec25995f01a9faee9a7bed33426605d714d3e75cb7",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_2dc8c9",
+    "schema_version": 1,
+    "kind": "kinesis.shard",
+    "subject": {
+      "type": "source_location",
+      "file": "kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "iterator_age_ms": 2000
+    },
+    "attrs": {
+      "shard_id": "shard-000",
+      "stream_name": "clicks-stream",
+      "observed_at": "2026-10-01T00:05:00Z"
+    },
+    "provenance": {
+      "artifact": "kinesis.json",
+      "artifact_sha256": "fb7a16c6d88e2bb02c30b7ec25995f01a9faee9a7bed33426605d714d3e75cb7",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_619792",
+    "schema_version": 1,
+    "kind": "kinesis.shard",
+    "subject": {
+      "type": "source_location",
+      "file": "kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "iterator_age_ms": 1000
+    },
+    "attrs": {
+      "shard_id": "shard-000",
+      "stream_name": "clicks-stream",
+      "observed_at": "2026-10-01T00:00:00Z"
+    },
+    "provenance": {
+      "artifact": "kinesis.json",
+      "artifact_sha256": "fb7a16c6d88e2bb02c30b7ec25995f01a9faee9a7bed33426605d714d3e75cb7",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_cc6aab",
+    "schema_version": 1,
+    "kind": "kinesis.stream",
+    "subject": {
+      "type": "source_location",
+      "file": "kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "stream_name": "clicks-stream",
+      "status": "ACTIVE"
+    },
+    "provenance": {
+      "artifact": "kinesis.json",
+      "artifact_sha256": "fb7a16c6d88e2bb02c30b7ec25995f01a9faee9a7bed33426605d714d3e75cb7",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_545e48",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "slo",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 7,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "slo",
+      "table": null,
+      "query_name": null,
+      "transport_key": "clicks-stream",
+      "max_skew_seconds": null,
+      "slo_name": "transport-slo"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "contract.json",
+        "kinesis.json"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_5c05ae",
+    "schema_version": 1,
+    "kind": "streaming.slo",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "transport-slo",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 1500
+    },
+    "attrs": {
+      "name": "transport-slo",
+      "metric": "iterator_age_ms",
+      "operator": "lte",
+      "unit": "ms",
+      "window": "5m",
+      "source": "kinesis"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8c24cac25b4be41b9045229c948d5c957456dce81a6f83b24971acef172184fd",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_7f42f4",
+    "schema_version": 1,
+    "kind": "streaming.slo.evaluation",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "clicks-stream:transport-slo",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 1500,
+      "observed_min": 1000.0,
+      "observed_max": 2000.0,
+      "observation_count": 3,
+      "observed_span_seconds": 600.0,
+      "window_seconds": 300.0,
+      "violated_count": 1
+    },
+    "attrs": {
+      "name": "transport-slo",
+      "metric": "iterator_age_ms",
+      "operator": "lte",
+      "unit": "ms",
+      "window": "5m",
+      "source": "kinesis",
+      "query_name": "",
+      "status": "violated",
+      "window_covered": true,
+      "causal_inference": false,
+      "source_fact_ids": [
+        "f_002554",
+        "f_2dc8c9",
+        "f_5c05ae",
+        "f_619792"
+      ],
+      "transport_key": "clicks-stream",
+      "observation_source": "kinesis.shard"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "contract.json",
+        "kinesis.json"
+      ],
+      "extractor": "streaming_slo@0.1.0"
+    }
+  },
+  {
+    "id": "f_2ff6da",
+    "schema_version": 1,
+    "kind": "streaming_ops.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 1
+    },
+    "attrs": {
+      "sections": [
+        "finops",
+        "lakehouse",
+        "security",
+        "serving",
+        "slo"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8c24cac25b4be41b9045229c948d5c957456dce81a6f83b24971acef172184fd",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  }
+]

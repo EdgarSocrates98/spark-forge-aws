@@ -1,0 +1,3 @@
+version: 1
+bash:
+  - {rule: "terraform destroy *", decision: talvez}

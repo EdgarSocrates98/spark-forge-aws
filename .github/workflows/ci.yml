@@ -1,0 +1,285 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_sarif:
+        description: "Executa upload das fixtures SARIF; requer security-events write no token"
+        required: false
+        default: false
+        type: boolean
+
+# Defesa em profundidade: o job so faz checkout, lint, teste e build local,
+# nunca escreve no repositorio. Sem isto, herdaria o default do repositorio,
+# que pode ser mais amplo do que o necessario.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # HISTORICO INTEIRO, e nao o clone raso do default.
+          #
+          # `actions/checkout` traz `fetch-depth: 1` por padrao: so o commit
+          # sendo testado. As provas `historical` do manifesto de lastro citam
+          # commits ANTIGOS -- `docs/harness/BASELINE.md` cita `6a76b7a` -- e
+          # `check_vnext_claims.py` as confere com `git cat-file -t`. Num clone
+          # raso esse commit nao existe, e o gate recusa por
+          # "proof.commit nao existe neste repositorio": um falso vermelho
+          # sobre uma alegacao que esta certa. Este job e o unico que precisa
+          # do historico; `wheel` e `audit` seguem rasos.
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (frozen)
+        # Instalacao CONGELADA: nada e resolvido aqui dentro.
+        #
+        # `--require-hashes` poe o pip em modo hash-checking: todo requisito
+        # -- inclusive o que entra por transitividade -- precisa estar pinado
+        # com `==` e com hash NESTE arquivo, ou o install falha. Nao e que o
+        # pip deixe de olhar dependencia; e que qualquer coisa que ele
+        # descubra e que nao esteja na lista vira erro em vez de virar uma
+        # versao escolhida na hora. Por isso `locks/py<versao>.txt` carrega o
+        # fecho inteiro do ambiente, backend de build incluso -- e por isso o
+        # conjunto instalado nao pode divergir do commitado.
+        #
+        # `--no-build-isolation` no install editavel e o que fecha a ultima
+        # brecha: com isolamento, o pip criaria um ambiente proprio e BAIXARIA
+        # hatchling do indice em tempo de CI. Como o lock ja instalou hatchling
+        # e o que ele exige, o build usa o que esta ali.
+        #
+        # `--no-deps` no install editavel porque as dependencias ja vieram do
+        # lock; sem ele o pip resolveria os pisos de `pyproject.toml` de novo e
+        # poderia trocar uma versao pinada.
+        run: |
+          python -m pip install --require-hashes -r "locks/py${{ matrix.python-version }}.txt"
+          python -m pip install -e . --no-deps --no-build-isolation
+      - name: Lint
+        run: python -m ruff check sparkforge_aws scripts tests
+      # `Mirror sync` ANTES de `Test suite`, e a ordem e semantica: a suite
+      # roda `sync_skills.py` em modo ESCRITA (test_sync_check_passes_after_sync)
+      # e conserta o disco do runner. Rodando depois, o `--check` media a arvore
+      # ja reparada e dizia OK sobre um commit divergente -- foi exatamente o que
+      # aconteceu em c82a45e. `tests/test_arvore_versionada.py` fecha o buraco de
+      # dentro do pytest olhando HEAD via `git archive`; esta ordem impede que o
+      # passo dedicado continue mentindo para quem le o log do CI.
+      - name: Mirror sync
+        run: python scripts/sync_skills.py --check
+      - name: Test suite
+        run: python -m pytest -q
+      - name: Requirements mirror
+        run: python scripts/gen_requirements.py --check
+      - name: Lock integrity
+        # Offline de proposito: confere forma, cobertura e consistencia dos
+        # locks commitados. Regenerar exige rede e nao acontece aqui -- um gate
+        # que precisa do indice do PyPI para dizer "ok" fica vermelho quando o
+        # indice cai, sem defeito nenhum no repositorio.
+        run: python scripts/gen_lock.py --check
+      - name: Vendored third-party integrity
+        run: python scripts/vendor_caveman.py --check
+      - name: Offline knowledge bundle integrity
+        run: python scripts/verify_offline_bundle.py --check
+      - name: Eval corpus consistency
+        run: python scripts/check_evals.py
+      - name: vNext claims lastro
+        run: python scripts/check_vnext_claims.py
+      # O gate acima audita `docs/vnext/` e `docs/harness/`, e NAO o STATUS.md
+      # -- que e a fonte da verdade sobre onde o projeto esta. A auditoria de
+      # 2026-09-01 mediu a consequencia: oito numeros errados na tabela
+      # *Numeros correntes* com o gate acima em exit 0.
+      - name: STATUS.md numeros correntes
+        run: python scripts/check_status_numbers.py --strict
+      # O gate de recall decide UMA coisa e recusa outra: recall nominal tem
+      # piso duro de 100% (perguntado pelo nome, o pack entrega o simbolo), e
+      # a razao de economia sai `unresolved` porque o corpus do gold set e
+      # menor que o envelope fixo do pack. Publicar a razao daqui mediria o
+      # piso do envelope, nao a economia do subsistema.
+      - name: Recall e economia do ContextPack
+        run: python scripts/check_recall_economy.py
+      - name: Surface lock
+        run: python scripts/check_surface_lock.py
+      - name: Catalog loads with expression validation
+        run: |
+          python -c "from sparkforge_aws.rules.loader import load_catalog; \
+                     print(len(load_catalog(validate_exprs=True)), 'regras validadas')"
+      - name: No raw artifact is tracked
+        run: |
+          if git ls-files | grep -E '^\.sparkforge_aws/artifacts/' | grep -v 'manifest\.json'; then
+            echo "artefato bruto rastreado pelo git" >&2
+            exit 1
+          fi
+
+  wheel:
+    # Job proprio, fora da matriz 3.10/3.11/3.12: construir artefato e criar venv
+    # custa mais de um minuto e o resultado nao depende da versao de Python.
+    # Depende do sistema operacional -- golden e gravado com LF forcado e path
+    # de subject e normalizado para `/`. O que escapar disso so aparece no
+    # Windows, por isso os dois sistemas operacionais entram na matriz.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tooling
+        # `build` ja esta no extra `dev`, mas este job nao instala o pacote em
+        # modo editable -- verify_wheel.py cria o proprio venv isolado e
+        # instala o wheel construido ali dentro. O processo externo (o que
+        # roda `python -m build`) so precisa do modulo `build` em si.
+        run: python -m pip install --quiet build
+      - name: Artifact parity gate
+        run: python scripts/verify_wheel.py
+
+  audit:
+    # Job PROPRIO, e a separacao e o desenho, nao arrumacao.
+    #
+    # Auditoria de vulnerabilidade consulta base de dados externa por natureza:
+    # ela nao pode viver dentro do job `test`, que precisa rodar offline e cuja
+    # cor precisa significar "o codigo esta certo". Aqui, uma indisponibilidade
+    # da base pinta ESTE job de vermelho e deixa `test` intacto -- as duas
+    # perguntas ficam legiveis separadamente.
+    #
+    # Consequencia a declarar: se a protecao de branch exigir checks, o check a
+    # exigir e `test`. Exigir `audit` deixa merge dependendo de servico de
+    # terceiro estar de pe.
+    #
+    # A politica de o que derruba e o que so reporta esta escrita, inteira, na
+    # docstring de `scripts/audit_policy.py`, e `tests/test_supply_chain.py` a
+    # exercita offline com relatorios sinteticos -- inclusive o caso "base nao
+    # consultada", que e o que nunca pode ser lido como aprovacao.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pip-audit
+        # Fora do lock de proposito: `pip-audit` e a ferramenta que AUDITA o
+        # ambiente, e nao parte dele. Instala-lo no mesmo lock faria a arvore
+        # dele entrar no que se audita, e um achado numa dependencia do
+        # auditor apareceria como achado nosso.
+        run: python -m pip install --quiet pip-audit
+      - name: Audit the locked environment
+        # `--require-hashes` diz que o arquivo ja e um fecho pinado, e
+        # `--disable-pip` e o que faz o pip-audit CONFIAR nisso: sem ele, o
+        # pip-audit cria um virtualenv e INSTALA o lock inteiro so para
+        # enumerar o que instalou. Os dois juntos fazem ele ler o arquivo e
+        # consultar a base -- que e a unica coisa que se quer daqui.
+        #
+        # Auditar `requirements.txt` seria auditar PISOS: `PyYAML>=6.0` nao tem
+        # CVE, a versao instalada e que tem.
+        #
+        # `|| true` para que o codigo de saida do pip-audit nao decida sozinho:
+        # quem decide e a politica, no passo seguinte, que sabe distinguir
+        # achado com correcao, achado sem correcao e base nao consultada. Sem
+        # isso, `set -e` do runner mataria o passo antes de a politica ler o
+        # relatorio -- e um achado sem correcao publicada derrubaria o job.
+        run: |
+          pip-audit --require-hashes --disable-pip -r locks/py3.11.txt \
+            --format json --output audit.json || true
+      - name: Apply the audit policy
+        # `--lock` e a unica checagem que compara o relatorio com o ALVO em vez
+        # de olhar so para dentro dele: um relatorio bem formado sobre outra
+        # coisa -- caminho errado, arquivo velho de uma execucao anterior --
+        # passaria por tudo o mais sem ter respondido nada sobre o lock.
+        run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt
+
+  otel-collector:
+    # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge-aws
+    # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda em todo push
+    # e PR: nao escreve em lugar nenhum fora do runner. O `otelcol-contrib` le os
+    # goldens de fixtures/otel com o receiver `otlp_json_file` e grava o que recebeu
+    # com o exporter `file`; `scripts/check_otel_collector.py` cobra os mesmos
+    # spans, atributos e pontos de metrica. Versao do Collector fixada.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Subir o Collector
+        run: |
+          mkdir -p "$RUNNER_TEMP/otel-out"
+          chmod 777 "$RUNNER_TEMP/otel-out"
+          docker run -d --name otelcol             -v "$GITHUB_WORKSPACE/fixtures/otel:/data:ro"             -v "$RUNNER_TEMP/otel-out:/out"             -v "$GITHUB_WORKSPACE/.github/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro"             otel/opentelemetry-collector-contrib:0.160.0
+      - name: Conferir o que o Collector recebeu
+        run: |
+          python scripts/check_otel_collector.py --expected fixtures/otel             --traces "$RUNNER_TEMP/otel-out/traces.json"             --metrics "$RUNNER_TEMP/otel-out/metrics.json" --wait 90
+      - name: Log do Collector
+        if: always()
+        run: docker logs otelcol 2>&1 | tail -n 60
+
+  sarif-upload:
+    # Prova de que o GitHub ACEITA o SARIF de `sparkforge-aws report github`
+    # (SC6 do DEFINE_SARIF_GITHUB_CHECK). So roda por `workflow_dispatch`, de
+    # proposito: os findings das fixtures sao codigo ruim de proposito, e subir a
+    # cada push encheria a aba Security deste repositorio com alertas que nao
+    # sao defeito dele. Os caminhos saem relativos a raiz do git (`--repo .` e as
+    # raizes prefixadas com o caminho da fixture), para que o GitHub encontre o
+    # arquivo de cada alerta. A permissao de escrita em `security-events` e so
+    # deste job.
+    if: github.event_name == 'workflow_dispatch' && inputs.run_sarif == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - caso: pyspark_com_linha
+            roots: "--source-root fixtures/sarif/pyspark_com_linha/input/repo/jobs"
+          - caso: terraform
+            roots: "--source-root fixtures/sarif/terraform/input/repo/infra"
+          - caso: misto
+            roots: >-
+              --source-root fixtures/sarif/misto/input/repo/a
+              --source-root fixtures/sarif/misto/input/repo/b
+          - caso: stage_python
+            roots: "--source-root fixtures/sarif/stage_python/input/repo"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: python -m pip install --quiet -e .
+      - name: report github
+        run: |
+          python -m sparkforge_aws.adapters.cli report github \
+            --findings fixtures/sarif/${{ matrix.caso }}/input/findings.json \
+            --facts fixtures/sarif/${{ matrix.caso }}/input/facts.json \
+            --repo . ${{ matrix.roots }} \
+            --category sparkforge-aws-fixtures-${{ matrix.caso }}
+      - name: Upload SARIF
+        id: upload
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .sparkforge_aws/report/sparkforge-aws.sarif
+          category: sparkforge-aws-fixtures-${{ matrix.caso }}
+          wait-for-processing: true
+      - name: Conferir a analise aceita
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          esperado=$(python -c "import json; print(len(json.load(open('.sparkforge_aws/report/sparkforge-aws.sarif'))['runs'][0]['results']))")
+          gh api "repos/${{ github.repository }}/code-scanning/sarifs/${{ steps.upload.outputs.sarif-id }}" --jq '.processing_status' | tee status.txt
+          grep -qx complete status.txt
+          obtido=$(gh api "repos/${{ github.repository }}/code-scanning/analyses?sarif_id=${{ steps.upload.outputs.sarif-id }}" --jq 'map(.results_count) | add')
+          echo "resultados no SARIF: $esperado, aceitos pelo GitHub: $obtido"
+          test "$esperado" = "$obtido"

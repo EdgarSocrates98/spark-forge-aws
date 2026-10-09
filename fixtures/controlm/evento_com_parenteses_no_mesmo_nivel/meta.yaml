@@ -1,0 +1,19 @@
+name: evento_com_parenteses_no_mesmo_nivel
+proves: >
+  O NEGATIVO de `SF-CTM-005`, e o artefato e a estrutura do exemplo `Wait2` da
+  propria pagina: DOIS grupos entre parenteses, IRMAOS, ligados por `OR`.
+  `max_paren_depth` sai 1 -- ha parentese, e nao ha aninhamento.
+  E O QUE IMPEDE A REGRA DE SER "tem parentese". Uma condicao sobre
+  `open_paren_count` maior que zero acusaria exatamente a forma que a BMC publica
+  como correta, e esta fixture e o que a reprova. O par e
+  `evento_com_parenteses_aninhados`, que so troca a posicao de um dos parenteses.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.dependency
+  - ctm.event_logic
+  - ctm.folder
+  - ctm.job
+  - ctm.version_declared
+expects_rules: []

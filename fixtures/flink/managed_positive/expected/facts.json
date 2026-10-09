@@ -1,0 +1,209 @@
+[
+  {
+    "id": "f_75cfcb",
+    "schema_version": 1,
+    "kind": "managed_flink.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 7
+    },
+    "attrs": {
+      "artifact": "managed_flink"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_0039f7",
+    "schema_version": 1,
+    "kind": "managed_flink.application",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "parallelism": 2,
+      "kpu": 2
+    },
+    "attrs": {
+      "application_name": "orders-managed",
+      "application_arn": "arn:aws:kinesisanalytics:us-east-1:123:application/orders-managed",
+      "status": "RUNNING",
+      "runtime_version": "1.19",
+      "application_version_id": null,
+      "service_execution_role": null,
+      "application_mode": null
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_dd68c2",
+    "schema_version": 1,
+    "kind": "managed_flink.config",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "checkpoint_interval_ms",
+      "value": 60000
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_dd68c2",
+    "schema_version": 1,
+    "kind": "managed_flink.config",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "checkpointing_enabled",
+      "value": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_bc9901",
+    "schema_version": 1,
+    "kind": "managed_flink.connector",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "type": "kafka",
+      "name": "orders-source",
+      "region": "us-east-1"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_bc9901",
+    "schema_version": 1,
+    "kind": "managed_flink.connector",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "type": "kinesis",
+      "name": "orders-sink",
+      "region": "us-east-1"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_1e70ba",
+    "schema_version": 1,
+    "kind": "managed_flink.metric",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "value": 1000,
+      "timestamp": 1720000000
+    },
+    "attrs": {
+      "name": "records_in"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  },
+  {
+    "id": "f_ff7f7d",
+    "schema_version": 1,
+    "kind": "managed_flink.metric",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "value": 990,
+      "timestamp": 1720000000
+    },
+    "attrs": {
+      "name": "records_out"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "54924989ac15b09d429933075de3d45c560a43b4e681872b31d0bb658e473d52",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "managed_flink"
+    }
+  }
+]

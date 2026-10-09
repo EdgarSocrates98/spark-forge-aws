@@ -1,0 +1,34 @@
+name: dois_grafos_no_mesmo_arquivo
+proves: >
+  O `same_subject: true` de `SF-GRAPH-003` e de `SF-GRAPH-004`, que ate esta
+  fixture era apagavel com a suite inteira verde -- nenhuma das 19 fixtures da
+  Task 5 tinha DUAS construcoes com arestas nao persistidas nem DOIS lacos com
+  algoritmo, e com um sujeito so a regra por entidade e a regra por conjunto
+  produzem o mesmo numero de achados.
+  Aqui divergem: sao DOIS achados de cada uma -- quatro no total --, e apagar
+  qualquer um dos dois `same_subject` derruba este golden para um. O remedio de
+  `SF-GRAPH-003` e um `cache()` por construcao e o de `SF-GRAPH-004` e uma
+  consolidacao por laco: subcontar esconderia metade do trabalho, que e o falso
+  negativo que `same_subject` existe para evitar.
+  OS DOIS GRAFOS ESTAO EM FUNCOES DIFERENTES, e isso e medicao desta rodada, nao
+  estilo: `engine._subject_group_key` usa `subject.symbol` quando ele existe, e
+  o `symbol` de todo fact deste extrator e a funcao que contem o no. Duas
+  construcoes na MESMA funcao caem no mesmo grupo e viram um achado so -- limite
+  agora declarado na nota de `SF-GRAPH-003` no catalogo.
+  O checkpoint esta configurado de proposito -- `SF-GRAPH-001` e regra de
+  ARQUIVO, sem `same_subject`, e deixa-la disparar aqui misturaria os dois
+  eixos.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules:
+  - SF-GRAPH-003
+  - SF-GRAPH-004

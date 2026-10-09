@@ -1,0 +1,19 @@
+[
+  {
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0044"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.4",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

@@ -1,0 +1,9 @@
+name: risk_context
+proves: Qualitative residency, Iceberg, migration and generative-variability context
+runtime:
+  glue: "5.1"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.review
+  - dq.ai.analyzed
+expects_rules: []

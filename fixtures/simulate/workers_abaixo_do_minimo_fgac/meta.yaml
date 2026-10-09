@@ -1,0 +1,8 @@
+description: >-
+  Dois jobs FGAC com 2 e 4 workers. number_of_workers = 1 troca os dois facts
+  da camada tf, e SF-LF-006 (FGAC abaixo do minimo de workers) aparece.
+facts: [fixtures/infra_code/fgac_abaixo_do_minimo_de_workers/expected/facts.json]
+sets: ["tf:number_of_workers=1"]
+expect:
+  disappeared: []
+  appeared: [SF-LF-006]

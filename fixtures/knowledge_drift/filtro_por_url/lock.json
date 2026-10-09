@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html": {
+      "changed_at": "2026-09-12",
+      "checked_at": "2026-09-12",
+      "docs": [],
+      "pinned": false,
+      "retrieved": [],
+      "rules": [],
+      "sha256": "sintetico"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
+      "changed_at": "2026-09-09",
+      "checked_at": "2026-09-09",
+      "docs": [],
+      "pinned": false,
+      "retrieved": [],
+      "rules": [],
+      "sha256": "sintetico"
+    }
+  }
+}

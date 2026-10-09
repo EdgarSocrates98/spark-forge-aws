@@ -1,0 +1,41 @@
+{
+  "virtualCluster": {
+    "id": "0abcdefghijklmnop",
+    "name": "analytics",
+    "state": "RUNNING",
+    "containerProvider": {
+      "type": "EKS",
+      "id": "producao-eks",
+      "info": {"eksInfo": {"namespace": "spark"}}
+    }
+  },
+  "jobRun": {
+    "id": "0000000abcdefghij",
+    "name": "etl-sem-credencial-literal",
+    "virtualClusterId": "0abcdefghijklmnop",
+    "state": "COMPLETED",
+    "releaseLabel": "emr-7.5.0-latest",
+    "executionRoleArn": "arn:aws:iam::111122223333:role/EMRContainersJobRole",
+    "jobDriver": {
+      "sparkSubmitJobDriver": {
+        "entryPoint": "s3://bucket/etl.py",
+        "sparkSubmitParameters": "--conf spark.kubernetes.authenticate.driver.serviceAccountName=emr-containers-sa-spark --conf spark.kubernetes.authenticate.executor.serviceAccountName=emr-containers-sa-spark-driver"
+      }
+    },
+    "configurationOverrides": {
+      "applicationConfiguration": [
+        {
+          "classification": "spark-defaults",
+          "properties": {
+            "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.InstanceProfileCredentialsProvider",
+            "spark.sql.shuffle.partitions": "400"
+          }
+        }
+      ],
+      "monitoringConfiguration": {
+        "persistentAppUI": "ENABLED",
+        "s3MonitoringConfiguration": {"logUri": "s3://bucket/logs/"}
+      }
+    }
+  }
+}

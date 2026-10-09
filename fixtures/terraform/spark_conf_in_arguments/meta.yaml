@@ -1,0 +1,33 @@
+name: spark_conf_in_arguments
+proves: >
+  `--conf` no Glue nao carrega UMA propriedade: carrega uma string com varias,
+  separadas pela repeticao literal do proprio flag. Como `tf.attribute`, isso e
+  um unico fact cujo `value` e a string inteira, e nenhuma regra consegue
+  perguntar "o AQE esta desligado na definicao do job?" sobre esse texto sem
+  fazer parsing dentro da condicao do catalogo -- que e o que o catalogo nao
+  faz, porque condicao com parser embutido deixa de ser dado e vira codigo
+  escondido em YAML.
+  Esta fixture prova a decomposicao em `tf.spark_conf`, um fact por
+  propriedade, ao lado do `tf.attribute` original, que continua emitido
+  intacto: o fact bruto e a evidencia de que a linha existe com aquele texto, e
+  o decomposto e o que a regra cita.
+  Prova tambem o pedaco malformado. `spark.sql.autoBroadcastJoinThreshold` vem
+  sem `=` e sem valor -- erro de definicao de job que o operador quer ver. Ele
+  NAO vira `tf.spark_conf` silenciosamente: vira `tf.unresolved` com
+  `reason: malformed_conf_pair`, porque engoli-lo produziria o falso negativo
+  de "a chave nao estava la", que e o item 4 do README do catalogo.
+  Job pelo resto limpo, com observabilidade configurada e bookmark declarado,
+  para isolar o eixo de configuracao de qualquer regra de infraestrutura.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.spark_conf
+  - tf.unresolved
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules: []

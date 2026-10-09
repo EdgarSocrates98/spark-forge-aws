@@ -1,0 +1,16 @@
+name: consenso_sem_concessao
+proves: 'Rodada 1 sem objecao: consenso. Ninguem concedeu, entao nao ha vencedor -- mesmo
+  com o referee aceitando o protocolo.'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: unresolved

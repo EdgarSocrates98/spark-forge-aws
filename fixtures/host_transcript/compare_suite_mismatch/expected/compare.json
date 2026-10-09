@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "refused": {
+    "reason": "suite_mismatch",
+    "baseline_sha256": "1ff6e7851af4f6780a9927399812b5aa0921fb4e75003944b2062ee6c5c8a803",
+    "candidate_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "single_sample": false,
+  "questions": []
+}

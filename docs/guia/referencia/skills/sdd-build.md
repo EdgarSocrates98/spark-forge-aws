@@ -1,0 +1,257 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# Skill `sdd-build`
+
+Use quando o plan.md da feature está ready e é hora de construir — \"executa o plano\", \"implementa a feature\", \"fase build\" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox).
+
+| Campo | Valor |
+|---|---|
+| Arquivo de origem | `skills/sdd-build/SKILL.md` |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws code symbol']} |
+
+## Procedimento (texto integral)
+
+## SDD Build
+
+Fase 3b do SDD próprio. Executa o plano tarefa por tarefa, com TDD, e deixa um
+relatório que o gate confere: toda tarefa feita declara o comando que falhou
+antes do código, toda afirmação aponta evidência, e no perfil operator a mudança
+passou por um sandbox.
+
+### A lei
+
+```
+NENHUM CÓDIGO DE PRODUÇÃO SEM UM TESTE QUE FALHOU ANTES
+```
+
+Código escrito antes do teste é apagado, e a tarefa recomeça pelo teste. Não
+vale guardar "como referência" nem "adaptar enquanto escreve o teste".
+
+**Ver falhar** é: rodar o comando, ler a mensagem, e a falha ser pelo motivo
+certo — o comportamento ausente, não um erro de digitação no próprio teste. Se o
+teste passou de primeira, ele não testa nada novo: pare e revise a tarefa.
+Erro de import ou de coleta (`ModuleNotFoundError`, `NameError`) só conta como
+vermelho quando o que falta é **a unidade sob teste**; faltando outra coisa (um
+auxiliar, um fixture, um typo), o teste está quebrado, não vermelho.
+
+### Antes de começar
+
+1. `sparkforge-aws sdd check --repo . --feature <F>` com o plan em `ready`.
+2. Branch de trabalho, nunca a principal.
+3. Leia o plano **com olho crítico**, uma vez, e extraia cada tarefa com o texto
+   inteiro. Tarefa ambígua, comando que não existe, arquivo fora do manifesto
+   ou ordem que não fecha: levante a dúvida ao operador e **pare** — adivinhar
+   para seguir é como o plano errado vira código.
+4. Copie `docs/sdd/templates/build_report.md` para
+   `docs/sdd/<FEATURE>/build_report.md`, com `status: draft`, `upstream.path` no
+   plan, e `tasks: []` para ir preenchendo.
+5. Abra `docs/gates-por-mudanca.md` nas seções dos `change_kinds` do define: são
+   os gates vizinhos de cada tarefa.
+
+### Por tarefa
+
+1. **Vermelho.** Escreva o teste da tarefa. Rode o comando do plano. Veja a
+   falha certa. Anote `red: {command, exit}` com o exit **que apareceu**. O
+   comando cita o **node id** de cada critério `kind: test` que a tarefa cobre
+   (`python -m pytest tests/a.py::test_x tests/a.py::test_y -q`); só o arquivo
+   conta apenas com exit 2, erro de coleta.
+2. **Verde.** Escreva o mínimo que faz o teste passar. Rode o mesmo comando.
+   Anote `green: {command, exit: 0}`.
+3. **Refatore** mantendo verde.
+4. **Gates vizinhos.** Rode os comandos da seção da mudança. Vermelho vizinho
+   é desta tarefa, não da próxima.
+5. **Commit**, um por tarefa. Arquivo novo entra no índice antes dos testes que
+   conferem a árvore versionada.
+6. **Revisão em dois estágios** (abaixo).
+7. Tarefa no relatório com `status: done`.
+   **O controlador escreve `red` e `green`** no `build_report.md`, a partir do
+   comando e do exit que o subagente relatou ter visto; o subagente não edita
+   o relatório. Relato sem exit volta ao subagente.
+
+### Um subagente por tarefa
+
+- **Novo a cada tarefa**, sem herdar o histórico da sessão. Você monta o
+  contexto dele; ele não lê o plano sozinho.
+- **Cole o texto da tarefa** inteiro no pedido, mais: onde ela se encaixa, as
+  decisões do design que a afetam, as regras do repositório que a mordem
+  (edição por ferramenta de edição, fim de linha LF, registros manuais).
+- **Modelo pelo tamanho:** tarefa mecânica de um ou dois arquivos vai para um
+  modelo mais barato; integração e julgamento, para o mais capaz.
+- **Nunca dois subagentes escrevendo na mesma árvore ao mesmo tempo.**
+- O subagente devolve um de quatro estados:
+
+| estado | o que fazer |
+|---|---|
+| `DONE` | revisão de spec |
+| `DONE_WITH_CONCERNS` | leia as dúvidas; se forem de correção ou escopo, resolva antes da revisão |
+| `NEEDS_CONTEXT` | dê o que faltou e despache de novo |
+| `BLOCKED` | mais contexto, modelo mais capaz, tarefa menor — ou o plano está errado, e isso sobe ao operador |
+
+Esqueleto do pedido ao implementador:
+
+```
+Você implementa a tarefa T<n> da feature <F>.
+
+## Tarefa
+<texto inteiro da tarefa, colado>
+
+## Contexto
+<onde ela se encaixa; decisões do design; regras do repositório>
+
+## Antes de começar
+Pergunte agora o que estiver ambíguo.
+
+## Trabalho
+1. Teste primeiro; rode e veja falhar; guarde comando e exit.
+2. Código mínimo; rode e veja passar; guarde comando e exit.
+3. Gates vizinhos: <comandos>.
+4. Commit.
+5. Autorrevisão: fez tudo? fez só isso? o teste testa comportamento?
+
+## Relato
+Estado (DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED), arquivos,
+red {command, exit}, green {command, exit}, dúvidas.
+```
+
+### Revisão em dois estágios
+
+1. **Spec.** Um subagente novo recebe o texto da tarefa e o relato do
+   implementador, e **não confia no relato**: lê o código. Procura o que falta,
+   o que sobra (o que ninguém pediu) e o que foi entendido errado. Devolve
+   "conforme" ou a lista com `arquivo:linha`.
+2. **Qualidade**, só depois da spec conforme. Outro subagente novo lê o diff
+   entre o commit anterior e o atual: uma responsabilidade por arquivo, teste
+   que exercita comportamento (não o mock), arquivo que cresceu demais, padrão do
+   repositório seguido. Devolve achados classificados em crítico, importante e
+   menor.
+
+Achado corrigido volta ao **mesmo** estágio. Revisor lista achados; não dá nota.
+
+### Revisão final
+
+Depois da última tarefa e **antes do ship**, um revisor novo lê o diff inteiro
+da feature (do commit do plano até o último) contra o define e o design:
+critério sem entrega, tarefas que se contradizem, código duplicado entre
+tarefas, registro manual esquecido. Achado crítico ou importante volta ao
+build; o resultado entra no corpo do relatório.
+
+### O relatório (`build_report.md`)
+
+- **`tasks`**: `id`, `status` (`done`, `skipped`, `blocked`), `red` e `green`.
+  Tarefa `done` sem `red`, ou com `red.exit` igual a zero, sai
+  `red_not_declared`.
+- **Cada critério `kind: test` visto vermelho.** No perfil `dev`, com o relatório
+  em `ready` ou `done` e o ship fora de `done`, todo `acceptance` de `kind: test` sem `guard`
+  precisa de uma tarefa que o cubra (`covers` do plan) cujo `red` tenha exit
+  diferente de zero e cite o node id do `verified_by` — ou o arquivo, com exit 2.
+  Sem isso, `acceptance_never_red`. Arquivo com exit 1 não conta: não diz qual
+  teste falhou.
+- **Tarefa sem vermelho próprio** (regenerar referência, lock de superfície):
+  o `red` é o gate que falhou **antes** da regeneração, se você o viu falhar.
+  Se não viu, `status: skipped` e uma nota no corpo. Exit inventado é o defeito
+  mais grave deste relatório.
+- **`claims`**: `text` e `evidence_ref` — o node id do teste, o arquivo, o fact.
+  Sem evidência, `claim_without_evidence`.
+- **Corpo**: desvios do plano com o motivo, decisões tomadas sozinho com a
+  alternativa que ficou de fora, e os achados das revisões.
+- Com o relatório em `ready` ou `done`, todo teste citado no define e no plan
+  **precisa existir**: o que faltar sai `verified_by_dangling`.
+
+Feche pelo laço de `docs/sdd/README.md#o-laço-de-cada-fase`:
+`sparkforge-aws sdd stamp --repo . docs/sdd/<F>/build_report.md` e
+`sparkforge-aws sdd check --repo . --feature <F>`. Zero recusa e zero lacuna →
+`status: done`.
+
+### Conhecimento durante o build
+
+Antes de mexer num símbolo, `sparkforge-aws code symbol <node_id>` diz quem o chama.
+O resto: `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
+
+### Perfil operator
+
+A sessão **nunca** escreve na árvore do operador. Spec e evidências moram em
+`.sparkforge_aws/sdd/<F>/` (a cópia do sandbox poda `.sparkforge_aws`). Siga
+`docs/sdd/README.md#caminho-da-mudança-do-operador`; os três passos que mais
+erram:
+
+- `sparkforge-aws change sandbox --repo . --diff d.patch`: o `id` vai para
+  `change_id`. Id fora de `.sparkforge_aws/sandbox/` e de `.sparkforge_aws/proposal/`
+  sai `change_missing`. Achado novo P0 ou P1: pare e volte ao design.
+- `funcval compare ... --out <ref do AC>` e `benchmark ... --out bench.json`:
+  sem o `--out`, a evidência não existe para o gate.
+- `change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
+  sem as duas flags, o pacote diz PENDENTE.
+
+Registro por tarefa:
+
+- Tarefa com `test`: `red` é o teste rodado antes do sandbox; `green`, o mesmo
+  teste depois do compare.
+- Tarefa com `proof`, sem pytest: `moved: {change_id: <id>, resolved: [<rule_id>...]}`
+  no lugar de `red` e `green`, com o **mesmo** `change_id` do relatório
+  (outro sai `moved_change_mismatch`). O gate lê
+  `.sparkforge_aws/sandbox/<id>/report.json` (ou
+  `.sparkforge_aws/proposal/<id>/evidence/sandbox_report.json`) e exige cada
+  regra em `resolved` e fora de `new`; senão, `moved_not_observed`. No dev,
+  `moved` é `schema_invalid`.
+
+Feche com `sparkforge-aws sdd check --repo . --root .sparkforge_aws/sdd --feature <F>`.
+O `case_id` é o de `sparkforge-aws case open` (`.sparkforge_aws/case.yaml`).
+
+### Verificação antes de fechar
+
+Rode de novo, agora, os comandos que provam o que o relatório afirma. "Deve
+passar" e "passou antes da última edição" não são evidência. Todo
+`verified_by` de `kind: command` do define roda aqui e precisa sair com
+exit 0. A suíte inteira roda em lotes, um por vez
+(`tests/test_suite_batches.py`, constante `LOTES`).
+
+### Quando NÃO usar
+
+- Plan em `draft`, ou tarefa sem teste: volte a `sdd-plan`.
+- Para decidir arquitetura no meio do build: pare, volte a `sdd-design`, e deixe
+  a cascata marcar o que ficou velho.
+- Para aplicar mudança direto no job do operador ou em produção.
+- Para fechar a feature e rodar os registros: `sdd-ship`.
+
+### Referência rápida
+
+| Passo | CLI | Tool MCP |
+|---|---|---|
+| conferir o plan | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
+| quem chama | `sparkforge-aws code symbol <node_id>` | `sparkforge_aws_code_symbol` |
+| carimbar o relatório | `sparkforge-aws sdd stamp --repo . docs/sdd/<F>/build_report.md` | `sparkforge_aws_sdd_stamp` |
+| diff (operator) | `sparkforge-aws change plan --facts <f> --set k=v --out d.patch` | `sparkforge_aws_change_plan` |
+| sandbox (operator) | `sparkforge-aws change sandbox --repo . --diff d.patch` | `sparkforge_aws_change_sandbox` |
+| semântica (operator) | `sparkforge-aws funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_aws_funcval_compare` |
+| desempenho (operator) | `sparkforge-aws benchmark --before <a> --after <b> --out bench.json` | `sparkforge_aws_benchmark` |
+| pacote do PR (operator) | `sparkforge-aws change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_aws_change_propose` |
+
+Recusas desta fase: `red_not_declared`, `acceptance_never_red`, `claim_without_evidence`,
+`change_missing`, `moved_not_observed`, `moved_change_mismatch`,
+`verified_by_dangling`, `upstream_stale`. Contrato completo:
+`docs/sdd/CONTRATO.md`. Template: `docs/sdd/templates/build_report.md`.
+
+### Red flags
+
+- Código antes do teste, "só desta vez".
+- `red.exit` escrito sem ter rodado o comando, ou copiado do `green`.
+- Teste que passou de primeira e ficou assim.
+- Subagente que recebeu "leia o plano" em vez do texto da tarefa.
+- Revisão de qualidade antes da de spec, ou revisor que dá nota.
+- Dois subagentes editando a mesma árvore.
+- "Deve passar" no lugar da saída do comando.
+- Arquivo do operador editado fora do sandbox.
+- Claim sem `evidence_ref`, ou ganho de desempenho afirmado sem medida.
+
+
+### Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **execução rastreável das tarefas de build SDD**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge-aws sdd check`, `sparkforge-aws sdd stamp`, `sparkforge-aws code symbol`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../docs/sdd/README.md`, `../../docs/sdd/CONTRATO.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

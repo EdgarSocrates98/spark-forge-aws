@@ -1,0 +1,73 @@
+ecosystem: synthetic-platform-ecosystem
+systems:
+  - {id: trino, category: serving, kind: trino, owner: analytics, source_ref: synthetic://trino}
+  - {id: clickhouse, category: serving, kind: clickhouse, owner: realtime, source_ref: synthetic://clickhouse}
+  - {id: airbyte, category: ingestion, kind: airbyte, owner: ingestion, source_ref: synthetic://airbyte}
+  - {id: debezium, category: ingestion, kind: debezium, owner: cdc, source_ref: synthetic://debezium}
+  - {id: feast, category: ai, kind: feast, owner: ml, source_ref: synthetic://feast}
+  - {id: orders-vector, category: ai, kind: vector_index, owner: ml, source_ref: synthetic://vector/orders}
+  - {id: beam-radar, category: radar, kind: beam, owner: platform, source_ref: synthetic://beam}
+  - {id: datahub-radar, category: radar, kind: datahub, owner: platform, source_ref: synthetic://datahub}
+  - {id: openmetadata-radar, category: radar, kind: openmetadata, owner: platform, source_ref: synthetic://openmetadata}
+reliability:
+  - system_id: trino
+    idempotency: declared
+    checkpointing: not_applicable
+    retry: declared
+    dlq: not_applicable
+    rate_limit: declared
+    schema_contract: declared
+    freshness_slo: slo:orders_query
+    recovery: runbook:trino
+  - system_id: clickhouse
+    idempotency: declared
+    checkpointing: not_applicable
+    retry: declared
+    dlq: not_applicable
+    rate_limit: declared
+    schema_contract: declared
+    freshness_slo: slo:orders_realtime
+    recovery: runbook:clickhouse
+  - system_id: airbyte
+    idempotency: declared
+    checkpointing: cursor
+    retry: exponential
+    dlq: quarantine
+    rate_limit: connector_config
+    schema_contract: declared
+    freshness_slo: slo:source_freshness
+    recovery: runbook:airbyte
+  - system_id: debezium
+    idempotency: source_offset
+    checkpointing: offsets
+    retry: exponential
+    dlq: quarantine
+    rate_limit: connector_config
+    schema_contract: registry
+    freshness_slo: slo:cdc_lag
+    recovery: runbook:cdc
+  - system_id: feast
+    idempotency: entity_key
+    checkpointing: not_applicable
+    retry: declared
+    dlq: not_applicable
+    rate_limit: serving_config
+    schema_contract: feature_view
+    freshness_slo: slo:feature_freshness
+    recovery: runbook:feast
+  - system_id: orders-vector
+    idempotency: document_id
+    checkpointing: batch_marker
+    retry: declared
+    dlq: quarantine
+    rate_limit: embedding_provider
+    schema_contract: embedding_schema
+    freshness_slo: slo:embedding_freshness
+    recovery: runbook:vector
+integrations:
+  - {source: airbyte, target: debezium, relation: feeds, evidence: [synthetic://lineage/airbyte-debezium]}
+  - {source: debezium, target: feast, relation: supplies_features, evidence: [synthetic://lineage/debezium-feast]}
+  - {source: feast, target: trino, relation: serves, evidence: [synthetic://lineage/feast-trino]}
+  - {source: datahub-radar, target: trino, relation: catalogs, role: radar, runtime_dependency: false, evidence: [synthetic://radar/datahub]}
+  - {source: beam-radar, target: airbyte, relation: integrates, role: radar, runtime_dependency: false, evidence: [synthetic://radar/beam]}
+  - {source: openmetadata-radar, target: clickhouse, relation: catalogs, role: radar, runtime_dependency: false, evidence: [synthetic://radar/openmetadata]}

@@ -1,0 +1,14 @@
+rules:
+  - id: DUP-GOV-001
+    category: dup
+    title: Segunda escrita do mesmo id
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: worker_type, attrs.value: G.1X}
+    status: structural
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    sources:
+      - {origin: sintetico}

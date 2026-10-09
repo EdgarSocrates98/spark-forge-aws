@@ -1,0 +1,169 @@
+[
+  {
+    "id": "f_15a5be",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_8acf3d",
+    "schema_version": 1,
+    "kind": "catalog.table_partitions",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "partition_count": 1200,
+      "distinct_values": 1200
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_5b9e64",
+    "schema_version": 1,
+    "kind": "catalog.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "projection.enabled",
+      "value": "true",
+      "present": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_f47404",
+    "schema_version": 1,
+    "kind": "catalog.table_property.projection_enabled",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "projection.enabled",
+      "value": "true",
+      "present": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_13c117",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "column_count": 3,
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "db.eventos",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "cliente_id": "bigint",
+        "valor": "double",
+        "dt": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_2f74f9",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.legado_csv"
+    },
+    "measures": {
+      "column_count": 1
+    },
+    "attrs": {
+      "table": "db.legado_csv",
+      "storage_format": "csv",
+      "columnar": false,
+      "partition_keys": [],
+      "column_types": {
+        "id": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_1bd695",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.sem_dados"
+    },
+    "measures": {},
+    "attrs": {
+      "table": "db.sem_dados",
+      "storage_format": null,
+      "columnar": null,
+      "partition_keys": [],
+      "column_types": {}
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "8d864214b94d2e34280bcaf6e02557849948470d2375afc6fce5edf9acdd8d9b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  }
+]

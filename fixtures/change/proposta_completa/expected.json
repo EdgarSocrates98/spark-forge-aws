@@ -1,0 +1,76 @@
+{
+  "applied": false,
+  "attention_findings": [],
+  "blocking_findings": [],
+  "branch": "sparkforge_aws/change-fc778c4f",
+  "conteudo": {
+    "branch.txt": "sparkforge_aws/change-fc778c4f\n",
+    "change.patch": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=800 --conf spark.sql.adaptive.enabled=true\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=320 --conf spark.sql.adaptive.enabled=true\"\n   }\n }\n",
+    "commands.md": "# Como abrir este PR\n\nRode a partir da raiz do repositorio. O pacote nao executou nada disto.\n\n1. `git switch -c sparkforge_aws/change-fc778c4f`\n2. `git apply --check .sparkforge_aws/proposal/fc778c4f8222e1b0/change.patch`\n3. `git apply .sparkforge_aws/proposal/fc778c4f8222e1b0/change.patch`\n4. `git add main.tf`\n5. `git commit -F .sparkforge_aws/proposal/fc778c4f8222e1b0/commit_message.txt`\n6. PARE: confirme com o operador antes de publicar a branch.\n7. `git push -u origin sparkforge_aws/change-fc778c4f`\n8. PARE: confirme com o operador antes de abrir o PR.\n9. `gh pr create --title \"config: main.tf (sparkforge-aws change fc778c4f)\" --body-file .sparkforge_aws/proposal/fc778c4f8222e1b0/pr_body.md`\n\n## Rollback\n\n- Antes do commit: `git apply -R .sparkforge_aws/proposal/fc778c4f8222e1b0/change.patch`.\n- Depois do commit, antes do merge: `git apply .sparkforge_aws/proposal/fc778c4f8222e1b0/rollback.patch` e um commit novo.\n- Depois do merge: `git revert <commit>`.\n",
+    "commit_message.txt": "config: main.tf (sparkforge-aws change fc778c4f)\n\nProposta sparkforge-aws change fc778c4f8222e1b0: 1 arquivo(s). Achados que deixam de aparecer no scan: 0; novos P2/P3: 0.\nNenhuma afirmacao de ganho; medidas pendentes: benchmark, funcval.\n",
+    "pr_body.md": "# config: main.tf (sparkforge-aws change fc778c4f)\n\nProposta montada por `sparkforge-aws change propose` a partir do sandbox `fc778c4f8222e1b0`. O pacote nao aplica nada e nao roda git: quem abre e quem revisa este PR sao pessoas.\n\n## O que muda\n\n```diff\n--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=800 --conf spark.sql.adaptive.enabled=true\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=320 --conf spark.sql.adaptive.enabled=true\"\n   }\n }\n```\n\n## Achados que deixam de aparecer\n\nNenhum: a mudanca nao tira achado do scan.\n\n## Atencao: achados novos\n\nNenhum.\n\n## Obrigacoes de prova\n\nNenhuma regra tocada.\n\n## Medidas\n\n### benchmark: PENDENTE\n\nFalta medir: dois runs medidos, antes e depois da mudanca, comparados com `sparkforge-aws benchmark`: a diferenca de achados nao e desempenho.\n\n### funcval: PENDENTE\n\nFalta medir: o resultado continua o mesmo -- contagem, schema, chaves e agregados --, com `sparkforge-aws funcval plan` e `sparkforge-aws funcval compare`.\n\n## O que esta proposta nao afirma\n\n- ganho de desempenho, de custo ou de DPU: a diferenca de achados diz o que o motor deixa de ver, e nao quanto o job melhora (regra 13).\n- que o resultado do job continua o mesmo, alem do que um funcval anexado mediu.\n- efeito em producao: o scan roda sobre o repositorio, e nao sobre um run.\n\n## Rollback\n\nAntes do merge: `git apply -R .sparkforge_aws/proposal/fc778c4f8222e1b0/change.patch` (ou `git apply .sparkforge_aws/proposal/fc778c4f8222e1b0/rollback.patch`). Depois dele: `git revert` do commit.\n\n## Assinatura\n\n<!-- sparkforge-aws:signature -->\n- assinatura: sig_b4b880fd12a3af395ee2ff714553a258d5d745298edbd0e045814e8291ca66c4\n- signature_version: 1\n- evidência: 1 fact, 1 regra\n- fact_ids: f_c2312c\n- rule_ids: SF-GLUE-002\n- catalog_version: 1\n- schema_version: 1\n- verifique com: `sparkforge-aws report verify --report <este arquivo> --findings <findings.json>`\n\nEsta assinatura prova **correspondência**, não autoria: que este texto foi\nderivado desta evidência com este catálogo. Não há chave e não há segredo —\nqualquer pessoa com os mesmos findings produz exatamente a mesma assinatura,\nentão ela não diz quem emitiu o relatório e não o autoriza. O corpo assinado\né tudo que vem antes do delimitador acima; este bloco fica de fora dele.\n<!-- /sparkforge-aws:signature -->\n",
+    "rollback.patch": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=320 --conf spark.sql.adaptive.enabled=true\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=800 --conf spark.sql.adaptive.enabled=true\"\n   }\n }\n"
+  },
+  "files": [
+    "branch.txt",
+    "change.patch",
+    "commands.md",
+    "commit_message.txt",
+    "evidence/receipt.json",
+    "evidence/sandbox_report.json",
+    "manifest.json",
+    "pr_body.md",
+    "rollback.patch"
+  ],
+  "git_run": false,
+  "id": "fc778c4f8222e1b0",
+  "main_tree_touched": false,
+  "manifest": {
+    "files": [
+      {
+        "path": "branch.txt",
+        "sha256": "fbc6a66f2d01488bd33e45a61532524707c578bbf8457f43b62616eedc468912"
+      },
+      {
+        "path": "change.patch",
+        "sha256": "3f2f7bb8e2903eab4ef8223cd73c0f3b47f8960831dad78375b13feea382a0eb"
+      },
+      {
+        "path": "commands.md",
+        "sha256": "66f65bc2e0655342a7cd8817ace9ac20bb7a53d36842256aa86299ecab2f3495"
+      },
+      {
+        "path": "commit_message.txt",
+        "sha256": "bc65a4681f7f0f3000d3917a7a5bbfae514ef15987495aef84b94f8f184b421b"
+      },
+      {
+        "path": "evidence/receipt.json",
+        "sha256": "21db7660e2ee9f8f034e43ad6a03c03eaaf7484643f297b17c3302386d911b98"
+      },
+      {
+        "path": "evidence/sandbox_report.json",
+        "sha256": "76b83e4e7a7c26c8aa13ed4aec97a242294f912536c5e4293806d1750fb0b44e"
+      },
+      {
+        "path": "pr_body.md",
+        "sha256": "181a0ba5e678be2a972a9849f2ce8a0961367d0c1519dfa025c4d2ba1621fc8f"
+      },
+      {
+        "path": "rollback.patch",
+        "sha256": "d46d9abd522642efb2429ee54d6838d7944dd2fa9df90aceeb638f0d7a0cad6d"
+      }
+    ],
+    "id": "fc778c4f8222e1b0",
+    "sandbox": ".sparkforge_aws/sandbox/fc778c4f8222e1b0",
+    "stage": "propose_change"
+  },
+  "pending_measures": [
+    "benchmark",
+    "funcval"
+  ],
+  "proposal": ".sparkforge_aws/proposal/fc778c4f8222e1b0",
+  "receipt_id": "rcpt_5e27c8334052a776e9002f1ab1095fd95b147e09cf4dcc5adb782324bfc31882",
+  "refused": [],
+  "signed": true,
+  "stage": "propose_change"
+}

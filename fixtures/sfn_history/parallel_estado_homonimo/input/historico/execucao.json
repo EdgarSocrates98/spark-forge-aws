@@ -1,0 +1,23 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T11:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T11:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "Preparacao"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T11:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T11:00:03.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_dddddddd0\", \"JobName\": \"preparacao\"}"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T11:04:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 6, "previousEventId": 5, "timestamp": "2026-09-18T11:04:01.000000+00:00", "type": "TaskStateExited", "stateExitedEventDetails": {"name": "Preparacao"}},
+    {"id": 7, "previousEventId": 6, "timestamp": "2026-09-18T11:04:02.000000+00:00", "type": "ParallelStateEntered", "stateEnteredEventDetails": {"name": "Cargas"}},
+    {"id": 8, "previousEventId": 7, "timestamp": "2026-09-18T11:04:03.000000+00:00", "type": "ParallelStateStarted"},
+    {"id": 9, "previousEventId": 8, "timestamp": "2026-09-18T11:04:04.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "Carga"}},
+    {"id": 10, "previousEventId": 8, "timestamp": "2026-09-18T11:04:04.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "Carga"}},
+    {"id": 11, "previousEventId": 9, "timestamp": "2026-09-18T11:04:05.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 12, "previousEventId": 10, "timestamp": "2026-09-18T11:04:05.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 13, "previousEventId": 11, "timestamp": "2026-09-18T11:04:06.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_dddddddd1\", \"JobName\": \"carga-ramo-a\"}"}},
+    {"id": 14, "previousEventId": 12, "timestamp": "2026-09-18T11:04:06.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_dddddddd2\", \"JobName\": \"carga-ramo-b\"}"}},
+    {"id": 15, "previousEventId": 13, "timestamp": "2026-09-18T11:20:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 16, "previousEventId": 14, "timestamp": "2026-09-18T11:21:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 17, "previousEventId": 16, "timestamp": "2026-09-18T11:21:01.000000+00:00", "type": "ParallelStateSucceeded"},
+    {"id": 18, "previousEventId": 17, "timestamp": "2026-09-18T11:21:02.000000+00:00", "type": "ParallelStateExited", "stateExitedEventDetails": {"name": "Cargas"}},
+    {"id": 19, "previousEventId": 18, "timestamp": "2026-09-18T11:21:03.000000+00:00", "type": "ExecutionSucceeded"}
+  ]
+}

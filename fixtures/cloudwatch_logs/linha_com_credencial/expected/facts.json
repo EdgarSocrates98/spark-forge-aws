@@ -1,0 +1,103 @@
+[
+  {
+    "id": "f_9bec29",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_j1k2l3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_j1k2l3",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "<redigido>",
+      "log_stream": "jr_j1k2l3",
+      "redacted": true
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_j1k2l3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_5dcb6e",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_j1k2l3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_j1k2l3",
+      "event": 1
+    },
+    "measures": {
+      "timestamp_ms": 1788948000137.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:02:00,900 ERROR [main] executor.Executor: Container killed by YARN for exceeding memory limits. 5.5 GB of 5.5 GB physical memory used",
+      "log_stream": "jr_j1k2l3_g-abc"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_j1k2l3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_1a4202",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_j1k2l3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_j1k2l3"
+    },
+    "measures": {
+      "events": 2.0,
+      "events_redacted": 1.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_j1k2l3"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_j1k2l3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_77238a",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_j1k2l3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_j1k2l3",
+      "event": 1,
+      "signature_id": "ERR-GLUE-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-GLUE-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:02:00,900 ERROR [main] executor.Executor: Container killed by YARN for exceeding memory limits. 5.5 GB of 5.5 GB physical memory used"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_j1k2l3_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

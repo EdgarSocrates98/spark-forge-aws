@@ -1,0 +1,103 @@
+{
+  "baseline": {
+    "capacities": [
+      {
+        "autoscaling": false,
+        "glue_version": "5.0",
+        "number_of_workers": 10,
+        "runs": 10,
+        "worker_type": "G.1X"
+      }
+    ],
+    "runs": 10,
+    "volume_median_bytes": 2000000000.0
+  },
+  "candidate": {
+    "capacities": [
+      {
+        "autoscaling": false,
+        "glue_version": "5.0",
+        "number_of_workers": 10,
+        "runs": 10,
+        "worker_type": "G.2X"
+      }
+    ],
+    "runs": 10,
+    "volume_median_bytes": 2000000000.0
+  },
+  "currency": null,
+  "discarded": {
+    "run_nao_sucedido": 0
+  },
+  "job_name": "etl_pedidos_diario",
+  "metrics": {
+    "cost": {
+      "baseline": {
+        "max": null,
+        "median": null,
+        "min": null,
+        "n": 0
+      },
+      "candidate": {
+        "max": null,
+        "median": null,
+        "min": null,
+        "n": 0
+      },
+      "delta": null,
+      "delta_pct": null,
+      "marks": [
+        "custo_indisponivel"
+      ]
+    },
+    "dpu_seconds": {
+      "baseline": {
+        "max": 900.0,
+        "median": 900.0,
+        "min": 900.0,
+        "n": 10
+      },
+      "candidate": {
+        "max": 1000.0,
+        "median": 1000.0,
+        "min": 1000.0,
+        "n": 10
+      },
+      "delta": 100.0,
+      "delta_pct": 11.1,
+      "marks": []
+    },
+    "execution_time_s": {
+      "baseline": {
+        "max": 900.0,
+        "median": 900.0,
+        "min": 900.0,
+        "n": 10
+      },
+      "candidate": {
+        "max": 500.0,
+        "median": 500.0,
+        "min": 500.0,
+        "n": 10
+      },
+      "delta": -400.0,
+      "delta_pct": -44.4,
+      "marks": []
+    }
+  },
+  "refused": [
+    {
+      "field": "economia_mensal",
+      "reason": "projecao_sobre_runs_que_nao_aconteceram"
+    },
+    {
+      "field": "atribuicao_causal",
+      "reason": "sem_run_de_controle"
+    },
+    {
+      "field": "intervalo_de_confianca",
+      "reason": "amostra_pequena_use_mediana_e_faixa"
+    }
+  ],
+  "volume_tolerance": 0.25
+}

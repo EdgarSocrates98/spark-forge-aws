@@ -1,0 +1,26 @@
+{
+  "tables": [
+    {
+      "database_name": "analytics",
+      "name": "pedidos",
+      "storage_descriptor": {
+        "columns": [
+          {"name": "pedido_id", "type": "bigint"},
+          {"name": "valor", "type": "double"}
+        ],
+        "location": "s3://lake/analytics/pedidos/"
+      },
+      "partition_keys": [
+        {"name": "dt", "type": "string"}
+      ]
+    },
+    {
+      "database_name": "analytics",
+      "storage_descriptor": {
+        "columns": [],
+        "location": "s3://lake/analytics/sem_nome/"
+      }
+    },
+    "isto-nao-e-uma-tabela"
+  ]
+}

@@ -1,0 +1,7 @@
+artifact: cdc
+expects_kinds:
+  - cdc.analyzed
+  - cdc.event
+  - cdc.snapshot
+  - cdc.transaction
+  - cdc.unresolved

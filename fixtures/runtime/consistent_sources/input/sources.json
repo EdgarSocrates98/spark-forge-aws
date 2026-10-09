@@ -1,0 +1,8 @@
+{
+  "terraform": {
+    "glue_version": "5.0"
+  },
+  "event_log": {
+    "spark_version": "3.5.4"
+  }
+}

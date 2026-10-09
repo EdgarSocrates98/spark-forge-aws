@@ -1,0 +1,136 @@
+[
+  {
+    "id": "f_915124",
+    "schema_version": 1,
+    "kind": "dms.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "dms"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_b9d4fd",
+    "schema_version": 1,
+    "kind": "dms.task",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-full-cdc",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-full-cdc",
+      "migration_type": "FULL-LOAD-AND-CDC",
+      "status": "STOPPED"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_3aff72",
+    "schema_version": 1,
+    "kind": "dms.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_source_endpoint"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_3aff72",
+    "schema_version": 1,
+    "kind": "dms.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_target_endpoint"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_3aff72",
+    "schema_version": 1,
+    "kind": "dms.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_table_mappings"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_3aff72",
+    "schema_version": 1,
+    "kind": "dms.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "snapshot_cdc_seam"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

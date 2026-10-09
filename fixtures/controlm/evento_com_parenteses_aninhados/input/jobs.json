@@ -1,0 +1,31 @@
+{
+  "ConciliacaoDiaria": {
+    "Type": "Folder",
+    "Application": "Financeiro",
+    "Concilia": {
+      "Type": "Job:Command",
+      "Command": "concilia --data %%$DATE",
+      "RunAs": "ctmagent",
+      "EsperaAsCargas": {
+        "Type": "WaitForEvents",
+        "Events": [
+          "(",
+          {
+            "Event": "CARGA-CLIENTES"
+          },
+          "OR",
+          "(",
+          {
+            "Event": "CARGA-PEDIDOS"
+          },
+          "AND",
+          {
+            "Event": "CARGA-ITENS"
+          },
+          ")",
+          ")"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "job": {
+    "name": "rtm-incompatible",
+    "glue_version": "6.0",
+    "command": "gluestreaming",
+    "default_arguments": {
+      "--enable-real-time-mode": "true",
+      "--job-language": "python"
+    },
+    "stream": {
+      "source_type": "kinesis",
+      "partition_count": 4,
+      "task_slots": 4,
+      "stateful": true,
+      "output_mode": "Append",
+      "foreach_batch": true,
+      "autoscaling": true
+    }
+  }
+}

@@ -1,0 +1,10 @@
+name: source_clean
+artifact: source
+runtime:
+  spark: "3.5.6"
+expects_rules: []
+expects_kinds:
+  - pyspark.chain
+  - pyspark.module_analyzed
+  - pyspark.read
+  - pyspark.write

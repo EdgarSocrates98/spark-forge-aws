@@ -1,0 +1,45 @@
+schema_version: 1
+policy_version: agentic-control-v1
+authority:
+  default_mode: shadow
+  active:
+    enabled: false
+    minimum_labeled_tasks: 50
+    require_quality_gate: true
+    require_economy_gate: true
+    require_ci_gate: true
+    require_rollback: true
+    require_contract_sha256: true
+    require_calibration_match: true
+    require_evidence_refs: true
+    promotion_record: null
+profiles:
+  economy: {max_agents: 1, max_debates: 0, max_retries: 1, max_replans: 1, max_tokens: 8000}
+  balanced: {max_agents: 3, max_debates: 1, max_retries: 2, max_replans: 2, max_tokens: 16000}
+  deep: {max_agents: 5, max_debates: 2, max_retries: 2, max_replans: 2, max_tokens: 32000}
+risk_caps:
+  low: {max_agents: 5, max_debates: 2, max_retries: 2, max_replans: 2, max_tokens: 32000}
+  medium: {max_agents: 3, max_debates: 1, max_retries: 1, max_replans: 1, max_tokens: 16000}
+  high: {max_agents: 1, max_debates: 0, max_retries: 0, max_replans: 0, max_tokens: 8000}
+status:
+  accepted: {max_agents: 64, max_debates: 64, max_retries: 64, max_replans: 64, max_tokens: 1000000000, action: allow}
+  unresolved: {max_agents: 1, max_debates: 0, max_retries: 0, max_replans: 1, max_tokens: 8000, action: bounded_fallback, reason: decision_unresolved}
+  refused: {max_agents: 0, max_debates: 0, max_retries: 0, max_tokens: 0, action: refuse, reason: decision_status_refused}
+recovery:
+  max_attempts: 2
+  failure_classes:
+    invalid_input: refuse
+    schema_validation: refuse
+    missing_evidence: abstain
+    budget_exceeded: fallback_deterministic
+    transient_host: retry
+    deterministic_conflict: escalate
+    strategy_rejected: replan
+    timeout: retry
+    provider_unavailable: retry
+    tool_failure: replan
+    policy_conflict: escalate
+    security_refusal: refuse
+    context_insufficient: replan
+    loop: stop
+    dependency_failure: escalate

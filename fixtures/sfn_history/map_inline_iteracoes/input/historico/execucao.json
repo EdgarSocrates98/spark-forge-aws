@@ -1,0 +1,22 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T14:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T14:00:01.000000+00:00", "type": "MapStateEntered", "stateEnteredEventDetails": {"name": "PorParticao"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T14:00:02.000000+00:00", "type": "MapStateStarted"},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T14:00:03.000000+00:00", "type": "MapIterationStarted"},
+    {"id": 5, "previousEventId": 3, "timestamp": "2026-09-18T14:00:03.000000+00:00", "type": "MapIterationStarted"},
+    {"id": 6, "previousEventId": 4, "timestamp": "2026-09-18T14:00:04.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "Carga"}},
+    {"id": 7, "previousEventId": 5, "timestamp": "2026-09-18T14:00:04.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "Carga"}},
+    {"id": 8, "previousEventId": 6, "timestamp": "2026-09-18T14:00:05.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 9, "previousEventId": 7, "timestamp": "2026-09-18T14:00:05.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 10, "previousEventId": 8, "timestamp": "2026-09-18T14:00:06.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_eeeeeeee1\", \"JobName\": \"carga-particao\"}"}},
+    {"id": 11, "previousEventId": 9, "timestamp": "2026-09-18T14:00:06.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_eeeeeeee2\", \"JobName\": \"carga-particao\"}"}},
+    {"id": 12, "previousEventId": 10, "timestamp": "2026-09-18T14:12:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 13, "previousEventId": 11, "timestamp": "2026-09-18T14:13:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 14, "previousEventId": 12, "timestamp": "2026-09-18T14:12:01.000000+00:00", "type": "MapIterationSucceeded"},
+    {"id": 15, "previousEventId": 13, "timestamp": "2026-09-18T14:13:01.000000+00:00", "type": "MapIterationSucceeded"},
+    {"id": 16, "previousEventId": 15, "timestamp": "2026-09-18T14:13:02.000000+00:00", "type": "MapStateSucceeded"},
+    {"id": 17, "previousEventId": 16, "timestamp": "2026-09-18T14:13:03.000000+00:00", "type": "MapStateExited", "stateExitedEventDetails": {"name": "PorParticao"}},
+    {"id": 18, "previousEventId": 17, "timestamp": "2026-09-18T14:13:04.000000+00:00", "type": "ExecutionSucceeded"}
+  ]
+}

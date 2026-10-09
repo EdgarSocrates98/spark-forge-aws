@@ -1,0 +1,66 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [
+    {
+      "key": "spark.sql.shuffle.partitions",
+      "current": {
+        "value": "",
+        "provenance": "unset",
+        "evidence": []
+      },
+      "derived": {
+        "value": 5,
+        "formula": "ceil(shuffle_write_bytes / target_partition_bytes)",
+        "basis": {
+          "shuffle_write_bytes": 671088640.0,
+          "target_partition_bytes": 134217728.0,
+          "target_source": "declared"
+        }
+      },
+      "safety": "REVIEW",
+      "supported_in_runtime": true,
+      "explanation": "Com AQE ligado por default nesta versao, este numero e o PISO de paralelismo inicial: o motor coalesce as particoes pos-shuffle com estatistica real e chega perto do alvo sozinho. Derivar o piso alto demais custa tarefas curtas; derivar baixo demais o AQE nao conserta, porque ele so junta particao, nunca divide."
+    }
+  ],
+  "refused": [
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memoryOverhead",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge-aws analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memory",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge-aws analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_footer",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Nenhum `parquet.row_group` com tamanho comprimido. `sparkforge-aws collect parquet-footer --prefix <fonte>` e `sparkforge-aws analyze parquet-footer` o produzem."
+    },
+    {
+      "reason": "sem_explain_cost",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Nenhuma estimativa de join. Gere o plano com `df.explain(\"cost\")` (ou `EXPLAIN COST`) e extraia com `sparkforge-aws analyze plan`."
+    },
+    {
+      "reason": "sem_tasks_por_executor",
+      "property": "spark.speculation",
+      "detail": "Nenhuma duracao de task nos facts. `sparkforge-aws analyze event-log` a extrai de `SparkListenerTaskEnd`, com o executor de cada task."
+    },
+    {
+      "reason": "sem_relacao_observada",
+      "property": "spark.network.timeout",
+      "detail": "Sem `spark.timeout.relation`: o run nao reportou `spark.executor.heartbeatInterval` e `spark.network.timeout` juntos em `spark.conf_effective`. `sparkforge-aws analyze event-log` seguido de `sparkforge-aws fuse` a produz."
+    },
+    {
+      "reason": "sem_diagnostico_de_broadcast",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Nenhum `spark.timeout.diagnosis` com categoria `broadcast`. Sem o broadcast estourando o limite nao tem o que sustentar; `wall_clock` e `heartbeat` nunca tem valor proposto (regra 15)."
+    }
+  ]
+}

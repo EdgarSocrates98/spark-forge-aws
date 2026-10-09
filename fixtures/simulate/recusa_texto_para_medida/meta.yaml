@@ -1,0 +1,7 @@
+description: >-
+  max_concurrent_runs guarda o valor tambem em measures.value. Texto nao cabe
+  na medida numerica, e o simulate recusa em vez de gravar um fact que a regra
+  leria errado.
+facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
+sets: ["tf:max_concurrent_runs=muitos"]
+refusal: valor_nao_numerico_para_medida

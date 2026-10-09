@@ -1,0 +1,6 @@
+{
+  "results": [
+    {"unique_id": "model.synthetic.orders", "status": "success", "execution_time": 1.2, "failures": null},
+    {"unique_id": "test.synthetic.orders_not_null", "status": "success", "execution_time": 0.2, "failures": 0}
+  ]
+}

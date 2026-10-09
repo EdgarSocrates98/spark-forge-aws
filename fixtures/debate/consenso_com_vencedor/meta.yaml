@@ -1,0 +1,16 @@
+name: consenso_com_vencedor
+proves: 'Caminho feliz: B objeta, A responde e concede, e a rodada 2 fecha sem objecao nova.
+  Um lado concedeu, o referee aceita, e a Decision nomeia SF-LF-001.'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: winner:SF-LF-001

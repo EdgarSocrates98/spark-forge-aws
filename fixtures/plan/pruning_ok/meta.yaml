@@ -1,0 +1,19 @@
+name: pruning_ok
+proves: >
+  Plano `explain("formatted")` de uma leitura que ja esta certa: PartitionFilters
+  preenchido (evidencia positiva de tabela particionada COM pruning) e ReadSchema
+  de 3 colunas contra 3 referenciadas. Existe para provar o sentido negativo do
+  golden -- nenhuma regra pode disparar aqui. Um falso positivo de SF-PQ-002
+  (P0) mandaria o operador reescrever uma leitura otima.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.aqe
+  - plan.exchange
+  - plan.file_scan
+  - plan.operator
+expects_rules: []

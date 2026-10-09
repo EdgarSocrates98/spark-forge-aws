@@ -1,0 +1,71 @@
+[
+  {
+    "rule_id": "SF-ERR-017",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Erro de validação de segurança sob controle de acesso fino -- e o log que explicaria está fechado por desenho",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "curated-fato",
+      "job_run_id": "jr_sec1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_sec1",
+      "event": 0,
+      "signature_id": "ERR-LF-005"
+    },
+    "evidence": [
+      "f_2d737e",
+      "f_9daedd"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Não é erro de autorização. Sob controle de acesso fino o AWS Glue separa a execução em dois perfis -- um system driver com identidade privilegiada, que aplica as políticas do Lake Formation, e um user driver que roda o código submetido --, e esta mensagem diz que a validação dessa separação falhou.\n\n**O log que explicaria está fechado por desenho**, e isso é parte do diagnóstico e não um contratempo: a AWS declara que restringe o acesso aos logs do system driver em aplicações habilitadas para Lake Formation, porque eventos do perfil privilegiado podem conter dado sensível. Nenhuma coleta de log alcança essa metade.\n\n**A própria documentação prescreve contatar o suporte da AWS**, e não publica as condições que produzem a mensagem. Este achado é P0 e termina numa recomendação de suporte -- o que ele acrescenta é a lista do que **pode** ser lido antes de abrir o chamado. Ver `knowledge/glue/lakeformation-fgac.md` §2.",
+    "proposed_change": [
+      "Inventariar, no código e nos argumentos do job, o que o AWS Glue BLOQUEIA sob controle de acesso fino para preservar o isolamento do system driver: UDTs, HiveUDFs e qualquer função com classe customizada, data sources customizados, JAR adicional para extensão do Spark, conector ou metastore, e o comando `ANALYZE TABLE`.",
+      "Conferir que o job usa uma ÚNICA sessão Spark de ponta a ponta. Código que encerra a sessão e abre outra -- padrão comum para \"resetar\" configuração no meio do pipeline -- não é suportado sob controle de acesso fino.",
+      "Abrir chamado no suporte da AWS quando o inventário não achar nada, que é o que a página de troubleshooting prescreve. Não há remediação self-service publicada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Desligar o controle de acesso fino faz a mensagem sumir removendo os controles de linha, coluna e célula a que o job estava submetido. É decisão de governança, nunca conserto, e exige quem responda por ela.",
+      "Reexecutar com mais workers não toca o isolamento de que a mensagem fala, e gasta capacidade para chegar ao mesmo lugar.",
+      "A regra **não** afirma causa. A fonte não publica as condições que produzem a mensagem, e inventar uma lista de causas prováveis aqui seria preencher com conjectura o que a documentação deixou em branco."
+    ],
+    "tradeoffs": [
+      "Remover a funcionalidade bloqueada devolve o job ao suportado e pode custar reescrever em Spark SQL nativo o que uma função customizada fazia. A alternativa -- trocar de modelo de acesso -- muda quem enxerga o quê."
+    ],
+    "validation": [
+      "Se funcionalidade bloqueada foi removida: reexecutar e confirmar que o job alcança a leitura que executava.",
+      "Se a mudança substituiu função customizada por expressão nativa, comparação VALOR A VALOR sobre a chave de negócio declarada. Duas implementações da mesma transformação podem contar igual e devolver diferente.",
+      "Não há validação de um conserto que o suporte da AWS ainda não descreveu, e declarar isso é parte da validação."
+    ],
+    "rollback": [
+      "Restaurar a funcionalidade removida devolve o job ao estado não suportado. Só é rollback válido junto de uma decisão sobre o modelo de acesso."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/lakeformation/security_validation_exception.json` (`ERR-LF-005`). É a única das quatro assinaturas desta família cujo texto a AWS escreve -- as outras três são nome de ação de IAM ou de API. A página prescreve contatar o suporte e não enumera as condições.\n"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-09",
+        "note": "Dela saem a lista do que o AWS Glue bloqueia para preservar o isolamento do system driver, a exigência de sessão Spark única, e a declaração de que os logs do system driver são inacessíveis.\n"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.system_driver_isolation",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

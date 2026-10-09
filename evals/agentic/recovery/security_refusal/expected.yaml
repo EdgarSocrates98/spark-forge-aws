@@ -1,0 +1,4 @@
+schema_version: 1
+action: refuse
+terminal: true
+reason_prefix: "failure_class:"

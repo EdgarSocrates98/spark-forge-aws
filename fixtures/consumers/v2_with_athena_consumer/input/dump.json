@@ -1,0 +1,23 @@
+{
+  "table": "glue_catalog.curated.pedidos",
+  "format_version": 2,
+  "properties": {
+    "format-version": "2",
+    "write.distribution-mode": "hash"
+  },
+  "files": [
+    {
+      "file_path": "s3://lake/curated/pedidos/data/f0.parquet",
+      "file_size_in_bytes": 402653184,
+      "record_count": 1000000
+    }
+  ],
+  "delete_files": [],
+  "snapshots": [
+    {
+      "snapshot_id": 1,
+      "committed_at": "2026-07-30T03:00:00Z",
+      "operation": "append"
+    }
+  ]
+}

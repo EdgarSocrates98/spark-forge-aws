@@ -1,0 +1,14 @@
+{
+  "id": "q-mcp",
+  "status": "ungraded",
+  "answer": null,
+  "abstention": null,
+  "tools": null,
+  "cost": null,
+  "unresolved": [
+    {
+      "reason": "host_format_unknown",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+name: aggregate_exact_diverged
+proves: >
+  O ramo EXATO da SF-FVAL-004, que ate aqui nenhuma fixture exercitava
+  (D-4c-23). O eixo trocado em relacao a `aggregate_outside_tolerance`: la
+  o agregado de ponto flutuante se move e o inteiro fica parado; aqui o
+  inteiro se move e o de ponto flutuante fica IDENTICO. A soma de
+  `cliente_id` (bigint) vai de 500.500.123.000 para 500.500.123.001 -- UMA
+  unidade sobre quinhentos bilhoes -- enquanto contagem, schema e a soma
+  de `valor` nao mudam.
+  A magnitude e escolhida, e e o que da a esta fixture o valor que a
+  divida cobrava. `relative_delta` sai 2,0e-12, TRES ordens de grandeza
+  ABAIXO da tolerancia de 1,0e-9: nenhuma leitura relativa desta soma
+  produziria achado nenhum, e o achado sai assim mesmo porque a
+  comparacao de inteiro e EXATA e o veredito ja esta no fact
+  (`attrs.diverged: true`). Apagar a condicao exata da SF-FVAL-004 deixa
+  este golden vermelho, que era exatamente a prova que faltava.
+  A razao principal de as duas condicoes serem necessarias nem sequer e de
+  magnitude: a condicao relativa filtra por `attrs.comparison: relative`, e
+  um agregado exato nao casa com ela em grandeza NENHUMA. A magnitude
+  daqui fecha o contrafactual mais generoso possivel, aquele em que a
+  condicao relativa lesse todo agregado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules:
+  - SF-FVAL-004

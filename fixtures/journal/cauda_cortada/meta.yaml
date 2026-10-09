@@ -1,0 +1,2 @@
+description: 'Queda cortou a ultima linha do journal, de claims.jsonl e de submissions.jsonl:
+  leitura sem erro, torn_tail reportado (AT-010).'

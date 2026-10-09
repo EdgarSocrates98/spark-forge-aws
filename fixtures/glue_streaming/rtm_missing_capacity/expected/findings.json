@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "SF-GLUESTREAM-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Capacidade de partições Kafka para Glue RTM não observada",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-capacity-unknown",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_f4e405",
+      "f_445ea7"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job observado é RTM sobre Kafka, mas o artefato não traz partições e task slots suficientes para comparar cobertura. A ausência não prova insuficiência nem segurança; impede medir se todas as partições têm slot.",
+    "proposed_change": [
+      "Coletar partições da fonte e task slots efetivos do job, sem preencher valores por nome de worker.",
+      "Comparar as duas medidas na mesma janela e declarar a unidade."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Escalar antes de medir partições pode aumentar custo sem responder ao risco."
+    ],
+    "tradeoffs": [
+      "Coleta adicional aumenta evidência e custo operacional de retenção."
+    ],
+    "validation": [
+      "Reexecutar análise com ambas as medidas observadas e julgar novamente."
+    ],
+    "rollback": [
+      "Não há mutação proposta; descartar apenas o artefato coletado se a política de retenção exigir."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "glue.streaming.rtm.partition_capacity",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

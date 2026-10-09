@@ -1,0 +1,149 @@
+# Catálogo de regras — grafo de chamadas da biblioteca
+# Consome os facts de sparkforge_aws/facts/call_graph.py, que são derivados de outros
+# facts (pyspark.callgraph_edge e os kinds de trabalho Spark), não de artefato bruto.
+#
+# Estas regras respondem à pergunta que nenhuma outra área responde: onde, na
+# ESTRUTURA do código, o trabalho Spark está sendo disparado. Uma action isolada é
+# barata; a mesma action dentro de um ciclo de chamadas é ilimitada. `SF-PY-004`
+# pega action dentro de `for`/`while` no mesmo arquivo; SF-CG-001 pega o caso que
+# ela não vê, porque o laço é feito de chamadas entre funções.
+#
+# ESCOPO (Fase 5a, Task 3c): SF-CG-001 declarava `runtime_scope:
+# {spark: ">=3.0"}`. Passou para `{}`.
+#
+# O CRITÉRIO: `runtime_scope` só pode ser não-vazio quando o GATILHO varia com a
+# versão E essa versão vem do runtime detectado. O gatilho aqui é ESTRUTURA DE
+# CÓDIGO: um ciclo no grafo de chamadas, derivado de `pyspark.callgraph_edge`,
+# que sai do AST. Recursão mútua contendo trabalho Spark é recursão mútua
+# contendo trabalho Spark em Spark 3.0 e em 3.5 -- o laziness que faz cada action
+# reexecutar o lineage é o modelo de execução, não um comportamento de versão.
+#
+# O EFEITO MEDIDO: `RuntimeContext.spark` só vem de event log, de `GLUE_MATRIX`
+# (via `glue_version`) ou da flag `--spark`. Ler um `.py` não traz nenhum dos
+# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge-aws
+# judge` -- o contexto sai com `spark: ""`, `in_scope` falha fechada
+# (`sparkforge_aws/rules/version_scope.py`), e a ÁREA SF-CG INTEIRA sumia. Área de
+# uma regra só: o guarda apagava 100% dela, e como não havia segunda regra para
+# sobrar, o relatório perdia o eixo inteiro em silêncio.
+
+catalog_version: 1
+schema_version: 1
+area: SF-CG
+retrieved: 2026-07-31
+
+rules:
+
+  - id: SF-CG-001
+    category: call-graph
+    title: Ciclo de chamadas contendo trabalho Spark
+    requires_facts: [callgraph.cycle]
+    when:
+      same_subject: true
+      all:
+        - fact: callgraph.cycle
+          where: {attrs.contains_spark_work: true}
+    status: structural
+    severity_default: P1
+    # Escopo vazio: gate por `callgraph.cycle`, derivado de arestas de
+    # chamada extraidas do AST -- estrutura de codigo, nao versao de motor.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
+    explanation: >
+      Um ciclo no grafo de chamadas é recursão -- direta ou mútua, que é a forma que
+      passa despercebida em revisão, porque nenhuma das funções envolvidas parece
+      recursiva sozinha. Quando esse ciclo contém read, write, action ou cadeia Spark, o
+      número de jobs submetidos passa a depender da profundidade da recursão, que
+      depende do dado. Spark é lazy: cada action reexecuta o lineage a partir do último
+      ponto materializado, então a recursão não repete só a chamada, repete o
+      recomputo. O sintoma típico não é erro -- é o job que roda em minutos com o volume
+      de teste e não termina com o de produção.
+      `measures.length` é o tamanho do ciclo e `attrs.functions` nomeia as funções na
+      ordem, que é o que permite fechar o laço na leitura.
+    proposed_change:
+      - Confirmar se a recursão tem condição de parada que dependa de dado, e qual é a profundidade máxima possível com o volume de produção.
+      - Se a recursão existe para processar níveis de uma hierarquia, substituir por iteração com número de níveis conhecido, materializando o resultado de cada nível antes do próximo.
+      - Se o trabalho Spark dentro do ciclo é o mesmo em toda iteração, movê-lo para fora do ciclo.
+    action:
+      kind: code.restructure_loop
+      target: callgraph.cycle
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - Trocar recursão por iteração com limite fixo muda o resultado se algum dado exceder o número de níveis assumido.
+    tradeoffs:
+      - Materializar por nível adiciona escrita intermediária e custo de I/O que a versão recursiva não tem.
+    validation:
+      - Contagem total do resultado antes e depois.
+      - Número de jobs Spark submetidos antes e depois, na Spark UI.
+      - Executar com o volume de produção, não com o de teste — é a diferença que esconde o problema.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html", retrieved: 2026-07-31, note: "Secao 'Remove unneeded Spark actions': cada RDD transformado pode ser recomputado a cada action."}
+      - {origin: field-heuristic, note: "A severidade P1 é decisão de campo. Não há measure que distinga recursão de profundidade 2 de recursão sobre hierarquia profunda; quando houver, converter para severity_by sobre measures.length."}
+
+# Uma regra que NAO foi escrita, e por que -- `callgraph.summary` continua sem
+# regra que o consuma, de proposito. O MOTIVO mudou na Fase 5b; a decisao, nao.
+#
+# O QUE ERA (Fase 1 ate a 5b): a medida mentia.
+# `measures.unreachable_function_count` parecia dizer "codigo morto" e dizia
+# outra coisa. `nodes` continha so funcoes que apareciam em alguma aresta,
+# `entrypoints` eram os nos com zero chamadores, e o BFS partia de TODOS eles.
+# Logo, funcao que nao chama ninguem e ninguem chama -- o codigo morto tipico --
+# nao entrava no grafo, e a medida devolvia ZERO. Zero indistinguivel de "nao ha
+# codigo morto": o falso negativo silencioso que o item 4 do README deste
+# diretorio persegue. Sobrava um unico caso real, o componente ciclico isolado,
+# que ja e SF-CG-001 quando contem trabalho Spark.
+#
+# O QUE MUDOU: `pyspark_ast` passou a emitir `pyspark.function_def`, um fact por
+# funcao DEFINIDA, com ou sem aresta, e `call_graph` semeia os nos com ele. Como
+# a semantica mudou, o nome mudou junto -- nome que promete mais do que entrega
+# e da mesma familia de defeito que a Fase 5a.2 achou nas skills:
+#
+#   `unreachable_function_count` -> `unreachable_from_entrypoint_count`
+#       Mesma conta, nome honesto: no que nenhum BFS alcanca, o que so acontece
+#       em componente ciclico sem entrada. Nunca foi deteccao de codigo morto.
+#
+#   novo: `unreferenced_function_count` + `attrs.unreferenced_functions`
+#       Funcao definida (nivel de modulo ou aninhada), sem decorator, fora de
+#       `__all__`, que nenhuma funcao deste corpus chama e cujo nome nao e lido
+#       em nenhum arquivo deste corpus. A lista vem junto: contagem sem nome nao
+#       e acionavel, e o operador nao consegue verificar o que nao pode nomear.
+#
+#   novo: `opaque_caller_function_count`
+#       Quantas funcoes ficaram FORA da populacao medida por serem metodo
+#       (invocado por atributo), decorada (o framework invoca) ou exportada em
+#       `__all__` (o chamador esta fora do corpus). Exclusao contada, nunca
+#       silenciosa -- mesma disciplina dos kinds `*.unresolved`.
+#
+# POR QUE AINDA NAO NASCE REGRA: porque "sem referencia neste corpus" e
+# verdadeiro e util, e nao e achado. O corpus e o recorte que o operador passou
+# na linha de comando, nao o universo de chamadores:
+#
+#   - biblioteca Glue -- o caso CENTRAL deste repositorio -- tem funcao publica
+#     cujo chamador e a aplicacao, que nao esta no recorte;
+#   - despacho por string (`getattr`, tabela por nome, entry point de pacote,
+#     handler de framework) nao e observavel em AST;
+#     `attrs.dynamic_dispatch_present` marca quando o proprio corpus tem
+#     `getattr`, e a fixture `pyspark/dynamic_dispatch` mostra a forma;
+#   - `main` de um job sem bloco `if __name__` e chamado pelo runtime.
+#
+# Uma regra sobre isso produziria achado em cima de codigo vivo, em volume
+# proporcional ao tamanho da API publica -- o falso positivo em massa que o item
+# 4 do README trata como pior que achado nenhum, porque contamina a leitura de
+# todo o resto do relatorio.
+#
+# Entao `callgraph.summary` segue cumprindo o papel de sentinela e de forma do
+# grafo para o agente `glue-incremental-performance-architect` e para a skill
+# `analyze-library-call-graph`, que cruzam a lista com o que o operador sabe do
+# sistema -- exatamente o julgamento que o motor de regras nao pode fazer.
+# `tests/test_fixtures_golden_callgraph.py::test_no_rule_consumes_the_summary`
+# trava a decisao: se alguem escrever uma regra sobre este fact, o teste quebra
+# e obriga a decisao a ser explicita, com fixture bidirecional, `risks`,
+# `tradeoffs`, `validation` e `rollback` como qualquer outra.
+#
+# A fixture `callgraph/library_surface` prova a metade negativa: oito funcoes
+# sem chamador local, uma unica sobra na lista.

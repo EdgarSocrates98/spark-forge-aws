@@ -1,0 +1,56 @@
+[
+  {
+    "id": "f_c4a45b",
+    "schema_version": 1,
+    "kind": "env.platform",
+    "subject": {
+      "type": "job_run",
+      "symbol": "platform"
+    },
+    "measures": {
+      "distinct_platforms": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "resolved": "emr",
+      "observed": [
+        "emr"
+      ],
+      "source": "resolved",
+      "origins": {
+        "emr": [
+          "event_log"
+        ]
+      }
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
+    "id": "f_a55de2",
+    "schema_version": 1,
+    "kind": "env.runtime_signal",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "measures": {
+      "distinct_versions": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "component": "spark",
+      "resolved": "3.5.2",
+      "observed": [
+        "3.5.2",
+        "3.5.2-amzn-1"
+      ],
+      "source": "resolved",
+      "spark_minor": 3.5
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  }
+]

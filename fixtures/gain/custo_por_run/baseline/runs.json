@@ -1,0 +1,572 @@
+[
+  {
+    "id": "f_5e3924",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_0",
+      "symbol": "jr_x10_estourou_0"
+    },
+    "measures": {
+      "execution_time_s": 900,
+      "number_of_workers": 10,
+      "dpu_seconds": 15300.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_0dd6e3",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_1",
+      "symbol": "jr_x10_estourou_1"
+    },
+    "measures": {
+      "execution_time_s": 900,
+      "number_of_workers": 10,
+      "dpu_seconds": 15300.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_76bb89",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_2",
+      "symbol": "jr_x10_estourou_2"
+    },
+    "measures": {
+      "execution_time_s": 900,
+      "number_of_workers": 10,
+      "dpu_seconds": 15300.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_419b26",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_3",
+      "symbol": "jr_x10_estourou_3"
+    },
+    "measures": {
+      "execution_time_s": 900,
+      "number_of_workers": 10,
+      "dpu_seconds": 15300.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_de7dea",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_0",
+      "symbol": "jr_x10_ok_0"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_1dd124",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_1",
+      "symbol": "jr_x10_ok_1"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_b2d55c",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_2",
+      "symbol": "jr_x10_ok_2"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_414c6a",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_3",
+      "symbol": "jr_x10_ok_3"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_ef5509",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_4",
+      "symbol": "jr_x10_ok_4"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_06fbf6",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_5",
+      "symbol": "jr_x10_ok_5"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_723efb",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_0"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_3ea7ca",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_1"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_a47b33",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_2"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_f1655b",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_3",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_3"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_36f45d",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_0"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_a0f844",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_1"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_8f74b8",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_2"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_4d19fe",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_3",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_3"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_f6311e",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_4",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_4"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_86587a",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_5",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_5"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  }
+]

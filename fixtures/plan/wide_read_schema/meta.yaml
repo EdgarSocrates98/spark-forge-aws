@@ -1,0 +1,19 @@
+name: wide_read_schema
+proves: >
+  ReadSchema de 12 colunas para 2 efetivamente referenciadas (razao 6.0 contra
+  limiar 3.0): SF-PQ-004 dispara. Prova junto a separacao entre as duas regras
+  de pruning -- PartitionFilters esta vazio, mas o plano nao prova que a tabela
+  e particionada, entao SF-PQ-002 NAO dispara e o ponto cego vira um
+  `plan.unresolved` com reason `partition_status_unknown` em vez de virar
+  acusacao.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.file_scan
+  - plan.unresolved
+expects_rules:
+  - SF-PQ-004

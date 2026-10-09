@@ -1,0 +1,175 @@
+# Base de conhecimento — SparkForge AWS
+
+Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam**. Ela não contém procedimento de investigação — isso vive em `skills/`. Não contém estado de investigação — isso vive em `.sparkforge_aws/case.yaml`.
+
+O estado das waves que consomem esta base está em
+[`docs/EVOLUTION-CURRENT.md`](../docs/EVOLUTION-CURRENT.md). A matriz de
+streaming abaixo lista contratos offline entregues e mantém live/runtime sem
+artefato como `unresolved`.
+O inventário completo das features, commits e provas está em
+[`docs/DELIVERY-LEDGER.md`](../docs/DELIVERY-LEDGER.md).
+
+## Regra de uso
+
+1. **Nenhum limiar aplicado sem checar a versão.** Toda tabela aqui tem coluna ou nota de versão. Config de Spark 3.5 não vale automaticamente em Spark 3.3 (Glue 4.0).
+2. **Defaults documentados aqui são os do Apache Spark.** O AWS Glue sobrescreve alguns. Sempre confirme o valor **efetivo** no runtime: `spark.conf.get("<chave>")` ou a aba Environment do Spark UI.
+3. **Limiar é ponto de partida de hipótese, não veredito.** Um número fora do limiar indica onde olhar, não o que fazer.
+4. **Toda entrada tem fonte com data.** Se não tem, é heurística de campo e está marcada como tal.
+
+## Mapa
+
+### Forge Lab / Digital Twin
+| Arquivo | Conteúdo |
+|---|---|
+| [`forge-lab-product.md`](forge-lab-product.md) | Contrato do laboratório reproduzível: registry, Golden 20, Compose/Testcontainers, geradores, faults, probes, evidências, oracle, receipts, equivalência multi-engine, tiers L0–L3 e limites de prova |
+
+### Spark / PySpark
+| Arquivo | Conteúdo |
+|---|---|
+| [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC have offline contracts, enquanto live/replay/runtime sem artefato seguem unresolved |
+| [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; collector read-only também coleta janela bounded de métricas stream-level Kinesis, enquanto endpoints Connect/Streams/OpenLineage e eficácia runtime permanecem unresolved |
+| [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards, metrics and observed transport SLO; blind spots remain explicit |
+| [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg, incluindo snapshots granulares e janela temporal; preserva procedência, não infere causalidade e nomeia pontos cegos |
+| [`streaming-pipeline-diagnostics.md`](streaming-pipeline-diagnostics.md) | Contrato declarativo de pipeline cross-engine: selectors exatos, nodes/edges verificados, provenance, unresolved para zero/múltiplos matches e limites contra topologia/latência/causalidade inventadas |
+| [`streaming-realtime-candidate-matrix.md`](streaming-realtime-candidate-matrix.md) | Matriz offline de candidatos Spark, Glue, Flink, Kafka Streams, Iceberg e Redshift; separa requirements de assumptions e recusa vencedor sem eliminação factual |
+| [`streaming/runtime-matrix.md`](streaming/runtime-matrix.md) | Releases upstream versus managed, escopos verificados, `UNRESOLVED` de serviço/região e limites de capacidade para Spark, Kafka, Flink, Glue, MSK, Kinesis e Iceberg |
+| [`streaming-operations.md`](streaming-operations.md) | Contrato offline de SLO, FinOps, segurança e redaction para streaming; separa declaração, medida, atribuição e hipótese |
+| [`streaming-format-serving-matrix.md`](streaming-format-serving-matrix.md) | Matriz arquitetural Delta/Hudi/Iceberg e serving Redshift, ClickHouse, Pinot, Druid e Trino, com compatibilidade explicitamente unresolved |
+| [`event-driven-architecture.md`](event-driven-architecture.md) | Contrato offline para EventBridge, Pipes, SQS, SNS e padrões event-driven |
+| [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, explicit sources/sinks, checkpoints, state, service configuration, bounded CloudWatch application metrics, connectors and unresolved blind spots |
+| [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, explicit source/sink endpoints, RTM restrictions, observed capacity, terminal-run correlation and unresolved blind spots |
+| [`cdc-replication.md`](cdc-replication.md) | Offline CDC/Debezium/AWS DMS contract: operations, positions, keys, transactions, snapshot/CDC seam, tombstones, schema history, endpoints, mappings and unresolved blind spots |
+| [`schema-registry-data-contracts.md`](schema-registry-data-contracts.md) | Schema Registry compatibility, evolution, versions, data-contract governance and Glue read-only latest-version collection with cache/manifest/unresolved limits |
+| [`spark/execution-model.md`](spark/execution-model.md) | Como Spark executa: lazy eval, actions, jobs/stages/tasks, fronteiras de shuffle, codegen, o que quebra pushdown |
+| [`spark/config-reference.md`](spark/config-reference.md) | Configs com nome exato, default e significado — AQE, shuffle, broadcast, leitura de arquivos |
+| [`spark/shuffle-join-skew.md`](spark/shuffle-join-skew.md) | Estratégias físicas de join, custo de shuffle, diagnóstico e tratamento de skew |
+| [`spark/memory-and-oom.md`](spark/memory-and-oom.md) | Modelo de memória, spill, GC, e as 7 classes distintas de OOM |
+| [`spark/plan-reading.md`](spark/plan-reading.md) | Como ler `explain("formatted")` e mapear operador → stage → métrica |
+
+### AWS Glue
+| Arquivo | Conteúdo |
+|---|---|
+| [`glue/runtime-matrix.md`](glue/runtime-matrix.md) | Matriz Glue × Spark × Python × Iceberg/Hudi/Delta |
+| [`glue/workers-and-capacity.md`](glue/workers-and-capacity.md) | Worker types G/R, DPU, disco, Auto Scaling, Flex, cálculo de capacidade |
+| [`glue/job-arguments.md`](glue/job-arguments.md) | Argumentos que afetam performance, precedência código × IaC |
+| [`glue/observability.md`](glue/observability.md) | Métricas CloudWatch exatas, 28 categorias de erro, o que cada uma prova |
+| [`glue/lakeformation-fgac.md`](glue/lakeformation-fgac.md) | Controle de acesso fino do Lake Formation — o que exige, o que bloqueia, realocação de worker, recorte de Iceberg |
+
+### Lake Formation
+| Arquivo | Conteúdo |
+|---|---|
+| [`lakeformation/capability-matrix.yaml`](lakeformation/capability-matrix.yaml) | Células versionadas por engine, release, modelo, formato, operação e API |
+| [`lakeformation/architecture.md`](lakeformation/architecture.md) | Contrato do decision engine, routing de catálogos e estados fail-closed |
+| [`lakeformation/operational-closure.md`](lakeformation/operational-closure.md) | Revisão operacional, explain-access, root cause, preflight, migração e runbooks |
+| [`lakeformation/fgac-fta-improvements.md`](lakeformation/fgac-fta-improvements.md) | Enforcement por capability, source/target, resolução cross-account, Hybrid Access e semântica de IDs |
+
+### Amazon EMR
+| Arquivo | Conteúdo |
+|---|---|
+| [`emr/runtime-matrix.md`](emr/runtime-matrix.md) | Matriz EMR × Spark × Hadoop × Iceberg × Python, 6.4.0 a 7.13.0, com o significado do sufixo `-amzn-N` |
+| [`emr/cluster-configuration.md`](emr/cluster-configuration.md) | Instance groups × fleets, níveis de `Configurations`, `maximizeResourceAllocation`, Spot por papel, managed scaling × alocação dinâmica, committer × commit protocol em S3, `LogUri`, node labels e o ApplicationMaster, bootstrap actions |
+
+### Amazon EMR Serverless
+| Arquivo | Conteúdo |
+|---|---|
+| [`emr-serverless/runtime-matrix.md`](emr-serverless/runtime-matrix.md) | O que a fonte do Serverless publica por release — **só Spark, Hive e Tez** — e por que isso resolve a D-5 da Fase 5d como "`EMR_MATRIX` não se reaproveita". Comparação release a release contra o EC2, as seis releases que só o EC2 tem, e os dois release labels fora da forma `emr-X.Y.Z` |
+| [`emr-serverless/application-configuration.md`](emr-serverless/application-configuration.md) | A definição de uma application (`get-application`): tipos reais dos campos, o conjunto **fechado** de unidades de `cpu`/`memory`/`disk`, o faturamento de capacidade pré-inicializada com a application `STARTED`, auto-stop, os três destinos de log e o default que muda a forma da regra, e `EMR.secret@` no `runtimeConfiguration`. Traz o placar das cinco regras candidatas |
+
+### Amazon EMR on EKS
+| Arquivo | Conteúdo |
+|---|---|
+| [`emr-eks/runtime-matrix.md`](emr-eks/runtime-matrix.md) | A resposta da D-4: a AWS **publica** matriz por release para EMR on EKS — Spark, Iceberg, Hudi e Delta — e **não** publica Hadoop nem Python. Comparação release a release contra o EC2, com as **4 divergências de Spark e 6 de Iceberg** que provam que a `EMR_MATRIX` não se reaproveita, e a condição que permite derivar `spark` mas veta derivar `iceberg` |
+| [`emr-eks/job-run-configuration.md`](emr-eks/job-run-configuration.md) | A definição de um job run (`describe-job-run`) e do virtual cluster (`describe-virtual-cluster`): tipos reais dos campos, a lista de **cinco níveis de precedência** entre `sparkSubmitParameters` e `applicationConfiguration`, os destinos de log **sem** o managed storage ligado por default do Serverless, `persistentAppUI` sem default publicado, `dynamicAllocation` sem `shuffleTracking`, e o formato do release label com sufixo obrigatório. Traz o placar das cinco regras candidatas, com **uma vetada** |
+
+### Databricks
+| Arquivo | Conteúdo |
+|---|---|
+| [`databricks/runtime-matrix.md`](databricks/runtime-matrix.md) | Databricks Runtime → Spark, só a coluna que a página de versões suportadas publica, e a normalização do rótulo da API (`15.4.x-scala2.12` → `15.4`, `18.0` cai em `18`). Databricks entra como plataforma **declarada** (`--databricks`, `--photon`); Photon também é **detectado** no texto do plano (`plan.photon`, §4), sobre os extratores Spark que já existem; as lacunas U1 (versão no event log) e U2 (Photon no event log) ficam nomeadas, e `spark.sql.shuffle.partitions = auto` é recusado pelo `tune` |
+
+### Control-M (BMC)
+| Arquivo | Conteúdo |
+|---|---|
+| [`controlm/automation-api-matrix.md`](controlm/automation-api-matrix.md) | O **Automation API**, não o produto Control-M — a distinção não é formal, e o cabeçalho diz por quê. **Dois eixos**, porque a fonte tem dois tipos de afirmação: **51** capacidades com fronteira de versão (`Job:DetachedEmbeddedScript` a partir de `9.0.22.005`) e **6** exigências de componente (Java 11 fora em `9.0.21.325`). Faixa `9.0.21.200`–`9.0.22.100`, **31** versões citadas, **22** com afirmação e **9** recusadas por nome. Traz o procedimento do alarme mensal, e o aviso de que **`WebFetch` devolve 403** contra `documents.bmc.com` — o bloqueio é de user-agent |
+
+### Amazon Athena
+| Arquivo | Conteúdo |
+|---|---|
+| [`athena/performance.md`](athena/performance.md) | Engine v3, modelo de custo, partition projection, CTAS, Iceberg via Athena |
+
+### Armazenamento
+| Arquivo | Conteúdo |
+|---|---|
+| [`storage/parquet-layout.md`](storage/parquet-layout.md) | Row group, page, dictionary, estatísticas, small files, listing S3 |
+| [`storage/iceberg-performance.md`](storage/iceberg-performance.md) | Data/delete files, manifests, snapshots, partition spec, sort order, manutenção |
+| [`storage/iceberg-v3.md`](storage/iceberg-v3.md) | Iceberg 1.11.0 e o formato v3, com **feature da spec separada de suporte da engine**: tipos novos, default de coluna, transforms multi-argumento, row lineage, deletion vectors; piso de Java 17 e Spark 3.4 deprecado; e as limitações declaradas pela AWS no Glue 6.0 — incluindo `Cannot read unsupported version 3` no Athena |
+| [`iceberg-diagnostics.sql`](iceberg-diagnostics.sql) | Queries de metadata tables |
+
+### Validação de dados
+| Arquivo | Conteúdo |
+|---|---|
+| [`dq/validation-frameworks.md`](dq/validation-frameworks.md) | Superfície pública corrente de Great Expectations e PyDeequ, alcance de versões contra `GLUE_MATRIX`/`EMR_MATRIX`, o que a fonte primária garante sobre passadas sobre o dado, e `assert` sob `python -O`. Traz o bloco de **vetos** que o catálogo `SF-DQ` cita |
+
+### Grafo com Spark
+| Arquivo | Conteúdo |
+|---|---|
+| [`graph/graphframes-api.md`](graph/graphframes-api.md) | Superfície pública do GraphFrames nas **duas linhagens** (`graphframes` até 0.8.4, `io.graphframes` de 0.9.0 em diante): construção, colunas obrigatórias `id`/`src`/`dst`, vocabulário real de algoritmos, e as duas perguntas que decidem regra — checkpoint em `connectedComponents` é **exigência** e o algoritmo **falha** com `java.io.IOException`; `maxIter` **não** tem default único e em nenhum algoritmo a ausência é defeito. Traz o bloco de **vetos** `V-GF-*` |
+| [`graph/availability.md`](graph/availability.md) | Matriz GraphFrames × Spark × Glue/EMR: as **nove células sem jar nenhum** (Glue 4.0 e EMR 6.8.0–6.11.1, todas Spark 3.3), o piso de Python 3.10 de `graphframes-py`, e as listas da AWS onde GraphFrames **não** aparece. Traz o bloco de **vetos** `V-AV-*` |
+
+### Plataformas de agente
+| Arquivo | Conteúdo |
+|---|---|
+| [`devin/agents-and-subagents.md`](devin/agents-and-subagents.md) | Superfície oficial de **agents e subagents do Devin** (CLI e Devin Local): diretórios de descoberta, frontmatter literal, importação de `.claude/agents/*.md`, `.agents/skills/`, modelo default por router, `max-nesting`, `subagents_enabled`, MCP e atalhos. Traz o bloco de **vetos** `V-DV-*` e o que isso faz com a nota de `parity.yaml` |
+
+### Orquestração: quem dispara o job Glue
+| Arquivo | Conteúdo |
+|---|---|
+| [`airflow/glue-operator.md`](airflow/glue-operator.md) | Os parâmetros do `GlueJobOperator` que decidem o que acontece com o job — `wait_for_completion`, `deferrable`, `stop_job_run_on_kill`, `job_poll_interval` — com o **default publicado** ao lado da frase que o publica, o `execution_timeout` e o `core.default_task_retries` do core, e o `MaxRetries` do lado do Glue. Traz **6 lacunas nomeadas**, entre elas a composição dos dois retries e o que o JobRun faz quando a task é morta. Consome: `sparkforge_aws/facts/airflow_dag.py` e `rules/catalog/airflow.yaml` |
+| [`stepfunctions/glue-integration.md`](stepfunctions/glue-integration.md) | Como a state machine dispara o job: os padrões de integração do `arn:aws:states:::glue:startJobRun`, o que espera o job e o que não espera, e o `Retry` do ASL ao lado do `max_retries` do `aws_glue_job` — **a mesma lacuna** do lado do Airflow: quantas vezes uma falha reexecuta o job inteiro não está documentado. Consome: `sparkforge_aws/facts/stepfunctions.py` e `rules/catalog/stepfunctions.yaml` |
+| [`stepfunctions/execution-history.md`](stepfunctions/execution-history.md) | O que o **histórico de execução** prova: a forma de cada evento, como uma tentativa é pareada pelo encadeamento, o `JobRunId` do Glue, e o que as regras `SF-SFNX` afirmam — e o que elas recusam afirmar. Metade da lacuna de composição de retries acima já é mecanismo. Consome: `sparkforge_aws/facts/sfn_history.py` e `rules/catalog/sfn-history.yaml` |
+
+### Transversal
+| Arquivo | Conteúdo |
+|---|---|
+| [`cross-service-constraints.md`](cross-service-constraints.md) | **Armadilhas entre serviços.** Ler antes de recomendar mudança de formato ou versão |
+| [`performance-principles.md`](performance-principles.md) | Hierarquia de otimização, o que nunca assumir |
+| [`anti-patterns.md`](anti-patterns.md) | Anti-patterns de código |
+| [`runtime-compatibility.md`](runtime-compatibility.md) | Ponteiro para `glue/runtime-matrix.md` |
+
+## Catálogo de regras
+
+A forma **executável** deste conhecimento vive em [`../rules/catalog/`](../rules/catalog/): YAML com `rule_id`, limiar, guarda de versão e fonte. Prosa aqui explica *por quê*; o catálogo define *quando dispara*.
+
+Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever regra nova.
+
+## Fontes e frescor
+
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, `devin/` e `emr-serverless/` em **2026-08-04**, `graph/` em **2026-08-05**, `emr-eks/` em **2026-08-31** e `controlm/` em **2026-09-01**.
+
+`controlm/` tem um perfil de frescor que nenhuma das outras tem, e ele está escrito na própria página: a fonte é a `Monthly` da BMC e **rola ~12×/ano**, contra as ~4×/ano da página 7.x da AWS. Ela **fica** vigiada mesmo assim, porque a faixa que a matriz cobre é passado fechado — ao alarme, confere-se se alguma célula **da faixa** mudou, e quase sempre a resposta é não. E a releitura exige **UA de browser**: `WebFetch` devolve 403 contra `documents.bmc.com`, e quem não souber disso vai concluir que a fonte morreu.
+
+**A seção `Fontes` de cada arquivo daqui é vigiada.** `scripts/refresh_knowledge.py::watchlist` deriva a lista de URLs de **duas** origens, e nenhuma das duas é mantida à mão: `sources[].url` das regras do catálogo (campo `rules` no lock) e as URLs que aparecem nos blocos `Fontes` destas páginas (campo `docs`). `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_watchlist` exige igualdade exata entre o lock e a união das duas.
+
+Até 2026-08-05 a origem era **só o catálogo**, e o efeito ninguém tinha medido: conhecimento que nenhuma regra cita nunca entrava. O caso que fechou a dívida foi `devin/agents-and-subagents.md` — ela não sustenta regra nenhuma, sustenta **perfil de agente**, e as 24 URLs de `docs.devin.ai` envelheciam sem alarme sobre uma superfície que a própria fonte declara experimental. O lock foi de **51 para 109** fontes no dia em que a segunda origem entrou: 58 delas por `knowledge/` e nenhuma com hash ainda, porque hash só se escreve depois de ler a página — a próxima conferência com rede as relata como **NOVA**, que é a verdade. **Com a Fase 6a o lock chegou a 131**, e as 22 que entraram ali vieram dela: 13 chegam **só** por `knowledge/graph/`, e o total de fontes que existem apenas pela segunda origem subiu de 58 para **70**. **Hoje o lock está em 213**: a fase de EMR on EKS acrescentou **60** e não removeu nenhuma. Ela entrou em duas passadas, e a segunda é a lição: as 33 primeiras vieram das páginas citadas uma a uma; as **27** restantes são páginas por release de EMR on EKS que a primeira redação descrevia por **padrão de URL em prosa** (`emr-eks-<X.Y.Z>.html`) em vez de listar. O gate saiu 0 nas duas vezes — ele exige igualdade entre lock e watchlist, e a watchlist estava incompleta na origem. Padrão em prosa é legítimo para descrever, e nunca para **substituir** a URL de uma página de que o documento tirou número. Das 213, **71** são citadas por regra e **142** existem apenas pela segunda origem.
+
+O **vínculo de volta** é o que impede a segunda origem de virar ruído: toda entrada do lock nomeia pelo menos um consumidor — regra, página, ou as duas —, e o relatório imprime os dois. URL citada pelas duas com `retrieved` diferentes carrega **as duas datas**, para que a divergência apareça em vez de ser resolvida por chute.
+
+Duas convenções do rodapé, e as duas têm razão medida: o bloco é o heading cujo texto é exatamente `Fontes` (o `## Fontes e frescor` desta página fala *sobre* o mecanismo e não é origem), e URL dentro de crase é **padrão, não citação** — a §2 de `emr-serverless/runtime-matrix.md` escreve `release-version-<N>.html` para descrever 24 páginas, e vigiar esse texto daria 404 permanente.
+
+Sem rede: `python scripts/refresh_knowledge.py --update --offline` alinha o conjunto do lock (entra fonte nova sem hash, sai fonte que ninguém cita mais) sem carimbar conferência nenhuma.
+
+Conhecimento aqui **não substitui** a documentação do runtime real. Quando o job em análise contradiz esta base, o runtime ganha e a base é corrigida.
+ 
+## Engenharia agentica 
+agentic-engineering.md - contratos, autonomia, memoria e avaliacao 
+token-economy.md - reducao de contexto, cache, deduplicacao e metricas 
+tool-specialization-matrix.md - especializacao, ferramentas e escalonamento
+model-selection-observability.md - selecao adaptativa de modelos, traces opcionais e avisos de tokens
+## Bases da plataforma e especialidades
+
+- [data-platform-architecture.md](data-platform-architecture.md) - arquitetura, dominios, contratos, governanca e tradeoffs.
+- [airflow-pipelines.md](airflow-pipelines.md) - DAGs, idempotencia, particoes, retries e backfill.
+- [iceberg-parquet-s3.md](iceberg-parquet-s3.md) - tabelas, layout colunar, S3, lifecycle e custo.
+- [terraform-data-platform.md](terraform-data-platform.md) - state, plan, IAM, dependencias, drift e rollback.
+- [graphs-neptune-dynamodb-athena.md](graphs-neptune-dynamodb-athena.md) - grafos, Neptune, DynamoDB, Athena e conectores.
+- [agent-creation.md](agent-creation.md) - contratos, loops, handoffs, avaliacao e economia de tokens.
+- [domain-tool-matrix.md](domain-tool-matrix.md) - roteamento por dominio, evidencias e handoffs.

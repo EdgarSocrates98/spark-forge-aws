@@ -1,0 +1,25 @@
+name: auto_termination_idle_day
+proves: >
+  O limiar exato de SF-EMR-009, no lado que dispara. `IdleTimeout` é 86400 — um
+  dia, o valor declarado em `threshold.idle_timeout_seconds` —, e a comparação é
+  `>=`, então o cluster é acusado com severidade P2, o caso geral: custo puro,
+  sem efeito sobre correção de resultado.
+  Existe em par com `auto_termination_near_threshold`, que é o MESMO dump com uma
+  única diferença: 82800 em vez de 86400, uma hora abaixo. Os dois juntos são a
+  prova bidirecional exigida pela Fase 2 — nenhum outro campo muda, então se o
+  limiar mudar de lugar, de sinal, ou se a comparação virar `>`, um dos dois
+  goldens quebra. Um limiar que só tem golden de um lado nunca foi provado.
+  Nenhuma outra regra da área dispara: `LogUri` presente fecha SF-EMR-006, MASTER
+  e CORE On-Demand fecham SF-EMR-004 e SF-EMR-008, não há `Configurations` nem
+  managed scaling, e `ALL_STEPS_COMPLETED` não é `BOOTSTRAP_FAILURE`.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.instance_capacity
+expects_rules:
+  - SF-EMR-009

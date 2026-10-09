@@ -1,0 +1,6 @@
+name: tool_missing
+mode: transcript
+question: q-mcp
+proves: >
+  AT-007: so judge foi chamada. tools failed com
+  missing [analyze_pyspark]; a resposta continua sendo pontuada.

@@ -1,0 +1,24 @@
+{
+  "tables": [
+    {
+      "name": "db.eventos",
+      "storage_format": "parquet",
+      "partition_keys": [{"name": "dt", "type": "string"}],
+      "columns": [
+        {"name": "cliente_id", "type": "bigint"},
+        {"name": "valor", "type": "double"},
+        {"name": "dt", "type": "string"}
+      ],
+      "properties": {"projection.enabled": "true"},
+      "partition_count": 1200
+    },
+    {
+      "name": "db.legado_csv",
+      "storage_format": "csv",
+      "columns": [{"name": "id", "type": "string"}]
+    },
+    {
+      "name": "db.sem_dados"
+    }
+  ]
+}

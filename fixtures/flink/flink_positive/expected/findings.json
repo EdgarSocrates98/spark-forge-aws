@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-FLINK-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Backpressure observado em operador Flink",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_a5a236"
+    ],
+    "measured": {
+      "parallelism": 4,
+      "backpressured_ratio": 0.25,
+      "num_records_in": 1000,
+      "num_records_out": 1000
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O dump traz medida positiva de tempo ou razão de backpressure para um operador. A observação não define limiar de incidente nem prova causa raiz; é necessário correlacionar throughput, capacidade, downstream e janela da medição.",
+    "proposed_change": [
+      "Comparar a série de backpressure com throughput, busy time, idle time e backlog.",
+      "Localizar o operador dominante e a dependência downstream antes de dimensionar capacidade.",
+      "Alterar uma única variável e validar o resultado funcional e a latência observada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar uma amostra isolada como incidente pode provocar escala sem causa comprovada.",
+      "Alterar paralelismo pode mudar ordenação, estado e custo operacional."
+    ],
+    "tradeoffs": [
+      "Coleta mais frequente de métricas aumenta observabilidade e retenção."
+    ],
+    "validation": [
+      "Confirmar unidade, janela e operador de cada medida.",
+      "Comparar backlog, throughput e duração antes e depois de uma variável.",
+      "Executar proxies de contagem, schema, chaves e agregados."
+    ],
+    "rollback": [
+      "Reverter a única alteração experimental e manter o baseline e os dumps."
+    ],
+    "sources": [
+      {
+        "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/monitoring/back_pressure/",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "flink.operator.backpressure",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

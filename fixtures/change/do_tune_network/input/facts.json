@@ -1,0 +1,80 @@
+[
+  {
+    "id": "f_201975",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.network.timeout"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.network.timeout",
+      "value": "30",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "743a308046aa613c13eec52619b4c411b5bad62cbf9a07ef8fde14be7d8d520e",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_bda2fe",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.heartbeatInterval"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.heartbeatInterval",
+      "value": "60s",
+      "app_id": "application_1699000000000_0077",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {}
+  },
+  {
+    "id": "f_070acf",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.network.timeout"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.network.timeout",
+      "value": "30",
+      "app_id": "application_1699000000000_0077",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {}
+  },
+  {
+    "id": "f_bfda02",
+    "schema_version": 1,
+    "kind": "spark.timeout.relation",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {
+      "heartbeat_s": 60.0,
+      "network_timeout_s": 30.0
+    },
+    "attrs": {
+      "heartbeat_raw": "60s",
+      "network_timeout_raw": "30"
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

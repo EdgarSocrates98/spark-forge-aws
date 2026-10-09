@@ -1,0 +1,157 @@
+[
+  {
+    "rule_id": "SF-STREAM-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Série observada com processamento abaixo da entrada",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_82604a"
+    ],
+    "measured": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100,
+      "input_rows_per_second_last": 110,
+      "processed_rows_per_second_first": 80,
+      "processed_rows_per_second_last": 90
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Em todas as observações da série, a taxa processada ficou abaixo da taxa de entrada registrada no mesmo progresso. O fato não identifica sozinho se a causa é fonte, trigger, estado, sink, capacidade ou atraso de métrica; a investigação deve cruzar o plano, o runtime e o backlog do transporte.",
+    "proposed_change": [
+      "Coletar uma série comparável de progresso, duração de trigger, offsets e backlog da fonte.",
+      "Localizar se a diferença nasce em processamento, state store, sink ou capacidade.",
+      "Alterar uma variável principal por experimento e validar o resultado funcional."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Comparar janelas ou fontes não pareadas pode criar uma diferença que não existe.",
+      "Escalar infraestrutura antes de localizar o gargalo pode aumentar custo sem resolver atraso."
+    ],
+    "tradeoffs": [
+      "Maior observabilidade aumenta volume de logs e custo de retenção."
+    ],
+    "validation": [
+      "Confirmar unidade, janela, batch_id, fonte e timestamp de cada observação.",
+      "Comparar backlog e duração por batch antes e depois da única variável alterada.",
+      "Executar proxies de contagem, schema, chaves e agregados do resultado."
+    ],
+    "rollback": [
+      "Reverter a única alteração experimental e manter os artefatos de baseline."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-01"
+      },
+      {
+        "url": "https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.lastProgress.html",
+        "retrieved": "2026-10-01"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.progress.series",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAMOBS-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Janela temporal pareada com processamento abaixo da entrada e backlog observado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query<->orders-group",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_a19f50"
+    ],
+    "measured": {
+      "progress_observation_count": 2,
+      "transport_observation_count": 2,
+      "paired_observation_count": 2,
+      "progress_timestamped_count": 2,
+      "transport_timestamped_count": 2,
+      "max_skew_seconds": 2,
+      "max_transport_value": 40,
+      "min_transport_value": 30,
+      "comparable_progress_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A composição observou pelo menos dois pares de progresso e transporte dentro da tolerância temporal declarada. Em todos os pares comparáveis, a taxa processada ficou abaixo da entrada e uma medida de lag ou idade foi observada. Isso fortalece a investigação, mas não prova causa, impacto funcional, SLO ou ganho de capacidade.",
+    "proposed_change": [
+      "Conferir a janela, unidades, identidade, relógios e completude dos pares.",
+      "Correlacionar state, sink, duração, throttling, offsets e resultado funcional.",
+      "Alterar uma variável principal por experimento e comparar o mesmo caso."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Uma tolerância ampla pode parear snapshots de janelas diferentes.",
+      "Relógios sem timezone ou métricas agregadas podem mascarar a granularidade real.",
+      "Escalar capacidade sem medir state e sink pode aumentar custo sem resolver atraso."
+    ],
+    "tradeoffs": [
+      "Série temporal pareada exige retenção, sincronização de relógio e bytes adicionais."
+    ],
+    "validation": [
+      "Confirmar `max_skew_seconds`, timestamps, identidade e unidades no artefato de origem.",
+      "Repetir a coleta na mesma janela e conferir count, schema, chaves e agregados do resultado.",
+      "Comparar throughput, backlog e duração antes/depois da única variável experimental."
+    ],
+    "rollback": [
+      "Reverter a única variável experimental e preservar os facts pareados para reauditoria."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-02"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.temporal.diagnostic",
+      "direction": "investigate",
+      "requires_absent": [
+        "streaming.temporal.unresolved"
+      ],
+      "moves": [
+        "runtime.wall_clock",
+        "transport.backlog"
+      ],
+      "depends_on": []
+    }
+  }
+]

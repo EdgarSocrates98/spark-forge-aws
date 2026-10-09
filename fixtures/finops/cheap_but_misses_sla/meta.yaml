@@ -1,0 +1,7 @@
+name: cheap_but_misses_sla
+job_name: etl_pedidos_diario
+proves: 'G.2X x10 tem o menor custo por run (frontier), mas estoura o SLA de 10 minutos
+  em 4 de 10 execucoes (900s). G.2X x20 custa mais por run e cumpre sempre. Os 4 runs
+  que estouram nao sao so mais lentos: custam mais DPU-segundos que a media dos que
+  cumprem, o suficiente para o custo por DESFECHO (dividido so pelos runs que serviram)
+  inverter a ordem -- curto prazo e longo prazo discordam.'

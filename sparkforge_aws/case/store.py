@@ -1,0 +1,598 @@
+"""Leitura e escrita de `.sparkforge_aws/case.yaml` — o barramento de handoff.
+
+O case file é o que atravessa a fronteira entre uma sessão Devin e uma sessão
+Claude Code: são processos diferentes, sem contexto conversacional compartilhado.
+O que sobrevive é um commit, e o case file é o estado desse commit.
+
+Timestamp nunca é gerado aqui. Todo `created_at`/`at` chega como parâmetro,
+injetado por quem chama (o adapter de CLI, tipicamente `datetime.now(UTC)`).
+Isto mantém o módulo puro e reprodutível, e impede um LLM de inventar hora.
+"""
+from __future__ import annotations
+
+import copy
+import os
+import shutil
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from sparkforge_aws.durable import write_atomic
+
+SCHEMA_VERSION = 1
+CASE_DIR = ".sparkforge_aws"
+CASE_FILE = "case.yaml"
+
+PHASES = (
+    "intake",
+    "inventory",
+    "facts",
+    "diagnosis",
+    "hypothesis",
+    "experiment",
+    "validation",
+    "report",
+)
+
+GATES = (
+    "baseline_captured",
+    "dominant_bottleneck_identified",
+    "functional_validation_defined",
+    "flows_mapped",
+)
+
+
+class CaseError(ValueError):
+    """Case ausente, malformado, ou mutação com valor fora do domínio."""
+
+
+# Diretorio de estado legado: repos que ja tinham um case aberto gravaram-no em
+# `.sparkforge/case.yaml`. A leitura cai para o nome antigo quando so ele
+# existe; `case_path` (escrita) aponta sempre para o nome novo.
+LEGACY_CASE_DIR = ".sparkforge"
+
+
+def case_path(root: Path | str) -> Path:
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        from sparkforge_aws.distribution.paths import resolve_paths
+        return resolve_paths(root).state_root / CASE_FILE
+    return Path(root) / CASE_DIR / CASE_FILE
+
+
+def case_read_path(root: Path | str) -> Path:
+    """Onde o case e LIDO: `.sparkforge_aws/`, ou o legado `.sparkforge/`
+    quando so ele existe. E o diretorio que ancora o resto do estado do case
+    (journal, artefatos): quem le estado do case deve resolve-lo por aqui."""
+    novo = case_path(root)
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        return novo
+    if novo.is_file():
+        return novo
+    legado = Path(root) / LEGACY_CASE_DIR / CASE_FILE
+    return legado if legado.is_file() else novo
+
+
+def state_dir(root: Path | str) -> Path:
+    """O diretorio de estado do case: `.sparkforge_aws/`, ou `.sparkforge/`
+    enquanto o `case.yaml` ainda morar la.
+
+    O case e a ancora: journal, blackboard, memory e debate vivem ao lado dele
+    e seguem a mesma decisao, entao uma arvore pre-rename continua coerente
+    ate a proxima gravacao do case, que muda a ancora de uma vez."""
+    return case_read_path(root).parent
+
+
+def state_path(root: Path | str, rel: Path | str) -> Path:
+    """Onde um arquivo de estado autonomo mora: `<root>/.sparkforge_aws/<rel>`
+    se ele existe ou se nada existe ainda; o mesmo relativo sob `.sparkforge/`
+    quando so a copia legada existe.
+
+    Diferente de `state_dir`, que ancora no `case.yaml`: `traces.db`, o indice
+    de codeintel e o inventario de consumidores existem sem case algum, entao
+    a ancora deles e o proprio arquivo — o existente continua em uso em vez
+    de dividir o historico em duas arvores paralelas. `rel` pode vir com ou
+    sem o prefixo `.sparkforge_aws/` (ou o `.sparkforge/` legado — ambos sao
+    normalizados para a cauda relativa)."""
+    rel = Path(rel)
+    partes = rel.parts
+    tail = Path(*partes[1:]) if partes and partes[0] in (CASE_DIR, LEGACY_CASE_DIR) else rel
+    if tail.is_absolute() or '..' in tail.parts:
+        raise CaseError('state path must be relative and confined')
+    if 'SPARKFORGE_AWS_HOME' in os.environ:
+        from sparkforge_aws.distribution.paths import resolve_paths
+        return resolve_paths(root).state_root / tail
+    novo = Path(root) / CASE_DIR / tail
+    if novo.exists():
+        return novo
+    legado = Path(root) / LEGACY_CASE_DIR / tail
+    return legado if legado.exists() else novo
+
+
+# Estado vizinho do `case.yaml`, carregado junto quando a gravacao do case muda
+# a ancora de `.sparkforge/` para `.sparkforge_aws/`: historicos pequenos e o
+# indice de artefatos. O manifesto referencia payloads por caminho relativo ao
+# repo (`.sparkforge/artifacts/x`), que continua resolvendo -- os payloads em
+# si ficam onde estao e `artifacts/` nao entra na copia. Os nomes pertencem a
+# outros modulos (journal, agentic/*, collect); repetidos aqui de proposito,
+# porque importa-los criaria ciclo com quem ja resolve estado via `state_dir`.
+_CARRY_ON_FLIP = (
+    Path("journal.jsonl"),
+    Path("blackboard"),
+    Path("memory"),
+    Path("debate"),
+    Path("artifacts") / "manifest.json",
+)
+
+
+def _copiar_ausentes(origem: Path, destino: Path) -> None:
+    """Copia arquivos que ainda nao existem no destino; nunca sobrescreve."""
+    if origem.is_file():
+        if not destino.exists():
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(origem, destino)
+        return
+    for item in sorted(origem.rglob("*")):
+        if not item.is_file():
+            continue
+        alvo = destino / item.relative_to(origem)
+        if alvo.exists():
+            continue
+        alvo.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, alvo)
+
+
+def _carry_legacy_state(root: Path) -> None:
+    """Virada de ancora: traz o estado vizinho do case para `.sparkforge_aws/`.
+
+    Chamado na primeira gravacao de `case.yaml` num repo que so tinha o
+    `.sparkforge/` legado. Sem a copia, o journal encadeado por hash, o
+    blackboard, a memoria e os debates continuariam legiveis em disco mas
+    invisiveis para os verbos, que agora ancoram no diretorio novo. Copia,
+    nunca move: o original legado permanece intocado no lugar."""
+    origem = Path(root) / LEGACY_CASE_DIR
+    destino = Path(root) / CASE_DIR
+    for nome in _CARRY_ON_FLIP:
+        src = origem / nome
+        if src.exists():
+            _copiar_ausentes(src, destino / nome)
+
+
+def new_case(
+    case_id: str,
+    created_at: str,
+    runtime: dict[str, Any],
+    repo: str = "",
+    strict_gates: bool = False,
+) -> dict[str, Any]:
+    """Cria um case novo em fase `intake`, todos os gates falsos.
+
+    `created_at` é injetado, nunca gerado: ver nota do módulo.
+
+    `strict_gates` é a escolha de rigor, e ela é **do case**, não da invocação
+    (D-3 do spec da Fase 4b): fica gravada no `case.yaml` e vale pela
+    investigação inteira — outra sessão, outra máquina, outra ferramenta. Uma
+    flag por invocação desligaria o gate em silêncio quando alguém esquecesse
+    de passá-la, que é a família de defeito que esta fase existe para não
+    cometer.
+    """
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "case_id": case_id,
+        "created_at": created_at,
+        "runtime": copy.deepcopy(runtime),
+        "scope": {
+            "repo": repo,
+            "entrypoints": [],
+            "job_names": [],
+            "consumers": [],
+        },
+        "phase": "intake",
+        "artifacts": [],
+        "facts_index": {"path": "", "count": 0, "by_kind": {}},
+        "findings_index": {"path": "", "count": 0, "by_severity": {}},
+        "baseline": None,
+        "hypotheses": [],
+        "gates": dict.fromkeys(GATES, False),
+        "strict_gates": bool(strict_gates),
+        # Lista, nunca dicionário: dois overrides do mesmo gate em momentos
+        # diferentes são dois fatos, e um mapa `gate -> motivo` apagaria o
+        # primeiro motivo ao gravar o segundo.
+        "gate_overrides": [],
+        "skills_used": [],
+        "open_questions": [],
+    }
+
+
+def save_case(case: dict[str, Any], root: Path | str) -> Path:
+    """Escreve o case como YAML determinístico e legível em diff.
+
+    Chaves ordenadas e `default_flow_style=False`: o mesmo case produz sempre o
+    mesmo texto, condição necessária para o arquivo ser committável e revisável.
+
+    Gravação atômica (`durable.write_atomic`): uma queda no meio deixa o case
+    anterior inteiro, nunca um YAML truncado que `load_case` recusaria.
+
+    Quando esta gravacao e a virada de ancora (o MESMO case existia so em
+    `.sparkforge/` e acaba de nascer em `.sparkforge_aws/`), o estado vizinho
+    do case vem junto — `_carry_legacy_state`. A comparacao por `case_id` e o
+    que distingue a virada de um `case open` novo num repo com case legado:
+    o journal e o blackboard de uma investigacao diferente nao podem ser
+    copiados para debaixo dela. Depois da virada o novo case existe sempre,
+    e a checagem custa um `is_file` por gravacao.
+    """
+    path = case_path(root)
+    virada = (
+        'SPARKFORGE_AWS_HOME' not in os.environ
+        and not path.is_file()
+        and _mesmo_case_legado(Path(root), case)
+    )
+    if virada:
+        # Copia ANTES de gravar o case: falha aqui nao toca nada, e as copias
+        # sao ancoradas no case — invisiveis ate ele existir no diretorio novo
+        # — entao uma gravacao que falhe depois delas nao deixa estado partido.
+        _carry_legacy_state(Path(root))
+    text = yaml.safe_dump(
+        case, sort_keys=True, allow_unicode=True, default_flow_style=False
+    )
+    write_atomic(path, text)
+    return path
+
+
+def _mesmo_case_legado(root: Path, case: dict[str, Any]) -> bool:
+    """O case sendo gravado e o mesmo que mora em `.sparkforge/`?
+
+    Compara `case_id` lendo o YAML legado; ilegivel ou sem id, responde
+    "nao" — e a virada nao carrega nada, o que e a escolha segura."""
+    legado = root / LEGACY_CASE_DIR / CASE_FILE
+    if not legado.is_file():
+        return False
+    try:
+        documento = yaml.safe_load(legado.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return False
+    return bool(case.get("case_id")) and documento.get("case_id") == case["case_id"]
+
+
+def load_case(root: Path | str) -> dict[str, Any]:
+    """Carrega o case. Levanta CaseError se ausente ou schema divergente."""
+    path = case_read_path(root)
+    if not path.is_file():
+        raise CaseError(
+            f"Nenhum case em {path}. Rode `sparkforge-aws case open` para criar um."
+        )
+
+    try:
+        document = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as exc:
+        raise CaseError(f"{path}: YAML inválido: {exc}") from exc
+
+    version = document.get("schema_version")
+    if version != SCHEMA_VERSION:
+        raise CaseError(
+            f"{path}: schema_version {version!r} não suportado "
+            f"(esperado {SCHEMA_VERSION})"
+        )
+
+    return document
+
+
+def _gate_contract() -> dict[str, dict[str, Any]]:
+    """O bloco `gates` do `routing.yaml`, com os nomes conferidos contra `GATES`.
+
+    Import tardio de propósito: sem rigor ligado, `set_phase` não lê o catálogo,
+    e o comportamento é bit a bit o de antes desta fase.
+
+    Duas recusas, e as duas só acontecem **sob rigor** — quem não pediu rigor
+    nunca chega aqui, que é o critério 5 do spec da Fase 4b intacto:
+
+    - nome **desconhecido**: typo no catálogo viraria gate inerte em silêncio;
+    - nome **faltante**: era o buraco medido na revisão final da fase. Sem o
+      bloco `gates`, `load_gate_contract` devolvia `{}`, `_gates_blocking` não
+      achava contrato para gate nenhum e a lista de bloqueio saía vazia — um
+      case com `strict_gates: true` transitava de `intake` a `report` sem
+      evidência nenhuma. Rigor que falha **aberto** é pior que rigor ausente,
+      porque o case afirma uma garantia que ninguém está prestando.
+
+    Contrato **vazio** e contrato **parcial** recebem a mesma resposta, e isso é
+    decisão registrada: os dois deixam pelo menos um gate de `GATES` sem
+    contrato, e nesse estado ninguém sabe se aquele gate guarda a fase pedida.
+    Tratar o bloco inteiro ausente como "catálogo de outra época, siga em
+    frente" premiaria justamente o catálogo que esqueceu mais.
+    """
+    from sparkforge_aws.case.router import load_gate_contract, routing_path
+
+    contract = load_gate_contract()
+    unknown = sorted(set(contract) - set(GATES))
+    if unknown:
+        raise CaseError(
+            f"routing.yaml declara gate desconhecido: {', '.join(unknown)} "
+            f"(esperado um de: {', '.join(GATES)}). Gate com nome errado seria "
+            f"gate inerte em silêncio."
+        )
+    missing = [gate for gate in GATES if gate not in contract]
+    if missing:
+        raise CaseError(_missing_contract_message(missing, routing_path()))
+    return contract
+
+
+def _missing_contract_message(missing: list[str], path: Path) -> str:
+    """Qual gate falta, onde ele deveria estar, e o que declarar por gate."""
+    lines = [
+        f"contrato de gates incompleto: {len(missing)} gate(s) de `store.GATES` "
+        f"sem declaração no catálogo carregado.",
+        f"  onde: bloco `gates` de {path}",
+    ]
+    for gate in missing:
+        lines.append(f"  - {gate}: ausente do bloco `gates`")
+    lines.append(
+        "Declare cada um com `satisfied_by` + `produced_by` + `guards_phases` "
+        "(gate que bloqueia) ou com `advisory_reason` (gate sem produtor). Este "
+        "case foi aberto com `strict_gates`, e gate sem contrato não pode ser "
+        "lido como gate satisfeito: seria rigor falhando ABERTO, com o case "
+        "afirmando uma garantia que ninguém prestou."
+    )
+    return "\n".join(lines)
+
+
+def overridden_gates(case: dict[str, Any]) -> set[str]:
+    """Gates com override registrado no case.
+
+    Lê a lista `gate_overrides`; case gravado antes da Fase 4b não tem a chave e
+    responde conjunto vazio, sem migração.
+    """
+    return {
+        str(entry.get("gate"))
+        for entry in (case.get("gate_overrides") or [])
+        if isinstance(entry, dict) and entry.get("gate")
+    }
+
+
+def _gates_blocking(
+    phase: str, fact_kinds: set[str], overridden: set[str] | None = None
+) -> list[tuple[str, str, str]]:
+    """Gates que guardam `phase` e cujo fact produtor não está presente.
+
+    Percorre `GATES` na ordem declarada, e não a do YAML: a mensagem de bloqueio
+    é a mesma para o mesmo estado, independente de como o catálogo foi editado.
+
+    Gate sem `satisfied_by` **nunca** entra na lista, nem sob rigor — é o
+    critério da §1 do spec da Fase 4b, e ele mora aqui em uma linha só.
+
+    `case["gates"][gate]` não é consultado de propósito (desvio D-4b-2):
+    `case update --gate X --gate-value true` viraria override sem motivo e sem
+    registro. O que destrava é evidência ou override declarado, nunca a flag.
+
+    `overridden` é o conjunto de gates com override registrado — o D-4 do spec.
+    Ele destrava porque tem nome e motivo gravados no case; a flag booleana não,
+    porque não tem nem um nem outro.
+    """
+    contract = _gate_contract()
+    skipped = overridden or set()
+    blocking: list[tuple[str, str, str]] = []
+    for gate in GATES:
+        spec = contract.get(gate) or {}
+        kind = spec.get("satisfied_by")
+        if not kind:
+            continue
+        if phase not in (spec.get("guards_phases") or []):
+            continue
+        if gate in skipped:
+            continue
+        if kind in fact_kinds:
+            continue
+        blocking.append((gate, kind, str(spec.get("produced_by", "")).strip()))
+    return blocking
+
+
+def _blocked_message(phase: str, blocking: list[tuple[str, str, str]]) -> str:
+    """Fase pedida, gate, fact que faltou e o comando exato — o D-5 do spec.
+
+    A Fase 4a mediu que mensagem inacionável passa no CI, então o comando vai
+    por extenso, copiável, vindo do `produced_by` do catálogo.
+    """
+    lines = [
+        f"transição para `{phase}` bloqueada: este case foi aberto com rigor de "
+        f"gates (`strict_gates`), e {len(blocking)} gate(s) sem a evidência que "
+        f"os satisfaz:"
+    ]
+    for gate, kind, command in blocking:
+        lines.append(f"  - {gate}: falta o fact `{kind}`")
+        lines.append(f"    produza com: {command}")
+        lines.append(
+            f"    ou, se o dado genuinamente não existe (job descontinuado, "
+            f"ambiente que sumiu): sparkforge-aws case update --override-gate "
+            f"{gate} --reason '<por que não existe>'"
+        )
+    lines.append(
+        "O gate checa a PRESENÇA do kind, não o conteúdo do fact: ele prova que "
+        "a análise rodou e produziu o artefato que destrava, nunca que ela "
+        "cobriu todo `scope.entrypoints` nem que o benchmark é do job certo."
+    )
+    return "\n".join(lines)
+
+
+def set_phase(
+    case: dict[str, Any],
+    phase: str,
+    fact_kinds: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Move o case de fase, e — só sob `strict_gates` — cobra os gates da fase.
+
+    `fact_kinds` é o conjunto de kinds de fact que o case já produziu. A
+    checagem é por **presença de kind**, não por conteúdo de fact: ela prova que
+    a análise rodou e emitiu o artefato que destrava o gate, e **não** prova que
+    ela cobriu todo `scope.entrypoints`, nem que o benchmark é do job certo.
+    Passar facts inteiros puxaria o índice de facts para dentro do store e faria
+    o gate precisar saber o que é "o job certo", que é julgamento. O limite fica
+    declarado aqui e na mensagem de bloqueio, como `dq.unresolved` declara o
+    recorte dele.
+
+    Parâmetro opcional: sem ele — e sem `strict_gates` no case — o comportamento
+    é o de antes da Fase 4b, inclusive sem ler o catálogo. Qual gate guarda qual
+    fase, e o que satisfaz cada um, é dado em `rules/catalog/routing.yaml`.
+    """
+    if phase not in PHASES:
+        raise CaseError(
+            f"fase desconhecida: {phase!r} (esperado uma de: {', '.join(PHASES)})"
+        )
+    if case.get("strict_gates"):
+        blocking = _gates_blocking(
+            phase, set(fact_kinds or ()), overridden_gates(case)
+        )
+        if blocking:
+            raise CaseError(_blocked_message(phase, blocking))
+    new = copy.deepcopy(case)
+    new["phase"] = phase
+    return new
+
+
+def set_gate(case: dict[str, Any], gate: str, value: bool) -> dict[str, Any]:
+    if gate not in GATES:
+        raise CaseError(
+            f"gate desconhecido: {gate!r} (esperado uma de: {', '.join(GATES)})"
+        )
+    new = copy.deepcopy(case)
+    new["gates"][gate] = value
+    return new
+
+
+def override_gate(
+    case: dict[str, Any], gate: str, reason: str, at: str = ""
+) -> dict[str, Any]:
+    """Registra que alguém passou por cima de um gate, e por quê (D-4 do spec).
+
+    O dado às vezes genuinamente não existe — job descontinuado, ambiente que
+    sumiu, corpus sem trabalho Spark alcançável. Gate sem escapatória reabre o
+    impasse que a §5.5 da Fase 0 recusou. A escapatória custa uma frase escrita,
+    e a frase fica no case: é a diferença entre *o gate não existe* e *o gate
+    existe e alguém passou por cima com o nome dele registrado*.
+
+    Sem motivo o override é recusado — um override anônimo seria a mesma coisa
+    que `--gate-value true`, que o desvio D-4b-2 já recusou.
+
+    `at` é injetado por quem chama, como todo timestamp deste módulo. Vazio é
+    aceito porque `override_gate` é chamável de teste e de biblioteca; a CLI
+    passa o `--now` que ela já exige.
+    """
+    if gate not in GATES:
+        raise CaseError(
+            f"gate desconhecido: {gate!r} (esperado uma de: {', '.join(GATES)})"
+        )
+    motivo = (reason or "").strip()
+    if not motivo:
+        raise CaseError(
+            f"override do gate {gate!r} recusado: falta o motivo. Passe "
+            f"`--reason \"<por que a evidência não existe>\"` — o case guarda "
+            f"quem passou por cima de quê e por quê, e override sem motivo não "
+            f"se distingue de gate esquecido."
+        )
+    new = copy.deepcopy(case)
+    overrides = list(new.get("gate_overrides") or [])
+    overrides.append({"gate": gate, "reason": motivo, "at": at})
+    new["gate_overrides"] = overrides
+    return new
+
+
+def add_hypothesis(
+    case: dict[str, Any], statement: str, prediction: str, experiment: str
+) -> dict[str, Any]:
+    new = copy.deepcopy(case)
+    hyp_id = f"h{len(new['hypotheses']) + 1}"
+    new["hypotheses"].append(
+        {
+            "id": hyp_id,
+            "statement": statement,
+            "prediction": prediction,
+            "experiment": experiment,
+            "status": "open",
+        }
+    )
+    return new
+
+
+# Os tres desfechos possiveis de uma hipotese, e por que sao tres. `confirmed` e
+# `refuted` sao os dois lados do experimento; `abandoned` existe porque a
+# terceira coisa que acontece de verdade e o experimento nunca rodar -- job
+# descontinuado, ambiente que sumiu, prioridade que mudou. Sem ela a hipotese
+# fica `open` para sempre, e a secao "Hipoteses abertas" do `resume` vira lista
+# de coisa que ninguem vai fazer.
+HYPOTHESIS_OUTCOMES = ("confirmed", "refuted", "abandoned")
+
+
+def close_hypothesis(
+    case: dict[str, Any],
+    hyp_id: str,
+    outcome: str,
+    at: str,
+    evidence: str = "",
+) -> dict[str, Any]:
+    """Fecha uma hipotese com desfecho, sem apagar o que ela afirmava.
+
+    O registro e ACRESCIMO: `status` deixa de ser `open` e ganha `outcome`,
+    `closed_at` e `evidence` ao lado do `statement`, da `prediction` e do
+    `experiment` originais. Reescrever a afirmacao para casar com o resultado e
+    exatamente o vies que uma hipotese registrada por escrito existe para
+    impedir.
+
+    Recusa id desconhecido em vez de criar, e recusa refechar: fechar hipotese
+    que ninguem abriu registra experimento que ninguem desenhou, e reabrir
+    apagaria o desfecho anterior.
+    """
+    if outcome not in HYPOTHESIS_OUTCOMES:
+        raise CaseError(
+            f"desfecho {outcome!r} desconhecido: esperado um de "
+            f"{', '.join(HYPOTHESIS_OUTCOMES)}. `confirmed` e `refuted` sao os "
+            f"dois lados do experimento, e `abandoned` e o experimento que nao "
+            f"vai rodar."
+        )
+    new = copy.deepcopy(case)
+    alvos = [h for h in new["hypotheses"] if h.get("id") == hyp_id]
+    if not alvos:
+        conhecidas = ", ".join(h.get("id", "?") for h in new["hypotheses"]) or "nenhuma"
+        raise CaseError(
+            f"hipotese {hyp_id!r} nao existe neste case (abertas ate agora: "
+            f"{conhecidas}). Fechar uma hipotese que ninguem abriu registraria "
+            f"um experimento que ninguem desenhou."
+        )
+    alvo = alvos[0]
+    if alvo.get("status") != "open":
+        raise CaseError(
+            f"hipotese {hyp_id!r} ja foi fechada como {alvo.get('status')!r} em "
+            f"{alvo.get('closed_at')!r}. Reabrir apagaria o desfecho anterior; "
+            f"se a pergunta voltou, ela e outra hipotese."
+        )
+    alvo["status"] = outcome
+    alvo["closed_at"] = at
+    alvo["evidence"] = evidence
+    return new
+
+
+def record_skill_use(
+    case: dict[str, Any], skill: str, at: str, outcome: str
+) -> dict[str, Any]:
+    new = copy.deepcopy(case)
+    new["skills_used"].append({"skill": skill, "at": at, "outcome": outcome})
+    return new
+
+
+def set_index(
+    case: dict[str, Any],
+    which: str,
+    path: str,
+    count: int,
+    breakdown: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    """Atualiza `facts_index` ou `findings_index` com contagem e detalhe."""
+    if which == "facts_index":
+        breakdown_key = "by_kind"
+    elif which == "findings_index":
+        breakdown_key = "by_severity"
+    else:
+        raise CaseError(
+            f"índice desconhecido: {which!r} (esperado facts_index ou findings_index)"
+        )
+    new = copy.deepcopy(case)
+    new[which] = {"path": path, "count": count, breakdown_key: dict(breakdown or {})}
+    return new

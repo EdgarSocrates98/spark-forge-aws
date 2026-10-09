@@ -1,0 +1,349 @@
+[
+  {
+    "id": "f_092660",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 4,
+      "job_run_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_25f673",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 598.0
+    },
+    "attrs": {
+      "state_name": "CargaSemDefinicao",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "failed",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "failed",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true,
+      "error": "Glue.AWSGlueException",
+      "cause": "JobRun jr_11111111 FAILED"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_0e5eb3",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#2",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 2,
+      "duration_seconds": 599.0
+    },
+    "attrs": {
+      "state_name": "CargaSemDefinicao",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "failed",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "failed",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true,
+      "error": "Glue.AWSGlueException",
+      "cause": "JobRun jr_22222222 FAILED"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_202c35",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#3",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 3,
+      "duration_seconds": 599.0
+    },
+    "attrs": {
+      "state_name": "CargaSemDefinicao",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "failed",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "failed",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true,
+      "error": "Glue.AWSGlueException",
+      "cause": "JobRun jr_33333333 FAILED"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_545023",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#4",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 4,
+      "duration_seconds": 599.0
+    },
+    "attrs": {
+      "state_name": "CargaSemDefinicao",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "failed",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "failed",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true,
+      "error": "Glue.AWSGlueException",
+      "cause": "JobRun jr_44444444 FAILED"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a3b2a",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "read_event_count": 15,
+      "attempt_count": 4,
+      "job_run_count": 4,
+      "duration_seconds": 2401.0
+    },
+    "attrs": {
+      "status": "failed",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_c9297a",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_11111111",
+      "job_name": null,
+      "state_name": "CargaSemDefinicao",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_599ccf",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#2",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 2
+    },
+    "attrs": {
+      "job_run_id": "jr_22222222",
+      "job_name": null,
+      "state_name": "CargaSemDefinicao",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_dda0ae",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#3",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 3
+    },
+    "attrs": {
+      "job_run_id": "jr_33333333",
+      "job_name": null,
+      "state_name": "CargaSemDefinicao",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_19e27b",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao#4",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 4
+    },
+    "attrs": {
+      "job_run_id": "jr_44444444",
+      "job_name": null,
+      "state_name": "CargaSemDefinicao",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "430893fe5fb86756c727f131f7adab8afa0bfdeca3dc6b4e31f2ccef2cf84aa2",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_33b2bf",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDefinicao",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaSemDefinicao"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_0e5eb3",
+        "f_202c35",
+        "f_25f673",
+        "f_545023"
+      ]
+    }
+  }
+]

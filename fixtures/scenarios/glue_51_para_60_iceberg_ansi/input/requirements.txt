@@ -1,0 +1,4 @@
+# Dependencias do job. PyArrow acima do piso do Spark 4.1 de proposito:
+# este cenario prova a fronteira do ANSI, nao a de dependencia Python.
+pyarrow==17.0.0
+boto3

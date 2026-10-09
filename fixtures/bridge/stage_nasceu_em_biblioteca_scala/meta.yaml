@@ -1,0 +1,37 @@
+name: stage_nasceu_em_biblioteca_scala
+proves: 'O veto V-BR-2 como corpus. `connectedComponents` roda em Scala, e o callsite aponta
+  para dentro da biblioteca -- nao para o `.py` do operador.
+
+  `spark.stage.callsite` recusa com `arquivo_nao_python`, e a recusa e FATO com `resolved:
+  False`, nunca ausencia: ausencia se le como "este stage nao tem callsite", e o que ha e
+  "o callsite existe e aponta para fora do codigo do operador".
+
+  `facts/bridge.py` entao emite `bridge.unresolved` com `reason: sem_callsite_resolvido` e
+  o `unblocked_by` que diz onde olhar. Sem esta fixture, o ramo de recusa da ponte nao teria
+  golden nenhum.
+
+  '
+runtime: {}
+expects_kinds:
+- bridge.analyzed
+- bridge.unresolved
+- pyspark.action
+- pyspark.callgraph_edge
+- pyspark.chain
+- pyspark.driver_collect
+- pyspark.function_def
+- pyspark.module_analyzed
+- pyspark.read
+- spark.cluster.cores
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.shuffle
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+expects_rules:
+- SF-PY-002

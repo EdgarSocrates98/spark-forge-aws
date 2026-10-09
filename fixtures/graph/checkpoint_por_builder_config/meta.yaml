@@ -1,0 +1,23 @@
+name: checkpoint_por_builder_config
+proves: >
+  A quinta forma de escrever certo, e a que faltava no vocabulario:
+  `SparkSession.builder.config("spark.checkpoint.dir", ...)`, encadeada na
+  construcao da sessao. Ate a revisao da Fase 6a o extrator so lia `set`, e esta
+  fixture saia com `checkpoint_configured_in_module: false` -- P0 sobre codigo
+  correto.
+  `method: "config"` no `graph.checkpoint_dir` e o que distingue esta forma da
+  fixture `conf_checkpoint_dir_no_job`, que declara a MESMA conf por
+  `spark.conf.set`. `checkpoint_required` continua `true`: a exigencia se aplica,
+  e o que muda e que o arquivo a satisfaz.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules: []

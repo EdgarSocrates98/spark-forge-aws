@@ -1,0 +1,30 @@
+{
+  "application": {
+    "applicationId": "00fdefault0000000001",
+    "name": "etl-no-default",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "architecture": "X86_64",
+    "initialCapacity": {
+      "DRIVER": {
+        "workerCount": 1,
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "16GB",
+          "disk": "20GB"
+        }
+      }
+    },
+    "maximumCapacity": {
+      "cpu": "400vCPU",
+      "memory": "3000GB",
+      "disk": "20000GB"
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

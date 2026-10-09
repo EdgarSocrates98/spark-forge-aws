@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-ICE-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Operação SQL que exige as extensões do Iceberg, e a sessão não as declara",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "merge.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_f46076"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A tabela de suporte de escrita do Apache Iceberg marca três operações com a mesma ressalva, e apenas essas três: *\"SQL merge into ✔️ ⚠ Requires Iceberg Spark extensions\"*, *\"SQL update ✔️ ⚠ Requires Iceberg Spark extensions\"* e *\"SQL delete from ✔️ ⚠ Row-level delete requires Iceberg Spark extensions\"*. `INSERT INTO` e `INSERT OVERWRITE` **não** estão entre elas -- a mesma tabela as marca só com `spark.sql.storeAssignmentPolicy=ANSI`, que é default desde o Spark 3.0.\n\nEste job pede uma das três, e a configuração lida não declara `spark.sql.extensions` com `IcebergSparkSessionExtensions`.\n\n**É a razão pela qual \"MERGE falhou\" não é \"Iceberg não faz MERGE\".** As duas frases descrevem o mesmo sintoma e consertos opostos: a primeira é uma linha de configuração ausente, a segunda seria uma limitação de formato que não existe. `attrs.operation` no fact diz qual das operações foi pedida, e `attrs.iceberg_extensions_source` diz em qual superfície a configuração foi lida -- event log, Terraform ou código.\n\n**O achado não afirma que a falha observada veio daqui.** Ele afirma que a pré-condição que a documentação nomeia não está satisfeita na configuração que este motor leu. `status: structural` por isso.",
+    "proposed_change": [
+      "Declarar as extensões na sessão: `spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions`. É uma linha de configuração, e ela precisa estar aplicada ANTES de a sessão existir -- extensão de SQL é resolvida na construção da sessão, e `spark.conf.set(...)` no meio do script não a instala.",
+      "Se a configuração JÁ está declarada em outra superfície que este motor não leu, coletar o event log do run e reavaliar: `attrs.iceberg_extensions_source` diz de onde a leitura veio, e `spark.conf_effective` é a única que responde pela sessão que realmente existiu.",
+      "Se a intenção era não depender das extensões, reescrever a operação: um `MERGE INTO` cuja lógica é só inserir vira `INSERT INTO`, que a mesma tabela de suporte não marca com essa ressalva. Isto é mudança de semântica de escrita, e não de configuração -- ver `validation`."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A regra correlaciona o texto SQL com a configuração da SESSÃO sem `same_subject`, e não poderia ser de outro jeito: o statement tem subject de localização de fonte e a conf tem subject de recurso ou de chave. Num case com dois jobs -- um que declara as extensões e outro que não --, a configuração lida é a união das superfícies, e o achado pode apontar o job errado. Conferir `attrs.iceberg_extensions_source` no achado.",
+      "`iceberg_extensions_declared: false` significa \"alguma superfície de conf foi lida e a chave não estava nela\", nunca \"a sessão não a tem\". Um job que instala a extensão por `--conf` em `non_overridable_arguments`, por propriedade de conexão, ou por qualquer caminho que este motor não leia, é acusado sem estar errado.",
+      "O parse de statement é ancorado no INÍCIO do texto e é regex, não gramática. `MERGE` construído por concatenação de string, ou statement precedido por algo que o `_strip_comments` não remove, não é reconhecido -- e ali não há achado nenhum, o que é falso negativo e não falso positivo.",
+      "A tabela da fonte diz que a operação **exige** a extensão, e não o que acontece sem ela. O erro concreto que o Spark levanta nesse caso não está nesta regra, e nenhuma assinatura de `knowledge/errors/` o cobre hoje."
+    ],
+    "tradeoffs": [
+      "As extensões do Iceberg acrescentam regras de análise e procedimentos à sessão INTEIRA, não só à operação que as pediu. Num job que também toca tabela não-Iceberg, isso é superfície nova para todo o job -- e é a mesma classe de decisão que `SF-ICE-006` levanta sobre o catálogo de sessão."
+    ],
+    "validation": [
+      "Se o conserto foi a configuração: a operação passa a executar, e o resultado se compara por contagem de linhas e agregado por chave de negócio no destino, antes e depois -- `MERGE` que executa não é `MERGE` que casou as linhas certas.",
+      "Se o conserto foi reescrever a operação -- `MERGE` virando `INSERT` --, a validação é de SEMÂNTICA e não de execução: as duas não fazem a mesma coisa com linha que já existe, e a comparação tem de ser linha a linha sobre a chave declarada.",
+      "`spark.sql.extensions` na configuração efetiva do run seguinte, lida do event log. É a única superfície que responde pela sessão que existiu."
+    ],
+    "rollback": [
+      "Remover a chave restaura a configuração anterior, e nenhum dado muda por causa disso -- desde que nenhuma escrita tenha acontecido no meio. Se alguma aconteceu, o rollback é de dado, e o destino precisa ser comparado antes de a versão anterior ser descartada."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-writes/",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-configuration/",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "config.satisfy_property_precondition",
+      "target": "spark.sql.extensions",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

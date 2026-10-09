@@ -1,0 +1,103 @@
+{
+  "Name": "lake",
+  "Prefix": "analytics/pedidos_por_hora/",
+  "IsTruncated": false,
+  "Contents": [
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-00/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-01/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-02/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-03/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-04/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-05/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-06/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-07/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-08/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-09/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-10/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-11/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-12/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-13/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-14/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-15/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-16/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-17/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-18/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-19/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-20/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-21/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-22/part-000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "analytics/pedidos_por_hora/dt=2026-07-30-23/part-000.snappy.parquet",
+      "Size": 1048576
+    }
+  ]
+}

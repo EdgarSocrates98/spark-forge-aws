@@ -1,0 +1,1103 @@
+"""Coletores AWS reais: event log (S3), definicao de job (Glue), metricas de
+observabilidade (CloudWatch) e metadata tables Iceberg (Athena).
+
+So le. Nenhuma funcao aqui grava em S3, muda estado de um job Glue, ou
+executa manutencao de tabela -- `get_object`, `list_objects_v2`,
+`get_job`, `get_metric_data` e consultas `SELECT` via Athena, e nada mais.
+
+`boto3` nunca e importado no topo deste modulo (ver `sparkforge_aws.collect.base
+require_boto3`): cada coletor so toca `require_boto3()` depois de checar se
+o artefato ja esta presente e integro localmente. Isto tem duas
+consequencias, as duas intencionais: (1) o nucleo determinístico continua
+funcionando sem `boto3` instalado, porque nada aqui e chamado por padrao;
+(2) uma segunda coleta do mesmo artefato sem mudanca no lado AWS nao toca a
+rede nem exige credenciais -- e um no-op puramente local (offline-first).
+
+`now` e sempre parametro, nunca lido do relogio (mesma convencao do resto do
+projeto: `sparkforge_aws.case.store.new_case`, `sparkforge_aws.adapters.cli` etc.).
+Isto e o que torna `collected_at == now` (coleta nova) versus
+`collected_at != now` (cache hit local, nada foi buscado) uma forma barata
+de o chamador (a CLI) saber se a chamada foi um no-op sem um segundo valor
+de retorno.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from sparkforge_aws.collect.base import (
+    ArtifactEntry,
+    CollectorUnavailable,
+    load_manifest,
+    register_artifact,
+    require_boto3,
+    verify_artifact,
+)
+from sparkforge_aws.facts.cloudwatch_retention import period_for_age_days
+
+# Segundos entre tentativas de poll de uma query Athena ainda em execucao.
+# So importa quando a query realmente demora -- um cliente de teste que
+# devolve SUCCEEDED na primeira checagem nunca dorme.
+_ATHENA_POLL_SECONDS = 1.0
+
+# Nomes exatos de metrica de observabilidade Glue, de
+# `knowledge/glue/observability.md`. `glue.driver.bytesWrittten` tem tres
+# "t" -- e como a documentacao da AWS escreve, reproduzido aqui sem
+# "corrigir": uma query CloudWatch com a grafia certa (duas "t") nao acha
+# a metrica.
+# Nome da metrica -> Stat correta, conforme knowledge/glue/observability.md.
+# `Stat` uniforme e defeito de dado, nao simplificacao: `glue.error.ALL` e
+# `glue.succeed.ALL` sao contadores documentados como SUM, e pedir Average deles
+# devolve um numero errado com aparencia de certo -- exatamente a classe de
+# resultado que este projeto existe para nao produzir. `bytesWrittten` mantem os
+# tres `t` porque e como a AWS escreve.
+CLOUDWATCH_METRICS: tuple[tuple[str, str], ...] = (
+    ("glue.driver.skewness.stage", "Maximum"),
+    ("glue.driver.skewness.job", "Maximum"),
+    ("glue.driver.workerUtilization", "Average"),
+    ("glue.driver.memory.heap.used.percentage", "Maximum"),
+    ("glue.driver.memory.total.used.percentage", "Maximum"),
+    ("glue.ALL.memory.heap.used.percentage", "Maximum"),
+    ("glue.ALL.memory.total.used.percentage", "Maximum"),
+    ("glue.driver.disk.used.percentage", "Maximum"),
+    ("glue.driver.bytesRead", "Average"),
+    ("glue.driver.recordsRead", "Average"),
+    ("glue.driver.filesRead", "Average"),
+    ("glue.driver.partitionsRead", "Average"),
+    ("glue.driver.bytesWrittten", "Average"),
+    ("glue.driver.recordsWritten", "Average"),
+    ("glue.driver.filesWritten", "Average"),
+    ("glue.succeed.ALL", "Sum"),
+    ("glue.error.ALL", "Sum"),
+)
+
+CLOUDWATCH_METRIC_NAMES: tuple[str, ...] = tuple(n for n, _ in CLOUDWATCH_METRICS)
+
+# Teto de paginas de `get_metric_data`. Existe para que uma janela absurda
+# falhe DIZENDO o que aconteceu, em vez de rodar para sempre ou gravar um
+# parcial silencioso.
+_MAX_PAGINAS_DE_METRICA = 20
+
+# As cinco metadata tables do Iceberg que este coletor consulta via Athena.
+# `partition_spec`/`sort_order`/`default_sort_order_id` (ver
+# `sparkforge_aws/facts/iceberg_metadata.py`) nao vem de uma metadata table
+# `SELECT *` -- sao metadados estruturais que exigiriam `SHOW CREATE
+# TABLE`/API de catalogo, fora do escopo deste coletor; o extrator ja trata as
+# tres chaves como opcionais por causa disso.
+# Consequencia para SF-ICE-004: a metade que ESTE coletor consegue trazer e a
+# coluna `sort_order_id` de cada data file, que vem de graca no `SELECT *` de
+# `$files` (a metadata table `files` expoe todo campo do struct `data_file`).
+# A outra metade, o `default-sort-order-id` da tabela, precisa vir de fora --
+# `spark.table("db.tbl").sortOrder().orderId()` via Spark, ou o metadata.json.
+# Sem ela o extrator nao emite `attrs.written_before_sort_order`, e a regra
+# fica calada em vez de chutar.
+# ARMADILHA OPERACIONAL, verificada na doc do Athena: consultar `$partitions`,
+# `$files`, `$manifests` ou `$snapshots` numa tabela com filtro de linha ou de
+# celula do Lake Formation ativo falha com AccessDeniedException. Nao e falta de
+# permissao no sentido usual -- e uma restricao do proprio Athena para metadata
+# tables sob esses filtros. Quem receber esse erro deve olhar o Lake Formation,
+# nao a policy de IAM, e o erro deste coletor diz isso.
+# MEDIDO CONTRA O ATHENA REAL em 2026-09-03, numa tabela Iceberg criada para
+# isto (conta 702561771161, us-east-1, destruida depois):
+#
+#   $files       EXISTE  14 colunas, com `content`
+#   $snapshots   EXISTE   6 colunas
+#   $manifests   EXISTE  11 colunas
+#   $partitions  EXISTE   5 colunas
+#   $history     EXISTE   (nao consultada por este coletor)
+#   $refs        EXISTE   (nao consultada por este coletor)
+#
+#   $delete_files       NAO EXISTE  -- TABLE_REDIRECTION_ERROR
+#   $all_files          NAO EXISTE
+#   $all_delete_files   NAO EXISTE
+#   $data_files         NAO EXISTE
+#   $entries            NAO EXISTE
+#   $statistics         NAO EXISTE
+#   $position_deletes   NAO EXISTE
+#
+# `delete_files` ESTAVA NESTA LISTA e nao podia funcionar: o Athena responde
+# `TABLE_REDIRECTION_ERROR: ... the target table does not exist`. Toda coleta
+# via Athena falhava naquela secao, e o extrator recebia o dump sem ela --
+# indistinguivel de uma tabela sem deletes.
+#
+# ONDE OS DELETES APARECEM: em `$files`, pela coluna `content` (0 data,
+# 1 position, 2 equality). E a mesma coluna que o censo de
+# `iceberg_metadata.py` le. `iceberg-diagnostics.sql` ja fazia
+# `WHERE content = 0` para os data files -- a evidencia estava escrita ali
+# desde antes, e ninguem a ligou a esta lista.
+ICEBERG_METADATA_SECTIONS: tuple[str, ...] = (
+    "files",
+    "snapshots",
+    "manifests",
+    "partitions",
+)
+
+# Secoes que o Athena NAO expoe, com o que cada uma custaria destravar. Sao
+# listadas para que a proxima pessoa nao as acrescente de novo achando que a
+# ausencia foi esquecimento.
+ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA: dict[str, str] = {
+    "delete_files": (
+        "os deletes vem de `$files` com `content` em (1, 2); consultar "
+        "`$delete_files` da TABLE_REDIRECTION_ERROR"
+    ),
+    "entries": "exigiria Spark; o Athena nao a expoe",
+    "statistics": "Puffin -- exigiria Spark ou leitura do metadata.json",
+    "all_files": "so a variante nao-`all_` existe",
+}
+
+
+# Estados em que um job run nao muda mais. So estes viram artefato: gravar um
+# run ainda em execucao produziria um arquivo cujo conteudo muda depois, e a
+# proxima coleta veria o sha256 divergir -- o cache offline-first viraria um
+# falso negativo permanente para aquele run.
+TERMINAL_JOB_RUN_STATES: frozenset[str] = frozenset(
+    {"SUCCEEDED", "FAILED", "TIMEOUT", "STOPPED", "ERROR"}
+)
+
+# Teto por pagina que a API aceita. `max_runs` do chamador ainda limita o total.
+_GET_JOB_RUNS_PAGE_SIZE = 200
+
+
+class CollectionFailed(RuntimeError):
+    """A chamada AWS se conectou, mas a coleta nao pode ser concluida --
+    query Athena terminou em FAILED/CANCELLED, listagem S3 vazia, etc.
+    Distinto de `CollectorUnavailable`, que e boto3 ausente ou credenciais
+    indisponiveis (a chamada nunca chegou a acontecer)."""
+
+
+# Caminho relativo esperado de cada tipo de artefato, ancorado em `root`. Uma
+# funcao por tipo (em vez de um dict fixo) para que o chamador (a CLI, ao
+# montar uma mensagem de erro acionavel quando `boto3` falta) monte o mesmo
+# caminho que o coletor vai usar sem duplicar a logica de formatacao.
+def event_log_path(job_run_id: str) -> str:
+    return f".sparkforge_aws/artifacts/eventlog/{job_run_id}.jsonl"
+
+
+def glue_job_path(job_name: str) -> str:
+    return f".sparkforge_aws/artifacts/glue_job/{job_name}.json"
+
+
+def cloudwatch_path(job_name: str, job_run_id: str) -> str:
+    return f".sparkforge_aws/artifacts/cloudwatch/{job_name}_{job_run_id}.json"
+
+
+def glue_job_run_path(job_name: str, job_run_id: str) -> str:
+    return f".sparkforge_aws/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
+
+
+def iceberg_metadata_path(table: str) -> str:
+    return f".sparkforge_aws/artifacts/iceberg/{table.replace('.', '_')}.json"
+
+
+def athena_workgroup_path(workgroup: str) -> str:
+    return f".sparkforge_aws/artifacts/athena/{workgroup}.json"
+
+
+def emr_cluster_path(cluster_id: str) -> str:
+    return f".sparkforge_aws/artifacts/emr/{cluster_id}.json"
+
+
+def emr_serverless_path(application_id: str) -> str:
+    return f".sparkforge_aws/artifacts/emr_serverless/{application_id}.json"
+
+
+def emr_eks_path(virtual_cluster_id: str, job_run_id: str) -> str:
+    return f".sparkforge_aws/artifacts/emr_eks/{virtual_cluster_id}_{job_run_id}.json"
+
+
+def _sha256_bytes(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
+
+
+def _offline_hit(root: Path | str, rel_path: str) -> ArtifactEntry | None:
+    """Devolve a entrada ja registrada se o artefato esta presente no disco
+    E seu sha256 bate com o manifesto -- o caso offline-first, sem tocar em
+    boto3 nem em rede. `None` sinaliza "precisa coletar", nao "erro"."""
+    entry_dict = next(
+        (e for e in load_manifest(root) if e.get("path") == rel_path), None
+    )
+    if entry_dict is None:
+        return None
+    result = verify_artifact(entry_dict, root)
+    if not (result["present"] and result["hash_matches"]):
+        return None
+    return ArtifactEntry(
+        kind=entry_dict["kind"],
+        path=entry_dict["path"],
+        sha256=entry_dict["sha256"],
+        source=entry_dict["source"],
+        collect_command=entry_dict["collect_command"],
+        collected_at=entry_dict["collected_at"],
+    )
+
+
+def _write_and_register(
+    root: Path | str,
+    rel_path: str,
+    content: bytes,
+    *,
+    kind: str,
+    source: str,
+    collect_command: str,
+    now: str,
+) -> ArtifactEntry:
+    path = Path(root) / rel_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(content)
+    entry = ArtifactEntry(
+        kind=kind,
+        path=rel_path,
+        sha256=_sha256_bytes(content),
+        source=source,
+        collect_command=collect_command,
+        collected_at=now,
+    )
+    register_artifact(entry, root)
+    return entry
+
+
+# --------------------------------------------------------------------------- #
+# event log (S3)
+# --------------------------------------------------------------------------- #
+
+
+def _list_all(client: Any, bucket: str, prefix: str) -> list[dict[str, Any]]:
+    """Lista todas as chaves sob `prefix`, seguindo paginacao.
+
+    `list_objects_v2` devolve no maximo 1000 chaves por chamada. Um event log de
+    run longo, com rollover, passa disso, e parar na primeira pagina truncaria o
+    log em silencio -- analise sobre log truncado e pior que analise nenhuma,
+    porque parece completa.
+    """
+    found: list[dict[str, Any]] = []
+    token: str | None = None
+    while True:
+        kwargs: dict[str, Any] = {"Bucket": bucket, "Prefix": prefix}
+        if token:
+            kwargs["ContinuationToken"] = token
+        page = client.list_objects_v2(**kwargs)
+        found.extend(page.get("Contents") or [])
+        if not page.get("IsTruncated"):
+            return found
+        token = page.get("NextContinuationToken")
+        if not token:
+            return found
+
+
+def collect_event_log(
+    job_run_id: str, root: Path, *, bucket: str, prefix: str, now: str
+) -> ArtifactEntry:
+    """Baixa o Spark event log de um job run via `s3.get_object`.
+
+    A documentacao da AWS especifica o parametro `--spark-event-logs-path` e diz
+    que o Glue faz backup do log a cada 30 segundos, mas **nao documenta a
+    convencao de nome nem o layout interno de objetos** por job run. Por isso
+    este coletor nunca constroi uma chave: ele LISTA e pega o que existe.
+
+    Duas tentativas, nessa ordem: o layout mais comum `<prefix>/<job_run_id>/`, e,
+    se vier vazio, uma listagem do prefixo inteiro filtrando chaves que contenham
+    o job run id. Assim uma mudanca de layout do lado da AWS degrada para "achei
+    por outro caminho" em vez de "nenhum objeto encontrado" com o log existindo.
+
+    Runs longos rolam o log em mais de um objeto. Ordenamos por chave para saida
+    deterministica e concatenamos no `.jsonl` que `sparkforge_aws.facts.event_log` le.
+    """
+    rel_path = event_log_path(job_run_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("s3")
+
+    key_prefix = f"{prefix.rstrip('/')}/{job_run_id}/"
+    contents = _list_all(client, bucket, key_prefix)
+    if not contents:
+        # Fallback: layout diferente do esperado. Lista o prefixo inteiro e
+        # filtra pelo job run id na chave.
+        contents = [
+            obj
+            for obj in _list_all(client, bucket, f"{prefix.rstrip('/')}/")
+            if job_run_id in obj["Key"]
+        ]
+    if not contents:
+        raise CollectionFailed(
+            f"nenhum objeto de event log em s3://{bucket}/{key_prefix} nem no "
+            f"prefixo pai contendo {job_run_id!r}.\n"
+            "  Confirme --enable-spark-ui e --spark-event-logs-path no job, e que "
+            "o job run ja terminou de escrever o log (o Glue faz backup a cada 30s).\n"
+            "  Alternativa manual: baixe o log e registre com "
+            "`sparkforge_aws.collect.register_artifact`."
+        )
+
+    chunks: list[bytes] = []
+    for obj in sorted(contents, key=lambda o: o["Key"]):
+        body = client.get_object(Bucket=bucket, Key=obj["Key"])["Body"].read()
+        if isinstance(body, str):
+            body = body.encode("utf-8")
+        chunks.append(body.rstrip(b"\n"))
+    content = b"\n".join(chunks) + b"\n"
+
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="event_log",
+        source=f"s3://{bucket}/{key_prefix}",
+        collect_command=(
+            f"sparkforge-aws collect event-log --job-run {job_run_id} "
+            f"--bucket {bucket} --prefix {prefix}"
+        ),
+        now=now,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# definicao do job (Glue)
+# --------------------------------------------------------------------------- #
+
+
+def collect_glue_job(job_name: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa a definicao de um job via `glue.get_job` e grava como JSON.
+
+    Isto e o que alimenta analise no formato de `tf.attribute` para o job tal
+    como esta *implantado* -- em vez do que o `.tf` fonte declara. Os dois
+    podem divergir (alguem mudou `number_of_workers` no console, ou o
+    `terraform apply` mais recente nunca rodou), e essa divergencia em si e
+    informacao que vale reportar, nao um erro deste coletor.
+    """
+    rel_path = glue_job_path(job_name)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("glue")
+    response = client.get_job(JobName=job_name)
+    job = response.get("Job") or {}
+
+    content = json.dumps(job, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="terraform",
+        source=f"glue:get_job:{job_name}",
+        collect_command=f"sparkforge-aws collect glue-job --job-name {job_name}",
+        now=now,
+    )
+
+
+def collect_glue_job_runs(
+    job_name: str, root: Path, *, max_runs: int, now: str
+) -> dict[str, Any]:
+    """Baixa o historico de execucoes de um job via `glue.get_job_runs`.
+
+    Um arquivo por run TERMINAL, e nao um arquivo por janela: `GetJobRuns`
+    devolve uma janela movel, e o manifesto assume artefato imutavel verificado
+    por sha256. Um run por arquivo reconcilia os dois -- e da coleta incremental
+    de graca, porque `_offline_hit` reconhece o que ja esta em disco.
+
+    Diferenca dos coletores de artefato unico: a listagem SEMPRE toca a rede.
+    Nao ha como saber quais runs existem sem perguntar. O que o cache evita e
+    reescrever e reregistrar o que ja esta integro no disco, e e isso que
+    `cache_hit` por run informa.
+
+    `max_runs` e teto de paginacao, nao filtro de data: a API devolve do mais
+    recente para tras e nao aceita janela temporal. Expor `--start`/`--end` seria
+    filtro do lado do cliente disfarcado de parametro de API.
+    """
+    if max_runs < 1:
+        raise ValueError(f"max_runs precisa ser >= 1, veio {max_runs}")
+
+    boto3 = require_boto3()
+    client = boto3.client("glue")
+
+    artifacts: list[dict[str, Any]] = []
+    skipped: list[dict[str, str]] = []
+    seen = 0
+    token: str | None = None
+
+    while seen < max_runs:
+        kwargs: dict[str, Any] = {
+            "JobName": job_name,
+            "MaxResults": min(_GET_JOB_RUNS_PAGE_SIZE, max_runs - seen),
+        }
+        if token:
+            kwargs["NextToken"] = token
+        try:
+            page = client.get_job_runs(**kwargs)
+        except Exception as exc:  # noqa: BLE001 -- botocore nao e importavel aqui
+            # `botocore` gera as classes de excecao em tempo de execucao a
+            # partir do modelo do servico, e este modulo nunca importa boto3 no
+            # topo. Casar pelo NOME da classe e o unico jeito de distinguir
+            # "job nao existe" de uma falha de rede sem acoplar ao botocore.
+            if type(exc).__name__ == "EntityNotFoundException":
+                raise CollectionFailed(
+                    f"Job {job_name!r} nao existe na conta/regiao correntes. "
+                    f"Confira o nome com `aws glue list-jobs`."
+                ) from exc
+            raise
+
+        runs = page.get("JobRuns") or []
+        for run in runs:
+            seen += 1
+            state = run.get("JobRunState") or ""
+            run_id = run.get("Id") or ""
+            if state not in TERMINAL_JOB_RUN_STATES:
+                skipped.append({"job_run_id": run_id, "state": state})
+                continue
+            artifacts.append(_write_job_run(job_name, run_id, run, root, now=now))
+
+        token = page.get("NextToken")
+        if not token:
+            break
+
+    return {
+        "job_name": job_name,
+        "artifacts": artifacts,
+        "skipped": skipped,
+        "runs_listed": seen,
+    }
+
+
+def _write_job_run(
+    job_name: str, run_id: str, run: dict[str, Any], root: Path, *, now: str
+) -> dict[str, Any]:
+    rel_path = glue_job_run_path(job_name, run_id)
+    collect_command = (
+        f"sparkforge-aws collect glue-job-runs --job-name {job_name} --max-runs 30"
+    )
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        payload = hit.to_dict()
+        payload["cache_hit"] = True
+        return payload
+
+    content = json.dumps(
+        run, indent=2, sort_keys=True, default=str, ensure_ascii=False
+    ).encode("utf-8")
+    entry = _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="glue_job_run",
+        source=f"glue:get_job_runs:{job_name}/{run_id}",
+        collect_command=collect_command,
+        now=now,
+    )
+    payload = entry.to_dict()
+    payload["cache_hit"] = False
+    return payload
+
+
+# --------------------------------------------------------------------------- #
+# metricas de observabilidade (CloudWatch)
+# --------------------------------------------------------------------------- #
+
+
+def _parse_iso(ts: str) -> datetime:
+    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+
+def collect_cloudwatch(
+    job_name: str, job_run_id: str, root: Path, *, now: str, start: str, end: str
+) -> ArtifactEntry:
+    """Baixa as metricas de observabilidade Glue via `cloudwatch.get_metric_data`.
+
+    `start`/`end` sao ISO 8601 fornecidos pelo chamador -- este modulo nunca
+    le o relogio. Consulta exatamente os nomes de `CLOUDWATCH_METRICS`
+    (extraidos de `knowledge/glue/observability.md`), dimensionados por
+    `JobName`+`JobRunId`. Requer `glueContext` inicializado no job e
+    `--enable-observability-metrics=true`; se nao, o CloudWatch simplesmente
+    nao tem essas series -- `get_metric_data` devolve resultados vazios, nao
+    um erro, e este coletor grava o que veio de volta sem tentar adivinhar.
+    """
+    rel_path = cloudwatch_path(job_name, job_run_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("cloudwatch")
+
+    start_dt = _parse_iso(start)
+    end_dt = _parse_iso(end)
+
+    # O periodo vem da idade do run, nunca fixo. Ponto de granularidade fina
+    # expira; consultar um run antigo com periodo curto devolve serie vazia, e
+    # vazio se parece com "observabilidade desligada no job" -- causa diferente
+    # e remedio diferente. A tabela de retencao esta em
+    # `knowledge/glue/observability.yaml`, com fonte e data.
+    age_days = (_parse_iso(now) - end_dt).total_seconds() / 86400.0
+    period = period_for_age_days(max(age_days, 0.0))
+    if period is None:
+        raise CollectionFailed(
+            f"Metrica de {job_name}/{job_run_id} expirada: o run terminou em {end}, "
+            f"fora da janela de retencao de toda granularidade publicada em "
+            f"knowledge/glue/observability.yaml. Consultar assim mesmo devolveria "
+            f"serie vazia, indistinguivel de observabilidade desligada no job."
+        )
+
+    dimensions = [
+        {"Name": "JobName", "Value": job_name},
+        {"Name": "JobRunId", "Value": job_run_id},
+    ]
+    queries = [
+        {
+            "Id": f"m{index}",
+            "MetricStat": {
+                "Metric": {"Namespace": "Glue", "MetricName": metric, "Dimensions": dimensions},
+                "Period": period,
+                "Stat": stat,
+            },
+            "Label": metric,
+            "ReturnData": True,
+        }
+        for index, (metric, stat) in enumerate(CLOUDWATCH_METRICS)
+    ]
+
+    # PAGINA. `get_metric_data` devolve ate 100 800 pontos por chamada e o
+    # resto atras de `NextToken` -- com 17 metricas e periodo fino, um run
+    # longo estoura isso e a resposta vem PARCIAL.
+    #
+    # Ler uma resposta so era o defeito: a serie truncada e indistinguivel da
+    # serie completa, e nada acusava. Achado na auditoria de fakes de
+    # 2026-09-03, na mesma classe do `$delete_files` do Athena -- o
+    # `FakeCloudWatchClient` devolvia UM resultado para as 17 consultas, entao
+    # aceitar menos do que se pediu nunca foi exercitado.
+    resultados: list[dict[str, Any]] = []
+    token: str | None = None
+    for _ in range(_MAX_PAGINAS_DE_METRICA):
+        kwargs: dict[str, Any] = {
+            "MetricDataQueries": queries,
+            "StartTime": start_dt,
+            "EndTime": end_dt,
+        }
+        if token:
+            kwargs["NextToken"] = token
+        pagina = client.get_metric_data(**kwargs)
+        resultados.extend(pagina.get("MetricDataResults") or [])
+        token = pagina.get("NextToken")
+        if not token:
+            break
+    else:
+        raise CollectionFailed(
+            f"`get_metric_data` ainda paginava depois de "
+            f"{_MAX_PAGINAS_DE_METRICA} paginas para {job_name}/{job_run_id}. "
+            f"Gravar o parcial produziria uma serie truncada indistinguivel da "
+            f"completa -- reduza a janela ou aumente o periodo."
+        )
+
+    # O QUE VOLTOU CONTRA O QUE SE PEDIU. A API pode devolver menos resultados
+    # que consultas, e sem esta conta o payload sairia com a mesma cara de um
+    # completo. Nao e erro: sai declarado, e quem le decide.
+    devolvidos = {r.get("Label") for r in resultados}
+    faltando = sorted(set(CLOUDWATCH_METRIC_NAMES) - devolvidos)
+
+    payload = {
+        "job_name": job_name,
+        "job_run_id": job_run_id,
+        "start": start,
+        "end": end,
+        "period_seconds": period,
+        "metric_data_results": resultados,
+        "metrics_requested": len(queries),
+        "metrics_returned": len(devolvidos & set(CLOUDWATCH_METRIC_NAMES)),
+        "metrics_missing": faltando,
+    }
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="cloudwatch",
+        source=f"cloudwatch:get_metric_data:{job_name}/{job_run_id}",
+        collect_command=(
+            f"sparkforge-aws collect cloudwatch --job-name {job_name} --job-run {job_run_id} "
+            f"--start {start} --end {end}"
+        ),
+        now=now,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# metadata tables Iceberg (Athena)
+# --------------------------------------------------------------------------- #
+
+
+def _split_table(table: str) -> tuple[str, str]:
+    database, _, name = table.partition(".")
+    return database, name
+
+
+def _coerce_athena_value(value: str | None) -> Any:
+    """Athena devolve toda celula como string (`VarCharValue`). As metadata
+    tables do Iceberg tem colunas numericas (`file_size_in_bytes`,
+    `record_count`, `length`, `added_data_files_count`, ...) que
+    `sparkforge_aws.facts.iceberg_metadata` so agrega quando o tipo Python e
+    `int`/`float` -- uma string nunca passa no `isinstance` de la, e a secao
+    inteira seria silenciosamente ignorada. Coagir aqui e o que faz o
+    artefato coletado ser de fato legivel pelo extrator, nao so presente."""
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    if value in ("true", "false"):
+        return value == "true"
+    return value
+
+
+def _athena_rows_to_records(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Primeira linha e o cabecalho (nome de coluna); as demais sao dados.
+    Uma metadata table sem linhas (`rows == []`, nem cabecalho) vira `[]`."""
+    if not rows:
+        return []
+    header = [cell.get("VarCharValue", "") for cell in rows[0].get("Data", [])]
+    records: list[dict[str, Any]] = []
+    for row in rows[1:]:
+        cells = row.get("Data", [])
+        record = {
+            header[i]: _coerce_athena_value(cell.get("VarCharValue"))
+            for i, cell in enumerate(cells)
+            if i < len(header)
+        }
+        records.append(record)
+    return records
+
+
+def _run_athena_query(
+    client: Any, query: str, workgroup: str, output_location: str
+) -> list[dict[str, Any]]:
+    start = client.start_query_execution(
+        QueryString=query,
+        WorkGroup=workgroup,
+        ResultConfiguration={"OutputLocation": output_location},
+    )
+    execution_id = start["QueryExecutionId"]
+
+    while True:
+        status = client.get_query_execution(QueryExecutionId=execution_id)
+        state = status["QueryExecution"]["Status"]["State"]
+        if state == "SUCCEEDED":
+            break
+        if state in ("FAILED", "CANCELLED"):
+            reason = status["QueryExecution"]["Status"].get("StateChangeReason", "")
+            message = (
+                f"consulta Athena {execution_id} terminou em {state}: {reason}\n"
+                f"  query: {query}"
+            )
+            # AccessDenied numa metadata table quase nunca e policy de IAM: o
+            # Athena recusa `$files`/`$snapshots`/`$manifests`/`$partitions` em
+            # tabela com filtro de linha ou celula do Lake Formation ativo.
+            # Mandar o operador revisar IAM aqui e mandar procurar no lugar errado.
+            if "AccessDenied" in reason or "access denied" in reason.lower():
+                message += (
+                    "\n  Metadata table sob Lake Formation com filtro de linha ou "
+                    "celula retorna AccessDeniedException por restricao do Athena, "
+                    "nao por falta de permissao IAM. Verifique o Lake Formation "
+                    "antes da policy.\n"
+                    "  Alternativa: colete via Spark (`SELECT * FROM db.tbl.files`) "
+                    "e registre com `sparkforge_aws.collect.register_artifact`."
+                )
+            raise CollectionFailed(message)
+        time.sleep(_ATHENA_POLL_SECONDS)
+
+    results = client.get_query_results(QueryExecutionId=execution_id)
+    return results.get("ResultSet", {}).get("Rows") or []
+
+
+def collect_iceberg_metadata(
+    table: str, root: Path, *, workgroup: str, output_location: str, now: str
+) -> ArtifactEntry:
+    """Consulta as cinco metadata tables Iceberg de `table` via Athena e
+    monta o JSON no formato que `sparkforge_aws.facts.iceberg_metadata` le.
+
+    `table` e `db.tabela`. Cada secao vira `SELECT * FROM "db"."tabela$secao"`
+    -- a sintaxe de metadata table do Athena/Iceberg -- e a resposta e
+    convertida para o shape documentado no topo de
+    `sparkforge_aws/facts/iceberg_metadata.py`. Uma secao que a query devolve
+    vazia vira lista vazia no JSON, nunca uma chave ausente: o extrator
+    distingue "coletado e vazio" de "nao coletado" pela presenca da chave.
+    """
+    rel_path = iceberg_metadata_path(table)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("athena")
+    database, name = _split_table(table)
+
+    payload: dict[str, Any] = {"table": table}
+    for section in ICEBERG_METADATA_SECTIONS:
+        # `database`/`name` vem do argumento `table` do chamador (CLI local,
+        # nao entrada remota), e `section` e um dos cinco valores fixos de
+        # `ICEBERG_METADATA_SECTIONS` -- nao ha parametro de query Athena
+        # para nomes de tabela/metadata table, so para valores de `WHERE`,
+        # que este SELECT nem usa.
+        query = f'SELECT * FROM "{database}"."{name}${section}"'  # noqa: S608
+        rows = _run_athena_query(client, query, workgroup, output_location)
+        payload[section] = _athena_rows_to_records(rows)
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="iceberg_metadata",
+        source=f"athena:{table}",
+        collect_command=(
+            f"sparkforge-aws collect iceberg-metadata --table {table} "
+            f"--workgroup {workgroup} --output-location {output_location}"
+        ),
+        now=now,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# workgroup do Athena (`get_work_group`)
+# --------------------------------------------------------------------------- #
+
+
+def collect_athena_workgroup(workgroup: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa a configuracao de um workgroup via `athena.get_work_group` e grava
+    no shape que `sparkforge_aws.facts.athena_workgroup` le.
+
+    O boto3 devolve `EngineVersion`/`BytesScannedCutoffPerQuery`/etc em
+    PascalCase, aninhados sob `WorkGroup.Configuration` -- forma nativa da API,
+    nao a forma que o extrator entende. Este coletor faz a unica traducao:
+    projeta a resposta no shape documentado no topo de
+    `sparkforge_aws/facts/athena_workgroup.py` (`name`, `engine_version.*`,
+    `state`, `bytes_scanned_cutoff`, `output_location`), sem interpretar nada
+    -- nenhum parsing de versao acontece aqui, isso e trabalho do extrator.
+    """
+    rel_path = athena_workgroup_path(workgroup)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("athena")
+    response = client.get_work_group(WorkGroup=workgroup)
+    wg = response.get("WorkGroup") or {}
+    configuration = wg.get("Configuration") or {}
+    engine_version_raw = configuration.get("EngineVersion") or {}
+    result_configuration = configuration.get("ResultConfiguration") or {}
+
+    entry: dict[str, Any] = {
+        "name": wg.get("Name", workgroup),
+        "state": wg.get("State"),
+        "engine_version": {
+            "effective_engine_version": engine_version_raw.get("EffectiveEngineVersion"),
+            "selected_engine_version": engine_version_raw.get("SelectedEngineVersion"),
+        },
+    }
+    bytes_scanned_cutoff = configuration.get("BytesScannedCutoffPerQuery")
+    if bytes_scanned_cutoff is not None:
+        entry["bytes_scanned_cutoff"] = bytes_scanned_cutoff
+    output_location = result_configuration.get("OutputLocation")
+    if output_location is not None:
+        entry["output_location"] = output_location
+
+    payload = {"workgroups": [entry]}
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="athena_workgroup",
+        source=f"athena:get_work_group:{workgroup}",
+        collect_command=f"sparkforge-aws collect athena-workgroup --workgroup {workgroup}",
+        now=now,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# cluster EMR on EC2 (`describe-cluster` e os cinco dumps que o completam)
+# --------------------------------------------------------------------------- #
+
+# Secao do dump -> (metodo boto3, chave da resposta). A ordem e a de leitura, e
+# e o que o JSON gravado preserva. `list-configurations` NAO existe na API do
+# EMR: as classificacoes chegam dentro de `Cluster.Configurations` e de
+# `InstanceGroup.Configurations`/`InstanceTypeSpecification.Configurations`,
+# entao nao ha chamada propria para elas.
+_EMR_LIST_SECTIONS: tuple[tuple[str, str], ...] = (
+    ("list_instance_groups", "InstanceGroups"),
+    ("list_instance_fleets", "InstanceFleets"),
+    ("list_bootstrap_actions", "BootstrapActions"),
+)
+
+_EMR_POLICY_SECTIONS: tuple[tuple[str, str], ...] = (
+    ("get_managed_scaling_policy", "ManagedScalingPolicy"),
+    ("get_auto_termination_policy", "AutoTerminationPolicy"),
+)
+
+
+def _emr_list_all(client: Any, method: str, cluster_id: str, key: str) -> list[dict[str, Any]]:
+    """Pagina uma API `List*` do EMR pelo `Marker`, ate o fim.
+
+    Parar na primeira pagina truncaria a lista de grupos de um cluster grande
+    em silencio -- e um cluster com o grupo TASK faltando parece um cluster sem
+    capacidade Spot, que e exatamente a conclusao errada.
+    """
+    found: list[dict[str, Any]] = []
+    marker: str | None = None
+    while True:
+        kwargs: dict[str, Any] = {"ClusterId": cluster_id}
+        if marker:
+            kwargs["Marker"] = marker
+        page = getattr(client, method)(**kwargs)
+        found.extend(page.get(key) or [])
+        marker = page.get("Marker")
+        if not marker:
+            return found
+
+
+def _emr_optional(call: Any) -> Any:
+    """Roda uma chamada de secao OPCIONAL; `None` quando ela nao se aplica.
+
+    `list_instance_fleets` falha num cluster de instance groups (e vice-versa,
+    porque os dois modelos sao exclusivos), e as duas politicas nao existem em
+    cluster que nao as configurou. Os tres casos sao "esta secao nao existe
+    para este cluster", nao falha de coleta. A chamada OBRIGATORIA
+    (`describe_cluster`) fica de fora deste helper de proposito: credencial
+    expirada ou cluster inexistente precisa estourar, e estoura la.
+    """
+    try:
+        return call()
+    except Exception:
+        return None
+
+
+def collect_emr_cluster(cluster_id: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa os seis dumps de um cluster EMR on EC2 e grava a uniao deles.
+
+    O shape gravado e exatamente o que `sparkforge_aws.facts.emr_cluster` documenta
+    -- PascalCase, sem traducao -- pela mesma razao que o extrator o le assim:
+    o artefato tem que ser indistinguivel do que sai de `aws emr ...` rodado a
+    mao, para que a coleta manual e a automatica produzam o MESMO arquivo.
+
+    `describe_cluster` e a unica chamada obrigatoria: sem ela nao ha release,
+    nem LogUri, nem identidade para ancorar o resto, e uma falha ali (perfil
+    errado, cluster inexistente, credencial expirada) tem que aparecer, nao ser
+    engolida. As outras cinco sao opcionais por construcao da API:
+    `list_instance_fleets` FALHA num cluster de instance groups e vice-versa
+    (os modelos sao exclusivos), e as duas politicas simplesmente nao existem
+    em cluster que nao as configurou. Nesses casos a secao e OMITIDA do dump --
+    nunca gravada como lista vazia, que o extrator leria como "coletado e
+    vazio" em vez de "nao coletado".
+    """
+    rel_path = emr_cluster_path(cluster_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("emr")
+
+    cluster = client.describe_cluster(ClusterId=cluster_id).get("Cluster") or {}
+    payload: dict[str, Any] = {"Cluster": cluster}
+
+    for method, key in _EMR_LIST_SECTIONS:
+        section = _emr_optional(lambda m=method, k=key: _emr_list_all(client, m, cluster_id, k))
+        if section is not None:
+            payload[key] = section
+
+    for method, key in _EMR_POLICY_SECTIONS:
+        policy = _emr_optional(
+            lambda m=method, k=key: getattr(client, m)(ClusterId=cluster_id).get(k)
+        )
+        if policy:
+            payload[key] = policy
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="emr_cluster",
+        source=f"emr:describe_cluster:{cluster_id}",
+        collect_command=f"sparkforge-aws collect emr-cluster --cluster-id {cluster_id}",
+        now=now,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# application EMR Serverless (`get-application`, e SO ela)
+# --------------------------------------------------------------------------- #
+
+
+def collect_emr_serverless(application_id: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa `get-application` de uma application EMR Serverless e grava a
+    resposta como ela vem.
+
+    UMA chamada, nao seis. O EMR on EC2 precisa de `describe-cluster` mais cinco
+    listagens porque grupos, fleets, bootstrap actions e politicas moram em APIs
+    separadas; no Serverless `GetApplication` ja devolve capacidade inicial,
+    maxima, auto-start/stop, `runtimeConfiguration` e `monitoringConfiguration`
+    dentro do mesmo objeto. Job runs ficam de fora por decisao de escopo desta
+    fase (spec secao 2), nao por limitacao da API.
+
+    **Nao ha `list-applications` aqui, e a razao e de identidade.** `GetApplication`
+    aceita `applicationId`, e resolver um id a partir do `name` exigiria listar e
+    escolher. Mas `name` e `Required: No` na referencia de API -- uma application
+    pode nao ter nenhum -- e nenhuma fonte lida na Task 1 declara que ele seja
+    unico. Um coletor que aceitasse nome escolheria uma entre N homonimas em
+    silencio e gravaria o artefato errado com aparencia de certo, que e a classe
+    de resultado que este pacote existe para nao produzir. Mesma disciplina de
+    `collect_emr_cluster`, que so aceita `j-XXXX` e nunca o `Name` do cluster.
+
+    O shape gravado e o da resposta da API, com a chave de topo `application` --
+    identico ao que `aws emr-serverless get-application --application-id ...`
+    imprime, para que coleta manual e automatica produzam o MESMO arquivo, e e
+    exatamente o que `sparkforge_aws.facts.emr_serverless` documenta ler. Nenhuma
+    traducao acontece aqui: `cpu`/`memory`/`disk` continuam strings com unidade,
+    e interpreta-las e trabalho do extrator.
+    """
+    rel_path = emr_serverless_path(application_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("emr-serverless")
+
+    application = client.get_application(applicationId=application_id).get("application") or {}
+    payload: dict[str, Any] = {"application": application}
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="emr_serverless",
+        source=f"emr-serverless:get_application:{application_id}",
+        collect_command=(
+            f"sparkforge-aws collect emr-serverless --application-id {application_id}"
+        ),
+        now=now,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# execucao EMR on EKS (`describe-virtual-cluster` + `describe-job-run`)
+# --------------------------------------------------------------------------- #
+
+
+def collect_emr_eks(
+    virtual_cluster_id: str, job_run_id: str, root: Path, *, now: str
+) -> ArtifactEntry:
+    """Baixa `DescribeVirtualCluster` e `DescribeJobRun` de uma execucao EMR
+    on EKS e grava as duas respostas num arquivo autocontido.
+
+    DUAS chamadas, nem uma nem seis. Diferente do EMR Serverless, onde
+    `GetApplication` ja devolve tudo num objeto so, e diferente do EMR on EC2,
+    onde `describe-cluster` mais cinco listagens vivem todas na API `emr`: no
+    EMR on EKS, `DescribeVirtualCluster` (identidade e estado do cluster
+    virtual) e `DescribeJobRun` (a execucao em si) sao duas APIS SEPARADAS do
+    servico `emr-containers`, e nenhuma delas contem a outra.
+
+    As duas respostas vao para o MESMO arquivo, sob as chaves de topo
+    `virtualCluster` e `jobRun` -- exatamente o shape que
+    `sparkforge_aws.facts.emr_eks` documenta ler. Correlacionar as duas e trabalho
+    do extrator, nao deste coletor; o que este coletor garante e um artefato
+    autocontido por execucao, a mesma decisao de `collect_emr_cluster` (seis
+    dumps, um arquivo).
+
+    **Os dois ids sao obrigatorios, e nao ha resolucao por nome.**
+    `DescribeJobRun` exige `virtualClusterId` junto do `id` -- a propria API
+    nao aceita um job run sem o cluster virtual que o contem. Um coletor que
+    aceitasse nome escolheria uma entre N homonimas em silencio e gravaria o
+    artefato errado com aparencia de certo, a classe de resultado que este
+    pacote existe para nao produzir. Mesma disciplina de `collect_emr_cluster`
+    (so aceita `j-XXXX`) e `collect_emr_serverless` (so aceita
+    `applicationId`).
+
+    Fora do escopo desta fase, por decisao e nao por limitacao da API:
+    `list-job-runs` (listagem, nao coleta de uma execucao identificada), o pod
+    template apontado pela configuracao (exigiria uma segunda chamada,
+    `GetObject`, fora do que este coletor faz), e todo o lado EKS (nodegroup,
+    autoscaling, pods) -- outro servico, outro IAM, outra matriz de versao.
+    """
+    rel_path = emr_eks_path(virtual_cluster_id, job_run_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("emr-containers")
+
+    virtual_cluster = (
+        client.describe_virtual_cluster(id=virtual_cluster_id).get("virtualCluster") or {}
+    )
+    job_run = (
+        client.describe_job_run(id=job_run_id, virtualClusterId=virtual_cluster_id).get(
+            "jobRun"
+        )
+        or {}
+    )
+    payload: dict[str, Any] = {"virtualCluster": virtual_cluster, "jobRun": job_run}
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="emr_eks",
+        source=f"emr-containers:describe_job_run:{virtual_cluster_id}:{job_run_id}",
+        collect_command=(
+            f"sparkforge-aws collect emr-eks --virtual-cluster-id {virtual_cluster_id} "
+            f"--job-run-id {job_run_id}"
+        ),
+        now=now,
+    )
+
+
+__all__ = [
+    "CLOUDWATCH_METRICS",
+    "CLOUDWATCH_METRIC_NAMES",
+    "ICEBERG_METADATA_SECTIONS",
+    "CollectionFailed",
+    "CollectorUnavailable",
+    "athena_workgroup_path",
+    "cloudwatch_path",
+    "collect_athena_workgroup",
+    "collect_cloudwatch",
+    "collect_emr_cluster",
+    "collect_emr_eks",
+    "collect_emr_serverless",
+    "collect_event_log",
+    "collect_glue_job",
+    "collect_iceberg_metadata",
+    "emr_cluster_path",
+    "emr_eks_path",
+    "emr_serverless_path",
+    "event_log_path",
+    "glue_job_path",
+    "iceberg_metadata_path",
+]

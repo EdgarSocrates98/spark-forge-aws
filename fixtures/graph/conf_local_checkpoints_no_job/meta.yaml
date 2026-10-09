@@ -1,0 +1,18 @@
+name: conf_local_checkpoints_no_job
+proves: >
+  A outra grafia da quarta forma: `spark.graphframes.useLocalCheckpoints` ligada
+  no proprio job. O valor de uma conf do Spark e STRING, e e `_truthy` que le
+  "true" -- um `bool(value)` leria "false" como verdadeiro e transformaria a
+  conf DESLIGADA em dispensa da exigencia.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules: []

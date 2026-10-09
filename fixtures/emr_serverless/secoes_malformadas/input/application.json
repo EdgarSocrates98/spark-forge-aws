@@ -1,0 +1,40 @@
+{
+  "application": {
+    "applicationId": "00fmalformada0000001",
+    "name": "payload-torto",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "initialCapacity": {
+      "DRIVER": "nao-e-objeto",
+      "EXECUTOR": {
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "16GB",
+          "disk": "20GB"
+        }
+      }
+    },
+    "maximumCapacity": "400vCPU",
+    "runtimeConfiguration": [
+      "nao-e-objeto",
+      {
+        "properties": {
+          "spark.executor.cores": "4"
+        }
+      },
+      {
+        "classification": "spark-defaults",
+        "properties": "nao-e-objeto",
+        "configurations": "nao-e-lista"
+      },
+      {
+        "classification": "spark-hive-site",
+        "properties": {
+          "   ": "sem-chave"
+        }
+      }
+    ],
+    "monitoringConfiguration": "nao-e-objeto"
+  }
+}

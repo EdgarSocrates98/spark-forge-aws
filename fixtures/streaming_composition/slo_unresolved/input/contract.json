@@ -1,0 +1,15 @@
+{
+  "slo": [{
+    "name": "throughput",
+    "metric": "processed_rows_per_second",
+    "target": 95,
+    "operator": "gte",
+    "unit": "rows_per_second",
+    "window": "15m",
+    "source": "spark_progress"
+  }],
+  "finops": [],
+  "security": [],
+  "serving": [],
+  "lakehouse": []
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "op": "start",
+    "rules": [
+      "SF-LF-001",
+      "SF-LF-001"
+    ]
+  },
+  {
+    "op": "start",
+    "rules": [
+      "SF-GRAPH-002",
+      "SF-LF-001"
+    ]
+  }
+]

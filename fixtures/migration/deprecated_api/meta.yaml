@@ -1,0 +1,15 @@
+name: deprecated_api
+proves: >
+  `SQLContext` instanciado num job Glue -- observacao pura, sem regra nenhuma
+  no catalogo hoje (`mig.deprecated_api` nao aparece em nenhum
+  `requires_facts` de `rules/catalog/glue-migration.yaml`). Runtime Glue 5.0
+  por consistencia com o resto do corpus -- nao ha fronteira de versao a
+  provar aqui, so o vocabulario do fact.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.deprecated_api
+expects_rules: []

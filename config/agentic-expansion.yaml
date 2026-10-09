@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "mode": "offline-first",
+  "network_required": false,
+  "agents": [
+    "sf-security-reviewer",
+    "sf-lake-formation-specialist"
+  ],
+  "knowledge": [
+    "knowledge/streaming-reliability.md",
+    "knowledge/lake-governance.md",
+    "knowledge/data-contracts-schema-evolution.md",
+    "knowledge/data-lineage-impact.md",
+    "knowledge/data-platform-finops.md",
+    "knowledge/agent-evaluation.md",
+    "knowledge/offline-policy.md",
+    "knowledge/offline-manifest.json"
+  ],
+  "policy": {
+    "network": "forbidden_by_default",
+    "mutation": "approval_required",
+    "source": "local_manifest_first",
+    "unknown_source": "unresolved"
+  }
+}

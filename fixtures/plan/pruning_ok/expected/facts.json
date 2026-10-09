@@ -1,0 +1,168 @@
+[
+  {
+    "id": "f_07e7fa",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 48,
+      "node_count": 7,
+      "file_scan_count": 1,
+      "exchange_count": 1,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": true,
+      "aqe_final_plan": true,
+      "aqe_sections_seen": [
+        "Final Plan"
+      ]
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "ccc8c55d3cafa73ae4b3a3c6f57671213c6c043eb603ace16d363951f2c670b5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_462d00",
+    "schema_version": 1,
+    "kind": "plan.aqe",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 46,
+      "symbol": "(7) AdaptiveSparkPlan",
+      "node_id": 7,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "is_final_plan": true
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "ccc8c55d3cafa73ae4b3a3c6f57671213c6c043eb603ace16d363951f2c670b5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_d620d9",
+    "schema_version": 1,
+    "kind": "plan.exchange",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 35,
+      "symbol": "(5) Exchange",
+      "node_id": 5,
+      "operator": "Exchange",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "Exchange",
+      "partitioning": "hashpartitioning",
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "ccc8c55d3cafa73ae4b3a3c6f57671213c6c043eb603ace16d363951f2c670b5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_64e857",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 12,
+      "symbol": "(1) Scan parquet analytics.transacoes",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.transacoes"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 4,
+      "referenced_columns": 3,
+      "partition_filter_count": 2,
+      "pushed_filter_count": 2
+    },
+    "attrs": {
+      "relation": "analytics.transacoes",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": true,
+      "partitioned_evidence": "partition_filters",
+      "partition_filters_present": true,
+      "partition_filters_empty": false,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "ccc8c55d3cafa73ae4b3a3c6f57671213c6c043eb603ace16d363951f2c670b5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_75704b",
+    "schema_version": 1,
+    "kind": "plan.operator",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 28,
+      "symbol": "(4) HashAggregate",
+      "node_id": 4,
+      "operator": "HashAggregate",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "HashAggregate"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "ccc8c55d3cafa73ae4b3a3c6f57671213c6c043eb603ace16d363951f2c670b5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_f3ae25",
+    "schema_version": 1,
+    "kind": "plan.operator",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 39,
+      "symbol": "(6) HashAggregate",
+      "node_id": 6,
+      "operator": "HashAggregate",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "HashAggregate"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "ccc8c55d3cafa73ae4b3a3c6f57671213c6c043eb603ace16d363951f2c670b5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

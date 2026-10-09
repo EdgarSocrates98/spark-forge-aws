@@ -1,0 +1,23 @@
+name: pregel_como_propriedade
+proves: >
+  O Pregel e `@property` nas duas linhagens: um vocabulario casado so contra
+  `ast.Call` nao emitiria fact nenhum aqui, e o Pregel e o unico algoritmo cujo
+  limite de iteracao o usuario controla de fato. O fact sai com
+  `form: "property"`, e `setMaxIter(10)` e recuperado percorrendo a cadeia para
+  FORA a partir de `g.pregel` -- travessia que nenhum outro extrator do
+  repositorio precisa fazer.
+  Vertices e arestas chegam por PARAMETRO: `vertices_persisted` e
+  `edges_persisted` ficam OMITIDOS, que e a subnotificacao declarada, nunca
+  `false`. Cobre tambem o import de submodulo (`graphframes.lib`), que conta
+  como import do pacote.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.module_analyzed
+expects_rules: []

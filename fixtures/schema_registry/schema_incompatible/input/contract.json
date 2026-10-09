@@ -1,0 +1,11 @@
+{
+  "registry": {"name": "orders", "provider": "glue", "compatibility": "BACKWARD"},
+  "schema": {"name": "orders-value", "format": "AVRO", "version": 3,
+    "definition": {"type": "record", "name": "Order", "fields": [
+      {"name": "id", "type": "int"}, {"name": "status", "type": "string"}
+    ]}},
+  "previous": {"definition": {"type": "record", "name": "Order", "fields": [
+    {"name": "id", "type": "string"}, {"name": "total", "type": "double"}
+  ]}},
+  "auto_register": true
+}

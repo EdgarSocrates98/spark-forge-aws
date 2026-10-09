@@ -1,0 +1,47 @@
+[
+  {
+    "id": "f_731b9f",
+    "schema_version": 1,
+    "kind": "cdc.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "bad.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "cdc",
+      "event_count": 0
+    },
+    "provenance": {
+      "artifact": "bad.json",
+      "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_49b4b1",
+    "schema_version": 1,
+    "kind": "cdc.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "bad.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_json"
+    },
+    "provenance": {
+      "artifact": "bad.json",
+      "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

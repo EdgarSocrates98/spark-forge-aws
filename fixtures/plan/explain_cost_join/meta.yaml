@@ -1,0 +1,21 @@
+name: explain_cost_join
+proves: >
+  Saida de `df.explain("cost")`: o `== Optimized Logical Plan ==` traz o sufixo
+  `Statistics(sizeInBytes=...)` em cada no. O join Inner entre db.pedidos
+  (1.1 GiB) e db.clientes (24.0 MiB) vira `plan.join_side_stats` com os bytes
+  estimados de cada lado e se cada um tem estatistica. O plano fisico abaixo
+  continua extraido como antes -- a secao logica acrescenta, nao substitui.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.exchange
+  - plan.file_scan
+  - plan.join
+  - plan.join_side_stats
+  - plan.operator
+  - plan.unresolved
+expects_rules: []

@@ -1,0 +1,26 @@
+name: execucao_com_redrive
+proves: >
+  AC1 e AC2. O historico traz `ExecutionRedriven` (id 10): a execucao foi RETOMADA, e
+  o Task foi agendado TRES vezes no total -- duas antes do redrive e uma depois --
+  contra um teto declarado de DUAS (`MaxAttempts: 1`). Sem a recusa, a SF-SFNX-001
+  dispararia sobre uma contagem que soma as tentativas de antes e as de depois, e o
+  arquivo nao sustenta essa soma como uma coisa so. Com ela, sai
+  `sfn.unresolved: execution_redriven` (pelo evento) e
+  `sfn.unresolved: redrive_in_execution` (pela derivacao, no lugar do
+  `sfn.retry_observado`), e a SF-SFNX-001 fica CALADA. As tres tentativas e os tres
+  JobRuns continuam publicados: o que se recusa e a COMPARACAO. SF-SFN-002 dispara
+  junto, pelo lado da DEFINICAO, e deve: o retrier reexecuta o job inteiro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.state_machine
+  - sfn.task
+  - sfn.unresolved
+expects_rules: [SF-SFN-002]

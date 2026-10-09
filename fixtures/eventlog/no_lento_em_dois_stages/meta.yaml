@@ -1,0 +1,30 @@
+name: no_lento_em_dois_stages
+proves: >
+  Dois stages de 8 tasks, todas com o mesmo input (10 MB) e sem shuffle. Nos dois, a
+  unica task acima do criterio de copia especulativa do Spark 3.5 (1,5 x a mediana de
+  1000 ms) roda no executor 2. Mesmo executor, dois stages, leitura igual a mediana:
+  `spark.executor.slow_node` sai para o executor 2 e SF-UI-007 dispara (P2). A razao
+  max/p50 fica em 2,9, abaixo do 3,0 da SF-UI-001, que por isso cala: lentidao do no
+  nao e skew de duracao de particao.
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+expects_kinds:
+- spark.cluster.cores
+- spark.conf_effective
+- spark.conf_excluded
+- spark.executor.slow_node
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.slow_tasks
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+expects_rules:
+- SF-UI-007

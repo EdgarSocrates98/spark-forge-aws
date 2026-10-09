@@ -1,0 +1,11 @@
+name: heartbeat_perdido
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'A frase com que o Spark removeu o executor decide a categoria. `heartbeat` sai de
+  `spark.executor.lost`, e a relacao entre as duas propriedades esta na ordem certa (10s dentro
+  de 120s), entao `SF-TIMEOUT-002` nao dispara: o problema nao e a configuracao, e o executor
+  que parou de responder.'

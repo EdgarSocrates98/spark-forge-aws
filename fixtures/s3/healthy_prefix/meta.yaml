@@ -1,0 +1,15 @@
+name: healthy_prefix
+proves: >
+  Doze arquivos Parquet de ~256 MB, que e a faixa alvo. Nenhuma regra pode
+  disparar. Existe pelo sentido negativo do golden: SF-PQ-001 e SF-PQ-003 leem
+  as mesmas measures que aqui estao saudaveis, e um erro de sinal no limiar
+  (`<` virando `>`) acusaria exatamente este prefixo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.prefix_summary
+expects_rules: []

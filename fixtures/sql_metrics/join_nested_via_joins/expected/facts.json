@@ -1,0 +1,310 @@
+[
+  {
+    "id": "f_eabf0d",
+    "schema_version": 1,
+    "kind": "spark.sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "executions": 1,
+      "scan_nodes": 3,
+      "unattributed_accumulators": 0,
+      "malformed_lines": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_cd8511",
+    "schema_version": 1,
+    "kind": "spark.sql.execution",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "execution",
+      "relation": "",
+      "symbol": "0:0",
+      "execution_id": 0
+    },
+    "measures": {
+      "scan_nodes": 3,
+      "nodes_total": 5
+    },
+    "attrs": {
+      "plan_source": "initial",
+      "description": "select at Query.scala:20",
+      "redacted": false
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_b1b066",
+    "schema_version": 1,
+    "kind": "spark.sql.join",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "SortMergeJoin",
+      "relation": "",
+      "symbol": "0:0",
+      "execution_id": 0
+    },
+    "measures": {
+      "inputs_left": 2,
+      "inputs_right": 1
+    },
+    "attrs": {
+      "strategy": "SortMergeJoin",
+      "join_type": "Inner",
+      "build_side": ""
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_ec5dee",
+    "schema_version": 1,
+    "kind": "spark.sql.join",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "SortMergeJoin",
+      "relation": "",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {
+      "inputs_left": 1,
+      "inputs_right": 1
+    },
+    "attrs": {
+      "strategy": "SortMergeJoin",
+      "join_type": "Inner",
+      "build_side": ""
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_70f5fb",
+    "schema_version": 1,
+    "kind": "spark.sql.join_input",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "SortMergeJoin",
+      "relation": "db.a",
+      "symbol": "0:0",
+      "execution_id": 0,
+      "position": "left"
+    },
+    "measures": {
+      "via_joins": 1
+    },
+    "attrs": {
+      "relation": "db.a",
+      "position": "left",
+      "side": "unknown",
+      "strategy": "SortMergeJoin"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_6c5a27",
+    "schema_version": 1,
+    "kind": "spark.sql.join_input",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "SortMergeJoin",
+      "relation": "db.b",
+      "symbol": "0:0",
+      "execution_id": 0,
+      "position": "left"
+    },
+    "measures": {
+      "via_joins": 1
+    },
+    "attrs": {
+      "relation": "db.b",
+      "position": "left",
+      "side": "unknown",
+      "strategy": "SortMergeJoin"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_8138bc",
+    "schema_version": 1,
+    "kind": "spark.sql.join_input",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "SortMergeJoin",
+      "relation": "db.c",
+      "symbol": "0:0",
+      "execution_id": 0,
+      "position": "right"
+    },
+    "measures": {
+      "via_joins": 0
+    },
+    "attrs": {
+      "relation": "db.c",
+      "position": "right",
+      "side": "unknown",
+      "strategy": "SortMergeJoin"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_d55b97",
+    "schema_version": 1,
+    "kind": "spark.sql.join_input",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "SortMergeJoin",
+      "relation": "db.a",
+      "symbol": "0:1",
+      "execution_id": 0,
+      "position": "left"
+    },
+    "measures": {
+      "via_joins": 0
+    },
+    "attrs": {
+      "relation": "db.a",
+      "position": "left",
+      "side": "unknown",
+      "strategy": "SortMergeJoin"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_72738a",
+    "schema_version": 1,
+    "kind": "spark.sql.join_input",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "SortMergeJoin",
+      "relation": "db.b",
+      "symbol": "0:1",
+      "execution_id": 0,
+      "position": "right"
+    },
+    "measures": {
+      "via_joins": 0
+    },
+    "attrs": {
+      "relation": "db.b",
+      "position": "right",
+      "side": "unknown",
+      "strategy": "SortMergeJoin"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_2f1d6b",
+    "schema_version": 1,
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 2,
+      "operator": "Scan parquet db.a",
+      "relation": "db.a",
+      "symbol": "0:2",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet db.a"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_c5fcc4",
+    "schema_version": 1,
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 3,
+      "operator": "Scan parquet db.b",
+      "relation": "db.b",
+      "symbol": "0:3",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet db.b"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_ea0df8",
+    "schema_version": 1,
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 4,
+      "operator": "Scan parquet db.c",
+      "relation": "db.c",
+      "symbol": "0:4",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet db.c"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

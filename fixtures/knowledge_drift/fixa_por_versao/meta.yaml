@@ -1,0 +1,4 @@
+description: >-
+  URL com versao no caminho nao muda por construcao: mesmo com `changed_at`
+  no lock, ela nunca entra no radar (estado `fixed`).
+args: []

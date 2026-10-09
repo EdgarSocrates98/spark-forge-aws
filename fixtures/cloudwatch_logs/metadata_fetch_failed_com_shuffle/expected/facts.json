@@ -1,0 +1,320 @@
+[
+  {
+    "id": "f_a8b3bb",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_mff1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_mff1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:07:03,880 ERROR [main] scheduler.DAGScheduler: org.apache.spark.shuffle.MetadataFetchFailedException: Missing an output location for shuffle 2",
+      "log_stream": "jr_mff1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_mff1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_7ce2f7",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_mff1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_mff1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_mff1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_mff1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_80688f",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-b2"
+    },
+    "measures": {
+      "available_cores": 0,
+      "executor_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_367cbd",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-b2"
+    },
+    "measures": {
+      "stages_with_spill": 0,
+      "total_memory_spill_bytes": 0,
+      "total_disk_spill_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_60f194",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 5,
+      "event_count": 5,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_de9d57",
+    "schema_version": 1,
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-b2"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.6",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_865c47",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "map at etl.py:20",
+      "stage_id": 4
+    },
+    "measures": {
+      "line": 20
+    },
+    "attrs": {
+      "resolved": true,
+      "method": "map",
+      "file": "etl.py",
+      "path": "etl.py"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_2d9f2a",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "map at etl.py:20",
+      "stage_id": 4
+    },
+    "measures": {
+      "gc_ms": 0,
+      "executor_run_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_7dcad7",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "map at etl.py:20",
+      "stage_id": 4
+    },
+    "measures": {
+      "read_bytes": 0,
+      "remote_read_bytes": 0,
+      "local_read_bytes": 0,
+      "read_records": 0,
+      "fetch_wait_ms": 0,
+      "write_bytes": 52428800,
+      "write_records": 1000,
+      "write_time_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_fa72e0",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "map at etl.py:20",
+      "stage_id": 4
+    },
+    "measures": {
+      "memory_spill_bytes": 0,
+      "disk_spill_bytes": 0,
+      "input_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_5609e4",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "map at etl.py:20",
+      "stage_id": 4
+    },
+    "measures": {
+      "task_count": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_11ad29",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "map at etl.py:20",
+      "stage_id": 4
+    },
+    "measures": {
+      "min_ms": 10000,
+      "p50_ms": 10000,
+      "p95_ms": 10000,
+      "max_ms": 10000,
+      "mean_ms": 10000.0,
+      "task_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_d10526",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_mff1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_mff1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:07:03,880 ERROR [main] scheduler.DAGScheduler: org.apache.spark.shuffle.MetadataFetchFailedException: Missing an output location for shuffle 2"
+    },
+    "provenance": {
+      "artifact": "logs/etl-curated_jr_mff1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  },
+  {
+    "id": "f_d18502",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_mff1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_mff1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-011"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-011",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:07:03,880 ERROR [main] scheduler.DAGScheduler: org.apache.spark.shuffle.MetadataFetchFailedException: Missing an output location for shuffle 2"
+    },
+    "provenance": {
+      "artifact": "logs/etl-curated_jr_mff1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

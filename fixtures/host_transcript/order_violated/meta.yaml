@@ -1,0 +1,6 @@
+name: order_violated
+mode: transcript
+question: q-mcp
+proves: >
+  AT-008: judge antes de analyze_pyspark. tools failed com
+  order_violated [analyze_pyspark<judge].

@@ -1,0 +1,72 @@
+# Host da URL -> tier de autoridade. DADO versionado, nao codigo: pela mesma
+# razao que a matriz de runtime e YAML e nao literal em Python -- host novo
+# citado por regra nova e mudanca de DADO, e revisa-la num diff de YAML e mais
+# barato do que revisa-la dentro de um dicionario embutido no motor.
+#
+# O tier gradua FONTE DE CONHECIMENTO. Ele nao gradua a medida do artefato do
+# cliente, e nao existe tier para isso -- ver a secao 3.4 do spec. Event log,
+# plano fisico e glue.job_run sao medida, nao fonte: nao passam por aqui.
+#
+# T3 (benchmark reproduzivel) NAO aparece neste arquivo, e nao por esquecimento:
+# host nao prova reprodutibilidade. Um benchmark so vira T3 quando alguem o
+# reproduz, e isso e propriedade da evidencia, nunca do dominio que a hospeda.
+#
+# Cobertura medida em 2026-09-08: 18 hosts distintos entre rules/catalog
+# (12 hosts, 157 citacoes) e knowledge/sources.lock.json (18 hosts, 225
+# fontes). Todos os 18 estao declarados abaixo.
+schema_version: 1
+
+# Host que este arquivo nao nomeia cai aqui. T4 e o piso conservador: nunca
+# promove um desconhecido a documentacao oficial, e nunca o rebaixa a
+# conjectura, que e afirmacao sobre o CONTEUDO e nao sobre o host.
+default: T4_RECOGNIZED_AUTHORITY
+
+hosts:
+  # --- T1: documentacao de referencia do proprio produto ---------------------
+  docs.aws.amazon.com: T1_OFFICIAL_DOCS
+  spark.apache.org: T1_OFFICIAL_DOCS
+  iceberg.apache.org: T1_OFFICIAL_DOCS
+  parquet.apache.org: T1_OFFICIAL_DOCS
+  hadoop.apache.org: T1_OFFICIAL_DOCS
+  docs.python.org: T1_OFFICIAL_DOCS
+  docs.greatexpectations.io: T1_OFFICIAL_DOCS
+  docs.devin.ai: T1_OFFICIAL_DOCS
+  # Documentacao oficial do Control-M (BMC). O host documents.bmc.com serve a
+  # referencia de API versionada, nao material de marketing.
+  documents.bmc.com: T1_OFFICIAL_DOCS
+  # Site oficial do projeto GraphFrames -- guia de uso e instalacao. O projeto
+  # nao tem host separado para docs, entao o dominio inteiro e a documentacao.
+  graphframes.io: T1_OFFICIAL_DOCS
+
+  # --- T2: codigo-fonte, release notes e artefato publicado ------------------
+  github.com: T2_SOURCE_CODE
+  raw.githubusercontent.com: T2_SOURCE_CODE
+  api.github.com: T2_SOURCE_CODE
+  # Maven Central e PyPI publicam o POM, o maven-metadata.xml e o JSON de
+  # release. Isso e o artefato e a metadata DECLARADA pela versao -- a mesma
+  # natureza de release notes, e nao a de um terceiro escrevendo sobre ela.
+  # Provam que a versao existe e o que ela declara depender; nao provam
+  # comportamento, que continua exigindo medida.
+  repo1.maven.org: T2_SOURCE_CODE
+  pypi.org: T2_SOURCE_CODE
+
+  # --- T4: primeira parte, mas nao referencia --------------------------------
+  # aws.amazon.com NAO e docs.aws.amazon.com. Ele serve /blogs/,
+  # /about-aws/whats-new/ e /pricing/: post tecnico de engenheiro da AWS,
+  # anuncio e tabela de preco. E autoridade reconhecida (T4) e nao referencia
+  # (T1) -- o blog nao e mantido junto com a versao, e ja envelheceu enquanto a
+  # doc correspondente foi corrigida. Declarado explicitamente, mesmo valendo o
+  # default, para que ninguem o conserte para T1 por parecer AWS oficial.
+  aws.amazon.com: T4_RECOGNIZED_AUTHORITY
+  # re:Post e Q&A de comunidade sob dominio AWS. Mesma razao do anterior: marca
+  # oficial nao torna o conteudo referencia oficial.
+  repost.aws: T4_RECOGNIZED_AUTHORITY
+  # Registro comunitario de pacotes Spark: lista o que terceiros publicaram, e
+  # nao e o artefato nem a doc do projeto.
+  spark-packages.org: T4_RECOGNIZED_AUTHORITY
+  # Paper academico revisado por pares (PVLDB). Alta qualidade e ainda assim T4
+  # e nao T3: o paper DESCREVE um benchmark, e T3 exige que ele tenha sido
+  # reproduzido no ambiente alvo -- coisa que o host nao pode atestar.
+  www.vldb.org: T4_RECOGNIZED_AUTHORITY
+  # Blog de fornecedor terceiro escrevendo sobre Iceberg.
+  www.dremio.com: T4_RECOGNIZED_AUTHORITY

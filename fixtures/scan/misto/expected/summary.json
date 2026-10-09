@@ -1,0 +1,127 @@
+{
+  "analyzes": {
+    "event-log": {
+      "facts": 29,
+      "files": 1
+    },
+    "glue-job-runs": {
+      "facts": 7,
+      "files": 1
+    },
+    "iceberg": {
+      "facts": 11,
+      "files": 1
+    },
+    "pyspark": {
+      "facts": 3,
+      "files": 1
+    },
+    "sql": {
+      "facts": 3,
+      "files": 2
+    },
+    "terraform": {
+      "facts": 17,
+      "files": 1
+    }
+  },
+  "dry_run": false,
+  "facts": {
+    "after_fuse": 73,
+    "extracted": 70
+  },
+  "findings": {
+    "by_severity": {
+      "P0": 3,
+      "P1": 4,
+      "P2": 2
+    },
+    "rule_ids": [
+      "SF-ICE-001",
+      "SF-LF-005",
+      "SF-PY-001",
+      "SF-UI-001",
+      "SF-UI-002",
+      "SF-UI-003",
+      "SF-UI-004",
+      "SF-UI-005",
+      "SF-UI-006"
+    ],
+    "total": 9
+  },
+  "gate": {
+    "fail_on": null,
+    "tripped": false
+  },
+  "outputs": [
+    ".sparkforge_aws/scan/facts_event-log.json",
+    ".sparkforge_aws/scan/facts_glue-job-runs.json",
+    ".sparkforge_aws/scan/facts_iceberg.json",
+    ".sparkforge_aws/scan/facts_pyspark.json",
+    ".sparkforge_aws/scan/facts_sql.json",
+    ".sparkforge_aws/scan/facts_terraform.json",
+    ".sparkforge_aws/scan/facts.json",
+    ".sparkforge_aws/scan/findings.json",
+    ".sparkforge_aws/scan/summary.json"
+  ],
+  "plan": {
+    "entries": [
+      {
+        "analyze": "event-log",
+        "origin": "manifesto",
+        "path": ".sparkforge_aws/artifacts/eventlog/jr_0001.jsonl"
+      },
+      {
+        "analyze": "glue-job-runs",
+        "job_name": "synthetic-job",
+        "origin": "manifesto",
+        "path": ".sparkforge_aws/artifacts/glue_job_run"
+      },
+      {
+        "analyze": "iceberg",
+        "origin": "manifesto",
+        "path": ".sparkforge_aws/artifacts/iceberg/small_files.json"
+      },
+      {
+        "analyze": "pyspark",
+        "origin": "extensao",
+        "path": "src/job.py"
+      },
+      {
+        "analyze": "sql",
+        "origin": "extensao",
+        "path": "sql/query.sql"
+      },
+      {
+        "analyze": "sql",
+        "origin": "extensao",
+        "path": "src/job.py"
+      },
+      {
+        "analyze": "terraform",
+        "origin": "extensao",
+        "path": "infra/main.tf"
+      }
+    ],
+    "refused": [],
+    "skipped": [
+      {
+        "path": ".sparkforge_aws",
+        "reason": "DIRECTORY_IGNORED"
+      }
+    ]
+  },
+  "refused": [],
+  "refused_by_reason": {},
+  "runtime": {
+    "athena": "",
+    "databricks": "",
+    "divergences": [],
+    "emr": "",
+    "glue": "5.0",
+    "iceberg": "1.7.1",
+    "photon": "",
+    "python": "3.11",
+    "spark": "3.5.4"
+  }
+}

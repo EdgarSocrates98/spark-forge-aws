@@ -1,0 +1,19 @@
+name: evento_desconhecido
+proves: >
+  AC3 na metade que a API move sozinha. O tipo `VariableSetEventDetailsEntered` nao
+  esta na lista publicada que o extrator carrega: nao e defeito do artefato, e a API
+  que cresceu. Ele sai em `event_type_unknown` COM o nome, e o resto do arquivo
+  continua valendo -- a tentativa completa sai, com o JobRun. Ignorar em silencio
+  seria a unica saida pior do que falhar.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: []

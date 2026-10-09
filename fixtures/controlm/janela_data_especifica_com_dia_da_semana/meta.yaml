@@ -1,0 +1,21 @@
+name: janela_data_especifica_com_dia_da_semana
+proves: >
+  O SEGUNDO positivo de `SF-CTM-002`, e a outra forma do mesmo defeito: aqui
+  `WeekDays` esta ESCRITO, com "ALL". `Months` e `MonthDays` estao anulados com
+  "NONE", entao o conflito e de uma opcao so -- e
+  `specific_dates_conflict_declared` traz `WeekDays` sozinho, com
+  `specific_dates_conflict_by_omission` vazio.
+  E O CONTRAFACTUAL DA FIXTURE IRMA. Ela e o mesmo defeito visivel; a outra e o
+  mesmo defeito invisivel. Se as duas produzirem evidencia identica, a separacao
+  entre `_declared` e `_by_omission` nao esta sendo feita -- e e essa separacao
+  que decide se a correcao acrescenta linha ou troca valor.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-002

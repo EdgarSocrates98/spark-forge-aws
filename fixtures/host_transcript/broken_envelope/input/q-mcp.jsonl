@@ -1,0 +1,5 @@
+{"type": "user", "version": "2.1.268", "sessionId": "00000000-0000-4000-8000-000000000000", "uuid": "00000000-0000-4000-8000-000000000001", "timestamp": "2026-09-10T00:00:01.000Z", "message": {"role": "user", "content": "Pergunta sintetica."}}
+{isto nao e json
+{"sem_type": true}
+{"type": "assistant", "version": "2.1.268", "sessionId": "00000000-0000-4000-8000-000000000000", "uuid": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-09-10T00:00:02.000Z", "message": ["message", "em", "lista"]}
+{"type": "assistant", "version": "2.1.268", "sessionId": "00000000-0000-4000-8000-000000000000", "uuid": "00000000-0000-4000-8000-000000000003", "timestamp": "2026-09-10T00:00:03.000Z", "message": "message em string"}

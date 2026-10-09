@@ -1,0 +1,9 @@
+{
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "rules/catalog/pyspark.yaml",
+    "old_string": "a",
+    "new_string": "b"
+  },
+  "cwd": "."
+}

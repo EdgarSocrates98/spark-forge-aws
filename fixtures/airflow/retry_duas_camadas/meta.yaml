@@ -1,0 +1,22 @@
+name: retry_duas_camadas
+proves: >
+  O POSITIVO de SF-AIRFLOW-004. A task liga ao `aws_glue_job.carga_diaria` pelo
+  `job_name` literal igual ao `name`; o `retries` efetivo do Airflow vem de
+  `default_args` e vale 2, e o job declara `max_retries = 2`. As duas camadas existem
+  sobre o mesmo job, e a composicao delas nao e documentada (U1). Esta fixture tambem e
+  a que exercita `default_args=DEFAULT_ARGS` pelo nome de modulo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - af.analyzed
+  - af.dag
+  - af.glue_job_link
+  - af.task
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: [SF-AIRFLOW-004]

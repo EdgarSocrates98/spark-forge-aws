@@ -1,0 +1,80 @@
+[
+  {
+    "id": "f_5baf27",
+    "schema_version": 1,
+    "kind": "dq.check",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 35,
+      "col": 18,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line": 35,
+      "checks_on_target": 1
+    },
+    "attrs": {
+      "framework": "handmade",
+      "check_type": "count_of_violations",
+      "target": "enriquecido",
+      "target_persisted": false,
+      "action_after_check": true,
+      "shares_scan": false,
+      "position_vs_write": "before_write"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "500d7b7a9238aaa188c49e872cc3c2522d91d594d5b5306aeec7ea067d8d6ba9",
+      "extractor": "data_quality@0.1.0"
+    }
+  },
+  {
+    "id": "f_26710d",
+    "schema_version": 1,
+    "kind": "dq.enforcement",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 35,
+      "col": 18,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line": 37
+    },
+    "attrs": {
+      "form": "raise"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "500d7b7a9238aaa188c49e872cc3c2522d91d594d5b5306aeec7ea067d8d6ba9",
+      "extractor": "data_quality@0.1.0"
+    }
+  },
+  {
+    "id": "f_2f3f0c",
+    "schema_version": 1,
+    "kind": "dq.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "check_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "500d7b7a9238aaa188c49e872cc3c2522d91d594d5b5306aeec7ea067d8d6ba9",
+      "extractor": "data_quality@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "Id": "jr_0002",
+  "JobName": "synthetic-job",
+  "JobRunState": "FAILED",
+  "StartedOn": "2024-04-02T08:00:00+00:00",
+  "CompletedOn": "2024-04-02T08:01:30+00:00",
+  "ExecutionTime": 90,
+  "GlueVersion": "4.0",
+  "WorkerType": "G.1X",
+  "NumberOfWorkers": 10,
+  "Timeout": 60,
+  "ErrorCategory": "USER"
+}

@@ -1,0 +1,24 @@
+{
+  "Folders": [
+    {
+      "Type": "Folder",
+      "Name": "CargaNoturna",
+      "Application": "DataLake",
+      "CargaClientes": {
+        "Type": "Job:Command",
+        "Command": "carga clientes",
+        "RunAs": "ctmagent"
+      }
+    },
+    {
+      "Type": "Folder",
+      "Name": "CargaNoturna",
+      "Application": "DataLake",
+      "CargaPedidos": {
+        "Type": "Job:Command",
+        "Command": "carga pedidos",
+        "RunAs": "ctmagent"
+      }
+    }
+  ]
+}

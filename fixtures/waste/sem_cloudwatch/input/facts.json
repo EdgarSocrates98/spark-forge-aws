@@ -1,0 +1,20 @@
+[
+  {
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-4",
+      "stage_id": 4
+    },
+    "measures": {
+      "p50_ms": 100.0,
+      "p95_ms": 1140.0,
+      "task_count": 20.0
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "cloudwatch@0.1.0",
+      "artifact": "cloudwatch.json"
+    }
+  }
+]

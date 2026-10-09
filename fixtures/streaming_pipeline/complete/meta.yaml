@@ -1,0 +1,2 @@
+expects_findings: []
+expects_kinds: [streaming.pipeline, streaming.pipeline.link, streaming.pipeline.node]

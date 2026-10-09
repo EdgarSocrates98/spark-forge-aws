@@ -1,0 +1,94 @@
+[
+  {
+    "id": "f_9b49e0",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "inventario.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_machine_count": 0,
+      "task_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "inventario.json",
+      "artifact_sha256": "df527ee5004e9b36261e6b73a851856fe03bcc2605ee252c07c5ff52b6c821c9",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_625ae0",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "quebrado.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_machine_count": 0,
+      "task_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "quebrado.asl.json",
+      "artifact_sha256": "298bcd273832b88e753ad2c20c85e8e50605bd849cabfa4f25acbd5bed6315ab",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_84494a",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "inventario.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "not_a_state_machine"
+    },
+    "provenance": {
+      "artifact": "inventario.json",
+      "artifact_sha256": "df527ee5004e9b36261e6b73a851856fe03bcc2605ee252c07c5ff52b6c821c9",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_93458a",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "quebrado.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_json"
+    },
+    "provenance": {
+      "artifact": "quebrado.asl.json",
+      "artifact_sha256": "298bcd273832b88e753ad2c20c85e8e50605bd849cabfa4f25acbd5bed6315ab",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  }
+]

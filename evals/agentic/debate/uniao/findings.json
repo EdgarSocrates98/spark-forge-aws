@@ -1,0 +1,243 @@
+[
+  {
+    "action": {
+      "depends_on": [],
+      "direction": "replace",
+      "kind": "version.upgrade_runtime",
+      "moves": [
+        "runtime.engine_version",
+        "correctness.write_result"
+      ],
+      "requires_absent": [],
+      "target": "runtime.version"
+    },
+    "benchmark_ref": "",
+    "catalog_version": 1,
+    "confidence": "high",
+    "evidence": [
+      "f_32bc0d"
+    ],
+    "expected_effect": "",
+    "explanation": "Este job importa GraphFrames, e para o Spark deste runtime nenhuma linhagem da biblioteca publicou artefato. Medido por requisição direta ao repositório em 2026-08-05: `graphframes-0.8.3-spark3.3-s_2.12.jar` responde 404, `graphframes-0.8.4-spark3.3-s_2.12.jar` responde 404, e a linhagem corrente `io.graphframes` compila contra Spark 3.5 em todas as suas releases. A série legada para em `0.8.2-spark3.2` de um lado e recomeça em `0.8.3-spark3.4` do outro: Spark 3.3 é um buraco entre as duas. São nove células de runtime — Glue 4.0 e as oito releases de EMR de 6.8.0 a 6.11.1. A RELEASE NOTE DIZ O CONTRÁRIO, E ELA PERDE. A nota da `0.8.3` afirma \"Support Spark 3.3 / Scala 2.12\", e a listagem do spark-packages para essa versão traz apenas `-spark3.4` e `-spark3.5`. O suporte foi construído; o artefato não foi publicado. A pergunta desta regra não é \"o projeto suporta?\", é \"há o que instalar?\", e para essa o repositório de artefatos é a autoridade. A PLATAFORMA NÃO PREENCHE A LACUNA, e isso foi medido por ausência, não inferido: a página de release do EMR 7.13.0 lista as 24 aplicações, a tabela de versões, ~80 componentes instalados e ~140 classificações de configuração, e GraphFrames não aparece em nenhuma das quatro; a página de bibliotecas Python do Glue lista os módulos providos de fábrica para 2.0, 3.0, 4.0, 5.0 e 5.1, e GraphFrames não está em nenhuma das cinco. A biblioteca é sempre dependência do cliente, sob responsabilidade compartilhada — sem SLA e sem correção de compatibilidade vinda da AWS. UM `--extra-jars` NO IaC NÃO FECHA ESTE ACHADO, e é por isso que ele dispara mesmo quando existe. Como não há artefato para este Spark, qualquer jar de GraphFrames declarado aqui foi construído para OUTRO minor, e compatibilidade binária entre minors de Spark não é declarada por fonte nenhuma — nem pelo projeto nem pela AWS. Pode funcionar; a evidência não diz. O achado afirma o que foi medido — \"não há artefato publicado para este Spark\" —, nunca \"não funciona\". O QUE ESTE ACHADO NÃO AFIRMA: qual versão da biblioteca este job usa. `from graphframes import GraphFrame` é idêntico em `0.8.2` e em `0.12.1`, e o `__init__.py` das duas exporta um único nome. Nenhum fact desta área declara versão de GraphFrames.",
+    "measured": {
+      "line": 12
+    },
+    "proposed_change": [
+      "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, ou EMR 6.12.0+ / 7.x — onde há artefato publicado e mantido.",
+      "Se o runtime não pode mudar, tratar a dependência como build próprio: compilar GraphFrames contra o Spark do runtime, publicar o jar num repositório interno e declará-lo no IaC, assumindo a manutenção.",
+      "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência."
+    ],
+    "risks": [
+      "Trocar de runtime muda a versão de Spark, de Python e de Iceberg de uma vez, e cada uma delas pode quebrar outra parte do job.",
+      "Jar construído localmente contra um minor diferente pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança.",
+      "Reescrever o algoritmo em SQL nativo troca uma dependência por código próprio, com o custo de manutenção e o risco de divergência semântica que isso implica."
+    ],
+    "rollback": [
+      "Manter a definição anterior do job versionada; voltar é apontar a submissão para o runtime antigo."
+    ],
+    "rule_id": "SF-GRAPH-002",
+    "runtime_scope": {
+      "spark": [
+        ">=3.3",
+        "<3.4"
+      ]
+    },
+    "schema_version": 1,
+    "severity": "P1",
+    "sources": [
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://spark-packages.org/package/graphframes/graphframes"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/maven-metadata.xml"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.12.1/graphframes-spark3_2.12-0.12.1.pom"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://graphframes.io/02-quick-start/01-installation.html"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html"
+      }
+    ],
+    "status": "structural",
+    "subject": {
+      "col": 0,
+      "end_line": 12,
+      "file": "job.py",
+      "line": 12,
+      "snippet": "from graphframes import GraphFrame",
+      "symbol": "",
+      "type": "source_location"
+    },
+    "threshold": {},
+    "title": "GraphFrames importado num Spark sem artefato publicado",
+    "tradeoffs": [
+      "Migrar de runtime é o caminho suportado e o mais caro; manter um build próprio é barato hoje e é dívida permanente."
+    ],
+    "validation": [
+      "Executar o job no runtime alvo e conferir contagem de vértices, contagem de arestas e número de componentes contra a execução de referência.",
+      "Conferir que a biblioteca realmente carrega, com um `import graphframes` no início do job — a falha de artefato aparece no driver, antes de qualquer stage."
+    ]
+  },
+  {
+    "action": {
+      "depends_on": [
+        "SF-GRAPH-002"
+      ],
+      "direction": "add",
+      "kind": "dependency.declare_in_iac",
+      "moves": [
+        "dependency.delivered_artifacts"
+      ],
+      "requires_absent": [],
+      "target": "glue.default_arguments"
+    },
+    "benchmark_ref": "",
+    "catalog_version": 1,
+    "confidence": "high",
+    "evidence": [
+      "f_32bc0d",
+      "f_d9303b"
+    ],
+    "expected_effect": "",
+    "explanation": "Este job importa GraphFrames e a definição Terraform do job Glue não entrega a biblioteca por porta nenhuma: nem `--extra-jars`, nem `--extra-py-files`, nem `spark.jars`/`spark.jars.packages` dentro de `--conf`. GraphFrames nunca é provido de fábrica — medido por ausência nas cinco listas de módulos Python do Glue e nas quatro listas do release 7.13.0 do EMR —, então sem declaração o `from graphframes import GraphFrame` levanta `ModuleNotFoundError` no driver, antes de qualquer stage. A AUSÊNCIA AQUI É MEDIDA, E NÃO INFERIDA DO SILÊNCIO. O extrator de Terraform decide uma vez, por recurso, e emite o kind já decidido: `tf.graphframes.jar` quando alguma das portas nomeia a biblioteca, `tf.graphframes.unknown` quando uma delas existe com valor que só o `terraform apply` resolve. Esta regra só dispara quando NENHUM dos dois foi emitido — ou seja, quando as portas foram lidas e a biblioteca não estava em nenhuma. Sem o kind derivado a condição teria de ser `absent: tf.attribute`, que é o kind dos dois lados do par de fixtures, e a regra acusaria todo job de grafo, inclusive quem declarou o jar. O QUE ESTE ACHADO NÃO AFIRMA, e a ressalva é parte dele: que o job vai falhar. A definição efetiva pode ter sido alterada fora do IaC, o jar pode chegar por um `--extra-jars` acrescentado na submissão, e um jar renomeado ou um fat jar corporativo pode carregar a biblioteca sem dizê-lo no nome do arquivo. Confira a definição pela API (`get-job`) antes de mexer no Terraform — o achado é sobre o que o IaC declara. E ELE NÃO É O INVERSO DE `SF-GRAPH-002`. Declarar o jar fecha ESTE achado e não fecha aquele: na faixa de Spark 3.3 não existe artefato publicado, então qualquer jar declarado ali foi construído para outro minor, e compatibilidade binária entre minors não é declarada por fonte nenhuma. Um job pode disparar as duas regras, e elas dizem coisas diferentes sobre a mesma linha.",
+    "measured": {
+      "line": 12
+    },
+    "proposed_change": [
+      "Declarar o jar de GraphFrames em `--extra-jars` no `default_arguments` do job, apontando para um caminho S3 versionado do artefato da linhagem compatível com o Spark do runtime.",
+      "Se a biblioteca já chega por outro caminho — jar renomeado, fat jar interno, `--conf spark.jars.packages` montado fora do IaC —, trazer essa declaração para o Terraform, para que a definição versionada diga a verdade sobre a dependência do job.",
+      "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência — aí não há jar a declarar."
+    ],
+    "risks": [
+      "Apontar `--extra-jars` para um jar construído contra outro minor de Spark pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança.",
+      "Acrescentar jar ao classpath do job muda o classpath inteiro: uma dependência transitiva do jar pode entrar em conflito com uma que o runtime já provê.",
+      "A biblioteca é dependência do cliente, sob responsabilidade compartilhada: declará-la no IaC assume a manutenção dela, sem SLA e sem correção de compatibilidade vinda da AWS."
+    ],
+    "rollback": [
+      "Remover o argumento acrescentado restaura a definição anterior; nenhum efeito sobre o dado já escrito."
+    ],
+    "rule_id": "SF-GRAPH-005",
+    "runtime_scope": {},
+    "schema_version": 1,
+    "severity": "P1",
+    "sources": [
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html"
+      },
+      {
+        "retrieved": "2026-08-05",
+        "url": "https://graphframes.io/02-quick-start/01-installation.html"
+      }
+    ],
+    "status": "structural",
+    "subject": {
+      "col": 0,
+      "end_line": 12,
+      "file": "job.py",
+      "line": 12,
+      "snippet": "from graphframes import GraphFrame",
+      "symbol": "",
+      "type": "source_location"
+    },
+    "threshold": {},
+    "title": "Job usa GraphFrames e o IaC não entrega a biblioteca",
+    "tradeoffs": [
+      "Declarar a dependência no IaC deixa a definição do job verdadeira e acopla o job a um artefato que alguém precisa manter; deixá-la implícita é barato hoje e quebra em silêncio na próxima recriação do job."
+    ],
+    "validation": [
+      "Executar o job e confirmar que ele passa do `import` — a falha de biblioteca ausente aparece no driver, antes de qualquer stage, e é a primeira coisa que muda.",
+      "Contagem de vértices, contagem de arestas e número de componentes do resultado, comparadas com a execução de referência: acrescentar o jar não pode mudar nenhuma das três.",
+      "`get-job` pela API, e não só o Terraform declarado, confirma qual `default_arguments` ficou efetivamente aplicado."
+    ]
+  },
+  {
+    "action": {
+      "depends_on": [],
+      "direction": "remove",
+      "kind": "dependency.remove_library",
+      "moves": [
+        "dependency.delivered_artifacts",
+        "correctness.write_result"
+      ],
+      "requires_absent": [],
+      "target": "glue.default_arguments"
+    },
+    "benchmark_ref": "",
+    "catalog_version": 1,
+    "confidence": "high",
+    "evidence": [
+      "f_55f5ac",
+      "f_6ab9b2"
+    ],
+    "expected_effect": "",
+    "explanation": "Sob controle de acesso fino do Lake Formation, a AWS BLOQUEIA o fornecimento de JAR adicional para extensão do Spark, conector ou metastore. O bloqueio não é lacuna de roadmap -- a documentação declara que ele existe para preservar o isolamento completo do system driver, o mesmo motivo que bloqueia UDT, HiveUDF, função com classe customizada, data source customizado e `ANALYZE TABLE`. Um job que declara `--enable-lakeformation-fine-grained-access` E `--extra-jars` está pedindo duas coisas que a AWS declara incompatíveis, e isso é visível no Terraform antes de qualquer execução. A severidade é P0 porque não é risco nem degradação -- é configuração declarada bloqueada, e o que acontece com ela não é escolha de quem escreveu o Terraform. Ver `knowledge/glue/lakeformation-fgac.md` §2.",
+    "measured": {},
+    "proposed_change": [
+      "Decidir qual das duas fica, porque não existe meio-termo de configuração -- a AWS não oferece um modo de FGAC que aceite JAR adicional, e nenhum ajuste de argumento reconcilia os dois. Ou o job mantém FGAC e perde a dependência, ou mantém a dependência e perde FGAC.",
+      "Para manter FGAC -- reescrever em Spark SQL nativo ou em API do DataFrame o que o JAR fazia, e remover `--extra-jars`. Vale quando o JAR é um conector para formato que o runtime já lê nativamente, ou uma biblioteca de utilidade pequena.",
+      "Para manter a dependência -- remover `--enable-lakeformation-fine-grained-access` e mover o controle de acesso para o mecanismo que sobra, que é permissão IAM sobre o caminho S3 do runtime role. É controle mais grosso, e a diferença precisa ser registrada com quem responde pela governança, não absorvida em silêncio.",
+      "Conferir o classpath inteiro na mesma passada, e não só o JAR que motivou o achado -- `--extra-jars` costuma carregar mais de um artefato, e cada um é uma decisão separada de reescrever ou abandonar."
+    ],
+    "risks": [
+      "Remover `--enable-lakeformation-fine-grained-access` para manter o JAR AFROUXA o controle de acesso do job. Se havia permissão de coluna ou de linha concedida no Lake Formation contando com FGAC, ela deixa de ser aplicada na leitura, e o job passa a ler o que o runtime role puder ler.",
+      "Reescrever sem o JAR muda o caminho de leitura ou de escrita, e com ele o tratamento de tipo, de nulo e de encoding que a biblioteca fazia. A saída pode mudar de valor sem levantar erro.",
+      "Sob FGAC a escrita continua usando permissão IAM do runtime role, e não a concedida no Lake Formation. Quem remove FGAC esperando \"perder o controle de escrita\" está removendo algo que nunca controlou a escrita -- e quem o mantém esperando que ele cubra escrita está errado sobre metade do modelo."
+    ],
+    "rollback": [
+      "Restaurar os `default_arguments` anteriores e reaplicar. É rollback de configuração, não de dado -- mas a saída produzida pelo run com o caminho novo precisa ser descartada ou reconciliada antes, se houve divergência de valor.",
+      "Rollback que reponha `--extra-jars` COM FGAC ligado devolve o job ao estado bloqueado. Só é rollback válido o que remove um dos dois."
+    ],
+    "rule_id": "SF-LF-001",
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "schema_version": 1,
+    "severity": "P0",
+    "sources": [
+      {
+        "retrieved": "2026-08-22",
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+      }
+    ],
+    "status": "structural",
+    "subject": {
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_fgac_com_jar",
+      "type": "tf_resource"
+    },
+    "threshold": {},
+    "title": "JAR adicional declarado em job com controle de acesso fino do Lake Formation",
+    "tradeoffs": [
+      "Não há troca de configuração aqui, e é isso que torna a decisão arquitetural em vez de operacional. A escolha é entre FGAC e a dependência, e ela custa desenvolvimento (reescrever) de um lado e granularidade de governança do outro.",
+      "Separar o job em dois -- um sob FGAC lendo a tabela governada, outro sem FGAC usando o JAR sobre a saída intermediária -- preserva os dois, ao custo de uma etapa a mais, de um artefato intermediário e do controle de acesso sobre ele. Vale quando a tabela governada é a entrada e o JAR atua depois; não vale quando o JAR é o próprio leitor da tabela."
+    ],
+    "validation": [
+      "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de código que usava o JAR. Submissão bem-sucedida não é validação -- ela não carrega classe nenhuma.",
+      "Contagem total de linhas, contagem por chave e schema idênticos aos do run anterior sobre o mesmo lote de entrada, para separar \"roda\" de \"faz a mesma coisa\".",
+      "Se FGAC foi mantido -- consulta de controle com um principal que TEM e outro que NÃO TEM a permissão concedida no Lake Formation, conferindo que a projeção de coluna e o filtro de linha diferem entre os dois. Sem esse par, \"FGAC está ligado\" é uma afirmação sobre o argumento, não sobre o efeito.",
+      "Se FGAC foi removido -- inventário das permissões que existiam no Lake Formation sobre a tabela, e confirmação explícita de que o novo controle por IAM cobre cada uma, ou registro de qual deixou de ser coberta."
+    ]
+  }
+]

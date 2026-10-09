@@ -1,0 +1,31 @@
+name: great_expectations_suite
+proves: >
+  O MESMO kind `dq.check` saindo do outro framework: o extrator reconhece o
+  Great Expectations 1.x pela chave literal `"dataframe"` dentro do dict de
+  `batch_parameters`, montado numa linha e passado por nome na seguinte -- a
+  forma que a documentacao corrente usa. Detectar por prefixo `expect_*` esta
+  vetado, e `SparkDFDataset` nao existe mais na 1.x.
+  A prova principal e uma AUSENCIA de chave: o `dq.check` deste framework NAO
+  tem `shares_scan` (D-5c-3). Quais e quantas expectativas rodam vive no store
+  do contexto, fora do `.py`; `engine._where_matches` reprova caminho ausente,
+  entao SF-DQ-004 simplesmente nao avalia este check. `false` afirmaria que a
+  validacao nao compartilha varredura, e isso seria mentira.
+  Os quatro atributos de correlacao continuam presentes, porque eles nao
+  dependem do framework: target, target_persisted, action_after_check e
+  position_vs_write saem do mesmo `_check` das outras duas formas. E e por isso
+  que SF-DQ-003 dispara aqui e SF-DQ-004 nao: `faturas` nao esta persistido e e
+  reusado depois da validacao (o recomputo de lineage nao depende de framework
+  nenhum), enquanto a regra da varredura repetida precisa de `shares_scan`, que
+  este check nao tem. As duas juntas provam que a ausencia da chave silencia
+  UMA regra, e nao o fact inteiro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-003

@@ -1,0 +1,76 @@
+[
+  {
+    "rule_id": "SF-LF-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Catálogo Iceberg de nome arbitrário sob controle de acesso fino do Lake Formation",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_fgac_catalogo_nomeado"
+    },
+    "evidence": [
+      "f_8df3db",
+      "f_d90b53"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "A documentação da AWS declara, entre as limitações de Iceberg sob controle de acesso fino do Lake Formation: *\"You can only use Apache Iceberg with session catalog and not arbitrarily named catalogs.\"* O session catalog do Spark é `spark_catalog`, e a configuração que a própria AWS publica para rodar Iceberg sob FGAC declara `spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog`. Este job declara FGAC e um catálogo de outro nome.\n\n**É a configuração mais comum de todas, e é por isso que a regra existe.** `spark.sql.catalog.glue_catalog` é o padrão que a documentação de Glue 4.0 ensinava e que quase todo job carregou para o 5.x. Ele continua correto fora de FGAC, e continua correto sob Full Table Access -- a própria AWS publica exemplo de FTA com `glue_catalog`. O que a documentação recorta é a combinação com FGAC, e só ela.\n\n**Isto explica a classe de sintoma em que trocar a API de escrita não muda nada.** `writeTo`, `insertInto` e `INSERT INTO` resolvem o alvo pelo mesmo catálogo; se o catálogo está fora do recorte suportado, as três falham juntas, e a variável que muda o resultado não é a API. Ver `knowledge/glue/lakeformation-fgac.md` §4.",
+    "proposed_change": [
+      "Mover a configuração do catálogo para o session catalog: `spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog`, com `warehouse`, `client.region`, `glue.account-id` e `glue.endpoint` no mesmo prefixo, que é a forma publicada pela AWS.",
+      "Conferir que a configuração é aplicada ANTES de a sessão existir. A documentação declara que aplicá-la depois, por `SparkSession.builder().conf(...)`, não basta, e que isso mudou em relação ao Glue 4.0 -- job migrado que faz `spark.conf.set(...)` no meio do script cai exatamente nessa mudança.",
+      "Reescrever as referências de tabela que citam o catálogo pelo nome antigo. `glue_catalog.db.tabela` deixa de resolver quando o catálogo passa a ser o de sessão, e isso é mudança de código, não de argumento.",
+      "Se o job precisa de catálogo nomeado por outra razão, a decisão passa a ser de MODELO de acesso, não de configuração: Full Table Access aceita catálogo de nome arbitrário, e o que muda junto está na §5 do documento de conhecimento."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A regra correlaciona o argumento de job com a configuração de catálogo SEM `same_subject`, porque os dois facts têm formas de subject diferentes. Num arquivo com dois `aws_glue_job` -- um com FGAC e outro com catálogo nomeado -- ela acusa uma combinação que nenhum dos dois tem. Conferir, no achado, que o recurso do argumento e o do `--conf` são o mesmo antes de agir.",
+      "Trocar o nome do catálogo muda como toda referência de tabela resolve. Uma referência não atualizada deixa de encontrar a tabela, e o erro que sai disso -- tabela não encontrada -- não se parece com o problema original.",
+      "A documentação declara a restrição de session catalog sem dizer o que acontece quando ela é violada. O achado é `structural`: ele afirma que a configuração está fora do recorte suportado, nunca que a falha observada veio dela."
+    ],
+    "tradeoffs": [
+      "O session catalog é único por sessão. Um job que hoje lê de dois catálogos nomeados diferentes não tem tradução direta, e a alternativa passa a ser separar em dois jobs -- que é a mesma saída que a incompatibilidade entre FGAC e FTA impõe."
+    ],
+    "validation": [
+      "Contagem de linhas e agregado por chave no destino, antes e depois, sobre o MESMO recorte de entrada -- trocar o catálogo troca o caminho de resolução da tabela, e é o resultado escrito que prova que ele resolveu para o mesmo lugar.",
+      "Schema da tabela alvo comparado antes e depois, porque catálogo que resolve para outro lugar produz tabela que não é a mesma.",
+      "A configuração efetiva do run seguinte, lida do event log (`spark.conf_effective`), e não a declarada no Terraform: a diferença entre as duas é exatamente o modo de falha que a documentação nomeia ao dizer que aplicar depois não basta."
+    ],
+    "rollback": [
+      "Restaurar as chaves `spark.sql.catalog.*` anteriores e as referências de tabela no código, juntas. Reverter só a configuração deixa o código citando um catálogo que não existe mais.",
+      "Se alguma escrita chegou a acontecer sob a configuração nova, o rollback é de dado e não de configuração -- o destino precisa ser comparado antes de a versão anterior ser descartada."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "config.replace_property_key",
+      "target": "spark.sql.catalog.name",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

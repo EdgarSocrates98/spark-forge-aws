@@ -1,0 +1,5 @@
+{
+  "Name": "synthetic-job",
+  "NumberOfWorkers": 10,
+  "WorkerType": "G.1X"
+}

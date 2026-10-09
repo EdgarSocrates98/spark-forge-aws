@@ -1,0 +1,15 @@
+name: sem_debate_aberto
+proves: Par que a arbitragem nao deixou aberto e recusado por nome; regra repetida tambem.
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: refused:no_open_debate_for_rules

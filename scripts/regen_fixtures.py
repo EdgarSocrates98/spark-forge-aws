@@ -1,0 +1,1292 @@
+#!/usr/bin/env python3
+"""Regenera os golden outputs das fixtures.
+
+Rode SOMENTE quando a mudanca de comportamento for intencional, e revise o diff:
+o golden e a defesa contra falso positivo, e regenerar sem ler o diff a destroi.
+
+Uso:
+    python scripts/regen_fixtures.py            # todas
+    python scripts/regen_fixtures.py coalesce_one
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from sparkforge_aws.errors.matcher import build_signature_matches  # noqa: E402
+from sparkforge_aws.facts.airflow_dag import (  # noqa: E402
+    build_af_glue_link,
+    extract_airflow_dag_tree,
+)
+from sparkforge_aws.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
+from sparkforge_aws.facts.benchmark import build_benchmark  # noqa: E402
+from sparkforge_aws.facts.call_graph import build_call_graph  # noqa: E402
+from sparkforge_aws.facts.catalog_schema import (  # noqa: E402
+    extract_catalog_schema_path,
+    extract_catalog_schema_tree,
+)
+from sparkforge_aws.facts.cloudwatch_logs import (  # noqa: E402
+    extract_cloudwatch_logs_tree,
+)
+from sparkforge_aws.facts.consumers import extract_consumers_path  # noqa: E402
+from sparkforge_aws.facts.controlm_jobs import extract_controlm_jobs_tree  # noqa: E402
+from sparkforge_aws.facts.data_quality import extract_data_quality_tree  # noqa: E402
+from sparkforge_aws.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
+from sparkforge_aws.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
+from sparkforge_aws.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
+from sparkforge_aws.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge_aws.facts.exception import build_exceptions  # noqa: E402
+from sparkforge_aws.facts.funcval import build_comparison, build_plan  # noqa: E402
+from sparkforge_aws.facts.fusion import fuse  # noqa: E402
+from sparkforge_aws.facts.glue_resource_link import (  # noqa: E402
+    extract_glue_resource_link_tree,
+)
+from sparkforge_aws.facts.graph import extract_graph_tree  # noqa: E402
+from sparkforge_aws.facts.iam_access import extract_iam_access_tree  # noqa: E402
+from sparkforge_aws.facts.iceberg_metadata import (  # noqa: E402
+    extract_iceberg_metadata_path,
+    extract_iceberg_metadata_tree,
+)
+from sparkforge_aws.facts.lakeformation import build_lakeformation  # noqa: E402
+from sparkforge_aws.facts.lakeformation_grants import (  # noqa: E402
+    extract_lakeformation_tree,
+)
+from sparkforge_aws.facts.lakeformation_missing_grant import build_missing_grant  # noqa: E402
+from sparkforge_aws.facts.migration import extract_migration_tree  # noqa: E402
+from sparkforge_aws.facts.parquet_footer import extract_parquet_footer  # noqa: E402
+from sparkforge_aws.facts.pyspark_ast import extract_tree  # noqa: E402
+from sparkforge_aws.facts.runtime_detect import detect_runtime  # noqa: E402
+from sparkforge_aws.facts.s3_listing import extract_s3_listing_path  # noqa: E402
+from sparkforge_aws.facts.sfn_history import (  # noqa: E402
+    build_sfn_retry_observado,
+    extract_sfn_history_tree,
+)
+from sparkforge_aws.facts.spark_plan import extract_plan_path  # noqa: E402
+from sparkforge_aws.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge_aws.facts.stepfunctions import (  # noqa: E402
+    build_sfn_glue_link,
+    extract_stepfunctions_tree,
+)
+from sparkforge_aws.facts.terraform import (  # noqa: E402
+    extract_terraform_diff,
+    extract_terraform_tree,
+)
+from sparkforge_aws.findings.models import sort_facts  # noqa: E402
+from sparkforge_aws.migration.assessment import assess  # noqa: E402
+from sparkforge_aws.migration.collect import collect as collect_migration  # noqa: E402
+from sparkforge_aws.rules.engine import judge  # noqa: E402
+from sparkforge_aws.rules.loader import load_catalog  # noqa: E402
+
+FIXTURES = ROOT / "fixtures" / "pyspark"
+FIXTURES_EVENTLOG = ROOT / "fixtures" / "eventlog"
+FIXTURES_TERRAFORM = ROOT / "fixtures" / "terraform"
+FIXTURES_ICEBERG = ROOT / "fixtures" / "iceberg"
+FIXTURES_SQL = ROOT / "fixtures" / "sql"
+FIXTURES_FUSION = ROOT / "fixtures" / "fusion"
+FIXTURES_CATALOG = ROOT / "fixtures" / "catalog"
+FIXTURES_PLAN = ROOT / "fixtures" / "plan"
+FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
+FIXTURES_EMR = ROOT / "fixtures" / "emr"
+FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
+FIXTURES_EMR_EKS = ROOT / "fixtures" / "emr_eks"
+FIXTURES_CONTROLM = ROOT / "fixtures" / "controlm"
+FIXTURES_STEPFUNCTIONS = ROOT / "fixtures" / "stepfunctions"
+FIXTURES_SFN_HISTORY = ROOT / "fixtures" / "sfn_history"
+FIXTURES_AIRFLOW = ROOT / "fixtures" / "airflow"
+FIXTURES_DQ = ROOT / "fixtures" / "dq"
+FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
+FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
+FIXTURES_S3 = ROOT / "fixtures" / "s3"
+FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
+FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
+FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
+FIXTURES_LAKEFORMATION = ROOT / "fixtures" / "lakeformation"
+FIXTURES_IAM_ACCESS = ROOT / "fixtures" / "iam_access"
+FIXTURES_RESOURCE_LINK = ROOT / "fixtures" / "resource_link"
+FIXTURES_BENCH = ROOT / "fixtures" / "bench"
+FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
+FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
+FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
+FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
+FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
+FIXTURES_PARQUET_FOOTER = ROOT / "fixtures" / "parquet_footer"
+FIXTURES_HOST_TRANSCRIPT = ROOT / "fixtures" / "host_transcript"
+FIXTURES_SARIF = ROOT / "fixtures" / "sarif"
+FIXTURES_OTEL = ROOT / "fixtures" / "otel"
+# Versao fixa no golden de `report github`: o SARIF carrega `semanticVersion`,
+# e com a versao real todo release reescreveria os quatro goldens sem que nada
+# da projecao tivesse mudado.
+SARIF_GOLDEN_VERSION = "0.0.0+golden"
+FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
+# Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
+# `evals/holdout/README.md` e `regen_scenario`.
+HOLDOUT = ROOT / "evals" / "holdout"
+
+
+def _write_expected(directory: Path, facts, findings) -> None:
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    for name, payload in (
+        ("facts.json", [f.to_dict() for f in facts]),
+        ("findings.json", [f.to_dict() for f in findings]),
+    ):
+        text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+        # newline="\n" força LF mesmo no Windows: sem isso, write_text() em
+        # modo texto traduz para o newline nativo da plataforma (CRLF), e
+        # todo golden já commitado (LF) vira diff espúrio de fim de linha.
+        (out / name).write_text(text, encoding="utf-8", newline="\n")
+
+    fired = ", ".join(sorted({f.rule_id for f in findings})) or "nenhum"
+    print(f"{directory.name}: {len(facts)} facts, {len(findings)} findings ({fired})")
+
+
+def regen(directory: Path) -> None:
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_eventlog(directory: Path) -> None:
+    """Como `regen`, mas para fixtures de event log: uma unica *.jsonl sob
+    input/, extraida com `extract_event_log_path` em vez de `extract_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    jsonl_files = sorted(input_dir.glob("*.jsonl"))
+    facts = []
+    for jsonl in jsonl_files:
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_terraform(directory: Path) -> None:
+    """Como `regen`, mas para fixtures de Terraform: `*.tf` sob input/, extraida
+    com `extract_terraform_tree` em vez de `extract_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_terraform_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_iceberg(directory: Path) -> None:
+    """Como `regen`, mas para fixtures de metadata Iceberg: `*.json` sob
+    input/, extraida com `extract_iceberg_metadata_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_iceberg_metadata_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_sql(directory: Path) -> None:
+    """Como `regen_eventlog`, mas para fixtures de SQL: uma unica *.sql sob
+    input/, extraida com `extract_sql_path`. Nao ha `extract_sql_tree` --
+    mesma decisao de `event_log.py`, que tambem nao tem variante `_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for sql_file in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(sql_file, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_catalog(directory: Path) -> None:
+    """Como `regen_iceberg`, mas para fixtures do extrator do Glue Data
+    Catalog: `*.json` sob input/, extraida com `extract_catalog_schema_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_catalog_schema_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_callgraph(directory: Path) -> None:
+    """Corpus de grafo de chamadas: `*.py` sob input/, extraidos por
+    `extract_tree` e DERIVADOS por `build_call_graph`.
+
+    O golden guarda so os facts derivados. Os de `pyspark_ast` que serviram de
+    entrada ja tem o corpus `fixtures/pyspark/`; repeti-los aqui faria a mesma
+    mudanca quebrar dois goldens pelo mesmo motivo, escondendo qual dos dois
+    contratos regrediu.
+    """
+    facts = extract_tree(directory / "input", repo_root=directory / "input")
+    derived = build_call_graph(facts, path_hint=directory.name)
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    findings = judge(derived, load_catalog(), meta["runtime"])
+    _write_expected(directory, derived, findings)
+
+
+def regen_runtime(directory: Path) -> None:
+    """Corpus de deteccao de runtime. Unico que NAO julga com `meta["runtime"]`.
+
+    Aqui o runtime nao e premissa da fixture, e o resultado dela: julgar com o
+    runtime declarado no meta esconderia justamente o defeito que este corpus
+    existe para pegar -- uma deteccao que resolve para a versao errada
+    continuaria sendo julgada contra a versao certa, e a guarda
+    `runtime_scope` das regras nunca reprovaria nada. O meta declara o runtime
+    ESPERADO, e o golden test compara com o detectado.
+    """
+    input_dir = directory / "input"
+    sources: dict = {}
+    for source_file in sorted(input_dir.glob("*.json")):
+        sources.update(json.loads(source_file.read_text(encoding="utf-8")))
+    context, facts = detect_runtime(sources)
+    findings = judge(facts, load_catalog(), context.to_dict())
+    _write_expected(directory, facts, findings)
+
+
+def regen_infra_code(directory: Path) -> None:
+    """Terraform E codigo PySpark do MESMO job, no mesmo `input/`.
+
+    Duas regras do catalogo cruzam infraestrutura com codigo e nao podem ser
+    provadas por nenhum corpus de fonte unica: SF-ENV-003 (argumento de
+    observabilidade ligado sem `GlueContext` no codigo) e SF-GLUE-004
+    (`max_retries` com escrita `append`, que a retentativa duplica).
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_terraform_tree(input_dir, repo_root=input_dir))
+    facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # Mesma ordem de `tests/test_fixtures_golden_infra_code.py::_extract`:
+    # `build_lakeformation` deriva sobre a UNIAO das duas extracoes, e o golden
+    # tem de sair do mesmo caminho que o teste percorre.
+    facts.extend(build_lakeformation(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_resource_link(directory: Path) -> None:
+    """Artefato de `collect glue-resource-link` -- link, alvo e nome.
+
+    Um `input/*.json` por (catalogo consumidor, banco, [tabela]). Sem
+    companheiro: este corpus prende o CONTRATO do extrator de topologia, e as
+    duas regras que o consomem (`SF-XACC-002` e `SF-XACC-003`) leem so os facts
+    dele.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_glue_resource_link_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_iam_access(directory: Path) -> None:
+    """Artefato de `collect iam-access` -- a DECISAO simulada, com a camada."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_iam_access_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_lakeformation(directory: Path) -> None:
+    """Artefato de `collect lakeformation` -- grant, registro e data lake settings.
+
+    Um `input/*.json` por (catalogo, banco, tabela). Nao ha companheiro: este
+    corpus prende o CONTRATO do extrator de permissao, e nenhuma regra o consome
+    ainda -- `expects_rules` sai vazio de proposito.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_lakeformation_tree(input_dir, repo_root=input_dir)
+    # Mesma ordem de `tests/test_fixtures_golden_lakeformation.py::_extract`.
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_lakeformation(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_s3(directory: Path) -> None:
+    """Listagem S3, e opcionalmente o dump de catalogo que ela precisa.
+
+    `input/*.json` sao listagens; `input/catalog/*.json`, quando existe, e o
+    dump do Glue Data Catalog. SF-PQ-005 e a razao do segundo: ela correlaciona
+    o que esta no armazenamento com a cardinalidade de particao declarada no
+    catalogo, e nenhuma das duas fontes responde sozinha.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for listing in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_s3_listing_path(listing, repo_root=input_dir))
+    catalog_dir_path = input_dir / "catalog"
+    if catalog_dir_path.is_dir():
+        facts.extend(extract_catalog_schema_tree(catalog_dir_path, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_consumers(directory: Path) -> None:
+    """Inventario declarado de consumidores, e o dump Iceberg da tabela.
+
+    SF-ENV-002 so existe na interseccao: a tabela em format V3 vem do metadata
+    Iceberg, e quem a consome vem do inventario. Uma fixture com so uma das
+    metades nao prova nada sobre a regra.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for inventory in sorted(input_dir.glob("*.yaml")):
+        facts.extend(extract_consumers_path(inventory, repo_root=input_dir))
+    for dump in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_iceberg_metadata_path(dump, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_tfdiff(directory: Path) -> None:
+    """Diff de Terraform (`input/before/` e `input/after/`) mais o event log.
+
+    SF-GLUE-005 pergunta se alguem aumentou o worker SEM evidencia de pressao
+    de memoria: a mudanca vem do diff, e a evidencia (ou a falta dela) vem do
+    event log. As duas fontes na mesma fixture, porque a regra so faz sentido
+    com as duas.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(
+        extract_terraform_diff(input_dir / "before", input_dir / "after", repo_root=input_dir)
+    )
+    for log in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(log, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_athena(directory: Path) -> None:
+    """Como `regen_catalog`, mas para dumps de workgroup do Athena: `*.json`
+    sob input/, extraidos com `extract_athena_workgroup_path`. Nao ha variante
+    `_tree` neste extrator -- um dump ja descreve varios workgroups."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for dump in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_athena_workgroup_path(dump, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_emr(directory: Path) -> None:
+    """Como `regen_athena`, mas para dumps de cluster EMR on EC2: `*.json` sob
+    input/, extraidos com `extract_emr_cluster_path`. Um dump ja e a uniao dos
+    seis subcomandos de um cluster, entao nao ha variante `_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for dump in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_emr_cluster_path(dump, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_emr_serverless(directory: Path) -> None:
+    """Dumps de `get-application` de EMR Serverless: `*.json` sob input/.
+
+    Unico corpus de dump AWS que usa a variante `_tree` em vez de um laco sobre
+    `*.json`, e a escolha nao e estilo. `adapters/_core.py` chama
+    `extract_emr_serverless_tree` quando o `--path` e diretorio, e este corpus
+    tem fixtures com DOIS e TRES payloads (`capacidade_indecidivel`,
+    `release_sem_serie`, `identidade_ausente`). Um laco por arquivo concatena
+    blocos ja ordenados e produz uma ordem GLOBAL diferente da que a `_tree`
+    devolve; o golden passaria a descrever uma ordenacao que nenhuma superficie
+    do produto emite. `regen_emr` e `regen_athena` podem usar o laco porque
+    todas as fixtures deles tem um arquivo so, e com um arquivo as duas ordens
+    coincidem.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_emr_serverless_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_emr_eks(directory: Path) -> None:
+    """Dumps de `describe-job-run` de EMR on EKS: `*.json` sob input/.
+
+    Usa a variante `_tree` pela mesma razao de `regen_emr_serverless`: e a
+    funcao que o produto chama quando o `--path` e diretorio, e um laco por
+    arquivo produziria uma ordem GLOBAL diferente da que a `_tree` devolve. O
+    corpus desta Task tem um payload por fixture -- com um arquivo so as duas
+    ordens coincidem --, mas o golden precisa descrever a ordenacao que a
+    superficie do produto emite, nao a que este script escolheu.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_emr_eks_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_controlm(directory: Path) -> None:
+    """Definicoes `Jobs-as-Code` do Control-M: `*.json` sob input/.
+
+    UNICO CORPUS CUJA EXTRACAO RECEBE UM PARAMETRO QUE NAO VEM DO ARTEFATO, e a
+    razao e a D-1 da spec: a versao do Control-M e DECLARADA pelo operador, nunca
+    lida do JSON. Ela mora em `controlm_version` no `meta.yaml`, e nao em
+    `runtime:`, porque `runtime` alimenta `runtime_scope` -- guarda de versao do
+    RuntimeContext (Glue, Spark, Python, Iceberg) -- e nada ali conhece
+    `9.0.2x.yyy`. Poe-la em `runtime` faria o golden parecer versionado por um
+    mecanismo que nao a le.
+
+    A CHAVE E OPCIONAL, e a ausencia dela e o que a fixture `versao_nao_declarada`
+    exercita: sem versao o cruzamento com a matriz nao acontece e as capacidades
+    observadas saem em `ctm.capability_unresolved` com a medida que as destrava.
+
+    Usa a variante `_tree` pela mesma razao de `regen_emr_eks`: e a funcao que o
+    produto chama quando o `--path` e diretorio, e golden e produto precisam
+    extrair pela MESMA porta.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_controlm_jobs_tree(
+        input_dir, repo_root=input_dir, declared_version=meta.get("controlm_version")
+    )
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_stepfunctions(directory: Path) -> None:
+    """Definicoes ASL do AWS Step Functions: `*.json` sob input/, e `main.tf` ao lado.
+
+    O PAR de `tests/test_fixtures_golden_stepfunctions.py::_extract`, e a mesma porta do
+    produto: fixture so com `.json` e o que `analyze step-functions` ve; com `.tf` ao
+    lado, extrai o Terraform e deriva `sfn.glue_job_link` como `fusion.fuse` faz.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_stepfunctions_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_sfn_glue_link(facts))
+    facts = sort_facts(facts)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_airflow(directory: Path) -> None:
+    """DAGs do Apache Airflow: `*.py` sob input/, e `main.tf` ao lado quando houver.
+
+    O PAR de `tests/test_fixtures_golden_airflow.py::_extract`, e a mesma porta do
+    produto: fixture so com `.py` e o que `analyze airflow-dag` ve; com `.tf` ao lado,
+    extrai o Terraform e deriva `af.glue_job_link` como `fusion.fuse` faz. Os `.py`
+    daqui sao DAG, e NAO passam por `extract_tree` do PySpark: o corpus de
+    `pyspark_ast` e outro, e repetir os dois aqui faria uma mudanca em `pyspark_ast`
+    quebrar este golden pelo motivo errado.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_airflow_dag_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_af_glue_link(facts))
+    facts = sort_facts(facts)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_sfn_history(directory: Path) -> None:
+    """Historico de execucao do Step Functions: `*.json` sob input/historico/ (ou
+    input/), e a definicao ASL sob input/definicao/ quando houver.
+
+    O PAR de `tests/test_fixtures_golden_sfn_history.py::_extract`, e a mesma porta do
+    produto: dois verbos, dois `--path`. Os dois artefatos ficam em subdiretorios
+    porque a producao os separa -- juntos, cada extrator leria o arquivo do outro e
+    sairia um `sfn.unresolved` cruzado por fixture, ruido que nao e medida. A
+    derivacao roda sob a MESMA guarda de `fusion.fuse`: sem `sfn.attempt` no pool,
+    nada deriva.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    historico = input_dir / "historico"
+    definicao = input_dir / "definicao"
+    alvo = historico if historico.is_dir() else input_dir
+    facts = list(extract_sfn_history_tree(alvo, repo_root=input_dir))
+    if definicao.is_dir():
+        facts.extend(extract_stepfunctions_tree(definicao, repo_root=input_dir))
+    if any(f.kind == "sfn.attempt" for f in facts):
+        facts.extend(build_sfn_retry_observado(facts))
+    facts = sort_facts(facts)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_dq(directory: Path) -> None:
+    """Como `regen`, mas so os facts `dq.*`: `*.py` sob input/, extraidos com
+    `extract_data_quality_tree` em vez de `extract_tree`.
+
+    O golden guarda so os facts de validacao. Os de `pyspark_ast` sobre o mesmo
+    `.py` ja tem o corpus `fixtures/pyspark/` -- mesma decisao de
+    `regen_callgraph`, e pelo mesmo motivo: repetidos aqui, uma mudanca em
+    `pyspark_ast` quebraria dois goldens pelo mesmo motivo, escondendo qual dos
+    dois contratos regrediu.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_data_quality_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_graph(directory: Path) -> None:
+    """Corpus de processamento de grafo: `*.py` sob input/, extraidos com
+    `extract_graph_tree`, mais o `*.tf` do mesmo job quando ele existe.
+
+    USA A FUNCAO `_tree`, E NAO UM LACO POR ARQUIVO, e a escolha nao e estilo.
+    `adapters/_core.py:943` chama `extract_graph_tree` quando o `--path` e
+    diretorio, e ela ordena GLOBALMENTE por (kind, subject, id) --
+    `sort_facts` no fim -- enquanto um laco por arquivo concatenaria blocos
+    ja ordenados por arquivo. Com dois `.py` as duas ordens divergem
+    (`fonte_que_nao_compila` e a fixture que torna isso observavel), e o
+    golden passaria a descrever uma ordenacao que nenhuma superficie do
+    produto emite. Mesma medicao de `regen_emr_serverless` (D-5d-24).
+
+    O TERRAFORM ENTRA QUANDO EXISTE, no molde de `regen_infra_code` e
+    `regen_s3`: a regra de disponibilidade do GraphFrames cruza `graph.import`
+    com o `default_arguments` do job, e nenhuma das duas fontes responde
+    sozinha se alguem declarou o jar. Sem a metade do IaC, a regra acusaria
+    tambem quem resolveu o problema.
+
+    O golden guarda so os facts `graph.*` (mais os `tf.*` quando ha IaC). Os de
+    `pyspark_ast` sobre os mesmos `.py` ja tem o corpus `fixtures/pyspark/` --
+    mesma decisao de `regen_dq` e `regen_callgraph`, e pelo mesmo motivo:
+    repetidos aqui, uma mudanca em `pyspark_ast` quebraria dois goldens pelo
+    mesmo motivo, escondendo qual dos dois contratos regrediu.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_graph_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_migration(directory: Path) -> None:
+    """Corpus de compatibilidade de migracao: `*.py`, `*.jar` e
+    `requirements*.txt` sob `input/`, extraidos com `extract_migration_tree`
+    (Tasks 4-6 desta fase) -- mesma razao de `regen_graph` para usar a funcao
+    `_tree` e nao um laco por arquivo: `adapters/_core.py` chama essa funcao
+    quando o `--path` e diretorio, e ela ordena GLOBALMENTE por (kind,
+    subject, id); um laco por arquivo concatenaria blocos ja ordenados por
+    arquivo e o golden descreveria uma ordenacao que nenhuma superficie do
+    produto emite.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_migration_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_exception(directory: Path) -> None:
+    """Corpus da excecao: event log obrigatorio, `.jar` e `.tf` quando o caso
+    precisa deles.
+
+    Tres extratores de artefato e DOIS derivadores puros, nesta ordem, porque a
+    ordem e a dependencia: `extract_event_log_path` produz o
+    `spark.stage.failure` que `build_exceptions` estrutura, e o
+    `spark.exception` que ele emite e o que `build_signature_matches` casa
+    contra `knowledge/errors/`. Nenhum dos dois derivadores le artefato -- eles
+    leem a UNIAO dos facts, no molde de `regen_bench` e de `_derive` em
+    `tests/test_fixtures_golden_bridge.py`.
+
+    `.jar` e `.tf` entram sob guarda de existencia e nao por default: as duas
+    regras de `rules/catalog/errors.yaml` declaram `mig.jar_binary` e
+    `tf.attribute` em `requires_facts`, e o par positivo/negativo que prova esse
+    contrato e exatamente a fixture COM o jar contra a fixture SEM ele. Extrair
+    os dois sempre que o diretorio existisse apagaria a diferenca que o par
+    existe para medir.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for jsonl in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    if any(input_dir.rglob("*.jar")):
+        facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    facts.extend(build_exceptions(facts))
+    facts.extend(build_signature_matches(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_cloudwatch_logs(directory: Path) -> None:
+    """Corpus do LOG do CloudWatch: o log, os COMPANHEIROS que a assinatura
+    exige, e o matcher.
+
+    O nucleo continua sendo UM extrator de artefato e UM derivador puro, nesta
+    ordem, porque a ordem e a dependencia: `extract_cloudwatch_logs_tree`
+    produz os `cloudwatch.log_event` ja redigidos, e `build_signature_matches`
+    casa cada linha contra `knowledge/errors/`. E o mesmo desenho de
+    `regen_exception`, com a fonte trocada -- e e essa troca que destrava as
+    quatro assinaturas de mensagem.
+
+    ## Por que ha companheiros, e por que eles moram em SUBDIRETORIO
+
+    As quatro regras `SF-ERR-003..006` fazem com as quatro assinaturas de
+    mensagem o que `SF-ERR-001`/`SF-ERR-002` fizeram com as duas de classe:
+    exigem em `requires_facts` o `evidence_required` que a propria assinatura
+    declara. A linha de log casada NAO basta -- ela diz que a mensagem
+    apareceu, nunca que a acusacao se sustenta. Por isso o event log
+    (`*.jsonl`), o Terraform (`*.tf`), o dump Iceberg (`iceberg/*.json`) e o
+    inventario de consumidores (`*.yaml`) entram aqui.
+
+    O log do CloudWatch e o dump Iceberg sao os DOIS `*.json`, e por isso o
+    corpus ganhou pasta: quando `input/logs/` existe, e dela que sai o log, e
+    `input/iceberg/` guarda o dump. Sem as pastas, o comportamento e o de
+    antes -- `input/*.json` inteiro e log --, e e assim que as nove fixtures
+    originais continuam valendo byte a byte.
+
+    Cada companheiro entra sob GUARDA DE EXISTENCIA e nao por default, pela
+    mesma razao de `regen_exception`: o par positivo/negativo que prova
+    `requires_facts` e a fixture COM o companheiro contra a fixture SEM ele.
+    Extrair sempre que o diretorio existisse apagaria a diferenca que o par
+    existe para medir.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    logs_dir = input_dir / "logs"
+    facts = extract_cloudwatch_logs_tree(
+        logs_dir if logs_dir.is_dir() else input_dir, repo_root=input_dir
+    )
+    for jsonl in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    iceberg_dir = input_dir / "iceberg"
+    if iceberg_dir.is_dir():
+        facts.extend(extract_iceberg_metadata_tree(iceberg_dir, repo_root=input_dir))
+    for inventory in sorted(input_dir.glob("*.yaml")):
+        facts.extend(extract_consumers_path(inventory, repo_root=input_dir))
+    # O `.py` e o quinto companheiro, e ele entrou com `SF-ERR-008`: a regra
+    # exige `pyspark.udf` ao lado da linha de log, porque "Python worker exited
+    # unexpectedly" sozinho nao diz que ha UDF no caminho.
+    if any(input_dir.glob("*.py")):
+        facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # Mesma ordem de `tests/test_fixtures_golden_cloudwatch_logs.py::_derive`.
+    catalogo = input_dir / "catalog"
+    if catalogo.is_dir():
+        for dump in sorted(catalogo.glob("*.json")):
+            facts.extend(extract_catalog_schema_path(dump, repo_root=input_dir))
+    listagem = input_dir / "s3"
+    if listagem.is_dir():
+        for dump in sorted(listagem.glob("*.json")):
+            facts.extend(extract_s3_listing_path(dump, repo_root=input_dir))
+    if any(input_dir.glob("*.py")):
+        facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
+    # O artefato de `collect lakeformation` entra sob guarda de DIRETORIO, pela mesma
+    # razao de `catalog/` e `s3/`: `*.json` na raiz ja e o log.
+    permissoes = input_dir / "lf"
+    if permissoes.is_dir():
+        facts.extend(extract_lakeformation_tree(permissoes, repo_root=input_dir))
+    facts.extend(build_lakeformation(facts))
+    facts.extend(build_signature_matches(facts))
+    # `build_missing_grant` vem por ULTIMO: ele le o match de ERR-LF-001, que so
+    # existe depois do matcher, e o modelo de acesso, que so existe depois de
+    # `build_lakeformation`.
+    facts.extend(build_missing_grant(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_parquet_footer(directory: Path) -> None:
+    """Corpus do FOOTER do Parquet: um `*.json` sob input/, e mais nada.
+
+    UM extrator e ZERO derivadores -- e a diferenca para `regen_exception` e
+    `regen_cloudwatch_logs` e o ponto: o footer nao alimenta derivacao nenhuma
+    hoje. As quatro regras de `SF-PQ-006..009` consomem `parquet.row_group` e
+    `parquet.column_profile` direto.
+
+    O `.parquet` binario NAO mora no corpus. O input e o artefato JSON que
+    `collect parquet-footer` gravaria, gerado a partir de Parquet real por
+    `scripts/` e committado so nessa forma -- binario num corpus de fixture e
+    irrevisavel em diff.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for artefato in sorted(input_dir.glob("*.json")):
+        payload = json.loads(artefato.read_text(encoding="utf-8"))
+        rel = artefato.relative_to(input_dir).as_posix()
+        facts.extend(extract_parquet_footer(payload, rel))
+    # O `.sql` entra sob GUARDA DE EXISTENCIA, e nao por default: `SF-PQ-008`
+    # exige `sql.predicate` em `requires_facts`, e o par que prova esse contrato
+    # e a fixture COM a query contra a fixture SEM ela. Extrair sempre apagaria
+    # a diferenca que o par existe para medir -- mesma disciplina de
+    # `regen_exception` com o `.jar`.
+    for consulta in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(consulta, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_scenario(directory: Path) -> None:
+    """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
+
+    Difere de `regen_migration` em duas coisas, e as duas sao o motivo de o
+    corpus existir separado. Primeira: o golden nao e `facts`+`findings`, e o
+    `to_dict()` do `MigrationAssessment` -- porque o que um cenario prova nao e
+    "este fact vira este finding", e "este par de versoes expande nestes
+    degraus, e cada achado nasce neste degrau". Segunda: o runtime nao vem do
+    `meta.yaml`; `assess()` o deriva da matriz para o ALVO de cada degrau, entao
+    um cenario nao pode mentir sobre o runtime que julgou.
+
+    A extracao e `sparkforge_aws.migration.collect.collect()`, a MESMA funcao que a
+    CLI e a tool MCP chamam -- codigo, `.tf` quando existe e o inventario de
+    consumidores na convencao. Reimplementar a composicao aqui faria o golden
+    descrever uma uniao que nenhuma superficie do produto emite, que e o defeito
+    que este corpus existe para pegar.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = collect_migration(input_dir)
+    resultado = assess(facts, source=str(meta["source"]), target=str(meta["target"]))
+
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    text = json.dumps(resultado.to_dict(), indent=2, ensure_ascii=False) + "\n"
+    # Mesma razao de `_write_expected`: `newline="\n"` para o golden nao virar
+    # diff de fim de linha quando regenerado no Windows.
+    (out / "assessment.json").write_text(text, encoding="utf-8", newline="\n")
+
+    disparadas = ", ".join(sorted({f.rule_id for f in resultado.findings})) or "nenhuma"
+    print(
+        f"{directory.name}: {len(resultado.steps)} degraus, "
+        f"{len(resultado.by_step)} por degrau, {len(resultado.report())} no relatorio "
+        f"({disparadas})"
+    )
+
+
+def regen_plan(directory: Path) -> None:
+    """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
+    input/ (a saida colada de `explain("formatted")`), extraida com
+    `extract_plan_path`. Um plano e um arquivo de texto, nao uma arvore de
+    codigo, entao nao ha variante `_tree` -- mesma decisao de `event_log.py`
+    e `sql_literal.py`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for plan_file in sorted(input_dir.glob("*.txt")):
+        facts.extend(extract_plan_path(plan_file, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_fusion(directory: Path) -> None:
+    """Como `regen_sql`, mas o corpus de fusao: `*.sql` E `*.json` sob
+    input/ na MESMA fixture (a query e o dump de catalogo que ela precisa
+    correlacionar). Extrai as duas fontes, roda `fuse` sobre a uniao, e SO
+    ENTAO julga -- provando as regras SF-ATH-* desbloqueadas disparando (ou
+    corretamente nao disparando) a partir de facts fundidos de verdade, nao
+    so unitariamente."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for sql_file in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(sql_file, repo_root=input_dir))
+    for json_file in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_catalog_schema_path(json_file, repo_root=input_dir))
+    # Mesma ordem e mesma guarda de `tests/test_fixtures_golden_fusion.py::_extract`.
+    if any(input_dir.glob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    fused = fuse(facts)
+    findings = judge(fused, load_catalog(), meta["runtime"])
+    _write_expected(directory, fused, findings)
+
+
+def regen_bench(directory: Path) -> None:
+    """Fixture de benchmark tem DOIS event logs: `before.jsonl` e `after.jsonl`
+    sob input/, extraidos com `extract_event_log_path` e comparados por
+    `build_benchmark`.
+
+    O golden guarda so os derivados. Os facts de `event_log.py` que serviram de
+    entrada ja tem o corpus `fixtures/eventlog/`; repeti-los aqui faria uma
+    mudanca em `event_log.py` quebrar dois goldens pelo mesmo motivo, escondendo
+    qual dos dois contratos regrediu -- mesma decisao de `regen_callgraph` e
+    `regen_dq`.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    before = extract_event_log_path(input_dir / "before.jsonl", repo_root=input_dir)
+    after = extract_event_log_path(input_dir / "after.jsonl", repo_root=input_dir)
+    # Os rotulos de runtime sao OPCIONAIS no `meta.yaml`, e so um diretorio os
+    # declara: comparar duas execucoes no mesmo runtime continua valendo, e e o
+    # que os outros cinco medem. Passa-los sempre vazios mantem os goldens
+    # existentes byte-identicos.
+    facts = build_benchmark(
+        before,
+        after,
+        path_hint=directory.name,
+        before_runtime=str(meta.get("before_runtime", "")),
+        after_runtime=str(meta.get("after_runtime", "")),
+    )
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def with_plan_ref(result: dict, plan) -> dict:
+    """O resultado do operador com o `plan_ref` do plano que o corpus derivou.
+
+    Publica de proposito: `tests/test_fixtures_golden_funcval.py` refaz a
+    derivacao passo a passo, e esta injecao e a UNICA parte que nao pode divergir
+    por reimplementacao -- um `plan_ref` derivado de dois jeitos e o defeito que
+    a D-4c-22 recusou escrever a mao.
+
+    Nao muta o `input/`: recebe o objeto ja carregado e devolve uma copia. E nao
+    sobrescreve `plan_ref` declarado, porque fixture que declara o campo esta
+    afirmando sobre ele.
+    """
+    if str(result.get("plan_ref", "") or ""):
+        return result
+    return {**result, "plan_ref": plan.id}
+
+
+def regen_funcval(directory: Path) -> None:
+    """Corpus de validacao funcional -- o unico que cobre DOIS verbos.
+
+    O `input/` traz o codigo PySpark (`*.py`, que da o alvo via `pyspark.write`)
+    e o dump do Glue Data Catalog (`input/catalog/*.json`, que da coluna e
+    tipo). As duas fontes na mesma fixture porque nenhum verbo produz as duas no
+    mesmo arquivo, e sem as duas os eixos de schema e de agregado nao existem --
+    e a medicao da D-4c-6, que constatou que NENHUMA das sete fixtures reais com
+    `pyspark.write` junta um `catalog.table_schema` do mesmo alvo.
+
+    `meta.yaml` pode declarar `funcval.keys`: a chave de negocio nao e derivavel
+    de fact nenhum (D-4c-1), entao a fixture que quer o eixo de chaves declara a
+    chave do mesmo jeito que o operador declararia no `--key`.
+
+    Duas formas de fixture, e o que separa as duas e a presenca dos resultados:
+
+      * so `input/` -> a fixture e do PLANO. O golden guarda os `funcval.plan` e
+        os `funcval.unresolved` da derivacao.
+      * mais `input/before.json` e `input/after.json` -> a fixture e da
+        COMPARACAO, e o golden guarda o que ela produziu. O plano vira ENTRADA e
+        fica fora do golden, pela mesma disciplina de `regen_callgraph`,
+        `regen_dq` e `regen_bench`: repetir a entrada faria uma mudanca no
+        derivador quebrar dois goldens pelo mesmo motivo, escondendo qual dos
+        dois contratos regrediu.
+
+    Os `*.json` de resultado sao os valores que o OPERADOR mediu. O motor nunca
+    os produz -- se produzisse, estaria medindo, e a fase inteira existe para
+    dizer que quem mede e o operador.
+
+    O `plan_ref` e injetado AQUI, na regeneracao, e nao escrito nos `*.json`
+    (D-4c-22). Ele e o `Fact.id` do `funcval.plan`, sha1 de (kind, subject,
+    measures), entao depende do corpus: escrito a mao no `input/`, ele
+    desatualizaria na primeira mudanca de `input/` e a fixture passaria a
+    quebrar por uma razao que nao e a dela -- e um `plan_ref` desatualizado e
+    exatamente o defeito que `_reject_foreign_plan_ref` existe para pegar.
+    Derivado na regeneracao, ele sobrevive a mudanca de `input/` pelo mesmo
+    mecanismo que faz o resto do golden sobreviver. A injecao so preenche o lado
+    que OMITE `plan_ref`: fixture que declare o campo esta afirmando alguma coisa
+    sobre ele (o conflito entre os lados, por exemplo), e sobrescrever isso
+    apagaria a fixture em vez de completa-la.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+
+    facts = list(extract_tree(input_dir, repo_root=input_dir))
+    catalog_dir_path = input_dir / "catalog"
+    if catalog_dir_path.is_dir():
+        facts.extend(extract_catalog_schema_tree(catalog_dir_path, repo_root=input_dir))
+
+    keys = tuple((meta.get("funcval") or {}).get("keys") or ())
+    derived = build_plan(facts, keys=keys, path_hint=directory.name)
+
+    before_file = input_dir / "before.json"
+    after_file = input_dir / "after.json"
+    if before_file.is_file() and after_file.is_file():
+        plans = [f for f in derived if f.kind == "funcval.plan"]
+        if len(plans) != 1:
+            targets = sorted(str(p.attrs.get("target", "")) for p in plans)
+            raise SystemExit(
+                f"{directory.name}: fixture de comparacao precisa de UM plano, "
+                f"e o corpus derivou {len(plans)} ({targets}). Um resultado descreve "
+                f"UM alvo, e escolher entre planos aqui seria adivinhar."
+            )
+        derived = build_comparison(
+            plans[0].attrs,
+            with_plan_ref(json.loads(before_file.read_text(encoding="utf-8")), plans[0]),
+            with_plan_ref(json.loads(after_file.read_text(encoding="utf-8")), plans[0]),
+            path_hint=directory.name,
+        )
+
+    findings = judge(derived, load_catalog(), meta["runtime"])
+    _write_expected(directory, derived, findings)
+
+
+def _write_json(path: Path, payload) -> None:
+    path.parent.mkdir(exist_ok=True)
+    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
+def regen_host_transcript(directory: Path) -> None:
+    """Golden do corpus `fixtures/host_transcript/`, em tres modos declarados no
+    `meta.yaml` e sem `findings.json` em nenhum deles: `host.*` nao passa por
+    `judge` (Decision 2 do DESIGN do eval harness), e um `findings.json` vazio
+    faria as varreduras do executor agentico contarem estas pastas como casos
+    julgados, que elas nao sao.
+
+      * `transcript` -- UM `input/<qid>.jsonl`. Golden: `facts.json` do extrator
+        e `grade.json`, o veredito daquela pergunta contra `_suite/suite.yaml`.
+      * `run` -- varios `input/*.jsonl`, uma execucao inteira. Golden:
+        `scorecard.json`, pelo mesmo caminho da CLI (`sparkforge_aws.evals.cli.eval_grade`).
+      * `compare` -- `input/baseline/*.json` e `input/candidate/*.json`, que sao
+        scorecards. Golden: `compare.json`.
+
+    O `run.id` do scorecard e o nome do diretorio de transcripts, e aqui ele e
+    sempre `input` -- nunca o caminho da maquina.
+    """
+    from sparkforge_aws.evals.cli import eval_compare, eval_grade
+    from sparkforge_aws.evals.grade import grade_question
+    from sparkforge_aws.evals.suite import load_suite
+    from sparkforge_aws.facts.host_transcript import extract_host_transcript_path
+
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    out = directory / "expected"
+    mode = meta["mode"]
+    if mode == "transcript":
+        suite = load_suite(FIXTURES_HOST_TRANSCRIPT / "_suite")
+        question = suite.by_id()[meta["question"]]
+        facts = extract_host_transcript_path(directory / "input" / f"{question.id}.jsonl")
+        _write_json(out / "facts.json", [f.to_dict() for f in facts])
+        _write_json(out / "grade.json", grade_question(question, facts))
+        print(f"{directory.name}: {len(facts)} facts")
+    elif mode == "run":
+        scorecard = eval_grade(
+            str(FIXTURES_HOST_TRANSCRIPT / "_suite"), str(directory / "input")
+        )
+        _write_json(out / "scorecard.json", scorecard)
+        print(f"{directory.name}: scorecard {scorecard['totals']['graded']} graded")
+    elif mode == "compare":
+        resultado = eval_compare(
+            str(directory / "input" / "baseline"), str(directory / "input" / "candidate")
+        )
+        _write_json(out / "compare.json", resultado)
+        print(f"{directory.name}: compare refused={resultado['refused']}")
+    else:
+        raise SystemExit(f"{directory.name}: mode desconhecido {mode!r}")
+
+
+def saidas_sarif(directory: Path) -> dict[str, str]:
+    """As saidas de `report github` para um caso de `fixtures/sarif/`, como TEXTO.
+
+    Passa pelo mesmo `_core.report_github` e pelo mesmo `report_github_textos`
+    que a CLI usa, com a versao do pacote fixada em `SARIF_GOLDEN_VERSION`.
+    """
+    from sparkforge_aws.adapters import _core
+
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    real = _core._versao_sparkforge_aws
+    _core._versao_sparkforge_aws = lambda: SARIF_GOLDEN_VERSION
+    # Caso com `source_freshness`: o lock e SINTETICO, em `meta["sources_lock"]`, e
+    # `as_of` e fixo -- senao o golden dependeria do lock real e do dia.
+    lock_antes = os.environ.get("SPARKFORGE_AWS_SOURCES_LOCK")
+    if meta.get("sources_lock"):
+        os.environ["SPARKFORGE_AWS_SOURCES_LOCK"] = str(directory / meta["sources_lock"])
+    try:
+        payload = _core.report_github(
+            str(directory / "input" / "findings.json"),
+            [str(directory / "input" / "facts.json")],
+            repo=str(directory / "input" / "repo"),
+            source_roots=meta.get("source_roots"),
+            category=meta.get("category"),
+            fail_on=meta.get("fail_on"),
+            source_freshness=bool(meta.get("source_freshness")),
+            as_of=meta.get("as_of"),
+        )
+    finally:
+        _core._versao_sparkforge_aws = real
+        if lock_antes is None:
+            os.environ.pop("SPARKFORGE_AWS_SOURCES_LOCK", None)
+        else:
+            os.environ["SPARKFORGE_AWS_SOURCES_LOCK"] = lock_antes
+    textos = _core.report_github_textos(payload)
+    resultado = {
+        "counts": payload["counts"],
+        "refused": payload["refused"],
+        "gate": payload["gate"],
+        "exit_code": 1 if payload["gate"]["tripped"] else 0,
+    }
+    return {
+        "sparkforge-aws.sarif": textos["sparkforge-aws.sarif"],
+        "summary.md": textos["summary.md"],
+        "annotations.txt": "".join(linha + "\n" for linha in payload["annotations"]),
+        "result.json": json.dumps(resultado, indent=2, ensure_ascii=False) + "\n",
+    }
+
+
+def regen_sarif(directory: Path) -> None:
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    for nome, texto in saidas_sarif(directory).items():
+        (out / nome).write_text(texto, encoding="utf-8", newline="\n")
+    print(f"{directory.name}: SARIF + resumo + anotacoes")
+
+
+def saidas_otel(directory: Path) -> dict[str, str]:
+    """As saidas de `telemetry export` para um caso de `fixtures/otel/`, como TEXTO.
+
+    Os spans vem de `input/spans.json` (a forma que `context_ledger.spans_of`
+    devolve) e passam pelo mesmo `_core.telemetry_payload` e pelo mesmo
+    `telemetry_export_textos` da CLI, com a versao fixada em
+    `SARIF_GOLDEN_VERSION` para um release nao reescrever os goldens.
+    """
+    from sparkforge_aws.adapters import _core
+
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    spans = json.loads((directory / "input" / "spans.json").read_text(encoding="utf-8"))
+    transcript = meta.get("host_transcript")
+    real = _core._versao_sparkforge_aws
+    _core._versao_sparkforge_aws = lambda: SARIF_GOLDEN_VERSION
+    try:
+        payload = _core.telemetry_payload(
+            meta["run_id"],
+            spans,
+            host_transcript=str(directory / transcript) if transcript else "",
+            provider=meta.get("provider"),
+        )
+    finally:
+        _core._versao_sparkforge_aws = real
+    textos = _core.telemetry_export_textos(payload)
+    resultado = {
+        "counts": payload["counts"],
+        "refused": payload["refused"],
+        "unresolved": payload["unresolved"],
+    }
+    return {
+        "traces.jsonl": textos[f"{meta['run_id']}.traces.jsonl"],
+        "metrics.jsonl": textos[f"{meta['run_id']}.metrics.jsonl"],
+        "result.json": json.dumps(resultado, indent=2, ensure_ascii=False) + "\n",
+    }
+
+
+def regen_otel(directory: Path) -> None:
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    for nome, texto in saidas_otel(directory).items():
+        (out / nome).write_text(texto, encoding="utf-8", newline="\n")
+    print(f"{directory.name}: traces + metrics OTLP/JSON")
+
+
+def _otel_cases() -> list[Path]:
+    if not FIXTURES_OTEL.is_dir():
+        return []
+    return sorted(p for p in FIXTURES_OTEL.iterdir() if p.is_dir() and not p.name.startswith("_"))
+
+
+def _sarif_cases() -> list[Path]:
+    if not FIXTURES_SARIF.is_dir():
+        return []
+    return sorted(p for p in FIXTURES_SARIF.iterdir() if p.is_dir() and not p.name.startswith("_"))
+
+
+def _host_transcript_cases() -> list[Path]:
+    if not FIXTURES_HOST_TRANSCRIPT.is_dir():
+        return []
+    return sorted(
+        p
+        for p in FIXTURES_HOST_TRANSCRIPT.iterdir()
+        if p.is_dir() and not p.name.startswith("_")
+    )
+
+
+def main() -> int:
+    targets = sys.argv[1:]
+
+    if targets:
+        for name in targets:
+            # Um nome pode existir em mais de um corpus (ex.: "clean_job" em
+            # fixtures/pyspark E fixtures/terraform -- e o nome mais comum de
+            # fixture do repo, cada corpus tem o seu). Regenerar so o
+            # primeiro achado regeneraria o corpus errado em silencio;
+            # regenerar todos os que casam o nome e a unica opcao segura.
+            matches = [
+                (FIXTURES / name, regen),
+                (FIXTURES_EVENTLOG / name, regen_eventlog),
+                (FIXTURES_TERRAFORM / name, regen_terraform),
+                (FIXTURES_ICEBERG / name, regen_iceberg),
+                (FIXTURES_SQL / name, regen_sql),
+                (FIXTURES_FUSION / name, regen_fusion),
+                (FIXTURES_CATALOG / name, regen_catalog),
+                (FIXTURES_PLAN / name, regen_plan),
+                (FIXTURES_ATHENA / name, regen_athena),
+                (FIXTURES_EMR / name, regen_emr),
+                (FIXTURES_EMR_SERVERLESS / name, regen_emr_serverless),
+                (FIXTURES_EMR_EKS / name, regen_emr_eks),
+                (FIXTURES_CONTROLM / name, regen_controlm),
+                (FIXTURES_STEPFUNCTIONS / name, regen_stepfunctions),
+                (FIXTURES_SFN_HISTORY / name, regen_sfn_history),
+                (FIXTURES_AIRFLOW / name, regen_airflow),
+                (FIXTURES_DQ / name, regen_dq),
+                (FIXTURES_RUNTIME / name, regen_runtime),
+                (FIXTURES_CALLGRAPH / name, regen_callgraph),
+                (FIXTURES_S3 / name, regen_s3),
+                (FIXTURES_CONSUMERS / name, regen_consumers),
+                (FIXTURES_TFDIFF / name, regen_tfdiff),
+                (FIXTURES_INFRA_CODE / name, regen_infra_code),
+                (FIXTURES_LAKEFORMATION / name, regen_lakeformation),
+                (FIXTURES_IAM_ACCESS / name, regen_iam_access),
+                (FIXTURES_RESOURCE_LINK / name, regen_resource_link),
+                (FIXTURES_BENCH / name, regen_bench),
+                (FIXTURES_FUNCVAL / name, regen_funcval),
+                (FIXTURES_GRAPH / name, regen_graph),
+                (FIXTURES_MIGRATION / name, regen_migration),
+                (FIXTURES_EXCEPTION / name, regen_exception),
+                (FIXTURES_CW_LOGS / name, regen_cloudwatch_logs),
+                (FIXTURES_PARQUET_FOOTER / name, regen_parquet_footer),
+                (FIXTURES_HOST_TRANSCRIPT / name, regen_host_transcript),
+                (FIXTURES_SARIF / name, regen_sarif),
+                (FIXTURES_OTEL / name, regen_otel),
+                (FIXTURES_SCENARIOS / name, regen_scenario),
+                (HOLDOUT / name, regen_scenario),
+            ]
+            found = [(path, fn) for path, fn in matches if path.is_dir()]
+            if not found:
+                print(f"fixture nao encontrada: {name}", file=sys.stderr)
+                return 1
+            if len(found) > 1:
+                corpora = ", ".join(path.parent.name for path, _ in found)
+                print(f"{name}: nome ambiguo, regenerando em todos os corpus ({corpora})")
+            for path, fn in found:
+                fn(path)
+        return 0
+
+    for directory in sorted(p for p in FIXTURES.iterdir() if p.is_dir()):
+        regen(directory)
+    for directory in sorted(p for p in FIXTURES_EVENTLOG.iterdir() if p.is_dir()):
+        regen_eventlog(directory)
+    for directory in sorted(p for p in FIXTURES_TERRAFORM.iterdir() if p.is_dir()):
+        regen_terraform(directory)
+    for directory in sorted(p for p in FIXTURES_ICEBERG.iterdir() if p.is_dir()):
+        regen_iceberg(directory)
+    for directory in sorted(p for p in FIXTURES_SQL.iterdir() if p.is_dir()):
+        regen_sql(directory)
+    for directory in sorted(p for p in FIXTURES_FUSION.iterdir() if p.is_dir()):
+        regen_fusion(directory)
+    for directory in sorted(p for p in FIXTURES_CATALOG.iterdir() if p.is_dir()):
+        regen_catalog(directory)
+    for directory in sorted(p for p in FIXTURES_PLAN.iterdir() if p.is_dir()):
+        regen_plan(directory)
+    for directory in sorted(p for p in FIXTURES_ATHENA.iterdir() if p.is_dir()):
+        regen_athena(directory)
+    for directory in sorted(p for p in FIXTURES_EMR.iterdir() if p.is_dir()):
+        regen_emr(directory)
+    for directory in sorted(p for p in FIXTURES_EMR_SERVERLESS.iterdir() if p.is_dir()):
+        regen_emr_serverless(directory)
+    # Mesma guarda de existencia dos demais corpus recentes (D-4a-18):
+    # `fixtures/emr_eks/` nasce nesta Task, e uma regeneracao completa rodada
+    # antes dela nao pode morrer com FileNotFoundError depois de ja ter
+    # regenerado todos os corpus acima.
+    if FIXTURES_EMR_EKS.is_dir():
+        for directory in sorted(p for p in FIXTURES_EMR_EKS.iterdir() if p.is_dir()):
+            regen_emr_eks(directory)
+    # Mesma guarda de existencia: `fixtures/controlm/` nasce nesta entrega, e uma
+    # regeneracao completa rodada antes dela nao pode morrer com FileNotFoundError
+    # depois de ja ter regenerado todos os corpus acima.
+    if FIXTURES_CONTROLM.is_dir():
+        for directory in sorted(p for p in FIXTURES_CONTROLM.iterdir() if p.is_dir()):
+            regen_controlm(directory)
+    # Mesma guarda de existencia: `fixtures/stepfunctions/` nasce nesta entrega.
+    if FIXTURES_STEPFUNCTIONS.is_dir():
+        for directory in sorted(p for p in FIXTURES_STEPFUNCTIONS.iterdir() if p.is_dir()):
+            regen_stepfunctions(directory)
+    # Mesma guarda de existencia: `fixtures/sfn_history/` nasce nesta entrega.
+    if FIXTURES_SFN_HISTORY.is_dir():
+        for directory in sorted(p for p in FIXTURES_SFN_HISTORY.iterdir() if p.is_dir()):
+            regen_sfn_history(directory)
+    # Mesma guarda de existencia: `fixtures/airflow/` nasce nesta entrega.
+    if FIXTURES_AIRFLOW.is_dir():
+        for directory in sorted(p for p in FIXTURES_AIRFLOW.iterdir() if p.is_dir()):
+            regen_airflow(directory)
+    for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
+        regen_dq(directory)
+    for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):
+        regen_runtime(directory)
+    for directory in sorted(p for p in FIXTURES_CALLGRAPH.iterdir() if p.is_dir()):
+        regen_callgraph(directory)
+    for directory in sorted(p for p in FIXTURES_S3.iterdir() if p.is_dir()):
+        regen_s3(directory)
+    for directory in sorted(p for p in FIXTURES_CONSUMERS.iterdir() if p.is_dir()):
+        regen_consumers(directory)
+    for directory in sorted(p for p in FIXTURES_TFDIFF.iterdir() if p.is_dir()):
+        regen_tfdiff(directory)
+    for directory in sorted(p for p in FIXTURES_INFRA_CODE.iterdir() if p.is_dir()):
+        regen_infra_code(directory)
+    # D-4a-18: unico corpus com guarda de existencia. `fixtures/bench/` nasce na
+    # Task 4 desta fase, e o laco de corpus completo roda ENTRE a Task 3 e ela --
+    # `iterdir()` num diretorio ausente levanta FileNotFoundError e derrubaria a
+    # regeneracao de TODOS os outros corpus, que ja rodaram acima. A guarda sai
+    # quando o corpus existir? Nao: ela continua barata e correta, e o mesmo
+    # intervalo se repete no proximo dominio novo.
+    if FIXTURES_BENCH.is_dir():
+        for directory in sorted(p for p in FIXTURES_BENCH.iterdir() if p.is_dir()):
+            regen_bench(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/funcval/` nasce
+    # na Task 5 desta fase, e a regeneracao completa roda ENTRE a Task 4 e ela.
+    # `iterdir()` num diretorio ausente levanta FileNotFoundError e derrubaria
+    # todos os corpus que ja rodaram acima.
+    if FIXTURES_FUNCVAL.is_dir():
+        for directory in sorted(p for p in FIXTURES_FUNCVAL.iterdir() if p.is_dir()):
+            regen_funcval(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/graph/` nasce na
+    # Task 4 da Fase 6a, e a regeneracao completa roda ENTRE a Task 3 e ela.
+    if FIXTURES_GRAPH.is_dir():
+        for directory in sorted(p for p in FIXTURES_GRAPH.iterdir() if p.is_dir()):
+            regen_graph(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/migration/`
+    # nasce na Task 9 desta fase, e a regeneracao completa roda ENTRE a Task 8
+    # e ela.
+    if FIXTURES_MIGRATION.is_dir():
+        for directory in sorted(p for p in FIXTURES_MIGRATION.iterdir() if p.is_dir()):
+            regen_migration(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/exception/`
+    # nasce na Task 4 da frente de stacktrace intelligence, e a regeneracao
+    # completa roda ENTRE a Task 3 e ela.
+    if FIXTURES_EXCEPTION.is_dir():
+        for directory in sorted(p for p in FIXTURES_EXCEPTION.iterdir() if p.is_dir()):
+            regen_exception(directory)
+    for directory in sorted(p for p in FIXTURES_CW_LOGS.iterdir() if p.is_dir()):
+        regen_cloudwatch_logs(directory)
+    # Mesma guarda dos dois corpus anteriores, e pelo mesmo intervalo:
+    # `fixtures/parquet_footer/` nasce depois das regras de `SF-PQ-006..009`, e
+    # a regeneracao completa roda entre as duas coisas.
+    if FIXTURES_PARQUET_FOOTER.is_dir():
+        for directory in sorted(
+            p for p in FIXTURES_PARQUET_FOOTER.iterdir() if p.is_dir()
+        ):
+            regen_parquet_footer(directory)
+    # `_host_transcript_cases` ja carrega a guarda de existencia (D-4a-18) e
+    # pula `_suite/`, que e gabarito das fixtures e nao caso.
+    for directory in _host_transcript_cases():
+        regen_host_transcript(directory)
+    # `_schema/` e o schema OASIS versionado, e nao caso.
+    for directory in _sarif_cases():
+        regen_sarif(directory)
+    for directory in _otel_cases():
+        regen_otel(directory)
+    # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
+    # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
+    # que este script seja o primeiro a saber.
+    for raiz in (FIXTURES_SCENARIOS, HOLDOUT):
+        if not raiz.is_dir():
+            continue
+        for directory in sorted(p for p in raiz.iterdir() if p.is_dir()):
+            if (directory / "meta.yaml").exists():
+                regen_scenario(directory)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

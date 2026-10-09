@@ -1,0 +1,24 @@
+name: job_em_array_com_nome
+proves: >
+  O POSITIVO de `SF-CTM-004`, e o artefato e o EXEMPLO DA PROPRIA PAGINA: dois
+  `Job:Command` no array `Jobs`, os dois com o mesmo `Name` -- que e o caso que
+  `allowDuplicateJobNames` existe para permitir.
+  DOIS ACHADOS E NAO UM, e e isso que `same_subject` prova aqui. A trilha
+  (`Jobs[0]/Job1` e `Jobs[1]/Job1`) e o que separa dois jobs homonimos; sem o
+  indice no `subject.symbol`, os dois cairiam no mesmo grupo e o relatorio diria
+  "um job" quando sao dois -- o falso negativo que `same_subject` existe para
+  evitar, aqui na forma mais literal possivel.
+  O NEGATIVO DESTA REGRA JA ESTAVA NO CORPUS: `folder_em_array` tem FOLDERS em
+  array com os jobs declarados como objetos nomeados, e continua sem disparar.
+  A fonte condiciona o setting a "job definitions in an array format", e a
+  leitura literal e o que mantem aquele artefato correto em silencio.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.job_array_format
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-004

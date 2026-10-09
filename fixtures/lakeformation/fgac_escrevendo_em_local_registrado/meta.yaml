@@ -1,0 +1,41 @@
+name: fgac_escrevendo_em_local_registrado
+proves: >
+  O POSITIVO de `SF-LF-009`, e ele e o unico achado deste catalogo que afirma
+  que a DOCUMENTACAO nao fecha, em vez de afirmar um defeito.
+
+  FGAC ligado no job, e a localizacao da tabela REGISTRADA no Lake Formation.
+  Quatro frases da AWS descrevem essa combinacao, e duas delas se contradizem:
+  para localizacao registrada o caminho de dado nao e o do runtime role, e o
+  grant do Lake Formation nao autoriza escrita. A escrita fica sem caminho
+  declarado.
+
+  A severidade e P1 e nao P0 de proposito: o SparkForge NAO sabe se a escrita
+  falha -- sabe que a combinacao nao tem resposta publicada. Afirmar mais que
+  isso seria inventar o que a fonte nao diz.
+
+  O catalogo e o session catalog e nao ha JAR extra nem streaming, para que
+  `SF-LF-001`, `SF-LF-002` e `SF-LF-003` nao disparem junto. `SF-LF-010` tambem
+  nao dispara, e a razao e o par: aqui o modelo de acesso ESTA declarado, e a
+  regra dele exige a ausencia.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - lakeformation.access_model
+  - lakeformation.data_lake_settings
+  - lakeformation.grant
+  - lakeformation.grants.analyzed
+  - lakeformation.iceberg_catalog
+  - lakeformation.registered_location
+  - lakeformation.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-LF-009

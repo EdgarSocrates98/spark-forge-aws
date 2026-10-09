@@ -1,0 +1,575 @@
+#!/usr/bin/env python3
+"""Gate de lastro da tabela *Números correntes* de `docs/superpowers/STATUS.md`.
+
+## Por que este gate existe, e por que ele NAO e parte de `check_vnext_claims.py`
+
+`check_vnext_claims.py` audita `docs/vnext/` e `docs/harness/`. Ele **nao**
+audita o `STATUS.md` -- que e a fonte da verdade sobre onde o projeto esta.
+
+A auditoria de 2026-09-01 mediu a consequencia: **oito** numeros da tabela
+*Numeros correntes* estavam errados, e o gate saiu `exit 0`. Entre eles, um
+publicado **sem produtor nenhum** ("62 de 116", cuja coluna "Onde conferir"
+apontava um teste que nunca contou nem 62 nem 116).
+
+Estender `check_vnext_claims.py` ao `STATUS.md` foi medido antes de ser
+recusado, e o numero decide:
+
+| Recorte | Alegacoes que o extrator produz |
+|---|---|
+| `STATUS.md` inteiro | **1797** -- 2,5x o manifesto inteiro de hoje (717) |
+| So a secao *Numeros correntes* | **189** -- o extrator pega TODO numero,
+  inclusive os que sao explicacao de defeito passado, na coluna de prosa |
+| **A coluna `Valor`, uma por dimensao** | **24** -- e e essa a alegacao de verdade |
+
+Os 1214 numeros das secoes de fase sao de EPOCA: o proprio arquivo declara que
+fase e registro do que se pretendia numa data. Audita-los contra o HOJE seria
+errado por construcao.
+
+Entao este gate tem um recorte que `check_vnext_claims.py` nao tem -- secao,
+tabela e coluna -- e uma forma de prova que ele nao tem: a medicao e CODIGO
+aqui, e o valor publicado esta no `STATUS.md`. Nao ha terceiro arquivo de
+verdade, e por isso nao ha manifesto: o par (medida, publicado) e o contrato.
+
+## Como acrescentar dimensao
+
+Escreva a medida em `MEDIDAS`. Se a tabela ganhar linha que nenhuma medida
+cobre, `--strict` reprova nomeando-a -- e isso e de proposito: linha publicada
+sem produtor e o defeito que este gate existe para pegar.
+
+Uso:
+    python scripts/check_status_numbers.py            # audita; sai 1 se divergir
+    python scripts/check_status_numbers.py --strict   # tambem reprova linha sem medida
+    python scripts/check_status_numbers.py --list     # so mostra medido x publicado
+"""
+
+from __future__ import annotations
+
+import argparse
+import glob
+import importlib
+import json
+import os
+import re
+import sys
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+STATUS = ROOT / "docs" / "superpowers" / "STATUS.md"
+
+SECAO = "## Números correntes"
+# A tabela termina onde comeca a proxima secao de nivel 2.
+FIM = re.compile(r"^## ")
+
+
+def _catalogo() -> list[dict]:
+    sys.path.insert(0, str(ROOT))
+    from sparkforge_aws.rules.loader import load_catalog
+
+    return list(load_catalog())
+
+
+def _modulos_de_fact() -> list[object]:
+    sys.path.insert(0, str(ROOT))
+    modulos = []
+    for caminho in sorted((ROOT / "sparkforge_aws" / "facts").glob("*.py")):
+        if caminho.stem == "__init__":
+            continue
+        modulos.append(importlib.import_module(f"sparkforge_aws.facts.{caminho.stem}"))
+    return modulos
+
+
+def _extratores() -> list[object]:
+    """Modulo de `facts/` que EMITE kind. Os que so carregam conhecimento
+    (`runtime_matrix`, `pricing`, ...) nao sao extrator, e a linha da tabela
+    diz isso por escrito."""
+    return [m for m in _modulos_de_fact() if getattr(m, "EMITTED_KINDS", None)]
+
+
+def _kinds() -> set[str]:
+    uniao: set[str] = set()
+    for modulo in _extratores():
+        uniao |= set(getattr(modulo, "EMITTED_KINDS", ()) or ())
+    return uniao
+
+
+def _tools() -> dict:
+    sys.path.insert(0, str(ROOT))
+    from sparkforge_aws.adapters.tools import TOOLS
+
+    return TOOLS
+
+
+def _tools_com_detail_level() -> int:
+    """Tools cuja funcao aceita `detail_level`, contadas pela ASSINATURA.
+
+    Pela assinatura e nao por busca de texto no schema JSON: o parametro e o
+    contrato, e o texto do schema e descricao dele. Medido em 2026-09-09 -- 32
+    das 73 --, e o numero publicado em `AGENTS.md` e `CLAUDE.md` era 31.
+    """
+    sys.path.insert(0, str(ROOT))
+    import inspect
+
+    from sparkforge_aws.adapters import _core
+
+    total = 0
+    for nome in _tools():
+        funcao = getattr(_core, nome.replace("sparkforge_aws_", ""), None)
+        if funcao is None:
+            continue
+        try:
+            assinatura = inspect.signature(funcao)
+        except (TypeError, ValueError):
+            continue
+        if "detail_level" in assinatura.parameters:
+            total += 1
+    return total
+
+
+def _skills_despachaveis() -> list[Path]:
+    achadas = []
+    for caminho in sorted((ROOT / ".agents" / "skills").glob("*/SKILL.md")):
+        if re.search(r"^subagent:\s*true", caminho.read_text(encoding="utf-8"), re.M):
+            achadas.append(caminho)
+    return achadas
+
+
+def _fontes() -> int:
+    lock = json.loads((ROOT / "knowledge" / "sources.lock.json").read_text(encoding="utf-8"))
+    return len(lock.get("sources", lock))
+
+
+def _rotas() -> int:
+    texto = (ROOT / "rules" / "catalog" / "routing.yaml").read_text(encoding="utf-8")
+    return sum(1 for linha in texto.splitlines() if re.match(r"^  - id: ", linha))
+
+
+def _goldset() -> list:
+    from sparkforge_aws.economy.goldset import derivar_goldset
+
+    return list(derivar_goldset())
+
+
+def _fora_do_goldset() -> list:
+    """Os achados que a derivacao RECUSA, e a razao de eles serem publicados.
+
+    Publicar 23 perguntas sem publicar as 25 recusas faria "o gate cobre 23
+    achados" ser lido como "existem 23 achados" -- o gate esconderia o proprio
+    denominador.
+    """
+    from sparkforge_aws.economy.goldset import fora_do_alcance
+
+    return list(fora_do_alcance())
+
+
+def _regras_do_protocolo() -> int:
+    """Itens numerados DENTRO da secao `## Regras` do `AGENT_PROTOCOL.md`.
+
+    O escopo por secao nao e detalhe: a primeira versao desta medida contava
+    todo item numerado do arquivo e devolvia **15**, porque ha uma segunda
+    lista de 1 a 5 mais adiante. O gate acusou a divergencia contra os 10
+    publicados, e a investigacao mostrou que quem estava errado era a MEDIDA,
+    nao o numero -- que e o desfecho que este gate existe para produzir.
+    """
+    linhas = (ROOT / "AGENT_PROTOCOL.md").read_text(encoding="utf-8").splitlines()
+    inicio = next(i for i, linha in enumerate(linhas) if linha.strip() == "## Regras")
+    total = 0
+    for linha in linhas[inicio + 1 :]:
+        if linha.startswith("## "):
+            break
+        if re.match(r"^\d+\.\s", linha):
+            total += 1
+    return total
+
+
+def _gates_do_case() -> int:
+    import yaml
+
+    doc = yaml.safe_load((ROOT / "rules" / "catalog" / "routing.yaml").read_text(encoding="utf-8"))
+    return len(doc.get("gates") or [])
+
+
+# A medida de cada dimensao. A chave e o texto EXATO da coluna `Dimensão`.
+#
+# Cada valor e um `Callable[[], int]` -- medicao, nao numero. O numero mora no
+# `STATUS.md`, e a divergencia entre os dois e o que este gate reprova.
+MEDIDAS: dict[str, Callable[[], int]] = {
+    "Regras de diagnóstico": lambda: len(_catalogo()),
+    "Regras bloqueadas (`blocked_on`)": lambda: sum(1 for r in _catalogo() if r.get("blocked_on")),
+    "Regras com `runtime_scope` não-vazio": lambda: sum(
+        1 for r in _catalogo() if r.get("runtime_scope")
+    ),
+    "Regras com eixo de resultado no `validation`": lambda: sum(
+        1 for r in _catalogo() if r.get("validation")
+    ),
+    "Tools MCP": lambda: len(_tools()),
+    "Extratores de facts": lambda: len(_extratores()),
+    "Fact kinds distintos emitidos": lambda: len(_kinds()),
+    "Coordenadores": lambda: len(glob.glob(str(ROOT / "agents" / "*.md"))),
+    "Executores": lambda: len(glob.glob(str(ROOT / "agents" / "executors" / "*.md"))),
+    "Skills": lambda: len(glob.glob(str(ROOT / "skills" / "*" / "SKILL.md"))),
+    "Skills que declaram despacho": lambda: len(_skills_despachaveis()),
+    "Fixtures golden": lambda: len(
+        [d for d in glob.glob(str(ROOT / "fixtures" / "*" / "*" / "")) if os.path.isdir(d)]
+    ),
+    "Fontes oficiais vigiadas": _fontes,
+    "Rotas determinísticas": _rotas,
+    "Gates do case": _gates_do_case,
+    "Regras do `AGENT_PROTOCOL.md`": lambda: _regras_do_protocolo(),
+    # DERIVADO das regras, nunca lido de arquivo -- ver
+    # `sparkforge_aws/economy/goldset.py` sobre por que congelar o gold set o faria
+    # afirmar sobre a ancoragem de ontem.
+    "Perguntas do gold set de recuperação": lambda: len(_goldset()),
+    "Achados que NÃO rendem pergunta de ouro": lambda: len(_fora_do_goldset()),
+    # Conta os MODULOS, nao os arquivos: `__init__.py` e reexport, nao modulo
+    # da camada. A tabela publica "13 (+ `__init__.py`)" pela mesma razao --
+    # somar os dois daria 14 e faria a linha divergir do que AGENTS.md e
+    # `docs/agentic-evolution-report.md` descrevem modulo a modulo.
+    "Módulos da camada agêntica": lambda: len(
+        [
+            f
+            for f in glob.glob(str(ROOT / "sparkforge_aws" / "agentic" / "*.py"))
+            if os.path.basename(f) != "__init__.py"
+        ]
+    ),
+}
+
+# Dimensoes que a tabela publica e que este gate NAO mede, com a razao. Sem
+# esta lista, `--strict` reprovaria por elas -- e a recusa precisa ter nome,
+# como toda recusa neste repositorio.
+SEM_MEDIDA: dict[str, str] = {
+    "Testes da camada agêntica": (
+        "mesma razão da linha `Testes`: contar teste exige coletar com o "
+        "pytest, e este gate não roda suíte. Medido por "
+        "`python -m pytest tests/test_agentic_*.py -q --collect-only`, e o "
+        "guarda que impede arquivo órfão continua sendo `test_suite_batches.py`"
+    ),
+    "Testes": (
+        "a suite inteira num processo so nao sobrevive; medir aqui exigiria "
+        "rodar os nove lotes de `tests/test_suite_batches.py`, que leva mais de "
+        "30 minutos. O guarda que existe e o proprio `test_suite_batches.py`, "
+        "que prova que a receita cobre todo arquivo"
+    ),
+    "Tools alcançáveis a partir de algum coordenador": (
+        "medido por `tests/test_agent_coverage.py`, que ja reprova quando uma "
+        "tool fica orfa. Duplicar a travessia aqui seria segundo mecanismo para "
+        "a mesma pergunta"
+    ),
+    "Regras com golden que dispara": (
+        "medido por `tests/test_fixtures_kind_coverage.py`, que ja reprova "
+        "quando uma regra executavel nao tem fixture que a dispare"
+    ),
+    "Ramos de severidade com golden que os produz": (
+        "mesma razao da linha acima, no mesmo arquivo de teste"
+    ),
+    "Plataformas que despacham subagente": (
+        "o numero sai de `parity.yaml`, e o mecanismo que o guarda e "
+        "`tests/test_capability_parity.py`, que e data-driven sobre ele"
+    ),
+    "Pares de eval": "medido por `scripts/check_evals.py`",
+    "Arquivos de terceiro vendorizados": "medido por `python scripts/vendor_caveman.py --check`",
+    "Plugins de agente ligados por padrão": (
+        "sai de `.claude/settings.json`, que nao e produto -- e configuracao "
+        "local de quem desenvolve"
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
+# O SEGUNDO RECORTE: numero publicado em PROSA, fora do `STATUS.md`
+#
+# Medido em 2026-09-09, e o numero e o argumento: `README.md` publicava **27
+# extratores** quando havia 34, **158 kinds** quando havia 202 (em dois lugares),
+# e a tabela de verbos nao tinha tres `analyze` entregues dias antes.
+# `GUIA_DE_USO.md` publicava **44 tools** quando havia 73; `.devin/README.md`,
+# **63**; `AGENTS.md` e `CLAUDE.md`, **70 tools e 31 com `detail_level`** quando
+# eram 73 e 32.
+#
+# Sete numeros errados em quatro arquivos, e NENHUM gate os conferia:
+# `check_vnext_claims.py` audita `docs/vnext/` e `docs/harness/`, e a tabela
+# acima audita `docs/superpowers/STATUS.md`. Os quatro arquivos que um leitor
+# novo abre PRIMEIRO eram os unicos sem lastro.
+#
+# POR QUE ANCORA E NAO MANIFESTO. `check_vnext_claims.py` guarda a alegacao num
+# arquivo lateral (`docs/claims.lock.json`) porque audita prosa arbitraria em
+# dezenas de documentos. Aqui sao sete alegacoes em quatro arquivos, todas sobre
+# dimensoes que `MEDIDAS` ja mede -- um manifesto seria um terceiro arquivo de
+# verdade para guardar o que o par (ancora, medida) ja diz.
+#
+# A ancora FALHA FECHADA nos dois sentidos, e e isso que a torna gate:
+#
+#   * padrao que nao casa  -> reprova. A frase foi reescrita ou apagada, e nos
+#     dois casos alguem precisa reconferir o numero -- passar em silencio seria
+#     perder a alegacao sem aviso, que e o defeito de origem.
+#   * padrao que casa DUAS vezes -> reprova. Ancora ambigua audita a primeira
+#     ocorrencia e deixa a segunda apodrecer, que foi literalmente o caso dos
+#     dois `158 kinds` do `README.md`.
+
+
+@dataclass(frozen=True)
+class Alegacao:
+    """Um numero publicado em prosa, e a dimensao que o mede."""
+
+    arquivo: str
+    padrao: str
+    dimensao: str
+
+
+# Dimensoes que SO a prosa publica -- elas nao tem linha na tabela do
+# `STATUS.md`, e por isso moram fora de `MEDIDAS`: a checagem de orfa em
+# `auditar()` reprovaria por elas.
+MEDIDAS_PROSA: dict[str, Callable[[], int]] = {
+    # "Executavel" e regra com `status`. Ate 2026-09-18 havia 35 regras sem o
+    # campo -- declaracoes de area de coordenacao (`executable: false`,
+    # `when: {all: []}`), que existiam para a area ter nome e rota, nao para
+    # julgar. A feature `docs/sdd/SF_STUBS/` (2026-09-19) removeu as 35 areas
+    # `agentic-sf-*`: desde entao toda regra do catalogo tem `status`.
+    "Regras executáveis": lambda: sum(1 for r in _catalogo() if r.get("status")),
+    # Medido por `inspect.signature` sobre a funcao que cada tool despacha em
+    # `sparkforge_aws/adapters/_core.py`, e nao por busca de texto no schema: o
+    # parametro e o contrato, o texto do schema e descricao dele.
+    "Tools com `detail_level`": _tools_com_detail_level,
+}
+
+# Em 2026-09-18 o `README.md` virou porta de entrada curta, e o detalhe foi para
+# `docs/guia/06..12`. As frases com numero foram junto, e as ancoras as seguiram:
+# o README guarda as contagens de topo, e cada guia guarda as suas. Numero repetido
+# nos dois lados tem ancora nos dois -- copia sem ancora e o `158 kinds` de novo.
+_GUIA = "docs/guia/"
+
+PROSA: tuple[Alegacao, ...] = (
+    Alegacao("README.md", r"Os (\d+) extratores emitem", "Extratores de facts"),
+    Alegacao(
+        "README.md", r"extratores emitem (\d+) kinds distintos", "Fact kinds distintos emitidos"
+    ),
+    Alegacao(
+        "README.md", r"\*\*(\d+)\*\* regras de diagnóstico em YAML", "Regras de diagnóstico"
+    ),
+    Alegacao("README.md", r"\*\*(\d+) delas executáveis\*\*", "Regras executáveis"),
+    Alegacao("README.md", r"\*\*(\d+) tools MCP\*\*", "Tools MCP"),
+    Alegacao("README.md", r"\*\*(\d+) coordenadores\*\*", "Coordenadores"),
+    Alegacao("README.md", r"\*\*(\d+) executores\*\*", "Executores"),
+    Alegacao("README.md", r"\*\*(\d+) skills\*\*", "Skills"),
+    Alegacao(
+        _GUIA + "06-extrair-julgar-compor.md", r"Os (\d+) extratores emitem", "Extratores de facts"
+    ),
+    Alegacao(
+        _GUIA + "06-extrair-julgar-compor.md",
+        r"extratores emitem (\d+) kinds distintos",
+        "Fact kinds distintos emitidos",
+    ),
+    Alegacao(
+        _GUIA + "06-extrair-julgar-compor.md",
+        r"nenhum dos (\d+) kinds a nomeia",
+        "Fact kinds distintos emitidos",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"\*\*(\d+)\*\* regras de\s+diagnóstico em YAML",
+        "Regras de diagnóstico",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"\*\*(\d+) delas executáveis\*\*",
+        "Regras executáveis",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"mais \*\*(\d+)\*\* rotas determinísticas",
+        "Rotas determinísticas",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"As (\d+) executáveis se distribuem",
+        "Regras executáveis",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"Cada uma das (\d+) carrega um bloco",
+        "Regras executáveis",
+    ),
+    Alegacao(
+        _GUIA + "05-agents-e-skills.md", r"\*\*Coordenador\*\* — (\d+) agentes em", "Coordenadores"
+    ),
+    Alegacao(
+        _GUIA + "05-agents-e-skills.md",
+        r"As (\d+) skills\s+despacháveis\s+\(contadas",
+        "Skills que declaram despacho",
+    ),
+    Alegacao(
+        _GUIA + "05-agents-e-skills.md",
+        r"As (\d+) skills despacháveis\s+\(as que declaram",
+        "Skills que declaram despacho",
+    ),
+    Alegacao(
+        _GUIA + "09-camada-agentica.md",
+        r"`sparkforge_aws/agentic/` \((\d+) módulos",
+        "Módulos da camada agêntica",
+    ),
+    Alegacao(
+        _GUIA + "12-espelhos-e-dependencias.md",
+        r"hoje \d+\s+das (\d+) despacháveis",
+        "Skills que declaram despacho",
+    ),
+    Alegacao("GUIA_DE_USO.md", r"faz tudo o que as (\d+) tools fazem", "Tools MCP"),
+    Alegacao(".devin/README.md", r"expõe as \*\*(\d+) tools\*\*", "Tools MCP"),
+    Alegacao("AGENTS.md", r"\*\*(\d+) tools, \d+ with `detail_level`\*\*", "Tools MCP"),
+    Alegacao(
+        "AGENTS.md",
+        r"\*\*\d+ tools, (\d+) with `detail_level`\*\*",
+        "Tools com `detail_level`",
+    ),
+    Alegacao("CLAUDE.md", r"\*\*(\d+) tools, \d+ com `detail_level`\*\*", "Tools MCP"),
+    Alegacao(
+        "CLAUDE.md",
+        r"\*\*\d+ tools, (\d+) com `detail_level`\*\*",
+        "Tools com `detail_level`",
+    ),
+)
+
+
+def _medida_de(dimensao: str) -> Callable[[], int] | None:
+    return MEDIDAS.get(dimensao) or MEDIDAS_PROSA.get(dimensao)
+
+
+def auditar_prosa() -> list[str]:
+    """Cada alegacao de `PROSA`, conferida contra a medida que a dimensao tem."""
+    problemas: list[str] = []
+    for alegacao in PROSA:
+        caminho = ROOT / alegacao.arquivo
+        if not caminho.exists():
+            problemas.append(f"{alegacao.arquivo}: arquivo ausente, e `PROSA` o declara")
+            continue
+        texto = caminho.read_text(encoding="utf-8")
+        achados = re.findall(alegacao.padrao, texto)
+        if not achados:
+            problemas.append(
+                f"{alegacao.arquivo}: ancora de `{alegacao.dimensao}` nao casa "
+                f"({alegacao.padrao!r}). A frase mudou ou sumiu -- reconfira o numero "
+                f"e atualize a ancora, nunca apague a alegacao em silencio."
+            )
+            continue
+        if len(achados) > 1:
+            problemas.append(
+                f"{alegacao.arquivo}: ancora de `{alegacao.dimensao}` casa "
+                f"{len(achados)} vezes ({alegacao.padrao!r}). Ancora ambigua audita a "
+                f"primeira e deixa as outras apodrecer -- estreite o padrao."
+            )
+            continue
+        medida = _medida_de(alegacao.dimensao)
+        if medida is None:
+            problemas.append(
+                f"{alegacao.arquivo}: `{alegacao.dimensao}` nao tem medida em "
+                f"`MEDIDAS` nem em `MEDIDAS_PROSA`"
+            )
+            continue
+        publicado, obtido = int(achados[0]), medida()
+        if publicado != obtido:
+            problemas.append(
+                f"{alegacao.arquivo}: `{alegacao.dimensao}` publica {publicado}, "
+                f"medido {obtido}"
+            )
+    return problemas
+
+
+def linhas_da_tabela() -> list[tuple[int, str, str]]:
+    """(numero da linha, dimensao, valor publicado) da tabela *Números correntes*."""
+    linhas = STATUS.read_text(encoding="utf-8").splitlines()
+    inicio = next(i for i, linha in enumerate(linhas) if linha.startswith(SECAO))
+    saida: list[tuple[int, str, str]] = []
+    for numero in range(inicio + 1, len(linhas)):
+        linha = linhas[numero]
+        if FIM.match(linha):
+            break
+        if not linha.startswith("|"):
+            continue
+        colunas = [c.strip() for c in linha.strip("|").split("|")]
+        if len(colunas) < 3:
+            continue
+        if colunas[0] == "Dimensão" or set("".join(colunas)) <= set("- :"):
+            continue
+        saida.append((numero + 1, colunas[0], colunas[1]))
+    return saida
+
+
+def _publicado(valor: str) -> int | None:
+    """O PRIMEIRO numero da coluna `Valor` -- a alegacao. O resto da celula e
+    argumento, e argumento nao e alegacao."""
+    achado = re.search(r"(\d[\d.]*)", valor.replace("**", ""))
+    return int(achado.group(1).replace(".", "")) if achado else None
+
+
+def auditar(strict: bool = False) -> list[str]:
+    problemas: list[str] = []
+    vistas: set[str] = set()
+    for numero, dimensao, valor in linhas_da_tabela():
+        vistas.add(dimensao)
+        medida = MEDIDAS.get(dimensao)
+        if medida is None:
+            if dimensao in SEM_MEDIDA:
+                continue
+            if strict:
+                problemas.append(
+                    f"STATUS.md:{numero}: dimensao `{dimensao}` publicada e sem medida. "
+                    f"Ou escreva a medida em `MEDIDAS`, ou declare a razao em `SEM_MEDIDA` "
+                    f"-- numero publicado sem produtor e o defeito que este gate pega."
+                )
+            continue
+        esperado = _publicado(valor)
+        if esperado is None:
+            problemas.append(f"STATUS.md:{numero}: `{dimensao}` sem numero na coluna Valor")
+            continue
+        obtido = medida()
+        if obtido != esperado:
+            problemas.append(
+                f"STATUS.md:{numero}: `{dimensao}` publica {esperado}, medido {obtido}"
+            )
+    orfas = sorted(set(MEDIDAS) - vistas)
+    if orfas:
+        problemas.append(
+            f"medidas sem linha na tabela: {orfas}. A dimensao sumiu do STATUS.md e a "
+            f"medida ficou -- fail-closed nos dois sentidos, como `check_vnext_claims.py`."
+        )
+    return problemas
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--strict", action="store_true", help="reprova linha sem medida")
+    parser.add_argument("--list", action="store_true", help="mostra medido x publicado")
+    args = parser.parse_args()
+
+    if args.list:
+        for numero, dimensao, valor in linhas_da_tabela():
+            medida = MEDIDAS.get(dimensao)
+            obtido = medida() if medida else None
+            marca = "sem medida" if obtido is None else str(obtido)
+            print(f"{numero:5} {dimensao[:46]:48} publicado={_publicado(valor)} medido={marca}")
+        for alegacao in PROSA:
+            medida = _medida_de(alegacao.dimensao)
+            obtido = medida() if medida else None
+            texto = (ROOT / alegacao.arquivo).read_text(encoding="utf-8")
+            achados = re.findall(alegacao.padrao, texto)
+            publicado = achados[0] if len(achados) == 1 else f"<{len(achados)} ancoras>"
+            print(
+                f"{alegacao.arquivo:18} {alegacao.dimensao[:40]:42} "
+                f"publicado={publicado} medido={obtido}"
+            )
+        return 0
+
+    # Os DOIS recortes, e eles sao separados de proposito: `auditar()` fala da
+    # tabela do `STATUS.md` e `auditar_prosa()` fala dos quatro arquivos que
+    # publicam numero em prosa. Fundi-los numa funcao so faria os testes que
+    # trocam `MEDIDAS` por um dicionario de mentira reprovarem por alegacao de
+    # prosa que eles nao estao medindo -- e o gate perderia a capacidade de ser
+    # testado por partes.
+    problemas = auditar(strict=args.strict) + auditar_prosa()
+    for p in problemas:
+        print(p)
+    print(f"{len(problemas)} divergencia(s).")
+    return 1 if problemas else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

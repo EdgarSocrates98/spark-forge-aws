@@ -1,0 +1,21 @@
+name: fluxo_sem_capacidade_datada
+proves: >
+  O negativo de referencia do corpus, e ele e o `AutomationAPISampleFlow.json`
+  oficial da BMC com os placeholders preenchidos: `Job:Command`, `Job:Script` e
+  um `Flow` com `Sequence`.
+  Nenhum dos dois job types e nomeado pela matriz -- os dois sao anteriores a
+  faixa `9.0.21.200`-`9.0.22.100` --, entao NENHUM fact de capacidade sai, mesmo
+  com versao declarada. E o que trava o veto V-CTM-4: acusar os 70 job types que
+  a pagina *Job Types* publica e a matriz nao data diria "esta versao nao suporta
+  `Job:Command`", que e falso.
+  Se qualquer regra SF-CTM disparar aqui, ela acusa configuracao correta -- o
+  pior tipo de defeito de regra segundo rules/catalog/README.md.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.dependency
+  - ctm.folder
+  - ctm.job
+  - ctm.version_declared
+expects_rules: []

@@ -1,0 +1,55 @@
+[
+  {
+    "id": "f_8b52fa",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 1000,
+      "control_object_count": 0,
+      "group_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "prefix": "s3://lake/raw/enorme/",
+      "truncated": true
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "9dba5011237b2994d2596f046f92565139c8a04a2b721aa3eb10583a6e4ae78e",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_d14a95",
+    "schema_version": 1,
+    "kind": "s3.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "truncated_listing",
+      "prefix": "s3://lake/raw/enorme/",
+      "detail": "IsTruncated=true: a listagem tem no maximo uma pagina do prefixo. Colete as paginas seguintes com NextContinuationToken antes de julgar small files ou tamanho maximo de arquivo.",
+      "listed_object_count": 1000
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "9dba5011237b2994d2596f046f92565139c8a04a2b721aa3eb10583a6e4ae78e",
+      "extractor": "s3_listing@0.1.0"
+    }
+  }
+]

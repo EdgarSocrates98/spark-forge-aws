@@ -1,0 +1,14 @@
+name: glue_limpo
+proves: >
+  O NEGATIVO da area. Dois Glue `.sync` dentro de um Parallel, cada um com retry so em
+  erro nomeado (`Glue.ConcurrentRunsExceededException`), e o segundo com
+  `States.TaskFailed` em `MaxAttempts: 0` -- a falha do job NAO e reexecutada. Esse
+  zero e a fronteira que faz a troca `>` por `>=` na SF-SFN-002 mudar este golden.
+  Sem achado nenhum; o Lambda dentro do Map e registrado e nao julgado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.state_machine, sfn.task]
+expects_rules: []

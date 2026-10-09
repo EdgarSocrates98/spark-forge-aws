@@ -1,0 +1,25 @@
+[
+  {
+    "id": "f_e06ded",
+    "schema_version": 1,
+    "kind": "mig.sdk_import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "package": "com.amazonaws",
+      "generation": "v1"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "21e8517281f600b9da5e8d6902bd792ad4ee940fac72359c50cd1ffcd1a26c42",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

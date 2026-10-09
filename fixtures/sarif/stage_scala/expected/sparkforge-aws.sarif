@@ -1,0 +1,68 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SparkForge",
+          "semanticVersion": "0.0.0+golden",
+          "informationUri": "https://github.com/EdgarSocrates98/spark-forge-aws",
+          "rules": [
+            {
+              "id": "SF-UI-001",
+              "name": "SFUI001",
+              "shortDescription": {
+                "text": "Skew de duração de task no stage"
+              },
+              "fullDescription": {
+                "text": "O stage termina quando a última task termina. Uma task muito mais longa que a mediana significa que a maior parte do cluster está ociosa esperando por ela. Este achado sozinho não distingue skew de dados de skew de computação: cruzar com SF-UI-002 para separá-los, porque o tratamento é diferente. Ver knowledge/spark/shuffle-join-skew.md secao 3."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "precision": "high"
+              },
+              "help": {
+                "text": "Mudanca proposta:\n- Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.\n- Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.\n- Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos.\nValidacao:\n- Contagem total antes e depois.\n- Contagem de linhas com chave nula.\n- Contagem distinta da chave primária do resultado, para detectar duplicação.\n- Agregados de controle por dimensão de negócio.\n- Nova razão max/p50 do stage após a mudança.\nRollback:\n- Reverter o commit. Se houve escrita\n- usar time travel em Iceberg.",
+                "markdown": "**Mudanca proposta**\n\n- Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.\n- Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.\n- Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos.\n\n**Validacao**\n\n- Contagem total antes e depois.\n- Contagem de linhas com chave nula.\n- Contagem distinta da chave primária do resultado, para detectar duplicação.\n- Agregados de controle por dimensão de negócio.\n- Nova razão max/p50 do stage após a mudança.\n\n**Rollback**\n\n- Reverter o commit. Se houve escrita\n- usar time travel em Iceberg."
+              },
+              "helpUri": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "SF-UI-001",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Skew de duração de task no stage (medido: max_ms=15000, mean_ms=3333.3333333333335, min_ms=1000, p50_ms=1000, p95_ms=15000, task_count=6) -- linha da acao `save` que originou o stage 2 (nao e a causa)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Etl.scala",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 120
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              "f_a76c64"
+            ],
+            "severity": "P0",
+            "status": "confirmed"
+          }
+        }
+      ]
+    }
+  ]
+}

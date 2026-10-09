@@ -1,0 +1,7 @@
+name: more_resource_costs_more
+job_name: etl_pedidos_diario
+proves: 'O MESMO eixo do cenario anterior, no sentido oposto: G.2X x20 roda em 280s
+  contra G.2X x10 em 300s -- quase o dobro de capacidade por um ganho de tempo quase
+  nulo (7%). O dobro de workers quase dobra o dpu-segundos (6000 -> 11200) sem reduzir
+  o tempo na mesma proporcao, e custa MAIS por run. Sem este cenario, o corpus provaria
+  so um lado da troca recurso-tempo.'

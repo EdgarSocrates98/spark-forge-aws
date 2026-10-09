@@ -1,0 +1,31 @@
+artifacts: []
+baseline: null
+case_id: c1
+created_at: '2026-09-15T10:00:00Z'
+facts_index:
+  by_kind: {}
+  count: 0
+  path: ''
+findings_index:
+  by_severity: {}
+  count: 0
+  path: ''
+gate_overrides: []
+gates:
+  baseline_captured: false
+  dominant_bottleneck_identified: false
+  flows_mapped: false
+  functional_validation_defined: false
+hypotheses: []
+open_questions: []
+phase: intake
+runtime:
+  glue: '5.0'
+schema_version: 1
+scope:
+  consumers: []
+  entrypoints: []
+  job_names: []
+  repo: caso
+skills_used: []
+strict_gates: false

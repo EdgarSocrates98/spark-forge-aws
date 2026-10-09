@@ -1,0 +1,77 @@
+{
+  "trace": [
+    {
+      "op": "start",
+      "status": "started",
+      "created": true,
+      "max_rounds": 3
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "invalid_schema"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "out_of_turn"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "out_of_turn"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "claim_without_evidence"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "invalid_schema"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "invalid_schema"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "invalid_schema"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "invalid_schema"
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 1,
+        "objections": 0,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "brief"
+    },
+    {
+      "op": "next",
+      "status": "brief",
+      "side": "B",
+      "round": 1,
+      "rounds_remaining": 3,
+      "extracted_facts": 0,
+      "open_objections_against_you": 0,
+      "prior_submissions": 1
+    }
+  ],
+  "blackboard": {
+    "decisions": 0,
+    "debate_claims": 1,
+    "debate_objections": 0,
+    "debate_rebuttals": 0
+  }
+}

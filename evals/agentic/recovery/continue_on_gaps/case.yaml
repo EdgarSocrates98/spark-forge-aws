@@ -1,0 +1,13 @@
+schema_version: 1
+case_id: recovery-continue-on-gaps
+failure: transient_host
+attempt: 0
+strategy_fingerprint: cg-001
+history: []
+profile: balanced
+risk: low
+gain_state:
+  pending_action: agent
+  evidence_gaps: 2
+  novel_evidence_potential: true
+  remaining_budget: 5000

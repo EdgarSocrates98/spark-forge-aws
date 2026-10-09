@@ -1,0 +1,12 @@
+name: wall_clock_sem_event_log
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'O estado `TIMEOUT` do run Glue sozinho. E a DEFINICAO do relogio de parede, e nao
+  um indicio: a AWS define `Timeout` do JobRun como o tempo maximo que a execucao pode consumir
+  recursos antes de entrar naquele estado. Sem event log, `wall_clock` e a unica categoria
+  observavel, e `state_without_log` registra que as outras tres nao foram descartadas -- elas
+  nao foram sequer procuradas.'

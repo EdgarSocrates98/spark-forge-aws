@@ -1,0 +1,14 @@
+name: json_invalido
+proves: >
+  AC3 nas duas formas de "nao da para ler": JSON que nao fecha (`invalid_json`) e JSON
+  valido que nao e historico de execucao (`not_an_execution_history`). Um
+  `sfn.unresolved` por arquivo, uma sentinela por arquivo, e NENHUMA excecao que
+  derrube quem chamou. Sem `sfn.attempt` no pool, a derivacao nem roda -- a mesma
+  guarda que `fusion.fuse` aplica.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.unresolved]
+expects_rules: []
