@@ -191,8 +191,69 @@ _CODE_DB_HELP = (
 )
 
 
+_TOP_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("analyze", "extrai facts de um artefato (pyspark, plan, event-log, iceberg…)"),
+    ("judge", "julgamento de findings contra o catálogo de regras"),
+    ("playbook", "decomposição de um coordenador — o piso em qualquer plataforma"),
+    ("next-step", "próximo passo recomendado pelo catálogo de routing"),
+    ("case", "ciclo de vida do case que atravessa sessões"),
+    ("economy", "relatório de economia de contexto (medição, não alegação)"),
+    ("doctor", "health-check da instalação e dependências"),
+    ("mcp", "servidor MCP (handshake → tools/list → tools/call)"),
+)
+
+
+class _SparkForgeParser(argparse.ArgumentParser):
+    """Parser com o contrato DX: verbo desconhecido sugere, não só lista."""
+
+    def error(self, message: str) -> None:  # noqa: D102
+        import difflib
+        import re
+
+        m = re.search(r"invalid choice: '([^']+)'", message)
+        choices: list[str] = []
+        for a in self._actions:
+            if isinstance(a, argparse._SubParsersAction):
+                choices += list(a.choices)
+        if m and choices:
+            close = difflib.get_close_matches(m.group(1), choices, n=3, cutoff=0.6)
+            if close:
+                message += "\n\nvoce quis dizer: " + ", ".join(close) + "?"
+        super().error(message)
+
+
+def _bare_summary(parser: argparse.ArgumentParser) -> int:
+    """``sparkforge-aws`` sem argumentos: resumo de produto + caminho de
+    ajuda. Nunca erro, nunca mutação."""
+    print("sparkforge-aws — analise deterministica de jobs AWS Glue PySpark.")
+    print()
+    print("mais usados:")
+    for name, desc in _TOP_COMMANDS:
+        print(f"  {name:<14} {desc}")
+    print()
+    print("ajuda:   sparkforge-aws help <comando>  |  sparkforge-aws --help")
+    print("agentes: sparkforge-aws agents           playbooks: sparkforge-aws playbook")
+    print("docs:    docs/installation/quickstart.md")
+    return 0
+
+
+def _help_for(parser: argparse.ArgumentParser, argv: list[str]) -> int:
+    """``sparkforge-aws help [verbo]`` — help contextual sem adivinhar flags."""
+    target = argv[1] if len(argv) > 1 else None
+    if not target:
+        parser.print_help()
+        return 0
+    for a in parser._actions:
+        if isinstance(a, argparse._SubParsersAction) and target in a.choices:
+            a.choices[target].print_help()
+            return 0
+    print(f"sparkforge-aws help: comando desconhecido {target!r}", file=sys.stderr)
+    print("veja: sparkforge-aws --help", file=sys.stderr)
+    return 2
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = _SparkForgeParser(
         prog="sparkforge-aws",
         description=(
             "Analise deterministica de jobs AWS Glue PySpark: extracao de facts, "
@@ -6361,6 +6422,11 @@ def _dispatch(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     _ensure_utf8_streams()
     parser = build_parser()
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if not argv:
+        return _bare_summary(parser)
+    if argv[0] == "help":
+        return _help_for(parser, argv)
     args = parser.parse_args(argv)
     from sparkforge_aws.distribution.config import PortableError
     try:
