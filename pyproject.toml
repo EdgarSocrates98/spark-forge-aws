@@ -204,6 +204,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# Vendored Graph Studio kit (canonical: the-forge/src/theforge)
+"sparkforge_aws/_graphview.py" = ["ALL"]
+"sparkforge_aws/_graphstudio.py" = ["ALL"]
 # Vendored Forge UI kit (canonical: the-forge/src/theforge/ui)
 "sparkforge_aws/ui/**/*.py" = ["ALL"]
 "tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell

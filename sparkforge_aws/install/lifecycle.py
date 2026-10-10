@@ -111,6 +111,7 @@ def install(
     dry_run: bool = False,
     yes: bool = False,
     cwd: Path | None = None,
+    components: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Instala o Forge no projeto/workspace (ou no HOME via `integrate`)."""
     if profile not in PROFILES:
@@ -123,6 +124,7 @@ def install(
     target = kit.resolve_scope(spec, scope, cwd, root)
     state = kit.state_dir_for(spec, scope, target)
     content = _content_root()
+    opts = kit.component_options(profile, components)
 
     nomes = _hosts_for(alvo)
     disco = writer.Disco(target, dry_run=dry_run)
@@ -207,7 +209,13 @@ def install(
         refused=recusas, dry_run=dry_run,
         status="planned" if dry_run else ("completed" if not recusas else "failed"),
     )
+    if opts:
+        receipt["components"] = opts
     if not dry_run:
+        if opts:
+            state.mkdir(parents=True, exist_ok=True)
+            (state / "components.json").write_text(
+                json.dumps(opts, indent=2), encoding="utf-8")
         _write_receipt(state, receipt)
         _write_workspace_doc(scope, target, receipt)
         _register(target)

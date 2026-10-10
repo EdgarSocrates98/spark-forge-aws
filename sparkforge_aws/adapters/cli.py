@@ -2433,6 +2433,44 @@ def build_parser() -> argparse.ArgumentParser:
         )
     )
 
+    # graph -------------------------------------------------------------------
+    # Graph Studio surface: read-only ForgeGraphView over the codeintel index
+    # (the engine stays authoritative — this only projects it).
+    graph_p = sub.add_parser(
+        "graph",
+        help=(
+            "Grafo do indice de codigo: status, ForgeGraphView e Graph Studio local."
+        ),
+    )
+    graph_sub = graph_p.add_subparsers(dest="graph_action", required=True)
+
+    graph_status_p = graph_sub.add_parser(
+        "status", help="Estado do grafo: contagens e origem do indice."
+    )
+    graph_status_p.add_argument("--root", default=".")
+
+    graph_view_p = graph_sub.add_parser(
+        "view",
+        help="Emite o documento ForgeGraphView/v1 (contrato do Graph Studio).",
+    )
+    graph_view_p.add_argument("--root", default=".")
+    graph_view_p.add_argument(
+        "--limit",
+        type=int,
+        default=5000,
+        help="Teto de nos exportados (o restante fica em limitations).",
+    )
+
+    graph_ui_p = graph_sub.add_parser(
+        "ui", help="Abre o Graph Studio local (read-only, 127.0.0.1)."
+    )
+    graph_ui_p.add_argument("--root", default=".")
+    graph_ui_p.add_argument("--limit", type=int, default=5000)
+    graph_ui_p.add_argument(
+        "--no-browser", action="store_true", help="Serve sem abrir navegador (SSH)."
+    )
+    graph_ui_p.add_argument("--port", type=int, default=0)
+
     # knowledge path --------------------------------------------------------
     # pack ----------------------------------------------------------------------
     # Forge Pack (§5): regras, knowledge e fixtures de terceiro, ativados por
@@ -5780,6 +5818,61 @@ def _cmd_code_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_graph_status(args: argparse.Namespace) -> int:
+    from sparkforge_aws import graphview
+
+    _print(graphview.index_status(args.root))
+    return 0
+
+
+def _cmd_graph_view(args: argparse.Namespace) -> int:
+    from sparkforge_aws import graphview
+
+    view = graphview.build_view(args.root, limit=args.limit)
+    if view is None:
+        _print(
+            {
+                "refusal": "SF-GRAPH-NO-INDEX",
+                "unlock": "sparkforge-aws code index --root <repo>",
+            }
+        )
+        return 2
+    _print(view.to_dict())
+    return 0
+
+
+def _cmd_graph_ui(args: argparse.Namespace) -> int:
+    from sparkforge_aws import graphview
+    from sparkforge_aws._graphstudio import graph_studio_enabled, open_studio
+
+    if not graph_studio_enabled(
+        Path(args.root),
+        state_rel=".sparkforge_aws",
+        user_state_rel="~/.sparkforge_aws",
+    ):
+        _print(
+            {
+                "refusal": "SF-GRAPH-STUDIO-DISABLED",
+                "detail": "Graph Studio recusado na instalacao "
+                "(components.json: graph_studio=false)",
+                "unlock": "reinstale com o componente graph-studio",
+            }
+        )
+        return 2
+    view = graphview.build_view(args.root, limit=args.limit)
+    if view is None:
+        _print(
+            {
+                "refusal": "SF-GRAPH-NO-INDEX",
+                "unlock": "sparkforge-aws code index --root <repo>",
+            }
+        )
+        return 2
+    return open_studio(
+        [view], open_browser=not args.no_browser, port=args.port
+    )
+
+
 def _cmd_code_search(args: argparse.Namespace) -> int:
     _print(
         _core.code_search(
@@ -6278,6 +6371,9 @@ _DISPATCH = {
     ("code", "context"): _cmd_code_context,
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
+    ("graph", "status"): _cmd_graph_status,
+    ("graph", "view"): _cmd_graph_view,
+    ("graph", "ui"): _cmd_graph_ui,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("knowledge", "drift"): _cmd_knowledge_drift,
     ("pack", "list"): _cmd_pack_list,
@@ -6380,6 +6476,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "sdd_action", None)
         or getattr(args, "runtime_action", None)
         or getattr(args, "code_action", None)
+        or getattr(args, "graph_action", None)
         or getattr(args, "knowledge_action", None)
         or getattr(args, "policy_action", None)
         or getattr(args, "change_action", None)
