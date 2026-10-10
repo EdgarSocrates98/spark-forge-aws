@@ -15,6 +15,10 @@ Mapeia o terreno antes de qualquer análise:
 0. `sparkforge_aws_doctor` — o ambiente está pronto? Uma checagem `fail` (catálogo, servidor
    MCP, pacote) para o inventário antes de ele começar; `warn` e `skip` vão para
    `case.open_questions` com o `unlock` que a checagem devolveu.
+   `sparkforge_aws_ai` mede o host de IA — binário, versão, `logged_in` e integração
+   (devin, claude, codex, copilot); `NOT_DETECTED`/`NEEDS_LOGIN` vão para
+   `case.open_questions` com o `login_hint` do recibo. É só observação: lançar o
+   host é `sparkforge-aws ai <host> --launch`, fronteira humana, nunca MCP.
 1. `sparkforge_aws_runtime_detect` — versão de Glue, Spark, Python, Iceberg, e divergências entre fontes.
 2. `sparkforge_aws_case_get` — estado do case, ou `sparkforge_aws_case_open` se não existir.
 3. `sparkforge_aws_collect_verify` — quais artefatos já existem e estão íntegros.
