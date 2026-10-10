@@ -16,4 +16,6 @@
 | "O que vale escanear neste repo?" | [scan-repo](recipes/scan-repo.md) |
 | "Minha instalação está completa?" | [doctor-extras](recipes/doctor-extras.md) |
 
+Hub do ecossistema (descoberta cross-forge): `the-forge/docs/hub/` — install, which-forge, hosts, MCP, troubleshooting.
+
 Índice gerado: [../INDEX.md](../INDEX.md).

@@ -2,7 +2,7 @@
   "schema": "forge/CommandInventory/v1",
   "forge_id": "spark-forge-aws",
   "cli": "sparkforge-aws",
-  "generated_at": "2026-10-10T10:17:13Z",
+  "generated_at": "2026-10-10T10:22:19Z",
   "generated_by": "doc_inventory.py/1",
   "command_count": 246,
   "commands": [
