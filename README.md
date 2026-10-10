@@ -59,7 +59,8 @@ acesso a:
   pedido: "meu job Glue tá lento" ativa `sparkforge-aws-diagnose` antes de
   qualquer análise; "dá pra subir pra Glue 6?" ativa `migrate-glue-6`; "por que
   a escrita falha no Lake Formation" ativa `diagnose-lakeformation-access`.
-- 145 tools MCP (`sparkforge-aws mcp serve`, registrado em `.mcp.json` no
+- 145 tools MCP (`python -m sparkforge_aws.adapters.mcp --transport stdio`,
+  registrado como `mcpServers["sparkforge-aws"]` em `.mcp.json` no
   projeto) — os verbos determinísticos que as skills chamam: `analyze`,
   `judge`, `collect`, `rules_lookup`, `validate_output`, `next_step`.
 

@@ -9,4 +9,6 @@ Assets vão para `.claude/skills/`; `CLAUDE.md` recebe o bloco gerenciado
 apenas se já existir (nunca criado sem pedido). Abra o Claude Code no
 diretório — as skills aparecem automaticamente.
 
-MCP: `claude` lê `.mcp.json` da raiz — a entrada `sparkforge-aws mcp serve` é registrada na instalação.
+MCP: `claude` lê `.mcp.json` da raiz — a entrada `mcpServers["sparkforge-aws"]`
+é registrada na instalação e entra **após aprovação na sessão**
+(`claude mcp list` mostra os servidores aprovados).

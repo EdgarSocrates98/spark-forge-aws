@@ -12,7 +12,7 @@ registrado o update reporta BLOCKED honestamente.
 ## Repair
 
 ```bash
-sparkforge-aws doctor   # mostra o drift
+sparkforge-aws status   # mostra o drift
 sparkforge-aws repair   # reassegura regiões gerenciadas
 ```
 
