@@ -234,7 +234,15 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _stdio_utf8() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _stdio_utf8()
     parser = build_parser()
     args = parser.parse_args(argv)
 

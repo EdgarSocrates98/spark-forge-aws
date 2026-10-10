@@ -5,6 +5,7 @@ stdout para que o consumidor seja um programa, nao um humano lendo texto.
 """
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from .cost import estimate_tokens
@@ -12,7 +13,15 @@ from .lineage import extract_lineage_edges
 from .offline import OfflineKnowledgeIndex
 
 
+def _stdio_utf8() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
+
+
 def main():
+    _stdio_utf8()
     parser = argparse.ArgumentParser(prog="sparkforge-aws-tools")
     sub = parser.add_subparsers(dest="command", required=True)
 
