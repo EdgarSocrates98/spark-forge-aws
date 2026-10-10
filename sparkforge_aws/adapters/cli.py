@@ -2132,7 +2132,18 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Arquivo de facts (JSON) que comprova os gates da fase pedida. "
             "Repetivel. Num case estrito, e daqui que sai a evidencia que "
-            "destrava `--phase`."
+            "destrava `--phase`. Tambem preenche `facts_index`, que o "
+            "`next-step` le para rotear."
+        ),
+    )
+    update_p.add_argument(
+        "--findings",
+        action="append",
+        help=(
+            "Arquivo de findings (JSON) gerado por `judge`. Repetivel. "
+            "Preenche `findings_index` (contagem por severidade), que o "
+            "`next-step` le para distinguir 'facts sem finding' de "
+            "'investigacao julgada'."
         ),
     )
 
@@ -5097,6 +5108,7 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
         override_gate=args.override_gate,
         reason=args.reason,
         facts_path=args.facts,
+        findings_path=args.findings,
         hypothesis=args.hypothesis,
         prediction=args.prediction,
         experiment=args.experiment,

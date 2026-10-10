@@ -5643,7 +5643,18 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "description": (
                         "Facts que comprovam os gates da fase pedida. Num case "
                         "estrito, e daqui que sai a evidencia que destrava "
-                        "`phase`."
+                        "`phase`. Tambem preenche `facts_index`, que o "
+                        "`next-step` le para rotear."
+                    ),
+                },
+                "findings_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Arquivo(s) de findings do `judge`. Preenche "
+                        "`findings_index` (contagem por severidade), que o "
+                        "`next-step` le para distinguir 'facts sem finding' de "
+                        "'investigacao julgada'."
                     ),
                 },
             },
@@ -11227,6 +11238,7 @@ def _h_case_update(args: dict[str, Any]) -> dict[str, Any]:
         override_gate=args.get("override_gate"),
         reason=args.get("reason"),
         facts_path=args.get("facts_path"),
+        findings_path=args.get("findings_path"),
         hypothesis=args.get("hypothesis"),
         prediction=args.get("prediction"),
         experiment=args.get("experiment"),

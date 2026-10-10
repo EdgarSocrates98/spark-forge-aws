@@ -605,6 +605,63 @@ class TestCallTool:
         )
         assert "SF-GLUE-004" in {f["rule_id"] for f in result["items"]}
 
+    def test_facts_path_populates_facts_index_over_mcp(self, repo, tmp_path):
+        """Correcao do desvio D-4b-5: `facts_index` deixava o `next-step`
+        sempre em ROUTE-002 porque nenhum verbo o preenchia."""
+        from sparkforge_aws.findings.models import Fact
+
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    Fact(kind="pyspark.action", subject={"type": "job"}).to_dict(),
+                    Fact(kind="pyspark.write", subject={"type": "job"}).to_dict(),
+                ]
+            ),
+            encoding="utf-8",
+        )
+        case = call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "facts_path": str(facts)},
+        )
+        assert case["facts_index"]["count"] == 2
+        assert case["facts_index"]["by_kind"] == {
+            "pyspark.action": 1,
+            "pyspark.write": 1,
+        }
+        step = call_tool("sparkforge_aws_next_step", {"repo": str(repo)})
+        assert step["recommended_skill"] != "analyze-library-call-graph"
+
+    def test_findings_path_populates_findings_index_over_mcp(self, repo, tmp_path):
+        """Mesma lacuna do D-4b-5 no lado do julgamento: ROUTE-014 disparava
+        'facts sem finding' mesmo com findings do `judge` em disco."""
+        from sparkforge_aws.findings.models import Fact
+
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps([Fact(kind="pyspark.action", subject={"type": "job"}).to_dict()]),
+            encoding="utf-8",
+        )
+        findings = tmp_path / "findings.json"
+        findings.write_text(
+            json.dumps(
+                [{"rule_id": "SF-PY-001", "severity": "P1", "evidence": ["f_1"]}]
+            ),
+            encoding="utf-8",
+        )
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z"},
+        )
+        case = call_tool(
+            "sparkforge_aws_case_update",
+            {"repo": str(repo), "facts_path": str(facts),
+             "findings_path": str(findings)},
+        )
+        assert case["findings_index"]["count"] == 1
+        assert case["findings_index"]["by_severity"] == {"P1": 1}
+
 
 class TestFuncvalCompareWritesLikeTheCLI:
     """D-4c-26 pelo lado do MCP.

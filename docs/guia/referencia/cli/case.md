@@ -88,7 +88,8 @@ sparkforge-aws case update --help
 | `--evidence` | não | texto |  |  | Onde ler o que fechou a hipotese (stage, run, arquivo de facts). |
 | `--override-gate` | não | texto |  |  | Passa por cima de um gate num case estrito, quando o dado genuinamente nao existe (job descontinuado, ambiente que sumiu). Exige `--reason`. Fica gravado no case como lista: dois overrides do mesmo gate sao dois fatos, e nenhum apaga o outro. |
 | `--reason` | não | texto |  |  | Motivo do `--override-gate`. Sem ele o override e recusado. |
-| `--facts` | não | texto | sim |  | Arquivo de facts (JSON) que comprova os gates da fase pedida. Repetivel. Num case estrito, e daqui que sai a evidencia que destrava `--phase`. |
+| `--facts` | não | texto | sim |  | Arquivo de facts (JSON) que comprova os gates da fase pedida. Repetivel. Num case estrito, e daqui que sai a evidencia que destrava `--phase`. Tambem preenche `facts_index`, que o `next-step` le para rotear. |
+| `--findings` | não | texto | sim |  | Arquivo de findings (JSON) gerado por `judge`. Repetivel. Preenche `findings_index` (contagem por severidade), que o `next-step` le para distinguir 'facts sem finding' de 'investigacao julgada'. |
 
 ### Tool MCP equivalente
 
