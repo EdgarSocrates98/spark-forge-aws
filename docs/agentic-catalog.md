@@ -325,7 +325,7 @@ Superfície: **14 coordenadores**, **5 executores**, **60 skills**.
 | SUPPORTED_HOSTS | todos via `playbook`; inline em Claude/Devin |
 | REQUIRED_SKILLS | — |
 | AVAILABLE_TOOLS | Read, Grep, Glob, Bash |
-| MCP_DEPENDENCIES | `sparkforge_aws_case_get`, `sparkforge_aws_case_open`, `sparkforge_aws_case_update`, `sparkforge_aws_collect_athena_workgroup`, `sparkforge_aws_collect_cloudwatch`, `sparkforge_aws_collect_cloudwatch_logs`, `sparkforge_aws_collect_emr_serverless`, `sparkforge_aws_collect_event_log`, `sparkforge_aws_collect_glue_job`, `sparkforge_aws_collect_glue_job_runs`, `sparkforge_aws_collect_iceberg_metadata`, `sparkforge_aws_collect_parquet_footer`, `sparkforge_aws_collect_verify`, `sparkforge_aws_doctor`, `sparkforge_aws_runtime_detect`, `sparkforge_aws_scan` |
+| MCP_DEPENDENCIES | `sparkforge_aws_ai`, `sparkforge_aws_case_get`, `sparkforge_aws_case_open`, `sparkforge_aws_case_update`, `sparkforge_aws_collect_athena_workgroup`, `sparkforge_aws_collect_cloudwatch`, `sparkforge_aws_collect_cloudwatch_logs`, `sparkforge_aws_collect_emr_serverless`, `sparkforge_aws_collect_event_log`, `sparkforge_aws_collect_glue_job`, `sparkforge_aws_collect_glue_job_runs`, `sparkforge_aws_collect_iceberg_metadata`, `sparkforge_aws_collect_parquet_footer`, `sparkforge_aws_collect_verify`, `sparkforge_aws_doctor`, `sparkforge_aws_runtime_detect`, `sparkforge_aws_scan` |
 | INPUTS | ver `## Pressupõe` na fonte |
 | EXPECTED_OUTPUT | `case.runtime` — versões confirmadas e `detected_from`; `case.runtime.divergences` — vazio, ou o conflito entre fontes; `case.artifacts` — o que existe, com sha256 e origem |
 | VERIFICATION | contrato `## Pressupõe`/`## Entrega` na fonte |
