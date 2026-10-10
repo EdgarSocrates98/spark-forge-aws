@@ -6424,6 +6424,17 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv:
+        try:
+            import sys as _sys
+            if _sys.stdin.isatty() and _sys.stdout.isatty():
+                from sparkforge_aws.ui.home import run_home
+                from sparkforge_aws.ui.kit import NonInteractive
+                try:
+                    return run_home()
+                except NonInteractive:
+                    pass
+        except ImportError:
+            pass
         return _bare_summary(parser)
     if argv[0] == "help":
         return _help_for(parser, argv)

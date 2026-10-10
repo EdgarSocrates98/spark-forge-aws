@@ -204,5 +204,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# Vendored Forge UI kit (canonical: the-forge/src/theforge/ui)
+"sparkforge_aws/ui/**/*.py" = ["ALL"]
 "tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell
 "scripts/verify_wheel.py" = ["S603"] # subprocess com argv fixo, sem shell
