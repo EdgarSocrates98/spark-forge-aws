@@ -93,6 +93,12 @@ _Task-oriented guides and workflows._
 
 - [Forge Lab / Digital Twin](../labs/forge-lab/README.md)
 
+### learn/
+
+- [Spark Forge AWS — trilha de aprendizado](learn/README.md)
+- [Receita — fatos determinísticos de código PySpark](learn/recipes/analyze-pyspark.md)
+- [Receita — o que vale escanear neste repositório?](learn/recipes/scan-repo.md)
+
 ### payloads/
 
 - [Payload Devin — SparkForge AWS](../payloads/devin/README.md)
@@ -364,6 +370,10 @@ _Troubleshooting, doctor/repair, observability._
 - [Seleção de Modelos e Observabilidade](../knowledge/model-selection-observability.md)
 - [Streaming, Iceberg e observabilidade](../knowledge/streaming-lakehouse-observability.md)
 - [Streaming operations: SLO, FinOps e segurança](../knowledge/streaming-operations.md)
+
+### learn/
+
+- [Receita — minha instalação está completa?](learn/recipes/doctor-extras.md)
 
 ### skills/
 
