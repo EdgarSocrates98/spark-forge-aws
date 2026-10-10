@@ -105,5 +105,14 @@ em 5 docs, chave `_forge_managed` fictícia, claim falso de Codex+MCP,
      26 378/26 435 bytes no worktree vs 26 000/25 992 no blob — drift CRLF
      de worktree (o defeito que `.gitattributes eol=lf` já declarava);
      checkout normalizado, sem mudança de conteúdo.
-- **Run 2**: relançada detached no HEAD após os fixes
-  (`sf-suite2.log`, PID 17896) — resultado registrado ao fechar.
+- **Run 2** (1h24m38s): 14 876 passaram, 17 skipped, **3 falhas** —
+  todas diagnosticadas:
+  1. `test_catalogo_em_dia` + `test_referencia_em_dia`: os espelhos
+     gerados (`docs/agentic-catalog.md`, `docs/guia/referencia/agents/
+     sf-inventory.md`) ficaram velhos quando `391d29ed` citou
+     `sparkforge_aws_ai` — regen commitado (`d1f6f68`).
+  2. `test_stale_receipt_lock_is_recovered_only_when_pid_is_absent`:
+     flake de lock/PID sob carga de suíte (mesmo padrão observado no
+     spark-forge-azure); passa isolado e por módulo.
+- **Run 3**: relançada detached no HEAD pós-regen
+  (`sf-suite3.log`, PID 17416) — gate final; resultado ao fechar.
