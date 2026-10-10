@@ -11095,6 +11095,77 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_aws_graph_view": {
+        "description": (
+            "Projecao ForgeGraphView/v1 do indice de codigo persistido — a mesma "
+            "saida de `sparkforge-aws graph view`, produtora do Graph Studio. "
+            "Somente leitura sobre `.sparkforge_aws/local/codeintel/graph.sqlite3`; "
+            "sem indice recusa SF-GRAPH-NO-INDEX com o unlock `code index`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": [],
+            "properties": {
+                "root": {
+                    "type": "string",
+                    "description": "Raiz do repo analisado (default: cwd).",
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Teto de nos da projecao (default 5000).",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["schema", "descriptor", "nodes", "edges"],
+                "properties": {
+                    "schema": {"type": "string"},
+                    "descriptor": {"type": "object"},
+                    "nodes": {"type": "array"},
+                    "edges": {"type": "array"},
+                },
+            },
+            "ForgeGraphView/v1, ou recusa SF-GRAPH-NO-INDEX sem indice.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_aws_graph_status": {
+        "description": (
+            "Estado do indice que alimenta `graph view` — existe, frescor, "
+            "contagens. Responde SOBRE o indice, nao COM ele; a unica leitura "
+            "que explica por que `graph_view` recusaria."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": [],
+            "properties": {
+                "root": {
+                    "type": "string",
+                    "description": "Raiz do repo analisado (default: cwd).",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["provider", "graph"],
+                "properties": {
+                    "provider": {"type": "string"},
+                    "graph": {"type": "string", "enum": ["available", "unavailable"]},
+                    "reason": {"type": "string"},
+                    "db": {"type": "string"},
+                    "nodes": {"type": "integer"},
+                    "edges": {"type": "integer"},
+                    "edge_kinds": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "Estado do indice, ou erro de raiz invalida.",
+        ),
+        "annotations": _READ_ONLY,
+    },
 }
 
 
@@ -12444,6 +12515,26 @@ def _h_code_status(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_graph_view(args: dict[str, Any]) -> dict[str, Any]:
+    from sparkforge_aws import graphview
+
+    view = graphview.build_view(
+        args.get("root", "."), limit=int(args.get("limit") or 5000)
+    )
+    if view is None:
+        return {
+            "error": "SF-GRAPH-NO-INDEX — run `sparkforge-aws code index --root <repo>`",
+            "exit_code": 2,
+        }
+    return view.to_dict()
+
+
+def _h_graph_status(args: dict[str, Any]) -> dict[str, Any]:
+    from sparkforge_aws import graphview
+
+    return graphview.index_status(args.get("root", "."))
+
+
 def _h_code_sync(args: dict[str, Any]) -> dict[str, Any]:
     return _core.code_sync(args["repo"], db=args.get("db"))
 
@@ -12592,6 +12683,8 @@ _HANDLERS = {
     "sparkforge_aws_code_read": _h_code_read,
     "sparkforge_aws_code_status": _h_code_status,
     "sparkforge_aws_code_sync": _h_code_sync,
+    "sparkforge_aws_graph_view": _h_graph_view,
+    "sparkforge_aws_graph_status": _h_graph_status,
 }
 
 

@@ -311,7 +311,7 @@ def test_explicit_absolute_external_root_and_cross_volume_fallback(tmp_path, mon
     monkeypatch.setattr("sparkforge_aws.workspace.portable.os.path.relpath", cross_volume)
     add_repository(workspace, external)
     path = workspace / ".sparkforge_aws/workspace.yaml"
-    assert yaml.safe_load(path.read_text())["repositories"][0]["path"] == str(external)
+    assert yaml.safe_load(path.read_text())["repositories"][0]["path"] == external.as_posix()
     assert load_workspace(path).repositories[0].path == external
 
 
@@ -339,4 +339,6 @@ def test_workspace_loader_preserves_tilde_input(tmp_path, monkeypatch):
     workspace.mkdir()
     init_workspace(workspace)
     monkeypatch.setenv("HOME", str(tmp_path))
+    # Windows expanduser ignores HOME — it reads USERPROFILE.
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     assert load_manifest("~/ws/.sparkforge_aws/workspace.yaml").root == workspace

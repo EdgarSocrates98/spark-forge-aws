@@ -273,6 +273,35 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         "lab shell": "guarded local service shell; no MCP surface by design.",
         "lab up": "guarded local Compose lifecycle; no MCP surface by design.",
         "lab verify": "offline Forge Lab contract verification; no MCP surface by design.",
+        # Install/distribution/workspace lifecycle runs on the CALLER's machine:
+        # it writes host config, state dirs and managed files under governed
+        # roots. An MCP client has no business mutating the machine that hosts
+        # it -- the reads it needs (readiness, doctor) already arrive through
+        # `sparkforge_aws_doctor`/`sparkforge_aws_runtime_detect`.
+        "context resolve": (
+            "resolve refs ctx://v1 contra o state dir local do chamador; "
+            "artefato de processo local, sem superficie MCP."
+        ),
+        "distribution doctor": "diagnostico do lifecycle portavel no disco do chamador.",
+        "distribution init": "escreve a distribuicao portavel no disco do chamador.",
+        "distribution inspect": "inspeciona manifests/receipts locais da distribuicao.",
+        "distribution status": "le o ledger de instalacao local do chamador.",
+        "workspace add": "muta workspace.yaml no disco do chamador.",
+        "workspace discover": "varre o disco do chamador por repos declaraveis.",
+        "workspace init": "cria workspace.yaml no disco do chamador.",
+        "workspace status": "le o workspace.yaml do disco do chamador.",
+        # `graph ui` abre um BROWSER no host: o efeito colateral e a janela, nao
+        # o payload. A projecao que ele renderiza ja chega por
+        # `sparkforge_aws_graph_view`.
+        "graph ui": "abre browser no host; projecao coberta por sparkforge_aws_graph_view.",
+        # Ciclo de vida da instalacao local (roteados para install.cli):
+        # escritas governadas na maquina do chamador.
+        "install doctor": "diagnostico da instalacao no disco do chamador.",
+        "status": "le o ledger de instalacao local; alias do ciclo install.",
+        "repair": "reasserts de managed files; muta o disco do chamador.",
+        "update": "atualiza a instalacao; muta o disco do chamador.",
+        "uninstall": "remove a instalacao; muta o disco do chamador.",
+        "mcp verify": "verifica a propria configuracao MCP do chamador.",
     }
 
     def _subcomandos(self, parser):
