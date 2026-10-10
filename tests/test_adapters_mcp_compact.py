@@ -99,11 +99,12 @@ def test_compact_catalog_matches_its_golden_fixture():
 def test_full_catalog_remains_declared_and_http_compact_has_no_source_tool():
     # 141 -> 143 com `agentops_timeline` e `agentops_critical_path`
     # (2026-10-06, FASE 10); 143 -> 145 com `graph_view` e `graph_status`
-    # (Graph Studio, d33d5c74) — declarado em docs/surface.lock.json.
+    # (Graph Studio, d33d5c74); 145 -> 146 com `ai` (FASE 1 §1.2, painel
+    # read-only do host agentico) — declarado em docs/surface.lock.json.
     # http/full exclui so `code_read`, que depende do
     # indice local -- por isso o gap de 1 entre os transportes se mantem.
-    assert len(tools_do_transporte("stdio", "full")) == 145
-    assert len(tools_do_transporte("http", "full")) == 144
+    assert len(tools_do_transporte("stdio", "full")) == 146
+    assert len(tools_do_transporte("http", "full")) == 145
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
     assert "sparkforge_aws_code_read" not in tools_do_transporte("http", "compact")
