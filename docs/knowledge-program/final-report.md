@@ -3,14 +3,14 @@
 | Campo | Valor |
 |---|---|
 | repository | `spark-forge-aws` |
-| branch | `feat/knowledge-experience` |
-| commit | `acc497c0` |
-| docs inventoried | 2074 (excl. GENERATED mirrors: 1262; vendored upstream: 68) |
+| branch | `feat/docs-evolution` |
+| commit | `2a490024` |
+| docs inventoried | 2075 (excl. GENERATED mirrors: 1263; vendored upstream: 68) |
 
 ## Review levels (honest)
 
 - `INVENTORIED`: 0
-- `AUTOMATICALLY_CHECKED`: 2074
+- `AUTOMATICALLY_CHECKED`: 2075
 - `TECHNICALLY_VERIFIED`: 0
 - `SEMANTICALLY_REVIEWED`: 0
 - `USER_JOURNEY_VALIDATED`: 0
@@ -21,7 +21,7 @@ Automatic checks ran on every row; semantic review is recorded only where a huma
 
 - `GENERATED`: 812
 - `SDD_ARTIFACT`: 594
-- `UNKNOWN`: 252
+- `UNKNOWN`: 253
 - `REFERENCE`: 150
 - `INTERNAL`: 69
 - `SKILL`: 63

@@ -1,0 +1,16 @@
+{
+  "forge_id": "spark-forge-aws",
+  "cli": "sparkforge-aws",
+  "parser": "argparse:sparkforge_aws.adapters.cli:build_parser",
+  "docs": [
+    "docs",
+    "README.md"
+  ],
+  "steps": {
+    "inventory": true,
+    "manifest": true,
+    "index": true,
+    "hub": false,
+    "final_report": true
+  }
+}
