@@ -82,11 +82,20 @@ class InstallArgs:
 
 
 def _hosts_for(alvo: str) -> list[str]:
+    """``all`` → todos; ``none``/vazio → opt-out explícito (nunca todos);
+    nome único ou csv → subconjunto validado (GAP-003)."""
     if alvo == "all":
         return list(HOSTS)
-    if alvo not in HOSTS:
-        raise kit.InstallError(kit.E_HOST, f"host {alvo!r}; conhecidos: {list(HOSTS)} + all")
-    return [alvo]
+    if not alvo or alvo == "none":
+        return []
+    nomes = [h.strip() for h in alvo.split(",") if h.strip()]
+    desconhecidos = [h for h in nomes if h not in HOSTS]
+    if desconhecidos:
+        raise kit.InstallError(
+            kit.E_HOST,
+            f"host {desconhecidos[0]!r}; conhecidos: {list(HOSTS)} + all,none",
+        )
+    return list(dict.fromkeys(nomes))
 
 
 def _marker_body() -> str:

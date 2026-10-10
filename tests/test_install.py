@@ -251,3 +251,15 @@ def test_cli_erro_estruturado_sem_traceback(projeto, capsys, monkeypatch):
     doc = json.loads(capsys.readouterr().out)
     assert doc["error"]["kind"].endswith("NOT-APPROVED") or \
         "NOT-APPROVED" in json.dumps(doc)
+
+def test_hosts_for_none_e_csv():
+    """GAP-003: `none` nunca vira `all`; csv subconjunto e validado."""
+    from sparkforge_aws.install.lifecycle import _hosts_for
+    import pytest
+    assert _hosts_for("all")
+    assert _hosts_for("none") == []
+    assert _hosts_for("") == []
+    assert _hosts_for("claude") == ["claude"]
+    assert set(_hosts_for("claude,devin")) == {"claude", "devin"}
+    with pytest.raises(Exception):
+        _hosts_for("nope")
