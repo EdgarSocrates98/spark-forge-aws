@@ -43,7 +43,7 @@ Outros três — `iam_kms`, `rede`, `cross_account` — são nomeados pelo contr
 
 ## Preço não é performance
 
-A AWS anunciou 30% de redução no Glue 6.0 ([`knowledge/glue/pricing.yaml`](../../knowledge/glue/pricing.yaml)). O anúncio não nomeia a versão de comparação, não recorta por região nem por tipo de worker, e a página de pricing publica um preço único que **não** diferencia por versão de runtime. Nada aqui permite calcular o custo do seu job em 6.0 contra 5.1.
+A AWS anunciou 30% de redução no Glue 6.0 ([`knowledge/glue/pricing.yaml`](../../../knowledge/glue/pricing.yaml)). O anúncio não nomeia a versão de comparação, não recorta por região nem por tipo de worker, e a página de pricing publica um preço único que **não** diferencia por versão de runtime. Nada aqui permite calcular o custo do seu job em 6.0 contra 5.1.
 
 E preço 30% menor não é performance 30% maior. Para medir performance entre runtimes é preciso executar nos dois: `sparkforge-aws benchmark --before <facts> --after <facts> --before-runtime 5.1 --after-runtime 6.0`. Sem os dois rótulos, o eixo de runtime volta como `missing_runtime_label`; com rótulos iguais, `same_runtime_label`, porque comparar um runtime consigo mesmo não prova nada sobre trocar de runtime.
 
@@ -58,7 +58,7 @@ E preço 30% menor não é performance 30% maior. Para medir performance entre r
 
 Limiares, severidade e `runtime_scope` vêm de `sparkforge-aws rules lookup --id <ID>`, nunca de memória.
 
-Aprofundamento sob demanda, não aqui: [`docs/aws/glue/6.0/README.md`](../../docs/aws/glue/6.0/README.md) é a porta de entrada, [`docs/aws/glue/6.0/decision-guide.md`](../../docs/aws/glue/6.0/decision-guide.md) sustenta "ficar na versão anterior" como resposta legítima, e [`docs/aws/glue/6.0/known-unknowns.md`](../../docs/aws/glue/6.0/known-unknowns.md) reúne o que ninguém mediu.
+Aprofundamento sob demanda, não aqui: [`docs/aws/glue/6.0/README.md`](../../../docs/aws/glue/6.0/README.md) é a porta de entrada, [`docs/aws/glue/6.0/decision-guide.md`](../../../docs/aws/glue/6.0/decision-guide.md) sustenta "ficar na versão anterior" como resposta legítima, e [`docs/aws/glue/6.0/known-unknowns.md`](../../../docs/aws/glue/6.0/known-unknowns.md) reúne o que ninguém mediu.
 
 ## Protocolo
 

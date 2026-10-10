@@ -83,7 +83,7 @@ Deletion vectors e row lineage **já vinham** no Glue 5.1: migrar para 6.0 por c
 
 ## Referência rápida
 
-Aprofundamento sob demanda: [`knowledge/storage/iceberg-v3.md`](../../knowledge/storage/iceberg-v3.md) separa as duas metades em prosa; [`knowledge/storage/iceberg-feature-support.yaml`](../../knowledge/storage/iceberg-feature-support.yaml) é a matriz consultável, com as notas por engine explicando por que cada `UNKNOWN` continua `UNKNOWN`; [`docs/aws/glue/6.0/iceberg.md`](../../docs/aws/glue/6.0/iceberg.md) traz as limitações declaradas pela AWS para o Glue 6.0.
+Aprofundamento sob demanda: [`knowledge/storage/iceberg-v3.md`](../../../knowledge/storage/iceberg-v3.md) separa as duas metades em prosa; [`knowledge/storage/iceberg-feature-support.yaml`](../../../knowledge/storage/iceberg-feature-support.yaml) é a matriz consultável, com as notas por engine explicando por que cada `UNKNOWN` continua `UNKNOWN`; [`docs/aws/glue/6.0/iceberg.md`](../../../docs/aws/glue/6.0/iceberg.md) traz as limitações declaradas pela AWS para o Glue 6.0.
 
 ## Quando NÃO usar
 

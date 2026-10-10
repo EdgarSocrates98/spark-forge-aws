@@ -58,7 +58,7 @@ Spark 4.1 liga ANSI por padrão: overflow de inteiro, cast inválido e índice f
 
 ## Referência rápida
 
-Conhecimento de fundo, sob demanda: [`knowledge/spark/spark4-migration.md`](../../knowledge/spark/spark4-migration.md) traz o que a fonte declara e marca como *a verificar* o que ela não declara. [`docs/aws/glue/6.0/spark4.md`](../../docs/aws/glue/6.0/spark4.md) é a leitura pelo lado do Glue.
+Conhecimento de fundo, sob demanda: [`knowledge/spark/spark4-migration.md`](../../../knowledge/spark/spark4-migration.md) traz o que a fonte declara e marca como *a verificar* o que ela não declara. [`docs/aws/glue/6.0/spark4.md`](../../../docs/aws/glue/6.0/spark4.md) é a leitura pelo lado do Glue.
 
 Severidade e limiar de cada regra: `sparkforge-aws rules lookup --id SF-SPARK4-001` (e seguintes).
 

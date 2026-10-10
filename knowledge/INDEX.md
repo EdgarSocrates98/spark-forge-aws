@@ -21,7 +21,7 @@ O inventário completo das features, commits e provas está em
 ### Forge Lab / Digital Twin
 | Arquivo | Conteúdo |
 |---|---|
-| [`forge-lab-product.md`](forge-lab-product.md) | Contrato do laboratório reproduzível: registry, Golden 20, Compose/Testcontainers, geradores, faults, probes, evidências, oracle, receipts, equivalência multi-engine, tiers L0–L3 e limites de prova |
+| [`forge-lab-product.md`](../docs/knowledge/forge-lab-product.md) | Contrato do laboratório reproduzível: registry, Golden 20, Compose/Testcontainers, geradores, faults, probes, evidências, oracle, receipts, equivalência multi-engine, tiers L0–L3 e limites de prova |
 
 ### Spark / PySpark
 | Arquivo | Conteúdo |

@@ -16,8 +16,9 @@ commitado; um import de `sparkforge_aws.*` aqui quebraria esse carregamento.
 from __future__ import annotations
 
 import json
+import os
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 # --------------------------------------------------------------------------
 # Renderizacao por plataforma
@@ -610,6 +611,43 @@ def agent_for_skill(name: str, agents_src: Path) -> str | None:
     return coordinators[0]
 
 
+_MD_LINK = re.compile(r"(\[[^\]]*\]\()([^)\s]+)((?:\s+\"[^\"]*\")?\))")
+
+
+def _rewrite_outgoing_links(text: str, *, skill_name: str) -> str:
+    """Re-relativiza links que escapam do diretorio da skill.
+
+    O canonico mora em `skills/<name>/SKILL.md` (nivel 2); os espelhos em
+    `<plataforma>/skills/<name>/SKILL.md` (nivel 3). Um link
+    `../../knowledge/x.md` resolve contra o canonico mas aponta para
+    `<plataforma>/knowledge/` no espelho -- precisa de mais um `../`.
+    Links que ficam dentro de `skills/` (ex.: `references/x.md`,
+    `../_shared/...`) sao preservados pela copia da arvore inteira e nao
+    mudam. Alvos que nao existem no repo ficam como estao -- link quebrado
+    no canonico e achado do inventario, nao algo que o renderizador invente.
+    """
+    skills_root = PurePosixPath("skills")
+    src_dir = skills_root / skill_name
+
+    def fix(match: re.Match[str]) -> str:
+        target = match.group(2)
+        if target.startswith(("http://", "https://", "mailto:", "#", "/")):
+            return match.group(0)
+        path_part, _, frag = target.partition("#")
+        resolved = PurePosixPath(
+            os.path.normpath(str(src_dir / path_part))
+        )
+        try:
+            resolved.relative_to(skills_root)
+            return match.group(0)  # link interno de skills/: espelho preserva
+        except ValueError:
+            pass
+        new_target = "../" + path_part + ("#" + frag if frag else "")
+        return match.group(1) + new_target + match.group(3)
+
+    return _MD_LINK.sub(fix, text)
+
+
 def _newline_of(lines: list[str]) -> str:
     """O fim de linha que o arquivo usa, para a linha inserida usar o mesmo.
 
@@ -643,6 +681,7 @@ def render_skill(text: str, platform: str, *, name: str, agents_src: Path) -> st
             "lado -- o default silencioso seria publicar a skill sem ninguem ter "
             "decidido se ela pode rodar sem poder perguntar."
         )
+    text = _rewrite_outgoing_links(text, skill_name=name)
     if platform in PASSTHROUGH_PLATFORMS or platform == "codex":
         return text
 
