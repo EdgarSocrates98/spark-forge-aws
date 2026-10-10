@@ -110,7 +110,7 @@ em 5 docs, chave `_forge_managed` fictícia, claim falso de Codex+MCP,
   1. `test_catalogo_em_dia` + `test_referencia_em_dia`: os espelhos
      gerados (`docs/agentic-catalog.md`, `docs/guia/referencia/agents/
      sf-inventory.md`) ficaram velhos quando `391d29ed` citou
-     `sparkforge_aws_ai` — regen commitado (`d1f6f68`).
+     `sparkforge_aws_ai` — regen commitado (`c14ef60c`).
   2. `test_stale_receipt_lock_is_recovered_only_when_pid_is_absent`:
      flake de lock/PID sob carga de suíte (mesmo padrão observado no
      spark-forge-azure); passa isolado e por módulo.
