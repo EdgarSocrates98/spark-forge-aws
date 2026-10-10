@@ -94,3 +94,16 @@ em 5 docs, chave `_forge_managed` fictícia, claim falso de Codex+MCP,
 - Codex: MCP só por `--scope user` (limitação do host 0.160.0, verificada).
 - Revisão semântica de `docs/guia/**`, `docs/reference/**`, `docs/experience/**`
   restante: AUTOMATICALLY_CHECKED, sweep da FASE 8.
+
+## Suíte integral (gate final)
+
+- **Run 1** (código pré-fixes, 1h25m18s): 14 877 passaram, 17 skipped,
+  **2 falhas** — ambas diagnosticadas e corrigidas:
+  1. `test_no_tool_is_orphan`: `sparkforge_aws_ai` órfã → citada no passo 0
+     do `sf-inventory` (commit `391d29ed`, mirrors re-renderizados).
+  2. `test_arquivos_de_instrucao_cabem_no_teto`: CLAUDE.md/AGENTS.md em
+     26 378/26 435 bytes no worktree vs 26 000/25 992 no blob — drift CRLF
+     de worktree (o defeito que `.gitattributes eol=lf` já declarava);
+     checkout normalizado, sem mudança de conteúdo.
+- **Run 2**: relançada detached no HEAD após os fixes
+  (`sf-suite2.log`, PID 17896) — resultado registrado ao fechar.
