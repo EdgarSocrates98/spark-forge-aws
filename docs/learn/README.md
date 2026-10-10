@@ -15,6 +15,9 @@
 | "Quero fatos determinísticos do meu código PySpark" | [analyze-pyspark](recipes/analyze-pyspark.md) |
 | "O que vale escanear neste repo?" | [scan-repo](recipes/scan-repo.md) |
 | "Minha instalação está completa?" | [doctor-extras](recipes/doctor-extras.md) |
+| "Este job Glue 5.1 está bem definido?" | [glue-51-investigation](recipes/glue-51-investigation.md) |
+| "Este pipeline streaming entrega o SLO?" | [streaming-eval](recipes/streaming-eval.md) |
+| "Quem chama o quê neste repo?" | [graph-studio](recipes/graph-studio.md) |
 
 Hub do ecossistema (descoberta cross-forge): `the-forge/docs/hub/` — install, which-forge, hosts, MCP, troubleshooting.
 

@@ -23,6 +23,11 @@ _SUSPEND_VERBS = {"analyze", "judge", "collect", "migrate", "graph", "sdd"}
 _LEARN_DOC: dict[str, str] = {
     "analyze": "docs/learn/recipes/analyze-pyspark.md",
     "doctor": "docs/learn/recipes/doctor-extras.md",
+    "rules": "docs/learn/recipes/glue-51-investigation.md",
+    "lakeformation": "docs/guia/usos/lake-formation-e-acesso.md",
+    "graph": "docs/learn/recipes/graph-studio.md",
+    "case": "docs/guia/usos/investigacao-com-case.md",
+    "next-step": "docs/guia/05-agents-e-skills.md",
 }
 
 
