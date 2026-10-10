@@ -98,3 +98,4 @@ test-runs/
 # ainda pode ter um na arvore; continua fora do git.
 .sparkforge/
 .pytest*
+uv.lock
