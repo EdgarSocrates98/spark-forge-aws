@@ -2,9 +2,9 @@
   "schema": "forge/CommandInventory/v1",
   "forge_id": "spark-forge-aws",
   "cli": "sparkforge-aws",
-  "generated_at": "2026-10-09T22:45:16Z",
+  "generated_at": "2026-10-10T01:11:07Z",
   "generated_by": "doc_inventory.py/1",
-  "command_count": 242,
+  "command_count": 246,
   "commands": [
     {
       "path": "lab",
@@ -10601,6 +10601,156 @@
       ]
     },
     {
+      "path": "graph",
+      "help": null,
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ],
+      "group": true
+    },
+    {
+      "path": "graph status",
+      "help": null,
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "root",
+          "flags": [
+            "--root"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "graph view",
+      "help": null,
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "root",
+          "flags": [
+            "--root"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "limit",
+          "flags": [
+            "--limit"
+          ],
+          "required": false,
+          "default": "5000",
+          "choices": null,
+          "positional": false,
+          "help": "Teto de nos exportados (o restante fica em limitations)."
+        }
+      ]
+    },
+    {
+      "path": "graph ui",
+      "help": null,
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "root",
+          "flags": [
+            "--root"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "limit",
+          "flags": [
+            "--limit"
+          ],
+          "required": false,
+          "default": "5000",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "no_browser",
+          "flags": [
+            "--no-browser"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": "Serve sem abrir navegador (SSH)."
+        },
+        {
+          "name": "port",
+          "flags": [
+            "--port"
+          ],
+          "required": false,
+          "default": "0",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
       "path": "pack",
       "help": null,
       "arguments": [
@@ -12808,6 +12958,17 @@
           "choices": null,
           "positional": false,
           "help": "Aprovacao explicita: sem ela, --dry-run."
+        },
+        {
+          "name": "components",
+          "flags": [
+            "--components"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Componentes opcionais csv: skills,agents,mcp,tui,graph-studio."
         },
         {
           "name": "dry_run",
