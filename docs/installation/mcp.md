@@ -48,5 +48,5 @@ Em `--scope user` o registro vai para o config do usuário de cada host
 arquivo compartilhado.
 
 Handshake real, observado neste repositório: o server sobe por stdio,
-responde `tools/list` com as 145 tools e invoca
+responde `tools/list` com as 146 tools e invoca
 `sparkforge_aws_runtime_detect` com saída estruturada.

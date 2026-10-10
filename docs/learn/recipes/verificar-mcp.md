@@ -1,7 +1,7 @@
 # Receita — verificar o MCP
 
 **O quê:** confirma que o server `sparkforge-aws` está configurado,
-subindo e expondo as 145 tools — pelo lado do arquivo, do host e do
+subindo e expondo as 146 tools — pelo lado do arquivo, do host e do
 handshake.
 **Por que:** "o agente não acha o Forge" quase sempre é MCP não
 consumido — e cada host lê o config num lugar diferente.
@@ -39,7 +39,7 @@ codex mcp list      # Codex: só ~/.codex/config.toml (escopo user)
 ## Saída esperada / interpretação
 
 Handshake verificado nesta sessão: o server sobe por stdio, lista as
-145 tools e invoca `sparkforge_aws_runtime_detect` com saída estruturada.
+146 tools e invoca `sparkforge_aws_runtime_detect` com saída estruturada.
 `status` marca o `.mcp.json` como config gerenciado — removê-lo degrada
 o estado até `repair` restaurar.
 

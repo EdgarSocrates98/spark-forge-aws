@@ -69,6 +69,13 @@ O bloco gerenciado `sparkforge-aws:managed` em `AGENTS.md`/`CLAUDE.md` diz ao
 host que o Forge está instalado e onde está o MCP. Depois do install, peça em
 linguagem natural — as skills ativam pelo pedido.
 
+Para medir e abrir o host sem sair do terminal:
+
+```bash
+sparkforge-aws ai            # painel: binário, versão, login, integração dos 4 hosts
+sparkforge-aws ai devin --launch   # abre o CLI do host aqui (só TTY; deslogado não lança)
+```
+
 ## Leitura seguinte
 
 - [quickstart](../../installation/quickstart.md) — caminho rápido ponta a ponta

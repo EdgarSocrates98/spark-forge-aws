@@ -1011,7 +1011,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # passava pela cadeia de autorizacao sem confinamento. Corrigido no
         # predicado: `root` virou nome de caminho, e as duas ficam no lado que
         # declara caminho sem mover `SEM_CAMINHO`.
-        assert len(TOOLS) - len(sem_caminho) == 135
+        # 135 -> 136 com `sparkforge_aws_ai` (2026-10-16, FASE 1): `_READ_ONLY`,
+        # declara `repo` (a raiz onde a integracao e medida) -- entra no lado
+        # que declara caminho sem mover `SEM_CAMINHO`.
+        assert len(TOOLS) - len(sem_caminho) == 136
 
 
 class TestAImposicaoNoDespacho:

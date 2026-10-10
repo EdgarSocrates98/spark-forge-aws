@@ -14,6 +14,12 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_aws_agentops_inspect`](sparkforge_aws_agentops_inspect.md) | só leitura | Inspeciona um run AgentOps local, com evidencia e desperdicio observado. |
 | [`sparkforge_aws_agentops_timeline`](sparkforge_aws_agentops_timeline.md) | só leitura | Linha do tempo de um run local: eventos por lane (task/context/routing/agent/model/tool/review/debate/checkpoint). |
 
+## ai
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_aws_ai`](sparkforge_aws_ai.md) | só leitura | Estado observado dos hosts de IA no repo: binario detectado (caminho), versao lida por `<bin> --version`, autenticacao pelo subcomando oficial de status (so o booleano `logged_i... |
+
 ## analyze
 
 | Tool | Efeito | O que faz |

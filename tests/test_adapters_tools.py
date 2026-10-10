@@ -136,6 +136,9 @@ class TestToolSurface:
             "sparkforge_aws_gain",
             "sparkforge_aws_scan",
             "sparkforge_aws_doctor",
+            # FASE 1 (programa evo): estado observado dos hosts de IA — so le;
+            # lancar o host e `sparkforge-aws ai --launch`, CLI+TTY, nunca MCP.
+            "sparkforge_aws_ai",
             "sparkforge_aws_policy_explain",
             "sparkforge_aws_change_plan",
             "sparkforge_aws_change_sandbox",
@@ -3716,6 +3719,13 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         # Idem: sem indice a tool devolve o envelope de erro de fronteira
         # (SF-GRAPH-NO-INDEX), branch `_ERROR_SCHEMA` do oneOf declarado.
         return call_tool("sparkforge_aws_graph_view", {"root": str(tmp_path)})
+
+    if name == "sparkforge_aws_ai":
+        # `all` mede os quatro hosts: numa maquina sem CLIs cada um devolve
+        # NOT_DETECTED, numa com eles devolve o painel observado de verdade
+        # (somente comandos de status documentados, read-only). As duas
+        # branches validam contra o schema.
+        return call_tool("sparkforge_aws_ai", {"repo": str(tmp_path), "host": "all"})
 
     raise AssertionError(f"sem construtor de argumentos reais para {name}")
 

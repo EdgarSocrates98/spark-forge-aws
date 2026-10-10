@@ -21,7 +21,7 @@ CLI_ENTRY = 'sparkforge_aws.adapters.cli:main'
 
 _MENU: list[tuple[str, list[str] | None]] = [
     ('Analyze PySpark project', ['analyze', 'pyspark', '--path', '.']),
-    ('Judge findings', ['judge']),
+    ('Judge findings', ['judge', '--facts', '.sparkforge_aws/facts.json']),
     ('Next step (routing)', ['next-step', '--repo', '.']),
     ('Explore agents', ['agents', 'list']),
     ('Case evidence', ['case', 'get', '--repo', '.']),
@@ -35,7 +35,8 @@ _MENU: list[tuple[str, list[str] | None]] = [
     ('Graph status', ['graph', 'status']),
     ('Graph Studio (browser)', ['graph', 'ui']),
     ('Check installation health', ['doctor']),
-    ('MCP verify (real handshake)', ['install', 'mcp-verify']),
+    ('MCP verify (real handshake)', ['mcp', 'verify']),
+    ('Open AI host (state + launch)', ['ai']),
     ("installation wizard", "__wizard__"),
     ("quit", None),
 ]

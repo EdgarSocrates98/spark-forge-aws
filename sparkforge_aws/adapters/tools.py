@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from sparkforge_aws.adapters import _core
@@ -3663,6 +3664,43 @@ _DOCTOR_SCHEMA: dict[str, Any] = {
         "online": {"type": "boolean"},
     },
 }
+
+_AI_HOST_STATE: dict[str, Any] = {
+    "type": "object",
+    "required": ["host", "state"],
+    "properties": {
+        "host": {"type": "string"},
+        "binary": {"type": "string"},
+        "fonte": {"type": "string"},
+        "binary_path": {"type": "string"},
+        "state": {
+            "type": "string",
+            "enum": ["NOT_DETECTED", "DETECTED", "SUPPORTED", "NEEDS_LOGIN",
+                     "READY", "INTEGRATION_DEGRADED", "INTEGRATION_BROKEN",
+                     "refused"],
+        },
+        "version": {"type": ["string", "null"]},
+        "logged_in": {"type": ["boolean", "null"]},
+        "login_hint": {"type": "string"},
+        "launch_command": {"type": "string"},
+        "integration": {"type": "object"},
+    },
+}
+
+_AI_SCHEMA: dict[str, Any] = _may_fail(
+    {
+        "type": "object",
+        "required": ["repo", "hosts", "launched"],
+        "properties": {
+            "repo": {"type": "string"},
+            "hosts": {"type": "array", "items": _AI_HOST_STATE},
+            "launched": {"type": "boolean"},
+            "launch_refused": {"type": "string"},
+            "login_hint": {"type": "string"},
+        },
+    },
+    "O painel de hosts, ou erro de entrada.",
+)
 
 _POLICY_EXPLAIN_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -9520,6 +9558,29 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(_DOCTOR_SCHEMA, "As checagens, ou erro de entrada."),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_aws_ai": {
+        "description": (
+            "Estado observado dos hosts de IA no repo: binario detectado (caminho), "
+            "versao lida por `<bin> --version`, autenticacao pelo subcomando oficial "
+            "de status (so o booleano `logged_in` entra na resposta — a saida pode "
+            "listar credenciais) e estado da integracao lido do manifesto do install. "
+            "`host: all` mede os quatro. So le: nunca lanca processo — abrir o host e "
+            "`sparkforge-aws ai <host> --launch`, so na CLI, com TTY e aprovacao humana."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio (padrao: .)."},
+                "host": {
+                    "type": "string",
+                    "enum": ["claude", "devin", "codex", "copilot", "all"],
+                    "description": "Host a medir (padrao: all).",
+                },
+            },
+        },
+        "outputSchema": _AI_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_aws_policy_explain": {
         "description": (
             "Diz o que a policy de seguranca do repositorio (`.sparkforge_aws/policy.yaml`) "
@@ -12237,6 +12298,17 @@ def _h_doctor(args: dict[str, Any]) -> dict[str, Any]:
     return _core.doctor(args.get("repo", "."))
 
 
+def _h_ai(args: dict[str, Any]) -> dict[str, Any]:
+    from sparkforge_aws.integrate import open_host
+
+    # Read-only por contrato: launch nunca chega ao MCP (fronteira humana, so CLI+TTY).
+    return open_host.ai_flow(
+        args.get("host") or "all",
+        repo=Path(args.get("repo") or "."),
+        launch=False,
+    )
+
+
 def _h_gain(args: dict[str, Any]) -> dict[str, Any]:
     return _core.gain(args["baseline_paths"], args["candidate_paths"])
 
@@ -12657,6 +12729,7 @@ _HANDLERS = {
     "sparkforge_aws_gain": _h_gain,
     "sparkforge_aws_scan": _h_scan,
     "sparkforge_aws_doctor": _h_doctor,
+    "sparkforge_aws_ai": _h_ai,
     "sparkforge_aws_policy_explain": _h_policy_explain,
     "sparkforge_aws_change_plan": _h_change_plan,
     "sparkforge_aws_change_sandbox": _h_change_sandbox,

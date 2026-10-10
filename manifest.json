@@ -110,6 +110,7 @@
     "sparkforge_aws_agentops_critical_path",
     "sparkforge_aws_agentops_inspect",
     "sparkforge_aws_agentops_timeline",
+    "sparkforge_aws_ai",
     "sparkforge_aws_analyze_airflow_dag",
     "sparkforge_aws_analyze_athena_workgroup",
     "sparkforge_aws_analyze_call_graph",

@@ -8,6 +8,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 |---|---|
 | [`sparkforge-aws agentops`](agentops.md) | Inspeciona runs locais, compara baseline e atribui desperdicio observado. |
 | [`sparkforge-aws agents`](agents.md) | Lista e inspeciona agentes do runtime agêntico. |
+| [`sparkforge-aws ai`](ai.md) | Abre o host de IA no repositorio: detecta o binario, le a versao, confere autenticacao pelo subcomando oficial de status e o estado da integracao. |
 | [`sparkforge-aws analyze`](analyze.md) | Extrai facts deterministicos de codigo-fonte. |
 | [`sparkforge-aws arbitrate`](arbitrate.md) | Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. |
 | [`sparkforge-aws architecture`](architecture.md) | Avalia arquitetura declarada sem escolher por preferência ou custo inventado. |
