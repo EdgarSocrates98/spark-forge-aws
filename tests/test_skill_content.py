@@ -76,8 +76,12 @@ def test_copias_conferem_com_a_renderizacao(skill_dir: Path) -> None:
     Isso deixou de ser o invariante: `.agents/skills/` recebe `subagent:` e
     `agent:` nas skills despacháveis, então o espelho do Devin byte-idêntico à
     fonte passou a ser justamente o defeito — é o que sai sem declarar despacho.
-    `.claude/` segue passthrough e continua comparado byte a byte com a fonte,
-    porque lá a identidade é o contrato.
+    `.claude/` segue passthrough de CONTEÚDO — nenhum campo entra no frontmatter
+    — mas desde o re-relativamento de links (`integrate/render.py`, 2026-10-10)
+    passthrough já não é byte-identidade com a fonte: links `[](...)` que
+    escapam de `skills/` são re-relativizados (`../../` -> `../../../`) porque o
+    espelho mora um nível abaixo. O invariante do `.claude/` é "fonte com a
+    única transformação possível: a re-relativização".
 
     A comparação é em bytes, e não em texto, pela mesma razão da Task 2:
     `read_text()` aplica newline universal e um espelho gravado com CRLF
@@ -91,7 +95,12 @@ def test_copias_conferem_com_a_renderizacao(skill_dir: Path) -> None:
             f"{dst} divergente. Rode: python scripts/sync_skills.py"
         )
     claude = MIRRORS[0] / skill_dir.name / "SKILL.md"
-    assert claude.read_bytes() == src.read_bytes(), f"{claude} deixou de ser cópia"
+    rewrite = sync_skills._render._rewrite_outgoing_links(
+        src.read_text(encoding="utf-8"), skill_name=skill_dir.name
+    )
+    assert claude.read_bytes() == rewrite.encode("utf-8"), (
+        f"{claude} divergiu da fonte por algo além do re-relativamento de links"
+    )
 
 
 # --------------------------------------------------------------------------- #

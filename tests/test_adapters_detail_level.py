@@ -321,10 +321,17 @@ class TestSuperficieMCP:
         # duas tools de codigo que TEM `detail_level` (`code_symbol` e
         # `code_status`) usam o mesmo mecanismo desta flag, e por isso nao
         # aparecem aqui -- elas nao declaram `limit`.
+        #
+        # `graph_view` e o mesmo caso com outro shape: devolve a projecao
+        # `ForgeGraphView/v1` inteira (`nodes` + `edges` + `descriptor`), nao
+        # uma lista de itens com `provenance`. O `limit` e o teto de nos da
+        # projecao (default 5000), sem cursor nem envelope de pagina -- um
+        # `summary` nao teria campo de item para projetar.
         assert sem_flag == {
             "sparkforge_aws_judge",
             "sparkforge_aws_rules_lookup",
             "sparkforge_aws_code_search",
+            "sparkforge_aws_graph_view",
         }
 
     def test_nenhuma_superficie_promete_buscar_fato_por_id(self):

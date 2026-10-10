@@ -736,15 +736,22 @@ class TestSkillsReais:
     def test_o_corpus_tem_vinte_skills(self):
         assert len(SKILL_DIRS) >= 20
 
-    def test_claude_e_github_recebem_byte_a_byte(self):
-        """`.claude/skills/` continua passthrough: o Claude Code nao le
-        `subagent:`, e publicar campo que ninguem consome e ruido no diff."""
+    def test_claude_e_github_so_re_relativizam_links(self):
+        """`.claude/skills/` continua passthrough de frontmatter: o Claude Code
+        nao le `subagent:`, e publicar campo que ninguem consome e ruido no
+        diff. Desde o re-relativamento de links (`integrate/render.py`,
+        2026-10-10), "passthrough" nao e mais `== texto`: links `[](...)` que
+        escapam de `skills/` ganham um `../` porque o espelho mora um nivel
+        abaixo da fonte. O invariante e "fonte menos links de escape"."""
         for skill in SKILL_DIRS:
             texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            esperado = sync_skills._render._rewrite_outgoing_links(
+                texto, skill_name=skill.name
+            )
             for plataforma in ("claude", "github"):
                 assert (
                     sync_skills.render_skill(texto, plataforma, name=skill.name)
-                    == texto
+                    == esperado
                 ), skill.name
 
     def test_despachavel_ganha_subagent_true(self):
@@ -827,10 +834,17 @@ class TestSkillsReais:
             assert linhas.index("subagent: true") < linhas.index("---", 1), skill
 
     def test_o_corpo_sobrevive_inteiro(self):
+        """O corpo sai inteiro -- modulo a re-relativizacao de links, que e a
+        unica transformacao licita no corpo desde 2026-10-10."""
         for skill in SKILL_DIRS:
             texto = (skill / "SKILL.md").read_text(encoding="utf-8")
             corpo = texto.split("\n---\n", 1)[1]
-            assert corpo in sync_skills.render_skill(texto, "devin", name=skill.name)
+            corpo_esperado = sync_skills._render._rewrite_outgoing_links(
+                corpo, skill_name=skill.name
+            )
+            assert corpo_esperado in sync_skills.render_skill(
+                texto, "devin", name=skill.name
+            )
 
     def test_render_e_idempotente(self):
         for skill in SKILL_DIRS:
