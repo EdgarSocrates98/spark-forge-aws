@@ -211,3 +211,8 @@ ignore = [
 "sparkforge_aws/ui/**/*.py" = ["ALL"]
 "tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell
 "scripts/verify_wheel.py" = ["S603"] # subprocess com argv fixo, sem shell
+# Vendored engine (canonical: the-forge/scripts/installkit) — kept
+# byte-identical to the shared source; linted in the canonical repo.
+"sparkforge_aws/_installkit.py" = ["ALL"]
+"scripts/forge_bootstrap.py" = ["ALL"]
+"scripts/forge_installkit.py" = ["ALL"]

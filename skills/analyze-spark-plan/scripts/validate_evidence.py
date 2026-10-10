@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate analyze-spark-plan recommendation envelope offline."""
-from pathlib import Path
 import sys
+from pathlib import Path
 
 _SHARED = Path(__file__).resolve().parents[2] / "_shared" / "scripts"
 sys.path.insert(0, str(_SHARED))

@@ -315,7 +315,7 @@ def generated_files(skill_dir: Path) -> dict[Path, str]:
     ref_path = skill_dir / "references" / "README.md"
     generated[ref_path] = references_readme(name, refs)
     script_path = skill_dir / "scripts" / "validate_evidence.py"
-    wrapper = f'''#!/usr/bin/env python3\n"""Validate {name} recommendation envelope offline."""\nfrom pathlib import Path\nimport sys\n\n_SHARED = Path(__file__).resolve().parents[2] / "_shared" / "scripts"\nsys.path.insert(0, str(_SHARED))\nfrom validate_skill_context import main  # noqa: E402\n\nif __name__ == "__main__":\n    raise SystemExit(main(default_skill="{name}"))\n'''
+    wrapper = f'''#!/usr/bin/env python3\n"""Validate {name} recommendation envelope offline."""\nimport sys\nfrom pathlib import Path\n\n_SHARED = Path(__file__).resolve().parents[2] / "_shared" / "scripts"\nsys.path.insert(0, str(_SHARED))\nfrom validate_skill_context import main  # noqa: E402\n\nif __name__ == "__main__":\n    raise SystemExit(main(default_skill="{name}"))\n'''
     generated[script_path] = wrapper
     return generated
 
