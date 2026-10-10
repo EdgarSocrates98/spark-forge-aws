@@ -7,7 +7,12 @@ from sparkforge_aws.adapters.tools import TOOLS, call_tool
 def test_full_and_compact_surfaces_have_declared_sizes() -> None:
     # 141 -> 143 em 2026-10-05: `agentops_timeline` e `agentops_critical_path`
     # (FASE 10 do prompt_evo_runtime) -- aditivo, compact continua 7.
-    assert len(tools_do_transporte("stdio", "full")) == 143
+    # 143 -> 145 em 2026-10-08 (`d33d5c74`, Graph Studio): `graph_view` e
+    # `graph_status` projetam o indice de codigo; o commit nao atualizou este
+    # lock nem `docs/surface.lock.json` -- drift achado pela suite, nao
+    # decisao de esconder tool. HTTP/full fica em 144: `code_read` continua
+    # fora por depender do indice local.
+    assert len(tools_do_transporte("stdio", "full")) == 145
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
 

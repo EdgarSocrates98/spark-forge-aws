@@ -131,7 +131,12 @@ def tool_class(tool: str) -> ToolClass:
 # para fechar. A lista fica, e `TestOCatalogoContinuaCabendoNaVerificacao` e o
 # gate que impede ela de envelhecer calada: se uma tool entrar com caminho
 # batizado de outro jeito, a contagem de 43 muda e o teste cai.
-_NOMES_DE_CAMINHO = frozenset({"path", "repo", "file", "before", "after"})
+# `root` entra no conjunto de nomes (2026-10-10) porque `graph_view` e
+# `graph_status` o declaram como a raiz do repositorio onde vive o indice de
+# codigo -- caminho escolhido pelo chamador, como `repo`. Sem o nome aqui, o
+# sufixo `_root` nao casa ("root".endswith("_root") e False por faltar o `_`)
+# e a raiz passava pela cadeia de autorizacao SEM confinamento.
+_NOMES_DE_CAMINHO = frozenset({"path", "repo", "file", "before", "after", "root"})
 _SUFIXOS_DE_CAMINHO = ("_path", "_paths", "_file", "_files", "_dir", "_root")
 
 

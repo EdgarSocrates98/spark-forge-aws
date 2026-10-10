@@ -329,7 +329,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge_aws/adapters/_core.py`), e o servidor publica **143 tools MCP** no catálogo atual.
+(`sparkforge_aws/adapters/_core.py`), e o servidor publica **145 tools MCP** no catálogo atual.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|

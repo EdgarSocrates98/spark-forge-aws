@@ -195,6 +195,12 @@ inteiro — que é o que torna a revisão estrutural barata.
 - `sparkforge_aws_code_context` — monta o pacote de contexto com teto em bytes
   declarado. Ele **recusa** a seção que não sabe preencher, com a razão, em vez
   de devolver lista vazia.
+- `sparkforge_aws_graph_view` — projeção `ForgeGraphView/v1` do índice persistido
+  (`nodes` + `edges`), a mesma saída de `sparkforge-aws graph view` que alimenta
+  o Graph Studio. Sem índice local recusa `SF-GRAPH-NO-INDEX` com o unlock
+  `code index` — nunca sintetize uma projeção à mão.
+- `sparkforge_aws_graph_status` — o índice que alimenta `graph_view` existe e
+  está fresco? É a única leitura que explica por que `graph_view` recusaria.
 - `sparkforge_aws_code_read` — trecho de fonte, com rótulo de conteúdo não confiável
   e teto duro de tamanho.
 

@@ -207,6 +207,12 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_aws_doctor_agentic": (
         "2026-10-04: diagnóstico local dos contratos do Agentic OS v2"
     ),
+    "sparkforge_aws_graph_view": (
+        "2026-10-06: projeção ForgeGraphView/v1 do índice local (Graph Studio)"
+    ),
+    "sparkforge_aws_graph_status": (
+        "2026-10-06: estado/frescor do índice que alimenta graph_view"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

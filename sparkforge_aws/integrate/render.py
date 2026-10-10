@@ -637,6 +637,13 @@ def _rewrite_outgoing_links(text: str, *, skill_name: str) -> str:
         resolved = PurePosixPath(
             os.path.normpath(str(src_dir / path_part))
         )
+        if str(resolved).startswith(".."):
+            # Resolvido contra skills/<name>/ o alvo sai do REPO: ou e um link
+            # quebrado de verdade na fonte (achado do inventario, nao algo que
+            # o renderizador conserte) ou e uma saida ja re-relativizada sendo
+            # re-renderizada -- `../../../` de skills/<name>/ aponta para fora.
+            # Preservar e o que torna a renderizacao idempotente.
+            return match.group(0)
         try:
             resolved.relative_to(skills_root)
             return match.group(0)  # link interno de skills/: espelho preserva

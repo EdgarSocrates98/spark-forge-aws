@@ -1003,7 +1003,15 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # (2026-10-06, FASE 10): ambas `_READ_ONLY` e declaram `db_path`,
         # o banco de spans que leem -- entram no lado que declara caminho
         # sem mover o conjunto de excecao.
-        assert len(TOOLS) - len(sem_caminho) == 133
+        # 133 -> 135 com `graph_view` e `graph_status` (2026-10-08, `d33d5c74`):
+        # as duas declaram `root`, a raiz do repo onde vive o indice de codigo.
+        # `root` NAO casava em `_SUFIXOS_DE_CAMINHO` (falta o `_` no nome cru) e
+        # entrava em `sem_caminho` apesar de ser caminho escolhido pelo chamador
+        # -- o commit que as trouxe nao moveu `_NOMES_DE_CAMINHO`, entao a raiz
+        # passava pela cadeia de autorizacao sem confinamento. Corrigido no
+        # predicado: `root` virou nome de caminho, e as duas ficam no lado que
+        # declara caminho sem mover `SEM_CAMINHO`.
+        assert len(TOOLS) - len(sem_caminho) == 135
 
 
 class TestAImposicaoNoDespacho:
