@@ -2,13 +2,13 @@
   "schema": "forge/CommandInventory/v1",
   "forge_id": "spark-forge-aws",
   "cli": "sparkforge-aws",
-  "generated_at": "2026-10-10T10:22:19Z",
+  "generated_at": "2026-10-10T10:34:05Z",
   "generated_by": "doc_inventory.py/1",
   "command_count": 246,
   "commands": [
     {
       "path": "lab",
-      "help": null,
+      "help": "Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita.",
       "arguments": [
         {
           "name": "help",
@@ -27,7 +27,7 @@
     },
     {
       "path": "lab doctor",
-      "help": null,
+      "help": "Verifica host, registry e perfis sem iniciar serviços.",
       "arguments": [
         {
           "name": "help",
@@ -56,7 +56,7 @@
     },
     {
       "path": "lab profiles",
-      "help": null,
+      "help": "Lista profiles e requisitos declarados.",
       "arguments": [
         {
           "name": "help",
@@ -85,7 +85,7 @@
     },
     {
       "path": "lab scenarios",
-      "help": null,
+      "help": "Lista o Golden 20 e suas fidelidades.",
       "arguments": [
         {
           "name": "help",
@@ -125,7 +125,7 @@
     },
     {
       "path": "lab verify",
-      "help": null,
+      "help": "Verifica registry, Golden 20, schemas e action plans offline.",
       "arguments": [
         {
           "name": "help",
@@ -154,7 +154,7 @@
     },
     {
       "path": "lab describe",
-      "help": null,
+      "help": "Descreve um cenário",
       "arguments": [
         {
           "name": "help",
@@ -239,7 +239,7 @@
     },
     {
       "path": "lab plan",
-      "help": null,
+      "help": "Compila cenário em actions",
       "arguments": [
         {
           "name": "help",
@@ -324,7 +324,7 @@
     },
     {
       "path": "lab run",
-      "help": null,
+      "help": "Planeja ou executa cenário",
       "arguments": [
         {
           "name": "help",
@@ -409,7 +409,7 @@
     },
     {
       "path": "lab inspect",
-      "help": null,
+      "help": "Inspeciona run/receipt e verifica hash.",
       "arguments": [
         {
           "name": "help",
@@ -447,7 +447,7 @@
     },
     {
       "path": "lab analyze",
-      "help": null,
+      "help": "Aponta artifacts capturados para análise posterior.",
       "arguments": [
         {
           "name": "help",
@@ -485,7 +485,7 @@
     },
     {
       "path": "lab compare",
-      "help": null,
+      "help": "Compara dois receipts/runs sem afirmar performance.",
       "arguments": [
         {
           "name": "help",
@@ -532,7 +532,7 @@
     },
     {
       "path": "lab promote-fixture",
-      "help": null,
+      "help": "Promove run revisado para fixture curated.",
       "arguments": [
         {
           "name": "help",
@@ -590,7 +590,7 @@
     },
     {
       "path": "lab reproduce",
-      "help": null,
+      "help": "Verifica receipt e devolve plano reproduzível.",
       "arguments": [
         {
           "name": "help",
@@ -628,7 +628,7 @@
     },
     {
       "path": "lab up",
-      "help": null,
+      "help": "Sobe profile Compose",
       "arguments": [
         {
           "name": "help",
@@ -712,7 +712,7 @@
     },
     {
       "path": "lab down",
-      "help": null,
+      "help": "Derruba projeto Compose",
       "arguments": [
         {
           "name": "help",
@@ -796,7 +796,7 @@
     },
     {
       "path": "lab shell",
-      "help": null,
+      "help": "Planeja shell de serviço",
       "arguments": [
         {
           "name": "help",
@@ -880,7 +880,7 @@
     },
     {
       "path": "lab gc",
-      "help": null,
+      "help": "Planeja coleta de runs",
       "arguments": [
         {
           "name": "help",
@@ -964,7 +964,7 @@
     },
     {
       "path": "analyze",
-      "help": null,
+      "help": "Extrai facts deterministicos de codigo-fonte.",
       "arguments": [
         {
           "name": "help",
@@ -983,7 +983,7 @@
     },
     {
       "path": "analyze pyspark",
-      "help": null,
+      "help": "Extrai facts de PySpark via AST estatico (nunca importa o codigo).",
       "arguments": [
         {
           "name": "help",
@@ -1082,7 +1082,7 @@
     },
     {
       "path": "analyze streaming",
-      "help": null,
+      "help": "Extrai facts de fonte Structured Streaming ou StreamingQueryProgress.",
       "arguments": [
         {
           "name": "help",
@@ -1184,7 +1184,7 @@
     },
     {
       "path": "analyze transport",
-      "help": null,
+      "help": "Extrai facts offline de dumps Kafka, MSK ou Kinesis.",
       "arguments": [
         {
           "name": "help",
@@ -1287,7 +1287,7 @@
     },
     {
       "path": "analyze flink",
-      "help": null,
+      "help": "Extrai facts offline de dumps Apache Flink ou Managed Flink.",
       "arguments": [
         {
           "name": "help",
@@ -1389,7 +1389,7 @@
     },
     {
       "path": "analyze cdc",
-      "help": null,
+      "help": "Extrai facts offline de dumps CDC, Debezium ou AWS DMS.",
       "arguments": [
         {
           "name": "help",
@@ -1492,7 +1492,7 @@
     },
     {
       "path": "analyze schema-registry",
-      "help": null,
+      "help": "Extrai facts offline de contratos e evolução de schemas.",
       "arguments": [
         {
           "name": "help",
@@ -1580,7 +1580,7 @@
     },
     {
       "path": "analyze event-driven",
-      "help": null,
+      "help": "Extrai facts offline de EventBridge/Pipes, SQS e SNS.",
       "arguments": [
         {
           "name": "help",
@@ -1668,7 +1668,7 @@
     },
     {
       "path": "analyze streaming-ops",
-      "help": null,
+      "help": "Extrai facts declarados de SLO, FinOps, segurança e serving streaming.",
       "arguments": [
         {
           "name": "help",
@@ -1756,7 +1756,7 @@
     },
     {
       "path": "analyze streaming-integrations",
-      "help": null,
+      "help": "Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.",
       "arguments": [
         {
           "name": "help",
@@ -1844,7 +1844,7 @@
     },
     {
       "path": "analyze streaming-composition",
-      "help": null,
+      "help": "Compõe facts já extraídos de streaming, transporte e Iceberg.",
       "arguments": [
         {
           "name": "help",
@@ -2016,7 +2016,7 @@
     },
     {
       "path": "analyze glue-streaming",
-      "help": null,
+      "help": "Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.",
       "arguments": [
         {
           "name": "help",
@@ -2104,7 +2104,7 @@
     },
     {
       "path": "analyze catalog-schema",
-      "help": null,
+      "help": "Extrai facts de um dump JSON do Glue Data Catalog.",
       "arguments": [
         {
           "name": "help",
@@ -2192,7 +2192,7 @@
     },
     {
       "path": "analyze event-log",
-      "help": null,
+      "help": "Extrai facts de um Spark event log (.jsonl) ja coletado.",
       "arguments": [
         {
           "name": "help",
@@ -2280,7 +2280,7 @@
     },
     {
       "path": "analyze sql-metrics",
-      "help": null,
+      "help": "Extrai metrica por no do plano de um Spark event log ja coletado.",
       "arguments": [
         {
           "name": "help",
@@ -2368,7 +2368,7 @@
     },
     {
       "path": "analyze cloudwatch",
-      "help": null,
+      "help": "Extrai facts de um artefato de metricas do CloudWatch ja coletado.",
       "arguments": [
         {
           "name": "help",
@@ -2456,7 +2456,7 @@
     },
     {
       "path": "analyze cloudwatch-logs",
-      "help": null,
+      "help": "Extrai facts do LOG do run ja coletado do CloudWatch Logs.",
       "arguments": [
         {
           "name": "help",
@@ -2544,7 +2544,7 @@
     },
     {
       "path": "analyze glue-resource-link",
-      "help": null,
+      "help": "Extrai a topologia do catalogo ja coletada: link, alvo e nome.",
       "arguments": [
         {
           "name": "help",
@@ -2632,7 +2632,7 @@
     },
     {
       "path": "analyze iam-access",
-      "help": null,
+      "help": "Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.",
       "arguments": [
         {
           "name": "help",
@@ -2720,7 +2720,7 @@
     },
     {
       "path": "analyze lakeformation-grants",
-      "help": null,
+      "help": "Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings).",
       "arguments": [
         {
           "name": "help",
@@ -2808,7 +2808,7 @@
     },
     {
       "path": "analyze error-signatures",
-      "help": null,
+      "help": "Casa knowledge/errors/ contra os facts do case. Derivacao pura.",
       "arguments": [
         {
           "name": "help",
@@ -2896,7 +2896,7 @@
     },
     {
       "path": "analyze parquet-footer",
-      "help": null,
+      "help": "Extrai facts do FOOTER do Parquet ja coletado.",
       "arguments": [
         {
           "name": "help",
@@ -2984,7 +2984,7 @@
     },
     {
       "path": "analyze glue-job-runs",
-      "help": null,
+      "help": "Extrai facts de historico do diretorio de artefatos de run Glue.",
       "arguments": [
         {
           "name": "help",
@@ -3094,7 +3094,7 @@
     },
     {
       "path": "analyze plan",
-      "help": null,
+      "help": "Extrai facts do texto de um plano fisico (`df.explain(\"formatted\")` / EXPLAIN FORMATTED).",
       "arguments": [
         {
           "name": "help",
@@ -3182,7 +3182,7 @@
     },
     {
       "path": "analyze terraform",
-      "help": null,
+      "help": "Extrai facts de blocos aws_glue_job em HCL Terraform.",
       "arguments": [
         {
           "name": "help",
@@ -3270,7 +3270,7 @@
     },
     {
       "path": "analyze iceberg",
-      "help": null,
+      "help": "Extrai facts de um dump JSON das metadata tables Iceberg.",
       "arguments": [
         {
           "name": "help",
@@ -3358,7 +3358,7 @@
     },
     {
       "path": "analyze sql",
-      "help": null,
+      "help": "Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark.",
       "arguments": [
         {
           "name": "help",
@@ -3457,7 +3457,7 @@
     },
     {
       "path": "analyze athena-workgroup",
-      "help": null,
+      "help": "Extrai facts de um dump JSON de workgroups do Athena.",
       "arguments": [
         {
           "name": "help",
@@ -3545,7 +3545,7 @@
     },
     {
       "path": "analyze emr-cluster",
-      "help": null,
+      "help": "Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam).",
       "arguments": [
         {
           "name": "help",
@@ -3633,7 +3633,7 @@
     },
     {
       "path": "analyze emr-serverless",
-      "help": null,
+      "help": "Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe.",
       "arguments": [
         {
           "name": "help",
@@ -3721,7 +3721,7 @@
     },
     {
       "path": "analyze emr-eks",
-      "help": null,
+      "help": "Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump.",
       "arguments": [
         {
           "name": "help",
@@ -3809,7 +3809,7 @@
     },
     {
       "path": "analyze controlm-jobs",
-      "help": null,
+      "help": "Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem.",
       "arguments": [
         {
           "name": "help",
@@ -3908,7 +3908,7 @@
     },
     {
       "path": "analyze step-functions",
-      "help": null,
+      "help": "Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao.",
       "arguments": [
         {
           "name": "help",
@@ -3996,7 +3996,7 @@
     },
     {
       "path": "analyze sfn-history",
-      "help": null,
+      "help": "Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao.",
       "arguments": [
         {
           "name": "help",
@@ -4084,7 +4084,7 @@
     },
     {
       "path": "analyze airflow-dag",
-      "help": null,
+      "help": "Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal.",
       "arguments": [
         {
           "name": "help",
@@ -4172,7 +4172,7 @@
     },
     {
       "path": "analyze data-quality",
-      "help": null,
+      "help": "Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa.",
       "arguments": [
         {
           "name": "help",
@@ -4260,7 +4260,7 @@
     },
     {
       "path": "analyze dq-ai",
-      "help": null,
+      "help": "Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas.",
       "arguments": [
         {
           "name": "help",
@@ -4348,7 +4348,7 @@
     },
     {
       "path": "analyze graph",
-      "help": null,
+      "help": "Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure.",
       "arguments": [
         {
           "name": "help",
@@ -4436,7 +4436,7 @@
     },
     {
       "path": "analyze platform-graph",
-      "help": null,
+      "help": "Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.",
       "arguments": [
         {
           "name": "help",
@@ -4535,7 +4535,7 @@
     },
     {
       "path": "analyze platform-ecosystem",
-      "help": null,
+      "help": "Analisa serving, ingestion, AI Data Engineering e radar opcional.",
       "arguments": [
         {
           "name": "help",
@@ -4575,7 +4575,7 @@
     },
     {
       "path": "analyze forge-lab",
-      "help": null,
+      "help": "Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.",
       "arguments": [
         {
           "name": "help",
@@ -4615,7 +4615,7 @@
     },
     {
       "path": "analyze lakehouse-catalog",
-      "help": null,
+      "help": "Analisa topologia declarada de catalogs, engines, tabelas e bindings.",
       "arguments": [
         {
           "name": "help",
@@ -4655,7 +4655,7 @@
     },
     {
       "path": "analyze dbt-artifacts",
-      "help": null,
+      "help": "Analisa manifest, catalog e run_results do dbt sem executar dbt.",
       "arguments": [
         {
           "name": "help",
@@ -4695,7 +4695,7 @@
     },
     {
       "path": "analyze duckdb-microscope",
-      "help": null,
+      "help": "Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL.",
       "arguments": [
         {
           "name": "help",
@@ -4735,7 +4735,7 @@
     },
     {
       "path": "analyze data-observability",
-      "help": null,
+      "help": "Avalia SLI/SLO, error budget, incidentes e dependências offline.",
       "arguments": [
         {
           "name": "help",
@@ -4775,7 +4775,7 @@
     },
     {
       "path": "analyze orchestration",
-      "help": null,
+      "help": "Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.",
       "arguments": [
         {
           "name": "help",
@@ -4815,7 +4815,7 @@
     },
     {
       "path": "analyze s3-listing",
-      "help": null,
+      "help": "Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel).",
       "arguments": [
         {
           "name": "help",
@@ -4903,7 +4903,7 @@
     },
     {
       "path": "analyze consumers",
-      "help": null,
+      "help": "Extrai facts do inventario declarado de consumidores de tabela.",
       "arguments": [
         {
           "name": "help",
@@ -4991,7 +4991,7 @@
     },
     {
       "path": "analyze workload",
-      "help": null,
+      "help": "Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem.",
       "arguments": [
         {
           "name": "help",
@@ -5079,7 +5079,7 @@
     },
     {
       "path": "analyze terraform-diff",
-      "help": null,
+      "help": "Compara dois estados de um modulo Terraform e marca o que mudou.",
       "arguments": [
         {
           "name": "help",
@@ -5178,7 +5178,7 @@
     },
     {
       "path": "analyze call-graph",
-      "help": null,
+      "help": "Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos.",
       "arguments": [
         {
           "name": "help",
@@ -5266,7 +5266,7 @@
     },
     {
       "path": "architecture",
-      "help": null,
+      "help": "Avalia arquitetura declarada sem escolher por preferência ou custo inventado.",
       "arguments": [
         {
           "name": "help",
@@ -5285,7 +5285,7 @@
     },
     {
       "path": "architecture streaming",
-      "help": null,
+      "help": "Compara candidatos streaming por constraints factuais declaradas.",
       "arguments": [
         {
           "name": "help",
@@ -5325,7 +5325,7 @@
     },
     {
       "path": "migrate",
-      "help": null,
+      "help": "Avalia migracao entre versoes de runtime com o catalogo.",
       "arguments": [
         {
           "name": "help",
@@ -5344,7 +5344,7 @@
     },
     {
       "path": "migrate glue",
-      "help": null,
+      "help": "Julga a migracao de um job Glue entre um par de versoes, degrau a degrau.",
       "arguments": [
         {
           "name": "help",
@@ -5404,7 +5404,7 @@
     },
     {
       "path": "migrate emr",
-      "help": null,
+      "help": "Julga a migracao de um job EMR entre um par de releases, degrau a degrau, na matriz da plataforma escolhida.",
       "arguments": [
         {
           "name": "help",
@@ -5479,7 +5479,7 @@
     },
     {
       "path": "migrate controlm",
-      "help": null,
+      "help": "Julga a migracao de um job Control-M entre um par de versoes, degrau a degrau, por CAPACIDADE e nao por runtime.",
       "arguments": [
         {
           "name": "help",
@@ -5539,7 +5539,7 @@
     },
     {
       "path": "glue",
-      "help": null,
+      "help": "Comandos especificos do runtime AWS Glue.",
       "arguments": [
         {
           "name": "help",
@@ -5558,7 +5558,7 @@
     },
     {
       "path": "glue dependency-audit",
-      "help": null,
+      "help": "Audita dependencia Python e binario Scala do job contra um runtime.",
       "arguments": [
         {
           "name": "help",
@@ -5596,7 +5596,7 @@
     },
     {
       "path": "iceberg",
-      "help": null,
+      "help": "Comandos especificos de Apache Iceberg.",
       "arguments": [
         {
           "name": "help",
@@ -5615,7 +5615,7 @@
     },
     {
       "path": "iceberg assess-upgrade",
-      "help": null,
+      "help": "Avalia subir o format version da tabela contra quem a consome. NAO executa.",
       "arguments": [
         {
           "name": "help",
@@ -5664,7 +5664,7 @@
     },
     {
       "path": "release",
-      "help": null,
+      "help": "O que uma release publica, e o que muda entre duas. Le matriz de versao; NAO avalia se algo quebra.",
       "arguments": [
         {
           "name": "help",
@@ -5683,7 +5683,7 @@
     },
     {
       "path": "release describe",
-      "help": null,
+      "help": "O que a fonte daquela plataforma publica para uma release. Componente nao publicado sai em `unresolved` NOMEADO.",
       "arguments": [
         {
           "name": "help",
@@ -5723,7 +5723,7 @@
     },
     {
       "path": "release diff",
-      "help": null,
+      "help": "O que muda entre duas releases, com o eixo (`release`, `platform` ou os dois) DECLARADO na saida.",
       "arguments": [
         {
           "name": "help",
@@ -5785,7 +5785,7 @@
     },
     {
       "path": "controlm",
-      "help": null,
+      "help": "Conhecimento versionado do Control-M Automation API. Le matriz de versao; NAO le artefato, NAO chama BMC e NAO julga.",
       "arguments": [
         {
           "name": "help",
@@ -5804,7 +5804,7 @@
     },
     {
       "path": "controlm describe",
-      "help": null,
+      "help": "O que vale numa versao do Automation API. Versao fora da faixa coberta sai como recusa NOMEADA, com o intervalo.",
       "arguments": [
         {
           "name": "help",
@@ -5848,7 +5848,7 @@
     },
     {
       "path": "benchmark",
-      "help": null,
+      "help": "Compara duas execucoes a partir dos facts de event log de cada uma. Nao executa nada e nao mede relogio.",
       "arguments": [
         {
           "name": "help",
@@ -5969,7 +5969,7 @@
     },
     {
       "path": "workload",
-      "help": null,
+      "help": "Perfil de workload por eixos, a partir de facts ja extraidos.",
       "arguments": [
         {
           "name": "help",
@@ -6042,7 +6042,7 @@
     },
     {
       "path": "capacity",
-      "help": null,
+      "help": "Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades que o job JA rodou. Nunca aplica a mudanca.",
       "arguments": [
         {
           "name": "help",
@@ -6115,7 +6115,7 @@
     },
     {
       "path": "finops",
-      "help": null,
+      "help": "O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- capacidade ou codigo.",
       "arguments": [
         {
           "name": "help",
@@ -6166,7 +6166,7 @@
     },
     {
       "path": "dq-ai",
-      "help": null,
+      "help": "Avalia governanca Glue DQ ADVANCED sobre facts e artefatos observados.",
       "arguments": [
         {
           "name": "help",
@@ -6185,7 +6185,7 @@
     },
     {
       "path": "dq-ai assess",
-      "help": null,
+      "help": "Compõe facts, julga regras e renderiza o relatório canônico.",
       "arguments": [
         {
           "name": "help",
@@ -6307,7 +6307,7 @@
     },
     {
       "path": "tune",
-      "help": null,
+      "help": "Configuracao Spark derivada da medida, com a procedencia de cada propriedade. Nunca aplica a mudanca.",
       "arguments": [
         {
           "name": "help",
@@ -6358,7 +6358,7 @@
     },
     {
       "path": "economy",
-      "help": null,
+      "help": "O que a execucao poe na janela de contexto: byte medido, nunca token estimado.",
       "arguments": [
         {
           "name": "help",
@@ -6377,7 +6377,7 @@
     },
     {
       "path": "economy report",
-      "help": null,
+      "help": "Agrupa os spans de um run e poe a superficie ao lado.",
       "arguments": [
         {
           "name": "help",
@@ -6428,7 +6428,7 @@
     },
     {
       "path": "economy provider-cost",
-      "help": null,
+      "help": "Calcula custo observado do transcript com pricing e cost_basis declarados.",
       "arguments": [
         {
           "name": "help",
@@ -6479,7 +6479,7 @@
     },
     {
       "path": "decision",
-      "help": null,
+      "help": "Valida e observa decisões declarativas sem alterar o dispatch atual.",
       "arguments": [
         {
           "name": "help",
@@ -6498,7 +6498,7 @@
     },
     {
       "path": "decision validate",
-      "help": null,
+      "help": "Valida um contrato Decision Plane versionado.",
       "arguments": [
         {
           "name": "help",
@@ -6549,7 +6549,7 @@
     },
     {
       "path": "decision shadow",
-      "help": null,
+      "help": "Avalia estado normalizado e compara com a rota atual.",
       "arguments": [
         {
           "name": "help",
@@ -6622,7 +6622,7 @@
     },
     {
       "path": "decision evaluate",
-      "help": null,
+      "help": "Avalia contrato bounded genérico em modo offline.",
       "arguments": [
         {
           "name": "help",
@@ -6695,7 +6695,7 @@
     },
     {
       "path": "decision compare",
-      "help": null,
+      "help": "Compara uma decisão shadow persistida com uma rota atual.",
       "arguments": [
         {
           "name": "help",
@@ -6746,7 +6746,7 @@
     },
     {
       "path": "decision benchmark",
-      "help": null,
+      "help": "Executa a suíte seed offline do Decision Plane.",
       "arguments": [
         {
           "name": "help",
@@ -6797,7 +6797,7 @@
     },
     {
       "path": "decision receipt",
-      "help": null,
+      "help": "Verifica receipt content-addressed de decisão shadow.",
       "arguments": [
         {
           "name": "help",
@@ -6837,7 +6837,7 @@
     },
     {
       "path": "context",
-      "help": null,
+      "help": "Descobre capabilities e empacota contexto deterministico sob limite explicito.",
       "arguments": [
         {
           "name": "help",
@@ -6856,7 +6856,7 @@
     },
     {
       "path": "context resolve",
-      "help": null,
+      "help": "Resolve locality repo/workspace/target sem ler fontes.",
       "arguments": [
         {
           "name": "help",
@@ -6926,7 +6926,7 @@
     },
     {
       "path": "context start",
-      "help": null,
+      "help": "Inicia descoberta, selecao, reducao e materializacao de contexto.",
       "arguments": [
         {
           "name": "help",
@@ -7036,7 +7036,7 @@
     },
     {
       "path": "context expand",
-      "help": null,
+      "help": "Expande uma referencia ctx://v1 sob budget.",
       "arguments": [
         {
           "name": "help",
@@ -7087,7 +7087,7 @@
     },
     {
       "path": "context inspect",
-      "help": null,
+      "help": "Inspeciona qualidade de contexto sem inferir tokens por bytes.",
       "arguments": [
         {
           "name": "help",
@@ -7127,7 +7127,7 @@
     },
     {
       "path": "distribution",
-      "help": null,
+      "help": "Inspeção e inicialização portátil offline.",
       "arguments": [
         {
           "name": "help",
@@ -7146,7 +7146,7 @@
     },
     {
       "path": "distribution inspect",
-      "help": null,
+      "help": "Portable distribution inspect.",
       "arguments": [
         {
           "name": "help",
@@ -7175,7 +7175,7 @@
     },
     {
       "path": "distribution init",
-      "help": null,
+      "help": "Portable distribution init.",
       "arguments": [
         {
           "name": "help",
@@ -7204,7 +7204,7 @@
     },
     {
       "path": "distribution status",
-      "help": null,
+      "help": "Portable distribution status.",
       "arguments": [
         {
           "name": "help",
@@ -7233,7 +7233,7 @@
     },
     {
       "path": "distribution doctor",
-      "help": null,
+      "help": "Portable distribution doctor.",
       "arguments": [
         {
           "name": "help",
@@ -7262,7 +7262,7 @@
     },
     {
       "path": "workspace",
-      "help": null,
+      "help": "Workspace virtual declarado e descoberta limitada.",
       "arguments": [
         {
           "name": "help",
@@ -7281,7 +7281,7 @@
     },
     {
       "path": "workspace discover",
-      "help": null,
+      "help": "Portable workspace discover.",
       "arguments": [
         {
           "name": "help",
@@ -7332,7 +7332,7 @@
     },
     {
       "path": "workspace init",
-      "help": null,
+      "help": "Portable workspace init.",
       "arguments": [
         {
           "name": "help",
@@ -7372,7 +7372,7 @@
     },
     {
       "path": "workspace add",
-      "help": null,
+      "help": "Portable workspace add.",
       "arguments": [
         {
           "name": "help",
@@ -7421,7 +7421,7 @@
     },
     {
       "path": "workspace status",
-      "help": null,
+      "help": "Portable workspace status.",
       "arguments": [
         {
           "name": "help",
@@ -7450,7 +7450,7 @@
     },
     {
       "path": "agentops",
-      "help": null,
+      "help": "Inspeciona runs locais, compara baseline e atribui desperdicio observado.",
       "arguments": [
         {
           "name": "help",
@@ -7469,7 +7469,7 @@
     },
     {
       "path": "agentops inspect",
-      "help": null,
+      "help": "Inspeciona um run local.",
       "arguments": [
         {
           "name": "help",
@@ -7518,7 +7518,7 @@
     },
     {
       "path": "agentops compare",
-      "help": null,
+      "help": "Compara dois runs locais.",
       "arguments": [
         {
           "name": "help",
@@ -7576,7 +7576,7 @@
     },
     {
       "path": "agentops baseline",
-      "help": null,
+      "help": "Salva ou compara baseline local.",
       "arguments": [
         {
           "name": "help",
@@ -7648,7 +7648,7 @@
     },
     {
       "path": "agentops timeline",
-      "help": null,
+      "help": "Linha do tempo do run, por lane de componente.",
       "arguments": [
         {
           "name": "help",
@@ -7697,7 +7697,7 @@
     },
     {
       "path": "agentops critical-path",
-      "help": null,
+      "help": "Maiores duracoes, retries e waiting medidos do run.",
       "arguments": [
         {
           "name": "help",
@@ -7746,7 +7746,7 @@
     },
     {
       "path": "agents",
-      "help": null,
+      "help": "Lista e inspeciona agentes do runtime agêntico.",
       "arguments": [
         {
           "name": "help",
@@ -7765,7 +7765,7 @@
     },
     {
       "path": "agents list",
-      "help": null,
+      "help": "Lista agentes disponíveis.",
       "arguments": [
         {
           "name": "help",
@@ -7794,7 +7794,7 @@
     },
     {
       "path": "agents inspect",
-      "help": null,
+      "help": "Inspeciona um agente.",
       "arguments": [
         {
           "name": "help",
@@ -7834,7 +7834,7 @@
     },
     {
       "path": "blackboard",
-      "help": null,
+      "help": "Lê o shared blackboard (.sparkforge_aws/blackboard/).",
       "arguments": [
         {
           "name": "help",
@@ -7853,7 +7853,7 @@
     },
     {
       "path": "blackboard summary",
-      "help": null,
+      "help": "Resumo contável do blackboard.",
       "arguments": [
         {
           "name": "help",
@@ -7882,7 +7882,7 @@
     },
     {
       "path": "blackboard list",
-      "help": null,
+      "help": "Lista entidades de um tipo.",
       "arguments": [
         {
           "name": "help",
@@ -7932,7 +7932,7 @@
     },
     {
       "path": "decisions",
-      "help": null,
+      "help": "Lista e explica decisões registradas.",
       "arguments": [
         {
           "name": "help",
@@ -7951,7 +7951,7 @@
     },
     {
       "path": "decisions list",
-      "help": null,
+      "help": "Lista decisões.",
       "arguments": [
         {
           "name": "help",
@@ -7980,7 +7980,7 @@
     },
     {
       "path": "decisions explain",
-      "help": null,
+      "help": "Explica uma decisão.",
       "arguments": [
         {
           "name": "help",
@@ -8020,7 +8020,7 @@
     },
     {
       "path": "budget",
-      "help": null,
+      "help": "Mostra estado do budget do case.",
       "arguments": [
         {
           "name": "help",
@@ -8039,7 +8039,7 @@
     },
     {
       "path": "budget show",
-      "help": null,
+      "help": "Mostra budget do case.",
       "arguments": [
         {
           "name": "help",
@@ -8079,7 +8079,7 @@
     },
     {
       "path": "autonomy",
-      "help": null,
+      "help": "Mostra níveis de autonomia L0-L5.",
       "arguments": [
         {
           "name": "help",
@@ -8098,7 +8098,7 @@
     },
     {
       "path": "autonomy show",
-      "help": null,
+      "help": "Mostra perfil de um nível.",
       "arguments": [
         {
           "name": "help",
@@ -8134,7 +8134,7 @@
     },
     {
       "path": "funcval",
-      "help": null,
+      "help": "Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. Nao executa nada.",
       "arguments": [
         {
           "name": "help",
@@ -8153,7 +8153,7 @@
     },
     {
       "path": "funcval plan",
-      "help": null,
+      "help": "Deriva o plano de validacao (contagem, schema, agregados) dos facts ja extraidos, e grava o artefato que `funcval compare` rele.",
       "arguments": [
         {
           "name": "help",
@@ -8252,7 +8252,7 @@
     },
     {
       "path": "funcval compare",
-      "help": null,
+      "help": "Compara os dois resultados que VOCE mediu contra o plano. Antes contra depois, nunca observado contra catalogo.",
       "arguments": [
         {
           "name": "help",
@@ -8362,7 +8362,7 @@
     },
     {
       "path": "sdd",
-      "help": null,
+      "help": "Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o que nao fecha, sem julgar a prosa.",
       "arguments": [
         {
           "name": "help",
@@ -8381,7 +8381,7 @@
     },
     {
       "path": "sdd check",
-      "help": null,
+      "help": "Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0.",
       "arguments": [
         {
           "name": "help",
@@ -8432,7 +8432,7 @@
     },
     {
       "path": "sdd status",
-      "help": null,
+      "help": "Fase atual de cada feature e o que a impede de avancar.",
       "arguments": [
         {
           "name": "help",
@@ -8472,7 +8472,7 @@
     },
     {
       "path": "sdd stamp",
-      "help": null,
+      "help": "Grava upstream.sha256 do artefato. Escreve so a linha do hash.",
       "arguments": [
         {
           "name": "help",
@@ -8521,7 +8521,7 @@
     },
     {
       "path": "fuse",
-      "help": null,
+      "help": "Correlaciona facts de SQL com schema do catalogo (sparkforge_aws.facts.fusion), antes de judge.",
       "arguments": [
         {
           "name": "help",
@@ -8609,7 +8609,7 @@
     },
     {
       "path": "judge",
-      "help": null,
+      "help": "Aplica o catalogo de regras versionado sobre facts ja extraidos.",
       "arguments": [
         {
           "name": "help",
@@ -8806,7 +8806,7 @@
     },
     {
       "path": "arbitrate",
-      "help": null,
+      "help": "Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. Nao estima ganho, nao publica score, nao executa debate.",
       "arguments": [
         {
           "name": "help",
@@ -8948,7 +8948,7 @@
     },
     {
       "path": "case",
-      "help": null,
+      "help": "Gerencia o estado do case em .sparkforge_aws/case.yaml.",
       "arguments": [
         {
           "name": "help",
@@ -8967,7 +8967,7 @@
     },
     {
       "path": "case open",
-      "help": null,
+      "help": "Cria um case novo, em fase intake.",
       "arguments": [
         {
           "name": "help",
@@ -9142,7 +9142,7 @@
     },
     {
       "path": "case get",
-      "help": null,
+      "help": "Le o case atual.",
       "arguments": [
         {
           "name": "help",
@@ -9171,7 +9171,7 @@
     },
     {
       "path": "case update",
-      "help": null,
+      "help": "Atualiza fase, gate ou registra uso de skill no case.",
       "arguments": [
         {
           "name": "help",
@@ -9372,7 +9372,7 @@
     },
     {
       "path": "next-step",
-      "help": null,
+      "help": "Rota deterministica a partir de routing.yaml (nunca julgamento do agente).",
       "arguments": [
         {
           "name": "help",
@@ -9412,7 +9412,7 @@
     },
     {
       "path": "resume",
-      "help": null,
+      "help": "Payload de rehidratacao do case.",
       "arguments": [
         {
           "name": "help",
@@ -9474,7 +9474,7 @@
     },
     {
       "path": "handoff",
-      "help": null,
+      "help": "Escreve .sparkforge_aws/handoff.md e imprime o payload.",
       "arguments": [
         {
           "name": "help",
@@ -9536,7 +9536,7 @@
     },
     {
       "path": "journal",
-      "help": null,
+      "help": "Journal de eventos do case (.sparkforge_aws/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash.",
       "arguments": [
         {
           "name": "help",
@@ -9555,7 +9555,7 @@
     },
     {
       "path": "journal verify",
-      "help": null,
+      "help": "Recalcula a cadeia: intact, broken (com o seq da quebra), torn_tail ou absent. Sai 1 em broken.",
       "arguments": [
         {
           "name": "help",
@@ -9584,7 +9584,7 @@
     },
     {
       "path": "playbook",
-      "help": null,
+      "help": "Decomposicao de um coordenador em passos sequenciais -- o PISO de orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, e o caminho em Claude Code, Devin CLI e Devin Local agent quando o despacho de subagente esta desligado -- e, no Devin, tambem quando ele esta ligado, porque subagente nao gera subagente por default. Le agents/, nunca repete a lista de executores.",
       "arguments": [
         {
           "name": "help",
@@ -9633,7 +9633,7 @@
     },
     {
       "path": "runtime",
-      "help": null,
+      "help": "Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena.",
       "arguments": [
         {
           "name": "help",
@@ -9652,7 +9652,7 @@
     },
     {
       "path": "runtime detect",
-      "help": null,
+      "help": "Deriva a matriz de runtime a partir de facts ja extraidos e de flags.",
       "arguments": [
         {
           "name": "help",
@@ -9772,7 +9772,7 @@
     },
     {
       "path": "code",
-      "help": null,
+      "help": "Indice local de codigo: prepara, sincroniza, busca simbolo, monta contexto e diagnostica.",
       "arguments": [
         {
           "name": "help",
@@ -9791,7 +9791,7 @@
     },
     {
       "path": "code init",
-      "help": null,
+      "help": "Prepara o indice sob --root: preflight de seguranca, diretorio, conferencia do .gitignore, banco, indexacao e integridade. `index` e o nome antigo do mesmo comando.",
       "arguments": [
         {
           "name": "help",
@@ -9871,7 +9871,7 @@
     },
     {
       "path": "code sync",
-      "help": null,
+      "help": "Poe o indice em dia com a arvore. Unica escrita do verbo.",
       "arguments": [
         {
           "name": "help",
@@ -9911,7 +9911,7 @@
     },
     {
       "path": "code status",
-      "help": null,
+      "help": "Estado do indice: frescor, contagens, seguranca e o que mudou na arvore.",
       "arguments": [
         {
           "name": "help",
@@ -9966,7 +9966,7 @@
     },
     {
       "path": "code search",
-      "help": null,
+      "help": "Busca simbolo por parte do nome.",
       "arguments": [
         {
           "name": "help",
@@ -10048,7 +10048,7 @@
     },
     {
       "path": "code export",
-      "help": null,
+      "help": "Exporta o grafo no formato de extracao que a fonte publica.",
       "arguments": [
         {
           "name": "help",
@@ -10114,7 +10114,7 @@
     },
     {
       "path": "code shape",
-      "help": null,
+      "help": "Comunidades e nos de maior grau. Nao e julgamento, e forma.",
       "arguments": [
         {
           "name": "help",
@@ -10180,7 +10180,7 @@
     },
     {
       "path": "code path",
-      "help": null,
+      "help": "O caminho mais curto de chamadas entre dois simbolos. Nunca o corpo.",
       "arguments": [
         {
           "name": "help",
@@ -10264,7 +10264,7 @@
     },
     {
       "path": "code symbol",
-      "help": null,
+      "help": "Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo.",
       "arguments": [
         {
           "name": "help",
@@ -10339,7 +10339,7 @@
     },
     {
       "path": "code read",
-      "help": null,
+      "help": "Le um trecho do repositorio, por --node-id OU por --file com faixa. Tetos duros: 250 linhas, 32 KiB, 4096 tokens.",
       "arguments": [
         {
           "name": "help",
@@ -10445,7 +10445,7 @@
     },
     {
       "path": "code context",
-      "help": null,
+      "help": "Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento.",
       "arguments": [
         {
           "name": "help",
@@ -10522,7 +10522,7 @@
     },
     {
       "path": "code doctor",
-      "help": null,
+      "help": "Diagnostico local do indice e da superficie. Sai 1 quando alguma checagem falha. Nao testa conectividade de internet.",
       "arguments": [
         {
           "name": "help",
@@ -10562,7 +10562,7 @@
     },
     {
       "path": "code purge",
-      "help": null,
+      "help": "Apaga SOMENTE .sparkforge_aws/local/codeintel/. Qualquer outro diretorio e recusado.",
       "arguments": [
         {
           "name": "help",
@@ -10602,7 +10602,7 @@
     },
     {
       "path": "graph",
-      "help": null,
+      "help": "Grafo do indice de codigo: status, ForgeGraphView e Graph Studio local.",
       "arguments": [
         {
           "name": "help",
@@ -10621,7 +10621,7 @@
     },
     {
       "path": "graph status",
-      "help": null,
+      "help": "Estado do grafo: contagens e origem do indice.",
       "arguments": [
         {
           "name": "help",
@@ -10650,7 +10650,7 @@
     },
     {
       "path": "graph view",
-      "help": null,
+      "help": "Emite o documento ForgeGraphView/v1 (contrato do Graph Studio).",
       "arguments": [
         {
           "name": "help",
@@ -10690,7 +10690,7 @@
     },
     {
       "path": "graph ui",
-      "help": null,
+      "help": "Abre o Graph Studio local (read-only, 127.0.0.1).",
       "arguments": [
         {
           "name": "help",
@@ -10752,7 +10752,7 @@
     },
     {
       "path": "pack",
-      "help": null,
+      "help": "Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_AWS_PACKS).",
       "arguments": [
         {
           "name": "help",
@@ -10771,7 +10771,7 @@
     },
     {
       "path": "pack list",
-      "help": null,
+      "help": "Packs ativos, recusados com o motivo, e o mapa prefixo -> pack.",
       "arguments": [
         {
           "name": "help",
@@ -10789,7 +10789,7 @@
     },
     {
       "path": "pack check",
-      "help": null,
+      "help": "Roda cada fixture do pack pelo judge. Sai 1 quando uma regra do pack nao dispara no fixture que a declara, ou quando o pack e recusado.",
       "arguments": [
         {
           "name": "help",
@@ -10816,7 +10816,7 @@
     },
     {
       "path": "knowledge",
-      "help": null,
+      "help": "Localiza os arquivos de conhecimento versionado.",
       "arguments": [
         {
           "name": "help",
@@ -10835,7 +10835,7 @@
     },
     {
       "path": "knowledge path",
-      "help": null,
+      "help": "Imprime a raiz de knowledge e, com --file, um arquivo dentro dela.",
       "arguments": [
         {
           "name": "help",
@@ -10886,7 +10886,7 @@
     },
     {
       "path": "knowledge drift",
-      "help": null,
+      "help": "Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), as regras e documentos que a leram antes da mudanca e os goldens, evals e agentes dessas regras. Sem rede.",
       "arguments": [
         {
           "name": "help",
@@ -10926,7 +10926,7 @@
     },
     {
       "path": "debate",
-      "help": null,
+      "help": "Conduz e arbitra o protocolo de debate do case. Nao gera argumento: quem escreve cada submissao e o host.",
       "arguments": [
         {
           "name": "help",
@@ -10945,7 +10945,7 @@
     },
     {
       "path": "debate referee",
-      "help": null,
+      "help": "Diz se o fechamento declarado pode ser publicado: hipotese que sobrevive, claim sem evidencia, objecao sem replica, referencia pendurada.",
       "arguments": [
         {
           "name": "help",
@@ -10974,7 +10974,7 @@
     },
     {
       "path": "debate start",
-      "help": null,
+      "help": "Congela o plano de debate do par --rules A,B em <repo>/.sparkforge_aws/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml.",
       "arguments": [
         {
           "name": "help",
@@ -11127,7 +11127,7 @@
     },
     {
       "path": "debate next",
-      "help": null,
+      "help": "O brief do lado da vez, ou `done` com a Decision. Grava a Decision no fechamento; depois dele devolve sempre o mesmo `done`.",
       "arguments": [
         {
           "name": "help",
@@ -11167,7 +11167,7 @@
     },
     {
       "path": "debate submit",
-      "help": null,
+      "help": "Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual.",
       "arguments": [
         {
           "name": "help",
@@ -11218,7 +11218,7 @@
     },
     {
       "path": "root-cause",
-      "help": null,
+      "help": "Ordena os achados por consequencia declarada e nomeia a lacuna. Nao calcula confianca e nao estima ganho.",
       "arguments": [
         {
           "name": "help",
@@ -11364,7 +11364,7 @@
     },
     {
       "path": "lakeformation",
-      "help": null,
+      "help": "Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, nao versao de componente.",
       "arguments": [
         {
           "name": "help",
@@ -11383,7 +11383,7 @@
     },
     {
       "path": "lakeformation access-graph",
-      "help": null,
+      "help": "O caminho de acesso como GRAFO, a partir de facts. `is_accessible` e TERNARIO -- `null` e 'o que olhei nao impede', nao 'funciona'.",
       "arguments": [
         {
           "name": "help",
@@ -11434,7 +11434,7 @@
     },
     {
       "path": "lakeformation matrix",
-      "help": null,
+      "help": "Imprime o eixo: filesystem S3 default, FGAC por caminho, DDL/DML e FTA, com a frase da fonte quando ela existe.",
       "arguments": [
         {
           "name": "help",
@@ -11489,7 +11489,7 @@
     },
     {
       "path": "lakeformation architect",
-      "help": null,
+      "help": "Avalia arquitetura declarada de FGAC/FTA, ownership de catalogos, cross-account e capability por release. Nao toca AWS.",
       "arguments": [
         {
           "name": "help",
@@ -11518,7 +11518,7 @@
     },
     {
       "path": "rules",
-      "help": null,
+      "help": "Consulta o catalogo de regras versionado.",
       "arguments": [
         {
           "name": "help",
@@ -11537,7 +11537,7 @@
     },
     {
       "path": "rules lookup",
-      "help": null,
+      "help": "Busca regras por id ou categoria (thresholds, fontes, severidade).",
       "arguments": [
         {
           "name": "help",
@@ -11660,7 +11660,7 @@
     },
     {
       "path": "validate",
-      "help": null,
+      "help": "Valida findings contra o JSON Schema e a regra de ganho sem benchmark_ref.",
       "arguments": [
         {
           "name": "help",
@@ -11700,7 +11700,7 @@
     },
     {
       "path": "report",
-      "help": null,
+      "help": "Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi derivado daquela evidencia com aquele catalogo. Nunca autoria.",
       "arguments": [
         {
           "name": "help",
@@ -11719,7 +11719,7 @@
     },
     {
       "path": "report sign",
-      "help": null,
+      "help": "Escreve o bloco de assinatura no fim do relatorio. Reassinar e barato e devolve o mesmo arquivo quando nada mudou.",
       "arguments": [
         {
           "name": "help",
@@ -11759,7 +11759,7 @@
     },
     {
       "path": "report verify",
-      "help": null,
+      "help": "Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo ou corpo. Sai com codigo 1 quando nao corresponde.",
       "arguments": [
         {
           "name": "help",
@@ -11799,7 +11799,7 @@
     },
     {
       "path": "report github",
-      "help": null,
+      "help": "Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge_aws/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede.",
       "arguments": [
         {
           "name": "help",
@@ -11908,7 +11908,7 @@
     },
     {
       "path": "telemetry",
-      "help": null,
+      "help": "Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector.",
       "arguments": [
         {
           "name": "help",
@@ -11927,7 +11927,7 @@
     },
     {
       "path": "telemetry export",
-      "help": null,
+      "help": "Grava .sparkforge_aws/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le com o receiver otlp_json_file. Nao chama rede; token so com transcript do host.",
       "arguments": [
         {
           "name": "help",
@@ -11989,7 +11989,7 @@
     },
     {
       "path": "receipt",
-      "help": null,
+      "help": "Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o recibo e os artefatos, nunca autoria.",
       "arguments": [
         {
           "name": "help",
@@ -12008,7 +12008,7 @@
     },
     {
       "path": "receipt emit",
-      "help": null,
+      "help": "Grava .sparkforge_aws/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso.",
       "arguments": [
         {
           "name": "help",
@@ -12114,7 +12114,7 @@
     },
     {
       "path": "receipt verify",
-      "help": null,
+      "help": "Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 quando o recibo nao corresponde.",
       "arguments": [
         {
           "name": "help",
@@ -12165,7 +12165,7 @@
     },
     {
       "path": "proof",
-      "help": null,
+      "help": "Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra deixou de disparar no depois?) e um eixo por item de action.moves (funcval, benchmark ou sem comparador). Desfechos: refuted, not_refuted, inconclusive, unproven -- nunca provado.",
       "arguments": [
         {
           "name": "help",
@@ -12318,7 +12318,7 @@
     },
     {
       "path": "simulate",
-      "help": null,
+      "help": "O que uma mudanca de configuracao move, estruturalmente: altera o valor de facts que ja existem, rederiva e julga os dois lados, e diz que achados somem e aparecem. Nunca preve spill, tempo ou custo.",
       "arguments": [
         {
           "name": "help",
@@ -12449,7 +12449,7 @@
     },
     {
       "path": "gain",
-      "help": null,
+      "help": "Ganho OBSERVADO entre runs medidos antes e depois de uma mudanca: por lado, N, mediana, minimo e maximo de tempo, DPU-segundos e custo, e o delta das medianas. Nunca projeta economia nem atribui causa.",
       "arguments": [
         {
           "name": "help",
@@ -12489,7 +12489,7 @@
     },
     {
       "path": "scan",
-      "help": null,
+      "help": "Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge_aws/scan/. Sem rede.",
       "arguments": [
         {
           "name": "help",
@@ -12646,7 +12646,7 @@
     },
     {
       "path": "doctor",
-      "help": null,
+      "help": "Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. Sai 1 com alguma falha.",
       "arguments": [
         {
           "name": "help",
@@ -12687,7 +12687,7 @@
     },
     {
       "path": "doctor agentic",
-      "help": null,
+      "help": "Confere readiness local do plano agêntico, sem rede.",
       "arguments": [
         {
           "name": "help",
@@ -12716,7 +12716,7 @@
     },
     {
       "path": "integrate",
-      "help": null,
+      "help": "Instala skills, agents e o MCP do SparkForge nos diretorios de USUARIO do host (Claude Code por marketplace local; Devin, Codex e Copilot CLI), a partir do pacote instalado. Nada e escrito no repositorio, exceto a remocao da copia vendorizada que o operador escolher.",
       "arguments": [
         {
           "name": "help",
@@ -12803,7 +12803,7 @@
     },
     {
       "path": "detach",
-      "help": null,
+      "help": "Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge_aws/integrations.json registrou e ainda tem o sha256 gravado.",
       "arguments": [
         {
           "name": "help",
@@ -12860,7 +12860,7 @@
     },
     {
       "path": "install",
-      "help": null,
+      "help": "Instala o SparkForge no projeto/workspace (--scope) ou no HOME (--scope user, delegado ao integrate). Escreve so arquivos gerenciados; --dry-run mostra o plano.",
       "arguments": [
         {
           "name": "help",
@@ -12986,7 +12986,7 @@
     },
     {
       "path": "install doctor",
-      "help": null,
+      "help": "Saude da instalacao no alvo.",
       "arguments": [
         {
           "name": "help",
@@ -13004,7 +13004,7 @@
     },
     {
       "path": "status",
-      "help": null,
+      "help": "Estado da instalacao (ledger + drift + health doc).",
       "arguments": [
         {
           "name": "help",
@@ -13048,7 +13048,7 @@
     },
     {
       "path": "repair",
-      "help": null,
+      "help": "Regrava assets gerenciados que sumiram ou mudaram.",
       "arguments": [
         {
           "name": "help",
@@ -13103,7 +13103,7 @@
     },
     {
       "path": "update",
-      "help": null,
+      "help": "Atualiza o runtime instalado pelo bootstrap.",
       "arguments": [
         {
           "name": "help",
@@ -13154,7 +13154,7 @@
     },
     {
       "path": "uninstall",
-      "help": null,
+      "help": "Remove so o que o manifesto declara como gerenciado.",
       "arguments": [
         {
           "name": "help",
@@ -13237,7 +13237,7 @@
     },
     {
       "path": "mcp",
-      "help": null,
+      "help": "Operacoes do servidor MCP.",
       "arguments": [
         {
           "name": "help",
@@ -13256,7 +13256,7 @@
     },
     {
       "path": "mcp verify",
-      "help": null,
+      "help": "Handshake JSON-RPC real: initialize + tools/list contra o server.",
       "arguments": [
         {
           "name": "help",
@@ -13274,7 +13274,7 @@
     },
     {
       "path": "policy",
-      "help": null,
+      "help": "Politica de seguranca do repositorio (.sparkforge_aws/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json.",
       "arguments": [
         {
           "name": "help",
@@ -13293,7 +13293,7 @@
     },
     {
       "path": "policy check",
-      "help": null,
+      "help": "Valida a policy e lista as regras; sai 2 se ela for invalida.",
       "arguments": [
         {
           "name": "help",
@@ -13322,7 +13322,7 @@
     },
     {
       "path": "policy explain",
-      "help": null,
+      "help": "Diz a decisao (allow, ask, deny), a regra que casou e qual porta a impoe.",
       "arguments": [
         {
           "name": "help",
@@ -13384,7 +13384,7 @@
     },
     {
       "path": "policy sync-settings",
-      "help": null,
+      "help": "Gera permissions.ask no .claude/settings.json a partir das regras ask; --check so confere e sai 1 se divergir.",
       "arguments": [
         {
           "name": "help",
@@ -13424,7 +13424,7 @@
     },
     {
       "path": "change",
-      "help": null,
+      "help": "Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff numa copia isolada para ver o que ele move nos achados (sandbox).",
       "arguments": [
         {
           "name": "help",
@@ -13443,7 +13443,7 @@
     },
     {
       "path": "change plan",
-      "help": null,
+      "help": "Diff e diff de rollback de um valor de configuracao, achado pela procedencia dos facts (Terraform --conf ou spark.conf.set). Nao aplica nada.",
       "arguments": [
         {
           "name": "help",
@@ -13516,7 +13516,7 @@
     },
     {
       "path": "change sandbox",
-      "help": null,
+      "help": "Aplica um diff numa copia em .sparkforge_aws/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda.",
       "arguments": [
         {
           "name": "help",
@@ -13567,7 +13567,7 @@
     },
     {
       "path": "change propose",
-      "help": null,
+      "help": "Monta o pacote de um PR em .sparkforge_aws/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh.",
       "arguments": [
         {
           "name": "help",
@@ -13640,7 +13640,7 @@
     },
     {
       "path": "collect",
-      "help": null,
+      "help": "Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).",
       "arguments": [
         {
           "name": "help",
@@ -13659,7 +13659,7 @@
     },
     {
       "path": "collect event-log",
-      "help": null,
+      "help": "Baixa o Spark event log de um job run via S3.",
       "arguments": [
         {
           "name": "help",
@@ -13732,7 +13732,7 @@
     },
     {
       "path": "collect glue-job",
-      "help": null,
+      "help": "Baixa a definicao de um job via a API do Glue.",
       "arguments": [
         {
           "name": "help",
@@ -13783,7 +13783,7 @@
     },
     {
       "path": "collect cloudwatch",
-      "help": null,
+      "help": "Baixa metricas de observabilidade Glue via CloudWatch.",
       "arguments": [
         {
           "name": "help",
@@ -13867,7 +13867,7 @@
     },
     {
       "path": "collect iam-access",
-      "help": null,
+      "help": "Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao.",
       "arguments": [
         {
           "name": "help",
@@ -13940,7 +13940,7 @@
     },
     {
       "path": "collect glue-resource-link",
-      "help": null,
+      "help": "Le o resource link na conta consumidora e o recurso de origem que ele declara.",
       "arguments": [
         {
           "name": "help",
@@ -14024,7 +14024,7 @@
     },
     {
       "path": "collect lakeformation",
-      "help": null,
+      "help": "Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela.",
       "arguments": [
         {
           "name": "help",
@@ -14108,7 +14108,7 @@
     },
     {
       "path": "collect cloudwatch-logs",
-      "help": null,
+      "help": "Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem).",
       "arguments": [
         {
           "name": "help",
@@ -14225,7 +14225,7 @@
     },
     {
       "path": "collect glue-job-runs",
-      "help": null,
+      "help": "Baixa o historico de execucoes de um job, um artefato por run terminal.",
       "arguments": [
         {
           "name": "help",
@@ -14287,7 +14287,7 @@
     },
     {
       "path": "collect iceberg-metadata",
-      "help": null,
+      "help": "Consulta metadata tables Iceberg de uma tabela via Athena.",
       "arguments": [
         {
           "name": "help",
@@ -14360,7 +14360,7 @@
     },
     {
       "path": "collect parquet-footer",
-      "help": null,
+      "help": "Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow.",
       "arguments": [
         {
           "name": "help",
@@ -14422,7 +14422,7 @@
     },
     {
       "path": "collect athena-workgroup",
-      "help": null,
+      "help": "Baixa a configuracao de um workgroup via a API do Athena.",
       "arguments": [
         {
           "name": "help",
@@ -14473,7 +14473,7 @@
     },
     {
       "path": "collect emr-cluster",
-      "help": null,
+      "help": "Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de scaling de um cluster EMR on EC2.",
       "arguments": [
         {
           "name": "help",
@@ -14524,7 +14524,7 @@
     },
     {
       "path": "collect emr-serverless",
-      "help": null,
+      "help": "Baixa get-application de uma application EMR Serverless. Uma chamada, nao seis: capacidade, auto-stop, runtimeConfiguration e monitoramento chegam no mesmo objeto.",
       "arguments": [
         {
           "name": "help",
@@ -14575,7 +14575,7 @@
     },
     {
       "path": "collect emr-eks",
-      "help": null,
+      "help": "Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: no `emr-containers` cluster virtual e execucao sao APIs separadas.",
       "arguments": [
         {
           "name": "help",
@@ -14637,7 +14637,7 @@
     },
     {
       "path": "collect streaming-integrations",
-      "help": null,
+      "help": "Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio.",
       "arguments": [
         {
           "name": "help",
@@ -14798,7 +14798,7 @@
     },
     {
       "path": "collect schema-registry",
-      "help": null,
+      "help": "Coleta metadata e latest version read-only do AWS Glue Schema Registry.",
       "arguments": [
         {
           "name": "help",
@@ -14904,7 +14904,7 @@
     },
     {
       "path": "collect managed-flink",
-      "help": null,
+      "help": "Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação.",
       "arguments": [
         {
           "name": "help",
@@ -14999,7 +14999,7 @@
     },
     {
       "path": "collect workspace-graph",
-      "help": null,
+      "help": "Coleta grafo live limitado aos cloud_resources declarados no workspace manifest.",
       "arguments": [
         {
           "name": "help",
@@ -15061,7 +15061,7 @@
     },
     {
       "path": "collect verify",
-      "help": null,
+      "help": "Verifica presenca e integridade de todos os artefatos do manifesto.",
       "arguments": [
         {
           "name": "help",

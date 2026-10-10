@@ -1,0 +1,262 @@
+{
+  "agentops": {
+    "why": "inspeciona runs locais e atribui desperdício observado contra baseline",
+    "when": "medir o que uma execução agentica realmente custou — nunca estimativa"
+  },
+  "agents": {
+    "why": "lista e inspeciona agentes do runtime agêntico",
+    "when": "ver o roster declarado antes de rotear trabalho"
+  },
+  "analyze": {
+    "why": "extrai facts determinísticos de código-fonte (AST, provenance sha256)",
+    "when": "inventário factual de jobs antes de judge/playbook — sem rodar nada"
+  },
+  "arbitrate": {
+    "why": "executor agêntico determinístico: arbitra findings já julgados e grava claim+evidência",
+    "when": "transformar findings julgados em ação auditável com recibo"
+  },
+  "architecture": {
+    "why": "avalia arquitetura declarada sem preferência nem custo inventado",
+    "when": "revisão estrutural honesta de topologia declarada"
+  },
+  "autonomy": {
+    "why": "mostra os níveis de autonomia L0-L5",
+    "when": "entender o que cada nível permite antes de subir autonomia"
+  },
+  "benchmark": {
+    "why": "compara duas execuções por facts de event log — não executa nada",
+    "when": "validar se uma mudança melhorou uma run já medida"
+  },
+  "blackboard": {
+    "why": "lê o shared blackboard do case (.sparkforge_aws/blackboard/)",
+    "when": "ver o que agentes já publicaram no case atual"
+  },
+  "budget": {
+    "why": "estado do budget do case",
+    "when": "conferir quanto de contexto/custo o case já consumiu"
+  },
+  "capacity": {
+    "why": "escolhe a capacidade mais barata que cumpre o SLA — entre capacidades que o job JÁ rodou",
+    "when": "dimensionar DPU/worker com evidência, nunca extrapolação"
+  },
+  "case": {
+    "why": "gerencia o estado do case (.sparkforge_aws/case.yaml)",
+    "when": "iniciar/inspecionar o case que ancora findings e evidência"
+  },
+  "change": {
+    "why": "autonomia L1-L2: diff de config (plan) e aplicação numa cópia",
+    "when": "ensaiar uma mudança de configuração com evidência antes/depois"
+  },
+  "code": {
+    "why": "índice local de código: símbolos, contexto, diagnóstico",
+    "when": "busca estrutural de código sem varrer o repo inteiro"
+  },
+  "collect": {
+    "why": "coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)",
+    "when": "trazer evidência de runtime para análise offline — requer credencial"
+  },
+  "context": {
+    "why": "descobre capabilities e empacota contexto sob limite explícito",
+    "when": "montar contexto determinístico para um agente/host"
+  },
+  "controlm": {
+    "why": "conhecimento versionado do Control-M Automation API — lê matriz, não artefato",
+    "when": "avaliar migração/integração Control-M com fonte versionada"
+  },
+  "debate": {
+    "why": "conduz e arbitra o protocolo de debate do case — não gera argumento",
+    "when": "quando o caso exige debate estruturado entre submissões"
+  },
+  "decision": {
+    "why": "valida e observa decisões declarativas sem alterar dispatch",
+    "when": "experimentar uma decisão antes de adotá-la"
+  },
+  "decisions": {
+    "why": "lista e explica decisões registradas",
+    "when": "auditar o histórico de decisões do case"
+  },
+  "detach": {
+    "why": "remove a integração de usuário do host — só o que o manifesto declara",
+    "when": "desinstalar limpo sem órfãos nos hosts"
+  },
+  "distribution": {
+    "why": "inspeção e inicialização portátil offline",
+    "when": "distribuir o pacote em ambiente sem rede"
+  },
+  "doctor": {
+    "why": "confere ambiente: pacote, extras, MCP, catálogo, packs, índice",
+    "when": "primeira linha: pós-install, máquina nova, erro de import"
+  },
+  "dq-ai": {
+    "why": "avalia governança Glue DQ ADVANCED sobre facts observados",
+    "when": "julgamento de data quality com evidência, não suposição"
+  },
+  "economy": {
+    "why": "o que a execução põe na janela de contexto — byte medido",
+    "when": "quantificar contexto antes de reclamar de custo"
+  },
+  "finops": {
+    "why": "relatório financeiro: custo, troca recurso-tempo, alavanca de capacidade",
+    "when": "decidir configuração por custo com dados reais de run"
+  },
+  "funcval": {
+    "why": "validação funcional: deriva o que medir nos dois lados e compara",
+    "when": "provar equivalência antes/depois de uma mudança"
+  },
+  "fuse": {
+    "why": "correlaciona facts de SQL com schema do catálogo",
+    "when": "cruzar uso real de tabelas/colunas com o catálogo antes de julgar"
+  },
+  "gain": {
+    "why": "ganho OBSERVADO entre runs medidos antes/depois — por lado, N, mediana",
+    "when": "comprovar melhoria estatística, não impressão"
+  },
+  "glue": {
+    "why": "comandos específicos do runtime AWS Glue",
+    "when": "operações de assessment/migração no domínio Glue"
+  },
+  "graph": {
+    "why": "grafo do índice de código: ForgeGraphView + Graph Studio local",
+    "when": "navegar dependências do código indexado"
+  },
+  "handoff": {
+    "why": "escreve .sparkforge_aws/handoff.md + payload",
+    "when": "transferir o case para outro host/agente com contexto completo"
+  },
+  "iceberg": {
+    "why": "comandos específicos de Apache Iceberg",
+    "when": "assessment de tabelas/catálogo Iceberg"
+  },
+  "install": {
+    "why": "instala SparkForge no projeto/workspace (--scope) ou HOME (--scope user)",
+    "when": "instalar a forja num escopo governado"
+  },
+  "integrate": {
+    "why": "instala skills, agents e MCP nos diretórios de USUÁRIO do host",
+    "when": "ativar a forja no Claude/Codex/Devin do usuário"
+  },
+  "journal": {
+    "why": "journal de eventos do case — started/finished por verbo",
+    "when": "auditar sequência de operações do case"
+  },
+  "judge": {
+    "why": "aplica o catálogo de regras versionado sobre facts extraídos",
+    "when": "depois do analyze: transformar facts em findings com rule_id"
+  },
+  "knowledge": {
+    "why": "localiza arquivos de conhecimento versionado",
+    "when": "achar a fonte canônica de regras/playbooks"
+  },
+  "lab": {
+    "why": "experimentos Forge Lab; execução mutável exige confirmação explícita",
+    "when": "cenários reproduzíveis offline; nada muta sem opt-in"
+  },
+  "lakeformation": {
+    "why": "eixo de versão Lake Formation por runtime Glue — capacidade, não componente",
+    "when": "verificar o que cada runtime Glue suporta em LF"
+  },
+  "mcp": {
+    "why": "operações do servidor MCP",
+    "when": "servir a forja via MCP ou inspecionar o catálogo"
+  },
+  "migrate": {
+    "why": "avalia migração entre versões de runtime com o catálogo",
+    "when": "Glue 4→5/6, EMR, Spark — assessment versionado"
+  },
+  "next-step": {
+    "why": "rota determinística via routing.yaml — nunca julgamento do agente",
+    "when": "o próximo passo correto a partir dos findings do case"
+  },
+  "pack": {
+    "why": "Forge Packs: regras, knowledge e fixtures de terceiro",
+    "when": "estender a forja com packs versionados externos"
+  },
+  "playbook": {
+    "why": "decomposição de coordenador em passos sequenciais — piso de orquestração",
+    "when": "executar fluxo multi-passo declarado, deterministicamente"
+  },
+  "policy": {
+    "why": "política de segurança do repo (.sparkforge_aws/policy.yaml)",
+    "when": "validar/explicar regras de política aplicadas"
+  },
+  "proof": {
+    "why": "obrigações de prova de recomendações APLICADAS",
+    "when": "provar que a regra deixou de disparar após aplicar"
+  },
+  "receipt": {
+    "why": "recibo content-addressed da execução — prova correspondência",
+    "when": "verificar que o recibo corresponde aos artefatos da run"
+  },
+  "release": {
+    "why": "o que uma release publica e o que muda entre duas — lê matriz de versão",
+    "when": "comparar releases sem avaliar ambiente"
+  },
+  "repair": {
+    "why": "regrava assets gerenciados que sumiram ou mudaram",
+    "when": "restaurar a integração sem reinstalar"
+  },
+  "report": {
+    "why": "assinatura de correspondência do relatório — texto derivado da evidência",
+    "when": "provar que o relatório saiu daquela evidência, não de prosa"
+  },
+  "resume": {
+    "why": "payload de reidratação do case",
+    "when": "retomar um case noutro processo/host"
+  },
+  "root-cause": {
+    "why": "ordena achados por consequência declarada e nomeia a lacuna",
+    "when": "priorizar findings pela causa, não pela ordem de emissão"
+  },
+  "rules": {
+    "why": "consulta o catálogo de regras versionado",
+    "when": "ver regras disponíveis e seus metadados"
+  },
+  "runtime": {
+    "why": "detecção de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena",
+    "when": "identificar o runtime alvo da análise"
+  },
+  "scan": {
+    "why": "roda sozinho os analyzes que cabem no repo",
+    "when": "primeira passada num repo desconhecido — descoberta por presença"
+  },
+  "sdd": {
+    "why": "confere a cadeia de artefatos de spec em docs/sdd/<FEATURE>/<fase>.md",
+    "when": "gate de spec-driven development antes de build/ship"
+  },
+  "simulate": {
+    "why": "o que uma mudança de config move estruturalmente — sobre facts existentes",
+    "when": "ensaiar impacto de config sem executar"
+  },
+  "status": {
+    "why": "estado da instalação (ledger + drift + health doc)",
+    "when": "ver se a instalação divergiu do manifesto"
+  },
+  "telemetry": {
+    "why": "spans de tool e transcript do host em OTLP/JSON",
+    "when": "exportar telemetria para um OTLP Collector"
+  },
+  "tune": {
+    "why": "configuração Spark derivada da medida, com provenance — nunca aplica",
+    "when": "obter config recomendada com evidência, sem mutação"
+  },
+  "uninstall": {
+    "why": "remove só o que o manifesto declara como gerenciado",
+    "when": "desinstalação honesta e delimitada"
+  },
+  "update": {
+    "why": "atualiza o runtime instalado pelo bootstrap",
+    "when": "manter a distribuição instalada atual"
+  },
+  "validate": {
+    "why": "valida findings contra JSON Schema + regra de ganho",
+    "when": "conformidade estrutural de findings antes de consumir"
+  },
+  "workload": {
+    "why": "perfil de workload por eixos, a partir de facts",
+    "when": "caracterizar a carga para orientar capacidade/tune"
+  },
+  "workspace": {
+    "why": "workspace virtual declarado e descoberta limitada",
+    "when": "trabalhar multi-projeto dentro de um workspace declarado"
+  }
+}

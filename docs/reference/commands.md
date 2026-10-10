@@ -1,6 +1,8 @@
 # `sparkforge-aws` command reference
 
-Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. Do not hand-edit generated sections — write between `keep:start`/`keep:end` markers. Status vocabulary: `available` unless marked otherwise.
+Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. Do not hand-edit generated sections — write between `keep:start`/`keep:end` markers. `por que`/`quando` lines come from the curated `command-rationale.json` — edit rationale there, never here. Status vocabulary: `available` unless marked otherwise.
+
+Rationale coverage: **65/65** first-level groups curated in `command-rationale.json`.
 
 ## Groups
 
@@ -74,6 +76,11 @@ Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. D
 
 ### `agentops`
 
+**para que:** Inspeciona runs locais, compara baseline e atribui desperdicio observado.
+
+- **por que:** inspeciona runs locais e atribui desperdício observado contra baseline
+- **quando usar:** medir o que uma execução agentica realmente custou — nunca estimativa
+
 **Syntax**
 
 ```text
@@ -89,6 +96,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `agentops baseline`
+
+**para que:** Salva ou compara baseline local.
+
+- **por que:** inspeciona runs locais e atribui desperdício observado contra baseline
+- **quando usar:** medir o que uma execução agentica realmente custou — nunca estimativa
 
 **Syntax**
 
@@ -111,6 +123,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `agentops compare`
 
+**para que:** Compara dois runs locais.
+
+- **por que:** inspeciona runs locais e atribui desperdício observado contra baseline
+- **quando usar:** medir o que uma execução agentica realmente custou — nunca estimativa
+
 **Syntax**
 
 ```text
@@ -131,6 +148,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `agentops critical-path`
 
+**para que:** Maiores duracoes, retries e waiting medidos do run.
+
+- **por que:** inspeciona runs locais e atribui desperdício observado contra baseline
+- **quando usar:** medir o que uma execução agentica realmente custou — nunca estimativa
+
 **Syntax**
 
 ```text
@@ -150,6 +172,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `agentops inspect`
 
+**para que:** Inspeciona um run local.
+
+- **por que:** inspeciona runs locais e atribui desperdício observado contra baseline
+- **quando usar:** medir o que uma execução agentica realmente custou — nunca estimativa
+
 **Syntax**
 
 ```text
@@ -168,6 +195,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `agentops timeline`
+
+**para que:** Linha do tempo do run, por lane de componente.
+
+- **por que:** inspeciona runs locais e atribui desperdício observado contra baseline
+- **quando usar:** medir o que uma execução agentica realmente custou — nunca estimativa
 
 **Syntax**
 
@@ -190,6 +222,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `agents`
 
+**para que:** Lista e inspeciona agentes do runtime agêntico.
+
+- **por que:** lista e inspeciona agentes do runtime agêntico
+- **quando usar:** ver o roster declarado antes de rotear trabalho
+
 **Syntax**
 
 ```text
@@ -205,6 +242,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `agents inspect`
+
+**para que:** Inspeciona um agente.
+
+- **por que:** lista e inspeciona agentes do runtime agêntico
+- **quando usar:** ver o roster declarado antes de rotear trabalho
 
 **Syntax**
 
@@ -223,6 +265,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `agents list`
+
+**para que:** Lista agentes disponíveis.
+
+- **por que:** lista e inspeciona agentes do runtime agêntico
+- **quando usar:** ver o roster declarado antes de rotear trabalho
 
 **Syntax**
 
@@ -243,6 +290,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze`
 
+**para que:** Extrai facts deterministicos de codigo-fonte.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -258,6 +310,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze airflow-dag`
+
+**para que:** Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -281,6 +338,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze athena-workgroup`
 
+**para que:** Extrai facts de um dump JSON de workgroups do Athena.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -302,6 +364,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze call-graph`
+
+**para que:** Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -325,6 +392,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze catalog-schema`
 
+**para que:** Extrai facts de um dump JSON do Glue Data Catalog.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -346,6 +418,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze cdc`
+
+**para que:** Extrai facts offline de dumps CDC, Debezium ou AWS DMS.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -370,6 +447,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze cloudwatch`
 
+**para que:** Extrai facts de um artefato de metricas do CloudWatch ja coletado.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -391,6 +473,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze cloudwatch-logs`
+
+**para que:** Extrai facts do LOG do run ja coletado do CloudWatch Logs.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -414,6 +501,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze consumers`
 
+**para que:** Extrai facts do inventario declarado de consumidores de tabela.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -435,6 +527,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze controlm-jobs`
+
+**para que:** Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -459,6 +556,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze data-observability`
 
+**para que:** Avalia SLI/SLO, error budget, incidentes e dependências offline.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -476,6 +578,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze data-quality`
+
+**para que:** Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -499,6 +606,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze dbt-artifacts`
 
+**para que:** Analisa manifest, catalog e run_results do dbt sem executar dbt.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -516,6 +628,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze dq-ai`
+
+**para que:** Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -539,6 +656,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze duckdb-microscope`
 
+**para que:** Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -556,6 +678,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze emr-cluster`
+
+**para que:** Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam).
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -579,6 +706,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze emr-eks`
 
+**para que:** Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -600,6 +732,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze emr-serverless`
+
+**para que:** Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -623,6 +760,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze error-signatures`
 
+**para que:** Casa knowledge/errors/ contra os facts do case. Derivacao pura.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -644,6 +786,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze event-driven`
+
+**para que:** Extrai facts offline de EventBridge/Pipes, SQS e SNS.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -667,6 +814,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze event-log`
 
+**para que:** Extrai facts de um Spark event log (.jsonl) ja coletado.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -688,6 +840,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze flink`
+
+**para que:** Extrai facts offline de dumps Apache Flink ou Managed Flink.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -712,6 +869,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze forge-lab`
 
+**para que:** Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -729,6 +891,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze glue-job-runs`
+
+**para que:** Extrai facts de historico do diretorio de artefatos de run Glue.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -754,6 +921,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze glue-resource-link`
 
+**para que:** Extrai a topologia do catalogo ja coletada: link, alvo e nome.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -775,6 +947,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze glue-streaming`
+
+**para que:** Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -798,6 +975,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze graph`
 
+**para que:** Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -819,6 +1001,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze iam-access`
+
+**para que:** Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -842,6 +1029,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze iceberg`
 
+**para que:** Extrai facts de um dump JSON das metadata tables Iceberg.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -863,6 +1055,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze lakeformation-grants`
+
+**para que:** Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings).
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -886,6 +1083,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze lakehouse-catalog`
 
+**para que:** Analisa topologia declarada de catalogs, engines, tabelas e bindings.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -904,6 +1106,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze orchestration`
 
+**para que:** Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -921,6 +1128,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze parquet-footer`
+
+**para que:** Extrai facts do FOOTER do Parquet ja coletado.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -944,6 +1156,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze plan`
 
+**para que:** Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED).
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -966,6 +1183,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze platform-ecosystem`
 
+**para que:** Analisa serving, ingestion, AI Data Engineering e radar opcional.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -983,6 +1205,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze platform-graph`
+
+**para que:** Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1007,6 +1234,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze pyspark`
 
+**para que:** Extrai facts de PySpark via AST estatico (nunca importa o codigo).
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1030,6 +1262,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze s3-listing`
 
+**para que:** Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel).
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1051,6 +1288,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze schema-registry`
+
+**para que:** Extrai facts offline de contratos e evolução de schemas.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1074,6 +1316,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze sfn-history`
 
+**para que:** Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1095,6 +1342,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze sql`
+
+**para que:** Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1119,6 +1371,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze sql-metrics`
 
+**para que:** Extrai metrica por no do plano de um Spark event log ja coletado.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1140,6 +1397,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze step-functions`
+
+**para que:** Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1163,6 +1425,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze streaming`
 
+**para que:** Extrai facts de fonte Structured Streaming ou StreamingQueryProgress.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1185,6 +1452,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze streaming-composition`
+
+**para que:** Compõe facts já extraídos de streaming, transporte e Iceberg.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1215,6 +1487,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze streaming-integrations`
 
+**para que:** Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1236,6 +1513,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze streaming-ops`
+
+**para que:** Extrai facts declarados de SLO, FinOps, segurança e serving streaming.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1259,6 +1541,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze terraform`
 
+**para que:** Extrai facts de blocos aws_glue_job em HCL Terraform.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1280,6 +1567,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze terraform-diff`
+
+**para que:** Compara dois estados de um modulo Terraform e marca o que mudou.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1304,6 +1596,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `analyze transport`
 
+**para que:** Extrai facts offline de dumps Kafka, MSK ou Kinesis.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
+
 **Syntax**
 
 ```text
@@ -1326,6 +1623,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `analyze workload`
+
+**para que:** Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem.
+
+- **por que:** extrai facts determinísticos de código-fonte (AST, provenance sha256)
+- **quando usar:** inventário factual de jobs antes de judge/playbook — sem rodar nada
 
 **Syntax**
 
@@ -1350,6 +1652,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## arbitrate
 
 ### `arbitrate`
+
+**para que:** Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. Nao estima ganho, nao publica score, nao executa debate.
+
+- **por que:** executor agêntico determinístico: arbitra findings já julgados e grava claim+evidência
+- **quando usar:** transformar findings julgados em ação auditável com recibo
 
 **Syntax**
 
@@ -1380,6 +1687,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `architecture`
 
+**para que:** Avalia arquitetura declarada sem escolher por preferência ou custo inventado.
+
+- **por que:** avalia arquitetura declarada sem preferência nem custo inventado
+- **quando usar:** revisão estrutural honesta de topologia declarada
+
 **Syntax**
 
 ```text
@@ -1395,6 +1707,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `architecture streaming`
+
+**para que:** Compara candidatos streaming por constraints factuais declaradas.
+
+- **por que:** avalia arquitetura declarada sem preferência nem custo inventado
+- **quando usar:** revisão estrutural honesta de topologia declarada
 
 **Syntax**
 
@@ -1416,6 +1733,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `autonomy`
 
+**para que:** Mostra níveis de autonomia L0-L5.
+
+- **por que:** mostra os níveis de autonomia L0-L5
+- **quando usar:** entender o que cada nível permite antes de subir autonomia
+
 **Syntax**
 
 ```text
@@ -1431,6 +1753,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `autonomy show`
+
+**para que:** Mostra perfil de um nível.
+
+- **por que:** mostra os níveis de autonomia L0-L5
+- **quando usar:** entender o que cada nível permite antes de subir autonomia
 
 **Syntax**
 
@@ -1450,6 +1777,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## benchmark
 
 ### `benchmark`
+
+**para que:** Compara duas execucoes a partir dos facts de event log de cada uma. Nao executa nada e nao mede relogio.
+
+- **por que:** compara duas execuções por facts de event log — não executa nada
+- **quando usar:** validar se uma mudança melhorou uma run já medida
 
 **Syntax**
 
@@ -1478,6 +1810,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `blackboard`
 
+**para que:** Lê o shared blackboard (.sparkforge_aws/blackboard/).
+
+- **por que:** lê o shared blackboard do case (.sparkforge_aws/blackboard/)
+- **quando usar:** ver o que agentes já publicaram no case atual
+
 **Syntax**
 
 ```text
@@ -1493,6 +1830,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `blackboard list`
+
+**para que:** Lista entidades de um tipo.
+
+- **por que:** lê o shared blackboard do case (.sparkforge_aws/blackboard/)
+- **quando usar:** ver o que agentes já publicaram no case atual
 
 **Syntax**
 
@@ -1511,6 +1853,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `blackboard summary`
+
+**para que:** Resumo contável do blackboard.
+
+- **por que:** lê o shared blackboard do case (.sparkforge_aws/blackboard/)
+- **quando usar:** ver o que agentes já publicaram no case atual
 
 **Syntax**
 
@@ -1531,6 +1878,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `budget`
 
+**para que:** Mostra estado do budget do case.
+
+- **por que:** estado do budget do case
+- **quando usar:** conferir quanto de contexto/custo o case já consumiu
+
 **Syntax**
 
 ```text
@@ -1546,6 +1898,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `budget show`
+
+**para que:** Mostra budget do case.
+
+- **por que:** estado do budget do case
+- **quando usar:** conferir quanto de contexto/custo o case já consumiu
 
 **Syntax**
 
@@ -1566,6 +1923,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## capacity
 
 ### `capacity`
+
+**para que:** Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades que o job JA rodou. Nunca aplica a mudanca.
+
+- **por que:** escolhe a capacidade mais barata que cumpre o SLA — entre capacidades que o job JÁ rodou
+- **quando usar:** dimensionar DPU/worker com evidência, nunca extrapolação
 
 **Syntax**
 
@@ -1590,6 +1952,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `case`
 
+**para que:** Gerencia o estado do case em .sparkforge_aws/case.yaml.
+
+- **por que:** gerencia o estado do case (.sparkforge_aws/case.yaml)
+- **quando usar:** iniciar/inspecionar o case que ancora findings e evidência
+
 **Syntax**
 
 ```text
@@ -1605,6 +1972,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `case get`
+
+**para que:** Le o case atual.
+
+- **por que:** gerencia o estado do case (.sparkforge_aws/case.yaml)
+- **quando usar:** iniciar/inspecionar o case que ancora findings e evidência
 
 **Syntax**
 
@@ -1622,6 +1994,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `case open`
+
+**para que:** Cria um case novo, em fase intake.
+
+- **por que:** gerencia o estado do case (.sparkforge_aws/case.yaml)
+- **quando usar:** iniciar/inspecionar o case que ancora findings e evidência
 
 **Syntax**
 
@@ -1652,6 +2029,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `case update`
+
+**para que:** Atualiza fase, gate ou registra uso de skill no case.
+
+- **por que:** gerencia o estado do case (.sparkforge_aws/case.yaml)
+- **quando usar:** iniciar/inspecionar o case que ancora findings e evidência
 
 **Syntax**
 
@@ -1687,6 +2069,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `change`
 
+**para que:** Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff numa copia isolada para ver o que ele move nos achados (sandbox).
+
+- **por que:** autonomia L1-L2: diff de config (plan) e aplicação numa cópia
+- **quando usar:** ensaiar uma mudança de configuração com evidência antes/depois
+
 **Syntax**
 
 ```text
@@ -1702,6 +2089,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `change plan`
+
+**para que:** Diff e diff de rollback de um valor de configuracao, achado pela procedencia dos facts (Terraform --conf ou spark.conf.set). Nao aplica nada.
+
+- **por que:** autonomia L1-L2: diff de config (plan) e aplicação numa cópia
+- **quando usar:** ensaiar uma mudança de configuração com evidência antes/depois
 
 **Syntax**
 
@@ -1724,6 +2116,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `change propose`
 
+**para que:** Monta o pacote de um PR em .sparkforge_aws/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh.
+
+- **por que:** autonomia L1-L2: diff de config (plan) e aplicação numa cópia
+- **quando usar:** ensaiar uma mudança de configuração com evidência antes/depois
+
 **Syntax**
 
 ```text
@@ -1744,6 +2141,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `change sandbox`
+
+**para que:** Aplica um diff numa copia em .sparkforge_aws/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda.
+
+- **por que:** autonomia L1-L2: diff de config (plan) e aplicação numa cópia
+- **quando usar:** ensaiar uma mudança de configuração com evidência antes/depois
 
 **Syntax**
 
@@ -1766,6 +2168,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code`
 
+**para que:** Indice local de codigo: prepara, sincroniza, busca simbolo, monta contexto e diagnostica.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1781,6 +2188,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `code context`
+
+**para que:** Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
 
 **Syntax**
 
@@ -1803,6 +2215,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code doctor`
 
+**para que:** Diagnostico local do indice e da superficie. Sai 1 quando alguma checagem falha. Nao testa conectividade de internet.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1820,6 +2237,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `code export`
+
+**para que:** Exporta o grafo no formato de extracao que a fonte publica.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
 
 **Syntax**
 
@@ -1841,6 +2263,9 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code index`
 
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1859,6 +2284,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code init`
 
+**para que:** Prepara o indice sob --root: preflight de seguranca, diretorio, conferencia do .gitignore, banco, indexacao e integridade. `index` e o nome antigo do mesmo comando.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1876,6 +2306,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `code path`
+
+**para que:** O caminho mais curto de chamadas entre dois simbolos. Nunca o corpo.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
 
 **Syntax**
 
@@ -1899,6 +2334,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code purge`
 
+**para que:** Apaga SOMENTE .sparkforge_aws/local/codeintel/. Qualquer outro diretorio e recusado.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1916,6 +2356,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `code read`
+
+**para que:** Le um trecho do repositorio, por --node-id OU por --file com faixa. Tetos duros: 250 linhas, 32 KiB, 4096 tokens.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
 
 **Syntax**
 
@@ -1941,6 +2386,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code search`
 
+**para que:** Busca simbolo por parte do nome.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1963,6 +2413,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code shape`
 
+**para que:** Comunidades e nos de maior grau. Nao e julgamento, e forma.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -1983,6 +2438,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code status`
 
+**para que:** Estado do indice: frescor, contagens, seguranca e o que mudou na arvore.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -2001,6 +2461,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `code symbol`
+
+**para que:** Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
 
 **Syntax**
 
@@ -2023,6 +2488,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `code sync`
 
+**para que:** Poe o indice em dia com a arvore. Unica escrita do verbo.
+
+- **por que:** índice local de código: símbolos, contexto, diagnóstico
+- **quando usar:** busca estrutural de código sem varrer o repo inteiro
+
 **Syntax**
 
 ```text
@@ -2043,6 +2513,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect`
 
+**para que:** Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2058,6 +2533,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect athena-workgroup`
+
+**para que:** Baixa a configuracao de um workgroup via a API do Athena.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2077,6 +2557,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect cloudwatch`
+
+**para que:** Baixa metricas de observabilidade Glue via CloudWatch.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2099,6 +2584,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect cloudwatch-logs`
+
+**para que:** Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem).
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2125,6 +2615,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect emr-cluster`
 
+**para que:** Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de scaling de um cluster EMR on EC2.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2143,6 +2638,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect emr-eks`
+
+**para que:** Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: no `emr-containers` cluster virtual e execucao sao APIs separadas.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2164,6 +2664,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect emr-serverless`
 
+**para que:** Baixa get-application de uma application EMR Serverless. Uma chamada, nao seis: capacidade, auto-stop, runtimeConfiguration e monitoramento chegam no mesmo objeto.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2182,6 +2687,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect event-log`
+
+**para que:** Baixa o Spark event log de um job run via S3.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2204,6 +2714,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect glue-job`
 
+**para que:** Baixa a definicao de um job via a API do Glue.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2222,6 +2737,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect glue-job-runs`
+
+**para que:** Baixa o historico de execucoes de um job, um artefato por run terminal.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2242,6 +2762,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect glue-resource-link`
+
+**para que:** Le o resource link na conta consumidora e o recurso de origem que ele declara.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2265,6 +2790,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect iam-access`
 
+**para que:** Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2285,6 +2815,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect iceberg-metadata`
+
+**para que:** Consulta metadata tables Iceberg de uma tabela via Athena.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2307,6 +2842,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect lakeformation`
 
+**para que:** Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2328,6 +2868,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect managed-flink`
+
+**para que:** Coleta descrição read-only de uma aplicação Managed Flink; com janela explícita, coleta cinco métricas temporais de aplicação.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2352,6 +2897,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect parquet-footer`
 
+**para que:** Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2371,6 +2921,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect schema-registry`
+
+**para que:** Coleta metadata e latest version read-only do AWS Glue Schema Registry.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2395,6 +2950,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect streaming-integrations`
+
+**para que:** Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, MSK e DMS; com janela explícita, coleta cinco métricas stream-level temporais do Kinesis; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2425,6 +2985,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `collect verify`
 
+**para que:** Verifica presenca e integridade de todos os artefatos do manifesto.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
+
 **Syntax**
 
 ```text
@@ -2441,6 +3006,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `collect workspace-graph`
+
+**para que:** Coleta grafo live limitado aos cloud_resources declarados no workspace manifest.
+
+- **por que:** coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg)
+- **quando usar:** trazer evidência de runtime para análise offline — requer credencial
 
 **Syntax**
 
@@ -2464,6 +3034,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `context`
 
+**para que:** Descobre capabilities e empacota contexto deterministico sob limite explicito.
+
+- **por que:** descobre capabilities e empacota contexto sob limite explícito
+- **quando usar:** montar contexto determinístico para um agente/host
+
 **Syntax**
 
 ```text
@@ -2479,6 +3054,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `context expand`
+
+**para que:** Expande uma referencia ctx://v1 sob budget.
+
+- **por que:** descobre capabilities e empacota contexto sob limite explícito
+- **quando usar:** montar contexto determinístico para um agente/host
 
 **Syntax**
 
@@ -2499,6 +3079,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `context inspect`
 
+**para que:** Inspeciona qualidade de contexto sem inferir tokens por bytes.
+
+- **por que:** descobre capabilities e empacota contexto sob limite explícito
+- **quando usar:** montar contexto determinístico para um agente/host
+
 **Syntax**
 
 ```text
@@ -2516,6 +3101,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `context resolve`
+
+**para que:** Resolve locality repo/workspace/target sem ler fontes.
+
+- **por que:** descobre capabilities e empacota contexto sob limite explícito
+- **quando usar:** montar contexto determinístico para um agente/host
 
 **Syntax**
 
@@ -2536,6 +3126,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `context start`
+
+**para que:** Inicia descoberta, selecao, reducao e materializacao de contexto.
+
+- **por que:** descobre capabilities e empacota contexto sob limite explícito
+- **quando usar:** montar contexto determinístico para um agente/host
 
 **Syntax**
 
@@ -2563,6 +3158,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `controlm`
 
+**para que:** Conhecimento versionado do Control-M Automation API. Le matriz de versao; NAO le artefato, NAO chama BMC e NAO julga.
+
+- **por que:** conhecimento versionado do Control-M Automation API — lê matriz, não artefato
+- **quando usar:** avaliar migração/integração Control-M com fonte versionada
+
 **Syntax**
 
 ```text
@@ -2578,6 +3178,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `controlm describe`
+
+**para que:** O que vale numa versao do Automation API. Versao fora da faixa coberta sai como recusa NOMEADA, com o intervalo.
+
+- **por que:** conhecimento versionado do Control-M Automation API — lê matriz, não artefato
+- **quando usar:** avaliar migração/integração Control-M com fonte versionada
 
 **Syntax**
 
@@ -2599,6 +3204,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `debate`
 
+**para que:** Conduz e arbitra o protocolo de debate do case. Nao gera argumento: quem escreve cada submissao e o host.
+
+- **por que:** conduz e arbitra o protocolo de debate do case — não gera argumento
+- **quando usar:** quando o caso exige debate estruturado entre submissões
+
 **Syntax**
 
 ```text
@@ -2614,6 +3224,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `debate next`
+
+**para que:** O brief do lado da vez, ou `done` com a Decision. Grava a Decision no fechamento; depois dele devolve sempre o mesmo `done`.
+
+- **por que:** conduz e arbitra o protocolo de debate do case — não gera argumento
+- **quando usar:** quando o caso exige debate estruturado entre submissões
 
 **Syntax**
 
@@ -2633,6 +3248,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `debate referee`
 
+**para que:** Diz se o fechamento declarado pode ser publicado: hipotese que sobrevive, claim sem evidencia, objecao sem replica, referencia pendurada.
+
+- **por que:** conduz e arbitra o protocolo de debate do case — não gera argumento
+- **quando usar:** quando o caso exige debate estruturado entre submissões
+
 **Syntax**
 
 ```text
@@ -2649,6 +3269,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `debate start`
+
+**para que:** Congela o plano de debate do par --rules A,B em <repo>/.sparkforge_aws/debate/<debate_id>/, a partir dos MESMOS insumos do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml.
+
+- **por que:** conduz e arbitra o protocolo de debate do case — não gera argumento
+- **quando usar:** quando o caso exige debate estruturado entre submissões
 
 **Syntax**
 
@@ -2678,6 +3303,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `debate submit`
 
+**para que:** Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual.
+
+- **por que:** conduz e arbitra o protocolo de debate do case — não gera argumento
+- **quando usar:** quando o caso exige debate estruturado entre submissões
+
 **Syntax**
 
 ```text
@@ -2699,6 +3329,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `decision`
 
+**para que:** Valida e observa decisões declarativas sem alterar o dispatch atual.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
+
 **Syntax**
 
 ```text
@@ -2714,6 +3349,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `decision benchmark`
+
+**para que:** Executa a suíte seed offline do Decision Plane.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
 
 **Syntax**
 
@@ -2734,6 +3374,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `decision compare`
 
+**para que:** Compara uma decisão shadow persistida com uma rota atual.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
+
 **Syntax**
 
 ```text
@@ -2752,6 +3397,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `decision evaluate`
+
+**para que:** Avalia contrato bounded genérico em modo offline.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
 
 **Syntax**
 
@@ -2774,6 +3424,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `decision receipt`
 
+**para que:** Verifica receipt content-addressed de decisão shadow.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
+
 **Syntax**
 
 ```text
@@ -2791,6 +3446,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `decision shadow`
+
+**para que:** Avalia estado normalizado e compara com a rota atual.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
 
 **Syntax**
 
@@ -2813,6 +3473,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `decision validate`
 
+**para que:** Valida um contrato Decision Plane versionado.
+
+- **por que:** valida e observa decisões declarativas sem alterar dispatch
+- **quando usar:** experimentar uma decisão antes de adotá-la
+
 **Syntax**
 
 ```text
@@ -2834,6 +3499,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `decisions`
 
+**para que:** Lista e explica decisões registradas.
+
+- **por que:** lista e explica decisões registradas
+- **quando usar:** auditar o histórico de decisões do case
+
 **Syntax**
 
 ```text
@@ -2849,6 +3519,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `decisions explain`
+
+**para que:** Explica uma decisão.
+
+- **por que:** lista e explica decisões registradas
+- **quando usar:** auditar o histórico de decisões do case
 
 **Syntax**
 
@@ -2868,6 +3543,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `decisions list`
 
+**para que:** Lista decisões.
+
+- **por que:** lista e explica decisões registradas
+- **quando usar:** auditar o histórico de decisões do case
+
 **Syntax**
 
 ```text
@@ -2886,6 +3566,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## detach
 
 ### `detach`
+
+**para que:** Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge_aws/integrations.json registrou e ainda tem o sha256 gravado.
+
+- **por que:** remove a integração de usuário do host — só o que o manifesto declara
+- **quando usar:** desinstalar limpo sem órfãos nos hosts
 
 **Syntax**
 
@@ -2908,6 +3593,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `distribution`
 
+**para que:** Inspeção e inicialização portátil offline.
+
+- **por que:** inspeção e inicialização portátil offline
+- **quando usar:** distribuir o pacote em ambiente sem rede
+
 **Syntax**
 
 ```text
@@ -2923,6 +3613,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `distribution doctor`
+
+**para que:** Portable distribution doctor.
+
+- **por que:** inspeção e inicialização portátil offline
+- **quando usar:** distribuir o pacote em ambiente sem rede
 
 **Syntax**
 
@@ -2941,6 +3636,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `distribution init`
 
+**para que:** Portable distribution init.
+
+- **por que:** inspeção e inicialização portátil offline
+- **quando usar:** distribuir o pacote em ambiente sem rede
+
 **Syntax**
 
 ```text
@@ -2958,6 +3658,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `distribution inspect`
 
+**para que:** Portable distribution inspect.
+
+- **por que:** inspeção e inicialização portátil offline
+- **quando usar:** distribuir o pacote em ambiente sem rede
+
 **Syntax**
 
 ```text
@@ -2974,6 +3679,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `distribution status`
+
+**para que:** Portable distribution status.
+
+- **por que:** inspeção e inicialização portátil offline
+- **quando usar:** distribuir o pacote em ambiente sem rede
 
 **Syntax**
 
@@ -2994,6 +3704,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `doctor`
 
+**para que:** Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. Sai 1 com alguma falha.
+
+- **por que:** confere ambiente: pacote, extras, MCP, catálogo, packs, índice
+- **quando usar:** primeira linha: pós-install, máquina nova, erro de import
+
 **Syntax**
 
 ```text
@@ -3011,6 +3726,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `doctor agentic`
+
+**para que:** Confere readiness local do plano agêntico, sem rede.
+
+- **por que:** confere ambiente: pacote, extras, MCP, catálogo, packs, índice
+- **quando usar:** primeira linha: pós-install, máquina nova, erro de import
 
 **Syntax**
 
@@ -3031,6 +3751,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `dq-ai`
 
+**para que:** Avalia governanca Glue DQ ADVANCED sobre facts e artefatos observados.
+
+- **por que:** avalia governança Glue DQ ADVANCED sobre facts observados
+- **quando usar:** julgamento de data quality com evidência, não suposição
+
 **Syntax**
 
 ```text
@@ -3046,6 +3771,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `dq-ai assess`
+
+**para que:** Compõe facts, julga regras e renderiza o relatório canônico.
+
+- **por que:** avalia governança Glue DQ ADVANCED sobre facts observados
+- **quando usar:** julgamento de data quality com evidência, não suposição
 
 **Syntax**
 
@@ -3074,6 +3804,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `economy`
 
+**para que:** O que a execucao poe na janela de contexto: byte medido, nunca token estimado.
+
+- **por que:** o que a execução põe na janela de contexto — byte medido
+- **quando usar:** quantificar contexto antes de reclamar de custo
+
 **Syntax**
 
 ```text
@@ -3089,6 +3824,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `economy provider-cost`
+
+**para que:** Calcula custo observado do transcript com pricing e cost_basis declarados.
+
+- **por que:** o que a execução põe na janela de contexto — byte medido
+- **quando usar:** quantificar contexto antes de reclamar de custo
 
 **Syntax**
 
@@ -3108,6 +3848,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `economy report`
+
+**para que:** Agrupa os spans de um run e poe a superficie ao lado.
+
+- **por que:** o que a execução põe na janela de contexto — byte medido
+- **quando usar:** quantificar contexto antes de reclamar de custo
 
 **Syntax**
 
@@ -3130,6 +3875,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `finops`
 
+**para que:** O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- capacidade ou codigo.
+
+- **por que:** relatório financeiro: custo, troca recurso-tempo, alavanca de capacidade
+- **quando usar:** decidir configuração por custo com dados reais de run
+
 **Syntax**
 
 ```text
@@ -3151,6 +3901,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `funcval`
 
+**para que:** Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. Nao executa nada.
+
+- **por que:** validação funcional: deriva o que medir nos dois lados e compara
+- **quando usar:** provar equivalência antes/depois de uma mudança
+
 **Syntax**
 
 ```text
@@ -3166,6 +3921,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `funcval compare`
+
+**para que:** Compara os dois resultados que VOCE mediu contra o plano. Antes contra depois, nunca observado contra catalogo.
+
+- **por que:** validação funcional: deriva o que medir nos dois lados e compara
+- **quando usar:** provar equivalência antes/depois de uma mudança
 
 **Syntax**
 
@@ -3190,6 +3950,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `funcval plan`
+
+**para que:** Deriva o plano de validacao (contagem, schema, agregados) dos facts ja extraidos, e grava o artefato que `funcval compare` rele.
+
+- **por que:** validação funcional: deriva o que medir nos dois lados e compara
+- **quando usar:** provar equivalência antes/depois de uma mudança
 
 **Syntax**
 
@@ -3216,6 +3981,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `fuse`
 
+**para que:** Correlaciona facts de SQL com schema do catalogo (sparkforge_aws.facts.fusion), antes de judge.
+
+- **por que:** correlaciona facts de SQL com schema do catálogo
+- **quando usar:** cruzar uso real de tabelas/colunas com o catálogo antes de julgar
+
 **Syntax**
 
 ```text
@@ -3240,6 +4010,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `gain`
 
+**para que:** Ganho OBSERVADO entre runs medidos antes e depois de uma mudanca: por lado, N, mediana, minimo e maximo de tempo, DPU-segundos e custo, e o delta das medianas. Nunca projeta economia nem atribui causa.
+
+- **por que:** ganho OBSERVADO entre runs medidos antes/depois — por lado, N, mediana
+- **quando usar:** comprovar melhoria estatística, não impressão
+
 **Syntax**
 
 ```text
@@ -3260,6 +4035,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `glue`
 
+**para que:** Comandos especificos do runtime AWS Glue.
+
+- **por que:** comandos específicos do runtime AWS Glue
+- **quando usar:** operações de assessment/migração no domínio Glue
+
 **Syntax**
 
 ```text
@@ -3275,6 +4055,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `glue dependency-audit`
+
+**para que:** Audita dependencia Python e binario Scala do job contra um runtime.
+
+- **por que:** comandos específicos do runtime AWS Glue
+- **quando usar:** operações de assessment/migração no domínio Glue
 
 **Syntax**
 
@@ -3296,6 +4081,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `graph`
 
+**para que:** Grafo do indice de codigo: status, ForgeGraphView e Graph Studio local.
+
+- **por que:** grafo do índice de código: ForgeGraphView + Graph Studio local
+- **quando usar:** navegar dependências do código indexado
+
 **Syntax**
 
 ```text
@@ -3311,6 +4101,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `graph status`
+
+**para que:** Estado do grafo: contagens e origem do indice.
+
+- **por que:** grafo do índice de código: ForgeGraphView + Graph Studio local
+- **quando usar:** navegar dependências do código indexado
 
 **Syntax**
 
@@ -3328,6 +4123,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `graph ui`
+
+**para que:** Abre o Graph Studio local (read-only, 127.0.0.1).
+
+- **por que:** grafo do índice de código: ForgeGraphView + Graph Studio local
+- **quando usar:** navegar dependências do código indexado
 
 **Syntax**
 
@@ -3349,6 +4149,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `graph view`
 
+**para que:** Emite o documento ForgeGraphView/v1 (contrato do Graph Studio).
+
+- **por que:** grafo do índice de código: ForgeGraphView + Graph Studio local
+- **quando usar:** navegar dependências do código indexado
+
 **Syntax**
 
 ```text
@@ -3368,6 +4173,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## handoff
 
 ### `handoff`
+
+**para que:** Escreve .sparkforge_aws/handoff.md e imprime o payload.
+
+- **por que:** escreve .sparkforge_aws/handoff.md + payload
+- **quando usar:** transferir o case para outro host/agente com contexto completo
 
 **Syntax**
 
@@ -3391,6 +4201,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `iceberg`
 
+**para que:** Comandos especificos de Apache Iceberg.
+
+- **por que:** comandos específicos de Apache Iceberg
+- **quando usar:** assessment de tabelas/catálogo Iceberg
+
 **Syntax**
 
 ```text
@@ -3406,6 +4221,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `iceberg assess-upgrade`
+
+**para que:** Avalia subir o format version da tabela contra quem a consome. NAO executa.
+
+- **por que:** comandos específicos de Apache Iceberg
+- **quando usar:** assessment de tabelas/catálogo Iceberg
 
 **Syntax**
 
@@ -3427,6 +4247,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## install
 
 ### `install`
+
+**para que:** Instala o SparkForge no projeto/workspace (--scope) ou no HOME (--scope user, delegado ao integrate). Escreve so arquivos gerenciados; --dry-run mostra o plano.
+
+- **por que:** instala SparkForge no projeto/workspace (--scope) ou HOME (--scope user)
+- **quando usar:** instalar a forja num escopo governado
 
 **Syntax**
 
@@ -3452,6 +4277,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `install doctor`
 
+**para que:** Saude da instalacao no alvo.
+
+- **por que:** instala SparkForge no projeto/workspace (--scope) ou HOME (--scope user)
+- **quando usar:** instalar a forja num escopo governado
+
 **Syntax**
 
 ```text
@@ -3469,6 +4299,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## integrate
 
 ### `integrate`
+
+**para que:** Instala skills, agents e o MCP do SparkForge nos diretorios de USUARIO do host (Claude Code por marketplace local; Devin, Codex e Copilot CLI), a partir do pacote instalado. Nada e escrito no repositorio, exceto a remocao da copia vendorizada que o operador escolher.
+
+- **por que:** instala skills, agents e MCP nos diretórios de USUÁRIO do host
+- **quando usar:** ativar a forja no Claude/Codex/Devin do usuário
 
 **Syntax**
 
@@ -3493,6 +4328,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `journal`
 
+**para que:** Journal de eventos do case (.sparkforge_aws/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash.
+
+- **por que:** journal de eventos do case — started/finished por verbo
+- **quando usar:** auditar sequência de operações do case
+
 **Syntax**
 
 ```text
@@ -3508,6 +4348,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `journal verify`
+
+**para que:** Recalcula a cadeia: intact, broken (com o seq da quebra), torn_tail ou absent. Sai 1 em broken.
+
+- **por que:** journal de eventos do case — started/finished por verbo
+- **quando usar:** auditar sequência de operações do case
 
 **Syntax**
 
@@ -3527,6 +4372,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## judge
 
 ### `judge`
+
+**para que:** Aplica o catalogo de regras versionado sobre facts ja extraidos.
+
+- **por que:** aplica o catálogo de regras versionado sobre facts extraídos
+- **quando usar:** depois do analyze: transformar facts em findings com rule_id
 
 **Syntax**
 
@@ -3562,6 +4412,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `knowledge`
 
+**para que:** Localiza os arquivos de conhecimento versionado.
+
+- **por que:** localiza arquivos de conhecimento versionado
+- **quando usar:** achar a fonte canônica de regras/playbooks
+
 **Syntax**
 
 ```text
@@ -3577,6 +4432,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `knowledge drift`
+
+**para que:** Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), as regras e documentos que a leram antes da mudanca e os goldens, evals e agentes dessas regras. Sem rede.
+
+- **por que:** localiza arquivos de conhecimento versionado
+- **quando usar:** achar a fonte canônica de regras/playbooks
 
 **Syntax**
 
@@ -3595,6 +4455,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `knowledge path`
+
+**para que:** Imprime a raiz de knowledge e, com --file, um arquivo dentro dela.
+
+- **por que:** localiza arquivos de conhecimento versionado
+- **quando usar:** achar a fonte canônica de regras/playbooks
 
 **Syntax**
 
@@ -3617,6 +4482,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab`
 
+**para que:** Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3632,6 +4502,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab analyze`
+
+**para que:** Aponta artifacts capturados para análise posterior.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3651,6 +4526,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab compare`
 
+**para que:** Compara dois receipts/runs sem afirmar performance.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3669,6 +4549,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab describe`
+
+**para que:** Descreve um cenário
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3692,6 +4577,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab doctor`
 
+**para que:** Verifica host, registry e perfis sem iniciar serviços.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3708,6 +4598,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab down`
+
+**para que:** Derruba projeto Compose
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3731,6 +4626,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab gc`
 
+**para que:** Planeja coleta de runs
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3753,6 +4653,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab inspect`
 
+**para que:** Inspeciona run/receipt e verifica hash.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3770,6 +4675,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab plan`
+
+**para que:** Compila cenário em actions
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3793,6 +4703,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab profiles`
 
+**para que:** Lista profiles e requisitos declarados.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3809,6 +4724,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab promote-fixture`
+
+**para que:** Promove run revisado para fixture curated.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3830,6 +4750,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab reproduce`
 
+**para que:** Verifica receipt e devolve plano reproduzível.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3847,6 +4772,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab run`
+
+**para que:** Planeja ou executa cenário
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3870,6 +4800,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab scenarios`
 
+**para que:** Lista o Golden 20 e suas fidelidades.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3887,6 +4822,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lab shell`
+
+**para que:** Planeja shell de serviço
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
 
 **Syntax**
 
@@ -3910,6 +4850,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab up`
 
+**para que:** Sobe profile Compose
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3932,6 +4877,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lab verify`
 
+**para que:** Verifica registry, Golden 20, schemas e action plans offline.
+
+- **por que:** experimentos Forge Lab; execução mutável exige confirmação explícita
+- **quando usar:** cenários reproduzíveis offline; nada muta sem opt-in
+
 **Syntax**
 
 ```text
@@ -3951,6 +4901,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lakeformation`
 
+**para que:** Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, nao versao de componente.
+
+- **por que:** eixo de versão Lake Formation por runtime Glue — capacidade, não componente
+- **quando usar:** verificar o que cada runtime Glue suporta em LF
+
 **Syntax**
 
 ```text
@@ -3966,6 +4921,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lakeformation access-graph`
+
+**para que:** O caminho de acesso como GRAFO, a partir de facts. `is_accessible` e TERNARIO -- `null` e 'o que olhei nao impede', nao 'funciona'.
+
+- **por que:** eixo de versão Lake Formation por runtime Glue — capacidade, não componente
+- **quando usar:** verificar o que cada runtime Glue suporta em LF
 
 **Syntax**
 
@@ -3986,6 +4946,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `lakeformation architect`
 
+**para que:** Avalia arquitetura declarada de FGAC/FTA, ownership de catalogos, cross-account e capability por release. Nao toca AWS.
+
+- **por que:** eixo de versão Lake Formation por runtime Glue — capacidade, não componente
+- **quando usar:** verificar o que cada runtime Glue suporta em LF
+
 **Syntax**
 
 ```text
@@ -4002,6 +4967,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `lakeformation matrix`
+
+**para que:** Imprime o eixo: filesystem S3 default, FGAC por caminho, DDL/DML e FTA, com a frase da fonte quando ela existe.
+
+- **por que:** eixo de versão Lake Formation por runtime Glue — capacidade, não componente
+- **quando usar:** verificar o que cada runtime Glue suporta em LF
 
 **Syntax**
 
@@ -4024,6 +4994,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `mcp`
 
+**para que:** Operacoes do servidor MCP.
+
+- **por que:** operações do servidor MCP
+- **quando usar:** servir a forja via MCP ou inspecionar o catálogo
+
 **Syntax**
 
 ```text
@@ -4039,6 +5014,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `mcp verify`
+
+**para que:** Handshake JSON-RPC real: initialize + tools/list contra o server.
+
+- **por que:** operações do servidor MCP
+- **quando usar:** servir a forja via MCP ou inspecionar o catálogo
 
 **Syntax**
 
@@ -4058,6 +5038,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `migrate`
 
+**para que:** Avalia migracao entre versoes de runtime com o catalogo.
+
+- **por que:** avalia migração entre versões de runtime com o catálogo
+- **quando usar:** Glue 4→5/6, EMR, Spark — assessment versionado
+
 **Syntax**
 
 ```text
@@ -4073,6 +5058,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `migrate controlm`
+
+**para que:** Julga a migracao de um job Control-M entre um par de versoes, degrau a degrau, por CAPACIDADE e nao por runtime.
+
+- **por que:** avalia migração entre versões de runtime com o catálogo
+- **quando usar:** Glue 4→5/6, EMR, Spark — assessment versionado
 
 **Syntax**
 
@@ -4094,6 +5084,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `migrate emr`
 
+**para que:** Julga a migracao de um job EMR entre um par de releases, degrau a degrau, na matriz da plataforma escolhida.
+
+- **por que:** avalia migração entre versões de runtime com o catálogo
+- **quando usar:** Glue 4→5/6, EMR, Spark — assessment versionado
+
 **Syntax**
 
 ```text
@@ -4114,6 +5109,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `migrate glue`
+
+**para que:** Julga a migracao de um job Glue entre um par de versoes, degrau a degrau.
+
+- **por que:** avalia migração entre versões de runtime com o catálogo
+- **quando usar:** Glue 4→5/6, EMR, Spark — assessment versionado
 
 **Syntax**
 
@@ -4137,6 +5137,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `next-step`
 
+**para que:** Rota deterministica a partir de routing.yaml (nunca julgamento do agente).
+
+- **por que:** rota determinística via routing.yaml — nunca julgamento do agente
+- **quando usar:** o próximo passo correto a partir dos findings do case
+
 **Syntax**
 
 ```text
@@ -4157,6 +5162,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `pack`
 
+**para que:** Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_AWS_PACKS).
+
+- **por que:** Forge Packs: regras, knowledge e fixtures de terceiro
+- **quando usar:** estender a forja com packs versionados externos
+
 **Syntax**
 
 ```text
@@ -4172,6 +5182,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `pack check`
+
+**para que:** Roda cada fixture do pack pelo judge. Sai 1 quando uma regra do pack nao dispara no fixture que a declara, ou quando o pack e recusado.
+
+- **por que:** Forge Packs: regras, knowledge e fixtures de terceiro
+- **quando usar:** estender a forja com packs versionados externos
 
 **Syntax**
 
@@ -4190,6 +5205,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `pack list`
 
+**para que:** Packs ativos, recusados com o motivo, e o mapa prefixo -> pack.
+
+- **por que:** Forge Packs: regras, knowledge e fixtures de terceiro
+- **quando usar:** estender a forja com packs versionados externos
+
 **Syntax**
 
 ```text
@@ -4207,6 +5227,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## playbook
 
 ### `playbook`
+
+**para que:** Decomposicao de um coordenador em passos sequenciais -- o PISO de orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, e o caminho em Claude Code, Devin CLI e Devin Local agent quando o despacho de subagente esta desligado -- e, no Devin, tambem quando ele esta ligado, porque subagente nao gera subagente por default. Le agents/, nunca repete a lista de executores.
+
+- **por que:** decomposição de coordenador em passos sequenciais — piso de orquestração
+- **quando usar:** executar fluxo multi-passo declarado, deterministicamente
 
 **Syntax**
 
@@ -4229,6 +5254,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `policy`
 
+**para que:** Politica de seguranca do repositorio (.sparkforge_aws/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json.
+
+- **por que:** política de segurança do repo (.sparkforge_aws/policy.yaml)
+- **quando usar:** validar/explicar regras de política aplicadas
+
 **Syntax**
 
 ```text
@@ -4244,6 +5274,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `policy check`
+
+**para que:** Valida a policy e lista as regras; sai 2 se ela for invalida.
+
+- **por que:** política de segurança do repo (.sparkforge_aws/policy.yaml)
+- **quando usar:** validar/explicar regras de política aplicadas
 
 **Syntax**
 
@@ -4261,6 +5296,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `policy explain`
+
+**para que:** Diz a decisao (allow, ask, deny), a regra que casou e qual porta a impoe.
+
+- **por que:** política de segurança do repo (.sparkforge_aws/policy.yaml)
+- **quando usar:** validar/explicar regras de política aplicadas
 
 **Syntax**
 
@@ -4282,6 +5322,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `policy sync-settings`
 
+**para que:** Gera permissions.ask no .claude/settings.json a partir das regras ask; --check so confere e sai 1 se divergir.
+
+- **por que:** política de segurança do repo (.sparkforge_aws/policy.yaml)
+- **quando usar:** validar/explicar regras de política aplicadas
+
 **Syntax**
 
 ```text
@@ -4301,6 +5346,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## proof
 
 ### `proof`
+
+**para que:** Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra deixou de disparar no depois?) e um eixo por item de action.moves (funcval, benchmark ou sem comparador). Desfechos: refuted, not_refuted, inconclusive, unproven -- nunca provado.
+
+- **por que:** obrigações de prova de recomendações APLICADAS
+- **quando usar:** provar que a regra deixou de disparar após aplicar
 
 **Syntax**
 
@@ -4332,6 +5382,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `receipt`
 
+**para que:** Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o recibo e os artefatos, nunca autoria.
+
+- **por que:** recibo content-addressed da execução — prova correspondência
+- **quando usar:** verificar que o recibo corresponde aos artefatos da run
+
 **Syntax**
 
 ```text
@@ -4347,6 +5402,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `receipt emit`
+
+**para que:** Grava .sparkforge_aws/receipts/<receipt_id>.json com caminho e sha256 do case, dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os spans do run declarado e o host declarado. Sem conteudo de caso.
+
+- **por que:** recibo content-addressed da execução — prova correspondência
+- **quando usar:** verificar que o recibo corresponde aos artefatos da run
 
 **Syntax**
 
@@ -4372,6 +5432,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `receipt verify`
 
+**para que:** Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 quando o recibo nao corresponde.
+
+- **por que:** recibo content-addressed da execução — prova correspondência
+- **quando usar:** verificar que o recibo corresponde aos artefatos da run
+
 **Syntax**
 
 ```text
@@ -4393,6 +5458,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `release`
 
+**para que:** O que uma release publica, e o que muda entre duas. Le matriz de versao; NAO avalia se algo quebra.
+
+- **por que:** o que uma release publica e o que muda entre duas — lê matriz de versão
+- **quando usar:** comparar releases sem avaliar ambiente
+
 **Syntax**
 
 ```text
@@ -4408,6 +5478,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `release describe`
+
+**para que:** O que a fonte daquela plataforma publica para uma release. Componente nao publicado sai em `unresolved` NOMEADO.
+
+- **por que:** o que uma release publica e o que muda entre duas — lê matriz de versão
+- **quando usar:** comparar releases sem avaliar ambiente
 
 **Syntax**
 
@@ -4426,6 +5501,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `release diff`
+
+**para que:** O que muda entre duas releases, com o eixo (`release`, `platform` ou os dois) DECLARADO na saida.
+
+- **por que:** o que uma release publica e o que muda entre duas — lê matriz de versão
+- **quando usar:** comparar releases sem avaliar ambiente
 
 **Syntax**
 
@@ -4449,6 +5529,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `repair`
 
+**para que:** Regrava assets gerenciados que sumiram ou mudaram.
+
+- **por que:** regrava assets gerenciados que sumiram ou mudaram
+- **quando usar:** restaurar a integração sem reinstalar
+
 **Syntax**
 
 ```text
@@ -4470,6 +5555,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `report`
 
+**para que:** Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi derivado daquela evidencia com aquele catalogo. Nunca autoria.
+
+- **por que:** assinatura de correspondência do relatório — texto derivado da evidência
+- **quando usar:** provar que o relatório saiu daquela evidência, não de prosa
+
 **Syntax**
 
 ```text
@@ -4485,6 +5575,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `report github`
+
+**para que:** Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e resumo Markdown para o PR, em .sparkforge_aws/report/ (nomes fixos), e uma anotacao ::error/::warning/::notice por finding com linha no stdout. Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede.
+
+- **por que:** assinatura de correspondência do relatório — texto derivado da evidência
+- **quando usar:** provar que o relatório saiu daquela evidência, não de prosa
 
 **Syntax**
 
@@ -4510,6 +5605,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `report sign`
 
+**para que:** Escreve o bloco de assinatura no fim do relatorio. Reassinar e barato e devolve o mesmo arquivo quando nada mudou.
+
+- **por que:** assinatura de correspondência do relatório — texto derivado da evidência
+- **quando usar:** provar que o relatório saiu daquela evidência, não de prosa
+
 **Syntax**
 
 ```text
@@ -4527,6 +5627,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `report verify`
+
+**para que:** Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo ou corpo. Sai com codigo 1 quando nao corresponde.
+
+- **por que:** assinatura de correspondência do relatório — texto derivado da evidência
+- **quando usar:** provar que o relatório saiu daquela evidência, não de prosa
 
 **Syntax**
 
@@ -4547,6 +5652,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## resume
 
 ### `resume`
+
+**para que:** Payload de rehidratacao do case.
+
+- **por que:** payload de reidratação do case
+- **quando usar:** retomar um case noutro processo/host
 
 **Syntax**
 
@@ -4569,6 +5679,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## root-cause
 
 ### `root-cause`
+
+**para que:** Ordena os achados por consequencia declarada e nomeia a lacuna. Nao calcula confianca e nao estima ganho.
+
+- **por que:** ordena achados por consequência declarada e nomeia a lacuna
+- **quando usar:** priorizar findings pela causa, não pela ordem de emissão
 
 **Syntax**
 
@@ -4599,6 +5714,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `rules`
 
+**para que:** Consulta o catalogo de regras versionado.
+
+- **por que:** consulta o catálogo de regras versionado
+- **quando usar:** ver regras disponíveis e seus metadados
+
 **Syntax**
 
 ```text
@@ -4614,6 +5734,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `rules lookup`
+
+**para que:** Busca regras por id ou categoria (thresholds, fontes, severidade).
+
+- **por que:** consulta o catálogo de regras versionado
+- **quando usar:** ver regras disponíveis e seus metadados
 
 **Syntax**
 
@@ -4642,6 +5767,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `runtime`
 
+**para que:** Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena.
+
+- **por que:** detecção de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena
+- **quando usar:** identificar o runtime alvo da análise
+
 **Syntax**
 
 ```text
@@ -4657,6 +5787,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `runtime detect`
+
+**para que:** Deriva a matriz de runtime a partir de facts ja extraidos e de flags.
+
+- **por que:** detecção de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena
+- **quando usar:** identificar o runtime alvo da análise
 
 **Syntax**
 
@@ -4684,6 +5819,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## scan
 
 ### `scan`
+
+**para que:** Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge_aws/scan/. Sem rede.
+
+- **por que:** roda sozinho os analyzes que cabem no repo
+- **quando usar:** primeira passada num repo desconhecido — descoberta por presença
 
 **Syntax**
 
@@ -4715,6 +5855,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `sdd`
 
+**para que:** Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o que nao fecha, sem julgar a prosa.
+
+- **por que:** confere a cadeia de artefatos de spec em docs/sdd/<FEATURE>/<fase>.md
+- **quando usar:** gate de spec-driven development antes de build/ship
+
 **Syntax**
 
 ```text
@@ -4730,6 +5875,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `sdd check`
+
+**para que:** Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0.
+
+- **por que:** confere a cadeia de artefatos de spec em docs/sdd/<FEATURE>/<fase>.md
+- **quando usar:** gate de spec-driven development antes de build/ship
 
 **Syntax**
 
@@ -4750,6 +5900,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `sdd stamp`
 
+**para que:** Grava upstream.sha256 do artefato. Escreve so a linha do hash.
+
+- **por que:** confere a cadeia de artefatos de spec em docs/sdd/<FEATURE>/<fase>.md
+- **quando usar:** gate de spec-driven development antes de build/ship
+
 **Syntax**
 
 ```text
@@ -4768,6 +5923,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `sdd status`
+
+**para que:** Fase atual de cada feature e o que a impede de avancar.
+
+- **por que:** confere a cadeia de artefatos de spec em docs/sdd/<FEATURE>/<fase>.md
+- **quando usar:** gate de spec-driven development antes de build/ship
 
 **Syntax**
 
@@ -4788,6 +5948,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## simulate
 
 ### `simulate`
+
+**para que:** O que uma mudanca de configuracao move, estruturalmente: altera o valor de facts que ja existem, rederiva e julga os dois lados, e diz que achados somem e aparecem. Nunca preve spill, tempo ou custo.
+
+- **por que:** o que uma mudança de config move estruturalmente — sobre facts existentes
+- **quando usar:** ensaiar impacto de config sem executar
 
 **Syntax**
 
@@ -4817,6 +5982,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `status`
 
+**para que:** Estado da instalacao (ledger + drift + health doc).
+
+- **por que:** estado da instalação (ledger + drift + health doc)
+- **quando usar:** ver se a instalação divergiu do manifesto
+
 **Syntax**
 
 ```text
@@ -4837,6 +6007,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `telemetry`
 
+**para que:** Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector.
+
+- **por que:** spans de tool e transcript do host em OTLP/JSON
+- **quando usar:** exportar telemetria para um OTLP Collector
+
 **Syntax**
 
 ```text
@@ -4852,6 +6027,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `telemetry export`
+
+**para que:** Grava .sparkforge_aws/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le com o receiver otlp_json_file. Nao chama rede; token so com transcript do host.
+
+- **por que:** spans de tool e transcript do host em OTLP/JSON
+- **quando usar:** exportar telemetria para um OTLP Collector
 
 **Syntax**
 
@@ -4875,6 +6055,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `tune`
 
+**para que:** Configuracao Spark derivada da medida, com a procedencia de cada propriedade. Nunca aplica a mudanca.
+
+- **por que:** configuração Spark derivada da medida, com provenance — nunca aplica
+- **quando usar:** obter config recomendada com evidência, sem mutação
+
 **Syntax**
 
 ```text
@@ -4895,6 +6080,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## uninstall
 
 ### `uninstall`
+
+**para que:** Remove so o que o manifesto declara como gerenciado.
+
+- **por que:** remove só o que o manifesto declara como gerenciado
+- **quando usar:** desinstalação honesta e delimitada
 
 **Syntax**
 
@@ -4919,6 +6109,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `update`
 
+**para que:** Atualiza o runtime instalado pelo bootstrap.
+
+- **por que:** atualiza o runtime instalado pelo bootstrap
+- **quando usar:** manter a distribuição instalada atual
+
 **Syntax**
 
 ```text
@@ -4940,6 +6135,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `validate`
 
+**para que:** Valida findings contra o JSON Schema e a regra de ganho sem benchmark_ref.
+
+- **por que:** valida findings contra JSON Schema + regra de ganho
+- **quando usar:** conformidade estrutural de findings antes de consumir
+
 **Syntax**
 
 ```text
@@ -4959,6 +6159,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ## workload
 
 ### `workload`
+
+**para que:** Perfil de workload por eixos, a partir de facts ja extraidos.
+
+- **por que:** perfil de workload por eixos, a partir de facts
+- **quando usar:** caracterizar a carga para orientar capacidade/tune
 
 **Syntax**
 
@@ -4983,6 +6188,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `workspace`
 
+**para que:** Workspace virtual declarado e descoberta limitada.
+
+- **por que:** workspace virtual declarado e descoberta limitada
+- **quando usar:** trabalhar multi-projeto dentro de um workspace declarado
+
 **Syntax**
 
 ```text
@@ -4998,6 +6208,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `workspace add`
+
+**para que:** Portable workspace add.
+
+- **por que:** workspace virtual declarado e descoberta limitada
+- **quando usar:** trabalhar multi-projeto dentro de um workspace declarado
 
 **Syntax**
 
@@ -5018,6 +6233,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `workspace discover`
 
+**para que:** Portable workspace discover.
+
+- **por que:** workspace virtual declarado e descoberta limitada
+- **quando usar:** trabalhar multi-projeto dentro de um workspace declarado
+
 **Syntax**
 
 ```text
@@ -5037,6 +6257,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ### `workspace init`
 
+**para que:** Portable workspace init.
+
+- **por que:** workspace virtual declarado e descoberta limitada
+- **quando usar:** trabalhar multi-projeto dentro de um workspace declarado
+
 **Syntax**
 
 ```text
@@ -5054,6 +6279,11 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
 ### `workspace status`
+
+**para que:** Portable workspace status.
+
+- **por que:** workspace virtual declarado e descoberta limitada
+- **quando usar:** trabalhar multi-projeto dentro de um workspace declarado
 
 **Syntax**
 
