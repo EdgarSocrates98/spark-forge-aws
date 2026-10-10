@@ -482,3 +482,10 @@ e [Política de segurança](docs/guia/usos/politica-de-seguranca.md).
 Instalação do usuário, estado externo, workspace virtual e contexto local:
 [guia portátil](docs/guides/SPARKFORGE_AWS_PORTABLE.pt-BR.md) ·
 [English](docs/guides/SPARKFORGE_AWS_PORTABLE.md).
+
+## Graph Studio
+
+`sparkforge-aws graph status|view|ui --root .` projects the code-intel index
+(`code index`) through `forge/ForgeGraphView/v1` and serves the embedded local
+explorer (declinable at install via `--components`). Full docs:
+`the-forge/docs/graph-studio/`.

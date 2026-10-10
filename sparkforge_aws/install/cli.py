@@ -29,6 +29,7 @@ def _print(doc: dict[str, Any]) -> None:
 
 
 def _install(args: argparse.Namespace) -> dict[str, Any]:
+    raw = _p(args, "components")
     return lifecycle.install(
         _p(args, "host", "all"),
         scope=_p(args, "scope", "project"),
@@ -37,6 +38,8 @@ def _install(args: argparse.Namespace) -> dict[str, Any]:
         gateway_profile=_p(args, "gateway_profile"),
         dry_run=_p(args, "dry_run", False),
         yes=_p(args, "yes", False),
+        components=tuple(
+            c.strip() for c in raw.split(",") if c.strip()) if raw else None,
     )
 
 
@@ -138,6 +141,9 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
                            help="Raiz do alvo (default: raiz do VCS ou cwd).")
     install_p.add_argument("--yes", "-y", action="store_true",
                            help="Aprovacao explicita: sem ela, --dry-run.")
+    install_p.add_argument("--components", default=None,
+                           help="Componentes opcionais csv: "
+                                "skills,agents,mcp,tui,graph-studio.")
     install_p.add_argument("--dry-run", action="store_true")
     install_sub = install_p.add_subparsers(dest="install_action")
     install_sub.add_parser("doctor", help="Saude da instalacao no alvo.")

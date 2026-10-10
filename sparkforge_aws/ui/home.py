@@ -26,6 +26,7 @@ _MENU: list[tuple[str, list[str] | None]] = [
     ('Check installation health', ['doctor']),
     ('MCP verify (real handshake)', ['install', 'mcp-verify']),
 
+        'Graph Studio (browser)', ['graph','ui'],
     ("installation wizard", "__wizard__"),
     ("quit", None),
 ]
