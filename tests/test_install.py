@@ -89,6 +89,85 @@ def test_install_profile_full_inclui_agents(projeto):
     assert any(p.startswith(".devin/agents/") for p in paths)
 
 
+def test_install_host_all_mcp_compartilhado_sem_recusa(projeto):
+    out = lifecycle.install("all", scope="project", root=projeto, yes=True)
+    assert out["status"] == "completed"
+    assert not out.get("refused")
+    mcp = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
+    entrada = mcp["mcpServers"]["sparkforge-aws"]
+    assert set(entrada) == {"command", "args"}
+    # o arquivo e um so: um unico registro no manifesto, sob um unico host
+    manifesto = json.loads(
+        (projeto / ".sparkforge_aws" / "integrations.json").read_text(
+            encoding="utf-8"))
+    donos = [h for h, r in manifesto["hosts"].items()
+             if any(c["path"] == ".mcp.json" for c in r.get("config") or [])]
+    assert len(donos) == 1
+
+
+def test_install_host_all_idempotente(projeto):
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    out = lifecycle.install("all", scope="project", root=projeto, yes=True)
+    assert out["status"] == "completed"
+    assert not out.get("refused")
+
+
+def test_install_subset_depois_de_all_reconhece_mcp_gerenciado(projeto):
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    out = lifecycle.install("copilot", scope="project", root=projeto,
+                            yes=True)
+    assert out["status"] == "completed"
+    assert not out.get("refused")
+
+
+def test_install_mcp_json_do_usuario_recusa(projeto):
+    (projeto / ".mcp.json").write_text(
+        json.dumps({"mcpServers": {"sparkforge-aws": {
+            "command": "outro", "args": []}}}),
+        encoding="utf-8")
+    out = lifecycle.install("claude", scope="project", root=projeto, yes=True)
+    assert out["status"] == "failed" or out.get("refused")
+
+
+def test_status_detecta_mcp_json_ausente(projeto):
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    (projeto / ".mcp.json").unlink()
+    st = lifecycle.status(scope="project", root=projeto)
+    assert st["status"] != "healthy"
+    assert ".mcp.json" in [d["path"] for d in st["drift"]["missing"]]
+
+
+def test_status_detecta_mcp_json_entrada_editada(projeto):
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    doc = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
+    doc["mcpServers"]["sparkforge-aws"]["args"] = ["--adulterado"]
+    (projeto / ".mcp.json").write_text(json.dumps(doc), encoding="utf-8")
+    st = lifecycle.status(scope="project", root=projeto)
+    assert ".mcp.json" in [d["path"] for d in st["drift"]["modified"]]
+
+
+def test_repair_restaura_mcp_json_ausente(projeto):
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    (projeto / ".mcp.json").unlink()
+    rep = lifecycle.repair(scope="project", root=projeto)
+    assert ".mcp.json" in rep["repaired"]
+    doc = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
+    assert "sparkforge-aws" in doc["mcpServers"]
+    st = lifecycle.status(scope="project", root=projeto)
+    assert st["status"] == "healthy"
+
+
+def test_repair_nao_regrava_entrada_editada(projeto):
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    doc = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
+    doc["mcpServers"]["sparkforge-aws"]["args"] = ["--adulterado"]
+    (projeto / ".mcp.json").write_text(json.dumps(doc), encoding="utf-8")
+    rep = lifecycle.repair(scope="project", root=projeto)
+    assert ".mcp.json" in rep["skipped"]
+    doc2 = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
+    assert doc2["mcpServers"]["sparkforge-aws"]["args"] == ["--adulterado"]
+
+
 def test_install_nao_sobrescreve_arquivo_do_usuario(projeto):
     skill = projeto / ".devin" / "skills"
     skill.mkdir(parents=True)
@@ -135,7 +214,14 @@ def test_status_healthy_e_drift(projeto):
     lifecycle.install("devin", scope="project", root=projeto, yes=True)
     st = lifecycle.status(scope="project", root=projeto)
     assert st["status"] == "healthy"
-    assert st["drift"]["ok"] == st["ledger_entries"] > 0
+    # drift conta files + configs gerenciados (.mcp.json); ledger so files
+    manifesto = json.loads(
+        (projeto / ".sparkforge_aws" / "integrations.json").read_text(
+            encoding="utf-8"))
+    configs = len({c["path"]
+                   for r in manifesto["hosts"].values()
+                   for c in r.get("config") or []})
+    assert st["drift"]["ok"] == st["ledger_entries"] + configs > 0
 
     alvo = projeto / st["hosts"]["devin"][0]
     alvo.write_text("edicao manual", encoding="utf-8")
@@ -254,12 +340,13 @@ def test_cli_erro_estruturado_sem_traceback(projeto, capsys, monkeypatch):
 
 def test_hosts_for_none_e_csv():
     """GAP-003: `none` nunca vira `all`; csv subconjunto e validado."""
-    from sparkforge_aws.install.lifecycle import _hosts_for
     import pytest
+
+    from sparkforge_aws.install.lifecycle import _hosts_for
     assert _hosts_for("all")
     assert _hosts_for("none") == []
     assert _hosts_for("") == []
     assert _hosts_for("claude") == ["claude"]
     assert set(_hosts_for("claude,devin")) == {"claude", "devin"}
-    with pytest.raises(Exception):
+    with pytest.raises(kit.InstallError):
         _hosts_for("nope")

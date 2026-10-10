@@ -146,7 +146,10 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
                                 "skills,agents,mcp,tui,graph-studio.")
     install_p.add_argument("--dry-run", action="store_true")
     install_sub = install_p.add_subparsers(dest="install_action")
-    install_sub.add_parser("doctor", help="Saude da instalacao no alvo.")
+    doctor_p = install_sub.add_parser(
+        "doctor", help="Saude da instalacao no alvo.")
+    doctor_p.add_argument("--scope", choices=scopes, default="project")
+    doctor_p.add_argument("--root", default=None)
 
     status_p = sub.add_parser(
         "status",

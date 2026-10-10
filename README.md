@@ -39,9 +39,11 @@ continuam locais, determinísticas e sem provider no core.
 ## O que o install entrega ao seu host
 
 `sparkforge-aws install` não instala só uma CLI — instala uma **equipe de
-engenharia de dados** dentro do seu AI host. Depois do install, abrir o Claude
-Code, o Codex, o Devin ou o Copilot CLI neste projeto (ou no escopo
-`workspace`/`user`) dá acesso a:
+engenharia de dados** dentro do seu AI host. O perfil padrão `recommended`
+instala as skills e o servidor MCP; a equipe de coordenadores e executores
+entra com `--profile full`. Depois do install, abrir o Claude Code, o Codex, o
+Devin ou o Copilot CLI neste projeto (ou no escopo `workspace`/`user`) dá
+acesso a:
 
 - 14 coordenadores — especialistas com escopo fechado que orquestram a
   investigação: `spark-performance-architect`, `pyspark-code-reviewer`,
@@ -72,7 +74,9 @@ Onde cada peça aterrissa, por host:
 
 No escopo `project` a superfície fica dentro do repositório (`.claude/`,
 `.devin/`, `.codex/`, `.github/`, `.mcp.json`); nos escopos `workspace`/`user`
-fica nos diretórios de usuário de cada host.
+fica nos diretórios de usuário de cada host. Perfis: `minimal` (CLI+MCP),
+`recommended` (skills+MCP, padrão), `full` (skills+agents — a equipe
+completa).
 
 ### Como é pedir
 
