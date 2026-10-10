@@ -33,6 +33,7 @@ Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. D
 - [`fuse`](#fuse) — 1 command(s)
 - [`gain`](#gain) — 1 command(s)
 - [`glue`](#glue) — 2 command(s)
+- [`graph`](#graph) — 4 command(s)
 - [`handoff`](#handoff) — 1 command(s)
 - [`iceberg`](#iceberg) — 2 command(s)
 - [`install`](#install) — 2 command(s)
@@ -3291,6 +3292,79 @@ sparkforge-aws glue dependency-audit [help] <path> <glue_version>
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+## graph
+
+### `graph`
+
+**Syntax**
+
+```text
+sparkforge-aws graph [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `graph status`
+
+**Syntax**
+
+```text
+sparkforge-aws graph status [help] [root]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `root` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `graph ui`
+
+**Syntax**
+
+```text
+sparkforge-aws graph ui [help] [root] [limit] [no_browser] [port]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `root` | no | — | — |
+| `limit` | no | — | — |
+| `no_browser` | no | — | Serve sem abrir navegador (SSH). |
+| `port` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `graph view`
+
+**Syntax**
+
+```text
+sparkforge-aws graph view [help] [root] [limit]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `root` | no | — | — |
+| `limit` | no | — | Teto de nos exportados (o restante fica em limitations). |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ## handoff
 
 ### `handoff`
@@ -3357,7 +3431,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws install [help] [scope] [host] [profile] [gateway_profile] [root] [yes] [dry_run]
+sparkforge-aws install [help] [scope] [host] [profile] [gateway_profile] [root] [yes] [components] [dry_run]
 ```
 
 | argument/flag | required | default | description |
@@ -3369,6 +3443,7 @@ sparkforge-aws install [help] [scope] [host] [profile] [gateway_profile] [root] 
 | `gateway_profile` | no | — | — |
 | `root` | no | — | Raiz do alvo (default: raiz do VCS ou cwd). |
 | `yes` | no | — | Aprovacao explicita: sem ela, --dry-run. |
+| `components` | no | — | Componentes opcionais csv: skills,agents,mcp,tui,graph-studio. |
 | `dry_run` | no | — | — |
 
 <!-- keep:start -->
