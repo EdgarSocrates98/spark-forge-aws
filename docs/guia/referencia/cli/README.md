@@ -35,6 +35,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws fuse`](fuse.md) | Correlaciona facts de SQL com schema do catalogo (sparkforge_aws.facts.fusion), antes de judge. |
 | [`sparkforge-aws gain`](gain.md) | Ganho OBSERVADO entre runs medidos antes e depois de uma mudanca: por lado, N, mediana, minimo e maximo de tempo, DPU-segundos e custo, e o delta das medianas. |
 | [`sparkforge-aws glue`](glue.md) | Comandos especificos do runtime AWS Glue. |
+| [`sparkforge-aws graph`](graph.md) | Grafo do indice de codigo: status, ForgeGraphView e Graph Studio local. |
 | [`sparkforge-aws handoff`](handoff.md) | Escreve .sparkforge_aws/handoff.md e imprime o payload. |
 | [`sparkforge-aws iceberg`](iceberg.md) | Comandos especificos de Apache Iceberg. |
 | [`sparkforge-aws install`](install.md) | Instala o SparkForge no projeto/workspace (--scope) ou no HOME (--scope user, delegado ao integrate). |

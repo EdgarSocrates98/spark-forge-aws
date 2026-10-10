@@ -183,6 +183,8 @@ class TestToolSurface:
             "sparkforge_aws_code_read",
             "sparkforge_aws_code_status",
             "sparkforge_aws_code_sync",
+            "sparkforge_aws_graph_view",
+            "sparkforge_aws_graph_status",
         }
 
     def test_every_tool_declares_an_output_schema(self):
@@ -3647,6 +3649,16 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_aws_code_sync",
     ):
         return _real_code_output_for(name, tmp_path)
+
+    if name == "sparkforge_aws_graph_status":
+        # Sem indice em tmp_path: a resposta "unavailable" e a saida real do
+        # produto para um repo sem `code index` -- e valida contra o schema.
+        return call_tool("sparkforge_aws_graph_status", {"root": str(tmp_path)})
+
+    if name == "sparkforge_aws_graph_view":
+        # Idem: sem indice a tool devolve o envelope de erro de fronteira
+        # (SF-GRAPH-NO-INDEX), branch `_ERROR_SCHEMA` do oneOf declarado.
+        return call_tool("sparkforge_aws_graph_view", {"root": str(tmp_path)})
 
     raise AssertionError(f"sem construtor de argumentos reais para {name}")
 

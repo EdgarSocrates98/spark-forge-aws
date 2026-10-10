@@ -219,6 +219,13 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 |---|---|---|
 | [`sparkforge_aws_glue_dependency_audit`](sparkforge_aws_glue_dependency_audit.md) | só leitura | Lista as dependencias DECLARADAS de um job Glue -- pin de `requirements*.txt` (`mig.python_dep`, com `major` ja separado) e binario `.jar` (`mig.jar_binary`, com `scala_minor` j... |
 
+## graph
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_aws_graph_status`](sparkforge_aws_graph_status.md) | só leitura | Estado do indice que alimenta `graph view` — existe, frescor, contagens. |
+| [`sparkforge_aws_graph_view`](sparkforge_aws_graph_view.md) | só leitura | Projecao ForgeGraphView/v1 do indice de codigo persistido — a mesma saida de `sparkforge-aws graph view`, produtora do Graph Studio. |
+
 ## iceberg
 
 | Tool | Efeito | O que faz |

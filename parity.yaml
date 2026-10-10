@@ -1355,6 +1355,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: emit ForgeGraphView/v1 projection and index state (Graph Studio producer)
+    tools: [sparkforge_aws_graph_view, sparkforge_aws_graph_status]
+    cli: [graph view, graph status]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: discover and expand selective context under a hard byte budget
     tools:
       - sparkforge_aws_context_start

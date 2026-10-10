@@ -92,6 +92,11 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "de tamanho sairia da varredura e o import escaparia por padding, que e "
         "evasao de uma tecla. INV-015 manda o contrario"
     ),
+    "_installkit.py": (
+        "motor de instalacao vendored (theforge/installkit, stampado): varre "
+        "receipts e manifests de instalacao que o proprio kit escreveu nos "
+        "state dirs governados -- nunca arvore de cliente"
+    ),
 }
 
 
