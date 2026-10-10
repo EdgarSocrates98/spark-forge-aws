@@ -204,6 +204,15 @@ def install(
 
         escritos = sum(len(r.get("written") or []) for r in relatorios)
         removidos = sum(len(r.get("removed") or []) for r in relatorios)
+        notas: list[dict[str, Any]] = []
+        if "codex" in nomes:
+            # Observado no Codex 0.160.0: `mcp list` ignora `.mcp.json` de
+            # projeto e `.codex/config.toml` de projeto — MCP so entra por
+            # `~/.codex/config.toml` (escopo user) ou `codex mcp add`.
+            notas.append({
+                "id": "mcp-scope:codex", "status": "NOT_APPLICABLE",
+                "detail": "codex nao le .mcp.json de projeto; MCP exige "
+                          "--scope user ou `codex mcp add`"})
         recusas = [
             {"host": r["host"], **rec}
             for r in relatorios for rec in (r.get("refused") or [])
@@ -225,7 +234,7 @@ def install(
         checks=[{"id": "files", "status": "PASS",
                  "detail": f"{escritos} written, {removidos} removed"},
                 {"id": "refusals", "status": "PASS" if not recusas else "FAIL",
-                 "detail": f"{len(recusas)} refused"}],
+                 "detail": f"{len(recusas)} refused"}] + notas,
         refused=recusas, dry_run=dry_run,
         status="planned" if dry_run else ("completed" if not recusas else "failed"),
     )

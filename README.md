@@ -69,7 +69,7 @@ Onde cada peça aterrissa, por host:
 |---|---|---|---|
 | Claude Code | plugin `agents/` (19) | plugin `skills/` | server do plugin |
 | Devin | `~/.config/devin/agents` (19) | `~/.agents/skills` | `mcp_config.json` |
-| Codex | `~/.codex/agents/*.toml` (14 coordenadores — o TOML do Codex exige `description`, que os executores não têm) | `~/.agents/skills` | `config.toml` |
+| Codex | `~/.codex/agents/*.toml` (14 coordenadores — o TOML do Codex exige `description`, que os executores não têm) | `~/.agents/skills` | `~/.codex/config.toml` — **só escopo `user`**: o Codex não lê `.mcp.json` de projeto; em `--scope project` o recibo declara `mcp-scope:codex` NOT_APPLICABLE |
 | Copilot CLI | `~/.copilot/agents` (19) | `~/.agents/skills` | `mcp-config.json` |
 
 No escopo `project` a superfície fica dentro do repositório (`.claude/`,
