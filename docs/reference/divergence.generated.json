@@ -3,21 +3,21 @@
   "cli": "sparkforge-aws",
   "documented_missing": [
     {
-      "file": "spark-forge-aws\\docs\\sdd\\archive\\agentspec\\features\\DESIGN_AGENTIC_EVAL_HARNESS.md:565",
+      "file": "docs\\sdd\\archive\\agentspec\\features\\DESIGN_AGENTIC_EVAL_HARNESS.md:565",
       "line": "-",
       "problem": "`sparkforge-aws eval` documented but not a real command",
       "impact": "user runs a command that fails",
       "fix": "remove or rename the `eval` mention"
     },
     {
-      "file": "spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:390; spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:391",
+      "file": "docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:390; docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:391",
       "line": "-",
       "problem": "`sparkforge-aws evidence` documented but not a real command",
       "impact": "user runs a command that fails",
       "fix": "remove or rename the `evidence` mention"
     },
     {
-      "file": "spark-forge-aws\\docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:395",
+      "file": "docs\\superpowers\\specs\\2026-09-03-sparkforge-aws-agentic-evolution-design.md:395",
       "line": "-",
       "problem": "`sparkforge-aws tokens` documented but not a real command",
       "impact": "user runs a command that fails",
@@ -25,5 +25,5 @@
     }
   ],
   "undocumented_commands": [],
-  "generated_at": "2026-10-09T22:45:16Z"
+  "generated_at": "2026-10-10T09:50:45Z"
 }

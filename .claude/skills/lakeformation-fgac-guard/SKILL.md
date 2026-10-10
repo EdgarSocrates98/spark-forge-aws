@@ -48,7 +48,7 @@ A versão muda o significado, não só o número:
 - afirmar "FGAC não escreve" para um Glue 5.1 é erro de versão, e o contrário também;
 - **FTA num Glue 5.1 de configuração default não funciona**: FTA exige EMRFS, e o 5.1 trocou o default para S3A. Pior — `fs.s3.credentialsResolverClass` é chave de EMRFS e sob S3A é **ignorada sem erro**.
 
-O eixo completo, com as citações e o **conflito declarado** entre quatro frases da documentação da AWS sobre escrita em tabela registrada, está em [`knowledge/glue/lakeformation-fgac.md`](../../knowledge/glue/lakeformation-fgac.md) §0, §5 e §6.
+O eixo completo, com as citações e o **conflito declarado** entre quatro frases da documentação da AWS sobre escrita em tabela registrada, está em [`knowledge/glue/lakeformation-fgac.md`](../../../knowledge/glue/lakeformation-fgac.md) §0, §5 e §6.
 
 ## A API de escrita não é o caminho de autorização
 
@@ -195,7 +195,7 @@ Ele dá **fact medido** à afirmação da §1 que antes vivia só em prosa: *cro
 
 O catálogo de ORIGEM nunca é passado à mão: ele sai medido do próprio link. Passá-lo conferiria contra o catálogo que o operador **supõe**.
 
-Aprofundamento sob demanda: [`knowledge/glue/lakeformation-fgac.md`](../../knowledge/glue/lakeformation-fgac.md) traz o que a documentação declara e o que ela não declara; [`docs/aws/glue/6.0/lakeformation.md`](../../docs/aws/glue/6.0/lakeformation.md) é a leitura pelo lado do runtime 6.0.
+Aprofundamento sob demanda: [`knowledge/glue/lakeformation-fgac.md`](../../../knowledge/glue/lakeformation-fgac.md) traz o que a documentação declara e o que ela não declara; [`docs/aws/glue/6.0/lakeformation.md`](../../../docs/aws/glue/6.0/lakeformation.md) é a leitura pelo lado do runtime 6.0.
 
 ## Protocolo
 

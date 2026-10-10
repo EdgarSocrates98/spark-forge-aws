@@ -127,7 +127,7 @@ sparkforge-aws analyze schema-registry --path .sparkforge_aws/artifacts/schema_r
 
 Definição ausente, inválida ou acima do limite é `unresolved`, não contrato
 inventado. Veja [`knowledge/schema-registry-data-contracts.md`](knowledge/schema-registry-data-contracts.md)
-e a [referência da tool MCP](referencia/tools/sparkforge_aws_collect_schema_registry.md).
+e a [referência da tool MCP](docs/guia/referencia/tools/sparkforge_aws_collect_schema_registry.md).
 
 Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
 de correlacionar com checkpoint, operator e transporte:
