@@ -816,8 +816,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 80,
-   "text": "143",
-   "context": "143 tools:",
+   "text": "146",
+   "context": "146 tools:",
    "type": "number",
    "id": "VNX-482",
    "state": "PROVADA",
@@ -827,7 +827,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -836,8 +836,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 84,
-   "text": "102",
-   "context": "| `READ_ONLY` | 102 |",
+   "text": "105",
+   "context": "| `READ_ONLY` | 105 |",
    "type": "number",
    "id": "VNX-484",
    "state": "PROVADA",
@@ -847,7 +847,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 102
+     "value": 105
     },
     "kind": "command",
     "tier": "fast"
@@ -936,8 +936,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 172,
-   "text": "92",
-   "context": "| `READ_ONLY` | 92 | 10 |",
+   "text": "95",
+   "context": "| `READ_ONLY` | 95 | 10 |",
    "type": "number",
    "id": "VNX-630",
    "state": "PROVADA",
@@ -947,7 +947,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 92
+     "value": 95
     },
     "kind": "command",
     "tier": "fast"
@@ -1056,8 +1056,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 176,
-   "text": "90",
-   "context": "Medido: **90** das tools `READ_ONLY` declaram algum argumento de caminho",
+   "text": "91",
+   "context": "Medido: **91** das tools `READ_ONLY` declaram algum argumento de caminho",
    "type": "number",
    "id": "VNX-490",
    "state": "PROVADA",
@@ -1067,7 +1067,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 90
+     "value": 91
     },
     "kind": "command",
     "tier": "fast"
@@ -1076,8 +1076,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 203,
-   "text": "133",
-   "context": "**133** de 143 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram",
+   "text": "136",
+   "context": "**136** de 146 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram",
    "type": "number",
    "id": "VNX-636",
    "state": "PROVADA",
@@ -1087,7 +1087,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 133
+     "value": 136
     },
     "kind": "command",
     "tier": "fast"
@@ -1096,8 +1096,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 203,
-   "text": "143",
-   "context": "**133** de 143 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram",
+   "text": "146",
+   "context": "**136** de 146 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram",
    "type": "number",
    "id": "VNX-637",
    "state": "PROVADA",
@@ -1107,7 +1107,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -1116,8 +1116,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 285,
-   "text": "143",
-   "context": "> `CallPolicy.decide`, e o despacho é único para as 143 tools, então fechar ali",
+   "text": "146",
+   "context": "> `CallPolicy.decide`, e o despacho é único para as 146 tools, então fechar ali",
    "type": "number",
    "id": "VNX-732",
    "state": "PROVADA",
@@ -1127,7 +1127,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -1136,8 +1136,8 @@
   {
    "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
    "line": 331,
-   "text": "143",
-   "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 143",
+   "text": "146",
+   "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 146",
    "type": "number",
    "id": "VNX-733",
    "state": "PROVADA",
@@ -1147,7 +1147,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -3145,8 +3145,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 215,
-   "text": "408362",
-   "context": "| `project_items` | 1 | 197 | 408362 | 2248 | 56 |",
+   "text": "410430",
+   "context": "| `project_items` | 1 | 197 | 410430 | 2248 | 56 |",
    "type": "number",
    "id": "VNX-823",
    "state": "PROVADA",
@@ -3156,7 +3156,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 408362
+     "value": 410430
     },
     "kind": "command",
     "tier": "fast"
@@ -3245,8 +3245,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 216,
-   "text": "433112",
-   "context": "| `tool_class` | 1 | 191 | 433112 | 3621 | 77 |",
+   "text": "435555",
+   "context": "| `tool_class` | 1 | 191 | 435555 | 3621 | 77 |",
    "type": "number",
    "id": "VNX-824",
    "state": "PROVADA",
@@ -3256,7 +3256,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 433112
+     "value": 435555
     },
     "kind": "command",
     "tier": "fast"
@@ -3345,8 +3345,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 217,
-   "text": "569480",
-   "context": "| `authorize` | 3 | 611 | 569480 | 4479 | 123 |",
+   "text": "576609",
+   "context": "| `authorize` | 3 | 611 | 576609 | 4479 | 123 |",
    "type": "number",
    "id": "VNX-844",
    "state": "PROVADA",
@@ -3356,7 +3356,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 569480
+     "value": 576609
     },
     "kind": "command",
     "tier": "fast"
@@ -3425,8 +3425,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 219,
-   "text": "2506895",
-   "context": "Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2506895**;",
+   "text": "2518535",
+   "context": "Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2518535**;",
    "type": "number",
    "id": "VNX-845",
    "state": "PROVADA",
@@ -3436,7 +3436,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 2506895
+     "value": 2518535
     },
     "kind": "command",
     "tier": "fast"
@@ -3485,8 +3485,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 229,
-   "text": "1292.9",
-   "context": "**Contra o denominador do plano, o índice economiza 1292.9 vezes.** Contra a saída de um `grep`",
+   "text": "1298.9",
+   "context": "**Contra o denominador do plano, o índice economiza 1298.9 vezes.** Contra a saída de um `grep`",
    "type": "number",
    "id": "VNX-741",
    "state": "PROVADA",
@@ -3495,7 +3495,7 @@
     "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge_aws.codeintel.index import indexar; from sparkforge_aws.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge_aws.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(round(total / com, 1))'",
     "expect": {
      "kind": "contains",
-     "value": "1292.9"
+     "value": "1298.9"
     },
     "kind": "command",
     "tier": "fast"
@@ -3582,8 +3582,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 248,
-   "text": "388853",
-   "context": "no mesmo corpus, tem **388853** bytes (remedido em 2026-10-06 após o `_trust` entrar em",
+   "text": "395872",
+   "context": "no mesmo corpus, tem **395872** bytes (remedido em 2026-10-06 após o `_trust` entrar em",
    "type": "number",
    "id": "VNX-827",
    "state": "PROVADA",
@@ -3593,7 +3593,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 388853
+     "value": 395872
     },
     "kind": "command",
     "tier": "fast"
@@ -3757,8 +3757,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 306,
-   "text": "143",
-   "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **143** tools do catálogo:",
+   "text": "146",
+   "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **54** das **146** tools do catálogo:",
    "type": "number",
    "id": "VNX-558",
    "state": "PROVADA",
@@ -3768,7 +3768,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -3910,8 +3910,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 563,
-   "text": "49",
-   "context": "existe em **49** delas, e os três empacotadores de contexto continuam sendo três (os estimadores",
+   "text": "50",
+   "context": "existe em **50** delas, e os três empacotadores de contexto continuam sendo três (os estimadores",
    "type": "number",
    "id": "VNX-559",
    "state": "PROVADA",
@@ -3921,7 +3921,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 49
+     "value": 50
     },
     "kind": "command",
     "tier": "fast"
@@ -4049,7 +4049,7 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 42,
-   "text": "133",
+   "text": "136",
    "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge_aws/agents/autonomy.py:tool_class()` deriva os 5 níveis do §",
    "type": "number",
    "id": "VNX-638",
@@ -4060,7 +4060,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 133
+     "value": 136
     },
     "kind": "command",
     "tier": "fast"
@@ -4069,7 +4069,7 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 42,
-   "text": "143",
+   "text": "146",
    "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge_aws/agents/autonomy.py:tool_class()` deriva os 5 níveis do §",
    "type": "number",
    "id": "VNX-639",
@@ -4080,7 +4080,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -4403,8 +4403,8 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-   "text": "532,0",
-   "context": "Confirmado por tamanho: `tools.py` (532,0 KB) e `_core.py` (398,8 KB) são, disparado, os dois maiores arquivos do pacote determinístico — maiores que todo `sparkforge_aws/economy`, `sparkforge_aws/context`, `sparkforge_aws/registry`, `sparkforge_aws/case`, `sparkforge_aws/agents` e `sparkforge_aws/workflows` somados. O gate de paridade é real e pesado: `tests/test_capability_parity.py` (982 linhas), `tests/test_agents_parity.py` (573 linhas) e `tests/test_platform_divergence.py` (227 linhas) — 1782 linhas de teste só para paridade entre adapters/plataformas, remediado em 2026-09-28 após declarar os verbos CLI-only do Decision Plane. O histórico de commits confirma que esse gate já pegou regressão real (`2cc7d27 fix(ci): o gate de paridade do artefato nao alcancava scripts/, e estava vermelho desde 9474aa8`).",
+   "text": "538,6",
+   "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-431",
    "state": "PROVADA",
@@ -4413,7 +4413,7 @@
     "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge_aws/adapters/tools.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
     "expect": {
      "kind": "contains",
-     "value": "532,0"
+     "value": "538,6"
     },
     "kind": "command",
     "tier": "fast"
@@ -4422,8 +4422,8 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-   "text": "398,8",
-   "context": "Confirmado por tamanho: `tools.py` (532,0 KB) e `_core.py` (398,8 KB) são, disparado, os dois maiores arquivos do pacote determinístico — maiores que todo `sparkforge_aws/economy`, `sparkforge_aws/context`, `sparkforge_aws/registry`, `sparkforge_aws/case`, `sparkforge_aws/agents` e `sparkforge_aws/workflows` somados. O gate de paridade é real e pesado: `tests/test_capability_parity.py` (982 linhas), `tests/test_agents_parity.py` (573 linhas) e `tests/test_platform_divergence.py` (227 linhas) — 1782 linhas de teste só para paridade entre adapters/plataformas, remediado em 2026-09-28 após declarar os verbos CLI-only do Decision Plane. O histórico de commits confirma que esse gate já pegou regressão real (`2cc7d27 fix(ci): o gate de paridade do artefato nao alcancava scripts/, e estava vermelho desde 9474aa8`).",
+   "text": "400,8",
+   "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-322",
    "state": "PROVADA",
@@ -4432,7 +4432,7 @@
     "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge_aws/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
     "expect": {
      "kind": "contains",
-     "value": "398,8"
+     "value": "400,8"
     },
     "kind": "command",
     "tier": "fast"
@@ -4441,8 +4441,8 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-   "text": "982",
-   "context": "Confirmado por tamanho: `tools.py` (529,8 KB) e `_core.py` (397,0 KB) são, disparado, os dois maiores arquivos do pacote",
+   "text": "1018",
+   "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-324",
    "state": "PROVADA",
@@ -4452,7 +4452,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 982
+     "value": 1018
     },
     "kind": "command",
     "tier": "fast"
@@ -4501,8 +4501,8 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-   "text": "1782",
-   "context": "Confirmado por tamanho: `tools.py` (529,8 KB) e `_core.py` (397,0 KB) são, disparado, os dois maiores arquivos do pacote",
+   "text": "1818",
+   "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-327",
    "state": "PROVADA",
@@ -4512,7 +4512,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 1782
+     "value": 1818
     },
     "kind": "command",
     "tier": "fast"
@@ -4521,8 +4521,8 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 107,
-   "text": "143",
-   "context": "o que cobre as 143 tools num ponto só. O que nunca passava por `call_tool` —",
+   "text": "146",
+   "context": "o que cobre as 146 tools num ponto só. O que nunca passava por `call_tool` —",
    "type": "number",
    "id": "VNX-734",
    "state": "PROVADA",
@@ -4532,7 +4532,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 143
+     "value": 146
     },
     "kind": "command",
     "tier": "fast"
@@ -10435,8 +10435,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 196,
-   "text": "1293",
-   "context": "lados — os arquivos `*.py` versionados que `iter_source_files(root, \"*.py\")` entrega, **1293** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening após `sparkforge_aws/agentic/handoff.py` e `tests/test_agentic_handoff.py` entrarem no corpus).",
+   "text": "1341",
+   "context": "lados — os arquivos `*.py` versionados que `iter_source_files(root, \"*.py\")` entrega, **1341** nesta árvore de checkout ",
    "type": "number",
    "id": "VNX-822",
    "state": "PROVADA",
@@ -10446,7 +10446,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 1293
+     "value": 1341
     },
     "kind": "command",
     "tier": "fast"

@@ -294,6 +294,13 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         # o payload. A projecao que ele renderiza ja chega por
         # `sparkforge_aws_graph_view`.
         "graph ui": "abre browser no host; projecao coberta por sparkforge_aws_graph_view.",
+        # `portal` sobe um servidor web local (127.0.0.1) na maquina do
+        # chamador: o efeito colateral e o processo/janela, nao um payload.
+        # Tudo o que ele renderiza ja chega por tools e recibos estruturados.
+        "portal": (
+            "sobe o portal web local no host do chamador; superficie de UI, "
+            "nao capacidade de dados."
+        ),
         # Ciclo de vida da instalacao local (roteados para install.cli):
         # escritas governadas na maquina do chamador.
         "install doctor": "diagnostico da instalacao no disco do chamador.",

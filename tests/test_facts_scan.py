@@ -97,6 +97,11 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "receipts e manifests de instalacao que o proprio kit escreveu nos "
         "state dirs governados -- nunca arvore de cliente"
     ),
+    "portal_adapter.py": (
+        "varre `.sparkforge_aws/receipts/install-*.json` do proprio state dir "
+        "da forja -- conjunto fechado que o proprio produto escreveu, para ler "
+        "o profile da instalacao mais recente; nunca arvore de cliente"
+    ),
 }
 
 
