@@ -12,7 +12,10 @@ def test_full_and_compact_surfaces_have_declared_sizes() -> None:
     # lock nem `docs/surface.lock.json` -- drift achado pela suite, nao
     # decisao de esconder tool. HTTP/full fica em 144: `code_read` continua
     # fora por depender do indice local.
-    assert len(tools_do_transporte("stdio", "full")) == 145
+    # 145 -> 146 em 2026-10-16 (FASE 1 §1.2): `sparkforge_aws_ai` observa o
+    # estado do host (detect/versao/auth/integracao); read-only, nunca lanca
+    # processo. HTTP/full sobe para 145 na mesma medida.
+    assert len(tools_do_transporte("stdio", "full")) == 146
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
 

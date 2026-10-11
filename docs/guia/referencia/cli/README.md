@@ -8,6 +8,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 |---|---|
 | [`sparkforge-aws agentops`](agentops.md) | Inspeciona runs locais, compara baseline e atribui desperdicio observado. |
 | [`sparkforge-aws agents`](agents.md) | Lista e inspeciona agentes do runtime agêntico. |
+| [`sparkforge-aws ai`](ai.md) | Abre o host de IA no repositorio: detecta o binario, le a versao, confere autenticacao pelo subcomando oficial de status e o estado da integracao. |
 | [`sparkforge-aws analyze`](analyze.md) | Extrai facts deterministicos de codigo-fonte. |
 | [`sparkforge-aws arbitrate`](arbitrate.md) | Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. |
 | [`sparkforge-aws architecture`](architecture.md) | Avalia arquitetura declarada sem escolher por preferência ou custo inventado. |
@@ -51,6 +52,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws pack`](pack.md) | Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_AWS_PACKS). |
 | [`sparkforge-aws playbook`](playbook.md) | Decomposicao de um coordenador em passos sequenciais -- o PISO de orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, e o caminho em Claude Code, Devin CLI... |
 | [`sparkforge-aws policy`](policy.md) | Politica de seguranca do repositorio (.sparkforge_aws/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json. |
+| [`sparkforge-aws portal`](portal.md) | Abre o portal web local do SparkForge (127.0.0.1, sessão por token): dashboard de instalação, hosts de IA, MCP, skills, agents, tarefas, grafo e docs — os mesmos serviços e rece... |
 | [`sparkforge-aws proof`](proof.md) | Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra deixou de disparar no depois?) e um eixo por item de action.moves (funcval, benchmark ou sem comparador). |
 | [`sparkforge-aws receipt`](receipt.md) | Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o recibo e os artefatos, nunca autoria. |
 | [`sparkforge-aws release`](release.md) | O que uma release publica, e o que muda entre duas. |

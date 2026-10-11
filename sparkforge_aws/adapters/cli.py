@@ -2132,7 +2132,18 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Arquivo de facts (JSON) que comprova os gates da fase pedida. "
             "Repetivel. Num case estrito, e daqui que sai a evidencia que "
-            "destrava `--phase`."
+            "destrava `--phase`. Tambem preenche `facts_index`, que o "
+            "`next-step` le para rotear."
+        ),
+    )
+    update_p.add_argument(
+        "--findings",
+        action="append",
+        help=(
+            "Arquivo de findings (JSON) gerado por `judge`. Repetivel. "
+            "Preenche `findings_index` (contagem por severidade), que o "
+            "`next-step` le para distinguir 'facts sem finding' de "
+            "'investigacao julgada'."
         ),
     )
 
@@ -3212,6 +3223,34 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true", help="Lista o que seria removido, sem remover."
     )
 
+    ai_p = sub.add_parser(
+        "ai",
+        help=(
+            "Abre o host de IA no repositorio: detecta o binario, le a versao, confere "
+            "autenticacao pelo subcomando oficial de status e o estado da integracao. "
+            "Com `--launch` e TTY, executa o CLI do host no diretorio; sem eles, o "
+            "recibo traz `launch_command` para o operador. Host deslogado nao e "
+            "lancado — `login_hint` aponta o login oficial."
+        ),
+    )
+    ai_p.add_argument(
+        "host",
+        nargs="?",
+        default="all",
+        choices=hosts_integraveis,
+        help="Host a abrir (padrao: all — mede os quatro, sem lancar).",
+    )
+    ai_p.add_argument(
+        "--launch",
+        action="store_true",
+        help="Executa o CLI do host no diretorio do repo (so com TTY e um host escolhido).",
+    )
+    ai_p.add_argument(
+        "--repo",
+        default=None,
+        help="Raiz do repositorio onde o host abre (padrao: diretorio corrente).",
+    )
+
     # install / lifecycle -------------------------------------------------------
     # PORTABLE_INSTALL: `install --scope project|workspace` escreve os mesmos
     # assets do integrate nos diretorios de host DENTRO do repositorio, com
@@ -3220,6 +3259,35 @@ def build_parser() -> argparse.ArgumentParser:
     from sparkforge_aws.install import cli as _install_cli
 
     _install_cli.add_parsers(sub)
+
+    # portal --------------------------------------------------------------------
+    # FORGE PORTAL (opcional): abre a UI web local do SparkForge — mesmos
+    # serviços e receipts do CLI/TUI; o portal nunca roda durante uso MCP.
+    portal_p = sub.add_parser(
+        "portal",
+        help=(
+            "Abre o portal web local do SparkForge (127.0.0.1, sessão por token): "
+            "dashboard de instalação, hosts de IA, MCP, skills, agents, tarefas, "
+            "grafo e docs — os mesmos serviços e receipts do CLI. Opcional: o "
+            "ecossistema inteiro funciona sem ele. --no-browser só imprime a URL."
+        ),
+    )
+    portal_p.add_argument(
+        "--no-browser",
+        action="store_true",
+        help=(
+            "Só imprime a URL de sessão — útil em SSH/headless ou quando "
+            "você quer abrir manualmente."
+        ),
+    )
+    portal_p.add_argument(
+        "--port", type=int, default=0,
+        help="Porta fixa (default: porta livre do sistema — evita conflito entre instâncias).",
+    )
+    portal_p.add_argument(
+        "--root", default=None,
+        help="Workspace a inspecionar (default: cwd).",
+    )
 
     # policy ------------------------------------------------------------------
     # §16: `.sparkforge_aws/policy.yaml`, imposta pelo servidor MCP, pelo hook
@@ -5097,6 +5165,7 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
         override_gate=args.override_gate,
         reason=args.reason,
         facts_path=args.facts,
+        findings_path=args.findings,
         hypothesis=args.hypothesis,
         prediction=args.prediction,
         experiment=args.experiment,
@@ -5548,6 +5617,23 @@ def _cmd_detach(args: argparse.Namespace) -> int:
     )
     _print(resultado)
     return _saida_da_integracao(resultado)
+
+
+def _cmd_ai(args: argparse.Namespace) -> int:
+    import subprocess
+
+    from sparkforge_aws.integrate import open_host
+
+    recibo = open_host.ai_flow(
+        args.host,
+        repo=Path(args.repo or Path.cwd()),
+        launch=args.launch,
+        tty=None,  # o fluxo mede sys.stdin.isatty() na hora
+        exec_host=lambda caminho, cwd: subprocess.call(  # noqa: S603
+            [caminho], cwd=str(cwd)),
+    )
+    _print(recibo)
+    return 0 if recibo.get("launched") or not args.launch else 1
 
 
 def _cmd_simulate(args: argparse.Namespace) -> int:
@@ -6333,6 +6419,7 @@ _DISPATCH = {
     ("doctor", "agentic"): _cmd_doctor_agentic,
     ("integrate", None): _cmd_integrate,
     ("detach", None): _cmd_detach,
+    ("ai", None): _cmd_ai,
     ("policy", "check"): _cmd_policy_check,
     ("policy", "explain"): _cmd_policy_explain,
     ("policy", "sync-settings"): _cmd_policy_sync_settings,
@@ -6468,6 +6555,16 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command in ('install', 'status', 'repair', 'update', 'uninstall', 'mcp'):
         from sparkforge_aws.install.cli import dispatch
         return dispatch(args)
+    if args.command == 'portal':
+        from sparkforge_aws.portal_adapter import main as portal_main
+        portal_argv: list[str] = []
+        if getattr(args, 'no_browser', False):
+            portal_argv.append('--no-browser')
+        if getattr(args, 'port', 0):
+            portal_argv += ['--port', str(args.port)]
+        if getattr(args, 'root', None):
+            portal_argv += ['--root', str(args.root)]
+        return portal_main(portal_argv)
     sub_action = (
         getattr(args, "lab_action", None)
         or getattr(args, "analyze_target", None)

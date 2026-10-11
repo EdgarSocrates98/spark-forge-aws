@@ -16,7 +16,8 @@ Atualiza a fase, um gate booleano, ou registra o uso de uma skill no case atual.
 | `close_hypothesis` | string | não | Id da hipotese a fechar (`h1`, `h2`, ...). Exige `hypothesis_outcome`. O registro e ACRESCIMO: a afirmacao, a previsao e o experimento originais ficam onde estao, e reescreve-los para casar com o resultado e o vies que a hipotese escrita existe para impedir. |
 | `evidence` | string | não | Onde ler o que fechou a hipotese (stage, run, arquivo de facts). |
 | `experiment` | string | não | Como medir a previsao. |
-| `facts_path` | string ou array de string | não | Facts que comprovam os gates da fase pedida. Num case estrito, e daqui que sai a evidencia que destrava `phase`. |
+| `facts_path` | string ou array de string | não | Facts que comprovam os gates da fase pedida. Num case estrito, e daqui que sai a evidencia que destrava `phase`. Tambem preenche `facts_index`, que o `next-step` le para rotear. |
+| `findings_path` | string ou array de string | não | Arquivo(s) de findings do `judge`. Preenche `findings_index` (contagem por severidade), que o `next-step` le para distinguir 'facts sem finding' de 'investigacao julgada'. |
 | `gate` | string | não |  |
 | `gate_value` | boolean | não |  |
 | `hypothesis` | string | não | Afirmacao testavel a registrar. Exige `prediction` e `experiment`: afirmacao sem previsao nao e testavel, e previsao sem experimento nao diz quem a testa. As tres juntas viram uma entrada em `hypotheses`, com id sequencial e status `open`. |

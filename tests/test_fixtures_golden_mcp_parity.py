@@ -213,6 +213,10 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_aws_graph_status": (
         "2026-10-06: estado/frescor do índice que alimenta graph_view"
     ),
+    "sparkforge_aws_ai": (
+        "2026-10-25: painel read-only do host agentico (binario, versao, auth, "
+        "estado da instalacao) — o `ai --launch` fica CLI-only, fronteira humana"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
@@ -274,7 +278,10 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_aws_case_update": (
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
-        "T2), so em `properties`, fora de `required`"
+        "T2), so em `properties`, fora de `required`. "
+        "2026-10-25: `findings_path` opcional na entrada, espelho de `--findings` "
+        "— preenche `findings_index`, que o `next-step` le para rotear (fechamento "
+        "do desvio documentado D-4b-5 estendido a findings), fora de `required`"
     ),
     "sparkforge_aws_runtime_detect": (
         "2026-09-17: `databricks` e `photon` na saida (DATABRICKS_SPARK T2), so em "
@@ -363,6 +370,14 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "2026-09-18: a descricao nomeia o motivo novo do enum (DATABRICKS_SPARK T9); "
         "depois diz que o plano com operador Photon (`plan.photon`) tambem leva a "
         "ele (DATABRICKS_PHOTON_PLAN TX), sem mudar o enum"
+    ),
+    (
+        "sparkforge_aws_case_update",
+        "inputSchema.properties.facts_path.description",
+    ): (
+        "2026-10-25: a descricao passou a nomear o `facts_index` que o "
+        "`--facts`/`facts_path` agora preenche de verdade (D-4b-5 fechado); "
+        "tipo e posicao nao mudaram"
     ),
 }
 # `Fact.subject.type` tambem ancora snapshots Iceberg. O campo ja era emitido
@@ -668,7 +683,10 @@ class TestHandshakeLegado:
         # root_cause), espelho das flags da CLI, fora de `required`. Doze chaves.
         # 47 -> 48 em 2026-10-24: `upstream` opcional na entrada de
         # `sparkforge_aws_analyze_pyspark` (intake upstream-facts/v1). Uma chave.
-        assert aditivas == {"stdio": 48, "http": 48}
+        # 48 -> 49 em 2026-10-25: `findings_path` opcional na entrada de
+        # `sparkforge_aws_case_update` (preenche `findings_index`; D-4b-5
+        # estendido a findings). Uma chave.
+        assert aditivas == {"stdio": 49, "http": 49}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
@@ -678,7 +696,9 @@ class TestHandshakeLegado:
         }
         # 8 -> 10 em 2026-09-18: o enum `reason` do `skipped` do judge cresceu com
         # `databricks.photon.unresolved`, e a descricao dele passou a nomea-lo.
-        assert reescritas == {"stdio": 41, "http": 41}
+        # 41 -> 42 em 2026-10-25: a descricao do `facts_path` do `case_update`
+        # passou a nomear o `facts_index` que ele agora preenche (D-4b-5).
+        assert reescritas == {"stdio": 42, "http": 42}
         # A chamada declarada: o texto serializado, alvo, direcao e os dois
         # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
         # que mudou sem registro.

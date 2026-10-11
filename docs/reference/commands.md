@@ -2,12 +2,13 @@
 
 Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. Do not hand-edit generated sections — write between `keep:start`/`keep:end` markers. `por que`/`quando` lines come from the curated `command-rationale.json` — edit rationale there, never here. Status vocabulary: `available` unless marked otherwise.
 
-Rationale coverage: **65/65** first-level groups curated in `command-rationale.json`.
+Rationale coverage: **66/67** first-level groups curated in `command-rationale.json`.
 
 ## Groups
 
 - [`agentops`](#agentops) — 6 command(s)
 - [`agents`](#agents) — 3 command(s)
+- [`ai`](#ai) — 1 command(s)
 - [`analyze`](#analyze) — 51 command(s)
 - [`arbitrate`](#arbitrate) — 1 command(s)
 - [`architecture`](#architecture) — 2 command(s)
@@ -51,6 +52,7 @@ Rationale coverage: **65/65** first-level groups curated in `command-rationale.j
 - [`pack`](#pack) — 3 command(s)
 - [`playbook`](#playbook) — 1 command(s)
 - [`policy`](#policy) — 4 command(s)
+- [`portal`](#portal) — 1 command(s)
 - [`proof`](#proof) — 1 command(s)
 - [`receipt`](#receipt) — 3 command(s)
 - [`release`](#release) — 3 command(s)
@@ -281,6 +283,29 @@ sparkforge-aws agents list [help] [repo]
 |---|---|---|---|
 | `help` | no | — | show this help message and exit |
 | `repo` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+## ai
+
+### `ai`
+
+**para que:** Abre o host de IA no repositorio: detecta o binario, le a versao, confere autenticacao pelo subcomando oficial de status e o estado da integracao. Com `--launch` e TTY, executa o CLI do host no diretorio; sem eles, o recibo traz `launch_command` para o operador. Host deslogado nao e lancado — `login_hint` aponta o login oficial.
+
+**Syntax**
+
+```text
+sparkforge-aws ai [help] [host] [launch] [repo]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `host` | no | — | Host a abrir (padrao: all — mede os quatro, sem lancar). |
+| `launch` | no | — | Executa o CLI do host no diretorio do repo (so com TTY e um host escolhido). |
+| `repo` | no | — | Raiz do repositorio onde o host abre (padrao: diretorio corrente). |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_
@@ -2038,7 +2063,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws case update [help] <repo> [phase] [gate] [gate_value] [skill] [now] [outcome] [hypothesis] [prediction] [experiment] [ID] [hypothesis_outcome] [evidence] [override_gate] [reason] [facts]
+sparkforge-aws case update [help] <repo> [phase] [gate] [gate_value] [skill] [now] [outcome] [hypothesis] [prediction] [experiment] [ID] [hypothesis_outcome] [evidence] [override_gate] [reason] [facts] [findings]
 ```
 
 | argument/flag | required | default | description |
@@ -2059,7 +2084,8 @@ sparkforge-aws case update [help] <repo> [phase] [gate] [gate_value] [skill] [no
 | `evidence` | no | — | Onde ler o que fechou a hipotese (stage, run, arquivo de facts). |
 | `override_gate` | no | — | Passa por cima de um gate num case estrito, quando o dado genuinamente nao existe (job descontinuado, ambiente que sumiu). Exige `--reason`. Fica gravado no case como lista: dois overrides do mesmo gate sao dois fatos, e nenhum apaga o outro. |
 | `reason` | no | — | Motivo do `--override-gate`. Sem ele o override e recusado. |
-| `facts` | no | — | Arquivo de facts (JSON) que comprova os gates da fase pedida. Repetivel. Num case estrito, e daqui que sai a evidencia que destrava `--phase`. |
+| `facts` | no | — | Arquivo de facts (JSON) que comprova os gates da fase pedida. Repetivel. Num case estrito, e daqui que sai a evidencia que destrava `--phase`. Tambem preenche `facts_index`, que o `next-step` le para rotear. |
+| `findings` | no | — | Arquivo de findings (JSON) gerado por `judge`. Repetivel. Preenche `findings_index` (contagem por severidade), que o `next-step` le para distinguir 'facts sem finding' de 'investigacao julgada'. |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_
@@ -4285,12 +4311,14 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws install doctor [help]
+sparkforge-aws install doctor [help] [scope] [root]
 ```
 
 | argument/flag | required | default | description |
 |---|---|---|---|
 | `help` | no | — | show this help message and exit |
+| `scope` | no | — | — |
+| `root` | no | — | — |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_
@@ -5338,6 +5366,32 @@ sparkforge-aws policy sync-settings [help] [repo] [check]
 | `help` | no | — | show this help message and exit |
 | `repo` | no | — | Raiz do repositorio (padrao: .). |
 | `check` | no | — | So confere; nao grava. Sai 1 se divergir. |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+## portal
+
+### `portal`
+
+**para que:** Abre o portal web local do SparkForge (127.0.0.1, sessão por token): dashboard de instalação, hosts de IA, MCP, skills, agents, tarefas, grafo e docs — os mesmos serviços e receipts do CLI. Opcional: o ecossistema inteiro funciona sem ele. --no-browser só imprime a URL.
+
+- **por que:** portal web local (127.0.0.1) com sessão por token — dashboard de instalação, hosts, MCP, skills, agents, tarefas, grafo e docs sobre os MESMOS serviços e receipts do CLI
+- **quando usar:** explorar a forja visualmente após instalar; opcional — CLI/TUI/MCP funcionam sem ele
+
+**Syntax**
+
+```text
+sparkforge-aws portal [help] [no_browser] [port] [root]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `no_browser` | no | — | Só imprime a URL de sessão — útil em SSH/headless ou quando você quer abrir manualmente. |
+| `port` | no | — | Porta fixa (default: porta livre do sistema — evita conflito entre instâncias). |
+| `root` | no | — | Workspace a inspecionar (default: cwd). |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_

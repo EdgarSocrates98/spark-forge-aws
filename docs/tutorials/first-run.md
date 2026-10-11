@@ -74,7 +74,7 @@ decomposição de um coordenador — o piso em qualquer plataforma.
 | `sparkforge-aws` bare, help, capabilities | offline |
 | analyze/scan/judge locais | offline — nunca toca credencial |
 | install --dry-run/--yes | offline, mutação no disco local |
-| mcp-verify | offline, spawna o servidor MCP local |
+| `mcp verify` | offline, spawna o servidor MCP local |
 | collect */ chamadas de cloud | **credenciais de cloud necessárias** |
 | uso via Claude/Devin/Codex | **requer host instalado** |
 
@@ -85,6 +85,6 @@ decomposição de um coordenador — o piso em qualquer plataforma.
 | `command not found: sparkforge-aws` | launcher fora do PATH ou shell velha | abra terminal novo; rode `./setup.sh` de novo |
 | `FORGE-INSTALL-LOCKED` | instalação concorrente/interrompida | lock expira e é recuperado sozinho; repita |
 | `FORGE-INSTALL-PLAN-NOT-APPROVED` | mutação sem `--yes` | rode `--dry-run`, depois `--yes` |
-| MCP `FAIL` com stderr | dependência ausente (ex.: extra `mcp`) | instale o extra e repita `mcp-verify` |
+| MCP `FAIL` com stderr | dependência ausente (ex.: extra `mcp`) | instale o extra e repita `mcp verify` |
 
 Mais: [../installation/troubleshooting.md](../installation/troubleshooting.md).

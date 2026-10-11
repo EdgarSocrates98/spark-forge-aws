@@ -36,6 +36,83 @@ Superfície operacional atual: **14 coordenadores**, **5 executores** e **60 ski
 o catálogo mantém rastreabilidade por artefato e as novas inspeções do Agentic OS v2
 continuam locais, determinísticas e sem provider no core.
 
+## O que o install entrega ao seu host
+
+`sparkforge-aws install` não instala só uma CLI — instala uma **equipe de
+engenharia de dados** dentro do seu AI host. O perfil padrão `recommended`
+instala as skills e o servidor MCP; a equipe de coordenadores e executores
+entra com `--profile full`. Depois do install, abrir o Claude Code, o Codex, o
+Devin ou o Copilot CLI neste projeto (ou no escopo `workspace`/`user`) dá
+acesso a:
+
+- 14 coordenadores — especialistas com escopo fechado que orquestram a
+  investigação: `spark-performance-architect`, `pyspark-code-reviewer`,
+  `glue-infra-reviewer`, `emr-infra-reviewer`, `iceberg-performance-engineer`,
+  `streaming-realtime-architect`, `cdc-contract-reviewer`,
+  `data-quality-reviewer`, `athena-query-optimizer`, `sf-security-reviewer`,
+  `sf-terraform-specialist`, `sf-runtime-specialist`,
+  `sf-lake-formation-specialist`, `glue-incremental-performance-architect`.
+- 5 executores — `sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`,
+  `sf-synthesizer` — a linha de montagem que os coordenadores disparam:
+  inventário → extração de facts → julgamento → verificação → síntese.
+- 60 skills — os procedimentos versionados que disparam pela descrição do
+  pedido: "meu job Glue tá lento" ativa `sparkforge-aws-diagnose` antes de
+  qualquer análise; "dá pra subir pra Glue 6?" ativa `migrate-glue-6`; "por que
+  a escrita falha no Lake Formation" ativa `diagnose-lakeformation-access`.
+- 146 tools MCP (`python -m sparkforge_aws.adapters.mcp --transport stdio`,
+  registrado como `mcpServers["sparkforge-aws"]` em `.mcp.json` no
+  projeto) — os verbos determinísticos que as skills chamam: `analyze`,
+  `judge`, `collect`, `rules_lookup`, `validate_output`, `next_step`.
+
+Onde cada peça aterrissa, por host:
+
+| Host | Agents | Skills | MCP |
+|---|---|---|---|
+| Claude Code | plugin `agents/` (19) | plugin `skills/` | server do plugin |
+| Devin | `~/.config/devin/agents` (19) | `~/.agents/skills` | `mcp_config.json` |
+| Codex | `~/.codex/agents/*.toml` (14 coordenadores — o TOML do Codex exige `description`, que os executores não têm) | `~/.agents/skills` | `~/.codex/config.toml` — **só escopo `user`**: o Codex não lê `.mcp.json` de projeto; em `--scope project` o recibo declara `mcp-scope:codex` NOT_APPLICABLE |
+| Copilot CLI | `~/.copilot/agents` (19) | `~/.agents/skills` | `mcp-config.json` |
+
+No escopo `project` a superfície fica dentro do repositório (`.claude/`,
+`.devin/`, `.codex/`, `.github/`, `.mcp.json`); nos escopos `workspace`/`user`
+fica nos diretórios de usuário de cada host. Perfis: `minimal` (CLI+MCP),
+`recommended` (skills+MCP, padrão), `full` (skills+agents — a equipe
+completa).
+
+### Como é pedir
+
+Você não escolhe o especialista — pergunta em linguagem natural e o host
+roteia:
+
+> "revisa esse PR PySpark antes do merge" → `pyspark-code-reviewer` →
+> `review-pyspark-pr` → `analyze pyspark` no diff comparado à base → findings
+> com `rule_id`, `fact_id` e severidade — nunca "parece ok".
+
+> "o job Glue morreu com OOM depois de 3 horas" → `sparkforge-aws-diagnose`
+> abre o case, `next-step` roteia e `diagnose-oom` ordena os coletores — e a
+> resposta distingue heap de driver, heap de executor e estouro de container
+> fora do heap, que é o OOM mais mal diagnosticado que existe.
+
+> "essa tabela Iceberg tá lenta pro Athena" → `iceberg-performance-engineer` →
+> `optimize-iceberg-table` → `collect iceberg-metadata` + `analyze iceberg` →
+> small files, delete files, snapshots e manifests **medidos**, não estimados.
+
+### Por que a resposta sai igual em qualquer host
+
+Todo agente e toda skill seguem o [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md):
+dez regras duras — abrir o case antes de analisar; `next-step` decide a rota,
+nunca julgamento do modelo; nenhum número sem `fact_id`; `rules_lookup` em vez
+de memória; `validate_output` antes de recomendar; `unresolved` sempre
+reportado; runtime confirmado antes de citar API; manutenção destrutiva nunca
+executada; plano de validação funcional derivado antes de fechar a
+recomendação. É o que iguala o resultado sob qualquer modelo — e o que faz
+"não sei, e para saber preciso do event log" valer mais que um número sem
+lastro.
+
+Delegação programática: [`forge.agentic.json`](forge.agentic.json)
+(`SpecialistAgenticManifest/v1`) declara workflows, coordenadores e o comando
+MCP para o The Forge ou outro orquestrador.
+
 ## Como ele pensa: extrair, julgar, compor
 
 Três etapas, e cada uma é um verbo diferente.
@@ -329,7 +406,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge_aws/adapters/_core.py`), e o servidor publica **145 tools MCP** no catálogo atual.
+(`sparkforge_aws/adapters/_core.py`), e o servidor publica **146 tools MCP** no catálogo atual.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|
@@ -489,3 +566,12 @@ Instalação do usuário, estado externo, workspace virtual e contexto local:
 (`code index`) through `forge/ForgeGraphView/v1` and serves the embedded local
 explorer (declinable at install via `--components`). Full docs:
 `the-forge/docs/graph-studio/`.
+
+## Portal web local
+
+`sparkforge-aws portal` abre uma UI local (127.0.0.1, sessão por token) com o
+mesmo motor do CLI: dashboard de instalação, hosts de IA, handshake MCP,
+catálogo de skills/agents, diagnósticos e docs — plano → confirmação →
+receipt `forge/*` idêntico ao da linha de comando. É opcional: CLI, TUI e
+MCP funcionam sem ele, e ele nunca roda dentro do fluxo MCP. Receita:
+[`docs/learn/recipes/portal.md`](docs/learn/recipes/portal.md).

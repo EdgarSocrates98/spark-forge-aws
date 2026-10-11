@@ -7511,8 +7511,47 @@ def case_open(
         photon=photon,
     )
     case = store.new_case(case_id, now, context.to_dict(), repo=repo, strict_gates=strict_gates)
+    if facts_path is not None:
+        case = _index_facts(case, facts_path)
     store.save_case(case, root=repo)
     return case
+
+
+def _index_facts(case: dict[str, Any], facts_path: str | list[str]) -> dict[str, Any]:
+    """Preenche `facts_index` a partir do arquivo de facts (desvio D-4b-5).
+
+    `next-step` le `facts_index.by_kind/count` para rotear; sem isto ele
+    sempre via `count=0` e respondia ROUTE-002 mesmo com facts coletados."""
+    paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+    merged = _merge_facts_files(paths)
+    by_kind: dict[str, int] = {}
+    for fact in merged:
+        by_kind[fact.kind] = by_kind.get(fact.kind, 0) + 1
+    return store.set_index(
+        case, "facts_index", "+".join(paths), len(merged), by_kind)
+
+
+def _index_findings(
+    case: dict[str, Any], findings_path: str | list[str]
+) -> dict[str, Any]:
+    """Preenche `findings_index` a partir do arquivo de findings do `judge`.
+
+    ROUTE-014 le `findings_index.count` para decidir "facts sem finding"; sem
+    este indice ela disparava ate com findings em disco -- a mesma classe de
+    lacuna do D-4b-5, do lado do julgamento. O indice guarda contagem e path,
+    nunca a lista: os `rule_id` continuam entrando por `--findings`."""
+    paths = (
+        [findings_path] if isinstance(findings_path, str) else list(findings_path)
+    )
+    findings: list[dict[str, Any]] = []
+    for path in paths:
+        findings.extend(_load_findings_file(path))
+    by_severity: dict[str, int] = {}
+    for finding in findings:
+        sev = str(finding.get("severity") or "")
+        by_severity[sev] = by_severity.get(sev, 0) + 1
+    return store.set_index(
+        case, "findings_index", "+".join(paths), len(findings), by_severity)
 
 
 def case_get(repo: str) -> dict[str, Any]:
@@ -7529,10 +7568,11 @@ def _fact_kinds_for_gates(facts_path: str | list[str] | None) -> set[str] | None
     rigor, `set_phase` ignora o parametro; com rigor e sem facts, o gate morde e
     a mensagem diz o comando que produz o fact.
 
-    O case tem `facts_index.by_kind`, mas nenhum verbo o preenche hoje (desvio
-    D-4b-5), entao ler dali seria ler um indice sempre vazio -- rigor que nunca
-    destrava por evidencia. A fonte e o arquivo de facts, o mesmo que `judge` e
-    `case open` ja aceitam.
+    A fonte e o arquivo de facts, o mesmo que `judge` e `case open` ja aceitam.
+    `case open`/`case update --facts` preenchem `facts_index` (correcao do
+    desvio D-4b-5), mas o gate avalia o arquivo informado, nao o indice: a
+    evidencia da transicao e o arquivo que a gerou, nao um indice que outra
+    invocacao pode ter gravado antes.
     """
     if facts_path is None:
         return None
@@ -7553,6 +7593,7 @@ def case_update(
     override_gate: str | None = None,
     reason: str | None = None,
     facts_path: str | list[str] | None = None,
+    findings_path: str | list[str] | None = None,
     hypothesis: str | None = None,
     prediction: str | None = None,
     experiment: str | None = None,
@@ -7605,6 +7646,10 @@ def case_update(
             case = store.set_gate(case, gate, bool(gate_value))
         if skill is not None:
             case = store.record_skill_use(case, skill, now or "", outcome or "")
+        if facts_path is not None:
+            case = _index_facts(case, facts_path)
+        if findings_path is not None:
+            case = _index_findings(case, findings_path)
         if hypothesis is not None:
             case = store.add_hypothesis(case, hypothesis, prediction or "", experiment or "")
         if close_hypothesis is not None:

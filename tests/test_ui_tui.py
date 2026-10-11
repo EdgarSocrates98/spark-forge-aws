@@ -13,6 +13,25 @@ def test_menu_well_formed():
         assert argv is None or argv == "__wizard__" or isinstance(argv, list)
 
 
+def test_menu_argv_parse_on_real_cli():
+    """Cada argv do menu resolve no parser de verdade — `install mcp-verify`
+    passou pelo contrato de forma e quebrava na execução (verbo inexistente)."""
+    import argparse
+
+    from sparkforge_aws.adapters.cli import build_parser
+    from sparkforge_aws.ui import home
+    parser = build_parser()
+    for label, argv in home._MENU:
+        if argv is None or argv == "__wizard__":
+            continue
+        try:
+            parser.parse_args(list(argv))
+        except SystemExit as exc:
+            pytest.fail(f"{label}: argv {argv} não parseia (SystemExit {exc.code})")
+        except argparse.ArgumentError as exc:
+            pytest.fail(f"{label}: argv {argv} inválido: {exc}")
+
+
 def test_tui_entries_real():
     from sparkforge_aws.ui import tui
     entries = tui.entries()

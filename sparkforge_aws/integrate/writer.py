@@ -659,6 +659,22 @@ def _registro_de_config(
     return None
 
 
+def _registro_compartilhado(
+    manifesto: dict[str, Any], relativo: str
+) -> dict[str, Any] | None:
+    """Registro de um config ja gerenciado por outro host.
+
+    `.mcp.json` de escopo projeto e um arquivo so: quem instalou com
+    `--host claude` e depois roda `--host codex` nao deve ver
+    `sparkforge_aws_ja_configurado` num arquivo que e nosso. O registro
+    continua sob o dono original — este lookup e so leitura."""
+    for host_regs in (manifesto.get("hosts") or {}).values():
+        for registro in host_regs.get("config") or []:
+            if registro["path"] == relativo:
+                return registro
+    return None
+
+
 def _guardar_registro(
     manifesto: dict[str, Any], nome: str, registro: dict[str, Any]
 ) -> None:
@@ -718,6 +734,8 @@ def apply_json_config(
     """Poe `mcpServers.sparkforge-aws` no JSON de config do host e nada mais."""
     relativo = disco.chave(caminho)
     registro = _registro_de_config(manifesto, nome, relativo)
+    if registro is None:
+        registro = _registro_compartilhado(manifesto, relativo)
     config = _ler_config(disco, caminho)
     dados = None if config is None else _json_de_config(config.texto)
     if config is None or dados is None:
@@ -732,6 +750,8 @@ def apply_json_config(
             if _editado(registro, _sha_entrada(servidores_d[chave])):
                 return _recusa(relativo, "editado_pelo_usuario")
         if presentes == [SERVIDOR] and servidores_d[SERVIDOR] == entrada:
+            if registro.get("entry") != entrada:
+                registro["entry"] = entrada
             return {"path": relativo, "status": "unchanged"}
     if registro is None:
         registro = _novo_registro(relativo, "json", config)
@@ -744,6 +764,7 @@ def apply_json_config(
     disco.gravar(caminho, gravado, seguir_link=True)
     registro["written_sha256"] = sha256_bytes(gravado)
     registro["entry_sha256"] = _sha_entrada(entrada)
+    registro["entry"] = entrada
     _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": "written"}
 

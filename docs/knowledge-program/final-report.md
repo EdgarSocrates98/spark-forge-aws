@@ -3,14 +3,14 @@
 | Campo | Valor |
 |---|---|
 | repository | `spark-forge-aws` |
-| branch | `main` |
-| commit | `b557ac42` |
-| docs inventoried | 2075 (excl. GENERATED mirrors: 1263; vendored upstream: 68) |
+| branch | `feat/ultimate-completion` |
+| commit | `1c64fe09` |
+| docs inventoried | 2093 (excl. GENERATED mirrors: 1278; vendored upstream: 68) |
 
 ## Review levels (honest)
 
 - `INVENTORIED`: 0
-- `AUTOMATICALLY_CHECKED`: 2075
+- `AUTOMATICALLY_CHECKED`: 2093
 - `TECHNICALLY_VERIFIED`: 0
 - `SEMANTICALLY_REVIEWED`: 0
 - `USER_JOURNEY_VALIDATED`: 0
@@ -19,23 +19,23 @@ Automatic checks ran on every row; semantic review is recorded only where a huma
 
 ## Category counts
 
-- `GENERATED`: 812
+- `GENERATED`: 815
 - `SDD_ARTIFACT`: 594
-- `UNKNOWN`: 253
+- `UNKNOWN`: 254
 - `REFERENCE`: 150
 - `INTERNAL`: 69
 - `SKILL`: 63
 - `CONCEPT`: 40
 - `USER_GUIDE`: 37
-- `HOW_TO`: 23
+- `HOW_TO`: 36
 - `ADR`: 13
 - `ARCHITECTURE`: 6
 - `CONTRACT`: 4
 - `GETTING_STARTED`: 4
 - `AGENT_INSTRUCTIONS`: 3
 - `TEST_EVIDENCE`: 2
+- `RELEASE_REPORT`: 2
 - `TUTORIAL`: 1
-- `RELEASE_REPORT`: 1
 
 ## Findings
 
@@ -47,7 +47,7 @@ Automatic checks ran on every row; semantic review is recorded only where a huma
 ## Educational layer delivered
 
 - first-run/quickstart docs: 3
-- docs/learn/ entries: 4
+- docs/learn/ entries: 17
 - docs/hub/ entries: 0
 
 ## Documentation changes this program

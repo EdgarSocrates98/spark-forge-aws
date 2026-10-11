@@ -147,6 +147,13 @@ def install(
     with kit.acquire_lock(state):
         plano_total: list[dict[str, Any]] = []
         relatorios: list[dict[str, Any]] = []
+        # `.mcp.json` e UM arquivo compartilhado no projeto: todo host aponta
+        # para ele. Escreve uma unica vez por install — senao o 2o+ host
+        # dedupa como `ja_configurado` e a recusa vira FAIL no recibo de uma
+        # instalacao correta. A entrada e sempre a forma simples
+        # (command/args): valida para os quatro hosts; os campos extras do
+        # copilot ficam para o mcp-config.json de usuario dele.
+        mcp_escritos: set[str] = set()
         for nome in nomes:
             h = project_host(nome, target)
             skills, agents = _profile_kinds(profile)
@@ -163,12 +170,16 @@ def install(
                 version=__version__)
             configs = []
             if h.mcp_config is not None:
-                configs.append(
-                    writer.apply_json_config(
-                        nome, h.mcp_config,
-                        mcp_entry(nome, python or sys.executable,
-                                  profile=gateway_profile),
-                        disco=disco, manifesto=manifesto))
+                chave_mcp = disco.chave(h.mcp_config)
+                if chave_mcp not in mcp_escritos:
+                    mcp_escritos.add(chave_mcp)
+                    dono = next((n for n in nomes if n != "copilot"), nome)
+                    configs.append(
+                        writer.apply_json_config(
+                            nome, h.mcp_config,
+                            mcp_entry(dono, python or sys.executable,
+                                      profile=gateway_profile),
+                            disco=disco, manifesto=manifesto))
             rel["config"] = configs
             relatorios.append(rel)
 
@@ -193,6 +204,15 @@ def install(
 
         escritos = sum(len(r.get("written") or []) for r in relatorios)
         removidos = sum(len(r.get("removed") or []) for r in relatorios)
+        notas: list[dict[str, Any]] = []
+        if "codex" in nomes:
+            # Observado no Codex 0.160.0: `mcp list` ignora `.mcp.json` de
+            # projeto e `.codex/config.toml` de projeto — MCP so entra por
+            # `~/.codex/config.toml` (escopo user) ou `codex mcp add`.
+            notas.append({
+                "id": "mcp-scope:codex", "status": "NOT_APPLICABLE",
+                "detail": "codex nao le .mcp.json de projeto; MCP exige "
+                          "--scope user ou `codex mcp add`"})
         recusas = [
             {"host": r["host"], **rec}
             for r in relatorios for rec in (r.get("refused") or [])
@@ -214,7 +234,7 @@ def install(
         checks=[{"id": "files", "status": "PASS",
                  "detail": f"{escritos} written, {removidos} removed"},
                 {"id": "refusals", "status": "PASS" if not recusas else "FAIL",
-                 "detail": f"{len(recusas)} refused"}],
+                 "detail": f"{len(recusas)} refused"}] + notas,
         refused=recusas, dry_run=dry_run,
         status="planned" if dry_run else ("completed" if not recusas else "failed"),
     )
@@ -283,6 +303,45 @@ def status(*, scope: str = "project", root: Path | None = None,
             drift.append({"path": rel, "status": "modified"})
         else:
             drift.append({"path": rel, "status": "ok"})
+    # Configs gerenciados (.mcp.json) vivem em hosts[*].config, fora do ledger
+    # de arquivos: sem este bloco, um .mcp.json apagado reportava "healthy"
+    # com o MCP quebrado. O que gerenciamos e a nossa entrada — outras chaves
+    # do usuario nao sao nossa conta.
+    vistos_cfg: set[str] = set()
+    for nome in sorted(manifesto.get("hosts") or {}):
+        for reg in (manifesto["hosts"][nome].get("config") or []):
+            rel = reg["path"]
+            if rel in vistos_cfg:
+                continue
+            vistos_cfg.add(rel)
+            dados = disco.ler(disco.local(rel))
+            if dados is None:
+                drift.append({"path": rel, "status": "missing",
+                              "kind": "config"})
+                continue
+            doc = None
+            if reg.get("format") == "json":
+                try:
+                    doc = json.loads(dados.decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    doc = None
+            if isinstance(doc, dict):
+                servidores = doc.get("mcpServers") or {}
+                atual = next(
+                    (servidores[k] for k in writer._SERVIDOR_KEYS
+                     if k in servidores), None)
+                if atual is not None and writer._sha_entrada(
+                        atual) == reg.get("entry_sha256"):
+                    drift.append({"path": rel, "status": "ok",
+                                  "kind": "config"})
+                else:
+                    drift.append({"path": rel, "status": "modified",
+                                  "kind": "config"})
+            else:
+                drift.append({
+                    "path": rel, "kind": "config",
+                    "status": ("ok" if writer.sha256_bytes(dados) == reg.get(
+                        "written_sha256") else "modified")})
     ok = sum(1 for d in drift if d["status"] == "ok")
     bad = [d for d in drift if d["status"] != "ok"]
     return {
@@ -370,6 +429,43 @@ def repair(*, scope: str = "project", root: Path | None = None,
         disco.gravar(caminho, regenerado)
         reg["sha256"] = writer.sha256_bytes(regenerado)
         fixed.append(rel)
+    # Configs gerenciados (.mcp.json): restaura com a `entry` gravada no
+    # registro — reproduz exatamente o que o install escreveu, inclusive o
+    # gateway-profile. Drift cobre: arquivo ausente, entrada ausente no JSON e
+    # entrada divergente. Entrada editada pelo usuario recusa
+    # `editado_pelo_usuario` -> skipped, nunca regravado. Sem `entry`
+    # (manifesto antigo): nao da para reproduzir com certeza -> skipped.
+    vistos_cfg: set[str] = set()
+    for nome in sorted(manifesto.get("hosts") or {}):
+        for reg in manifesto["hosts"][nome].get("config") or []:
+            rel = reg["path"]
+            if rel in vistos_cfg or reg.get("format") != "json":
+                continue
+            vistos_cfg.add(rel)
+            caminho = disco.local(rel)
+            entrada = reg.get("entry")
+            if entrada is None:
+                skipped.append(rel)
+                continue
+            dados = disco.ler(caminho)
+            doc = None
+            if dados is not None:
+                try:
+                    doc = json.loads(dados.decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    skipped.append(rel)  # JSON do usuario ilegivel
+                    continue
+            servidores = (doc.get("mcpServers") or {}) \
+                if isinstance(doc, dict) else {}
+            atual = next(
+                (servidores[k] for k in writer._SERVIDOR_KEYS
+                 if k in servidores), None)
+            if atual is not None and writer._sha_entrada(
+                    atual) == reg.get("entry_sha256"):
+                continue  # entrada intacta: nada a reparar
+            out = writer.apply_json_config(
+                nome, caminho, entrada, disco=disco, manifesto=manifesto)
+            (fixed if out["status"] == "written" else skipped).append(rel)
     if not dry_run:
         writer.save_manifest(target, manifesto)
     return _receipt("repair", scope, target, "recommended",

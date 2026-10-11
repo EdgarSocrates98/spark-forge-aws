@@ -136,6 +136,9 @@ class TestToolSurface:
             "sparkforge_aws_gain",
             "sparkforge_aws_scan",
             "sparkforge_aws_doctor",
+            # FASE 1 (programa evo): estado observado dos hosts de IA — so le;
+            # lancar o host e `sparkforge-aws ai --launch`, CLI+TTY, nunca MCP.
+            "sparkforge_aws_ai",
             "sparkforge_aws_policy_explain",
             "sparkforge_aws_change_plan",
             "sparkforge_aws_change_sandbox",
@@ -604,6 +607,63 @@ class TestCallTool:
             {"facts_path": [str(tf_facts), str(py_facts)], "glue": "5.0", "limit": 1000},
         )
         assert "SF-GLUE-004" in {f["rule_id"] for f in result["items"]}
+
+    def test_facts_path_populates_facts_index_over_mcp(self, repo, tmp_path):
+        """Correcao do desvio D-4b-5: `facts_index` deixava o `next-step`
+        sempre em ROUTE-002 porque nenhum verbo o preenchia."""
+        from sparkforge_aws.findings.models import Fact
+
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    Fact(kind="pyspark.action", subject={"type": "job"}).to_dict(),
+                    Fact(kind="pyspark.write", subject={"type": "job"}).to_dict(),
+                ]
+            ),
+            encoding="utf-8",
+        )
+        case = call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "facts_path": str(facts)},
+        )
+        assert case["facts_index"]["count"] == 2
+        assert case["facts_index"]["by_kind"] == {
+            "pyspark.action": 1,
+            "pyspark.write": 1,
+        }
+        step = call_tool("sparkforge_aws_next_step", {"repo": str(repo)})
+        assert step["recommended_skill"] != "analyze-library-call-graph"
+
+    def test_findings_path_populates_findings_index_over_mcp(self, repo, tmp_path):
+        """Mesma lacuna do D-4b-5 no lado do julgamento: ROUTE-014 disparava
+        'facts sem finding' mesmo com findings do `judge` em disco."""
+        from sparkforge_aws.findings.models import Fact
+
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps([Fact(kind="pyspark.action", subject={"type": "job"}).to_dict()]),
+            encoding="utf-8",
+        )
+        findings = tmp_path / "findings.json"
+        findings.write_text(
+            json.dumps(
+                [{"rule_id": "SF-PY-001", "severity": "P1", "evidence": ["f_1"]}]
+            ),
+            encoding="utf-8",
+        )
+        call_tool(
+            "sparkforge_aws_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z"},
+        )
+        case = call_tool(
+            "sparkforge_aws_case_update",
+            {"repo": str(repo), "facts_path": str(facts),
+             "findings_path": str(findings)},
+        )
+        assert case["findings_index"]["count"] == 1
+        assert case["findings_index"]["by_severity"] == {"P1": 1}
 
 
 class TestFuncvalCompareWritesLikeTheCLI:
@@ -3659,6 +3719,13 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         # Idem: sem indice a tool devolve o envelope de erro de fronteira
         # (SF-GRAPH-NO-INDEX), branch `_ERROR_SCHEMA` do oneOf declarado.
         return call_tool("sparkforge_aws_graph_view", {"root": str(tmp_path)})
+
+    if name == "sparkforge_aws_ai":
+        # `all` mede os quatro hosts: numa maquina sem CLIs cada um devolve
+        # NOT_DETECTED, numa com eles devolve o painel observado de verdade
+        # (somente comandos de status documentados, read-only). As duas
+        # branches validam contra o schema.
+        return call_tool("sparkforge_aws_ai", {"repo": str(tmp_path), "host": "all"})
 
     raise AssertionError(f"sem construtor de argumentos reais para {name}")
 

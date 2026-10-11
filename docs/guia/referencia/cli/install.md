@@ -20,7 +20,10 @@ sparkforge-aws install doctor --help
 
 ### Opções
 
-Este comando não recebe opções.
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--scope` | não | `project`, `workspace`, `user` |  | `project` |  |
+| `--root` | não | texto |  |  |  |
 
 ### Tool MCP equivalente
 
