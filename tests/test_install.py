@@ -374,6 +374,19 @@ def test_bare_install_tty_enters_guided_wizard(monkeypatch):
     assert cli.main(["install"]) == 17
 
 
+def test_bare_install_non_tty_never_mutates(projeto, capsys, monkeypatch):
+    from sparkforge_aws.adapters import cli
+
+    monkeypatch.chdir(projeto)
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: False)
+    before = _arquivos(projeto)
+    assert cli.main(["install"]) != 0
+    assert _arquivos(projeto) == before
+    output = capsys.readouterr().out.lower()
+    assert "not-approved" in output or "escreve no projeto" in output
+
+
 def test_explicit_install_flags_bypass_guided_wizard(projeto, capsys, monkeypatch):
     from sparkforge_aws.adapters import cli
     from sparkforge_aws.install import cli as install_cli
@@ -409,6 +422,25 @@ def test_guided_wizard_separates_gateway_profile_and_verifies_health(monkeypatch
         ctx=wizard.UIContext(interactive=True, color=False, unicode=False, width=80),
     ) == 0
     assert [call["gateway_profile"] for call in calls] == ["deep", "deep"]
+
+
+def test_guided_wizard_cancel_before_apply_returns_130(monkeypatch):
+    from sparkforge_aws.ui import wizard
+
+    monkeypatch.setattr(wizard, "env_check_rows", lambda: [])
+    selects = iter([0, 0, 1])
+    monkeypatch.setattr(wizard, "select", lambda *args, **kwargs: next(selects))
+    multi = iter([{0, 1}, {0}])
+    monkeypatch.setattr(wizard, "multi_select", lambda *args, **kwargs: next(multi))
+    monkeypatch.setattr(wizard, "confirm", lambda *args, **kwargs: False)
+    calls = []
+    assert wizard.run_wizard(
+        forge_name="sparkforge-aws",
+        install_fn=lambda **kwargs: calls.append(kwargs) or {"status": "planned"},
+        ctx=wizard.UIContext(interactive=True, color=False, unicode=False, width=80),
+    ) == 130
+    assert len(calls) == 1
+    assert calls[0]["dry_run"] is True
 
 def test_hosts_for_none_e_csv():
     """GAP-003: `none` nunca vira `all`; csv subconjunto e validado."""
