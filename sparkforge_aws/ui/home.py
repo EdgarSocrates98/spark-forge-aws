@@ -1,120 +1,246 @@
-"""spark-forge-aws interactive home — bare CLI on a TTY.
+"""The Forge Command Center — bare-``theforge`` interactive home.
 
-Menu entries run the forge's *real* CLI argv in a subprocess (installed
-launcher, else the agentic manifest's ``cli_entry`` via the checkout) —
-the TUI is a shell over the real surface, never a second engine.
+Shows real state (specialists lifecycle, detected hosts, recent
+delegations) and a menu whose every entry runs a real operation — no
+decorative buttons. On a non-TTY the caller keeps the classic summary.
 """
 
 from __future__ import annotations
 
-import shutil
-import subprocess
-import sys
+import dataclasses
+import json
 from pathlib import Path
 
-from sparkforge_aws.ui.i18n import t
+from sparkforge_aws.ui import i18n
 from sparkforge_aws.ui.kit import NonInteractive, UIContext, _c, dashboard, select
 
-FORGE_NAME = 'spark-forge-aws'
-CLI_NAME = 'sparkforge-aws'
-CLI_ENTRY = 'sparkforge_aws.adapters.cli:main'
-
-_MENU: list[tuple[str, list[str] | None]] = [
-    ('Analyze PySpark project', ['analyze', 'pyspark', '--path', '.']),
-    ('Judge findings', ['judge', '--facts', '.sparkforge_aws/facts.json']),
-    ('Next step (routing)', ['next-step', '--repo', '.']),
-    ('Explore agents', ['agents', 'list']),
-    ('Case evidence', ['case', 'get', '--repo', '.']),
-    ('Glue rules catalog', ['rules', 'lookup', '--index', '--runtime', 'glue']),
-    ('EMR rules catalog', ['rules', 'lookup', '--index', '--runtime', 'emr']),
-    ('Iceberg rules catalog', ['rules', 'lookup', '--index', '--category', 'iceberg']),
-    ('Performance rules (Spark UI evidence)',
-     ['rules', 'lookup', '--index', '--category', 'spark-ui']),
-    ('Streaming rules catalog', ['rules', 'lookup', '--index', '--category', 'streaming']),
-    ('Lake Formation access matrix', ['lakeformation', 'matrix']),
-    ('Graph status', ['graph', 'status']),
-    ('Graph Studio (browser)', ['graph', 'ui']),
-    ('Installation status (ledger + drift)', ['status']),
-    ('Check installation health', ['doctor']),
-    ('MCP verify (real handshake)', ['mcp', 'verify']),
-    ('Open AI host (state + launch)', ['ai']),
-    ("installation wizard", "__wizard__"),
-    ("quit", None),
-]
+_MENU = (
+    "specialists",
+    "run a task",
+    "hosts",
+    "graph studio",
+    "install wizard",
+    "install status",
+    "health check",
+    "recent tasks",
+    "quit",
+)
 
 
-def _cli_argv(extra: list[str]) -> list[str] | None:
-    """Resolve the real CLI argv: installed launcher else checkout entry."""
-    exe = shutil.which(CLI_NAME)
-    if exe:
-        return [exe, *extra]
-    if CLI_ENTRY:
-        module, _, fn = CLI_ENTRY.partition(":")
-        checkout = next(
-            (a for a in Path(__file__).resolve().parents if (a / "forge.json").is_file()),
-            None,
+def _specialist_rows() -> list[tuple[str, str]]:
+    from theforge import specialists
+
+    rows = []
+    for v in specialists.collect(workspace_root=Path.cwd().parent, probe_cli=False):
+        state = v.lifecycle.installation_state
+        detail = v.cli or (f"checkout:{Path(v.checkout).name}" if v.checkout else "-")
+        rows.append((v.lifecycle.provider, f"{state}  {detail}"))
+    return rows or [("(none)", "no catalog specialists")]
+
+
+def _host_rows() -> list[tuple[str, str]]:
+    from theforge import host_detect
+
+    result = host_detect.detect_hosts(project_root=Path.cwd())
+    return [
+        (
+            d.host,
+            ("running" if d.running else "detected" if d.detected else "not detected")
+            + f" ({d.confidence_basis})",
         )
-        if checkout is None:
-            return None
-        code = (
-            f"import sys; sys.path.insert(0, {str(checkout)!r});"
-            f" sys.path.insert(0, {str(checkout / 'src')!r});"
-            f" from {module} import {fn} as _m; _m()"
-        ).format(checkout=checkout, module=module, fn=fn)
-        return [sys.executable, "-c", code, *extra]
-    return None
+        for d in result.detections
+    ]
 
 
-def _run_argv(argv: list[str]) -> int:
-    env = dict(__import__('os').environ, FORGE_TEXT_OUTPUT="1")
-    try:
-        return subprocess.run(argv, check=False, env=env).returncode
-    except FileNotFoundError:
-        return 127
+def _recent_rows(limit: int = 5) -> list[tuple[str, str]]:
+    d = Path.cwd() / ".forge" / "delegations"
+    if not d.is_dir():
+        return [("(none)", "no delegations yet")]
+    files = sorted(d.glob("task-*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    rows = []
+    for f in files[:limit]:
+        try:
+            doc = json.loads(f.read_text(encoding="utf-8"))
+            rows.append(
+                (doc.get("task_id", f.stem), f"{doc.get('provider', '?')} {doc.get('stage', '?')}")
+            )
+        except (OSError, json.JSONDecodeError):
+            continue
+    return rows or [("(none)", "no delegations yet")]
+
+
+def show_dashboard(ctx: UIContext) -> None:
+    ws = Path.cwd().name
+    dashboard(
+        f"THE FORGE  workspace: {ws}",
+        [
+            ("Specialists", _specialist_rows()),
+            ("Hosts", _host_rows()),
+            ("Recent tasks", _recent_rows(3)),
+        ],
+        ctx=ctx,
+    )
+
+
+def _run_task(ctx: UIContext) -> None:
+    from theforge import delegation, specialists
+    from sparkforge_aws.ui.kit import prompt
+
+    intent = prompt("What would you like to accomplish?", ctx=ctx)
+    if not intent:
+        return
+    views = specialists.collect(workspace_root=Path.cwd().parent, probe_cli=False)
+    requests = []
+    for v in views:
+        if v.manifest is None or not v.manifest.workflows:
+            continue
+        picked = specialists.select_workflow(v.manifest.workflows, intent)
+        if isinstance(picked, str):
+            from sparkforge_aws.ui.kit import select
+
+            chosen = select(
+                f"{v.lifecycle.provider} — which workflow?",
+                [f"{w.id} — {w.description or w.mode}" for w in v.manifest.workflows],
+                ctx=ctx,
+            )
+            if chosen is None:
+                continue
+            wf = v.manifest.workflows[chosen]
+        else:
+            wf = picked
+        argv = specialists.resolve_command(wf.command, view=v, target=str(Path.cwd()))
+        if argv is None:
+            continue
+        requests.append(
+            delegation.new_request(
+                intent=intent,
+                provider=v.lifecycle.provider,
+                execution_mode=wf.mode,
+                command=argv,
+            )
+        )
+    if not requests:
+        print(_c(ctx, "33", "  no delegable specialist resolved an executable command"))
+        return
+    print(f"  {len(requests)} delegation(s) prepared:")
+    for r in requests:
+        print(f"    {r.provider}: {' '.join(r.command[:4])}…")
+    from sparkforge_aws.ui.kit import confirm
+
+    if not confirm("Execute?", default=True, ctx=ctx):
+        return
+    d = Path.cwd() / ".forge" / "delegations"
+    d.mkdir(parents=True, exist_ok=True)
+    for r in requests:
+        result = delegation.execute(r, cwd=str(Path.cwd()))
+        (d / f"{result.task_id}.json").write_text(
+            json.dumps(dataclasses.asdict(result), indent=2), encoding="utf-8"
+        )
+        color = "32" if result.stage == "COMPLETED" else "31"
+        print(f"  {result.provider}: {_c(ctx, color, result.stage)} exit={result.exit_code}")
+
+
+def _act_specialists(ctx: UIContext) -> None:
+    from sparkforge_aws.ui.kit import status_table
+
+    rows = []
+    for v in __import__("theforge.specialists", fromlist=["x"]).collect(
+        workspace_root=Path.cwd().parent, probe_cli=False
+    ):
+        rows.append((v.lifecycle.provider, v.lifecycle.installation_state, v.cli or "-"))
+    status_table(rows, ctx=ctx, headers=("specialist", "state", "cli"))
+
+
+def _act_hosts(ctx: UIContext) -> None:
+    from theforge import host_detect
+
+    result = host_detect.detect_hosts(project_root=Path.cwd())
+    for d in result.detections:
+        mark = "*" if d.running else " "
+        state = "DETECTED" if d.detected else "not detected"
+        print(f"{mark} {d.host:<10} {state}  ({d.confidence_basis})")
+
+
+def _act_health(ctx: UIContext) -> None:
+    from theforge.install import service
+    from sparkforge_aws.ui.kit import format_status_doc
+
+    health = service.doctor(scope="project")
+    print(format_status_doc(health, ctx=ctx))
+
+
+def _act_install_status(ctx: UIContext) -> None:
+    from theforge.install import service
+    from sparkforge_aws.ui.kit import format_status_doc
+
+    print(format_status_doc(service.status(scope="project"), ctx=ctx))
+
+
+def _act_recent(ctx: UIContext) -> None:
+    for name, detail in _recent_rows(10):
+        print(f"  {name:<20} {detail}")
+
+
+def _act_graph(ctx: UIContext) -> int:
+    """Federated Graph Studio — real provider views, namespaced merge."""
+    from theforge import graphview
+    from theforge.graphstudio import graph_studio_enabled, open_studio
+
+    if not graph_studio_enabled(Path.cwd()):
+        print("  graph studio disabled at install (components.json: graph_studio=false)")
+        return 0
+    views, notes = graphview.federated_views(workspace_root=Path.cwd().parent)
+    local = graphview.capability_view(root=Path.cwd())
+    views.insert(0, local)
+    for n in notes:
+        print(f"  note: {n}")
+    merged = graphview.federated_merge(views) if len(views) > 1 else local
+    return open_studio([merged], open_browser=True)
+
+
+def _act_install(ctx: UIContext) -> int:
+    from theforge.install import service
+    from sparkforge_aws.ui.wizard import run_wizard
+
+    return run_wizard(
+        forge_name="the-forge",
+        install_fn=lambda **kw: service.install(root=None, **kw),
+        doctor_fn=lambda **kw: service.doctor(**kw),
+        ctx=ctx,
+    )
 
 
 def run_home(*, ctx: UIContext | None = None) -> int:
+    """Command Center loop. Returns exit code; raises NonInteractive off-TTY."""
     ctx = ctx or UIContext.detect()
     if not ctx.interactive:
         raise NonInteractive("home requires a TTY")
     if ctx.ansi:  # full-screen path; ANSI-free terminals keep the inline kit
         from sparkforge_aws.ui.tui import run_tui
+
         return run_tui(ctx=ctx)
-    dashboard(
-        f"{FORGE_NAME}  workspace: {Path.cwd().name}",
-        [("CLI", [("command", CLI_NAME), ("entry", CLI_ENTRY or "-")])],
-        ctx=ctx,
-    )
-
+    actions = {
+        "specialists": _act_specialists,
+        "run a task": _run_task,
+        "hosts": _act_hosts,
+        "graph studio": _act_graph,
+        "install wizard": _act_install,
+        "install status": _act_install_status,
+        "health check": _act_health,
+        "recent tasks": _act_recent,
+    }
+    show_dashboard(ctx)
     while True:
-        idx = select(t("choose", ctx.language), [label for label, _ in _MENU], ctx=ctx)
-        if idx is None:
+        idx = select(
+            i18n.t("choose", ctx.language),
+            list(_MENU),
+            ctx=ctx,
+        )
+        if idx is None or _MENU[idx] == "quit":
             return 0
-        _label, argv = _MENU[idx]
-        if argv is None:
-            return 0
+        label = _MENU[idx]
         print()
-        if argv == "__wizard__":
-            _run_wizard(ctx)
-            print()
-            continue
-        resolved = _cli_argv(list(argv))
-        if resolved is None:
-            print(_c(ctx, "31", "  " + CLI_NAME + " not resolvable — run ./setup.sh"))
-        else:
-            print(_c(ctx, "2", "  $ " + " ".join(resolved[:3]) + " …"))
-            rc = _run_argv(resolved)
-            print(_c(ctx, "32" if rc == 0 else "31", f"  exit {rc}"))
+        rc = actions[label](ctx)
+        if isinstance(rc, int) and rc != 0:
+            return rc
         print()
-
-
-def _run_wizard(ctx: UIContext) -> None:
-    from sparkforge_aws.install import lifecycle as service
-    from sparkforge_aws.ui.wizard import run_wizard
-
-    run_wizard(
-        forge_name=FORGE_NAME,
-        install_fn=lambda **kw: service.install(root=None, **kw),
-        doctor_fn=lambda **kw: service.doctor(**kw),
-        ctx=ctx,
-    )
