@@ -11,7 +11,8 @@ de outro documento do repositório. Onde isso não foi possível — porque a
 medição exigiria infraestrutura que o repositório ainda não tem — a seção
 final diz isso explicitamente, em vez de estimar.
 
-- **Commit medido**: `a540c78` (snapshot raiz disponível neste clone)
+- **Commit medido**: `a540c78` (snapshot raiz, publicado na branch
+  `backup-old-history` para que a referência seja conferível fora deste clone)
 - **Branch**: `feat/fase6b-sf-cfg`
 - **Data**: 2026-08-22
 

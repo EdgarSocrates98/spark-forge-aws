@@ -7,6 +7,10 @@
     "why": "lista e inspeciona agentes do runtime agêntico",
     "when": "ver o roster declarado antes de rotear trabalho"
   },
+  "ai": {
+    "why": "abre o host de IA no repositório — detecta o binário, lê a versão, confere autenticação e o estado da integração de agents/skills",
+    "when": "trabalhar com Claude/Codex/Devin/Copilot dentro do repo após instalar; sem `--launch` só mede e devolve `launch_command` no recibo"
+  },
   "analyze": {
     "why": "extrai facts determinísticos de código-fonte (AST, provenance sha256)",
     "when": "inventário factual de jobs antes de judge/playbook — sem rodar nada"

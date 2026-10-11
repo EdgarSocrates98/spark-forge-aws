@@ -40,7 +40,9 @@ Perfil: `dev`; a mudança é no próprio SparkForge.
 
 ## Baseline observado
 
-- Branch `main`, commit inicial `a540c7805da0c79bbd71b6ed741f0ec3875e9b2f`.
+- Snapshot local `a540c7805da0c79bbd71b6ed741f0ec3875e9b2f` (raiz da branch
+  `backup-old-history`, o snapshot pré-release que as provas `historical` de
+  `docs/claims.lock.json` citam; a raiz publicada de `main` é `904b40e`).
 - `sparkforge-aws doctor --repo .`: pacote ok (`sparkforge-aws 0.5.0`, Python `3.14.6`), MCP montável com `115 tools`, catálogo com `177 regras`; boto3 ausente, fontes de knowledge com drift e integrações de usuário não configuradas.
 - Índice de código sincronizado em `.sparkforge_aws/local/codeintel/graph.sqlite3`: `1.391` arquivos, `14.851` nós, `23.645` edges, `33.137` unresolved; busca por `streaming` retornou somente testes de Lake Formation e busca por `kafka` somente `tests/test_database_specialists.py`.
 - Fact modules: `52`; skills canônicas com `SKILL.md`: `52`; agents coordenadores: `12`; executors: `5`; knowledge packs: `18` diretórios.
