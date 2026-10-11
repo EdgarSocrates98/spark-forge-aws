@@ -238,8 +238,9 @@ def build_manifest(repo: Path, forge_id: str, cli: str) -> tuple[list[dict], dic
         cp = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=repo,
                             capture_output=True, text=True, timeout=10, check=False)
         head_commit = cp.stdout.strip()
-    except Exception:
-        pass
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"doc-manifest: git HEAD unreadable ({exc}); commit column empty",
+              file=sys.stderr)
 
     rows: list[dict] = []
     all_links: list[dict] = []
