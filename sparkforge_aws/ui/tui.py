@@ -42,8 +42,10 @@ def _action_for(label: str, extra: list[str]) -> ActionData:
         print("$ " + " ".join(argv[:4]) + (" …" if len(argv) > 4 else ""))
         if suspend:
             return home._run_argv(argv)
+        env = {**__import__('os').environ,
+               'FORGE_TEXT_OUTPUT': '1', 'NO_COLOR': '1'}
         cp = subprocess.run(argv, capture_output=True, text=True,
-                            timeout=300, check=False)
+                            timeout=300, check=False, env=env)
         sys.stdout.write(cp.stdout)
         if cp.stderr:
             sys.stdout.write("\n[stderr]\n" + cp.stderr)

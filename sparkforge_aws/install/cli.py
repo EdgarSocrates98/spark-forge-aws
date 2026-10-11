@@ -24,23 +24,64 @@ def _p(args: argparse.Namespace, name: str, default: Any = None) -> Any:
     return getattr(args, name, default)
 
 
+def _tty() -> bool:
+    import sys
+
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
 def _print(doc: dict[str, Any]) -> None:
+    """TTY humans get the rendered doc; pipes and CI keep the JSON
+    contract byte-for-byte. ``FORGE_TEXT_OUTPUT`` opts a captured
+    subprocess (the TUI content pane) into the human layout."""
+    import os
+
+    if _tty() or os.environ.get("FORGE_TEXT_OUTPUT"):
+        try:
+            from sparkforge_aws.ui.kit import UIContext, format_status_doc
+            print(format_status_doc(doc, ctx=UIContext.detect()))
+            return
+        except ImportError:
+            pass
     print(json.dumps(doc, indent=2, sort_keys=True))
 
 
 def _install(args: argparse.Namespace) -> dict[str, Any]:
     raw = _p(args, "components")
-    return lifecycle.install(
-        _p(args, "host", "all"),
-        scope=_p(args, "scope", "project"),
-        root=Path(_p(args, "root")) if _p(args, "root") else None,
-        profile=_p(args, "profile", "recommended"),
-        gateway_profile=_p(args, "gateway_profile"),
-        dry_run=_p(args, "dry_run", False),
-        yes=_p(args, "yes", False),
-        components=tuple(
-            c.strip() for c in raw.split(",") if c.strip()) if raw else None,
-    )
+
+    def call(*, yes: bool, dry_run: bool) -> dict[str, Any]:
+        return lifecycle.install(
+            _p(args, "host", "all"),
+            scope=_p(args, "scope", "project"),
+            root=Path(_p(args, "root")) if _p(args, "root") else None,
+            profile=_p(args, "profile", "recommended"),
+            gateway_profile=_p(args, "gateway_profile"),
+            dry_run=dry_run,
+            yes=yes,
+            components=tuple(
+                c.strip() for c in raw.split(",") if c.strip()) if raw else None,
+        )
+
+    if not _p(args, "yes", False) and not _p(args, "dry_run", False) and _tty():
+        # Interactive approval: show the real plan, confirm once, apply.
+        try:
+            from sparkforge_aws.ui.kit import NonInteractive, approve_plan
+            plan = call(yes=False, dry_run=True)
+            try:
+                approved = approve_plan(plan)
+            except NonInteractive:
+                approved = False
+        except ImportError:
+            approved = False
+        if not approved:
+            return {"schema": kit.SCHEMA_RECEIPT, "forge_id": "spark-forge-aws",
+                    "operation": "install", "status": "declined",
+                    "checks": [], "managed_files": [],
+                    "verification": {"status": "UNVERIFIED"},
+                    "error": {"kind": "SF-INSTALL-DECLINED",
+                              "detail": "declined — nothing written"}}
+        return call(yes=True, dry_run=False)
+    return call(yes=_p(args, "yes", False), dry_run=_p(args, "dry_run", False))
 
 
 def _status(args: argparse.Namespace) -> dict[str, Any]:

@@ -34,6 +34,7 @@ _MENU: list[tuple[str, list[str] | None]] = [
     ('Lake Formation access matrix', ['lakeformation', 'matrix']),
     ('Graph status', ['graph', 'status']),
     ('Graph Studio (browser)', ['graph', 'ui']),
+    ('Installation status (ledger + drift)', ['status']),
     ('Check installation health', ['doctor']),
     ('MCP verify (real handshake)', ['mcp', 'verify']),
     ('Open AI host (state + launch)', ['ai']),
@@ -65,8 +66,9 @@ def _cli_argv(extra: list[str]) -> list[str] | None:
 
 
 def _run_argv(argv: list[str]) -> int:
+    env = dict(__import__('os').environ, FORGE_TEXT_OUTPUT="1")
     try:
-        return subprocess.run(argv, check=False).returncode
+        return subprocess.run(argv, check=False, env=env).returncode
     except FileNotFoundError:
         return 127
 
