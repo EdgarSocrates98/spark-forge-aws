@@ -698,7 +698,7 @@ def main(argv: list[str] | None = None) -> int:
         json.dumps({
             "url": url,
             "note": "portal is optional — CLI/TUI/MCP keep working without it",
-        })
+        }), flush=True
     )
     if not args.no_browser:
         webbrowser.open(url)
