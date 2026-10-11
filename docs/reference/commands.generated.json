@@ -2,9 +2,9 @@
   "schema": "forge/CommandInventory/v1",
   "forge_id": "spark-forge-aws",
   "cli": "sparkforge-aws",
-  "generated_at": "2026-10-10T10:34:05Z",
+  "generated_at": "2026-10-11T01:34:29Z",
   "generated_by": "doc_inventory.py/1",
-  "command_count": 246,
+  "command_count": 247,
   "commands": [
     {
       "path": "lab",
@@ -9366,7 +9366,18 @@
           "default": null,
           "choices": null,
           "positional": false,
-          "help": "Arquivo de facts (JSON) que comprova os gates da fase pedida. Repetivel. Num case estrito, e daqui que sai a evidencia que destrava `--phase`."
+          "help": "Arquivo de facts (JSON) que comprova os gates da fase pedida. Repetivel. Num case estrito, e daqui que sai a evidencia que destrava `--phase`. Tambem preenche `facts_index`, que o `next-step` le para rotear."
+        },
+        {
+          "name": "findings",
+          "flags": [
+            "--findings"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Arquivo de findings (JSON) gerado por `judge`. Repetivel. Preenche `findings_index` (contagem por severidade), que o `next-step` le para distinguir 'facts sem finding' de 'investigacao julgada'."
         }
       ]
     },
@@ -12859,6 +12870,61 @@
       ]
     },
     {
+      "path": "ai",
+      "help": "Abre o host de IA no repositorio: detecta o binario, le a versao, confere autenticacao pelo subcomando oficial de status e o estado da integracao. Com `--launch` e TTY, executa o CLI do host no diretorio; sem eles, o recibo traz `launch_command` para o operador. Host deslogado nao e lancado — `login_hint` aponta o login oficial.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "host",
+          "flags": [],
+          "required": false,
+          "default": "all",
+          "choices": [
+            "claude",
+            "devin",
+            "codex",
+            "copilot",
+            "all"
+          ],
+          "positional": true,
+          "help": "Host a abrir (padrao: all — mede os quatro, sem lancar)."
+        },
+        {
+          "name": "launch",
+          "flags": [
+            "--launch"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": "Executa o CLI do host no diretorio do repo (so com TTY e um host escolhido)."
+        },
+        {
+          "name": "repo",
+          "flags": [
+            "--repo"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Raiz do repositorio onde o host abre (padrao: diretorio corrente)."
+        }
+      ]
+    },
+    {
       "path": "install",
       "help": "Instala o SparkForge no projeto/workspace (--scope) ou no HOME (--scope user, delegado ao integrate). Escreve so arquivos gerenciados; --dry-run mostra o plano.",
       "arguments": [
@@ -12999,6 +13065,32 @@
           "choices": null,
           "positional": false,
           "help": "show this help message and exit"
+        },
+        {
+          "name": "scope",
+          "flags": [
+            "--scope"
+          ],
+          "required": false,
+          "default": "project",
+          "choices": [
+            "project",
+            "workspace",
+            "user"
+          ],
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "root",
+          "flags": [
+            "--root"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
         }
       ]
     },

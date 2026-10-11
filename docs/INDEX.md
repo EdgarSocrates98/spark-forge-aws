@@ -97,7 +97,20 @@ _Task-oriented guides and workflows._
 
 - [Spark Forge AWS — trilha de aprendizado](learn/README.md)
 - [Receita — fatos determinísticos de código PySpark](learn/recipes/analyze-pyspark.md)
+- [Receita — avaliar performance de um job](learn/recipes/avaliar-performance.md)
+- [Receita — diagnosticar acesso Lake Formation / FGAC](learn/recipes/diagnosticar-lakeformation.md)
+- [Receita — investigar um job no Glue 5.1](learn/recipes/glue-51-investigation.md)
+- [Receita — explorar o Graph Studio](learn/recipes/graph-studio.md)
+- [Receita — instalar e começar](learn/recipes/instalar-e-comecar.md)
+- [Receita — investigar uma tabela Iceberg](learn/recipes/investigar-iceberg.md)
 - [Receita — o que vale escanear neste repositório?](learn/recipes/scan-repo.md)
+- [Receita — avaliar um pipeline streaming](learn/recipes/streaming-eval.md)
+- [Receita — utilizar agents (coordenadores e executores)](learn/recipes/usar-agents.md)
+- [Receita — usar com o Claude Code](learn/recipes/usar-com-claude.md)
+- [Receita — usar com o Codex CLI](learn/recipes/usar-com-codex.md)
+- [Receita — usar com o Devin CLI](learn/recipes/usar-com-devin.md)
+- [Receita — utilizar skills](learn/recipes/usar-skills.md)
+- [Receita — verificar o MCP](learn/recipes/verificar-mcp.md)
 
 ### payloads/
 
@@ -594,7 +607,9 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 
 - [Accessibility](experience/accessibility.md) `UNKNOWN`
 - [Automation mode](experience/automation-mode.md) `UNKNOWN`
+- [FASE 1 — Spark Forge AWS como produto de referência Agent-First](experience/fase1-report.md) `RELEASE_REPORT`
 - [Interactive CLI](experience/interactive-cli.md) `UNKNOWN`
+- [Revisão semântica da documentação pública — FASE 1](experience/semantic-review.md) `UNKNOWN`
 - [Themes and visual identity](experience/themes.md) `UNKNOWN`
 
 ### fixtures/
