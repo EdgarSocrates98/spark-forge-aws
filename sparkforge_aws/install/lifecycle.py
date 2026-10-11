@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -152,7 +153,8 @@ def install(
             kit.E_NOTAPPROVED,
             "install escreve no projeto; use --yes ou --dry-run")
 
-    with kit.acquire_lock(state):
+    lock = kit.acquire_lock(state) if not dry_run else nullcontext()
+    with lock:
         plano_total: list[dict[str, Any]] = []
         relatorios: list[dict[str, Any]] = []
         # `.mcp.json` e UM arquivo compartilhado no projeto: todo host aponta
