@@ -1,4 +1,4 @@
-"""Forge UI Kit — stdlib-only interactive terminal layer.
+"""spark-forge-aws vendored Forge UI Kit — stdlib-only interactive terminal layer.
 
 Zero dependencies, cross-platform (msvcrt on Windows, termios on
 POSIX). Every interaction has a headless equivalent so automation never
