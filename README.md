@@ -566,3 +566,12 @@ Instalação do usuário, estado externo, workspace virtual e contexto local:
 (`code index`) through `forge/ForgeGraphView/v1` and serves the embedded local
 explorer (declinable at install via `--components`). Full docs:
 `the-forge/docs/graph-studio/`.
+
+## Portal web local
+
+`sparkforge-aws portal` abre uma UI local (127.0.0.1, sessão por token) com o
+mesmo motor do CLI: dashboard de instalação, hosts de IA, handshake MCP,
+catálogo de skills/agents, diagnósticos e docs — plano → confirmação →
+receipt `forge/*` idêntico ao da linha de comando. É opcional: CLI, TUI e
+MCP funcionam sem ele, e ele nunca roda dentro do fluxo MCP. Receita:
+[`docs/learn/recipes/portal.md`](docs/learn/recipes/portal.md).

@@ -2,7 +2,7 @@
 
 Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. Do not hand-edit generated sections — write between `keep:start`/`keep:end` markers. `por que`/`quando` lines come from the curated `command-rationale.json` — edit rationale there, never here. Status vocabulary: `available` unless marked otherwise.
 
-Rationale coverage: **65/66** first-level groups curated in `command-rationale.json`.
+Rationale coverage: **66/67** first-level groups curated in `command-rationale.json`.
 
 ## Groups
 
@@ -52,6 +52,7 @@ Rationale coverage: **65/66** first-level groups curated in `command-rationale.j
 - [`pack`](#pack) — 3 command(s)
 - [`playbook`](#playbook) — 1 command(s)
 - [`policy`](#policy) — 4 command(s)
+- [`portal`](#portal) — 1 command(s)
 - [`proof`](#proof) — 1 command(s)
 - [`receipt`](#receipt) — 3 command(s)
 - [`release`](#release) — 3 command(s)
@@ -5365,6 +5366,32 @@ sparkforge-aws policy sync-settings [help] [repo] [check]
 | `help` | no | — | show this help message and exit |
 | `repo` | no | — | Raiz do repositorio (padrao: .). |
 | `check` | no | — | So confere; nao grava. Sai 1 se divergir. |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+## portal
+
+### `portal`
+
+**para que:** Abre o portal web local do SparkForge (127.0.0.1, sessão por token): dashboard de instalação, hosts de IA, MCP, skills, agents, tarefas, grafo e docs — os mesmos serviços e receipts do CLI. Opcional: o ecossistema inteiro funciona sem ele. --no-browser só imprime a URL.
+
+- **por que:** portal web local (127.0.0.1) com sessão por token — dashboard de instalação, hosts, MCP, skills, agents, tarefas, grafo e docs sobre os MESMOS serviços e receipts do CLI
+- **quando usar:** explorar a forja visualmente após instalar; opcional — CLI/TUI/MCP funcionam sem ele
+
+**Syntax**
+
+```text
+sparkforge-aws portal [help] [no_browser] [port] [root]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `no_browser` | no | — | Só imprime a URL de sessão — útil em SSH/headless ou quando você quer abrir manualmente. |
+| `port` | no | — | Porta fixa (default: porta livre do sistema — evita conflito entre instâncias). |
+| `root` | no | — | Workspace a inspecionar (default: cwd). |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_

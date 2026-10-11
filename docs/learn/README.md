@@ -13,6 +13,7 @@
 | Tenho este problema | Receita |
 |---|---|
 | "Quero instalar e começar" | [instalar-e-comecar](recipes/instalar-e-comecar.md) |
+| "Prefiro uma UI local ao CLI" | [portal](recipes/portal.md) |
 | "Como uso com o Devin?" | [usar-com-devin](recipes/usar-com-devin.md) |
 | "Como uso com o Claude?" | [usar-com-claude](recipes/usar-com-claude.md) |
 | "Como uso com o Codex?" | [usar-com-codex](recipes/usar-com-codex.md) |

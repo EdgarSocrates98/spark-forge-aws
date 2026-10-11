@@ -258,5 +258,9 @@
   "workspace": {
     "why": "workspace virtual declarado e descoberta limitada",
     "when": "trabalhar multi-projeto dentro de um workspace declarado"
+  },
+  "portal": {
+    "why": "portal web local (127.0.0.1) com sessão por token — dashboard de instalação, hosts, MCP, skills, agents, tarefas, grafo e docs sobre os MESMOS serviços e receipts do CLI",
+    "when": "explorar a forja visualmente após instalar; opcional — CLI/TUI/MCP funcionam sem ele"
   }
 }

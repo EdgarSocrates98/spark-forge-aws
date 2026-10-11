@@ -156,6 +156,11 @@ packages = ["sparkforge_aws"]
 # quando nao ha repositorio (docs/sdd/INTEGRACAO_USUARIO/design.md, D3).
 "skills" = "sparkforge_aws/integrate/bundle/skills"
 "agents" = "sparkforge_aws/integrate/bundle/agents"
+# Portal web local: os assets vendored (`portal/assets/` na raiz do clone) vão
+# para dentro do pacote, e o adapter os resolve nos dois layouts — igual ao
+# integrate/bundle. Sem isto `sparkforge-aws portal` num pip install cairia na
+# recusa SFA-PORTAL-NO-ASSETS.
+"portal/assets" = "sparkforge_aws/portal_assets"
 
 # O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
 # realocar. `include` basta: preserva os dois onde o force-include do wheel
@@ -175,6 +180,7 @@ include = [
     "knowledge",
     "skills",
     "agents",
+    "portal",
     "README.md",
     "LICENSE",
     "pyproject.toml",
@@ -216,3 +222,6 @@ ignore = [
 "sparkforge_aws/_installkit.py" = ["ALL"]
 "scripts/forge_bootstrap.py" = ["ALL"]
 "scripts/forge_installkit.py" = ["ALL"]
+# Vendored portal server (canonical: forge-portal/portal_core) — byte-identical
+# to the shared source, linted in the canonical repo.
+"sparkforge_aws/_forge_portal.py" = ["ALL"]

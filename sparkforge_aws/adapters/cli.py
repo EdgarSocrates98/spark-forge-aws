@@ -3260,6 +3260,35 @@ def build_parser() -> argparse.ArgumentParser:
 
     _install_cli.add_parsers(sub)
 
+    # portal --------------------------------------------------------------------
+    # FORGE PORTAL (opcional): abre a UI web local do SparkForge — mesmos
+    # serviços e receipts do CLI/TUI; o portal nunca roda durante uso MCP.
+    portal_p = sub.add_parser(
+        "portal",
+        help=(
+            "Abre o portal web local do SparkForge (127.0.0.1, sessão por token): "
+            "dashboard de instalação, hosts de IA, MCP, skills, agents, tarefas, "
+            "grafo e docs — os mesmos serviços e receipts do CLI. Opcional: o "
+            "ecossistema inteiro funciona sem ele. --no-browser só imprime a URL."
+        ),
+    )
+    portal_p.add_argument(
+        "--no-browser",
+        action="store_true",
+        help=(
+            "Só imprime a URL de sessão — útil em SSH/headless ou quando "
+            "você quer abrir manualmente."
+        ),
+    )
+    portal_p.add_argument(
+        "--port", type=int, default=0,
+        help="Porta fixa (default: porta livre do sistema — evita conflito entre instâncias).",
+    )
+    portal_p.add_argument(
+        "--root", default=None,
+        help="Workspace a inspecionar (default: cwd).",
+    )
+
     # policy ------------------------------------------------------------------
     # §16: `.sparkforge_aws/policy.yaml`, imposta pelo servidor MCP, pelo hook
     # PreToolUse (deny) e por `permissions.ask` gerado (ask).
@@ -6526,6 +6555,16 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command in ('install', 'status', 'repair', 'update', 'uninstall', 'mcp'):
         from sparkforge_aws.install.cli import dispatch
         return dispatch(args)
+    if args.command == 'portal':
+        from sparkforge_aws.portal_adapter import main as portal_main
+        portal_argv: list[str] = []
+        if getattr(args, 'no_browser', False):
+            portal_argv.append('--no-browser')
+        if getattr(args, 'port', 0):
+            portal_argv += ['--port', str(args.port)]
+        if getattr(args, 'root', None):
+            portal_argv += ['--root', str(args.root)]
+        return portal_main(portal_argv)
     sub_action = (
         getattr(args, "lab_action", None)
         or getattr(args, "analyze_target", None)
