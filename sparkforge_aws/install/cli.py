@@ -30,6 +30,19 @@ def _tty() -> bool:
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
+def run_guided_install() -> int:
+    """Run guided install through the shared wizard and real lifecycle."""
+    from sparkforge_aws.ui.kit import UIContext
+    from sparkforge_aws.ui.wizard import run_wizard
+
+    return run_wizard(
+        forge_name="spark-forge-aws",
+        install_fn=lambda **kw: lifecycle.install(root=None, **kw),
+        doctor_fn=lambda **kw: lifecycle.doctor(**kw),
+        ctx=UIContext.detect(),
+    )
+
+
 def _print(doc: dict[str, Any]) -> None:
     """TTY humans get the rendered doc; pipes and CI keep the JSON
     contract byte-for-byte. ``FORGE_TEXT_OUTPUT`` opts a captured
@@ -229,4 +242,4 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
         help="Handshake JSON-RPC real: initialize + tools/list contra o server.")
 
 
-__all__ = ["add_parsers", "dispatch", "_COMMANDS"]
+__all__ = ["add_parsers", "dispatch", "run_guided_install", "_COMMANDS"]

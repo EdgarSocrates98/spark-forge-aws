@@ -89,6 +89,23 @@ def test_install_profile_full_inclui_agents(projeto):
     assert any(p.startswith(".devin/agents/") for p in paths)
 
 
+def test_install_profile_recommended_inclui_agents(projeto):
+    out = lifecycle.install("devin", scope="project", root=projeto,
+                            profile="recommended", yes=True)
+    paths = {f["path"] for f in out["managed_files"]}
+    assert any(p.startswith(".devin/skills/") for p in paths)
+    assert any(p.startswith(".devin/agents/") for p in paths)
+
+
+def test_install_components_control_asset_kinds(projeto):
+    out = lifecycle.install("devin", scope="project", root=projeto,
+                            components=("skills",), yes=True)
+    paths = {f["path"] for f in out["managed_files"]}
+    assert any(p.startswith(".devin/skills/") for p in paths)
+    assert not any(p.startswith(".devin/agents/") for p in paths)
+    assert not (projeto / ".mcp.json").exists()
+
+
 def test_install_host_all_mcp_compartilhado_sem_recusa(projeto):
     out = lifecycle.install("all", scope="project", root=projeto, yes=True)
     assert out["status"] == "completed"
@@ -337,6 +354,29 @@ def test_cli_erro_estruturado_sem_traceback(projeto, capsys, monkeypatch):
     doc = json.loads(capsys.readouterr().out)
     assert doc["error"]["kind"].endswith("NOT-APPROVED") or \
         "NOT-APPROVED" in json.dumps(doc)
+
+
+def test_bare_install_tty_enters_guided_wizard(monkeypatch):
+    from sparkforge_aws.adapters import cli
+    from sparkforge_aws.install import cli as install_cli
+
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(install_cli, "run_guided_install", lambda: 17)
+    assert cli.main(["install"]) == 17
+
+
+def test_explicit_install_flags_bypass_guided_wizard(projeto, capsys, monkeypatch):
+    from sparkforge_aws.adapters import cli
+    from sparkforge_aws.install import cli as install_cli
+
+    monkeypatch.chdir(projeto)
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(install_cli, "run_guided_install",
+                        lambda: pytest.fail("explicit flags entered wizard"))
+    assert cli.main(["install", "--dry-run", "--host", "devin"]) == 0
+    assert "PLANNED" in capsys.readouterr().out
 
 def test_hosts_for_none_e_csv():
     """GAP-003: `none` nunca vira `all`; csv subconjunto e validado."""

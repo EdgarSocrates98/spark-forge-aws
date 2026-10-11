@@ -1,8 +1,8 @@
 # Installation wizard
 
 Bare `sparkforge-aws install` on a TTY opens the guided wizard. On a non-TTY it
-exits with a usage error pointing at `install apply` — scripts keep the
-flag contract.
+returns the structured approval refusal without reading stdin or writing files.
+Explicit flags keep the deterministic CLI contract.
 
 ## Steps
 
@@ -24,10 +24,10 @@ flag contract.
 Non-interactive equivalent:
 
 ```bash
-sparkforge-aws install apply --scope project --profile recommended --host all --dry-run
-sparkforge-aws install apply --scope project --profile recommended --host all --yes
+sparkforge-aws install --scope project --profile recommended --host all --dry-run
+sparkforge-aws install --scope project --profile recommended --host all --yes
 # optional components:
-sparkforge-aws install apply --yes --components skills,mcp,tui,graph-studio
+sparkforge-aws install --yes --components skills,mcp,tui,graph-studio
 sparkforge-aws install doctor
 ```
 

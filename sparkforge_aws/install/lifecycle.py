@@ -58,10 +58,10 @@ def _content_root() -> Path:
 
 
 def _profile_kinds(profile: str) -> tuple[bool, bool]:
-    """(skills?, agents?) — minimal nao instala mirrors."""
+    """(skills?, agents?) — component profile, independent from gateway."""
     return {
         "minimal": (False, False),
-        "recommended": (True, False),
+        "recommended": (True, True),
         "full": (True, True),
     }[profile]
 
@@ -134,6 +134,14 @@ def install(
     state = kit.state_dir_for(spec, scope, target)
     content = _content_root()
     opts = kit.component_options(profile, components)
+    if components is None:
+        skills, agents = _profile_kinds(profile)
+        mcp_enabled = True
+    else:
+        selected_kinds = set(opts.get("asset_kinds", ()))
+        skills = "skill" in selected_kinds
+        agents = "agent" in selected_kinds
+        mcp_enabled = "mcp" in selected_kinds
 
     nomes = _hosts_for(alvo)
     disco = writer.Disco(target, dry_run=dry_run)
@@ -156,7 +164,6 @@ def install(
         mcp_escritos: set[str] = set()
         for nome in nomes:
             h = project_host(nome, target)
-            skills, agents = _profile_kinds(profile)
             plano = project_plan(h, content, target)
             filtrado = [
                 (d, b) for d, b in plano
@@ -171,7 +178,7 @@ def install(
             configs = []
             if h.mcp_config is not None:
                 chave_mcp = disco.chave(h.mcp_config)
-                if chave_mcp not in mcp_escritos:
+                if mcp_enabled and chave_mcp not in mcp_escritos:
                     mcp_escritos.add(chave_mcp)
                     dono = next((n for n in nomes if n != "copilot"), nome)
                     configs.append(

@@ -6632,6 +6632,10 @@ def main(argv: list[str] | None = None) -> int:
         return _bare_summary(parser)
     if argv[0] == "help":
         return _help_for(parser, argv)
+    if argv == ["install"] and sys.stdin.isatty() and sys.stdout.isatty():
+        from sparkforge_aws.install.cli import run_guided_install
+
+        return run_guided_install()
     args = parser.parse_args(argv)
     from sparkforge_aws.distribution.config import PortableError
     try:
