@@ -61,6 +61,13 @@ ls .sparkforge_aws/receipts/   # receipts escritos pelo portal OU pelo CLI
   scripts/vendor.py` no repo `forge-portal` (ou use o clone, que já os traz).
 - **Página abre mas API 403**: a URL precisa do `?forge_session=` — use a URL
   impressa pelo comando, não `localhost:porta` manual.
+- **`PORTAL-HOST` 403**: o servidor só fala com Host loopback
+  (127.0.0.1/localhost/::1) — acessar por hostname de rede ou túnel é
+  recusado de propósito (defesa contra DNS rebinding).
+- **`PORTAL-ORIGIN` 403**: POST com Origin fora do loopback — chamadas
+  vindas de outras páginas são recusadas; só a UI do próprio portal muta.
+- **`PORTAL-RATE-LIMITED` 429**: mais de 10 mutações/min — aguarde a
+  janela; o retry é sinalizado no envelope.
 - **Install recusado `sparkforge_aws_ja_configurado`**: o `.mcp.json` do
   projeto já existe — o receipt nomeia o motivo; nada foi escrito.
 
