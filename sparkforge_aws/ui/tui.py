@@ -17,7 +17,22 @@ from sparkforge_aws.ui.kit import UIContext
 
 # argv[0]s that stream progressively or open external surfaces —
 # those run attached (alt-screen suspended) instead of captured.
-_SUSPEND_VERBS = {"analyze", "judge", "collect", "migrate", "graph", "sdd"}
+_SUSPEND_VERBS = {
+    "ai",
+    "agents",
+    "analyze",
+    "case",
+    "doctor",
+    "graph",
+    "install",
+    "judge",
+    "lakeformation",
+    "mcp",
+    "migrate",
+    "next-step",
+    "rules",
+    "sdd",
+}
 
 
 _LEARN_DOC: dict[str, str] = {
@@ -42,10 +57,14 @@ def _action_for(label: str, extra: list[str]) -> ActionData:
         print("$ " + " ".join(argv[:4]) + (" …" if len(argv) > 4 else ""))
         if suspend:
             return home._run_argv(argv)
-        env = {**__import__('os').environ,
-               'FORGE_TEXT_OUTPUT': '1', 'NO_COLOR': '1'}
-        cp = subprocess.run(argv, capture_output=True, text=True,
-                            timeout=300, check=False, env=env)
+        env = {**__import__("os").environ, "FORGE_TEXT_OUTPUT": "1", "NO_COLOR": "1"}
+        try:
+            cp = subprocess.run(
+                argv, capture_output=True, text=True, timeout=300, check=False, env=env
+            )
+        except subprocess.TimeoutExpired:
+            print("command timed out after 300s; run it directly for live progress")
+            return 124
         sys.stdout.write(cp.stdout)
         if cp.stderr:
             sys.stdout.write("\n[stderr]\n" + cp.stderr)
@@ -56,16 +75,20 @@ def _action_for(label: str, extra: list[str]) -> ActionData:
         example=f"{home.CLI_NAME} {' '.join(extra)}",
         doc_path=_LEARN_DOC.get(extra[0], ""),
     )
-    return ActionData(callable=_run, title=f"{home.CLI_NAME} {' '.join(extra)}",
-                      suspend=suspend, doc=doc)
+    return ActionData(
+        callable=_run, title=f"{home.CLI_NAME} {' '.join(extra)}", suspend=suspend, doc=doc
+    )
 
 
 def _wizard_entry() -> Entry:
-    return Entry(label="installation wizard",
-                 provider=lambda: ActionData(
-                     callable=lambda: home._run_wizard(
-                         UIContext.detect(force_plain=True)),
-                     title="install wizard", suspend=True))
+    return Entry(
+        label="installation wizard",
+        provider=lambda: ActionData(
+            callable=lambda: home._run_wizard(UIContext.detect(force_plain=True)),
+            title="install wizard",
+            suspend=True,
+        ),
+    )
 
 
 def entries() -> list[Entry]:
@@ -76,12 +99,12 @@ def entries() -> list[Entry]:
         if argv == "__wizard__":
             out.append(_wizard_entry())
         else:
-            out.append(Entry(label=label,
-                             provider=lambda a=argv, lbl=label: _action_for(lbl, a)))
+            out.append(Entry(label=label, provider=lambda a=argv, lbl=label: _action_for(lbl, a)))
     return out
 
 
 def run_tui(*, ctx: UIContext | None = None, version: str = "") -> int:
     ctx = ctx or UIContext.detect()
-    return ForgeApp(ctx, forge_id=home.FORGE_NAME, title="command center",
-                    entries=entries(), version=version).run()
+    return ForgeApp(
+        ctx, forge_id=home.FORGE_NAME, title="command center", entries=entries(), version=version
+    ).run()
