@@ -87,9 +87,11 @@ def test_posix_reader_exits_on_eof_and_normalizes_csi(monkeypatch):
     if screen.os.name == "nt":
         return
     import select as select_module
+
     class ClosedStdin:
         def fileno(self):
             return 0
+
     monkeypatch.setattr(screen.sys, "stdin", ClosedStdin())
     monkeypatch.setattr(select_module, "select", lambda *args: ([0], [], []))
     monkeypatch.setattr(screen.os, "read", lambda *_args: b"")

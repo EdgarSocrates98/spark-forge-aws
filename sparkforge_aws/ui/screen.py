@@ -67,16 +67,33 @@ class Theme:
 
 
 _STATE_ICON_UNI = {
-    "empty": "○", "loading": "…", "ready": "●", "ok": "✓",
-    "error": "✗", "warn": "▲", "disconnected": "⚡", "too_small": "!",
+    "empty": "○",
+    "loading": "…",
+    "ready": "●",
+    "ok": "✓",
+    "error": "✗",
+    "warn": "▲",
+    "disconnected": "⚡",
+    "too_small": "!",
 }
 _STATE_ICON_ASCII = {
-    "empty": "o", "loading": "...", "ready": "*", "ok": "+",
-    "error": "x", "warn": "!", "disconnected": "x", "too_small": "!",
+    "empty": "o",
+    "loading": "...",
+    "ready": "*",
+    "ok": "+",
+    "error": "x",
+    "warn": "!",
+    "disconnected": "x",
+    "too_small": "!",
 }
 _STATE_COLOR = {
-    "empty": "dim", "loading": "info", "ready": "ok", "ok": "ok",
-    "error": "err", "warn": "warn", "disconnected": "warn",
+    "empty": "dim",
+    "loading": "info",
+    "ready": "ok",
+    "ok": "ok",
+    "error": "err",
+    "warn": "warn",
+    "disconnected": "warn",
     "too_small": "warn",
 }
 
@@ -130,6 +147,51 @@ def _clip(text: str, width: int) -> str:
     return "".join(out)
 
 
+def _paint_cells(
+    cells: list[str],
+    styles: list[str],
+    chunk: str,
+    cursor: int,
+    style: str,
+    width: int,
+) -> int:
+    for ch in chunk:
+        cw = cell_width(ch)
+        if cw == 0:
+            if cursor and cells[cursor - 1] != "":
+                cells[cursor - 1] += ch
+            continue
+        if cursor >= width or cursor + cw > width:
+            break
+        cells[cursor] = ch
+        styles[cursor] = style
+        for offset in range(1, cw):
+            cells[cursor + offset] = ""
+            styles[cursor + offset] = style
+        cursor += cw
+    return cursor
+
+
+def _render_cells(ctx: UIContext, cells: list[str], styles: list[str]) -> str:
+    rendered: list[str] = []
+    current_style = ""
+    segment: list[str] = []
+    for ch, style in zip(cells, styles, strict=True):
+        if ch == "":
+            continue
+        if style != current_style:
+            if segment:
+                text = "".join(segment)
+                rendered.append(_c(ctx, current_style, text) if current_style else text)
+                segment.clear()
+            current_style = style
+        segment.append(ch)
+    if segment:
+        text = "".join(segment)
+        rendered.append(_c(ctx, current_style, text) if current_style else text)
+    return "".join(rendered)
+
+
 class Buffer:
     """Fixed-size cell grid. ``draw()`` writes styled spans; ``render()``
     returns a list of finished lines (ANSI when ctx.color)."""
@@ -163,62 +225,49 @@ class Buffer:
             cells = [" "] * self.width
             styles = [""] * self.width
 
-            def paint(chunk: str, cursor: int, style: str) -> int:
-                for ch in chunk:
-                    cw = cell_width(ch)
-                    if cw == 0:
-                        if cursor and cells[cursor - 1] != "":
-                            cells[cursor - 1] += ch
-                        continue
-                    if cursor >= self.width or cursor + cw > self.width:
-                        break
-                    cells[cursor] = ch
-                    styles[cursor] = style
-                    for offset in range(1, cw):
-                        cells[cursor + offset] = ""
-                        styles[cursor + offset] = style
-                    cursor += cw
-                return cursor
-
             for span in spans:
                 cursor = max(0, span.x)
                 active = span.style
                 pos = 0
                 for match in _SGR_RE.finditer(span.text):
-                    cursor = paint(span.text[pos : match.start()], cursor, active)
+                    cursor = _paint_cells(
+                        cells,
+                        styles,
+                        span.text[pos : match.start()],
+                        cursor,
+                        active,
+                        self.width,
+                    )
                     code = match.group(1)
                     active = "" if code == "0" else code
                     pos = match.end()
-                paint(span.text[pos:], cursor, active)
+                _paint_cells(
+                    cells,
+                    styles,
+                    span.text[pos:],
+                    cursor,
+                    active,
+                    self.width,
+                )
 
-            rendered: list[str] = []
-            current_style = ""
-            segment: list[str] = []
-
-            def flush() -> None:
-                if not segment:
-                    return
-                text = "".join(segment)
-                rendered.append(_c(self.ctx, current_style, text) if current_style else text)
-                segment.clear()
-
-            for ch, style in zip(cells, styles, strict=True):
-                if ch == "":
-                    continue
-                if style != current_style:
-                    flush()
-                    current_style = style
-                segment.append(ch)
-            flush()
-            out.append("".join(rendered))
+            out.append(_render_cells(self.ctx, cells, styles))
         return out
 
 
 # ---------------------------------------------------------------- layout
 
 
-def panel(buf: Buffer, x: int, y: int, w: int, h: int, *, title: str = "",
-          focused: bool = False, theme: Theme) -> tuple[int, int, int, int]:
+def panel(
+    buf: Buffer,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    *,
+    title: str = "",
+    focused: bool = False,
+    theme: Theme,
+) -> tuple[int, int, int, int]:
     """Draw a bordered panel; returns inner (x, y, w, h) for content."""
     ctx = buf.ctx
     b = box(ctx)
@@ -227,9 +276,15 @@ def panel(buf: Buffer, x: int, y: int, w: int, h: int, *, title: str = "",
     if w < 3 or h < 3:
         return x, y, w, h
     cap = f" {title} " if title else ""
-    top = tl + hh * (w - 2 - cell_width(cap)) + cap if False else (
-        tl + cap + hh * max(0, w - 2 - cell_width(cap)) + tr
-        if cell_width(cap) <= w - 2 else tl + hh * (w - 2) + tr)
+    top = (
+        tl + hh * (w - 2 - cell_width(cap)) + cap
+        if False
+        else (
+            tl + cap + hh * max(0, w - 2 - cell_width(cap)) + tr
+            if cell_width(cap) <= w - 2
+            else tl + hh * (w - 2) + tr
+        )
+    )
     buf.draw(y, x, top, style=border_style)
     for row in range(1, h - 1):
         buf.draw(y + row, x, vv, style=border_style)
@@ -242,13 +297,11 @@ def key_bar(buf: Buffer, bindings: Iterable[tuple[str, str]], *, theme: Theme) -
     """Footer line: ``key action · key action``."""
     y = buf.height - 1
     buf.hline(y - 1, style="2")
-    parts = " · ".join(
-        f"{_c(buf.ctx, '1' if buf.ctx.color else '', k)} {v}" for k, v in bindings)
+    parts = " · ".join(f"{_c(buf.ctx, '1' if buf.ctx.color else '', k)} {v}" for k, v in bindings)
     buf.draw(y, 1, re.sub(r"\x1b\[[0-9;]*m", "", parts) if not buf.ctx.color else parts)
 
 
-def header(buf: Buffer, forge: str, screen: str, *, theme: Theme,
-           right: str = "") -> None:
+def header(buf: Buffer, forge: str, screen: str, *, theme: Theme, right: str = "") -> None:
     """2-row header: brand line + accent rule."""
     ctx = buf.ctx
     brand = f" {forge.upper()} "
@@ -268,10 +321,10 @@ def header(buf: Buffer, forge: str, screen: str, *, theme: Theme,
 class StateSpec:
     """A screen's real state — views render this, never hardcode."""
 
-    kind: str = "ready"          # empty|loading|ready|error|disconnected|too_small|warn
+    kind: str = "ready"  # empty|loading|ready|error|disconnected|too_small|warn
     title: str = ""
     detail: str = ""
-    hint: str = ""               # recovery hint ("press r to retry")
+    hint: str = ""  # recovery hint ("press r to retry")
 
 
 def state_view(buf: Buffer, state: StateSpec, *, theme: Theme) -> None:
@@ -283,19 +336,22 @@ def state_view(buf: Buffer, state: StateSpec, *, theme: Theme) -> None:
     line = f"{icon} {state.title or state.kind}"
     buf.draw(cy - 1, max(1, (buf.width - cell_width(line)) // 2), line, style=color)
     if state.detail:
-        buf.draw(cy, max(1, (buf.width - cell_width(state.detail)) // 2),
-                 state.detail, style="dim")
+        buf.draw(cy, max(1, (buf.width - cell_width(state.detail)) // 2), state.detail, style="dim")
     if state.hint:
-        buf.draw(cy + 1, max(1, (buf.width - cell_width(state.hint)) // 2),
-                 state.hint)
+        buf.draw(cy + 1, max(1, (buf.width - cell_width(state.hint)) // 2), state.hint)
 
 
 def too_small(buf: Buffer, *, theme: Theme) -> None:
-    state_view(buf, StateSpec(
-        kind="too_small",
-        title=f"terminal too small ({buf.width}x{buf.height})",
-        detail=f"need at least {MIN_WIDTH}x{MIN_HEIGHT}",
-        hint="resize to continue"), theme=theme)
+    state_view(
+        buf,
+        StateSpec(
+            kind="too_small",
+            title=f"terminal too small ({buf.width}x{buf.height})",
+            detail=f"need at least {MIN_WIDTH}x{MIN_HEIGHT}",
+            hint="resize to continue",
+        ),
+        theme=theme,
+    )
 
 
 # ---------------------------------------------------------------- table
@@ -341,9 +397,18 @@ def _column_widths(width: int, columns: list[Column]) -> list[int]:
     return widths
 
 
-def table(buf: Buffer, x: int, y: int, w: int, h: int, *,
-          columns: list[Column], rows: list[dict[str, str]],
-          selected: int = 0, theme: Theme) -> None:
+def table(
+    buf: Buffer,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    *,
+    columns: list[Column],
+    rows: list[dict[str, str]],
+    selected: int = 0,
+    theme: Theme,
+) -> None:
     """Selectable table: fixed columns, flexible last column, scrolls."""
     ctx = buf.ctx
     widths = _column_widths(w, columns)
@@ -354,7 +419,7 @@ def table(buf: Buffer, x: int, y: int, w: int, h: int, *,
         cx += cw + 2
     body_h = h - 2
     start = max(0, min(selected - body_h + 1, len(rows) - body_h))
-    for i, row in enumerate(rows[start:start + body_h]):
+    for i, row in enumerate(rows[start : start + body_h]):
         idx = start + i
         cx = x
         marker = ">" if idx == selected else " "
@@ -412,6 +477,7 @@ class _RawMode:
         if os.name != "nt" and sys.stdin.isatty():
             import termios
             import tty
+
             self._fd = sys.stdin.fileno()
             self._saved = termios.tcgetattr(self._fd)
             tty.setcbreak(self._fd)
@@ -420,30 +486,47 @@ class _RawMode:
     def __exit__(self, *exc) -> bool:
         if getattr(self, "_saved", None) is not None:
             import termios
+
             termios.tcsetattr(self._fd, termios.TCSADRAIN, self._saved)
         return False
 
 
-_ESC = {"\x1b[A": "up", "\x1b[B": "down", "\x1b[C": "right",
-        "\x1b[D": "left", "\x1b[H": "home", "\x1b[F": "end"}
-_KEYS = {"\r": "enter", "\n": "enter", " ": "space", "\t": "tab",
-         "\x1b": "esc", "\x7f": "backspace", "\x03": "ctrl-c"}
+_ESC = {
+    "\x1b[A": "up",
+    "\x1b[B": "down",
+    "\x1b[C": "right",
+    "\x1b[D": "left",
+    "\x1b[H": "home",
+    "\x1b[F": "end",
+}
+_KEYS = {
+    "\r": "enter",
+    "\n": "enter",
+    " ": "space",
+    "\t": "tab",
+    "\x1b": "esc",
+    "\x7f": "backspace",
+    "\x03": "ctrl-c",
+}
 
 
 def read_key(timeout: float = 0.05) -> str | None:
     """Non-blocking key read; returns a normalized name or None."""
     if os.name == "nt":
         import msvcrt
+
         if not msvcrt.kbhit():
             time.sleep(timeout)
             return None
         ch = msvcrt.getwch()
         if ch in ("\x00", "\xe0"):  # special key prefix
-            return {"H": "up", "P": "down", "M": "right",
-                    "K": "left", "G": "home", "O": "end"}.get(msvcrt.getwch(), "other")
+            return {"H": "up", "P": "down", "M": "right", "K": "left", "G": "home", "O": "end"}.get(
+                msvcrt.getwch(), "other"
+            )
         return _KEYS.get(ch, ch)
     # POSIX — select-based poll
     import select
+
     r, _, _ = select.select([sys.stdin], [], [], timeout)
     if not r:
         return None
