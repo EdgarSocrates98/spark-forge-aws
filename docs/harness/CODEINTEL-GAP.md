@@ -245,7 +245,8 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
 `buscar(banco, "source")` devolve **50** símbolos em **11567** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **395872** bytes (remedido em 2026-10-06 após o `_trust` entrar em
+  no mesmo corpus, tem **395839** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável;
+  o valor foi lido pela própria prova e não ajustado à mão, após o `_trust` entrar em
   `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
 (**16122** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.

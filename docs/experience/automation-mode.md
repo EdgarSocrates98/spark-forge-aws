@@ -5,7 +5,7 @@ Every interactive surface degrades to a deterministic, scriptable path.
 | Situation | Behavior |
 |---|---|
 | Non-TTY bare `sparkforge-aws` | product summary, exit 0 |
-| Non-TTY `sparkforge-aws install` | usage error pointing at `install apply` |
+| Non-TTY `sparkforge-aws install` | structured approval refusal; no prompt, no writes |
 | Interactive fn called headless | `NonInteractive` raised — never blocks |
 | `--dry-run` | real plan, zero writes |
 | `--yes` | explicit approval for writes |
@@ -14,7 +14,7 @@ Every interactive surface degrades to a deterministic, scriptable path.
 CI pattern:
 
 ```bash
-sparkforge-aws install apply --scope project --profile minimal --yes
+sparkforge-aws install --scope project --profile minimal --yes
 sparkforge-aws doctor
 ```
 

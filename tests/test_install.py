@@ -89,6 +89,23 @@ def test_install_profile_full_inclui_agents(projeto):
     assert any(p.startswith(".devin/agents/") for p in paths)
 
 
+def test_install_profile_recommended_inclui_agents(projeto):
+    out = lifecycle.install("devin", scope="project", root=projeto,
+                            profile="recommended", yes=True)
+    paths = {f["path"] for f in out["managed_files"]}
+    assert any(p.startswith(".devin/skills/") for p in paths)
+    assert any(p.startswith(".devin/agents/") for p in paths)
+
+
+def test_install_components_control_asset_kinds(projeto):
+    out = lifecycle.install("devin", scope="project", root=projeto,
+                            components=("skills",), yes=True)
+    paths = {f["path"] for f in out["managed_files"]}
+    assert any(p.startswith(".devin/skills/") for p in paths)
+    assert not any(p.startswith(".devin/agents/") for p in paths)
+    assert not (projeto / ".mcp.json").exists()
+
+
 def test_install_host_all_mcp_compartilhado_sem_recusa(projeto):
     out = lifecycle.install("all", scope="project", root=projeto, yes=True)
     assert out["status"] == "completed"
@@ -190,6 +207,14 @@ def test_install_dry_run_nao_escreve(projeto):
     assert out["status"] == "planned"
     assert not (projeto / ".devin").exists()
     assert not (projeto / ".mcp.json").exists()
+    assert not (projeto / ".sparkforge_aws").exists()
+
+
+def test_install_doctor_receipt_uses_string_health_status(projeto):
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    health = lifecycle.doctor(scope="project", root=projeto)
+    assert isinstance(health["status"], str)
+    assert health["status"] in {"healthy", "degraded", "broken", "unverified"}
 
 
 def test_install_workspace_scope(projeto):
@@ -337,6 +362,85 @@ def test_cli_erro_estruturado_sem_traceback(projeto, capsys, monkeypatch):
     doc = json.loads(capsys.readouterr().out)
     assert doc["error"]["kind"].endswith("NOT-APPROVED") or \
         "NOT-APPROVED" in json.dumps(doc)
+
+
+def test_bare_install_tty_enters_guided_wizard(monkeypatch):
+    from sparkforge_aws.adapters import cli
+    from sparkforge_aws.install import cli as install_cli
+
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(install_cli, "run_guided_install", lambda: 17)
+    assert cli.main(["install"]) == 17
+
+
+def test_bare_install_non_tty_never_mutates(projeto, capsys, monkeypatch):
+    from sparkforge_aws.adapters import cli
+
+    monkeypatch.chdir(projeto)
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: False)
+    before = _arquivos(projeto)
+    assert cli.main(["install"]) != 0
+    assert _arquivos(projeto) == before
+    output = capsys.readouterr().out.lower()
+    assert "not-approved" in output or "escreve no projeto" in output
+
+
+def test_explicit_install_flags_bypass_guided_wizard(projeto, capsys, monkeypatch):
+    from sparkforge_aws.adapters import cli
+    from sparkforge_aws.install import cli as install_cli
+
+    monkeypatch.chdir(projeto)
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(install_cli, "run_guided_install",
+                        lambda: pytest.fail("explicit flags entered wizard"))
+    assert cli.main(["install", "--dry-run", "--host", "devin"]) == 0
+    assert "PLANNED" in capsys.readouterr().out
+
+
+def test_guided_wizard_separates_gateway_profile_and_verifies_health(monkeypatch):
+    from sparkforge_aws.ui import wizard
+
+    monkeypatch.setattr(wizard, "env_check_rows", lambda: [])
+    selects = iter([0, 0, 2])
+    monkeypatch.setattr(wizard, "select", lambda *args, **kwargs: next(selects))
+    multi = iter([{0, 1, 2}, {0}])
+    monkeypatch.setattr(wizard, "multi_select", lambda *args, **kwargs: next(multi))
+    monkeypatch.setattr(wizard, "confirm", lambda *args, **kwargs: True)
+    calls = []
+
+    def install_fn(**kwargs):
+        calls.append(kwargs)
+        return {"status": "planned" if kwargs["dry_run"] else "completed"}
+
+    assert wizard.run_wizard(
+        forge_name="sparkforge-aws",
+        install_fn=install_fn,
+        doctor_fn=lambda **_: {"status": "healthy"},
+        ctx=wizard.UIContext(interactive=True, color=False, unicode=False, width=80),
+    ) == 0
+    assert [call["gateway_profile"] for call in calls] == ["deep", "deep"]
+
+
+def test_guided_wizard_cancel_before_apply_returns_130(monkeypatch):
+    from sparkforge_aws.ui import wizard
+
+    monkeypatch.setattr(wizard, "env_check_rows", lambda: [])
+    selects = iter([0, 0, 1])
+    monkeypatch.setattr(wizard, "select", lambda *args, **kwargs: next(selects))
+    multi = iter([{0, 1}, {0}])
+    monkeypatch.setattr(wizard, "multi_select", lambda *args, **kwargs: next(multi))
+    monkeypatch.setattr(wizard, "confirm", lambda *args, **kwargs: False)
+    calls = []
+    assert wizard.run_wizard(
+        forge_name="sparkforge-aws",
+        install_fn=lambda **kwargs: calls.append(kwargs) or {"status": "planned"},
+        ctx=wizard.UIContext(interactive=True, color=False, unicode=False, width=80),
+    ) == 130
+    assert len(calls) == 1
+    assert calls[0]["dry_run"] is True
 
 def test_hosts_for_none_e_csv():
     """GAP-003: `none` nunca vira `all`; csv subconjunto e validado."""
