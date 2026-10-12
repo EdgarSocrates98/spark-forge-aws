@@ -22,7 +22,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from typing import TextIO
 
-from sparkforge_aws.ui.kit import NonInteractive, UIContext
+from sparkforge_aws.ui.kit import NonInteractive, UIContext, terminal_size
 from sparkforge_aws.ui.screen import (
     MIN_HEIGHT,
     MIN_WIDTH,
@@ -136,6 +136,9 @@ class ForgeApp:
     # --------------------------------------------------------- data
 
     def _load(self) -> None:
+        if not self.entries:
+            self.pane = _Pane(data=StateSpec(kind="empty", title="no menu entries"))
+            return
         entry = self.entries[self.nav_idx]
         try:
             data = entry.provider()
@@ -161,9 +164,10 @@ class ForgeApp:
                                title="menu", focused=self.focus == "nav",
                                theme=th)
         vis = self._visible_entries()
-        for row, (i, e) in enumerate(vis[:ih]):
-            if row >= ih:
-                break
+        ids = [i for i, _ in vis]
+        selected_pos = ids.index(self.nav_idx) if self.nav_idx in ids else 0
+        start = min(max(0, selected_pos - ih + 1), max(0, len(vis) - ih))
+        for row, (i, e) in enumerate(vis[start : start + ih]):
             marker = "> " if i == self.nav_idx else "  "
             style = th.focus if (i == self.nav_idx and self.focus == "nav"
                                  and ctx.color) else ""
@@ -226,7 +230,7 @@ class ForgeApp:
     # --------------------------------------------------------- keys
 
     def on_key(self, key: str) -> str | None:
-        if key == "ctrl-c":
+        if key in ("ctrl-c", "ctrl-d"):
             return "quit"
         if self.show_help:
             self.show_help = False
@@ -247,6 +251,10 @@ class ForgeApp:
 
     def _nav_key(self, key: str) -> str | None:
         vis = self._visible_entries()
+        if not vis:
+            if key in ("q", "esc"):
+                return "quit"
+            return None
         if key in ("up", "k"):
             ids = [i for i, _ in vis]
             pos = ids.index(self.nav_idx) if self.nav_idx in ids else 0
@@ -283,24 +291,39 @@ class ForgeApp:
             elif key in ("down", "j"):
                 self.pane.selected = min(len(d.rows) - 1, self.pane.selected + 1)
             elif key == "enter" and d.on_enter:
-                d.on_enter(d.rows[self.pane.selected])
-                self._load()
+                try:
+                    d.on_enter(d.rows[self.pane.selected])
+                except Exception as exc:
+                    self.pane = _Pane(data=StateSpec(
+                        kind="error",
+                        title="row action failed",
+                        detail=str(exc) or exc.__class__.__name__,
+                        hint="press r to retry",
+                    ))
+                else:
+                    self._load()
         elif isinstance(d, ActionData) and key == "enter":
             return "exec"  # loop decides suspend vs in-place
         return None
 
-    def _execute(self, d: ActionData) -> None:
-        """Run the real callable; capture its stdout into the pane."""
+    def _execute(self, d: ActionData, *, capture: bool = True) -> None:
+        """Run real callable; capture inline or leave suspended output attached."""
         self.pane.log = [f"$ {d.title}", ""]
         sink = io.StringIO()
         try:
-            with redirect_stdout(sink), redirect_stderr(sink):
+            if capture:
+                with redirect_stdout(sink), redirect_stderr(sink):
+                    result = d.callable()
+            else:
                 result = d.callable()
         except Exception:
             self.pane.log += ["", "FAILED:", traceback.format_exc(limit=3)]
             return
-        out = sink.getvalue()
-        self.pane.log += out.rstrip().splitlines() or ["(no output)"]
+        out = sink.getvalue() if capture else ""
+        if capture:
+            self.pane.log += out.rstrip().splitlines() or ["(no output)"]
+        else:
+            self.pane.log.append("(output streamed in attached terminal)")
         if result is not None:
             self.pane.log += ["", f"exit: {result}"]
         self.pane.log += ["", "— done · r refresh · esc back"]
@@ -316,11 +339,7 @@ class ForgeApp:
             size = (0, 0)
             while True:
                 now = (ctx.width, ctx.height)
-                try:
-                    sz = os.get_terminal_size()
-                    now = (sz.columns, sz.lines)
-                except OSError:
-                    pass
+                now = terminal_size(stream=self._out or sys.stdout, fallback=(ctx.width, ctx.height))
                 if now != size:
                     size = now
                     self.ctx = UIContext(**{**ctx.__dict__,
@@ -344,7 +363,7 @@ class ForgeApp:
                         if d.suspend:
                             scr.__exit__(None, None, None)
                             try:
-                                self._execute(d)
+                                self._execute(d, capture=False)
                             finally:
                                 scr.__enter__()
                         else:
