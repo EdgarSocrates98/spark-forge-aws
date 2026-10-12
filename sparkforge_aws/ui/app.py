@@ -175,7 +175,7 @@ class ForgeApp:
         # content pane
         cx, cy, cw, ch = panel(buf, nav_w, 2, buf.width - nav_w,
                                buf.height - 5,
-                               title=self.entries[self.nav_idx].label,
+                               title=self.entries[self.nav_idx].label if self.entries else "menu",
                                focused=self.focus == "content", theme=th)
         self._render_content(buf, cx, cy, cw, ch)
         if self.show_help:
