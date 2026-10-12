@@ -824,7 +824,7 @@ class TestProvaHistorica:
     `scripts/check_vnext_claims.py` para o raciocinio completo."""
 
     def test_commit_existente_no_repositorio_real_passa(self):
-        # `a540c78` e um commit real deste repositorio (snapshot raiz disponivel;
+        # `5f6781e` e um commit real deste repositorio (snapshot raiz disponivel;
         # os SHAs historicos originais nao sao retidos neste clone) -- a prova
         # `docs/harness/BASELINE.md` cita como medido) -- teste de integracao
         # deliberado, nao mockado, porque a garantia central de `historical`
@@ -832,7 +832,7 @@ class TestProvaHistorica:
         prova = {
             "kind": "historical",
             "cmd": "python -m pytest -q -p no:randomly",
-            "commit": "a540c78",
+            "commit": "5f6781e",
         }
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
@@ -854,14 +854,14 @@ class TestProvaHistorica:
         assert any("proof historical sem commit" in e for e in erros)
 
     def test_sem_cmd_falha(self):
-        prova = {"kind": "historical", "commit": "a540c78"}
+        prova = {"kind": "historical", "commit": "5f6781e"}
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
         )
         assert any("proof historical sem cmd" in e for e in erros)
 
     def test_cmd_com_barra_invertida_e_rejeitado(self):
-        prova = {"kind": "historical", "cmd": r"python scripts\check.py", "commit": "a540c78"}
+        prova = {"kind": "historical", "cmd": r"python scripts\check.py", "commit": "5f6781e"}
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
         )
@@ -874,7 +874,7 @@ class TestProvaHistorica:
         prova = {
             "kind": "historical",
             "cmd": "python -m pytest -q -p no:randomly",
-            "commit": "a540c78",
+            "commit": "5f6781e",
         }
         assert "expect" not in prova
         erros = gate.validate_manifest(
@@ -892,16 +892,16 @@ class TestProvaHistorica:
         prova = {
             "kind": "historical",
             "cmd": "comando-que-definitivamente-nao-existe-no-path",
-            "commit": "a540c78",
+            "commit": "5f6781e",
         }
         m = manifesto([entrada(state="PROVADA", proof=prova, type="number")])
         assert gate.run_command_proofs(m, include_slow=False) == []
 
     def test_commit_abreviado_e_aceito(self):
         # `git cat-file -t` aceita SHA abreviado -- o mesmo formato que
-        # `docs/harness/BASELINE.md` usa ("Commit medido: `a540c78`",
+        # `docs/harness/BASELINE.md` usa ("Commit medido: `5f6781e`",
         # 7 caracteres, o formato de `git rev-parse --short HEAD`).
-        assert gate._commit_exists("a540c78") is True
+        assert gate._commit_exists("5f6781e") is True
 
     def test_commit_vazio_nao_existe(self):
         assert gate._commit_exists("") is False

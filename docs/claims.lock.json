@@ -1164,7 +1164,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "git show a5b9e96:docs/vnext/FINAL-REPORT.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1179,7 +1179,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "git show a5b9e96:docs/vnext/FINAL-REPORT.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1194,7 +1194,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest --collect-only -q",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1209,7 +1209,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1224,7 +1224,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1239,7 +1239,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1254,7 +1254,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/check_vnext_claims.py",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1269,7 +1269,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/check_vnext_claims.py",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1284,7 +1284,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/sync_skills.py --check",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1299,7 +1299,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/check_evals.py",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1314,7 +1314,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/check_evals.py",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1329,7 +1329,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/verify_offline_bundle.py",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1344,7 +1344,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python scripts/verify_offline_bundle.py",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1359,7 +1359,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest --collect-only -q",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1374,7 +1374,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1389,7 +1389,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1404,7 +1404,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest --collect-only -q",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1419,7 +1419,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; c=load_catalog(); print(len(c))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1434,7 +1434,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; c=load_catalog(); print(sum(1 for r in c if r.get(\"blocked_on\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1449,7 +1449,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; c=load_catalog(); print(len(set(r.get(\"category\") for r in c)))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1464,7 +1464,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "ls sparkforge_aws/facts/",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1479,7 +1479,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pkgutil, importlib; import sparkforge_aws.facts as pkg; mods=[m.name for m in pkgutil.iter_modules(pkg.__path__)]; print(sum(1 for m in mods if hasattr(importlib.import_module(\"sparkforge_aws.facts.\"+m), \"EMITTED_KINDS\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1494,7 +1494,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pkgutil, importlib; import sparkforge_aws.facts as pkg; mods=[m.name for m in pkgutil.iter_modules(pkg.__path__)]; print(sum(1 for m in mods if not hasattr(importlib.import_module(\"sparkforge_aws.facts.\"+m), \"EMITTED_KINDS\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1509,7 +1509,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pkgutil, importlib; import sparkforge_aws.facts as pkg; mods=[m.name for m in pkgutil.iter_modules(pkg.__path__)]; kinds=set(); [kinds.update(getattr(importlib.import_module(\"sparkforge_aws.facts.\"+m), \"EMITTED_KINDS\", [])) for m in mods]; print(len(kinds))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1524,7 +1524,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.adapters.tools import TOOLS; print(len(TOOLS))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1539,7 +1539,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import yaml; d=yaml.safe_load(open(\"rules/catalog/routing.yaml\", encoding=\"utf-8\")); print(len(d[\"rules\"]))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1554,7 +1554,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "ls agents/*.md | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1569,7 +1569,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "ls agents/executors/*.md | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1584,7 +1584,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "ls skills/*/SKILL.md | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1599,7 +1599,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1614,7 +1614,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1629,7 +1629,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1644,7 +1644,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1659,7 +1659,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1674,7 +1674,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1689,7 +1689,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1704,7 +1704,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1719,7 +1719,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1734,7 +1734,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1749,7 +1749,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1764,7 +1764,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1779,7 +1779,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1794,7 +1794,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1809,7 +1809,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1824,7 +1824,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1839,7 +1839,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1854,7 +1854,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1869,7 +1869,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1884,7 +1884,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1899,7 +1899,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/<domínio> -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1914,7 +1914,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/<domínio> -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1929,7 +1929,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/graph -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1944,7 +1944,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/emr_serverless -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1959,7 +1959,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/pyspark -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1974,7 +1974,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/dq -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -1989,7 +1989,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/emr -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2004,7 +2004,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/funcval -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2019,7 +2019,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/migration -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2034,7 +2034,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/iceberg -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2049,7 +2049,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/terraform -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2064,7 +2064,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/plan -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2079,7 +2079,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/runtime -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2094,7 +2094,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/s3 -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2109,7 +2109,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/fusion -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2124,7 +2124,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/eventlog -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2139,7 +2139,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/sql -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2154,7 +2154,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/athena -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2169,7 +2169,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/callgraph -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2184,7 +2184,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/catalog -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2199,7 +2199,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/consumers -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2214,7 +2214,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/infra_code -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2229,7 +2229,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/tfdiff -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2244,7 +2244,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures/bench -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2259,7 +2259,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2274,7 +2274,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2289,7 +2289,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "find fixtures -mindepth 1 -maxdepth 1 -type d | wc -l",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2304,7 +2304,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/workflows\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2319,7 +2319,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/workflows\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2334,7 +2334,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/economy\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2349,7 +2349,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/economy\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2364,7 +2364,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/context\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2379,7 +2379,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/context\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2394,7 +2394,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/registry\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2409,7 +2409,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/registry\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2424,7 +2424,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/evals\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2439,7 +2439,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/evals\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2454,7 +2454,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/observability\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2469,7 +2469,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/observability\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2484,7 +2484,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/providers\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2499,7 +2499,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/providers\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2514,7 +2514,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/cloud\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2529,7 +2529,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/cloud\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2544,7 +2544,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge_aws/adapters\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2559,7 +2559,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/adapters\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2574,7 +2574,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"tests\").glob(\"*.py\") if \"sparkforge_aws.adapters\" in f.read_text(encoding=\"utf-8\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2589,7 +2589,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"sparkforge_aws/providers/mock.py\").read_text(encoding=\"utf-8\").splitlines()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2604,7 +2604,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge_aws/cloud\").glob(\"*.py\")))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2619,7 +2619,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_3_cheap_local\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2634,7 +2634,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_3_cheap_local\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2649,7 +2649,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_5_premium\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2664,7 +2664,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_5_premium\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2679,7 +2679,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import sparkforge_aws.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2694,7 +2694,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import sparkforge_aws.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2709,7 +2709,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import sparkforge_aws.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2724,7 +2724,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import sparkforge_aws.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2739,7 +2739,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2754,7 +2754,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.economy.router import CapabilityModelRouter; d=CapabilityModelRouter().route_task(\"x\", is_deterministic_available=True); print(d.max_tokens, d.estimated_cost_usd)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2769,7 +2769,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.economy.router import CapabilityModelRouter; d=CapabilityModelRouter().route_task(\"x\", is_deterministic_available=True); print(d.max_tokens, d.estimated_cost_usd)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2784,7 +2784,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'from sparkforge_aws.adapters.tools import TOOLS; print(len(TOOLS))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2799,7 +2799,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -c 'import yaml; d=yaml.safe_load(open(\"rules/catalog/routing.yaml\", encoding=\"utf-8\")); print(len(d[\"rules\"]))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2814,7 +2814,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -2829,7 +2829,7 @@
    "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
    "proof": {
     "cmd": "python -m pytest -q -p no:randomly",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -3977,7 +3977,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"prompt_evo_harness.md\").read_text(encoding=\"utf-8\").splitlines()))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
@@ -4017,7 +4017,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"40. TOOL POLICY\"); j=t.index(\"41. CLAUDE CODE HOOKS\"); section=t[i:j]; labels=[\"READ_ONLY\",\"LOCAL_MUTATION\",\"CLOUD_READ\",\"CLOUD_MUTATION\",\"DESTRUCTIVE\"]; print(sum(1 for l in labels if l in section))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
@@ -4137,7 +4137,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
@@ -4235,7 +4235,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); print(\"agents = 0\" in t)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "True"
@@ -4254,7 +4254,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); print(\"agents <= 2\" in t)'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "True"
@@ -4353,7 +4353,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); print(\"Glue 4.0\" in t[i:j])'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "True"
@@ -4372,7 +4372,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); print(\"Glue 5.1\" in t[i:j])'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "True"
@@ -4391,7 +4391,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
@@ -4549,7 +4549,7 @@
    "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
@@ -4569,7 +4569,7 @@
    "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "AWS Glue 6.0"
@@ -4588,7 +4588,7 @@
    "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "Apache Spark 4.1"
@@ -4607,7 +4607,7 @@
    "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "contains",
      "value": "Apache Iceberg 1.11"
@@ -4626,7 +4626,7 @@
    "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"Glue 4.0 \" + chr(8594) + \" 5.1\"); alvos = [l.split()[-1] for l in ls[i:i + 5]]; print(alvos.count(\"5.1\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^([0-9]+)$",
@@ -4646,7 +4646,7 @@
    "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
    "proof": {
     "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"Glue 4.0 \" + chr(8594) + \" 5.1\"); alvos = [l.split()[-1] for l in ls[i:i + 5]]; print(alvos.count(\"6.0\"))'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "expect": {
      "kind": "number",
      "pattern": "^([0-9]+)$",
@@ -5511,7 +5511,7 @@
    "note": "a contagem ERRADA da primeira varredura, citada como o erro que o mapa corrige",
    "proof": {
     "cmd": "git show c73cd8a:docs/superpowers/STATUS.md | grep '15 so em documentacao'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "a contagem ERRADA da primeira varredura, registrada no STATUS daquele commit. E o erro que este mapa corrige, nao uma medida de hoje."
    }
@@ -5832,7 +5832,7 @@
    "note": "limiar REMOVIDO de IcebergMaintenancePlanner",
    "proof": {
     "cmd": "git show 71589e6^:sparkforge_aws/iceberg/maintenance.py | grep -c \"> 20\"",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "limiar `> 20` que `IcebergMaintenancePlanner` usava ANTES de 71589e6. E registro do defeito removido, nao estado de hoje -- reexecutar no HEAD daria zero, que e o ponto."
    }
@@ -5848,7 +5848,7 @@
    "note": "limiar REMOVIDO de IcebergMaintenancePlanner",
    "proof": {
     "cmd": "git show 71589e6^:sparkforge_aws/iceberg/maintenance.py | grep -c \"> 5\"",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "limiar `> 5` que `IcebergMaintenancePlanner` usava ANTES de 71589e6. E registro do defeito removido, nao estado de hoje -- reexecutar no HEAD daria zero, que e o ponto."
    }
@@ -5864,7 +5864,7 @@
    "note": "limiar REMOVIDO de IcebergMaintenancePlanner",
    "proof": {
     "cmd": "git show 71589e6^:sparkforge_aws/iceberg/maintenance.py | grep -c \"> 50\"",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "limiar `> 50` que `IcebergMaintenancePlanner` usava ANTES de 71589e6. E registro do defeito removido, nao estado de hoje -- reexecutar no HEAD daria zero, que e o ponto."
    }
@@ -5900,7 +5900,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
    }
@@ -5916,7 +5916,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
    }
@@ -5932,7 +5932,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
    }
@@ -5948,7 +5948,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
    }
@@ -5964,7 +5964,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -5995,7 +5995,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6011,7 +6011,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6027,7 +6027,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6043,7 +6043,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6059,7 +6059,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6075,7 +6075,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6091,7 +6091,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6107,7 +6107,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6123,7 +6123,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6139,7 +6139,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6155,7 +6155,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6171,7 +6171,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6187,7 +6187,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6203,7 +6203,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6219,7 +6219,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6235,7 +6235,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6251,7 +6251,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6267,7 +6267,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6283,7 +6283,7 @@
    "note": "classificacao pendente",
    "proof": {
     "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical",
     "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
    }
@@ -6319,7 +6319,7 @@
    "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
    "proof": {
     "cmd": "git ls-tree -r --name-only af2d7389 -- rules/catalog | grep -cE '^rules/catalog/agentic-sf-.*.yaml$'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -6334,7 +6334,7 @@
    "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
    "proof": {
     "cmd": "git ls-tree -r --name-only af2d7389 -- agents | grep -cE '^agents/(sf-agent-builder|sf-agent-evaluation-specialist|sf-airflow-specialist|sf-athena-specialist|sf-context-engineer|sf-cost-reviewer|sf-data-architect|sf-dynamodb-specialist|sf-evidence-verifier|sf-functional-rules-specialist|sf-iceberg-specialist|sf-kinesis-specialist|sf-lambda-serverless-specialist|sf-lineage-specialist|sf-memory-engineer|sf-parquet-specialist|sf-s3-specialist|sf-schema-registry-specialist|sf-step-functions-specialist).md$'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -6349,7 +6349,7 @@
    "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
    "proof": {
     "cmd": "git ls-tree -r --name-only af2d7389 -- skills | grep -cE '^skills/(design-agent-systems|design-airflow-pipelines|design-dynamodb-model|design-lambda-serverless|design-step-functions-orchestration|engineer-agent-context|engineer-agent-memory|optimize-athena-queries|optimize-iceberg-tables|verify-agent-evidence)/SKILL.md$'",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9522,7 +9522,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-orchestrator.md saiu em 2026-09-19 (feature docs/sdd/CRITERIO_DE_DOMINIO/, D2), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show 33a6d3f0:agents/sf-orchestrator.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9553,7 +9553,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-pyspark-specialist.md saiu em 2026-09-19 (feature docs/sdd/CRITERIO_DE_DOMINIO/, D2), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show af2d7389:agents/sf-pyspark-specialist.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9568,7 +9568,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-s3-specialist.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show af2d7389:agents/sf-s3-specialist.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9583,7 +9583,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-storage-specialist.md saiu em 2026-09-19 (feature docs/sdd/CRITERIO_DE_DOMINIO/, D2), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show febcdecb:agents/sf-storage-specialist.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9646,7 +9646,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-kinesis-specialist.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show af2d7389:agents/sf-kinesis-specialist.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9677,7 +9677,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-cost-reviewer.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show af2d7389:agents/sf-cost-reviewer.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
@@ -9692,7 +9692,7 @@
    "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-evidence-verifier.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
    "proof": {
     "cmd": "git show af2d7389:agents/sf-evidence-verifier.md",
-    "commit": "a540c78",
+    "commit": "5f6781e",
     "kind": "historical"
    }
   },
