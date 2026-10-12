@@ -1,7 +1,7 @@
-from sparkforge_aws.ui import screen
+from sparkforge_aws.ui import screen, tui
 from sparkforge_aws.ui.app import ActionData, Entry, ForgeApp, TextData
 from sparkforge_aws.ui.kit import UIContext
-from sparkforge_aws.ui.screen import Buffer, Column, Theme, table
+from sparkforge_aws.ui.screen import Buffer, Column, Theme, key_bar, table
 
 
 def _ctx(width=60, height=16):
@@ -73,6 +73,45 @@ def test_empty_menu_renders_empty_state():
     buf = Buffer(_ctx(), 60, 16)
     app.render(buf)
     assert "no menu entries" in "\n".join(buf.render())
+
+
+def test_command_palette_finds_and_opens_entry():
+    entries = [
+        Entry(label="status", provider=lambda: TextData(lines=["ok"])),
+        Entry(label="installation health", provider=lambda: TextData(lines=["healthy"])),
+    ]
+    app = ForgeApp(_ctx(), forge_id="spark-forge-aws", title="t", entries=entries)
+    app.on_key("ctrl-k")
+    for key in "health":
+        app.on_key(key)
+    app.on_key("enter")
+    assert app.nav_idx == 1
+    assert isinstance(app.pane.data, TextData)
+    assert app.focus == "content"
+    assert not app.palette_active
+
+
+def test_shortcut_footer_stays_inside_viewport():
+    buf = Buffer(_ctx(31, 10), 31, 10)
+    key_bar(
+        buf,
+        [("ctrl-k", "commands"), ("enter", "open"), ("?", "help"), ("q", "quit")],
+        theme=Theme(),
+    )
+    assert len(buf.render()[-1]) <= 31
+    assert "ctrl-k" in buf.render()[-1]
+
+
+def test_captured_command_timeout_returns_actionable_exit(monkeypatch, capsys):
+    monkeypatch.setattr(tui.home, "_cli_argv", lambda _extra: ["sparkforge-aws"])
+
+    def timeout(*_args, **_kwargs):
+        raise tui.subprocess.TimeoutExpired(["sparkforge-aws"], 300)
+
+    monkeypatch.setattr(tui.subprocess, "run", timeout)
+    action = tui._action_for("slow status", ["status"])
+    assert action.callable() == 124
+    assert "timed out" in capsys.readouterr().out
 
 
 def test_buffer_viewport_matrix_stays_bounded():
