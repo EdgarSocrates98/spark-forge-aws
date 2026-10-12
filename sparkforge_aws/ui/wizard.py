@@ -227,9 +227,9 @@ def run_wizard(
     if doctor_fn is not None and status == "completed":
         health = doctor_fn(scope=scope)
         raw_health = health.get("status") or health.get("health") or "unknown"
-        hstatus = (
-            raw_health.get("status", "unknown") if isinstance(raw_health, dict) else raw_health
-        )
+        hstatus = raw_health
+        if isinstance(raw_health, dict):
+            hstatus = raw_health.get("status", "unknown")
         color = "32" if hstatus in ("healthy", "PASS") else "33"
         print(f"  {i18n.t('health', ctx.language)}: {_c(ctx, color, str(hstatus))}")
 
