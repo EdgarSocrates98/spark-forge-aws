@@ -5,7 +5,7 @@ Três comandos:
 ```bash
 git clone <spark-forge-aws repo>
 cd spark-forge-aws
-./setup.sh        # Windows: .\setup.ps1
+./install.sh      # Windows: .\install.ps1 — account runtime + editable CLI
 ```
 
 Depois, dentro de qualquer projeto:
@@ -33,5 +33,7 @@ sparkforge-aws ai devin --launch   # abre o CLI do host neste diretório (TTY)
 sparkforge-aws status
 sparkforge-aws doctor
 ```
+
+Detalhes do ambiente de conta: [account-installation.md](account-installation.md).
 
 Problemas? → [troubleshooting.md](troubleshooting.md)
