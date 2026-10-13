@@ -1,0 +1,36 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_hoje_003",
+  "sla_minutes": 10.0,
+  "reliability_target": 0.99,
+  "volume_tolerance": 0.25,
+  "current_volume_bytes": 2000000000,
+  "candidates": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs_total": 28,
+      "runs_comparable": 28,
+      "runs_within_sla": 28,
+      "reliability": 1.0,
+      "resolution": 0.03571428571428571,
+      "dpu_seconds_p95": 1000.0,
+      "meets_sla": false,
+      "safety": "REVIEW"
+    }
+  ],
+  "chosen": null,
+  "refused": [
+    {
+      "reason": "resolution_too_coarse",
+      "capacity": "G.2X x10",
+      "runs_comparable": 28,
+      "runs_needed": 100,
+      "detail": "Com 28 runs comparaveis a menor diferenca observavel e 3.6%, e o alvo de 99.0% exige distinguir 1.0%. Sao precisos ao menos 100 runs."
+    }
+  ],
+  "discarded_runs": {},
+  "only_one_capacity_observed": true
+}

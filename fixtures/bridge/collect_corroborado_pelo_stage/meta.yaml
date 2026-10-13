@@ -1,0 +1,47 @@
+name: collect_corroborado_pelo_stage
+proves: 'O PRIMEIRO cruzamento entre artefato estatico e artefato de execucao deste motor.
+  Ate esta fixture, medido em 2026-09-02, as 146 regras se dividiam em 20 que usavam so fato
+  estatico, 35 so de runtime, e ZERO que cruzassem.
+
+  `job.py:9` tem `collect()` sem limite, e `SF-PY-002` ja o acusaria sozinho -- `status: structural`,
+  leitura estatica. O event log traz UM stage chamado `collect at /opt/spark/work/job.py:9`,
+  que e o formato de callsite que o Spark escreve e que `facts/event_log.py` ja guardava verbatim
+  sem que nada o lesse.
+
+  `spark.stage.callsite` faz o parse; `facts/bridge.py` cruza por `basename:linha` e emite
+  `bridge.driver_collect_confirmed`; `SF-BRIDGE-001` dispara como `confirmed`. A diferenca
+  para `SF-PY-002` e de natureza: uma diz que o codigo PODE puxar tudo para o driver, a outra
+  diz que a linha executou e traz o stage como evidencia.
+
+  A linha 9 e citada EXATAMENTE. Casar por arquivo faria dois `collect` do mesmo modulo virarem
+  um so -- e o par negativo prova que a linha importa.
+
+  As medidas saem com prefixo `stage_`: elas sao do STAGE, nao o custo desta linha. A regra
+  13 do CLAUDE.md proibe a segunda leitura, e o prefixo existe para que ela nao seja possivel.
+
+  '
+runtime: {}
+expects_kinds:
+- bridge.analyzed
+- bridge.driver_collect_confirmed
+- pyspark.action
+- pyspark.callgraph_edge
+- pyspark.chain
+- pyspark.driver_collect
+- pyspark.function_def
+- pyspark.module_analyzed
+- pyspark.read
+- spark.cluster.cores
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.shuffle
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+expects_rules:
+- SF-BRIDGE-001
+- SF-PY-002

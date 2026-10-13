@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-EVENT-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Regra EventBridge habilitada sem target observado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-rule",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_ddcd2f"
+    ],
+    "measured": {
+      "target_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A regra está habilitada, mas o dump não traz target. O extractor não infere destino por nome; a configuração precisa ser completada ou coletada novamente.",
+    "proposed_change": [
+      "Confirmar target, role e política de invocação no mesmo snapshot.",
+      "Reanalisar o dump depois de corrigir ou capturar a configuração faltante."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Regra habilitada sem destino pode produzir falsa sensação de automação."
+    ],
+    "tradeoffs": [
+      "Validar targets aumenta disciplina de inventário e custo operacional."
+    ],
+    "validation": [
+      "Comparar target observado com métrica de invocações e falhas."
+    ],
+    "rollback": [
+      "Desabilitar regra até que target e permissões estejam comprovados."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "event_driven.verify_target",
+      "target": "eventbridge.rule.target",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

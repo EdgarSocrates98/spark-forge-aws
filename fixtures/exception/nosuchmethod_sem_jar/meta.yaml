@@ -1,0 +1,52 @@
+name: nosuchmethod_sem_jar
+proves: >
+  O NEGATIVO de `SF-ERR-001`, e o par que prova que `requires_facts` faz trabalho
+  de verdade.
+
+  O event log e byte a byte o de `nosuchmethod_com_jar_e_terraform`. O `main.tf`
+  tambem. A UNICA diferenca no corpus inteiro e o `conector_2.12-1.4.0.jar`, que
+  aqui nao existe. A excecao continua acontecendo, `error.signature_match` com
+  `ERR-GLUE-002` continua saindo -- e o achado NAO sai.
+
+  O motor pula a regra nomeando exatamente o que falta:
+
+      {"rule_id": "SF-ERR-001", "reason": "requires_facts",
+       "missing": ["mig.jar_binary"]}
+
+  Um item na lista, e e o unico que muda entre as duas fixtures. Era esse o
+  defeito do caminho antigo do matcher, e e ele que esta frente fechou: casar a
+  palavra `NoSuchMethodError` num log e afirmar 98% de confianca IGNORAVA o
+  `evidence_required` que a propria assinatura declara. `NoSuchMethodError` sem o
+  binario nao distingue incompatibilidade de Scala de uma duzia de outras causas
+  de erro de linkagem, e acusar aqui seria mandar recompilar um JAR que ninguem
+  mediu.
+
+  Uma fixture que so dispara nao prova limiar nenhum. `expects_rules` vazio, com o
+  mesmo event log ao lado que dispara em P0, prova.
+runtime:
+  glue: "6.0"
+  spark: "4.0.0"
+  python: "3.11"
+  iceberg: "1.9.1"
+expects_kinds:
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

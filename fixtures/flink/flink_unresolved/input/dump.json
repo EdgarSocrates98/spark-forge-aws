@@ -1,0 +1,9 @@
+{
+  "job": {
+    "job_id": "job-003",
+    "name": "partial-dump"
+  },
+  "operators": [
+    {"operator_id": "source", "name": "Source"}
+  ]
+}

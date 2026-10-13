@@ -1,0 +1,6 @@
+name: wrong_answer
+mode: transcript
+question: q-mcp
+proves: >
+  AT-002: mesmas tools e ordem, resposta diferente. Resposta wrong e
+  tools ok -- as medidas sao independentes.

@@ -1,0 +1,22 @@
+name: arestas_nao_persistidas
+proves: >
+  A forma de `SF-DQ-003` com outro sujeito. Checkpoint configurado, vertices em
+  `cache()`, arestas nao: o unico eixo defeituoso e `edges_persisted: false`, no
+  MESMO fact da construcao -- e nao num kind proprio, porque correlacionar dois
+  kinds por nome de variavel casa objeto errado quando ha varios grafos no mesmo
+  diretorio (D-5d-17).
+  Par de contraste com `grafo_correto`, que difere pela unica linha do `cache()`
+  das arestas.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules:
+  - SF-GRAPH-003

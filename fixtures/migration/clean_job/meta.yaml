@@ -1,0 +1,13 @@
+name: clean_job
+proves: >
+  O sentido negativo do corpus: job Glue escrito do jeito atual (SDK v2 via
+  `boto3`, sem config de EMRFS, sem API depreciada, sem cast sem guarda). Nao
+  deve produzir fact nenhum -- se algum kind `mig.*` disparar aqui, e falso
+  positivo do extrator.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: []
+expects_rules: []

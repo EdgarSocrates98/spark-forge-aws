@@ -1,0 +1,6 @@
+{
+  "requirements": {},
+  "assumptions": {
+    "source": "probably_kafka"
+  }
+}

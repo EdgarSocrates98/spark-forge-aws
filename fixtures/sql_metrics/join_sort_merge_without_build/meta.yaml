@@ -1,0 +1,20 @@
+name: join_sort_merge_without_build
+proves: >
+  SortMergeJoin entre db.pedidos e db.eventos, Inner. O operador ordena e
+  mescla os dois lados -- nao publica BuildLeft/BuildRight -- entao
+  `spark.sql.join.build_side` sai `""` e as duas arestas
+  `spark.sql.join_input` saem com `side: unknown`. `position` continua
+  preenchido (`left`/`right`, pela ordem de `children`) e nenhuma aresta e
+  omitida: side desconhecido nao e motivo para lacuna.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.execution
+  - spark.sql.scan
+  - spark.sql.join
+  - spark.sql.join_input
+  - spark.sql.analyzed
+expects_rules: []

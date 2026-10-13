@@ -1,0 +1,4 @@
+Rules = [
+  Completeness "order_id" > 0.99,
+  IsUnique "order_id"
+]

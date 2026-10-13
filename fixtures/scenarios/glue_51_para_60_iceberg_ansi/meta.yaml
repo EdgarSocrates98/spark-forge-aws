@@ -1,0 +1,27 @@
+name: glue_51_para_60_iceberg_ansi
+source: "5.1"
+target: "6.0"
+proves: >
+  Um job realista atravessando o UNICO degrau que existe entre 5.1 e 6.0, com
+  mais de um artefato (`job_vendas.py` e `requirements.txt`) e mais de um kind
+  observado. O que os goldens por kind de `fixtures/migration/` nao provam:
+  ali cada fixture existe para fazer UMA regra disparar, com um artefato so e
+  um runtime fixo passado a mao para o `judge()`. Aqui o runtime de cada degrau
+  vem da matriz, via `assess()`, e o corpus de entrada carrega tres kinds
+  (`mig.ansi_risk`, `mig.table_format`, `mig.python_dep`) dos quais apenas um
+  sustenta regra neste par -- o cenario prova tanto o que dispara quanto o que
+  o par NAO sustenta.
+  `mig.table_format` (a tabela Iceberg com `format-version` 2) nao alimenta
+  regra nenhuma do catalogo: e o kind que a Task 9 criou para ter observacao
+  sem juizo, e o cenario o carrega justamente para provar que a presenca do
+  fact nao inventa achado.
+  `mig.python_dep` esta ali com `pyarrow==17.0.0`, ACIMA do piso 15.0.0 que
+  SF-SPARK4-003 cobra no Spark 4.1: o degrau CRUZA `spark >= 4.1.0` (Glue 6.0 e
+  Spark 4.1.1) e a regra fica calada assim mesmo, porque o numero satisfaz o
+  piso. E o negativo por VALOR, nao por versao -- o complemento exato do
+  negativo por versao que `fixtures/migration/python_dep` ja prova.
+  Os dois `cast(` sem guarda de `job_vendas.py` (linhas 32 e 33) produzem DOIS
+  facts `mig.ansi_risk` e UM unico finding: `same_subject` agrupa por arquivo,
+  entao um job com dez casts nao vira dez achados do mesmo problema.
+expects_rules:
+  - SF-MIG-003

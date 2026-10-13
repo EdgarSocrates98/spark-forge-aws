@@ -1,0 +1,34 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# Referência dos agents
+
+Coordenadores despacham executores em ordem; especialistas respondem uma área; executores fazem uma função do loop de fase (ver `AGENT_PROTOCOL.md`).
+
+## Coordenadores
+
+| Agent | O que faz |
+|---|---|
+| [`athena-query-optimizer`](athena-query-optimizer.md) | Custo ou latencia na consulta Athena e nao no job - bytes escaneados, pruning de particao, projecao de coluna, versao do engine, workgroup, layout de armazenamento. |
+| [`cdc-contract-reviewer`](cdc-contract-reviewer.md) | Especialista em CDC, Debezium/Kafka Connect, AWS DMS e contratos de mudança, separando posição, chave, snapshot/CDC seam, schema history, tombstone, mappings e unresolved sem de... |
+| [`data-quality-reviewer`](data-quality-reviewer.md) | Validacao de dado em job PySpark - PyDeequ, Great Expectations ou artesanal - se esta no lugar certo, se tem consequencia, quanto custa em passadas sobre o dado. |
+| [`emr-infra-reviewer`](emr-infra-reviewer.md) | Spark em Amazon EMR on EC2, Serverless ou on EKS com risco na infraestrutura e nao no codigo - instance fleets contra instance groups, purchasing option, managed scaling, Config... |
+| [`glue-incremental-performance-architect`](glue-incremental-performance-architect.md) | Investigacao ponta a ponta de job ou biblioteca Glue PySpark com fluxos full e incremental - latest-per-key em Iceberg bilionario, batching, OOM apos horas, carga variavel. |
+| [`glue-infra-reviewer`](glue-infra-reviewer.md) | Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como o job e... |
+| [`iceberg-performance-engineer`](iceberg-performance-engineer.md) | Gargalo em tabelas Apache Iceberg no Glue Data Catalog e S3 - small files, delete files, snapshots, manifests, metadata planning, partition spec, sort order, writes, manutencao. |
+| [`pyspark-code-reviewer`](pyspark-code-reviewer.md) | Revisao de codigo PySpark - PR, biblioteca ou job - correlacionando fonte, plano fisico pos-Catalyst e estrutura de chamadas. |
+| [`sf-lake-formation-specialist`](sf-lake-formation-specialist.md) | Lake Formation e governanca. |
+| [`sf-runtime-specialist`](sf-runtime-specialist.md) | Analisar Glue, EMR, runtimes, capacidade, infraestrutura e compatibilidade entre versoes numa migracao. |
+| [`sf-security-reviewer`](sf-security-reviewer.md) | IAM, KMS, S3 e exfiltracao. |
+| [`sf-terraform-specialist`](sf-terraform-specialist.md) | Revisar ou construir Terraform para plataformas de dados. |
+| [`spark-performance-architect`](spark-performance-architect.md) | Coordena diagnostico e otimizacao de job PySpark no AWS Glue - correlaciona codigo, plano fisico, Spark UI, Parquet e Iceberg para achar o gargalo dominante antes de recomendar... |
+| [`streaming-realtime-architect`](streaming-realtime-architect.md) | Especialista em plataformas streaming Apache Flink, Managed Flink, Structured Streaming e AWS Glue Streaming/RTM, correlacionando transporte, checkpoint, state, backpressure, ob... |
+
+## Executors
+
+| Agent | O que faz |
+|---|---|
+| [`sf-extractor`](sf-extractor.md) |  |
+| [`sf-inventory`](sf-inventory.md) |  |
+| [`sf-judge`](sf-judge.md) |  |
+| [`sf-synthesizer`](sf-synthesizer.md) |  |
+| [`sf-verifier`](sf-verifier.md) |  |

@@ -1,0 +1,23 @@
+[
+  {
+    "kind": "glue.job_run.distribution",
+    "subject": {"job_name": "orders-stream", "glue_version": "6.0", "worker_type": "G.1X", "number_of_workers": 4, "autoscaling": false, "state": "SUCCEEDED", "type": "job_run", "symbol": "[\"orders-stream\",\"6.0\",\"G.1X\",4,false,\"SUCCEEDED\"]"},
+    "measures": {"n": 1, "runtime_min_s": 60.0, "runtime_p50_s": 60.0, "runtime_p95_s": 60.0, "runtime_p99_s": 60.0, "runtime_max_s": 60.0},
+    "attrs": {"window_first": "2026-10-02T00:00:00Z", "window_last": "2026-10-02T00:00:00Z", "dpu_source": "none"},
+    "provenance": {"artifact": "runs", "extractor": "glue_job_run@0.1.0"}
+  },
+  {
+    "kind": "glue.job_run.outcome",
+    "subject": {"job_name": "orders-stream", "glue_version": "6.0", "worker_type": "G.1X", "number_of_workers": 4, "autoscaling": false, "type": "job_run", "symbol": "[\"orders-stream\",\"6.0\",\"G.1X\",4,false]"},
+    "measures": {"n_total": 1, "n_succeeded": 1, "n_failed": 0, "n_timeout": 0, "n_stopped": 0},
+    "attrs": {"window_first": "2026-10-02T00:00:00Z", "window_last": "2026-10-02T00:00:00Z"},
+    "provenance": {"artifact": "runs", "extractor": "glue_job_run@0.1.0"}
+  },
+  {
+    "kind": "glue.job_run.unresolved",
+    "subject": {"job_name": "orders-stream", "job_run_id": "jr-1", "type": "job_run", "symbol": "jr-1"},
+    "measures": {},
+    "attrs": {"reason": "dpu_unobservable_under_autoscaling", "detail": "DPU não observado no run."},
+    "provenance": {"extractor": "glue_job_run@0.1.0"}
+  }
+]

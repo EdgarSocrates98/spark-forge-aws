@@ -1,0 +1,9 @@
+name: utilizacao_alta_nada_dispara
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'Worker em 82%, memoria em 71%: nao ha folga, e nenhuma das duas regras dispara. Sem
+  este cenario, `SF-WASTE-001` poderia passar a disparar por haver metrica, em vez de por
+  haver folga, com a suite inteira verde.'

@@ -1,0 +1,4 @@
+artifact: msk
+expects_kinds:
+  - msk.analyzed
+  - msk.cluster

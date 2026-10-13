@@ -1,0 +1,21 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# `sparkforge-aws tune`
+
+Configuracao Spark derivada da medida, com a procedencia de cada propriedade. Nunca aplica a mudanca.
+
+```bash
+sparkforge-aws tune --help
+```
+
+## Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--facts` | sim | texto |  |  | Arquivo de facts (--out de analyze). |
+| `--out` | não | texto |  |  | Escreve o relatorio completo (JSON) neste arquivo. |
+| `--headroom` | não | texto |  |  | Folga declarada sobre o piso de memoryOverhead e de broadcastTimeout (0.2 = +20%). Sem ela, o piso. |
+
+## Tool MCP equivalente
+
+[`sparkforge_aws_tune`](../tools/sparkforge_aws_tune.md)

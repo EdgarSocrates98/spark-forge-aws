@@ -1,0 +1,148 @@
+[
+  {
+    "id": "f_bea1fb",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_machine_count": 1,
+      "task_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_0a9395",
+    "schema_version": 1,
+    "kind": "sfn.state_machine",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_count": 6,
+      "task_count": 2
+    },
+    "attrs": {
+      "type": "undeclared",
+      "type_declared": false,
+      "query_language": "JSONPath",
+      "source": "asl"
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_474855",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/ConsultarJobRun",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "ConsultarJobRun",
+      "resource": "arn:aws:states:::aws-sdk:glue:getJobRun",
+      "service": "glue",
+      "api": "getJobRun",
+      "pattern": "request_response",
+      "integration": "sdk",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
+      "retriers": [],
+      "failure_retry_matched": false,
+      "failure_retry_defaulted": false,
+      "has_catch": false,
+      "has_next": true,
+      "end": false,
+      "enclosing_has_next": false,
+      "effective_has_next": true,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "undeclared",
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": true
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_d6bf4a",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/IniciarCarga",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "IniciarCarga",
+      "resource": "arn:aws:states:::glue:startJobRun",
+      "service": "glue",
+      "api": "startJobRun",
+      "pattern": "request_response",
+      "integration": "optimized",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
+      "retriers": [],
+      "failure_retry_matched": false,
+      "failure_retry_defaulted": false,
+      "has_catch": false,
+      "has_next": true,
+      "end": false,
+      "enclosing_has_next": false,
+      "effective_has_next": true,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "undeclared",
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": true
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  }
+]

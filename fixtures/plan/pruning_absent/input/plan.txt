@@ -1,0 +1,37 @@
+== Physical Plan ==
+AdaptiveSparkPlan (6)
++- * Project (5)
+   +- * BroadcastHashJoin Inner BuildRight (4)
+      :- * Filter (2)
+      :  +- Scan parquet analytics.transacoes (1)
+      +- BroadcastExchange (3)
+
+
+(1) Scan parquet analytics.transacoes
+Output [4]: [cliente_id#2, valor#3, status#6, dt#11]
+Batched: true
+Location: InMemoryFileIndex [s3://lake/analytics/transacoes]
+PushedFilters: [IsNotNull(cliente_id)]
+ReadSchema: struct<cliente_id:bigint,valor:double,status:string>
+
+(2) Filter [codegen id : 1]
+Input [4]: [cliente_id#2, valor#3, status#6, dt#11]
+Condition : isnotnull(cliente_id#2)
+
+(3) BroadcastExchange
+Input [1]: [cliente_id#20]
+Arguments: HashedRelationBroadcastMode(List(input[0, bigint, false])), [plan_id=42]
+
+(4) BroadcastHashJoin [codegen id : 2]
+Left keys [1]: [cliente_id#2]
+Right keys [1]: [cliente_id#20]
+Join type: Inner
+Join condition: None
+
+(5) Project [codegen id : 2]
+Output [3]: [cliente_id#2, valor#3, status#6]
+Input [5]: [cliente_id#2, valor#3, status#6, dt#11, cliente_id#20]
+
+(6) AdaptiveSparkPlan
+Output [3]: [cliente_id#2, valor#3, status#6]
+Arguments: isFinalPlan=false

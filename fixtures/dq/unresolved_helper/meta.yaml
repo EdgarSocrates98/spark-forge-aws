@@ -1,0 +1,26 @@
+name: unresolved_helper
+proves: >
+  Validacao cujo alvo NAO se le: `valida_tabela` recebe o nome da tabela e
+  monta o DataFrame na propria cadeia do check
+  (`spark.table(tabela).filter(...).count()`). A raiz da cadeia e a sessao, e
+  nao o dado validado.
+  Sai `dq.unresolved` com reason `unresolved_target`, e o fact NAO tem a chave
+  `target`: nenhum alvo e adivinhado. Registrar `spark` dataria este check
+  contra o write de qualquer outro dado que tambem saia de `spark`, e SF-DQ-001
+  afirmaria "validou depois de publicar" sobre dados que nunca se tocaram.
+  E a fixture da maquinaria de ponto cego, que e a que apodrece mais
+  silenciosamente: quando ela para de contar, devolve zero, e zero e
+  exatamente o que uma extracao limpa devolve. `dq.module_analyzed` fecha a
+  conta com unresolved_count == 1 e check_count == 0 -- ha uma validacao neste
+  arquivo, e o extrator declara que nao a resolveu, em vez de nao a mencionar.
+  Nao ha `dq.enforcement` aqui apesar do `raise`, e isso e correto: enforcement
+  so existe com um `dq.check` cujo subject ele proteja.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.unresolved
+  - dq.module_analyzed
+expects_rules: []

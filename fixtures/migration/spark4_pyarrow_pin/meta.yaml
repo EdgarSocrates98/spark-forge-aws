@@ -1,0 +1,25 @@
+name: spark4_pyarrow_pin
+proves: >
+  Pin de PyArrow abaixo do piso declarado pelo Spark 4.1 (15.0.0), julgado em
+  Glue 6.0 -- o positivo de SF-SPARK4-003. O pin sobrevive a migracao porque
+  nao esta no runtime, esta escrito no `requirements.txt` do job, e
+  `--additional-python-modules` o instala por cima do que o runtime traz: trocar
+  de runtime nao corrige um pin. `pandas==2.2.0` esta na mesma fixture de
+  proposito -- ele esta EM CIMA do piso do 4.1 e nenhuma regra o acusa, o que
+  prova que a condicao filtra por `attrs.package` e nao acusa toda dependencia
+  pinada que encontra.
+
+  O par NEGATIVO desta fixture e `python_dep`: mesmo kind, `pyarrow==14.0.1`
+  (tambem abaixo de 15.0.0), julgado em Glue 5.0 -- abaixo da fronteira
+  `{spark: ">=4.1.0"}`, entao a regra e PULADA por `runtime_scope`, nao por
+  falta de fact. Mesma forma do par `cast_sem_guarda` /
+  `cast_sem_guarda_ansi_default` para SF-MIG-003.
+runtime:
+  glue: "6.0"
+  spark: "4.1.1"
+  python: "3.13"
+  iceberg: "1.11.0"
+expects_kinds:
+  - mig.python_dep
+expects_rules:
+  - SF-SPARK4-003

@@ -1,0 +1,2 @@
+{"id":"q-3","runId":"r-3","name":"events","batchId":30,"timestamp":"2026-10-01T12:00:00.000Z","inputRowsPerSecond":100.0,"processedRowsPerSecond":70.0,"stateOperators":[{"operatorName":"stateStore","numRowsTotal":10}]}
+{"id":"q-3","runId":"r-3","name":"events","batchId":31,"timestamp":"2026-10-01T12:00:01.000Z","inputRowsPerSecond":110.0,"processedRowsPerSecond":80.0,"stateOperators":[{"operatorName":"stateStore","numRowsTotal":20}]}

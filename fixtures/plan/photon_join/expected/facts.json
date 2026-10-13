@@ -1,0 +1,97 @@
+[
+  {
+    "id": "f_4be100",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 92,
+      "node_count": 17,
+      "file_scan_count": 0,
+      "exchange_count": 0,
+      "skipped_logical_lines": 1,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": true,
+      "aqe_final_plan": false,
+      "aqe_sections_seen": [
+        "Initial Plan"
+      ]
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "41494644d38cfaf5f5869af94c1329aaa501cf5f55fb58d2c82ee341e893ab7e",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_b3af03",
+    "schema_version": 1,
+    "kind": "plan.aqe",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 86,
+      "symbol": "(17) AdaptiveSparkPlan",
+      "node_id": 17,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "is_final_plan": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "41494644d38cfaf5f5869af94c1329aaa501cf5f55fb58d2c82ee341e893ab7e",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_b847fc",
+    "schema_version": 1,
+    "kind": "plan.photon",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 22,
+      "symbol": "(1) PhotonRange",
+      "node_id": 1,
+      "operator": "PhotonRange",
+      "relation": ""
+    },
+    "measures": {
+      "photon_operators": 16,
+      "operators": 17
+    },
+    "attrs": {
+      "operators": [
+        "PhotonBroadcastHashJoin",
+        "PhotonColumnarToRow",
+        "PhotonGroupingAgg",
+        "PhotonProject",
+        "PhotonRange",
+        "PhotonResultStage",
+        "PhotonShuffleExchangeSink",
+        "PhotonShuffleExchangeSource",
+        "PhotonShuffleMapStage"
+      ],
+      "explanation": "The query is fully supported by Photon."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "41494644d38cfaf5f5869af94c1329aaa501cf5f55fb58d2c82ee341e893ab7e",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

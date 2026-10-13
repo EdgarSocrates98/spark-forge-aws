@@ -1,0 +1,25 @@
+[
+  {
+    "id": "f_cbc079",
+    "schema_version": 1,
+    "kind": "mig.jar_binary",
+    "subject": {
+      "type": "source_location",
+      "file": "connector_2.12-1.4.0.jar",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "scala": "2.12",
+      "scala_minor": 12
+    },
+    "provenance": {
+      "artifact": "connector_2.12-1.4.0.jar",
+      "artifact_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,17 @@
+name: recusas_de_forma_e_vez
+proves: 'Cada recusa de forma e de vez tem nome, e nenhuma muda um byte do estado: chave desconhecida,
+  lado e rodada fora de vez, claim sem evidencia, abertura sem claim, tipo invalido, submissao
+  que nao e objeto, concede que nao e bool.'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: brief

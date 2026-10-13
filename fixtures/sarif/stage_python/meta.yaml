@@ -1,0 +1,9 @@
+description: >-
+  Callsite Python resolvido: dois findings de stage 0 em event logs diferentes, cada um na linha do seu callsite (job.py:42 e carga.py:7), e um job_run cuja evidencia cita o stage 3 (job.py:58). O caminho do cluster /opt/spark/work/jobs/lib/... casa pelo sufixo jobs/lib/.
+origem:
+  - fixtures/cloudwatch_logs\fetch_failed_com_executor_perdido (modelo do finding de stage)
+  - fixtures/waste\ocioso_por_skew (modelo do finding de job_run)
+  - fixtures/bridge/collect_corroborado_pelo_stage (forma do callsite)
+source_roots: [.]
+fail_on: P0
+category: fixture-stage-python

@@ -1,0 +1,58 @@
+{
+  "checkpoint": {
+    "query_name": "orders",
+    "path": "s3://analytics/checkpoints/orders",
+    "storage": "s3",
+    "state_store": "rocksdb",
+    "schema_version": "spark-3.5",
+    "restart_strategy": "resume",
+    "trigger": "10 seconds",
+    "stateful": true,
+    "watermark": "10 minutes",
+    "batch_duration_ms": [4200, 5100, 4800],
+    "trigger_interval_ms": 10000,
+    "backlog": [120, 100, 80],
+    "state_rows": [1000, 1010, 1020],
+    "watermark_delay_ms": [3000, 2800, 2500]
+  },
+  "kafka_connect": {
+    "name": "orders-source",
+    "mode": "distributed",
+    "type": "source",
+    "connector_class": "io.debezium.connector.postgresql.PostgresConnector",
+    "status": "RUNNING",
+    "worker_version": "3.8.0",
+    "source_system": "postgres",
+    "converter": "avro",
+    "transforms": ["route"],
+    "error_handling": "dead_letter_queue",
+    "dlq_topic": "orders.dlq",
+    "offsets": {"available": true},
+    "tasks": [
+      {"id": 0, "state": "RUNNING", "worker_id": "worker-a"}
+    ]
+  },
+  "kafka_streams": {
+    "application_id": "orders-enrichment",
+    "topology": "source->join->aggregate",
+    "processing_guarantee": "exactly_once_v2",
+    "state_stores": [
+      {"name": "orders-store", "type": "rocksdb", "persistent": true, "retention": "1d", "changelog_topic": "orders-store-changelog"}
+    ],
+    "repartition_topics": ["orders-repartition"],
+    "changelog_topics": ["orders-store-changelog"],
+    "joins": ["customer"],
+    "windows": ["5m"],
+    "interactive_queries": false,
+    "runtime_version": "3.8.0"
+  },
+  "openlineage": {
+    "eventType": "COMPLETE",
+    "producer": "https://example.invalid/streaming-agent",
+    "job": {"namespace": "analytics", "name": "orders-enrichment"},
+    "run": {"runId": "run-2026-10-02-001"},
+    "inputs": [{"namespace": "kafka", "name": "orders"}],
+    "outputs": [{"namespace": "iceberg", "name": "analytics.orders"}],
+    "facets": {"schema": {"_producer": "contract", "version": "1"}}
+  }
+}

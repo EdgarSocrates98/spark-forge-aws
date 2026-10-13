@@ -1,0 +1,22 @@
+name: retry_duas_camadas_sem_sync
+proves: >
+  O NEGATIVO de SF-SFN-004 pelo padrao de integracao. O ASL e o `main.tf` sao os de
+  `retry_duas_camadas`, menos o `.sync`: em Request Response o estado termina quando o
+  Glue aceita o pedido, e o retrier cobre a chamada `StartJobRun`, nao a falha do
+  JobRun. Nao ha retry do Step Functions sobre o job para compor com o `max_retries`
+  do Glue, entao `build_sfn_glue_link` nao liga e nada de `sfn.glue_job_link` sai. O
+  Task e `End`, sem estado seguinte: SF-SFN-001 tambem fica calada.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.state_machine
+  - sfn.task
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

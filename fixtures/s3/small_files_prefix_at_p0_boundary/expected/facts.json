@@ -1,0 +1,58 @@
+[
+  {
+    "id": "f_96cee8",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 100001,
+      "control_object_count": 1,
+      "group_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "prefix": "s3://lake/analytics/cliques/",
+      "truncated": false
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "2f019bf07d890a8c20a7c1ce0221773ce945da93b2596efba2b0b1bd1556acdc",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_a971d7",
+    "schema_version": 1,
+    "kind": "s3.prefix_summary",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/analytics/cliques/ [parquet/snappy]"
+    },
+    "measures": {
+      "file_count": 100000,
+      "total_bytes": 214715150000,
+      "avg_file_bytes": 2147151.5,
+      "min_file_bytes": 2097152,
+      "p50_file_bytes": 2147152,
+      "p95_file_bytes": 2192152,
+      "max_file_bytes": 2197151
+    },
+    "attrs": {
+      "prefix": "s3://lake/analytics/cliques/",
+      "format": "parquet",
+      "compression": "snappy"
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "2f019bf07d890a8c20a7c1ce0221773ce945da93b2596efba2b0b1bd1556acdc",
+      "extractor": "s3_listing@0.1.0"
+    }
+  }
+]

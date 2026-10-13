@@ -1,0 +1,33 @@
+name: validacao_de_seguranca_com_fgac
+proves: >
+  O POSITIVO de `SF-ERR-017`, e a UNICA das quatro assinaturas desta familia
+  cujo texto a AWS realmente escreve: `Security validation exception` e titulo de
+  secao da pagina de troubleshooting do AWS Glue.
+
+  O achado termina numa recomendacao de contatar o suporte da AWS, e isso e o que
+  a fonte prescreve -- nao ha remediacao self-service publicada, e a regra nao
+  inventa uma. O que ela acrescenta e a lista do que PODE ser lido antes do
+  chamado: a funcionalidade que o AWS Glue bloqueia sob controle de acesso fino,
+  e a exigencia de sessao Spark unica.
+
+  A fixture registra tambem o limite de coleta: o log do system driver, que
+  explicaria a mensagem, e inacessivel POR DESENHO -- a AWS declara que restringe
+  o acesso a ele em aplicacoes habilitadas para Lake Formation. Nenhuma coleta
+  alcanca essa metade, e a regra diz isso em vez de esconder.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - lakeformation.access_model
+  - lakeformation.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-017

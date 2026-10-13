@@ -1,0 +1,183 @@
+catalog_version: 1
+schema_version: 1
+area: SF-STREAMOBS
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-STREAMOBS-001
+    category: streaming_observability
+    title: Série de processamento abaixo da entrada com medida de transporte vinculada
+    requires_facts: [streaming.observability.link]
+    when:
+      all:
+        - fact: streaming.observability.link
+          expr: "attrs.processed_below_input and attrs.transport_measurement_observed"
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A mesma composição carrega uma série em que o processamento ficou abaixo
+      da entrada e uma medida de lag ou idade do shard para o transporte
+      declarado. O vínculo fortalece a investigação temporal, mas não identifica
+      se a causa é source, operator, state, sink, throttling ou capacidade.
+    proposed_change:
+      - Coletar uma série pareada com timestamps, offsets ou iterator age, duração de trigger e sink.
+      - Separar backlog observado de causa e testar uma variável principal por experimento.
+      - Validar resultado funcional e política de replay antes de promover mudança.
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.observability.link
+      direction: investigate
+      requires_absent: [streaming.composition.unresolved]
+      moves: [runtime.wall_clock, transport.backlog]
+      depends_on: []
+    risks:
+      - Usar uma janela não pareada pode transformar duas observações reais em uma falsa tendência.
+      - Escalar workers sem medir state, sink e throttling pode aumentar custo sem resolver atraso.
+    tradeoffs:
+      - Correlação temporal exige reter mais métricas e alinhar relógios entre serviços.
+    validation:
+      - Confirmar unidade, janela, identidade do grupo/stream e correspondência dos timestamps.
+      - Comparar processamento, entrada, lag/idade e resultado funcional antes e depois.
+    rollback:
+      - Reverter a única variável experimental e manter os artefatos de baseline para replay da análise.
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-lakehouse-observability.md}
+
+  - id: SF-STREAMOBS-002
+    category: streaming_observability
+    title: Janela temporal pareada com processamento abaixo da entrada e backlog observado
+    requires_facts: [streaming.temporal.diagnostic, env.runtime_signal]
+    when:
+      all:
+        - fact: streaming.temporal.diagnostic
+          expr: "measures.paired_observation_count >= 2 and attrs.temporal_window_complete and attrs.all_paired_processed_below_input and attrs.transport_backlog_observed"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A composição observou pelo menos dois pares de progresso e transporte
+      dentro da tolerância temporal declarada. Em todos os pares comparáveis, a
+      taxa processada ficou abaixo da entrada e uma medida de lag ou idade foi
+      observada. Isso fortalece a investigação, mas não prova causa, impacto
+      funcional, SLO ou ganho de capacidade.
+    proposed_change:
+      - Conferir a janela, unidades, identidade, relógios e completude dos pares.
+      - Correlacionar state, sink, duração, throttling, offsets e resultado funcional.
+      - Alterar uma variável principal por experimento e comparar o mesmo caso.
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.temporal.diagnostic
+      direction: investigate
+      requires_absent: [streaming.temporal.unresolved]
+      moves: [runtime.wall_clock, transport.backlog]
+      depends_on: []
+    risks:
+      - Uma tolerância ampla pode parear snapshots de janelas diferentes.
+      - Relógios sem timezone ou métricas agregadas podem mascarar a granularidade real.
+      - Escalar capacidade sem medir state e sink pode aumentar custo sem resolver atraso.
+    tradeoffs:
+      - Série temporal pareada exige retenção, sincronização de relógio e bytes adicionais.
+    validation:
+      - Confirmar `max_skew_seconds`, timestamps, identidade e unidades no artefato de origem.
+      - Repetir a coleta na mesma janela e conferir count, schema, chaves e agregados do resultado.
+      - Comparar throughput, backlog e duração antes/depois da única variável experimental.
+    rollback:
+      - Reverter a única variável experimental e preservar os facts pareados para reauditoria.
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-lakehouse-observability.md}
+
+  - id: SF-STREAMOBS-003
+    category: streaming_observability
+    title: ISR observado abaixo do replication factor em partição Kafka
+    requires_facts: [kafka.partition]
+    when:
+      all:
+        - fact: kafka.partition
+          expr: "measures.replication_factor > measures.isr_count"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump Kafka observou menos réplicas in-sync do que o replication factor
+      da partição. Isso é um sinal de replicação degradada naquela observação;
+      não prova indisponibilidade, perda de dados, causa do déficit ou violação
+      de min.insync.replicas sem esses campos no artifact.
+    proposed_change:
+      - Confirmar topic, partition, replicas, ISR, instante e procedência do dump.
+      - Coletar baseline pareado com eventos do broker, min.insync.replicas, acks e runtime efetivo.
+      - Validar escrita, leitura, resultado funcional e política de recuperação antes de alterar capacidade.
+    action:
+      kind: measurement.localize_divergence
+      target: transport.replication
+      direction: investigate
+      requires_absent: [kafka.unresolved]
+      moves: [transport.backlog, runtime.wall_clock]
+      depends_on: []
+    risks:
+      - Um snapshot único pode capturar uma transição curta e não estabelecer incidente persistente.
+      - Alterar min.insync.replicas ou brokers sem observar a configuração efetiva pode mudar semântica de escrita.
+      - Confundir ISR deficit com lag de consumidor desloca a investigação para o componente errado.
+    tradeoffs:
+      - Preservar facts por partição aumenta bytes locais, mas evita recomputar o dump para cada regra.
+    validation:
+      - Conferir replication factor, ISR, leader, timestamp e identidade da partição.
+      - Repetir a coleta na mesma partição e correlacionar broker events, producer acks e consumer lag.
+      - Validar count, schema, chaves e agregados do resultado após qualquer experimento.
+    rollback:
+      - Reverter a única mudança experimental e preservar o dump/receipt para reauditoria.
+    sources:
+      - {url: "https://kafka.apache.org/40/operations/basic-kafka-operations/", retrieved: 2026-10-03}
+      - {url: "https://kafka.apache.org/40/implementation/distribution/", retrieved: 2026-10-03}
+    knowledge_refs:
+      - {ref: knowledge/transport-diagnostics.md}
+
+  - id: SF-STREAMOBS-004
+    category: streaming_observability
+    title: Série explícita de lag Kafka em crescimento monotônico
+    requires_facts: [kafka.lag.series]
+    when:
+      all:
+        - fact: kafka.lag.series
+          expr: "measures.observation_count >= 2 and measures.delta_lag > 0 and attrs.monotonic_increase"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A mesma identidade group/topic/partition tem pelo menos duas observações
+      timestampadas em ordem e o lag cresceu em todos os passos da série
+      explícita. Isso sustenta investigação de backlog observado, mas não prova
+      causa, throughput insuficiente, SLO, impacto de negócio ou saúde do consumidor.
+    proposed_change:
+      - Confirmar identidade, timezone, unidade, intervalo e completude da série.
+      - Correlacionar current offset, log end offset, producer rate, consumer progress, assignment e runtime.
+      - Repetir o baseline antes de alterar paralelismo, capacidade, retenção ou comportamento do consumidor.
+    action:
+      kind: measurement.collect_baseline
+      target: transport.backlog
+      direction: investigate
+      requires_absent: [kafka.unresolved]
+      moves: [transport.backlog, runtime.wall_clock]
+      depends_on: []
+    risks:
+      - Janela curta ou amostragem irregular pode representar apenas uma fase transitória.
+      - Lag crescente não separa producer rate, broker replication, assignment, consumer ou sink.
+      - Agregar identidades diferentes inventaria uma tendência que o artifact não observou.
+    tradeoffs:
+      - A série compacta reduz contexto repetido, mas exige manter ids dos facts fonte para expansão sob demanda.
+    validation:
+      - Conferir observation_count, delta_lag, timestamp span, source_fact_ids e identidade declarada.
+      - Repetir a série na mesma janela e correlacionar offsets, taxa de entrada, processamento e resultado funcional.
+      - Comparar a única variável experimental com baseline equivalente, sem estimar ganho antecipado.
+    rollback:
+      - Reverter a única variável experimental e manter os artifacts temporais para replay da investigação.
+    sources:
+      - {url: "https://kafka.apache.org/40/operations/basic-kafka-operations/", retrieved: 2026-10-03}
+    knowledge_refs:
+      - {ref: knowledge/transport-diagnostics.md}

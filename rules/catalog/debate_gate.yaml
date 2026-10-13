@@ -1,0 +1,17 @@
+# Politica do Debate ROI Gate (§11 de `prompt_new_evo.md`).
+#
+# O gate le este arquivo para decidir se um par que a arbitragem nao fechou
+# pede debate. Ele mora no catalogo, e nao em `knowledge/`, pela mesma razao de
+# `proof_axes.yaml`: viaja com as regras que interpreta, e o `load_catalog` so
+# pega regra da chave `rules:`, que este arquivo nao tem.
+#
+# `debate_severities` e POLITICA declarada, nao medida: as severidades que,
+# sozinhas, justificam o custo de um debate. Nenhum experimento calibrou a
+# fronteira entre P1 e P2 -- ela e a mesma que o L3 do §15 usa para bloquear
+# achado novo, e mudar aqui muda o veredito de todo par aberto.
+#
+# Os outros dois motivos de `debater` nao moram aqui: a reversibilidade e o
+# campo `reversible` de cada `kind` em `action_kinds.yaml`, e `escalate` e o
+# desfecho da propria arbitragem.
+policy_version: 1
+debate_severities: [P0, P1]

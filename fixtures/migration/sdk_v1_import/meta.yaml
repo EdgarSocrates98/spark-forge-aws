@@ -1,0 +1,16 @@
+name: sdk_v1_import
+proves: >
+  Import do AWS SDK v1 para Java/Scala (`com.amazonaws.*`) sobrevivendo num
+  job Glue. Runtime Glue 5.0 escolhido de proposito: e a fronteira em que o
+  ambiente gerenciado deixa de garantir o SDK v1 no classpath
+  (`runtime_scope: {glue: ">=5.0"}` de SF-MIG-001), entao e o runtime em que a
+  regra precisa disparar para provar a regra positiva.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.sdk_import
+expects_rules:
+  - SF-MIG-001

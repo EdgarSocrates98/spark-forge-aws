@@ -1,0 +1,24 @@
+name: limit_no_filter_with_catalog
+proves: >
+  A prova decisiva de SF-ATH-002 no caso positivo classico: LIMIT sem WHERE
+  algum, catalogo presente (sales.orders, particionada por dt). Sem nenhum
+  sql.predicate para virar sql.predicate.partition_filter, `absent:
+  sql.predicate.partition_filter` e verdadeiro de forma legitima (nao vazia
+  -- catalog.table_schema esta em requires_facts, entao a analise sabe que
+  rodou catalogo). Ver fixtures/fusion/limit_partition_filter_guard para o
+  caso irmao que prova que a mesma forma de query NAO dispara quando ha um
+  filtro real de particao.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.analyzed
+  - catalog.table_schema
+  - catalog.analyzed
+  - sql.projection.enriched
+  - fusion.summary
+expects_rules:
+  - SF-ATH-002

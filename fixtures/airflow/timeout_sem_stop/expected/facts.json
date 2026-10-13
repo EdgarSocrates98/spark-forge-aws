@@ -1,0 +1,101 @@
+[
+  {
+    "id": "f_00bd8a",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_com_timeout.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 1,
+      "task_count": 1,
+      "dependency_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga_com_timeout.py",
+      "artifact_sha256": "49bd13ace4600cc806862d3132a60d7e77722388631929a4904c1191d6fa5f5b",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_00ec92",
+    "schema_version": 1,
+    "kind": "af.dag",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_com_timeout.py",
+      "line": 7,
+      "col": 5,
+      "symbol": "carga_com_timeout",
+      "snippet": ""
+    },
+    "measures": {
+      "default_retries": 0
+    },
+    "attrs": {
+      "dag_id_literal": true,
+      "dag_id": "carga_com_timeout",
+      "schedule_declared": true,
+      "schedule_literal": true,
+      "schedule_source": "schedule",
+      "schedule": "0 4 * * *",
+      "default_args_source": "inline",
+      "default_retries_declared": true,
+      "default_execution_timeout_declared": false
+    },
+    "provenance": {
+      "artifact": "carga_com_timeout.py",
+      "artifact_sha256": "49bd13ace4600cc806862d3132a60d7e77722388631929a4904c1191d6fa5f5b",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_8e9b27",
+    "schema_version": 1,
+    "kind": "af.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_com_timeout.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "retries_effective": 0,
+      "execution_timeout_seconds": 7200
+    },
+    "attrs": {
+      "operator_class": "GlueJobOperator",
+      "operator_family": "glue_job",
+      "task_id_literal": true,
+      "var_name": "carga",
+      "task_id": "carga",
+      "retries_source": "default_args",
+      "retries_defaulted": false,
+      "execution_timeout_declared": true,
+      "execution_timeout_source": "task",
+      "job_name": "carga-diaria",
+      "job_name_source": "literal",
+      "wait_for_completion_effective": true,
+      "wait_for_completion_defaulted": true,
+      "deferrable_effective": true,
+      "deferrable_defaulted": false,
+      "stop_job_run_on_kill_effective": false,
+      "stop_job_run_on_kill_defaulted": true,
+      "has_downstream": false
+    },
+    "provenance": {
+      "artifact": "carga_com_timeout.py",
+      "artifact_sha256": "49bd13ace4600cc806862d3132a60d7e77722388631929a4904c1191d6fa5f5b",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

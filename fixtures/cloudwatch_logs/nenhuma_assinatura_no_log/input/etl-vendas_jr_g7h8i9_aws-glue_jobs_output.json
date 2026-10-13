@@ -1,0 +1,36 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_g7h8i9",
+      "message": "2026-09-09 10:00:04,001 INFO [main] spark.SparkContext: Running Spark version 3.5.4",
+      "timestamp": 1788948000000
+    },
+    {
+      "eventId": "e1",
+      "ingestionTime": 1788948000501,
+      "logStreamName": "jr_g7h8i9_g-abc",
+      "message": "2026-09-09 10:00:09,730 INFO [main] glue.GlueContext: Initialized with Iceberg 1.7.1",
+      "timestamp": 1788948000137
+    },
+    {
+      "eventId": "e2",
+      "ingestionTime": 1788948000502,
+      "logStreamName": "jr_g7h8i9",
+      "message": "2026-09-09 10:31:55,318 INFO [main] scheduler.DAGScheduler: Job 0 finished, took 1905.6 s",
+      "timestamp": 1788948000274
+    }
+  ],
+  "events_collected": 3,
+  "filter_pattern": "",
+  "job_name": "etl-vendas",
+  "job_run_id": "jr_g7h8i9",
+  "log_group": "/aws-glue/jobs/output",
+  "log_stream_prefix": "jr_g7h8i9",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

@@ -1,0 +1,43 @@
+name: secoes_malformadas
+proves: >
+  Toda forma de o payload estar torto tem razao PROPRIA, e nenhuma delas derruba
+  a extracao. Um payload so, e nove pontos cegos contados:
+    * `initialCapacity.DRIVER` que nao e objeto -> `malformed_json`,
+      `section: initialCapacity[]`;
+    * `initialCapacity.EXECUTOR` sem `workerCount` -> `missing_worker_count`
+      (e o fact de capacidade SAI mesmo assim, com as quantidades que deu para
+      ler: o que falta e a contagem, nao a entrada);
+    * `maximumCapacity` como string -> `malformed_json`,
+      `section: maximumCapacity`;
+    * entrada de `runtimeConfiguration` que nao e objeto -> `malformed_json`,
+      `section: runtimeConfiguration[]`;
+    * entrada sem `classification` -> `missing_classification` (sem
+      classificacao a propriedade nao tem identidade, e inventar uma faria dois
+      payloads colidirem no mesmo subject);
+    * `properties` que nao e objeto, e `configurations` que nao e lista ->
+      `malformed_json` com a secao nomeada;
+    * chave de propriedade em branco -> `missing_property_key`;
+    * `monitoringConfiguration` como string -> `malformed_json` com a secao
+      nomeada, e o `emrs.monitoring` SAI assim mesmo, com os defaults
+      documentados. Aqui o default entra na conta porque a application foi
+      identificada e a pergunta "ha destino de log?" continua respondivel; em
+      `identidade_ausente` nao ha application, e por isso nao ha monitoring.
+  Nenhum desses vira excecao, e nenhum vira silencio: a sentinela conta os nove e
+  a extracao segue com o que sobrou. E o mesmo contrato de
+  `fixtures/emr/malformed_sections`, escrito para o vocabulario desta area.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+  - emrs.unresolved
+expects_rules: []

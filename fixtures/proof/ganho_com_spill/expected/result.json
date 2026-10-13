@@ -1,0 +1,83 @@
+{
+  "applied_count": 1,
+  "attribution": "single",
+  "fact_count": {
+    "after": 4,
+    "union": 9
+  },
+  "policy": {
+    "delta_sign_convention": {
+      "reason": "Sem regra de veredito para o eixo, \"nao melhorou\" e qualquer delta que nao seja negativo. E convencao declarada, nao limiar medido (regra 11), e vale so onde nenhuma regra do catalogo julga o eixo. Onde uma regra julga (`refuted_by`), ela vence a convencao.",
+      "refutes_when": "delta_pct >= 0"
+    },
+    "policy_version": 1
+  },
+  "refused": [
+    {
+      "field": "proven",
+      "reason": "nenhuma_medida_do_pacote_prova_equivalencia_ou_melhoria"
+    },
+    {
+      "field": "gain_estimate",
+      "reason": "exige_o_run_que_nao_aconteceu_regra_13"
+    }
+  ],
+  "results": [
+    {
+      "obligations": [
+        {
+          "evidence": [
+            "f_8ea752"
+          ],
+          "kind": "resolution",
+          "outcome": "refuted",
+          "reason": "regra_ainda_dispara",
+          "rule_id": "SF-PY-008"
+        },
+        {
+          "axis": "runtime.wall_clock",
+          "convention": "delta_sign_convention",
+          "delta_pct": -24.5,
+          "kind": "axis",
+          "measure": "total_task_ms",
+          "outcome": "not_refuted",
+          "proxy": "task_ms_nao_e_wall_clock",
+          "source": "bench"
+        },
+        {
+          "axis": "shuffle.spill_bytes",
+          "delta_pct": 3100.0,
+          "kind": "axis",
+          "measure": "total_spill_bytes",
+          "outcome": "refuted",
+          "source": "bench",
+          "verdicts": [
+            "SF-BENCH-003"
+          ]
+        }
+      ],
+      "rule_id": "SF-PY-008",
+      "stable_key": {
+        "file": "lib/job.py",
+        "symbol": "calcular",
+        "type": "source_location"
+      },
+      "subject": {
+        "col": 8,
+        "end_line": 2,
+        "file": "lib/job.py",
+        "line": 2,
+        "snippet": "d = df.cache()",
+        "symbol": "calcular",
+        "type": "source_location"
+      },
+      "summary": {
+        "inconclusive": 0,
+        "not_refuted": 1,
+        "refuted": 2,
+        "unproven": 0
+      }
+    }
+  ],
+  "unresolved": []
+}

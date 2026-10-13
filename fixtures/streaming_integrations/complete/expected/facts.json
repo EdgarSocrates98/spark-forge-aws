@@ -1,0 +1,247 @@
+[
+  {
+    "id": "f_142dda",
+    "schema_version": 1,
+    "kind": "kafka.connect",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-source",
+      "snippet": ""
+    },
+    "measures": {
+      "task_count": 1
+    },
+    "attrs": {
+      "name": "orders-source",
+      "mode": "distributed",
+      "type": "source",
+      "connector_class": "io.debezium.connector.postgresql.PostgresConnector",
+      "status": "RUNNING",
+      "worker_version": "3.8.0",
+      "source_system": "postgres",
+      "converter": "avro",
+      "transforms": [
+        "route"
+      ],
+      "error_handling": "dead_letter_queue",
+      "dlq_topic": "orders.dlq",
+      "offsets": [
+        "available"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_d2e433",
+    "schema_version": 1,
+    "kind": "kafka.connect.task",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-source.task.0",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "id": 0,
+      "state": "RUNNING",
+      "worker_id": "worker-a",
+      "connector": "orders-source"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_e9f246",
+    "schema_version": 1,
+    "kind": "kafka.streams",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-enrichment",
+      "snippet": ""
+    },
+    "measures": {
+      "state_store_count": 1
+    },
+    "attrs": {
+      "application_id": "orders-enrichment",
+      "topology": "source->join->aggregate",
+      "processing_guarantee": "exactly_once_v2",
+      "joins": [
+        "customer"
+      ],
+      "windows": [
+        "5m"
+      ],
+      "repartition_topics": [
+        "orders-repartition"
+      ],
+      "changelog_topics": [
+        "orders-store-changelog"
+      ],
+      "interactive_queries": false,
+      "runtime_version": "3.8.0"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_83e524",
+    "schema_version": 1,
+    "kind": "kafka.streams.state_store",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-enrichment.store.0",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-store",
+      "type": "rocksdb",
+      "persistent": true,
+      "retention": "1d",
+      "changelog_topic": "orders-store-changelog",
+      "application_id": "orders-enrichment"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_24b6ec",
+    "schema_version": 1,
+    "kind": "lineage.openlineage",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-enrichment",
+      "snippet": ""
+    },
+    "measures": {
+      "input_count": 1,
+      "output_count": 1
+    },
+    "attrs": {
+      "job_name": "orders-enrichment",
+      "job_namespace": "analytics",
+      "run_id": "run-2026-10-02-001",
+      "event_type": "COMPLETE",
+      "producer": "https://example.invalid/streaming-agent",
+      "input_count": 1,
+      "output_count": 1,
+      "facet_names": [
+        "schema"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_b0a3d6",
+    "schema_version": 1,
+    "kind": "streaming.checkpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_duration_ms_first": 4200,
+      "batch_duration_ms_last": 4800,
+      "batch_duration_ms_max": 5100,
+      "trigger_interval_ms_first": 10000,
+      "trigger_interval_ms_last": 10000,
+      "trigger_interval_ms_max": 10000,
+      "backlog_first": 120,
+      "backlog_last": 80,
+      "backlog_max": 120,
+      "backlog_non_decreasing": 0,
+      "state_rows_first": 1000,
+      "state_rows_last": 1020,
+      "state_rows_max": 1020,
+      "state_rows_non_decreasing": 1,
+      "watermark_delay_ms_first": 3000,
+      "watermark_delay_ms_last": 2500,
+      "watermark_delay_ms_max": 3000,
+      "observation_count": 3,
+      "trigger_interval_ms": 10000,
+      "batch_duration_exceeds_trigger": 0
+    },
+    "attrs": {
+      "query_name": "orders",
+      "path": "s3://analytics/checkpoints/orders",
+      "storage": "s3",
+      "state_store": "rocksdb",
+      "schema_version": "spark-3.5",
+      "restart_strategy": "resume",
+      "trigger": "10 seconds",
+      "watermark": "10 minutes",
+      "stateful": true
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  },
+  {
+    "id": "f_b8f5d4",
+    "schema_version": 1,
+    "kind": "streaming_integrations.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 6
+    },
+    "attrs": {
+      "sections": [
+        "checkpoint",
+        "kafka_connect",
+        "kafka_streams",
+        "openlineage"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "8814fd0a23a53e3683c60e5f0ae9f62763dbd8b3da3f9dad0e5df4b82b8592cc",
+      "extractor": "streaming_integrations@0.1.0"
+    }
+  }
+]

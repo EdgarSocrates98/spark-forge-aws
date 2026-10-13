@@ -1,0 +1,365 @@
+[
+  {
+    "id": "f_655123",
+    "schema_version": 1,
+    "kind": "ctm.action",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato/ActionIfFailure",
+      "snippet": ""
+    },
+    "measures": {
+      "action_count": 1
+    },
+    "attrs": {
+      "name": "ActionIfFailure",
+      "trigger": "completion_status",
+      "trigger_value": "NOTOK",
+      "action_types": [
+        "Action:Mail"
+      ]
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_a96c9b",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 1,
+      "job_count": 2,
+      "dependency_count": 3,
+      "capability_probe_count": 1,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_a36392",
+    "schema_version": 1,
+    "kind": "ctm.capability_supported",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "capability": "job_detached_embedded_script",
+      "evidence": "job_type",
+      "job_type": "Job:DetachedEmbeddedScript",
+      "job": "PagamentosDiarios/ExtraiExtrato",
+      "declared_version": "9.0.22.010",
+      "boundary": "introduced_in",
+      "boundary_version": "9.0.22.005",
+      "summary": "O job type `Job:DetachedEmbeddedScript` roda um script embutido como processo em background."
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_621b4f",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ConciliaExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "direction": "wait",
+      "event": "EXTRATO-PRONTO",
+      "container": "job"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_dadea2",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "direction": "add",
+      "event": "EXTRATO-PRONTO",
+      "container": "job"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_0099dd",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/Sequencia",
+      "snippet": ""
+    },
+    "measures": {
+      "step_count": 2
+    },
+    "attrs": {
+      "direction": "sequence",
+      "container": "Flow",
+      "flow": "Sequencia",
+      "sequence": [
+        "ExtraiExtrato",
+        "ConciliaExtrato"
+      ]
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_c96239",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "PagamentosDiarios",
+      "application": "Financeiro",
+      "sub_application": "ContasAPagar",
+      "created_by": "esteira"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_ff4514",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ConciliaExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "ConciliaExtrato",
+      "run_as": "ctmagent",
+      "critical": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_603d90",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:DetachedEmbeddedScript",
+      "name": "ExtraiExtrato",
+      "run_as": "ctmagent",
+      "host": "agente-fin-01",
+      "description": "Dispara a extracao do extrato em background"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_156e03",
+    "schema_version": 1,
+    "kind": "ctm.schedule",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios",
+      "snippet": ""
+    },
+    "measures": {
+      "week_days_count": 5
+    },
+    "attrs": {
+      "from_time": "0300",
+      "to_time": "0600"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_7f703e",
+    "schema_version": 1,
+    "kind": "ctm.schedule",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ConciliaExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "from_time": "0400"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_dcfbd1",
+    "schema_version": 1,
+    "kind": "ctm.variable",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "DataDeCorte",
+      "value": "%%$DATE"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_dcfbd1",
+    "schema_version": 1,
+    "kind": "ctm.variable",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "TOKEN_DO_PORTAL",
+      "value": "<redigido>",
+      "redacted": true,
+      "secret_pattern_match": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.22.010",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

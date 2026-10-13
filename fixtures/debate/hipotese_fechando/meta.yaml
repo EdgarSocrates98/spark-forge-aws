@@ -1,0 +1,16 @@
+name: hipotese_fechando
+proves: 'A claim de B e hipotese. A responde e concede, o candidato e SF-LF-001, e o referee
+  recusa: hipotese nao fecha causa raiz (AT-007).'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: unresolved

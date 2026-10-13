@@ -1,0 +1,83 @@
+[
+  {
+    "id": "f_6e6d69",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "c78316867225c58d1cbce10c750c841bd89a2a980cb21ad6af1769780b2f7d7f",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_16df36",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsemlog00000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fsemlog00000000001",
+      "name": "sem-destino-de-log",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "architecture": "X86_64",
+      "auto_start_declared": false,
+      "auto_stop_declared": true,
+      "auto_stop_enabled": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "c78316867225c58d1cbce10c750c841bd89a2a980cb21ad6af1769780b2f7d7f",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_766255",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsemlog00000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 0
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": false,
+      "managed_persistence_enabled": false,
+      "managed_persistence_declared": true,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "c78316867225c58d1cbce10c750c841bd89a2a980cb21ad6af1769780b2f7d7f",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

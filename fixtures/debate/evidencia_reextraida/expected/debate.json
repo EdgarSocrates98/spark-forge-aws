@@ -1,0 +1,67 @@
+{
+  "trace": [
+    {
+      "op": "start",
+      "status": "started",
+      "created": true,
+      "max_rounds": 3
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "extractor_not_allowed"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "artifact_outside_case"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "artifact_outside_case"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "artifact_not_found"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "invalid_schema"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "dangling_evidence_ref"
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 1,
+        "objections": 0,
+        "rebuttals": 0
+      },
+      "facts_added": 6,
+      "next": "brief"
+    },
+    {
+      "op": "next",
+      "status": "brief",
+      "side": "B",
+      "round": 1,
+      "rounds_remaining": 3,
+      "extracted_facts": 6,
+      "open_objections_against_you": 0,
+      "prior_submissions": 1
+    }
+  ],
+  "blackboard": {
+    "decisions": 0,
+    "debate_claims": 1,
+    "debate_objections": 0,
+    "debate_rebuttals": 0
+  }
+}

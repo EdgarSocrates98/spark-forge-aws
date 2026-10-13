@@ -1,0 +1,19 @@
+name: clean_improvement
+proves: >
+  A metade NEGATIVA do corpus, e a que decide se as regras SF-BENCH sao
+  usaveis: os tres stages casam por symbol nos dois lados, o volume lido e
+  identico (140 MB dos dois lados, 0,0% de variacao), nenhum dos dois lados
+  derramou um byte, e o depois soma 13,6 s de tempo de task contra 22,0 s do
+  antes -- 38,2% menos trabalho. Nenhuma das quatro regras da Task 5 pode
+  disparar aqui; se alguma disparar, ela acusa melhora limpa de defeito, que e
+  o pior falso positivo possivel neste dominio.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - bench.analyzed
+  - bench.run_delta
+  - bench.stage_delta
+expects_rules: []

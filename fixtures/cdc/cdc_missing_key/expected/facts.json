@@ -1,0 +1,122 @@
+[
+  {
+    "id": "f_ed6281",
+    "schema_version": 1,
+    "kind": "cdc.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "cdc",
+      "event_count": 1
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "1c561b4632ae03fcb829b15c7d51c96c9165325a046cb4a458e90655bb838fd4",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_1ba100",
+    "schema_version": 1,
+    "kind": "cdc.event",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "DELETE",
+      "table": "orders",
+      "key_fields": [],
+      "before_present": true,
+      "after_present": false,
+      "schema_changed": false
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "1c561b4632ae03fcb829b15c7d51c96c9165325a046cb4a458e90655bb838fd4",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_44c3d7",
+    "schema_version": 1,
+    "kind": "cdc.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_source_position",
+      "operation": "DELETE"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "1c561b4632ae03fcb829b15c7d51c96c9165325a046cb4a458e90655bb838fd4",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_44c3d7",
+    "schema_version": 1,
+    "kind": "cdc.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_primary_key",
+      "operation": "DELETE",
+      "table": "orders"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "1c561b4632ae03fcb829b15c7d51c96c9165325a046cb4a458e90655bb838fd4",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_44c3d7",
+    "schema_version": 1,
+    "kind": "cdc.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "delete_tombstone_behavior",
+      "table": "orders"
+    },
+    "provenance": {
+      "artifact": "events.jsonl",
+      "artifact_sha256": "1c561b4632ae03fcb829b15c7d51c96c9165325a046cb4a458e90655bb838fd4",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

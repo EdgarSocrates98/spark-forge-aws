@@ -1,0 +1,7 @@
+mode: temporal
+transport_key: clicks-stream
+query_name: clicks-query
+max_skew_seconds: 3
+expects_pairs: 2
+expects_kinds: [env.runtime_signal, kinesis.analyzed, kinesis.shard, kinesis.stream, streaming.composition.analyzed, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series, streaming.temporal.diagnostic]
+expects_findings: [SF-STREAMOBS-002]

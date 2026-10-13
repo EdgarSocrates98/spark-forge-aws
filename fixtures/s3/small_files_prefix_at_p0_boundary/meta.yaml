@@ -1,0 +1,30 @@
+name: small_files_prefix_at_p0_boundary
+proves: >
+  O ramo P0 de SF-PQ-001 — a única severidade P0 da área de Parquet, e a que até
+  aqui não tinha golden nenhum.
+  São 100000 arquivos Parquet de ~2 MB sob o prefixo, a contagem EXATA do
+  primeiro ramo de `severity_by`. A comparação é `>=`, então o limiar já é P0.
+  Com `small_files_prefix` (1500, P2) e `small_files_prefix_at_p1_boundary`
+  (10000, P1), os três ramos da regra passam a ter cada um o seu golden, cada um
+  no limiar do próprio ramo: trocar qualquer uma das três severidades, ou
+  qualquer um dos dois `>=` por `>`, quebra exatamente um golden.
+  A média fica em ~2,1 MB, muito abaixo dos 32 MB do `threshold.min_avg_bytes`,
+  então quem decide a severidade é a CONTAGEM. Quinhentas partições de dia com
+  duzentos arquivos em cada é a forma que um prefixo assim tem de verdade.
+  CUSTO, medido, porque ele é atípico neste corpus: a listagem tem 14,3 MB — é o
+  maior artefato do repositório por uma ordem de grandeza, e não há como
+  encolhê-la sem mentir sobre a contagem, que é o que a regra lê. O extrator
+  recusa listagem truncada (`IsTruncated`) justamente para não julgar contagem
+  sobre amostra, e uma listagem paginada em vários arquivos produziria um sumário
+  por página, nunca um com 100000. Comprimida, ela custa ~570 KB de objeto git, e
+  o parse leva ~0,08 s.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.prefix_summary
+expects_rules:
+  - SF-PQ-001

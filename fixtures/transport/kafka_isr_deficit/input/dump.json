@@ -1,0 +1,10 @@
+{
+  "topics": [
+    {
+      "name": "events",
+      "partitions": [
+        {"partition": 0, "leader": 1, "replicas": [1, 2, 3], "isr": [1, 2]}
+      ]
+    }
+  ]
+}

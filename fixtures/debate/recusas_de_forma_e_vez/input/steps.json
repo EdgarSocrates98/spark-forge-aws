@@ -1,0 +1,144 @@
+[
+  {
+    "op": "start"
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "vencedor": "SF-GRAPH-005"
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "B",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job declara FGAC e JAR adicional no mesmo aws_glue_job",
+          "evidence_refs": [
+            "f_55f5ac",
+            "f_6ab9b2"
+          ],
+          "confidence": "medium"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 2,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [],
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "palpite",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": "vence o lado A"
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "concede": "sim"
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "op": "next"
+  }
+]

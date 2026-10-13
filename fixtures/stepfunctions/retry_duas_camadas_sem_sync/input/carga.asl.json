@@ -1,0 +1,13 @@
+{
+  "Comment": "Fixture sintetica: o mesmo job e o mesmo retrier de retry_duas_camadas, mas sem .sync.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 300, "MaxAttempts": 2, "BackoffRate": 1.0}],
+      "End": true
+    }
+  }
+}

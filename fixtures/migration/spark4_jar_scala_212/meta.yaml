@@ -1,0 +1,31 @@
+name: spark4_jar_scala_212
+proves: >
+  JAR compilado contra Scala 2.12 no classpath de um runtime Spark 4, julgado
+  em Glue 6.0 -- o positivo de SF-SPARK4-004, e o unico P0 da area SF-SPARK4. A
+  fronteira e BINARIA, nao de API: 2.12 e 2.13 nao sao compativeis em bytecode,
+  entao o job nao roda -- `NoSuchMethodError` ou `ClassNotFoundException` na
+  primeira vez que a classe do JAR e carregada, ja em RUNTIME, depois da
+  submissao ter passado.
+
+  O `scala_minor: 12` do fact e o numero que a regra compara. Ele e derivado do
+  `scala: "2.12"` que o extrator ja lia do NOME do arquivo, e existe porque o
+  avaliador de `expr` do catalogo compara numero e nao versao -- mesmo motivo e
+  mesmo padrao de `mig.python_dep.major`.
+
+  O par NEGATIVO desta fixture e `jar_binary`, e ele e NEGATIVO POR VERSAO:
+  mesmo kind, o mesmo `connector_2.12-1.4.0.jar` (portanto o mesmo
+  `scala_minor: 12`, abaixo do limiar), julgado em Glue 5.0 -- abaixo da
+  fronteira `{spark: ">=4.0.0"}`, entao a regra e PULADA por `runtime_scope`,
+  nao por falta de fact. Mesma forma do par `python_dep` /
+  `spark4_pyarrow_pin` para SF-SPARK4-003 e do par `cast_sem_guarda` /
+  `cast_sem_guarda_ansi_default` para SF-MIG-003. Fixture negativa nova seria
+  redundante.
+runtime:
+  glue: "6.0"
+  spark: "4.1.1"
+  python: "3.13"
+  iceberg: "1.11.0"
+expects_kinds:
+  - mig.jar_binary
+expects_rules:
+  - SF-SPARK4-004

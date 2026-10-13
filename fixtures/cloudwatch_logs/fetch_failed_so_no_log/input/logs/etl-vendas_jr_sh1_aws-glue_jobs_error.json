@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_sh1",
+      "message": "2026-09-09 10:12:05,431 ERROR [task-result-getter-0] scheduler.TaskSetManager: FetchFailedException: Failed to connect to ip-10-0-0-31.ec2.internal/10.0.0.31:7337",
+      "timestamp": 1788948000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "etl-vendas",
+  "job_run_id": "jr_sh1",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_sh1",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

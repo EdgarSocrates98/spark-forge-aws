@@ -1,0 +1,14 @@
+{
+  "tables": [
+    {
+      "name": "sales.orders",
+      "storage_format": "parquet",
+      "partition_keys": [{"name": "dt", "type": "string"}],
+      "columns": [
+        {"name": "order_id", "type": "bigint"},
+        {"name": "amount", "type": "double"},
+        {"name": "dt", "type": "string"}
+      ]
+    }
+  ]
+}

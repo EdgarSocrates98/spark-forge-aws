@@ -1,0 +1,20 @@
+name: subpasta_com_referencia_sem_job_explicito
+proves: >
+  O NEGATIVO de `SF-CTM-006`, e o artefato e o EXEMPLO DA PROPRIA PAGINA: um
+  `SubFolder` chamado `JobImpl` que referencia `JobTemplate` e nao contem job
+  nenhum. `explicit_job_count` sai 0 e o veredito sai falso.
+  O PAR E EXATO: o mesmo `Parent`, o mesmo `JobTemplate`, e a unica diferenca e
+  o job dentro do sub-folder. Se os dois produzirem o mesmo veredito, a contagem
+  de job explicito nao esta sendo feita -- ha booleano constante em algum lugar.
+  ELE TAMBEM PROVA QUE O `Folder` DE TOPO NAO E ACUSADO. `Parent` contem
+  `JobTemplate`, que E um job explicito, e nao tem `ReferencePath` -- entao nao
+  recebe atributo de referencia nenhum. A fonte fala de sub-folder, e a leitura e
+  literal.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.version_declared
+expects_rules: []

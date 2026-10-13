@@ -1,0 +1,30 @@
+name: malformed_sections
+proves: >
+  Secao PRESENTE porem malformada vira `emr.unresolved`, nunca silencio, e cada
+  forma de nao-resposta tem reason proprio: entrada que nem objeto e
+  (`malformed_json` com a secao indexada), `Configurations` sem
+  `Classification` (`missing_classification`), `Properties` que nao e objeto,
+  grupo sem `Market` (`missing_market`), grupo sem `InstanceGroupType`
+  (`missing_instance_role`), fleet sem uma das duas capacidades alvo
+  (`missing_fleet_capacity`), bootstrap action sem `Name`
+  (`missing_bootstrap_name`) e politica de managed scaling sem `ComputeLimits`.
+  Nenhum deles vira fact com valor default: um `has_spot_capacity: false`
+  inventado num grupo sem `Market` apagaria em silencio as duas regras que
+  perguntam por Spot, e uma politica de scaling lida como ausente afirmaria o
+  oposto do que o dump sugere. Prova tambem `conflicting_instance_models`:
+  grupos E fleets no mesmo dump descrevem um cluster que nao existe -- os dois
+  modelos sao mutuamente exclusivos --, quase sempre dois clusters colados no
+  mesmo arquivo, e a contradicao fica registrada em vez de produzir um retrato
+  falso. O que sobrou legivel continua saindo: um dump ruim nao descarta os
+  facts bons.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.unresolved
+expects_rules: []

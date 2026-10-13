@@ -1,0 +1,10 @@
+{
+  "cluster": {
+    "clusterArn": "arn:aws:kafka:us-east-1:1:cluster/x",
+    "currentVersion": "K3AEGXETSR30VB",
+    "kafkaVersion": "3.6.0",
+    "brokerType": "express",
+    "encryptionInfo": {"encryptionAtRest": {"dataVolumeKMSKeyId": "key"}},
+    "clientAuthentication": {"sasl": {"iam": {"enabled": true}}}
+  }
+}

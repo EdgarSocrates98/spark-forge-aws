@@ -1,0 +1,311 @@
+[
+  {
+    "id": "f_cd249c",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 0,
+      "configuration_count": 0,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 10
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_49d77a",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-5MALFORMADO/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.5.2-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_d3be62",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-5MALFORMADO"
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "cluster_id": "j-5MALFORMADO",
+      "name": null,
+      "release_label": "emr-7.5.0",
+      "release": "7.5.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": null,
+      "auto_terminate": false,
+      "unhealthy_node_replacement": null,
+      "state": "RUNNING",
+      "state_change_reason_code": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "Applications[]"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "conflicting_instance_models"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "InstanceGroups[]"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_market",
+      "id": "ig-SEM-MARKET",
+      "role": "TASK",
+      "observed_market": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_instance_role",
+      "id": "ig-SEM-PAPEL",
+      "observed_role": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_fleet_capacity",
+      "id": "if-SEM-CAPACIDADE",
+      "role": "TASK"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_classification"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "spark-defaults.Properties"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_bootstrap_name"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "ManagedScalingPolicy.ComputeLimits"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "a9e12009f9d57b59256317479093a39a84e6a5a8bf513ccceab56ef425e5eb15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

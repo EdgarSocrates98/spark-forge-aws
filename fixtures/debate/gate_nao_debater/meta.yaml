@@ -1,0 +1,20 @@
+name: gate_nao_debater
+proves: 'Debate ROI Gate: o par real rebaixado a P3 nos dois lados, com as duas acoes
+  reversiveis e sem lacuna; start recusa gate_nao_debater ANTES de olhar o budget (o
+  case nao declara budget, e a recusa nao e budget_undeclared) (AT-003).'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+finding_overrides:
+  SF-GRAPH-005:
+    severity: P3
+  SF-LF-001:
+    severity: P3
+budget: null
+expects_outcome: refused:gate_nao_debater

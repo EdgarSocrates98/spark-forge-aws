@@ -1,0 +1,31 @@
+{
+  "catalog_id": "111111111111",
+  "database": "analytics",
+  "link": {
+    "aws_error_code": "",
+    "is_resource_link": true,
+    "link_catalog_id": "111111111111",
+    "link_database": "analytics",
+    "link_name": "dim_cliente_prod",
+    "requested_catalog_id": "111111111111",
+    "requested_database": "analytics",
+    "requested_table": "dim_cliente_prod",
+    "status": "ok",
+    "target_catalog_id": "999999999999",
+    "target_database": "curated",
+    "target_name": "dim_cliente",
+    "target_region": "us-east-1",
+    "target_type": "table"
+  },
+  "status": "ok",
+  "table": "dim_cliente_prod",
+  "target": {
+    "aws_error_code": "",
+    "catalog_id": "999999999999",
+    "database": "curated",
+    "name": "dim_cliente",
+    "resolved_name": "dim_cliente",
+    "status": "ok"
+  },
+  "target_type": "table"
+}

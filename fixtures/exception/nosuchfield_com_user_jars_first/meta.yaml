@@ -1,0 +1,58 @@
+name: nosuchfield_com_user_jars_first
+proves: >
+  O POSITIVO de `SF-ERR-002`, e a diferenca dele para `SF-ERR-001` mora numa
+  flag.
+
+  `java.lang.NoSuchFieldError` num pacote `software.amazon.awssdk` casa
+  `ERR-GLUE-003` por `matched_on: exception_class`, e o `main.tf` declara
+  `--user-jars-first = "true"` em `default_arguments`. Sem essa flag o SDK do
+  runtime vence o classpath e o defeito nao existe -- e por isso ela e CONDICAO da
+  regra, com `attrs.value: "true"` e `attrs.block: "default_arguments"` casados
+  explicitamente, e nao nota de rodape.
+
+  O JAR se chama `conector-interno-1.4.0.jar`, DE PROPOSITO sem versao de Scala no
+  nome. Duas coisas caem disso, e as duas sao o desenho:
+
+    * `mig.jar_binary` sai com `scala: ""` e SEM a chave `scala_minor` -- o
+      fail-closed de `_jar_facts`: um jar que nao declara Scala no nome pode ser
+      Java puro, e inventar `0` faria uma regra de piso acusar um artefato que
+      nunca teve versao de Scala nenhuma para estar errada;
+    * `SF-SPARK4-004` fica MUDA por isso, mesmo em Glue 6.0 / Spark 4.0, onde ela
+      esta no escopo. `attrs.scala_minor < 13` sobre caminho ausente vira
+      `ExprError`, logo `False`. `SF-ERR-002` dispara sozinha, e o achado unico e
+      a prova de que a condicao dela e a PRESENCA de um JAR customizado, nao um
+      limiar sobre a versao de Scala.
+
+  O que a regra NAO afirma, e esta fixture nao mede: qual versao do AWS SDK esta
+  empacotada dentro do JAR. Isso nao esta no nome do arquivo e nenhum extrator a
+  leu -- comparar com a 2.44.6 do Glue 6.0 e o primeiro passo de
+  `proposed_change`, e e o operador que o executa.
+runtime:
+  glue: "6.0"
+  spark: "4.0.0"
+  python: "3.11"
+  iceberg: "1.9.1"
+expects_kinds:
+  - error.signature_match
+  - mig.jar_binary
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-002

@@ -1,0 +1,50 @@
+name: iceberg_declarado_diferente_do_runtime
+proves: >
+  O POSITIVO de `SF-ICE-009`, e ele fecha METADE do veto `V-ICE-2`.
+
+  O job declara `iceberg-spark-runtime-3.5_2.12:1.4.2` e o Glue 5.1 embarca
+  1.10.0. Duas versoes no mesmo job, e nenhum `--user-jars-first` dizendo qual
+  vence.
+
+  O QUE ESTE CORPUS PROVA SOBRE A FUSAO: nenhum dos dois lados existe sozinho. A
+  versao DECLARADA vem da coordenada Maven dentro de `spark.jars.packages`
+  (`tf.spark_conf`); a EMBARCADA vem de `env.runtime_signal`, que
+  `runtime_detect` deriva do `glue_version` do PROPRIO Terraform -- e nao do
+  `meta.yaml`, porque derivar do meta faria o golden depender do arquivo de
+  metadados em vez do artefato.
+
+  DUAS TENTATIVAS DE LER A VERSAO EMBARCADA FALHARAM ANTES, e as duas do mesmo
+  jeito -- lendo fact que nao existe. Primeiro `env.runtime`, kind que nunca
+  existiu; depois `env.runtime_signal` com `component: iceberg`, e MEDIDO:
+  `detect_runtime` emite sinal so para `spark`. A versao de Iceberg vive em
+  `RuntimeContext.iceberg` e NAO vira fact.
+
+  A terceira le a mesma FONTE que `detect_runtime` usa -- a `GLUE_MATRIX` -- a
+  partir do `glue_version` que `tf.attribute` ja traz. Sem mudar assinatura de
+  `fuse` e sem mover golden nenhum.
+
+  O PREDICADO `order_declared` E DERIVADO, e a regra 33 e por que: `where`
+  compara igualdade, e "a ordem nao esta declarada" junta DOIS estados do
+  ternario -- `false` (lido e a chave ausente) e `null` (nao lido). A primeira
+  versao da regra disparava so no `null`, deixando de fora o caso mais comum,
+  que e exatamente o desta fixture (`user_jars_first: false`).
+
+  METADE DO `V-ICE-2` CONTINUA ABERTA, e a fixture nao a esconde:
+  `spark.jars.packages` e DECLARACAO, nao classpath em execucao. Saber qual
+  versao esta de fato carregada exigiria um dump de classpath, que nenhum
+  artefato deste motor traz.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - fusion.summary
+  - iceberg.library_conflict
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-ICE-009

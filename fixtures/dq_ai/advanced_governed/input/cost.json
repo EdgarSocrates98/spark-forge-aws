@@ -1,0 +1,8 @@
+{
+  "query_id": "sample-001",
+  "cost": 0.42,
+  "currency": "USD",
+  "cost_basis": "observed_athena_query",
+  "observed_at": "2026-09-26T12:00:00Z",
+  "bytes_scanned": 1048576
+}

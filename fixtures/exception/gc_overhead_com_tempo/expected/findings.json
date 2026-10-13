@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-ERR-013",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Coleta de lixo dominando o executor -- é a RAZÃO de tempo que decide, não o tamanho do heap",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "signature_id": "ERR-SPARK-007"
+    },
+    "evidence": [
+      "f_96c028",
+      "f_6726ec"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job LANÇOU `GC overhead limit exceeded`, e o event log traz o tempo de coleta de lixo do stage. Essa mensagem não diz que faltou memória — diz que a JVM passou a maior parte do tempo coletando e recuperando pouco. O conjunto VIVO quase preenche o heap, e o coletor roda sem parar.\n\nÉ por isso que a medida que decide é uma RAZÃO — tempo em coleta sobre tempo de executor —, e não o tamanho do heap. Um heap grande com conjunto vivo proporcionalmente grande falha igual, e é por isso que subir memória aqui costuma adiar em vez de resolver: o sintoma volta assim que a entrada cresce.\n\n**Esta regra é irmã de `SF-ERR-012` e não a mesma.** Lá o heap estourou numa alocação; aqui ele não estourou — o custo de mantê-lo é que passou a dominar. Os dois consertos divergem: um reduz o dado por task, o outro reduz o conjunto vivo.",
+    "proposed_change": [
+      "Ler a fração do tempo de executor gasta em coleta de lixo no stage que falhou — é a razão que decide, e o valor absoluto não decide nada.",
+      "Reduzir o conjunto vivo: descartar cache que já não é lido, e estreitar as colunas carregadas pelo stage.",
+      "Reduzir a criação de objetos curtos por registro, onde o job os constrói em volume.",
+      "Subir heap apenas quando o conjunto vivo for genuinamente grande e o coletor simplesmente não tiver espaço."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir heap sem medir a razão de coleta compra tempo e devolve o problema assim que a entrada crescer.",
+      "Aumentar `spark.memory.fraction` é desaconselhado pela documentação do Apache, que pede para deixá-lo no default e avisa que subi-lo exige ajustar a coleta de lixo junto.",
+      "Descartar cache que OUTRO ponto do job relê troca pressão de memória por releitura, e o job fica mais lento sem que a coleta melhore."
+    ],
+    "tradeoffs": [
+      "Menos cache reduz o conjunto vivo e aumenta releitura; o ponto de equilíbrio depende de quantas vezes o dado é lido, e nada aqui mede isso."
+    ],
+    "validation": [
+      "Fração do tempo de executor em coleta de lixo no mesmo stage, antes e depois, sobre o MESMO volume de entrada — é a medida que a mudança move.",
+      "Ausência de `GC overhead limit exceeded` no run seguinte.",
+      "Nenhum eixo de dado é exigido se a mudança for de cache ou de memória, e declarar isso é parte da validação. Se a mudança estreitar as colunas carregadas, o schema de saída precisa ser comparado — coluna que deixa de ser lida e era escrita muda o resultado."
+    ],
+    "rollback": [
+      "Restaurar o cache descartado ou reverter o valor de memória. Se colunas deixaram de ser carregadas, a saída precisa ser comparada antes de o código anterior ser descartado."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/gc_overhead_limit.json` (`ERR-SPARK-007`). Ela registra `spark.memory.fraction` com default `0.6` de (heap - 300MB) e a recomendação de mantê-lo, que os `risks` desta regra citam.\n"
+      }
+    ],
+    "action": {
+      "kind": "code.change_persistence",
+      "target": "spark.cache.live_set",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  }
+]

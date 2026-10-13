@@ -1,0 +1,3 @@
+description: >-
+  Codigo (.py, .tf, .sql) pela extensao e quatro artefatos coletados pelo manifesto, recortados de pyspark/python_udf, infra_code/fgac_com_fta_no_mesmo_job, fusion/select_star_parquet, eventlog/skewed_stage, iceberg/small_files e glue_job_run/correlated.
+args: []

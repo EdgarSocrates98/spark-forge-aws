@@ -1,0 +1,9 @@
+description: >-
+  O --set repete o valor que o Terraform ja declara. Os dois lados passam pelo
+  mesmo pipeline, entao a diferenca e vazia: nada que o proprio simulate
+  rederiva pode aparecer so de um lado.
+facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
+sets: ["tf:max_concurrent_runs=3"]
+expect:
+  disappeared: []
+  appeared: []

@@ -1,0 +1,68 @@
+[
+  {
+    "op": "start"
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "B",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job declara FGAC e JAR adicional no mesmo aws_glue_job",
+          "evidence_refs": [
+            "f_55f5ac",
+            "f_6ab9b2"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "objections": [
+        {
+          "target_claim": "@1.claims.0",
+          "statement": "sob FGAC a AWS bloqueia JAR adicional; declarar o GraphFrames reabre o bloqueio",
+          "evidence_refs": [
+            "f_55f5ac"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 2,
+      "concede": true
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "B",
+      "round": 2
+    }
+  },
+  {
+    "op": "next"
+  }
+]

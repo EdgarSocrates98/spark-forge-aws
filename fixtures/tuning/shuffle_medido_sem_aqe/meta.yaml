@@ -1,0 +1,7 @@
+name: shuffle_medido_sem_aqe
+runtime:
+  glue: '3.0'
+proves: 'O MESMO shuffle, em Glue 3.0 (Spark 3.1.1). O numero derivado e identico -- a conta
+  nao muda -- e o significado muda: sem AQE default, dez e o numero FINAL de particoes, e
+  nada o ajusta depois com estatistica real. Recomendar ''confie no AQE'' aqui seria erro
+  de versao.'

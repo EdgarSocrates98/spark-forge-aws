@@ -1,0 +1,4 @@
+name: speculation_particao
+runtime:
+  glue: '5.0'
+proves: 'O executor 2 e lento nos dois stages, mas cada task lenta leu 3x mais shuffle remoto: a particao explica, e a recusa e `lentidao_da_particao`.'

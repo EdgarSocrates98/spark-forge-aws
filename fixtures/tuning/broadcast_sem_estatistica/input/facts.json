@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "plan.join_side_stats",
+    "subject": {"type": "plan_node", "file": "plan.txt", "line": 2, "symbol": "Join Inner", "node_id": 0, "operator": "Join", "relation": ""},
+    "measures": {"left_bytes": 9223372036854775807.0, "right_bytes": 9223372036854775807.0},
+    "attrs": {"join_type": "Inner", "left_has_stats": false, "right_has_stats": false, "left_node": "Relation", "right_node": "Relation"},
+    "provenance": {"extractor": "spark_plan@0.1.0", "artifact": "plan.txt"}
+  }
+]

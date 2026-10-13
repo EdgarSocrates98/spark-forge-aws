@@ -1,0 +1,19 @@
+== Optimized Logical Plan ==
+Join Inner, (cliente_id#1 = id#5), Statistics(sizeInBytes=1.2 GiB)
+:- Filter isnotnull(cliente_id#1), Statistics(sizeInBytes=1.1 GiB)
+:  +- Relation db.pedidos[cliente_id#1,valor#2] parquet, Statistics(sizeInBytes=1.1 GiB)
++- Filter isnotnull(id#5), Statistics(sizeInBytes=24.0 MiB)
+   +- Relation db.clientes[id#5,nome#6] parquet, Statistics(sizeInBytes=24.0 MiB)
+
+== Physical Plan ==
+*(5) SortMergeJoin [cliente_id#1], [id#5], Inner
+:- *(2) Sort [cliente_id#1 ASC NULLS FIRST], false, 0
+:  +- Exchange hashpartitioning(cliente_id#1, 200), ENSURE_REQUIREMENTS, [plan_id=10]
+:     +- *(1) Filter isnotnull(cliente_id#1)
+:        +- *(1) ColumnarToRow
+:           +- FileScan parquet db.pedidos[cliente_id#1,valor#2] Batched: true, DataFilters: [isnotnull(cliente_id#1)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3://bucket-sintetico/pedidos], PartitionFilters: [], PushedFilters: [IsNotNull(cliente_id)], ReadSchema: struct<cliente_id:int,valor:double>
++- *(4) Sort [id#5 ASC NULLS FIRST], false, 0
+   +- Exchange hashpartitioning(id#5, 200), ENSURE_REQUIREMENTS, [plan_id=11]
+      +- *(3) Filter isnotnull(id#5)
+         +- *(3) ColumnarToRow
+            +- FileScan parquet db.clientes[id#5,nome#6] Batched: true, DataFilters: [isnotnull(id#5)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3://bucket-sintetico/clientes], PartitionFilters: [], PushedFilters: [IsNotNull(id)], ReadSchema: struct<id:int,nome:string>

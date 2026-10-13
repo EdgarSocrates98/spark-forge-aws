@@ -1,0 +1,15 @@
+{
+  "slo": [{
+    "name": "transport-slo",
+    "metric": "iterator_age_ms",
+    "target": 1500,
+    "operator": "lte",
+    "unit": "ms",
+    "window": "5m",
+    "source": "kinesis"
+  }],
+  "finops": [],
+  "security": [],
+  "serving": [],
+  "lakehouse": []
+}

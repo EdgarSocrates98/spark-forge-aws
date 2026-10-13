@@ -1,0 +1,11 @@
+description: >-
+  O mesmo SF-PY-004 com o benchmark de regression_slower: SF-BENCH-002 (tempo
+  piorou) refuta o eixo de tempo.
+findings: [fixtures/pyspark/action_in_loop/expected/findings.json]
+facts:
+  - fixtures/pyspark/action_in_loop/expected/facts.json
+  - fixtures/bench/regression_slower/expected/facts.json
+after_facts: [fixtures/pyspark/action_in_loop/expected/facts.json]
+applied: [SF-PY-004]
+expect:
+  - {rule_id: SF-PY-004, kind: axis, axis: runtime.wall_clock, outcome: refuted}

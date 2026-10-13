@@ -1,0 +1,156 @@
+[
+  {
+    "id": "f_0dc03a",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 34,
+      "node_count": 5,
+      "file_scan_count": 2,
+      "exchange_count": 0,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": true,
+      "aqe_final_plan": false,
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "6c8529d402889c15b4995c911642ed6734071a6eb226c888db635913e3e27e8a",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_c30bcc",
+    "schema_version": 1,
+    "kind": "plan.aqe",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 32,
+      "symbol": "(5) AdaptiveSparkPlan",
+      "node_id": 5,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "is_final_plan": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "6c8529d402889c15b4995c911642ed6734071a6eb226c888db635913e3e27e8a",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_a583e3",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 16,
+      "symbol": "(2) BatchScan glue_catalog.curated.itens",
+      "node_id": 2,
+      "operator": "BatchScan",
+      "relation": "glue_catalog.curated.itens"
+    },
+    "measures": {
+      "read_schema_columns": 2,
+      "output_columns": 2,
+      "referenced_columns": 2
+    },
+    "attrs": {
+      "relation": "glue_catalog.curated.itens",
+      "format": "parquet",
+      "scan_api": "v2_batch_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": false,
+      "partition_filters_empty": "unknown",
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "6c8529d402889c15b4995c911642ed6734071a6eb226c888db635913e3e27e8a",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_50524f",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 9,
+      "symbol": "(1) BatchScan glue_catalog.curated.pedidos",
+      "node_id": 1,
+      "operator": "BatchScan",
+      "relation": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 3,
+      "referenced_columns": 2,
+      "pushed_filter_count": 1
+    },
+    "attrs": {
+      "relation": "glue_catalog.curated.pedidos",
+      "format": "parquet",
+      "scan_api": "v2_batch_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": false,
+      "partition_filters_empty": "unknown",
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "6c8529d402889c15b4995c911642ed6734071a6eb226c888db635913e3e27e8a",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_56fabf",
+    "schema_version": 1,
+    "kind": "plan.join",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 22,
+      "symbol": "(3) SortMergeJoin",
+      "node_id": 3,
+      "operator": "SortMergeJoin",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "strategy": "SortMergeJoin",
+      "join_type": "Inner",
+      "build_side": "",
+      "has_condition": false,
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "6c8529d402889c15b4995c911642ed6734071a6eb226c888db635913e3e27e8a",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,1 @@
+[{"stream_name":"clicks-stream","shards":[{"shard_id":"shard-000","iterator_age_ms":1200,"timestamp":1790942401}]},{"stream_name":"clicks-stream","shards":[{"shard_id":"shard-000","iterator_age_ms":2500,"timestamp":1790942412}]}]

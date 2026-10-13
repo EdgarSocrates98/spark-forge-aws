@@ -1,0 +1,7 @@
+{
+  "skill_name": "review-glue-streaming",
+  "evals": [
+    {"id": "rtm", "prompt": "Review Glue RTM dump.", "expected_output": "separate runtime restrictions and observed facts.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "runtime"]},
+    {"id": "capacity", "prompt": "Review missing task capacity evidence.", "expected_output": "do not infer capacity from worker count.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "capacity"]}
+  ]
+}

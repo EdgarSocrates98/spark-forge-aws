@@ -1,0 +1,6 @@
+name: false_certainty
+mode: transcript
+question: q-abst
+proves: >
+  AT-004: pergunta de abstencao respondida com numero. abstention
+  false_certainty; o campo answer fica nulo, porque o eixo e outro.

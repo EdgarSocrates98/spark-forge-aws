@@ -1,0 +1,26 @@
+schema_version: 1
+suite_id: decision-plane-seed
+cases:
+  - {id: quality-glue-routing, source: quality, deterministic_available: true, current_route: tier_0_deterministic, expected_status: accepted, expected_route: tier_0_deterministic, expected_comparison: agreement}
+  - {id: quality-critical-budget, source: quality, current_route: tier_3_cheap_local, budget: {max_total_tokens: 8000, max_tool_calls: 10, tokens_used: 9000}, expected_status: unresolved, expected_comparison: coverage_gap}
+  - {id: quality-planner-partial, source: quality, risk_level: sensitive, current_route: tier_5_premium, expected_status: accepted, expected_route: tier_5_premium, expected_comparison: agreement}
+  - {id: quality-workspace-unresolved, source: quality, evidence_kinds: [specialist], current_route: tier_4_specialist, expected_status: accepted, expected_route: tier_4_specialist, expected_comparison: agreement}
+  - {id: quality-evidence, source: quality, current_route: tier_3_cheap_local, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: agreement}
+  - {id: quality-authority-conflict, source: quality, risk_level: sensitive, current_route: tier_5_premium, expected_status: accepted, expected_route: tier_5_premium, expected_comparison: agreement}
+  - {id: quality-risk-and-confidence, source: quality, risk_level: sensitive, current_route: tier_5_premium, expected_status: accepted, expected_route: tier_5_premium, expected_comparison: agreement}
+  - {id: quality-unresolved-reference, source: quality, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: coverage_gap}
+  - {id: quality-confidence-gap, source: quality, evidence_kinds: [specialist], current_route: tier_4_specialist, expected_status: accepted, expected_route: tier_4_specialist, expected_comparison: agreement}
+  - {id: quality-critical-knowledge, source: quality, current_route: tier_3_cheap_local, budget: {max_total_tokens: 8000, max_tool_calls: 10, tokens_used: 9000}, expected_status: unresolved, expected_comparison: coverage_gap}
+  - {id: quality-code-and-knowledge, source: quality, evidence_kinds: [specialist], current_route: tier_4_specialist, expected_status: accepted, expected_route: tier_4_specialist, expected_comparison: agreement}
+  - {id: quality-planner-debate, source: quality, risk_level: sensitive, current_route: tier_5_premium, expected_status: accepted, expected_route: tier_5_premium, expected_comparison: agreement}
+  - {id: quality-explicit-unavailable, source: quality, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: coverage_gap}
+  - {id: quality-bounded-payload, source: quality, current_route: tier_3_cheap_local, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: agreement}
+  - {id: quality-missing-evidence, source: quality, evidence_kinds: [specialist], current_route: tier_4_specialist, expected_status: accepted, expected_route: tier_4_specialist, expected_comparison: agreement}
+  - {id: graph-success, source: federated_graph, deterministic_available: true, current_route: tier_0_deterministic, expected_status: accepted, expected_route: tier_0_deterministic, expected_comparison: agreement}
+  - {id: graph-conflict, source: federated_graph, risk_level: sensitive, current_route: tier_5_premium, expected_status: accepted, expected_route: tier_5_premium, expected_comparison: agreement}
+  - {id: graph-endpoint-absent, source: federated_graph, current_route: tier_3_cheap_local, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: agreement}
+  - {id: graph-truncation, source: federated_graph, evidence_kinds: [specialist], expected_status: accepted, expected_route: tier_4_specialist, expected_comparison: coverage_gap}
+  - {id: graph-freshness-stale, source: federated_graph, evidence_kinds: [specialist], current_route: tier_4_specialist, expected_status: accepted, expected_route: tier_4_specialist, expected_comparison: agreement}
+  - {id: graph-freshness-unknown, source: federated_graph, current_route: tier_3_cheap_local, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: agreement}
+  - {id: transcript-synthetic, source: provider_transcript, current_route: tier_3_cheap_local, provider_usage: {provider_tokens: {input_tokens: 23, output_tokens: 11}, transcript_sha256: sha256:synthetic-transcript-v1}, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: agreement, expected_tokens_unresolved: false}
+  - {id: transcript-absent, source: provider_transcript, current_route: tier_3_cheap_local, expected_status: accepted, expected_route: tier_3_cheap_local, expected_comparison: agreement, expected_tokens_unresolved: true}

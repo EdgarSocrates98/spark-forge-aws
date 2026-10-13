@@ -1,0 +1,16 @@
+name: databricks_divergent_spark
+proves: >
+  O event log diz Spark 3.5.2 e a flag declara Databricks Runtime 15.4, que a
+  matriz liga a Spark 3.5.0. A leitura direta vence a derivacao, e a
+  diferenca vira divergencia registrada e SF-ENV-001, nunca resolucao
+  silenciosa.
+runtime:
+  databricks: "15.4"
+  spark: "3.5.2"
+expects_kinds:
+  - env.platform
+  - env.runtime_signal
+  - databricks.photon
+expects_rules:
+  - SF-ENV-001
+  - SF-ENV-006

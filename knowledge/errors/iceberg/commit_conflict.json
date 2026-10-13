@@ -1,0 +1,22 @@
+{
+  "id": "ERR-ICE-001",
+  "signature": "CommitFailedException: Commit failed: Table was updated concurrently",
+  "service": "iceberg",
+  "versions": ["1.x", "2.x"],
+  "symptoms": ["Concurrent commit conflict during write", "Snapshot out of date error"],
+  "likely_causes": ["Simultaneous write jobs committing to the same partition", "Long-running write overtaking shorter commit"],
+  "evidence_required": ["iceberg.commit_conflict", "iceberg.concurrent_writer"],
+  "diagnostic_steps": [
+    "Inspect Iceberg table snapshots and commit timestamps",
+    "Check write isolation mode (Serializable vs Snapshot)"
+  ],
+  "fixes": [
+    "Configure commit.retry.num-retries and commit.retry.min-wait-ms in table properties",
+    "Ensure writes to disjoint partitions or separate staging tables"
+  ],
+  "unsafe_fixes": ["Disabling concurrency checks in Spark session"],
+  "verification": "Re-run batch write with retry backoff enabled",
+  "rollback": "Clean uncommitted metadata files from table location",
+  "sources": ["https://iceberg.apache.org/docs/latest/spark-writes/"],
+  "last_verified": "2026-08-15"
+}

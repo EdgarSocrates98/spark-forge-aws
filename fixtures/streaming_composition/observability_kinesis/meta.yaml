@@ -1,0 +1,5 @@
+mode: observability
+transport_key: clicks-stream
+query_name: clicks-query
+expects_findings: []
+expects_kinds: [kinesis.analyzed, kinesis.shard, kinesis.stream, streaming.composition.analyzed, streaming.observability.link, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series]

@@ -1,0 +1,26 @@
+name: no_such_table_com_catalogo
+proves: >
+  O POSITIVO de `SF-ERR-019`. `NoSuchTableException`, com o dump do catalogo ao lado.
+
+  A excecao diz que o nome NAO RESOLVEU. Ela nao diz que a tabela nao existe, e
+  essa diferenca e a maior fonte de tempo perdido nesta classe: catalogo
+  errado, resource link ausente ou com nome diferente, e identidade que nao
+  pode descrever produzem a mesma mensagem.
+
+  O terceiro caso e o que mais engana -- a tabela aparece no console de quem
+  investiga e nao aparece para o job.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - catalog.analyzed
+  - catalog.table_schema
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules:
+  - SF-ERR-019

@@ -1,0 +1,11 @@
+{
+  "nodes": {
+    "model.synthetic.orders": {
+      "metadata": {"type": "BASE TABLE", "schema": "analytics", "name": "orders"},
+      "columns": {
+        "order_id": {"type": "BIGINT", "index": 0},
+        "amount": {"type": "DECIMAL", "index": 1}
+      }
+    }
+  }
+}

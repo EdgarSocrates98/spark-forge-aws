@@ -1,0 +1,93 @@
+{
+  "_comment": "Fonte da verdade do que esta vendorizado em vendor/. scripts/vendor_caveman.py --check compara a arvore em disco contra vendor/MANIFEST.sha256, e o modo default reconstroi a arvore a partir destes pins. Nao editar a mao sem rodar o script.",
+  "vendored": [
+    {
+      "name": "caveman",
+      "dest": "caveman",
+      "repo": "https://github.com/JuliusBrussee/caveman",
+      "sha": "ec83e5bace4c20484d704dea21e12fc4eb94e9aa",
+      "retrieved": "2026-08-07",
+      "license": "MIT",
+      "author": "Julius Brussee",
+      "keep": [
+        ".claude-plugin",
+        ".codex",
+        "agents",
+        "commands",
+        "dist",
+        "plugins",
+        "skills",
+        "src",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        "INSTALL.md",
+        "LICENSE",
+        "README.md",
+        "SECURITY.md",
+        "gemini-extension.json",
+        "package.json",
+        "skills-lock.json"
+      ],
+      "patches": [
+        {
+          "copy": "plugins/caveman/skills/caveman-compress/scripts",
+          "to": "skills/caveman-compress/scripts",
+          "why": "skills/caveman-compress/SKILL.md manda rodar `python3 -m scripts` a partir do diretorio do proprio SKILL.md, mas upstream so publica esses scripts sob plugins/caveman/. Sem esta copia a skill carrega no plugin e falha ao executar."
+        }
+      ]
+    },
+    {
+      "name": "cavekit",
+      "dest": "cavekit",
+      "repo": "https://github.com/JuliusBrussee/cavekit",
+      "sha": "c322f0bb6db82163041930467f3ce32754d42827",
+      "retrieved": "2026-08-07",
+      "license": "MIT",
+      "author": "Julius Brussee",
+      "keep": [
+        ".claude-plugin",
+        "commands",
+        "skills",
+        "CHANGELOG.md",
+        "FORMAT.md",
+        "LICENSE",
+        "README.md",
+        "SECURITY.md",
+        "UPGRADE.md",
+        "plugin.json"
+      ],
+      "patches": []
+    }
+  ],
+  "_fora_do_repositorio": "Duas pecas do mesmo autor NAO entram aqui, e nao ha package.json neste repositorio: o caminho padrao nao pode depender de `npm install` nem de `npx`.",
+  "nao_vendorizado": [
+    {
+      "name": "cavemem",
+      "repo": "https://github.com/JuliusBrussee/cavemem",
+      "package": "cavemem",
+      "license": "MIT",
+      "author": "Julius Brussee",
+      "why": "memoria entre sessoes. Depende de better-sqlite3, modulo nativo compilado por plataforma: bytes vendorizados nao rodariam fora da maquina que os gerou, e vendorizar prebuilds significaria commitar binario para win32/linux/darwin x x64/arm64. Quem quiser instala global: `npm install -g cavemem && cavemem install`.",
+      "nota": "Nao economiza token: o SessionStart dele INJETA contexto da sessao anterior. E memoria, nao compressao."
+    },
+    {
+      "name": "caveman-code",
+      "repo": "https://github.com/JuliusBrussee/caveman",
+      "package": "@juliusbrussee/caveman-code",
+      "license": "MIT",
+      "author": "Julius Brussee",
+      "why": "agente de terminal proprio, 15 MB desempacotados com better-sqlite3 nativo na arvore. Roda FORA do Claude Code, entao nao participa da economia de token deste repositorio. Quem quiser instala global: `npm install -g @juliusbrussee/caveman-code`.",
+      "nota": "Nao e componente do projeto: e um cliente alternativo."
+    },
+    {
+      "name": "caveman-shrink",
+      "repo": "https://github.com/JuliusBrussee/caveman",
+      "package": "caveman-shrink",
+      "license": "MIT",
+      "author": "Julius Brussee",
+      "why": "ESTA vendorizado, em vendor/caveman/src/mcp-servers/caveman-shrink/ (zero dependencias), mas NAO esta ligado. Proxy MCP que comprime o campo `description` do catalogo de tools. Medido contra os 41 tools do sparkforge em 2026-08-07: 146438 -> 146295 bytes, 0.1%. As regras dele cortam artigo e filler em INGLES; as descricoes deste catalogo sao em portugues. Nao paga o risco de por um proxy no caminho do MCP.",
+      "nota": "Reavaliar se o catalogo passar a ter descricao em ingles."
+    }
+  ]
+}

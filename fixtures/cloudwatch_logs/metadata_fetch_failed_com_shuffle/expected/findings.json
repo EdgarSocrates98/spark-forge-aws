@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-ERR-021",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Saída de shuffle perdida com o executor -- o stage inteiro é recomputado",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_mff1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_mff1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-011"
+    },
+    "evidence": [
+      "f_d18502",
+      "f_7dcad7"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O stage que **lê** o shuffle não encontrou a localização de saída, e o stage que a escreveu tinha reportado sucesso. O bloco foi embora com o executor que o produziu.\n\n**O custo não é a falha: é a recomputação.** O map stage inteiro roda de novo, e o preço disso é proporcional aos bytes que ele tinha escrito — que é exatamente o que `spark.stage.shuffle` mede, e por isso é o companheiro desta regra.\n\n**É diferente de uma falha de fetch de um bloco.** Ali uma conexão falhou; aqui o executor inteiro sumiu, e é por isso que `ERR-SPARK-001` e `ERR-SPARK-011` são assinaturas separadas.",
+    "proposed_change": [
+      "Ler os bytes de shuffle escritos pelo stage: é a medida do que a recomputação custa, e ela é o que decide se vale reduzir o shuffle ou manter o executor vivo.",
+      "Conferir se houve perda de executor entre o map stage e o reduce stage. Os dois eventos juntos contam uma história que nenhum conta sozinho.",
+      "Reduzir o shuffle, quando ele for grande: menos bytes escritos é menos recomputação por perda.",
+      "Tratar a perda de executor em si quando houver uma -- esta exceção é consequência dela."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir retentativas recomputa o map stage a cada uma, e o custo multiplica em vez de somar.",
+      "Desligar alocação dinâmica sem medir paga capacidade ociosa pelo run inteiro para evitar um evento que pode ser raro.",
+      "Reduzir o shuffle mexendo na chave ou na distribuição pode mudar o resultado, e aí o eixo de dado passa a ser exigido."
+    ],
+    "tradeoffs": [
+      "Manter o executor vivo entre os dois stages evita a recomputação e paga capacidade parada no intervalo."
+    ],
+    "validation": [
+      "O reduce stage completa sem recomputar o map stage.",
+      "Bytes de shuffle escritos, antes e depois, sobre a **mesma** entrada.",
+      "Se a redução mexeu na chave de particionamento, comparação de contagem e de agregado por chave -- a redistribuição pode mudar o resultado."
+    ],
+    "rollback": [
+      "Reverter a mudança de alocação ou de shuffle. Nenhum eixo de dado é exigido enquanto a mudança for de capacidade, e declarar isso é parte da validação."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/metadata_fetch_failed.json`."
+      }
+    ],
+    "action": {
+      "kind": "shuffle.reduce_bytes",
+      "target": "spark.shuffle.output_survival",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.partition_count",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  }
+]

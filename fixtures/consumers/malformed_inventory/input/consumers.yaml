@@ -1,0 +1,8 @@
+consumers:
+  - table: glue_catalog.curated.pedidos
+    service: athena
+  - table: glue_catalog.curated.pedidos
+    service: athena
+  - service: redshift
+  - table: glue_catalog.curated.itens
+  - "isto-nao-e-um-objeto"

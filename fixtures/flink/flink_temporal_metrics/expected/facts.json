@@ -1,0 +1,209 @@
+[
+  {
+    "id": "f_4b1fa6",
+    "schema_version": 1,
+    "kind": "flink.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "checkpoint_count": 1,
+      "fact_count": 7
+    },
+    "attrs": {
+      "artifact": "flink"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_e356ce",
+    "schema_version": 1,
+    "kind": "flink.checkpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "duration_ms": 840
+    },
+    "attrs": {
+      "checkpoint_id": 12,
+      "status": "COMPLETED",
+      "type": null,
+      "externalized": null
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_79b12f",
+    "schema_version": 1,
+    "kind": "flink.job",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders",
+      "runtime_version": "1.20.1"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_59471e",
+    "schema_version": 1,
+    "kind": "flink.metric",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "backpressuredRatio",
+      "snippet": ""
+    },
+    "measures": {
+      "value": 0.12
+    },
+    "attrs": {
+      "name": "backpressuredRatio",
+      "observed_at": "2026-10-03T00:00:00Z",
+      "unit": "Ratio",
+      "stat": "Average",
+      "scope": "operator",
+      "operator_id": "aggregate"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_bf3158",
+    "schema_version": 1,
+    "kind": "flink.metric",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "busyTimeMsPerSecond",
+      "snippet": ""
+    },
+    "measures": {
+      "value": 750
+    },
+    "attrs": {
+      "name": "busyTimeMsPerSecond",
+      "observed_at": "2026-10-03T00:00:00Z",
+      "unit": "MillisecondsPerSecond",
+      "stat": "Average",
+      "scope": "operator",
+      "operator_id": "aggregate"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_9b5e47",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "source_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_9b5e47",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sink_metrics_missing"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  },
+  {
+    "id": "f_9b5e47",
+    "schema_version": 1,
+    "kind": "flink.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "metric_timestamp_missing"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
+      "extractor": "flink_streaming@0.1.0",
+      "domain": "flink"
+    }
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "task": {
+    "name": "orders-full-cdc",
+    "migration_type": "full-load-and-cdc",
+    "status": "RUNNING",
+    "source_engine": "postgres",
+    "target_engine": "kafka",
+    "validation_enabled": true,
+    "cdc_start_position": "0/16B6C50",
+    "settings": {"ControlTablesSettings": {"ControlSchema": "awsdms_control"}}
+  },
+  "source_endpoint": {"engine": "postgres", "server": "orders.example", "port": 5432},
+  "target_endpoint": {"engine": "kafka", "server": "msk.example", "port": 9092},
+  "table_mappings": {"rules": [{"rule_type": "selection", "rule_action": "include", "object_locator": {"schema_name": "public", "table_name": "orders"}}]},
+  "stats": [{"schema": "public", "table": "orders", "full_load_rows": 10, "cdc_changes": 4, "latency_seconds": 2}]
+}

@@ -1,0 +1,15 @@
+== Physical Plan ==
+* Project (2)
++- Scan parquet analytics.evento_bruto (1)
+
+
+(1) Scan parquet analytics.evento_bruto
+Output [80]: [id#1, ts#2, tipo#3, origem#4, payload#5, versao#6, ingest_dt#7, particao#8, chave#9, valor#10, atributo_11#11, atributo_12#12, atributo_13#13, atributo_14#14, atributo_15#15, atributo_16#16, atributo_17#17, atributo_18#18, atributo_19#19, atributo_20#20, atributo_21#21, atributo_22#22, atributo_23#23, atributo_24#24, ... 56 more fields]
+Batched: true
+Location: InMemoryFileIndex [s3://lake/analytics/evento_bruto]
+PushedFilters: [IsNotNull(id)]
+ReadSchema: struct<id:bigint,ts:timestamp,tipo:string,origem:string,payload:string,versao:int,ingest_dt:string,particao:string,chave:string,valor:double,atributo_11:string,atributo_12:string,atributo_13:string,atributo_14:string,atributo_15:string,atributo_16:string,atributo_17:string,atributo_18:string,atributo_19:string,atributo_20:string,atributo_21:string,atributo_22:string,atributo_23:string,atributo_24:string,... 56 more fields>
+
+(2) Project [codegen id : 1]
+Output [2]: [id#1, ts#2]
+Input [80]: [id#1, ts#2, tipo#3, origem#4, payload#5, versao#6, ingest_dt#7, particao#8, chave#9, valor#10, atributo_11#11, atributo_12#12, atributo_13#13, atributo_14#14, atributo_15#15, atributo_16#16, atributo_17#17, atributo_18#18, atributo_19#19, atributo_20#20, atributo_21#21, atributo_22#22, atributo_23#23, atributo_24#24, ... 56 more fields]

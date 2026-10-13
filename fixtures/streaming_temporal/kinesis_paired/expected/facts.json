@@ -1,0 +1,358 @@
+[
+  {
+    "id": "f_a55de2",
+    "schema_version": 1,
+    "kind": "env.runtime_signal",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "measures": {
+      "distinct_versions": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "component": "spark",
+      "resolved": "3.5.6",
+      "observed": [
+        "3.5.6"
+      ],
+      "source": "resolved",
+      "spark_minor": 3.5
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
+    "id": "f_a61dc6",
+    "schema_version": 1,
+    "kind": "kinesis.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kinesis"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "artifact_sha256": "c671d6d51d885757e54296ac9eb0eb5463af3a89def38ad1c571e3d22e125f28",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_61bf20",
+    "schema_version": 1,
+    "kind": "kinesis.shard",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "timestamp": 1790942401,
+      "iterator_age_ms": 1200
+    },
+    "attrs": {
+      "shard_id": "shard-000"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "artifact_sha256": "c671d6d51d885757e54296ac9eb0eb5463af3a89def38ad1c571e3d22e125f28",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_43e9a8",
+    "schema_version": 1,
+    "kind": "kinesis.shard",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "timestamp": 1790942412,
+      "iterator_age_ms": 2500
+    },
+    "attrs": {
+      "shard_id": "shard-000"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "artifact_sha256": "c671d6d51d885757e54296ac9eb0eb5463af3a89def38ad1c571e3d22e125f28",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_1702ca",
+    "schema_version": 1,
+    "kind": "kinesis.stream",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "stream_name": "clicks-stream"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "artifact_sha256": "c671d6d51d885757e54296ac9eb0eb5463af3a89def38ad1c571e3d22e125f28",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_414eca",
+    "schema_version": 1,
+    "kind": "kinesis.stream",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "stream_name": "clicks-stream"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+      "artifact_sha256": "c671d6d51d885757e54296ac9eb0eb5463af3a89def38ad1c571e3d22e125f28",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_543223",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "temporal",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 10,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "temporal",
+      "table": null,
+      "query_name": "clicks-query",
+      "transport_key": "clicks-stream",
+      "max_skew_seconds": 3
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+        "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_dc9e64",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "artifact_sha256": "192459130dc8a9edd90f185a5ccb186a2aa017f9a487631145cc4c44db2de69a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_a27dc4",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "batch_duration_ms": 900,
+      "num_input_rows": 1000,
+      "input_rows_per_second": 100,
+      "processed_rows_per_second": 80
+    },
+    "attrs": {
+      "timestamp": "2026-10-02T12:00:00Z",
+      "query_id": "query-2",
+      "run_id": "run-2",
+      "query_name": "clicks-query"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "artifact_sha256": "192459130dc8a9edd90f185a5ccb186a2aa017f9a487631145cc4c44db2de69a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_76de4a",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "batch_duration_ms": 950,
+      "num_input_rows": 1100,
+      "input_rows_per_second": 110,
+      "processed_rows_per_second": 90
+    },
+    "attrs": {
+      "timestamp": "2026-10-02T12:00:10Z",
+      "query_id": "query-2",
+      "run_id": "run-2",
+      "query_name": "clicks-query"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "artifact_sha256": "192459130dc8a9edd90f185a5ccb186a2aa017f9a487631145cc4c44db2de69a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_4f72d9",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100,
+      "input_rows_per_second_last": 110,
+      "processed_rows_per_second_first": 80,
+      "processed_rows_per_second_last": 90
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 1,
+      "all_processed_below_input": true
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl",
+      "artifact_sha256": "192459130dc8a9edd90f185a5ccb186a2aa017f9a487631145cc4c44db2de69a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_6ac850",
+    "schema_version": 1,
+    "kind": "streaming.temporal.diagnostic",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "clicks-query<->clicks-stream",
+      "snippet": ""
+    },
+    "measures": {
+      "progress_observation_count": 2,
+      "transport_observation_count": 2,
+      "paired_observation_count": 2,
+      "progress_timestamped_count": 2,
+      "transport_timestamped_count": 2,
+      "max_skew_seconds": 2,
+      "max_transport_value": 2500,
+      "min_transport_value": 1200,
+      "comparable_progress_count": 2
+    },
+    "attrs": {
+      "query_name": "clicks-query",
+      "transport_key": "clicks-stream",
+      "transport_kinds": [
+        "kinesis"
+      ],
+      "transport_metrics": [
+        "iterator_age_ms"
+      ],
+      "processed_below_input_observed": true,
+      "all_paired_processed_below_input": true,
+      "transport_backlog_observed": true,
+      "temporal_window_complete": true,
+      "max_skew_seconds_declared": 3,
+      "link_kind": "declared_temporal_window",
+      "causal_inference": false,
+      "source_fact_ids": [
+        "f_43e9a8",
+        "f_61bf20",
+        "f_76de4a",
+        "f_a27dc4"
+      ],
+      "progress_window_start": "2026-10-02T12:00:00Z",
+      "progress_window_end": "2026-10-02T12:00:10Z"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\kinesis_paired\\input\\kinesis.json",
+        "fixtures\\streaming_temporal\\kinesis_paired\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_temporal@0.1.0"
+    }
+  }
+]

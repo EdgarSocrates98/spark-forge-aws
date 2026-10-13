@@ -1,0 +1,17 @@
+name: nomes_comuns_sem_import
+proves: >
+  O vocabulario tem DOIS niveis, e este arquivo e a prova do nivel de baixo.
+  `find` e metodo de `str`; `validate` e `degrees` sao identificadores de um
+  objeto do usuario. Sem import de GraphFrames no modulo, NENHUM deles vira
+  `graph.algorithm`: `algorithm_count` fica em zero.
+  Sem esta fixture, alguem "simplifica" o vocabulario de dois niveis para um
+  `frozenset` unico, a suite continua verde, e o motor passa a acusar grafo em
+  todo modulo que manipula string.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.module_analyzed
+expects_rules: []

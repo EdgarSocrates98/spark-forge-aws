@@ -1,0 +1,170 @@
+[
+  {
+    "id": "f_30491b",
+    "schema_version": 1,
+    "kind": "fusion.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "enriched_count": 0,
+      "unmatched_projection_count": 0,
+      "unmatched_predicate_count": 0,
+      "tables_known": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_3a65b3",
+    "schema_version": 1,
+    "kind": "glue.streaming.cross.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "rtm-valid",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "identity_not_literal",
+      "job_name": "rtm-valid",
+      "source_fact_ids": [
+        "f_222112",
+        "f_31491c",
+        "f_48f4b7"
+      ]
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "effective.json",
+        "main.tf"
+      ],
+      "extractor": "streaming_glue_cross@0.1.0"
+    }
+  },
+  {
+    "id": "f_48f4b7",
+    "schema_version": 1,
+    "kind": "glue.streaming.job",
+    "subject": {
+      "type": "source_location",
+      "file": "effective.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-valid",
+      "snippet": ""
+    },
+    "measures": {
+      "worker_count": 4
+    },
+    "attrs": {
+      "name": "rtm-valid",
+      "mode": "REAL_TIME",
+      "glue_version": "6.0",
+      "language": "SCALA"
+    },
+    "provenance": {
+      "artifact": "effective.json",
+      "artifact_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_960fc3",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "unresolved",
+      "snippet": ""
+    },
+    "measures": {
+      "run_count": 0,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "job_name": "rtm-valid",
+      "reason": "run_observation_missing",
+      "unresolved_fields": [
+        "glue_version",
+        "worker_count",
+        "worker_type"
+      ],
+      "source_fact_ids": [
+        "f_48f4b7"
+      ]
+    },
+    "provenance": {
+      "extractor": "streaming_glue_runtime@0.1.0",
+      "artifact": "<fusion>",
+      "source_fact_ids": [
+        "f_48f4b7"
+      ]
+    }
+  },
+  {
+    "id": "f_31491c",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 2,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "rtm-valid",
+      "literal": false,
+      "present": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_222112",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "col": 0,
+      "symbol": "aws_glue_job.rtm"
+    },
+    "measures": {
+      "attribute_count": 1
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "rtm"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

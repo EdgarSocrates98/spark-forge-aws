@@ -1,0 +1,42 @@
+{
+  "id": "ERR-SPARK-007",
+  "signature": "GC overhead limit exceeded",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The stage takes far longer than an earlier run over comparable input, then fails",
+    "Executor time is dominated by garbage collection rather than by work",
+    "Adding heap postpones the failure instead of removing it"
+  ],
+  "likely_causes": [
+    "The live set nearly fills the heap, so the collector runs constantly and recovers little",
+    "Cached data is holding memory the execution side needs",
+    "Many small objects per record, which multiplies collection work without multiplying data"
+  ],
+  "evidence_required": [
+    "spark.stage.gc",
+    "spark.stage.task_duration"
+  ],
+  "diagnostic_steps": [
+    "Read the share of executor time spent in garbage collection for the failing stage: this error is about the ratio, not about a single allocation",
+    "Check what the job caches and whether it is still needed at that point",
+    "Read the effective spark.memory.fraction, whose Spark default is 0.6 of heap minus 300MB for execution and storage"
+  ],
+  "fixes": [
+    "Reduce the live set: drop caches that are no longer read, and narrow the columns carried through the stage",
+    "Raise heap when the live set is genuinely large and the collector simply lacks room",
+    "Reduce object churn per record where the job builds many short-lived objects"
+  ],
+  "unsafe_fixes": [
+    "Raising heap without measuring the collection ratio, which buys time and returns as soon as the input grows",
+    "Raising spark.memory.fraction, which the Spark documentation recommends leaving at its default and which requires JVM garbage collection tuning alongside"
+  ],
+  "verification": "Share of executor time in garbage collection for the same stage, before and after, over the same input volume",
+  "rollback": "Revert the memory override or restore the cache that was dropped; neither changes data",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

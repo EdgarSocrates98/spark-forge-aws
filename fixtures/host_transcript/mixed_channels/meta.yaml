@@ -1,0 +1,7 @@
+name: mixed_channels
+mode: transcript
+question: q-mcp
+proves: >
+  AT-010 e AT-011: analyze_pyspark por Bash (com prefixo rtk e cadeia &&),
+  judge pelos dois canais, e um ls que cai em other. Um tool_result com
+  is_error true conta em tool_errors.

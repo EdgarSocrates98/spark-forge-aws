@@ -1,0 +1,5 @@
+{
+  "name": "ck",
+  "description": "Cavekit — compressed spec-driven dev. Full loop (grill → spec → research → review → build) over one SPEC.md file: three core commands + four reach-for. No sub-agents. Caveman encoding. Bug-to-spec backprop.",
+  "version": "4.1.0"
+}

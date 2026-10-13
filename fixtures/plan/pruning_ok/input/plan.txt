@@ -1,0 +1,48 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- == Final Plan ==
+   * HashAggregate (6)
+   +- Exchange (5)
+      +- * HashAggregate (4)
+         +- * Project (3)
+            +- * Filter (2)
+               +- Scan parquet analytics.transacoes (1)
+
+
+(1) Scan parquet analytics.transacoes
+Output [4]: [cliente_id#2, valor#3, status#6, dt#11]
+Batched: true
+Location: InMemoryFileIndex [s3://lake/analytics/transacoes]
+PartitionFilters: [isnotnull(dt#11), (dt#11 = 2026-07-29)]
+PushedFilters: [IsNotNull(cliente_id), EqualTo(status,PAGO)]
+ReadSchema: struct<cliente_id:bigint,valor:double,status:string>
+
+(2) Filter [codegen id : 1]
+Input [4]: [cliente_id#2, valor#3, status#6, dt#11]
+Condition : (isnotnull(cliente_id#2) AND (status#6 = PAGO))
+
+(3) Project [codegen id : 1]
+Output [2]: [cliente_id#2, valor#3]
+Input [4]: [cliente_id#2, valor#3, status#6, dt#11]
+
+(4) HashAggregate [codegen id : 1]
+Input [2]: [cliente_id#2, valor#3]
+Keys [1]: [cliente_id#2]
+Functions [1]: [partial_sum(valor#3)]
+Aggregate Attributes [1]: [sum#40]
+Results [2]: [cliente_id#2, sum#41]
+
+(5) Exchange
+Input [2]: [cliente_id#2, sum#41]
+Arguments: hashpartitioning(cliente_id#2, 200), ENSURE_REQUIREMENTS, [plan_id=42]
+
+(6) HashAggregate [codegen id : 2]
+Input [2]: [cliente_id#2, sum#41]
+Keys [1]: [cliente_id#2]
+Functions [1]: [sum(valor#3)]
+Aggregate Attributes [1]: [sum(valor#3)#42]
+Results [2]: [cliente_id#2, sum(valor#3)#42 AS total#43]
+
+(7) AdaptiveSparkPlan
+Output [2]: [cliente_id#2, total#43]
+Arguments: isFinalPlan=true

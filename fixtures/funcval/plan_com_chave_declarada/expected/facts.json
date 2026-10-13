@@ -1,0 +1,65 @@
+[
+  {
+    "id": "f_ef0c32",
+    "schema_version": 1,
+    "kind": "funcval.plan",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "check_count": 5,
+      "derived_check_count": 4,
+      "declared_check_count": 1
+    },
+    "attrs": {
+      "target": "db.eventos",
+      "checks": {
+        "agg:sum:cliente_id": {
+          "origin": "derived",
+          "type": "bigint",
+          "derived_from": [
+            "f_dae24f"
+          ]
+        },
+        "agg:sum:valor": {
+          "origin": "derived",
+          "type": "double",
+          "derived_from": [
+            "f_dae24f"
+          ]
+        },
+        "count": {
+          "origin": "derived",
+          "type": "bigint",
+          "derived_from": [
+            "f_90bd3d"
+          ]
+        },
+        "key:pedido_id+dt": {
+          "origin": "declared",
+          "type": "bigint",
+          "derived_from": []
+        },
+        "schema": {
+          "origin": "derived",
+          "type": "schema",
+          "derived_from": [
+            "f_dae24f"
+          ]
+        }
+      },
+      "derived_from": [
+        "f_90bd3d",
+        "f_dae24f"
+      ],
+      "undeclared_axes": [],
+      "undeclared_axes_reason": {}
+    },
+    "provenance": {
+      "artifact": "plan_com_chave_declarada",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  }
+]

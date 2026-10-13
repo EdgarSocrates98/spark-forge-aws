@@ -1,0 +1,5 @@
+mode: slo
+slo_name: transport-slo
+transport_key: orders-group
+expects_findings: []
+expects_kinds: [kafka.analyzed, kafka.consumer_group, kafka.lag, streaming.composition.analyzed, streaming.slo, streaming.slo.evaluation, streaming_ops.analyzed]

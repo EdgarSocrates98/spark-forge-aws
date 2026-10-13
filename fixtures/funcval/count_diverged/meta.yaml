@@ -1,0 +1,20 @@
+name: count_diverged
+proves: >
+  A contagem, sozinha. O depois traz DUAS linhas a mais -- 1.000.002
+  contra 1.000.000 -- e os outros tres checks ficam identicos, e isso nao
+  e conveniencia de fixture: as duas linhas novas sao orfas de um left
+  join com as colunas de medida NULAS, e `sum` ignora nulo, entao os dois
+  agregados nao se mexem e o schema tambem nao. E exatamente o caso que
+  justifica a contagem existir como eixo proprio: sem ela, uma mudanca que
+  duplica ou perde linha passa por todos os outros proxies. O golden tem
+  de mostrar UM unico check divergente, e ele tem de ser `count`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules:
+  - SF-FVAL-001

@@ -1,0 +1,15 @@
+name: timeout_sem_espera
+proves: >
+  O NEGATIVO da condicao de espera da SF-AIRFLOW-002. `execution_timeout` declarado e
+  `stop_job_run_on_kill` omitido -- os dois sinais da regra --, mas
+  `wait_for_completion=False`: a task termina assim que o Glue aceita o pedido, e o
+  prazo nunca chega a matar nada. SF-AIRFLOW-002 fica CALADA. SF-AIRFLOW-001 tambem
+  fica calada porque nenhuma tarefa depende da task, e SF-AIRFLOW-003 porque a task
+  nao espera o job.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.dag, af.task]
+expects_rules: []

@@ -1,0 +1,4 @@
+name: speculation_ja_ligada
+runtime:
+  glue: '5.0'
+proves: 'O mesmo no lento de `speculation_no_lento`, com `spark.speculation=true` ja efetivo: recusa `speculation_ja_ligada`.'

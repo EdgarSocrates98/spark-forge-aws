@@ -1,0 +1,13 @@
+{
+  "Comment": "Fixture sintetica: JobName vem da entrada da execucao.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName.$": "$.job_name"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 1}],
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge_aws.local/contracts/platform-graph-v1.schema.json",
+  "title": "Spark Forge Platform Intelligence Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "platform", "nodes", "edges"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "platform": {"type": "string", "minLength": 1},
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"type": "string", "minLength": 1},
+          "name": {"type": "string"},
+          "subtype": {"type": "string"},
+          "attrs": {"type": "object"},
+          "evidence": {"type": "array", "items": {"oneOf": [{"type": "string"}, {"type": "object"}]}},
+          "state": {"enum": ["declared", "observed", "inferred", "unresolved"]},
+          "source": {"type": "string"}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "relation", "target"],
+        "properties": {
+          "source": {"type": "string", "minLength": 1},
+          "relation": {"type": "string", "minLength": 1},
+          "target": {"type": "string", "minLength": 1},
+          "evidence": {"type": "array", "items": {"oneOf": [{"type": "string"}, {"type": "object"}]}},
+          "attrs": {"type": "object"},
+          "state": {"enum": ["declared", "observed", "inferred", "unresolved"]},
+          "source_system": {"type": "string"}
+        }
+      }
+    },
+    "provenance": {"type": "array", "items": {"type": "object"}},
+    "unresolved": {"type": "array", "items": {"type": "object"}}
+  }
+}

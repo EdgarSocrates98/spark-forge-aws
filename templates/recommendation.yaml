@@ -1,0 +1,24 @@
+recommendation:
+  id:
+  title:
+  severity: P0|P1|P2|P3|P4
+  confidence: low|medium|high
+  category: code|join|shuffle|skew|memory|cpu|s3|parquet|iceberg|glue|cost
+  evidence:
+    - metric:
+      observed:
+      expected_or_reference:
+  root_cause:
+  proposed_change:
+    - step:
+  expected_effect:
+  expected_effect_is_hypothesis: true
+  risks:
+    - risk:
+      mitigation:
+  tradeoffs:
+    - 
+  validation:
+    - 
+  rollback:
+    -

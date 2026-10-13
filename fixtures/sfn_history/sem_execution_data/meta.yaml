@@ -1,0 +1,19 @@
+name: sem_execution_data
+proves: >
+  As DUAS metades da AC2, e a lacuna U1 ao lado. O primeiro Task foi submetido sem
+  `output` -- `includeExecutionData` desligado --, e nenhum `sfn.job_run` e afirmado:
+  sai `execution_data_absent`. O segundo TEM `output`, e a forma dele nao e nenhuma
+  das tres que o extrator reconhece: sai `job_run_id_unrecognized` COM as chaves de
+  topo (`SdkHttpMetadata`, `SdkResponseMetadata`), que e o dado que um historico real
+  usa para fechar U1. Nenhuma regra dispara: as duas tentativas terminaram bem.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.unresolved
+expects_rules: []

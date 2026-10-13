@@ -1,0 +1,19 @@
+name: engine_v2_outdated
+proves: >
+  Dump com os dois casos lado a lado no MESMO corpus: `legacy-etl` na engine
+  version 2 e `primary` na 3. SF-ATH-004 tem que disparar uma vez so, ancorada
+  no workgroup `legacy-etl`. Um unico finding e a prova de que a regra avalia
+  por subject e nao pela lista global de facts -- o mesmo defeito de
+  mascaramento que `fixtures/fusion/limit_no_filter_multi_query` fecha do lado
+  do SQL, aqui no lado do workgroup.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+  athena: "3"
+expects_kinds:
+  - athena.analyzed
+  - athena.workgroup
+expects_rules:
+  - SF-ATH-004

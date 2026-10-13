@@ -1,0 +1,38 @@
+{
+  "job": {
+    "name": "rtm-valid",
+    "glue_version": "6.0",
+    "command": "gluestreaming",
+    "default_arguments": {
+      "--enable-real-time-mode": "true",
+      "--job-language": "scala"
+    },
+    "stream": {
+      "source_type": "kafka",
+      "sources": [
+        {
+          "source_id": "orders-source",
+          "connector": "kafka",
+          "topic": "orders",
+          "partition_count": 4,
+          "lag_records": 2
+        }
+      ],
+      "sinks": [
+        {
+          "sink_id": "orders-sink",
+          "connector": "iceberg",
+          "table": "prod.orders",
+          "num_records_out": 100,
+          "pending_commits": 0
+        }
+      ],
+      "partition_count": 4,
+      "task_slots": 4,
+      "stateful": false,
+      "output_mode": "Update",
+      "foreach_batch": false,
+      "autoscaling": false
+    }
+  }
+}

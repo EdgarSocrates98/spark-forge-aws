@@ -1,0 +1,145 @@
+[
+  {
+    "id": "f_af6f81",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 16,
+      "col": 8,
+      "end_line": 16,
+      "symbol": "rotular",
+      "snippet": "g.pregel.setMaxIter(10)"
+    },
+    "measures": {
+      "line": 16,
+      "iteration_literal": 10
+    },
+    "attrs": {
+      "name": "pregel",
+      "form": "property",
+      "inside_loop": false,
+      "receiver": "g",
+      "iteration_arg": "setMaxIter"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f10db46a44096f03fb1aff589366ff0cbfbef09f4461422d1894f6ee55377562",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5640d",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 14,
+      "col": 8,
+      "end_line": 14,
+      "symbol": "rotular",
+      "snippet": "g = GraphFrame(vertices, arestas)"
+    },
+    "measures": {
+      "line": 14
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "vertices",
+      "edges_ref": "arestas"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f10db46a44096f03fb1aff589366ff0cbfbef09f4461422d1894f6ee55377562",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_707a85",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 8,
+      "col": 0,
+      "end_line": 8,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "measures": {
+      "line": 8
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f10db46a44096f03fb1aff589366ff0cbfbef09f4461422d1894f6ee55377562",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_fadbcf",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 9,
+      "col": 0,
+      "end_line": 9,
+      "symbol": "",
+      "snippet": "from graphframes.lib import Pregel"
+    },
+    "measures": {
+      "line": 9
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes.lib",
+      "symbol": "Pregel",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f10db46a44096f03fb1aff589366ff0cbfbef09f4461422d1894f6ee55377562",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_6bb08b",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 2,
+      "construction_count": 1,
+      "algorithm_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f10db46a44096f03fb1aff589366ff0cbfbef09f4461422d1894f6ee55377562",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

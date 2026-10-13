@@ -1,0 +1,191 @@
+[
+  {
+    "id": "f_5ecee1",
+    "schema_version": 1,
+    "kind": "emrc.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "virtual_cluster_count": 1,
+      "job_run_count": 1,
+      "configuration_count": 1,
+      "conf_parameter_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_f8ceb2",
+    "schema_version": 1,
+    "kind": "emrc.configuration",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "classification": "spark-defaults",
+      "key": "spark.sql.shuffle.partitions",
+      "value": "400",
+      "surface": "application_configuration"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_3f7b6f",
+    "schema_version": 1,
+    "kind": "emrc.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "job_run_id": "0000000default003",
+      "name": "etl-alocacao-dinamica-default",
+      "virtual_cluster_id": "0abcdefghijklmnop",
+      "state": "COMPLETED",
+      "release_label": "emr-7.5.0-latest",
+      "execution_role_arn": "arn:aws:iam::111122223333:role/EMRContainersJobRole"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_2b8d9d",
+    "schema_version": 1,
+    "kind": "emrc.monitoring",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "log_destination_count": 1
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "cloudwatch_enabled": false,
+      "managed_logs_declared": false,
+      "container_log_rotation_declared": false,
+      "s3_log_uri": "s3://bucket/logs/",
+      "persistent_app_ui_declared": true,
+      "persistent_app_ui": "ENABLED"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_843e9a",
+    "schema_version": 1,
+    "kind": "emrc.spark_submit_parameters",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.dynamicAllocation.enabled",
+      "value": "true",
+      "surface": "spark_submit_parameters",
+      "driver": "sparkSubmitJobDriver"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_843e9a",
+    "schema_version": 1,
+    "kind": "emrc.spark_submit_parameters",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.dynamicAllocation.maxExecutors",
+      "value": "40",
+      "surface": "spark_submit_parameters",
+      "driver": "sparkSubmitJobDriver"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_de2764",
+    "schema_version": 1,
+    "kind": "emrc.virtual_cluster",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "virtual_cluster_id": "0abcdefghijklmnop",
+      "name": "analytics",
+      "state": "RUNNING",
+      "container_provider_type": "EKS",
+      "eks_cluster_name": "producao-eks",
+      "namespace": "spark"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  }
+]

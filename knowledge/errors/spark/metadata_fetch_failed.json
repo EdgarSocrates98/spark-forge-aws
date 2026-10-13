@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-011",
+  "signature": "MetadataFetchFailedException",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The failure names a missing output location for a shuffle",
+    "It appears on the stage that READS the shuffle, and the stage that wrote it had reported success",
+    "The whole map stage is recomputed after the failure"
+  ],
+  "likely_causes": [
+    "The executor that held the shuffle output is gone, and the block it wrote went with it",
+    "The external shuffle service is not in use, so shuffle output does not survive the executor that produced it",
+    "Dynamic allocation removed the executor after the map stage finished and before the reduce stage read it"
+  ],
+  "evidence_required": [
+    "spark.stage.shuffle"
+  ],
+  "diagnostic_steps": [
+    "Read the shuffle bytes the stage wrote: this failure costs the recomputation of the whole map stage, and the size of it is what the cost is proportional to",
+    "Read whether executors were lost between the map stage and the reduce stage -- the two events together tell one story that neither tells alone",
+    "Separate it from a fetch failure of a single block: a missing output LOCATION is the whole executor, not one connection"
+  ],
+  "fixes": [
+    "Reduce the shuffle so less has to be recomputed when a loss happens",
+    "Keep the executor alive across the two stages when dynamic allocation is removing it too eagerly",
+    "Treat the executor loss itself when there is one, because this exception is its consequence"
+  ],
+  "unsafe_fixes": [
+    "Raising retries to get past it: the map stage is recomputed on every retry, and the cost multiplies",
+    "Disabling dynamic allocation without measuring, which pays for idle capacity for the whole run"
+  ],
+  "verification": "Re-run and confirm the reduce stage completes without recomputing the map stage. Shuffle bytes written, before and after, over the same input",
+  "rollback": "Revert the allocation or shuffle change. No data axis is required when the change is of capacity, and declaring that is part of the verification",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

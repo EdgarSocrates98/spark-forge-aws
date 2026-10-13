@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "db.clientes",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {
+      "bytes_read": 11000000,
+      "files_read": 6
+    },
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "event_log.jsonl"
+    }
+  },
+  {
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-1",
+      "stage_id": 1
+    },
+    "measures": {
+      "write_bytes": 1400000
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "event_log.jsonl"
+    }
+  }
+]

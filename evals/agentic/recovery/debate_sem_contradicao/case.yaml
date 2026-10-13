@@ -1,0 +1,13 @@
+schema_version: 1
+case_id: recovery-debate-sem-contradicao
+failure: deterministic_conflict
+attempt: 0
+strategy_fingerprint: db-001
+history: []
+profile: balanced
+risk: low
+gain_state:
+  pending_action: debate
+  task_risk: low
+  contradictions: 0
+  agent_disagreement: false

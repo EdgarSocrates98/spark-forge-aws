@@ -1,0 +1,182 @@
+[
+  {
+    "id": "f_3c6667",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 2,
+      "job_count": 2,
+      "dependency_count": 0,
+      "capability_probe_count": 1,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_3a9048",
+    "schema_version": 1,
+    "kind": "ctm.capability_supported",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Folders",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "capability": "folders_array_structure",
+      "evidence": "array_structure",
+      "key": "Folders",
+      "at": "Folders",
+      "declared_version": "9.0.22.010",
+      "boundary": "introduced_in",
+      "boundary_version": "9.0.22.000",
+      "summary": "Estruturas de array `Folders`/`SubFolders` permitem mais de um folder ou sub-folder com o mesmo nome; a leitura e controlada por `useArrayFormat` em `deploy jobs::get`."
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_57dca2",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Folders[0]/CargaNoturna",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "CargaNoturna",
+      "application": "DataLake"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_35629f",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Folders[1]/CargaNoturna",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "CargaNoturna",
+      "application": "DataLake"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_8e4268",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Folders[0]/CargaNoturna/CargaClientes",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "CargaClientes",
+      "run_as": "ctmagent"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_067eda",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Folders[1]/CargaNoturna/CargaPedidos",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "CargaPedidos",
+      "run_as": "ctmagent"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.22.010",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "f3b5c2e7f2be120beea8d91426b4672ae0596b9a2d5d3554fb18aebc69266d6e",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,160 @@
+[
+  {
+    "id": "f_af1618",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "spark_8_ga.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "spark_8_ga.json",
+      "artifact_sha256": "6c54f78759dd3f36634d0ebd2e6932ee68bfd44e35af5cb2f9044fdbd110ddb4",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_abed49",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "spark_8_preview.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "spark_8_preview.json",
+      "artifact_sha256": "38525481e582a083be95c1230ce206fe597794f24c3f60d2282169bceb288420",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_e9207a",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fspark8ga000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fspark8ga000000001",
+      "name": "spark-8-ga",
+      "release_label": "emr-spark-8.0.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "auto_start_declared": false,
+      "auto_stop_declared": true,
+      "auto_stop_enabled": true
+    },
+    "provenance": {
+      "artifact": "spark_8_ga.json",
+      "artifact_sha256": "6c54f78759dd3f36634d0ebd2e6932ee68bfd44e35af5cb2f9044fdbd110ddb4",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_9e79d2",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fspark8prev0000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fspark8prev0000001",
+      "name": "spark-8-preview",
+      "release_label": "emr-spark-8.0-preview",
+      "type": "Spark",
+      "state": "STARTED",
+      "auto_start_declared": false,
+      "auto_stop_declared": true,
+      "auto_stop_enabled": true
+    },
+    "provenance": {
+      "artifact": "spark_8_preview.json",
+      "artifact_sha256": "38525481e582a083be95c1230ce206fe597794f24c3f60d2282169bceb288420",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_e50c3d",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fspark8ga000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "spark_8_ga.json",
+      "artifact_sha256": "6c54f78759dd3f36634d0ebd2e6932ee68bfd44e35af5cb2f9044fdbd110ddb4",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_8206c9",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fspark8prev0000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "spark_8_preview.json",
+      "artifact_sha256": "38525481e582a083be95c1230ce206fe597794f24c3f60d2282169bceb288420",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

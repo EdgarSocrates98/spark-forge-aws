@@ -1,0 +1,32 @@
+name: spark_ui_desligada
+proves: >
+  O positivo de SF-EMRK-003, com `persistentAppUI: "DISABLED"` ESCRITO -- nunca
+  ausente. O default do campo nao e publicado em lugar nenhum (nem na referencia
+  de API de `MonitoringConfiguration`, nem na de CLI de `start-job-run`, nem nas
+  paginas de logging do guia), entao uma regra que disparasse por ausencia
+  afirmaria um default que esta coleta nao mediu. `job_run_saudavel` e o par
+  negativo pelo lado do valor -- ele declara `ENABLED` --, e `sem_destino_de_log`
+  e o par negativo pelo lado da AUSENCIA: la o bloco de monitoramento nao veio, o
+  campo nao existe, e SF-EMRK-003 nao dispara.
+  Prova tambem a decisao de UM TERMO, que e onde esta area diverge do molde de
+  SF-EMRS-004: ha destino de log S3 declarado aqui, e mesmo assim o achado sai.
+  A fonte separa os dois objetos -- `s3MonitoringConfiguration` leva log de
+  submitter, driver e executor (log de CONTAINER), e `persistentAppUI` e o que
+  "allows AWS to save event logs which are used to generate the Spark UI".
+  Cruzar os dois na condicao, como o Serverless faz, produziria silencio
+  exatamente no caso em que o operador acha que esta protegido porque grava em
+  S3.
+  `containerLogRotationConfiguration` esta aqui de proposito, e nao dispara nada:
+  rotacao e quanto o arquivo dura dentro do container, nunca um destino nem um
+  substituto do event log.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules:
+  - SF-EMRK-003

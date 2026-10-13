@@ -1,0 +1,282 @@
+import pytest
+
+from sparkforge_aws.facts.pyspark_ast import extract_source
+from sparkforge_aws.findings.validate import (
+    ValidationFailed,
+    validate_business_rule,
+    validate_fact,
+    validate_finding,
+)
+
+
+def good_finding(**over):
+    base = {
+        "rule_id": "SF-PY-005",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "coalesce(1)",
+        "severity": "P0",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {"type": "source_location", "file": "a.py", "line": 1},
+        "evidence": ["f_abc123"],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {"glue": "*"},
+        "explanation": "explica",
+        "proposed_change": ["mudar"],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [],
+        "tradeoffs": [],
+        "validation": ["contagem total"],
+        "rollback": ["reverter"],
+        "sources": [{"origin": "field-heuristic"}],
+    }
+    base.update(over)
+    return base
+
+
+class TestFactSchema:
+    def test_extracted_facts_validate(self):
+        for fact in extract_source("df.coalesce(1)\n", "a.py"):
+            validate_fact(fact.to_dict())
+
+    def test_fact_without_kind_is_rejected(self):
+        with pytest.raises(ValidationFailed):
+            validate_fact({"id": "f_abc123", "schema_version": 1, "subject": {}})
+
+    def test_fact_with_non_numeric_measure_is_rejected(self):
+        bad = {
+            "id": "f_abc123",
+            "schema_version": 1,
+            "kind": "k",
+            "subject": {"type": "source_location"},
+            "measures": {"n": "doze"},
+            "attrs": {},
+            "provenance": {},
+        }
+        with pytest.raises(ValidationFailed, match="measures"):
+            validate_fact(bad)
+
+
+class TestFindingSchema:
+    def test_good_finding_validates(self):
+        validate_finding(good_finding())
+
+    def test_empty_evidence_rejected(self):
+        with pytest.raises(ValidationFailed, match="evidence"):
+            validate_finding(good_finding(evidence=[]))
+
+    def test_unknown_severity_rejected(self):
+        with pytest.raises(ValidationFailed):
+            validate_finding(good_finding(severity="BLOCKER"))
+
+    def test_unknown_status_rejected(self):
+        with pytest.raises(ValidationFailed):
+            validate_finding(good_finding(status="maybe"))
+
+
+class TestNoInventedGains:
+    """A regra que mata 'ganho de 40%' na origem."""
+
+    @pytest.mark.parametrize(
+        "effect",
+        [
+            "reduz o runtime em 40%",
+            "ganho de 2x no tempo",
+            "corta 30 % do custo",
+            "melhora ~15%",
+        ],
+    )
+    def test_quantified_effect_without_benchmark_is_rejected(self, effect):
+        with pytest.raises(ValidationFailed, match="benchmark_ref"):
+            validate_finding(good_finding(expected_effect=effect))
+
+    def test_qualitative_effect_without_benchmark_is_accepted(self):
+        validate_finding(
+            good_finding(expected_effect="hipotese: reduz o tempo do stage dominante")
+        )
+
+
+class TestBenchmarkRefCitesAFactId:
+    """Desde a Fase 4a o gate tem produtor, e o campo deixou de aceitar prosa.
+
+    Ate aqui `benchmark_ref` era texto livre: nada no projeto produzia um, entao
+    qualquer string satisfazia a regra e o gate se contornava digitando. Com
+    `bench.run_delta` existindo, o campo cita o `fact_id` daquele fato. Duas
+    camadas, porque `validate_finding(payload)` nao ve fact nenhum: a FORMA vale
+    sempre; a PERTINENCIA so quando alguem passa o conjunto.
+    """
+
+    def _gain(self, **over):
+        return good_finding(expected_effect="reduz o runtime em 40%", **over)
+
+    def test_free_text_benchmark_ref_is_rejected(self):
+        """O caso que ANTES passava. A quebra e o objetivo da fase."""
+        with pytest.raises(ValidationFailed, match="nao e um fact_id"):
+            validate_finding(self._gain(benchmark_ref="bench/2026-07-29-coalesce.json"))
+
+    @pytest.mark.parametrize(
+        "ref",
+        [
+            "f_ABC123",  # hex maiusculo: Fact.id sai de hexdigest(), minusculo
+            "f_abc12",  # curto demais
+            "f_abc1234",  # longo demais
+            "abc123",  # sem prefixo
+            "f_abcxyz",  # nao e hex
+            " f_abc123",  # espaco a esquerda -- ancorado dos dois lados
+            "f_abc123 extra",
+        ],
+    )
+    def test_near_miss_shapes_are_rejected(self, ref):
+        with pytest.raises(ValidationFailed, match="nao e um fact_id"):
+            validate_finding(self._gain(benchmark_ref=ref))
+
+    @pytest.mark.parametrize(
+        "ref",
+        [
+            "f_abc123\n",
+            "f_abc123\r\n",
+            "f_abc123\r",
+            "f_abc123\n\n",
+            "f_abc123\nf_d4e5f6",
+        ],
+    )
+    def test_a_trailing_newline_does_not_buy_a_pass(self, ref):
+        """`$` casa ANTES do `\\n` final, e `f_abc123\\n` passava por bem formado.
+
+        A ancora certa e `\\Z`, que so casa no fim absoluto. O caso importa duas
+        vezes aqui: um `benchmark_ref` lido de arquivo, de stdin ou de campo de
+        formulario carrega o terminador de linha, e a camada de pertinencia
+        compara a string CRUA contra o conjunto de `fact_id` -- entao a forma que
+        passa com `\\n` e a mesma que depois nao casa com fact nenhum, trocando
+        uma rejeicao clara por uma confusa. `\\r\\n` e o mesmo defeito no sistema
+        em que este repositorio roda, e `\\nf_d4e5f6` mostra o que a ancora frouxa
+        deixa entrar junto: uma segunda linha inteira de texto nao lido.
+        """
+        with pytest.raises(ValidationFailed, match="nao e um fact_id"):
+            validate_finding(self._gain(benchmark_ref=ref))
+
+    def test_well_formed_fact_id_without_a_fact_set_is_accepted(self):
+        """Camada de pertinencia ausente nao vira rejeicao: quem chama sem os
+        facts (golden, motor) ainda tem a camada de forma."""
+        validate_finding(self._gain(benchmark_ref="f_a1b2c3"))
+
+    def test_fact_id_absent_from_the_informed_set_is_rejected(self):
+        with pytest.raises(ValidationFailed, match="nao esta no conjunto"):
+            validate_finding(self._gain(benchmark_ref="f_a1b2c3"), {"f_d4e5f6"})
+
+    def test_fact_id_present_in_the_informed_set_is_accepted(self):
+        validate_finding(self._gain(benchmark_ref="f_a1b2c3"), {"f_a1b2c3", "f_d4e5f6"})
+
+    def test_an_empty_fact_set_is_not_the_same_as_no_fact_set(self):
+        """`set()` e falsy e `None` nao: confundir os dois faria o conjunto vazio
+        desligar a camada de pertinencia em silencio -- o oposto do pedido."""
+        with pytest.raises(ValidationFailed, match="nao esta no conjunto"):
+            validate_finding(self._gain(benchmark_ref="f_a1b2c3"), set())
+
+    def test_the_expected_shape_is_the_shape_fact_id_really_has(self):
+        """O padrao vive em `validate.py` e nao importa `models.py`. Este teste e
+        o que impede as duas formas de divergirem sem ninguem notar."""
+        from sparkforge_aws.findings.models import Fact
+        from sparkforge_aws.findings.validate import _BENCH_REF
+
+        fact = Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": 1})
+        assert _BENCH_REF.match(fact.id), fact.id
+
+    def test_a_qualitative_effect_does_not_care_about_the_shape(self):
+        """A forma so e cobrada onde o gate morde: efeito quantificado. Achado
+        sem numero nao passa a ser rejeitado por causa desta fase."""
+        validate_finding(
+            good_finding(
+                expected_effect="hipotese: reduz o tempo do stage dominante",
+                benchmark_ref="bench/2026-07-29-coalesce.json",
+            )
+        )
+
+
+def good_business_rule(**over):
+    base = {
+        "rule_id": "BR-DQ-001",
+        "schema_version": 1,
+        "statement": "Linha com chave nula vai para quarentena, nao para a tabela final.",
+        "status": "declared",
+        "source": [{"origin": "spec/requisitos.md#dq"}],
+    }
+    base.update(over)
+    return base
+
+
+class TestBusinessRuleSchema:
+    """data-quality-reviewer: regra do sistema analisado, nao achado do motor."""
+
+    def test_good_business_rule_validates(self):
+        validate_business_rule(good_business_rule())
+
+    def test_empty_source_rejected(self):
+        with pytest.raises(ValidationFailed, match="source"):
+            validate_business_rule(good_business_rule(source=[]))
+
+    def test_unknown_status_rejected(self):
+        with pytest.raises(ValidationFailed):
+            validate_business_rule(good_business_rule(status="confirmed"))
+
+    def test_undecided_without_owner_is_accepted(self):
+        """status=undecided e exatamente 'decisao ainda sem dono' -- owner ausente
+        nao pode ser o que barra esse estado, senao o schema nao consegue
+        representar a propria situacao que o nomeia."""
+        validate_business_rule(good_business_rule(status="undecided"))
+
+    def test_rule_id_out_of_namespace_rejected(self):
+        """BR- e SF- sao namespaces distintos -- regra de negocio nao e finding."""
+        with pytest.raises(ValidationFailed):
+            validate_business_rule(good_business_rule(rule_id="SF-DQ-001"))
+
+    def test_evidence_must_be_a_fact_id(self):
+        with pytest.raises(ValidationFailed):
+            validate_business_rule(good_business_rule(evidence=["nota-livre"]))
+
+
+class TestJsonSerializable:
+    """`yaml.safe_load` devolve `datetime.date` para `retrieved: 2026-07-29`. Esse
+    valor viaja da regra para o Finding e quebra `json.dumps`. Como as fixtures da
+    Task 10 e a saida do CLI da Task 15 sao JSON, isso seria bloqueador la, longe
+    da causa."""
+
+    def _real_finding(self):
+        from sparkforge_aws.facts.pyspark_ast import extract_source
+        from sparkforge_aws.rules.engine import judge
+        from sparkforge_aws.rules.loader import load_catalog
+
+        runtime = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
+        facts = extract_source('df.coalesce(1)\n', "a.py")
+        rules = [r for r in load_catalog() if r["id"] == "SF-PY-005"]
+        return judge(facts, rules, runtime)[0]
+
+    def test_real_finding_survives_json_dumps(self):
+        import json
+
+        payload = self._real_finding().to_dict()
+        assert json.loads(json.dumps(payload)) == payload
+
+    def test_retrieved_is_a_string_not_a_date(self):
+        import datetime
+
+        for source in self._real_finding().sources:
+            if "retrieved" in source:
+                assert isinstance(source["retrieved"], str)
+                assert not isinstance(source["retrieved"], datetime.date)
+
+    def test_schema_rejects_a_non_string_retrieved(self):
+        bad = good_finding(sources=[{"url": "http://x", "retrieved": 20260729}])
+        with pytest.raises(ValidationFailed, match="retrieved"):
+            validate_finding(bad)
+
+    def test_every_fact_from_the_extractor_survives_json_dumps(self):
+        import json
+
+        source = 'df.coalesce(1)\ndf.repartition(n)\ngetattr(df, m)(1)\n'
+        for fact in extract_source(source, "a.py"):
+            payload = fact.to_dict()
+            assert json.loads(json.dumps(payload)) == payload

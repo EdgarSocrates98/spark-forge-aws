@@ -1,0 +1,40 @@
+{
+  "id": "ERR-SPARK-003",
+  "signature": "ClassNotFoundException",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The job fails naming a fully qualified class that is not in the job's own code",
+    "The same code runs locally, where the missing jar happens to be on the classpath",
+    "The failure appears at the moment the class is first needed, not at submission"
+  ],
+  "likely_causes": [
+    "The jar that carries the class was never delivered to the classpath",
+    "The class comes from a connector or format that the runtime does not bundle",
+    "The dependency was declared for the build but not for the runtime"
+  ],
+  "evidence_required": [
+    "mig.jar_binary",
+    "tf.attribute"
+  ],
+  "diagnostic_steps": [
+    "List the jars actually delivered to the job and check whether any of them carries the named class",
+    "Read spark.jars and the extra classpath entries from spark.conf_effective, and compare with what the job declares",
+    "Confirm whether the class belongs to a connector the runtime is expected to bundle, or to a dependency the job must ship"
+  ],
+  "fixes": [
+    "Deliver the jar that carries the class to the classpath, through the mechanism the runtime provides",
+    "If the class comes from a connector the runtime bundles under a different name, use the runtime's own switch instead of shipping a second copy"
+  ],
+  "unsafe_fixes": [
+    "Shipping a second copy of a jar the runtime already bundles: it turns an absent class into a duplicated one, and the failure moves rather than disappearing"
+  ],
+  "verification": "Re-run the job and exercise the code path that loads the class, not only the submission",
+  "rollback": "Revert the classpath change. It changes no data, but partial output written by the failed run has to be discarded or reconciled separately",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

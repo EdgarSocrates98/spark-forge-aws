@@ -1,0 +1,20 @@
+{
+  "required": ["registries", "deviations"],
+  "properties": {
+    "hypothesis_outcome": {"enum": ["confirmed", "refuted", "abandoned"]},
+    "registries": {"type": "array", "items": {"type": "string"}},
+    "deviations": {"type": "array", "items": {"type": "string"}},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["change_id", "report_sha256"],
+        "properties": {
+          "change_id": {"type": "string", "minLength": 1},
+          "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

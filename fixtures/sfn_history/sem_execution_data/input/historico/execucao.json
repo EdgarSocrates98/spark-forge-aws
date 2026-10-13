@@ -1,0 +1,16 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T07:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T07:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaSemDado"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T07:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1"}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T07:00:03.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T07:10:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 6, "previousEventId": 5, "timestamp": "2026-09-18T07:10:01.000000+00:00", "type": "TaskStateExited", "stateExitedEventDetails": {"name": "CargaSemDado"}},
+    {"id": 7, "previousEventId": 6, "timestamp": "2026-09-18T07:10:02.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaComOutroOutput"}},
+    {"id": 8, "previousEventId": 7, "timestamp": "2026-09-18T07:10:03.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1"}},
+    {"id": 9, "previousEventId": 8, "timestamp": "2026-09-18T07:10:04.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"SdkResponseMetadata\": {\"RequestId\": \"abc\"}, \"SdkHttpMetadata\": {\"HttpStatusCode\": 200}}"}},
+    {"id": 10, "previousEventId": 9, "timestamp": "2026-09-18T07:20:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 11, "previousEventId": 10, "timestamp": "2026-09-18T07:20:01.000000+00:00", "type": "TaskStateExited", "stateExitedEventDetails": {"name": "CargaComOutroOutput"}},
+    {"id": 12, "previousEventId": 11, "timestamp": "2026-09-18T07:20:02.000000+00:00", "type": "ExecutionSucceeded"}
+  ]
+}

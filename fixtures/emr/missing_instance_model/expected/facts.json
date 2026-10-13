@@ -1,0 +1,102 @@
+[
+  {
+    "id": "f_9c92ba",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 0,
+      "configuration_count": 0,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2a0f1371e4430a8a01279299bdd63f463d5d7b5b69a61949655b84a33267db68",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_f0c1ed",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-4SEMINSTANCIAS/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.5.2-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2a0f1371e4430a8a01279299bdd63f463d5d7b5b69a61949655b84a33267db68",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_ed26a1",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-4SEMINSTANCIAS"
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "cluster_id": "j-4SEMINSTANCIAS",
+      "name": "etl-parcial",
+      "release_label": "emr-7.5.0",
+      "release": "7.5.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": null,
+      "auto_terminate": false,
+      "unhealthy_node_replacement": null,
+      "state": "TERMINATED",
+      "state_change_reason_code": "BOOTSTRAP_FAILURE"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2a0f1371e4430a8a01279299bdd63f463d5d7b5b69a61949655b84a33267db68",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5e9b7",
+    "schema_version": 1,
+    "kind": "emr.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_instance_model"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2a0f1371e4430a8a01279299bdd63f463d5d7b5b69a61949655b84a33267db68",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

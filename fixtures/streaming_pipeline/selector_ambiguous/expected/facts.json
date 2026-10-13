@@ -1,0 +1,325 @@
+[
+  {
+    "id": "f_5ec012",
+    "schema_version": 1,
+    "kind": "streaming.pipeline",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:summary",
+      "snippet": ""
+    },
+    "measures": {
+      "node_count": 4,
+      "observed_node_count": 3,
+      "edge_count": 3,
+      "verified_edge_count": 1,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "pipeline_id": "orders",
+      "schema_version": 1,
+      "status": "unresolved",
+      "source_fact_ids": [
+        "f_799873",
+        "f_c79703",
+        "f_ea3ab0"
+      ],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:cdc",
+        "fixture:flink",
+        "fixture:iceberg"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_4896e4",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.link",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:edge:flink-to-iceberg",
+      "snippet": ""
+    },
+    "measures": {
+      "endpoint_count": 2
+    },
+    "attrs": {
+      "pipeline_id": "orders",
+      "edge_id": "flink-to-iceberg",
+      "from_node": "processor",
+      "to_node": "sink",
+      "status": "verified",
+      "source_fact_ids": [
+        "f_799873",
+        "f_c79703"
+      ],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:flink",
+        "fixture:iceberg"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_0450d6",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.node",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:node:cdc",
+      "snippet": ""
+    },
+    "measures": {
+      "match_count": 1
+    },
+    "attrs": {
+      "pipeline_id": "orders",
+      "node_id": "cdc",
+      "status": "verified",
+      "selector_kind": "cdc.event",
+      "selector_attrs": {
+        "topic": "orders"
+      },
+      "source_fact_ids": [
+        "f_ea3ab0"
+      ],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:cdc"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_560186",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.node",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:node:processor",
+      "snippet": ""
+    },
+    "measures": {
+      "match_count": 1
+    },
+    "attrs": {
+      "pipeline_id": "orders",
+      "node_id": "processor",
+      "status": "verified",
+      "selector_kind": "flink.job",
+      "selector_attrs": {
+        "job_name": "orders-job"
+      },
+      "source_fact_ids": [
+        "f_c79703"
+      ],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:flink"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_62fa8f",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.node",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:node:sink",
+      "snippet": ""
+    },
+    "measures": {
+      "match_count": 1
+    },
+    "attrs": {
+      "pipeline_id": "orders",
+      "node_id": "sink",
+      "status": "verified",
+      "selector_kind": "iceberg.snapshots_summary",
+      "selector_attrs": {
+        "table": "catalog.db.orders"
+      },
+      "source_fact_ids": [
+        "f_799873"
+      ],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:iceberg"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_896e40",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.node",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:streaming.pipeline.node",
+      "snippet": ""
+    },
+    "measures": {
+      "match_count": 2
+    },
+    "attrs": {
+      "pipeline_id": "orders",
+      "node_id": "transport",
+      "status": "unresolved",
+      "selector_kind": "kafka.partition",
+      "selector_attrs": {
+        "topic": "orders",
+        "partition": 0
+      },
+      "source_fact_ids": [],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:kafka",
+        "fixture:kafka-duplicate"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_8df6c5",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:unresolved:edge_endpoint_unresolved:cdc-to-kafka",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "pipeline_id": "orders",
+      "reason": "edge_endpoint_unresolved",
+      "edge_id": "cdc-to-kafka",
+      "from_node": "cdc",
+      "to_node": "transport",
+      "unresolved_endpoints": [
+        "transport"
+      ]
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:cdc",
+        "fixture:flink",
+        "fixture:iceberg",
+        "fixture:kafka",
+        "fixture:kafka-duplicate"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_f8ce61",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:unresolved:edge_endpoint_unresolved:kafka-to-flink",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "pipeline_id": "orders",
+      "reason": "edge_endpoint_unresolved",
+      "edge_id": "kafka-to-flink",
+      "from_node": "transport",
+      "to_node": "processor",
+      "unresolved_endpoints": [
+        "transport"
+      ]
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:cdc",
+        "fixture:flink",
+        "fixture:iceberg",
+        "fixture:kafka",
+        "fixture:kafka-duplicate"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  },
+  {
+    "id": "f_15ab44",
+    "schema_version": 1,
+    "kind": "streaming.pipeline.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<streaming-pipeline>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders:unresolved:selector_ambiguous:transport",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "pipeline_id": "orders",
+      "reason": "selector_ambiguous",
+      "node_id": "transport",
+      "selector_kind": "kafka.partition",
+      "selector_attrs": {
+        "topic": "orders",
+        "partition": 0
+      },
+      "match_count": 2
+    },
+    "provenance": {
+      "artifact": "<streaming-pipeline>",
+      "artifacts": [
+        "fixture:kafka",
+        "fixture:kafka-duplicate"
+      ],
+      "extractor": "streaming_pipeline@0.1.0"
+    }
+  }
+]

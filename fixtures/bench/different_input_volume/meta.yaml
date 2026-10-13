@@ -1,0 +1,25 @@
+name: different_input_volume
+proves: >
+  Os dois lados leram volumes diferentes: 140 MB no antes contra 280 MB no
+  depois, +100,0%. A diferenca de tempo entre eles (+70,9%) nao e atribuivel a
+  mudanca de codigo, e sim ao dado -- e a forma mais comum de benchmark
+  mentiroso. Prova tambem o D-4 do spec: as OUTRAS medidas continuam sendo
+  emitidas e avaliadas, porque o achado de volume divergente nao suprime os
+  demais. Ler os dois juntos e o que da o quadro certo; suprimir um daria um
+  quadro falso.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - bench.analyzed
+  - bench.run_delta
+  - bench.stage_delta
+expects_rules:
+  # As DUAS, e e isso que o D-4 do spec exige: a 001 diz que a medicao nao
+  # sustenta conclusao sobre a mudanca, a 002 diz o que a medicao viciada
+  # mostrou. Se um dia so a 001 sobrar aqui, supressao entre regras entrou por
+  # acidente.
+  - SF-BENCH-001
+  - SF-BENCH-002

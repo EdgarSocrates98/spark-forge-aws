@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "engine": "streaming_architecture@0.1.0",
+  "input_sha256": "510f7396de8719b29be39bc00cbe6eed5a3856aa8beede7626572bd726c73c57",
+  "workload_profile": {
+    "requirements": {
+      "source": "kafka",
+      "stateful": true,
+      "for_each_batch": false,
+      "output_mode": "update"
+    },
+    "assumptions": {
+      "traffic_profile": "unknown",
+      "team_operates_kafka": true
+    },
+    "requirement_facts": [
+      {
+        "fact_id": "requirement.for_each_batch",
+        "kind": "architecture.requirement",
+        "name": "for_each_batch",
+        "value": false,
+        "evidence": "declared_input.requirements"
+      },
+      {
+        "fact_id": "requirement.output_mode",
+        "kind": "architecture.requirement",
+        "name": "output_mode",
+        "value": "update",
+        "evidence": "declared_input.requirements"
+      },
+      {
+        "fact_id": "requirement.source",
+        "kind": "architecture.requirement",
+        "name": "source",
+        "value": "kafka",
+        "evidence": "declared_input.requirements"
+      },
+      {
+        "fact_id": "requirement.stateful",
+        "kind": "architecture.requirement",
+        "name": "stateful",
+        "value": true,
+        "evidence": "declared_input.requirements"
+      }
+    ]
+  },
+  "candidate_matrix": [
+    {
+      "candidate": "spark_structured_streaming",
+      "role": "runtime",
+      "status": "supported",
+      "evidence": [
+        "source=kafka",
+        "stateful=True",
+        "for_each_batch=False",
+        "output_mode=update"
+      ],
+      "constraints": [],
+      "unresolved": [],
+      "capabilities": {
+        "managed": false,
+        "stateful": true,
+        "for_each_batch": true,
+        "output_modes": [
+          "append",
+          "update",
+          "complete"
+        ],
+        "sources": [
+          "kafka",
+          "kinesis",
+          "file",
+          "socket"
+        ]
+      }
+    },
+    {
+      "candidate": "glue_streaming",
+      "role": "runtime",
+      "status": "supported",
+      "evidence": [
+        "source=kafka",
+        "stateful=True",
+        "for_each_batch=False",
+        "output_mode=update"
+      ],
+      "constraints": [],
+      "unresolved": [],
+      "capabilities": {
+        "managed": true,
+        "stateful": true,
+        "for_each_batch": true,
+        "output_modes": [
+          "append",
+          "update",
+          "complete"
+        ],
+        "sources": [
+          "kafka",
+          "kinesis"
+        ]
+      }
+    },
+    {
+      "candidate": "glue_rtm",
+      "role": "runtime",
+      "status": "unsupported",
+      "evidence": [
+        "source=kafka",
+        "for_each_batch=False",
+        "output_mode=update"
+      ],
+      "constraints": [
+        {
+          "requirement": "stateful",
+          "expected": true,
+          "observed": false
+        }
+      ],
+      "unresolved": [],
+      "capabilities": {
+        "managed": true,
+        "stateful": false,
+        "for_each_batch": false,
+        "output_modes": [
+          "update"
+        ],
+        "sources": [
+          "kinesis",
+          "kafka"
+        ]
+      }
+    },
+    {
+      "candidate": "apache_flink",
+      "role": "runtime",
+      "status": "supported",
+      "evidence": [
+        "source=kafka",
+        "stateful=True",
+        "for_each_batch=False",
+        "output_mode=update"
+      ],
+      "constraints": [],
+      "unresolved": [],
+      "capabilities": {
+        "managed": false,
+        "stateful": true,
+        "for_each_batch": false,
+        "output_modes": [
+          "append",
+          "update"
+        ],
+        "sources": [
+          "kafka",
+          "kinesis",
+          "file"
+        ]
+      }
+    },
+    {
+      "candidate": "managed_flink",
+      "role": "runtime",
+      "status": "supported",
+      "evidence": [
+        "source=kafka",
+        "stateful=True",
+        "for_each_batch=False",
+        "output_mode=update"
+      ],
+      "constraints": [],
+      "unresolved": [],
+      "capabilities": {
+        "managed": true,
+        "stateful": true,
+        "for_each_batch": false,
+        "output_modes": [
+          "append",
+          "update"
+        ],
+        "sources": [
+          "kafka",
+          "kinesis"
+        ]
+      }
+    },
+    {
+      "candidate": "kafka_streams",
+      "role": "runtime",
+      "status": "supported",
+      "evidence": [
+        "source=kafka",
+        "stateful=True",
+        "for_each_batch=False",
+        "output_mode=update"
+      ],
+      "constraints": [],
+      "unresolved": [],
+      "capabilities": {
+        "managed": false,
+        "stateful": true,
+        "for_each_batch": false,
+        "output_modes": [
+          "update"
+        ],
+        "sources": [
+          "kafka"
+        ]
+      }
+    },
+    {
+      "candidate": "iceberg_lakehouse",
+      "role": "sink",
+      "status": "unresolved",
+      "evidence": [],
+      "constraints": [],
+      "unresolved": [
+        "sink_missing"
+      ],
+      "capabilities": {
+        "managed": false,
+        "stateful": null,
+        "for_each_batch": null,
+        "output_modes": [],
+        "sources": []
+      }
+    },
+    {
+      "candidate": "redshift_streaming",
+      "role": "sink",
+      "status": "unresolved",
+      "evidence": [],
+      "constraints": [],
+      "unresolved": [
+        "sink_missing"
+      ],
+      "capabilities": {
+        "managed": true,
+        "stateful": null,
+        "for_each_batch": null,
+        "output_modes": [],
+        "sources": []
+      }
+    }
+  ],
+  "constraint_elimination": [
+    {
+      "candidate": "spark_structured_streaming",
+      "status": "supported",
+      "constraints": []
+    },
+    {
+      "candidate": "glue_streaming",
+      "status": "supported",
+      "constraints": []
+    },
+    {
+      "candidate": "glue_rtm",
+      "status": "unsupported",
+      "constraints": [
+        {
+          "requirement": "stateful",
+          "expected": true,
+          "observed": false
+        }
+      ]
+    },
+    {
+      "candidate": "apache_flink",
+      "status": "supported",
+      "constraints": []
+    },
+    {
+      "candidate": "managed_flink",
+      "status": "supported",
+      "constraints": []
+    },
+    {
+      "candidate": "kafka_streams",
+      "status": "supported",
+      "constraints": []
+    },
+    {
+      "candidate": "iceberg_lakehouse",
+      "status": "unresolved",
+      "constraints": []
+    },
+    {
+      "candidate": "redshift_streaming",
+      "status": "unresolved",
+      "constraints": []
+    }
+  ],
+  "decision": {
+    "status": "unresolved",
+    "selected": null,
+    "viable_candidates": [
+      "spark_structured_streaming",
+      "glue_streaming",
+      "apache_flink",
+      "managed_flink",
+      "kafka_streams"
+    ],
+    "reason": "mais de um candidato permanece viavel; nao ha desempate factual"
+  },
+  "adr": {
+    "status": "unresolved",
+    "context": "Escolha de plataforma para workload streaming baseada em requisitos declarados.",
+    "requirements": {
+      "source": "kafka",
+      "stateful": true,
+      "for_each_batch": false,
+      "output_mode": "update"
+    },
+    "assumptions": {
+      "traffic_profile": "unknown",
+      "team_operates_kafka": true
+    },
+    "observed_facts": [
+      {
+        "fact_id": "requirement.for_each_batch",
+        "kind": "architecture.requirement",
+        "name": "for_each_batch",
+        "value": false,
+        "evidence": "declared_input.requirements"
+      },
+      {
+        "fact_id": "requirement.output_mode",
+        "kind": "architecture.requirement",
+        "name": "output_mode",
+        "value": "update",
+        "evidence": "declared_input.requirements"
+      },
+      {
+        "fact_id": "requirement.source",
+        "kind": "architecture.requirement",
+        "name": "source",
+        "value": "kafka",
+        "evidence": "declared_input.requirements"
+      },
+      {
+        "fact_id": "requirement.stateful",
+        "kind": "architecture.requirement",
+        "name": "stateful",
+        "value": true,
+        "evidence": "declared_input.requirements"
+      }
+    ],
+    "chosen_architecture": null,
+    "alternatives": [
+      "spark_structured_streaming",
+      "glue_streaming",
+      "glue_rtm",
+      "apache_flink",
+      "managed_flink",
+      "kafka_streams",
+      "iceberg_lakehouse",
+      "redshift_streaming"
+    ],
+    "tradeoffs": "Nao há tradeoff resolvido quando mais de um candidato permanece viavel.",
+    "risks": [
+      "Premissas nao sao evidencias de capacidade.",
+      "A matriz nao mede latencia, throughput, custo ou disponibilidade."
+    ],
+    "validation": [
+      "Validar runtime, contrato, replay, SLO e custo com artefatos do ambiente."
+    ],
+    "rollback": "Reabrir decisao, preservar input e substituir somente requisitos comprovados."
+  },
+  "unresolved": [
+    "iceberg_lakehouse:sink_missing",
+    "redshift_streaming:sink_missing"
+  ]
+}

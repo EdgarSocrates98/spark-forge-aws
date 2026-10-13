@@ -1,0 +1,45 @@
+[
+  {
+    "id": "f_10cce7",
+    "schema_version": 1,
+    "kind": "spark.timeout.diagnosis",
+    "subject": {
+      "type": "job_run",
+      "symbol": "3"
+    },
+    "measures": {
+      "executor_lost_count": 1.0
+    },
+    "attrs": {
+      "category": "heartbeat",
+      "basis": "executor_removed_reason",
+      "evidence_text": "ExecutorLostFailure (executor 3 exited caused by one of the running tasks) Reason: Executor heartbeat timed out after 130000 ms",
+      "also_seen": []
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_fb519c",
+    "schema_version": 1,
+    "kind": "spark.timeout.relation",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {
+      "heartbeat_s": 10.0,
+      "network_timeout_s": 120.0
+    },
+    "attrs": {
+      "heartbeat_raw": "10s",
+      "network_timeout_raw": "120s"
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

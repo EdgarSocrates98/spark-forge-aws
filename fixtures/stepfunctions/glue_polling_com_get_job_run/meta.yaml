@@ -1,0 +1,13 @@
+name: glue_polling_com_get_job_run
+proves: >
+  O NEGATIVO de SF-SFN-001 pela espera por consulta. `glue:startJobRun` sem `.sync` e
+  com `Next`, mas a MESMA definicao consulta o JobRun (`aws-sdk:glue:getJobRun`) num
+  laco `Wait` -> `getJobRun` -> `Choice`: a espera existe, montada a mao. O extrator
+  deriva `polled_by_get_job_run: true` no Task (regra 33), e a regra exige `false`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.state_machine, sfn.task]
+expects_rules: []

@@ -1,0 +1,78 @@
+[
+  {
+    "rule_id": "SF-STREAMICE-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Operação não-append observada no caminho streaming para Iceberg",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query->db.events",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_71a5f6"
+    ],
+    "measured": {
+      "progress_observation_count": 2,
+      "snapshot_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 120.0,
+      "processed_rows_per_second_last": 110.0,
+      "snapshot_span_hours": 0.001388888888888889,
+      "data_file_count": 1,
+      "avg_file_bytes": 67108864.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O vínculo declarado entre a query e a tabela contém pelo menos uma operação Iceberg não-append observada no dump de snapshots. Isso não prova que a operação quebrou a query, mas muda a pergunta de uma escrita append-only para uma compatibilidade que precisa ser validada contra o consumidor, o modo de leitura e a janela de replay.",
+    "proposed_change": [
+      "Confirmar a operação e o snapshot no metadata dump e revisar consumidores downstream.",
+      "Testar leitura incremental, reinício e replay em ambiente controlado antes de alterar o sink.",
+      "Definir rollback de dados e retenção de snapshots com o dono da tabela."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar a correlação como causa pode levar a mudar o sink sem evidência do modo de falha.",
+      "Expirar snapshots antes da validação pode remover o caminho de rollback."
+    ],
+    "tradeoffs": [
+      "Preservar histórico e executar replay aumenta armazenamento e duração do teste."
+    ],
+    "validation": [
+      "Comparar snapshots, operações, progresso e proxies funcionais antes e depois do experimento.",
+      "Confirmar que consumidores downstream aceitam a semântica observada."
+    ],
+    "rollback": [
+      "Reverter a configuração do sink e preservar snapshots necessários ao replay; não executar expiração sem aprovação."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-structured-streaming/",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "validation.functional_replay",
+      "target": "streaming.iceberg.link",
+      "direction": "investigate",
+      "requires_absent": [
+        "streaming.composition.unresolved"
+      ],
+      "moves": [
+        "correctness.write_result",
+        "storage.snapshot_history"
+      ],
+      "depends_on": []
+    }
+  }
+]

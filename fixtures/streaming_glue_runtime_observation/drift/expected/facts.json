@@ -1,0 +1,153 @@
+[
+  {
+    "id": "f_30491b",
+    "schema_version": 1,
+    "kind": "fusion.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "enriched_count": 0,
+      "unmatched_projection_count": 0,
+      "unmatched_predicate_count": 0,
+      "tables_known": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_5e270e",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "orders-stream",
+      "job_run_id": "jr-drift",
+      "symbol": "jr-drift"
+    },
+    "measures": {
+      "number_of_workers": 2,
+      "execution_time_s": 75
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "glue_version": "5.0",
+      "worker_type": "G.2X"
+    },
+    "provenance": {
+      "artifact": "jr-drift.json",
+      "artifact_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "extractor": "glue_job_run@0.1.0"
+    }
+  },
+  {
+    "id": "f_cd26a0",
+    "schema_version": 1,
+    "kind": "glue.streaming.job",
+    "subject": {
+      "type": "source_location",
+      "file": "effective.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-stream",
+      "snippet": ""
+    },
+    "measures": {
+      "worker_count": 4
+    },
+    "attrs": {
+      "name": "orders-stream",
+      "mode": "REAL_TIME",
+      "glue_version": "6.0",
+      "worker_type": "G.1X"
+    },
+    "provenance": {
+      "artifact": "effective.json",
+      "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_8e2bdc",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime_link",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-stream",
+      "snippet": ""
+    },
+    "measures": {
+      "run_count": 1,
+      "comparison_count": 3,
+      "divergence_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "job_name": "orders-stream",
+      "comparison_status": "divergent",
+      "drifts": [
+        "glue_version",
+        "worker_count",
+        "worker_type"
+      ],
+      "unresolved_fields": [],
+      "observed_states": [
+        "SUCCEEDED"
+      ],
+      "observed_run_ids": [
+        "jr-drift"
+      ],
+      "observed_glue_versions": [
+        "5.0"
+      ],
+      "observed_worker_types": [
+        "G.2X"
+      ],
+      "observed_worker_counts": [
+        2
+      ],
+      "source_fact_ids": [
+        "f_5e270e",
+        "f_cd26a0"
+      ]
+    },
+    "provenance": {
+      "extractor": "streaming_glue_runtime@0.1.0",
+      "artifact": "<fusion>",
+      "source_fact_ids": [
+        "f_5e270e",
+        "f_cd26a0"
+      ]
+    }
+  },
+  {
+    "id": "f_ca8c3f",
+    "schema_version": 1,
+    "kind": "spark.timeout.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "no_timeout_evidence",
+      "detail": "Nenhuma fonte trouxe sinal de timeout: o run nao esta em TIMEOUT, nenhum executor foi removido por heartbeat, e nenhuma stage falhou com frase de broadcast ou de RPC."
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": ""
+    }
+  }
+]

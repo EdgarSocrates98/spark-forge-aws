@@ -1,0 +1,9 @@
+name: drift
+description: Glue effective job and Terraform diverge on all four comparable axes.
+expects_kinds:
+  - glue.streaming.job
+  - tf.resource
+  - tf.attribute
+  - glue.streaming.terraform_link
+  - glue.streaming.runtime.unresolved
+  - fusion.summary

@@ -1,0 +1,3 @@
+artifact: input/contract.json
+expects_kinds: [streaming.checkpoint, kafka.connect, kafka.connect.task, kafka.streams, kafka.streams.state_store, lineage.openlineage, streaming_integrations.unresolved, streaming_integrations.analyzed]
+expects_findings: [SF-STREAM-007, SF-STREAM-008, SF-STREAM-009, SF-STREAM-010]

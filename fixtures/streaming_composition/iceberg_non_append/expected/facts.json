@@ -1,0 +1,360 @@
+[
+  {
+    "id": "f_0bbcf2",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "data_file_count": 1,
+      "total_bytes": 67108864,
+      "avg_file_bytes": 67108864.0,
+      "p50_file_bytes": 67108864,
+      "p95_file_bytes": 67108864,
+      "min_file_bytes": 67108864,
+      "max_file_bytes": 67108864,
+      "total_records": 100
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg.json",
+      "artifact_sha256": "e8811d1ae33b7006028e6e558813e9b9e1078a8ff36f846c9f6bfd1e4e096224",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_8cf7f2",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "declared": "2"
+    },
+    "provenance": {
+      "artifact": "iceberg.json",
+      "artifact_sha256": "e8811d1ae33b7006028e6e558813e9b9e1078a8ff36f846c9f6bfd1e4e096224",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_df7e65",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "iceberg.json",
+      "symbol": "db.events",
+      "snapshot_id": 1
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 1,
+      "committed_at": "2026-10-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "iceberg.json",
+      "artifact_sha256": "e8811d1ae33b7006028e6e558813e9b9e1078a8ff36f846c9f6bfd1e4e096224",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a55e5",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "iceberg.json",
+      "symbol": "db.events",
+      "snapshot_id": 2
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 2,
+      "committed_at": "2026-10-01T00:00:05+00:00",
+      "operation": "replace"
+    },
+    "provenance": {
+      "artifact": "iceberg.json",
+      "artifact_sha256": "e8811d1ae33b7006028e6e558813e9b9e1078a8ff36f846c9f6bfd1e4e096224",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_1c1b60",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "snapshot_count": 2,
+      "span_hours": 0.001388888888888889
+    },
+    "attrs": {
+      "operations": [
+        "append",
+        "replace"
+      ],
+      "oldest": "2026-10-01T00:00:00+00:00",
+      "newest": "2026-10-01T00:00:05+00:00"
+    },
+    "provenance": {
+      "artifact": "iceberg.json",
+      "artifact_sha256": "e8811d1ae33b7006028e6e558813e9b9e1078a8ff36f846c9f6bfd1e4e096224",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_9fdd63",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "iceberg.json",
+      "symbol": "db.events"
+    },
+    "measures": {
+      "section_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg.json",
+      "artifact_sha256": "e8811d1ae33b7006028e6e558813e9b9e1078a8ff36f846c9f6bfd1e4e096224",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_21901e",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "iceberg",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 10,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "iceberg",
+      "table": "db.events",
+      "query_name": "orders-query",
+      "transport_key": null,
+      "max_skew_seconds": null
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "iceberg.json",
+        "progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_71a5f6",
+    "schema_version": 1,
+    "kind": "streaming.iceberg.link",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query->db.events",
+      "snippet": ""
+    },
+    "measures": {
+      "progress_observation_count": 2,
+      "snapshot_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 120.0,
+      "processed_rows_per_second_last": 110.0,
+      "snapshot_span_hours": 0.001388888888888889,
+      "data_file_count": 1,
+      "avg_file_bytes": 67108864.0
+    },
+    "attrs": {
+      "table": "db.events",
+      "query_name": "orders-query",
+      "link_kind": "declared_input",
+      "operations": [
+        "append",
+        "replace"
+      ],
+      "non_append_operations": [
+        "replace"
+      ],
+      "non_append_observed": true,
+      "source_fact_ids": [
+        "f_0bbcf2",
+        "f_1c1b60",
+        "f_9debbc"
+      ],
+      "causal_inference": false
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "iceberg.json",
+        "progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_2962af",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_e546b8",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "num_input_rows": 100,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 120.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_6f9274",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "num_input_rows": 100,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 110.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:05Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_9debbc",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 120.0,
+      "processed_rows_per_second_last": 110.0,
+      "observed_span_seconds": 5.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 1,
+      "all_processed_below_input": false,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "0c96a19dc0db95be3434f00f39e570c41298d1b54993dcb6732c7588a0e28cdf",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  }
+]

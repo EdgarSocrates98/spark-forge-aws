@@ -1,0 +1,11 @@
+description: >-
+  Recibo de execucao (§14) sobre a UNIAO das duas fixtures do unico par de
+  conflito do catalogo (SF-GRAPH-005 x SF-LF-001). O teste monta o case em
+  tmp_path: copia os facts e os findings das duas fixtures, assina o report de
+  input/, roda arbitrate (blackboard com claims, contradicao, evidencias e
+  unknowns) e emite pela CLI com --now fixo, sem --run-id e sem transcript.
+now: "2026-09-12T00:00:00Z"
+case_id: uniao-debate
+uniao:
+  - fixtures/graph/import_sem_jar_no_iac/expected
+  - fixtures/infra_code/fgac_com_jar_extra/expected

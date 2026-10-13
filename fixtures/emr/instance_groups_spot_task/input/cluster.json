@@ -1,0 +1,105 @@
+{
+  "Cluster": {
+    "Id": "j-1GROUPSCLUSTER",
+    "Name": "etl-pedidos",
+    "ReleaseLabel": "emr-6.15.0",
+    "InstanceCollectionType": "INSTANCE_GROUP",
+    "LogUri": "s3://lake-emr-logs/elasticmapreduce/",
+    "ScaleDownBehavior": "TERMINATE_AT_TASK_COMPLETION",
+    "AutoTerminate": false,
+    "UnhealthyNodeReplacement": true,
+    "Status": {
+      "State": "RUNNING",
+      "StateChangeReason": {"Code": "ALL_STEPS_COMPLETED"}
+    },
+    "Applications": [
+      {"Name": "Spark", "Version": "3.4.1-amzn-2"},
+      {"Name": "Hadoop", "Version": "3.3.6-amzn-1"},
+      {"Name": "Iceberg", "Version": "1.4.0-amzn-0"}
+    ],
+    "Configurations": [
+      {
+        "Classification": "spark-defaults",
+        "Properties": {
+          "spark.dynamicAllocation.enabled": "false",
+          "spark.sql.sources.partitionOverwriteMode": "dynamic"
+        }
+      },
+      {
+        "Classification": "spark-env",
+        "Properties": {},
+        "Configurations": [
+          {
+            "Classification": "export",
+            "Properties": {"PYSPARK_PYTHON": "/usr/bin/python3"}
+          }
+        ]
+      },
+      {
+        "Classification": "emrfs-site",
+        "Properties": {"fs.s3.awsSecretAccessKey": "AKIAIOSFODNN7EXAMPLE"}
+      }
+    ]
+  },
+  "InstanceGroups": [
+    {
+      "Id": "ig-MASTER",
+      "InstanceGroupType": "MASTER",
+      "Market": "ON_DEMAND",
+      "InstanceType": "m5.xlarge",
+      "RequestedInstanceCount": 1,
+      "RunningInstanceCount": 1,
+      "EbsBlockDevices": []
+    },
+    {
+      "Id": "ig-CORE",
+      "InstanceGroupType": "CORE",
+      "Market": "ON_DEMAND",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 4,
+      "RunningInstanceCount": 4,
+      "EbsBlockDevices": [{"VolumeSpecification": {"VolumeType": "gp3", "SizeInGB": 256}}]
+    },
+    {
+      "Id": "ig-TASK",
+      "InstanceGroupType": "TASK",
+      "Market": "SPOT",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 8,
+      "RunningInstanceCount": 6,
+      "ConfigurationsVersion": 2,
+      "AutoScalingPolicy": {"Status": {"State": "ATTACHED"}},
+      "Configurations": [
+        {
+          "Classification": "spark-defaults",
+          "Properties": {"spark.dynamicAllocation.enabled": "true"}
+        }
+      ],
+      "LastSuccessfullyAppliedConfigurations": [
+        {
+          "Classification": "spark-defaults",
+          "Properties": {"spark.dynamicAllocation.enabled": "true"}
+        }
+      ]
+    }
+  ],
+  "BootstrapActions": [
+    {
+      "Name": "instala-dependencias",
+      "ScriptBootstrapAction": {
+        "Path": "s3://lake-emr-scripts/bootstrap.sh",
+        "Args": ["--repo", "interno", "--password=aB3xY9zQw7Lm2Kd8Rt5N"]
+      }
+    }
+  ],
+  "ManagedScalingPolicy": {
+    "ComputeLimits": {
+      "UnitType": "Instances",
+      "MinimumCapacityUnits": 5,
+      "MaximumCapacityUnits": 40,
+      "MaximumOnDemandCapacityUnits": 5,
+      "MaximumCoreCapacityUnits": 5
+    }
+  },
+  "AutoTerminationPolicy": {"IdleTimeout": 3600}
+}

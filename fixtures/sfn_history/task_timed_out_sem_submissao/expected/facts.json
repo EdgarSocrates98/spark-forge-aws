@@ -1,0 +1,124 @@
+[
+  {
+    "id": "f_d0a099",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4577fbbd791a7bf1f3fc6e6bf8688216a6727c9254c47004ac2bc1cd51beddb",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5db08",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaLenta#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 60.0,
+      "timeout_seconds": 60
+    },
+    "attrs": {
+      "state_name": "CargaLenta",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "timed_out",
+      "terminal_present": true,
+      "submitted": false,
+      "execution_outcome": "failed",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": false,
+      "error": "States.Timeout",
+      "cause": "Task timed out after 60 seconds"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4577fbbd791a7bf1f3fc6e6bf8688216a6727c9254c47004ac2bc1cd51beddb",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_b71cfb",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "read_event_count": 5,
+      "attempt_count": 1,
+      "job_run_count": 0,
+      "duration_seconds": 63.0
+    },
+    "attrs": {
+      "status": "failed",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4577fbbd791a7bf1f3fc6e6bf8688216a6727c9254c47004ac2bc1cd51beddb",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_ee7043",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaLenta",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaLenta"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_a5db08"
+      ]
+    }
+  }
+]

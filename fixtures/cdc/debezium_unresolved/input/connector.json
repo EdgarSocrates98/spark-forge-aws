@@ -1,0 +1,9 @@
+{
+  "connector": {
+    "name": "orders-connector",
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "database": "orders",
+    "delete.handling.mode": "rewrite",
+    "tombstones.on.delete": false
+  }
+}

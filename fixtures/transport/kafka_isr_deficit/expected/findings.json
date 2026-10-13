@@ -1,0 +1,77 @@
+[
+  {
+    "rule_id": "SF-STREAMOBS-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "ISR observado abaixo do replication factor em partição Kafka",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_b68b2c"
+    ],
+    "measured": {
+      "partition": 0,
+      "leader": 1,
+      "replication_factor": 3,
+      "isr_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O dump Kafka observou menos réplicas in-sync do que o replication factor da partição. Isso é um sinal de replicação degradada naquela observação; não prova indisponibilidade, perda de dados, causa do déficit ou violação de min.insync.replicas sem esses campos no artifact.",
+    "proposed_change": [
+      "Confirmar topic, partition, replicas, ISR, instante e procedência do dump.",
+      "Coletar baseline pareado com eventos do broker, min.insync.replicas, acks e runtime efetivo.",
+      "Validar escrita, leitura, resultado funcional e política de recuperação antes de alterar capacidade."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Um snapshot único pode capturar uma transição curta e não estabelecer incidente persistente.",
+      "Alterar min.insync.replicas ou brokers sem observar a configuração efetiva pode mudar semântica de escrita.",
+      "Confundir ISR deficit com lag de consumidor desloca a investigação para o componente errado."
+    ],
+    "tradeoffs": [
+      "Preservar facts por partição aumenta bytes locais, mas evita recomputar o dump para cada regra."
+    ],
+    "validation": [
+      "Conferir replication factor, ISR, leader, timestamp e identidade da partição.",
+      "Repetir a coleta na mesma partição e correlacionar broker events, producer acks e consumer lag.",
+      "Validar count, schema, chaves e agregados do resultado após qualquer experimento."
+    ],
+    "rollback": [
+      "Reverter a única mudança experimental e preservar o dump/receipt para reauditoria."
+    ],
+    "sources": [
+      {
+        "url": "https://kafka.apache.org/40/operations/basic-kafka-operations/",
+        "retrieved": "2026-10-03"
+      },
+      {
+        "url": "https://kafka.apache.org/40/implementation/distribution/",
+        "retrieved": "2026-10-03"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "transport.replication",
+      "direction": "investigate",
+      "requires_absent": [
+        "kafka.unresolved"
+      ],
+      "moves": [
+        "transport.backlog",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  }
+]

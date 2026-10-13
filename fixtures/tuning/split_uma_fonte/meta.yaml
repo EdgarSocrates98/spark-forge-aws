@@ -1,0 +1,4 @@
+name: split_uma_fonte
+runtime:
+  glue: '5.0'
+proves: 'Uma fonte medida, tres row groups de 96, 128 e 112 MiB COMPRIMIDOS: o split sai na mediana, 112 MiB (117440512 bytes). O `total_byte_size` descomprimido (256 MiB) esta no fact e nao entra: o Spark fatia bytes do arquivo.'

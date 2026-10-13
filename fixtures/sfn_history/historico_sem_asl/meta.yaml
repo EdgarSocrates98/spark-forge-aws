@@ -1,0 +1,19 @@
+name: historico_sem_asl
+proves: >
+  A SEGUNDA metade da AC4, e o unico jeito de prova-la. Quatro tentativas do mesmo
+  estado e quatro JobRuns distintos -- numero que dispararia a SF-SFNX-001 com
+  qualquer teto declarado plausivel --, e nenhuma definicao ASL no case. O confronto
+  NAO acontece, a regra sai em `skipped` com `reason: requires_facts`, e a lacuna sai
+  nomeada em `asl_absent`. "Nao perguntei" e o achado; "esta tudo bem" seria mentira.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: []

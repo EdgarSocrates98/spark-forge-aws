@@ -1,0 +1,174 @@
+{
+  "files": [
+    {
+      "created_by": "parquet-cpp-arrow version 25.0.1",
+      "file_bytes": 402653184,
+      "format_version": "2.6",
+      "num_columns": 2,
+      "num_row_groups": 3,
+      "num_rows": 3000,
+      "path": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "row_groups": [
+        {
+          "columns": [
+            {
+              "bloom_filter_offset": null,
+              "compression": "SNAPPY",
+              "encodings": [
+                "PLAIN",
+                "RLE",
+                "RLE_DICTIONARY"
+              ],
+              "has_column_index": false,
+              "has_dictionary_page": true,
+              "has_min_max": true,
+              "has_offset_index": false,
+              "is_stats_set": true,
+              "max": 999,
+              "min": 0,
+              "null_count": 0,
+              "num_values": 1000,
+              "path": "id",
+              "physical_type": "INT64",
+              "total_compressed_size": 5358,
+              "total_uncompressed_size": 9343
+            },
+            {
+              "bloom_filter_offset": null,
+              "compression": "SNAPPY",
+              "encodings": [
+                "PLAIN",
+                "RLE",
+                "RLE_DICTIONARY"
+              ],
+              "has_column_index": false,
+              "has_dictionary_page": true,
+              "has_min_max": true,
+              "has_offset_index": false,
+              "is_stats_set": true,
+              "max": "c4",
+              "min": "c0",
+              "null_count": 0,
+              "num_values": 1000,
+              "path": "cat",
+              "physical_type": "BYTE_ARRAY",
+              "total_compressed_size": 129,
+              "total_uncompressed_size": 462
+            }
+          ],
+          "index": 0,
+          "num_rows": 1000,
+          "total_byte_size": 134217728
+        },
+        {
+          "columns": [
+            {
+              "bloom_filter_offset": null,
+              "compression": "SNAPPY",
+              "encodings": [
+                "PLAIN",
+                "RLE",
+                "RLE_DICTIONARY"
+              ],
+              "has_column_index": false,
+              "has_dictionary_page": true,
+              "has_min_max": true,
+              "has_offset_index": false,
+              "is_stats_set": true,
+              "max": 1999,
+              "min": 1000,
+              "null_count": 0,
+              "num_values": 1000,
+              "path": "id",
+              "physical_type": "INT64",
+              "total_compressed_size": 5363,
+              "total_uncompressed_size": 9343
+            },
+            {
+              "bloom_filter_offset": null,
+              "compression": "SNAPPY",
+              "encodings": [
+                "PLAIN",
+                "RLE",
+                "RLE_DICTIONARY"
+              ],
+              "has_column_index": false,
+              "has_dictionary_page": true,
+              "has_min_max": true,
+              "has_offset_index": false,
+              "is_stats_set": true,
+              "max": "c4",
+              "min": "c0",
+              "null_count": 0,
+              "num_values": 1000,
+              "path": "cat",
+              "physical_type": "BYTE_ARRAY",
+              "total_compressed_size": 129,
+              "total_uncompressed_size": 462
+            }
+          ],
+          "index": 1,
+          "num_rows": 1000,
+          "total_byte_size": 134217728
+        },
+        {
+          "columns": [
+            {
+              "bloom_filter_offset": null,
+              "compression": "SNAPPY",
+              "encodings": [
+                "PLAIN",
+                "RLE",
+                "RLE_DICTIONARY"
+              ],
+              "has_column_index": false,
+              "has_dictionary_page": true,
+              "has_min_max": true,
+              "has_offset_index": false,
+              "is_stats_set": true,
+              "max": 2999,
+              "min": 2000,
+              "null_count": 0,
+              "num_values": 1000,
+              "path": "id",
+              "physical_type": "INT64",
+              "total_compressed_size": 5365,
+              "total_uncompressed_size": 9343
+            },
+            {
+              "bloom_filter_offset": null,
+              "compression": "SNAPPY",
+              "encodings": [
+                "PLAIN",
+                "RLE",
+                "RLE_DICTIONARY"
+              ],
+              "has_column_index": false,
+              "has_dictionary_page": true,
+              "has_min_max": true,
+              "has_offset_index": false,
+              "is_stats_set": true,
+              "max": "c4",
+              "min": "c0",
+              "null_count": 0,
+              "num_values": 1000,
+              "path": "cat",
+              "physical_type": "BYTE_ARRAY",
+              "total_compressed_size": 129,
+              "total_uncompressed_size": 462
+            }
+          ],
+          "index": 2,
+          "num_rows": 1000,
+          "total_byte_size": 134217728
+        }
+      ]
+    }
+  ],
+  "files_read": 1,
+  "files_seen": 1,
+  "max_files": 20,
+  "prefix": "s3://lake/curated/ordenado_poda/",
+  "sampling": "first_n_by_name",
+  "status": "ok"
+}

@@ -1,0 +1,6 @@
+# Recusa `id_duplicado`: dois arquivos do pack escrevem a mesma regra.
+pack:
+  id: dup-platform
+  version: 1.0.0
+  prefix: DUP
+  core: ">=0.5"

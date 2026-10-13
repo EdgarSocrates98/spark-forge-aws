@@ -1,0 +1,190 @@
+[
+  {
+    "id": "f_572f96",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0",
+      "symbol": "jr_0"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_89dab7",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_1",
+      "symbol": "jr_1"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_c2503e",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_2",
+      "symbol": "jr_2"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_d34ab1",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_3",
+      "symbol": "jr_3"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_d904a3",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_4",
+      "symbol": "jr_4"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_f573a8",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_5",
+      "symbol": "jr_5"
+    },
+    "measures": {
+      "execution_time_s": 300,
+      "number_of_workers": 10,
+      "dpu_seconds": 6000.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_f2535d",
+    "schema_version": 1,
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "db.pedidos",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {
+      "bytes_read": 2000000000,
+      "files_read": 4
+    },
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "event_log.jsonl"
+    }
+  }
+]

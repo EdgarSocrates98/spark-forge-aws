@@ -1,0 +1,104 @@
+catalog_version: 1
+schema_version: 1
+area: SF-SCHEMA
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-SCHEMA-001
+    category: schema_registry
+    title: Evolução de schema incompatível com modo declarado
+    requires_facts: [schema.registry, schema.diff]
+    when:
+      all:
+        - fact: schema.diff
+          expr: 'attrs.compatible == False'
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O diff estrutural observado viola o modo de compatibilidade declarado.
+      O finding não prova impacto em todo consumidor; prova que o contrato
+      capturado não sustenta a evolução no modo escolhido.
+    proposed_change:
+      - Revisar remoção, tipo e obrigatoriedade com todos os consumidores.
+      - Testar registro e leitura da nova versão em ambiente controlado.
+    risks: ["Publicar schema incompatível pode quebrar consumidores ou replay."]
+    tradeoffs: ["Compatibilidade mais restrita pode limitar evolução e exigir novo subject."]
+    validation: ["Executar testes de compatibilidade contra schema anterior e consumidores declarados."]
+    rollback: ["Reverter registro para versão anterior preservando eventos e evidência."]
+    action:
+      kind: contract.review_compatibility
+      target: schema.compatibility
+      direction: investigate
+      requires_absent: []
+      moves: [correctness.read_result, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/schema-registry-data-contracts.md}]
+
+  - id: SF-SCHEMA-002
+    category: schema_registry
+    title: Registro automático de schema sem aprovação explícita
+    requires_facts: [schema.registry]
+    when:
+      all:
+        - fact: schema.registry
+          expr: 'attrs.auto_register == True'
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O artefato declara auto-registro. Isso pode ser adequado em ambientes
+      controlados, mas não prova revisão, compatibilidade ou ownership do
+      contrato antes da publicação.
+    proposed_change:
+      - Declarar política de aprovação, owner e modo de compatibilidade.
+      - Separar registro de desenvolvimento e produção e testar rejeição.
+    risks: ["Produtores podem publicar mudança incompatível sem revisão."]
+    tradeoffs: ["Aprovação prévia aumenta governança e latência de deploy."]
+    validation: ["Verificar audit trail, owner e tentativa de registro incompatível."]
+    rollback: ["Desligar auto-registro conforme procedimento operacional aprovado."]
+    action:
+      kind: contract.require_review
+      target: schema.auto_register
+      direction: decrease
+      requires_absent: []
+      moves: [security.identity_access, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/schema-registry-works.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/schema-registry-data-contracts.md}]
+
+  - id: SF-SCHEMA-003
+    category: schema_registry
+    title: Compatibilidade do contrato não declarada
+    requires_facts: [schema.registry, schema.unresolved]
+    when:
+      all:
+        - fact: schema.unresolved
+          where: {attrs.reason: compatibility_not_declared}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O dump traz uma definição de schema, mas não informa o modo de
+      compatibilidade. Sem essa política o diff não pode ser julgado contra o
+      contrato operacional do registry.
+    proposed_change:
+      - Coletar configuração efetiva do registry/subject e o owner do contrato.
+      - Reexecutar o diff com a política declarada e consumidores versionados.
+    risks: ["Ausência de política permite evolução divergente entre ambientes."]
+    tradeoffs: ["Governança de compatibilidade exige manter versões e owners."]
+    validation: ["Comparar configuração efetiva, schema anterior e regra de deploy."]
+    rollback: ["Não publicar nova versão até recuperar a política observável."]
+    action:
+      kind: contract.collect_policy
+      target: schema.compatibility
+      direction: investigate
+      requires_absent: []
+      moves: [correctness.write_result, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/en_en/glue/latest/dg/aws-glue-api-schema-registry-api.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/schema-registry-data-contracts.md}]

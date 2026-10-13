@@ -1,0 +1,21 @@
+{
+  "application": {
+    "applicationId": "00fsempreinitoff0001",
+    "name": "batch-sob-demanda",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "architecture": "X86_64",
+    "autoStartConfiguration": {
+      "enabled": true
+    },
+    "autoStopConfiguration": {
+      "enabled": false
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

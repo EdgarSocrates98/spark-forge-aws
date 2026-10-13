@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-013",
+  "signature": "FileNotFoundException",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "A task fails naming a file that the plan expected to read",
+    "The message often suggests refreshing the table cache",
+    "Re-running the job sometimes succeeds without any change"
+  ],
+  "likely_causes": [
+    "The file was deleted between the moment the plan listed it and the moment a task read it -- a concurrent writer, a compaction, or a retention job",
+    "The catalog or the table metadata points at a location whose contents changed underneath",
+    "A previous run left the listing cached and the underlying prefix moved on"
+  ],
+  "evidence_required": [
+    "s3.prefix_summary"
+  ],
+  "diagnostic_steps": [
+    "Read the listing of the prefix the plan targeted, and check whether the count of files is compatible with what the plan expected",
+    "Read whether another process writes to or maintains the same location while this job runs -- this failure is almost always about two writers on one clock",
+    "Separate a file that never existed from a file that stopped existing: the first is a metadata problem, the second is a concurrency one"
+  ],
+  "fixes": [
+    "Serialise the job against the process that maintains the location, so the listing does not move under the read",
+    "Refresh the table metadata before the read when the location is known to change",
+    "Use a table format that gives the reader a consistent snapshot, when concurrent maintenance is a permanent condition"
+  ],
+  "unsafe_fixes": [
+    "Retrying until it passes, which turns a correctness question into a timing one and hides the concurrent writer",
+    "Ignoring missing files by configuration, which makes the job succeed with less data than it should have read"
+  ],
+  "verification": "Row count of the output against the expected count at the source, for the same window. This failure has a silent sibling -- a read that succeeds with fewer files than it should have -- and only the count catches it",
+  "rollback": "Restore the previous scheduling or metadata handling. If a run completed with partial data, the output is wrong and has to be reprocessed, not just reverted",
+  "sources": [
+    "https://spark.apache.org/docs/latest/sql-data-sources-parquet.html"
+  ],
+  "last_verified": "2026-09-09"
+}

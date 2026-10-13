@@ -1,0 +1,3 @@
+artifact: input/architecture.json
+expects_findings: [SF-EVENT-001]
+expects_kinds: [eventbridge.pipe, eventbridge.rule, event_driven.analyzed, sns.subscription, sns.topic, sqs.queue]

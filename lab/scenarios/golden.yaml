@@ -1,0 +1,319 @@
+schema_version: 1
+suite: forge-lab-golden-20
+defaults:
+  profile: &standard
+    profile: streaming
+    mode: lite
+    required_memory_gb: 1
+    required_cpu: 1
+    runtime_class: smoke
+    network: isolated
+    ports: [9092]
+    destructive_behavior: false
+  fidelity: &local
+    tier: L1
+    environment: local
+    implementation: apache
+    proves: [declared_engine_semantics]
+    does_not_prove: [aws_service_semantics, production_capacity]
+scenarios:
+  - id: LAB-001
+    slug: iceberg-small-files
+    title: Iceberg small files
+    version: 1
+    profile: {<<: *standard, profile: lakehouse, ports: [8181, 9000]}
+    fidelity: *local
+    topology: {source: generator, processor: spark, sink: iceberg_rest}
+    dataset: {schema: order, seed: 101, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {iceberg: {commit_interval: 1, target_file_records: 1}}
+    workload: {rate: 100, steps: 3, partition_key: {strategy: entity_id}}
+    fault: {type: none}
+    observe: [iceberg.file_count, iceberg.file_size_distribution, iceberg.manifest_count]
+    expected: {facts: [iceberg.file.count], findings: [SF-ICE-WASTE-SMALL-FILES], must_not_find: [SF-ICE-WASTE-COMPACTION_UNKNOWN], unresolved: [], analyzers: [iceberg], artifact_paths: [iceberg]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "tiny writes produce many small files", independent_variable: target_file_records, controlled: [seed, schema], measure: [file_count, file_size_distribution], success: fact_present}
+  - id: LAB-002
+    slug: spark-skew
+    title: Spark skew
+    version: 1
+    profile: {<<: *standard, profile: spark, mode: lite}
+    fidelity: *local
+    topology: {source: generator, processor: spark, sink: parquet}
+    dataset: {schema: order, seed: 102, records: 1000, key_cardinality: 100, skew: 0.95, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {spark: {partitions: 4}}
+    workload: {rate: 100, steps: 3, partition_key: {strategy: entity_id}}
+    fault: {type: none}
+    observe: [spark.task_duration_spread, spark.partition_distribution]
+    expected: {facts: [spark.partition.skew], findings: [SF-PY-SKEW], must_not_find: [], unresolved: [], analyzers: [event-log], artifact_paths: [spark]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "hot keys create partition imbalance", independent_variable: skew, controlled: [seed, record_count], measure: [task_duration_spread], success: fact_present}
+  - id: LAB-003
+    slug: spark-spill
+    title: Spark spill
+    version: 1
+    profile: {<<: *standard, profile: spark, mode: lite}
+    fidelity: *local
+    topology: {source: generator, processor: spark, sink: parquet}
+    dataset: {schema: transaction, seed: 103, records: 1000, key_cardinality: 10, skew: 0.5, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {spark: {memory_limit_mb: 256, shuffle_partitions: 2}}
+    workload: {rate: 100, steps: 3, partition_key: {strategy: entity_id}}
+    fault: {type: memory_constrain, duration: 10s}
+    observe: [spark.memory_spill, spark.shuffle_bytes]
+    expected: {facts: [spark.memory.spill], findings: [SF-SPARK-SPILL], must_not_find: [], unresolved: [], analyzers: [event-log], artifact_paths: [spark]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "constrained memory increases spill", independent_variable: memory_limit_mb, controlled: [seed, record_count], measure: [spill_bytes], success: fact_present}
+  - id: LAB-004
+    slug: kafka-consumer-lag-001
+    title: Kafka consumer lag
+    version: 1
+    profile: {<<: *standard, profile: kafka}
+    fidelity: *local
+    topology: {source: generator, transport: kafka, processor: spark}
+    dataset: {schema: clickstream, seed: 104, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {kafka: {partitions: 4}}
+    workload: {rate: 10000, steps: 4, partition_key: {strategy: customer_id}}
+    fault: {type: consumer_slowdown, after: 1s, duration: 2s, wait_until: {metric: kafka.consumer_lag, relation: greater_than_baseline}}
+    observe: [kafka.consumer_lag, kafka.throughput, kafka.catchup_duration]
+    expected: {facts: [kafka.consumer.lag, kafka.consumer.input_rate, kafka.consumer.processing_rate], findings: [SF-KAFKA-CONSUMER-LAG], must_not_find: [SF-KAFKA-BROKER_FAILURE], unresolved: [], analyzers: [streaming-integrations], artifact_paths: [kafka, metrics]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "slower consumer creates backlog", independent_variable: consumer_rate, controlled: [seed, partitions], measure: [consumer_lag, catchup_duration], success: lag_above_baseline}
+  - id: LAB-005
+    slug: kafka-hot-partition
+    title: Kafka hot partition
+    version: 1
+    profile: {<<: *standard, profile: kafka}
+    fidelity: *local
+    topology: {source: generator, transport: kafka, processor: consumer_validator}
+    dataset: {schema: clickstream, seed: 105, records: 1000, key_cardinality: 100, skew: 0.95, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {kafka: {partitions: 4}}
+    workload: {rate: 1000, steps: 4, partition_key: {strategy: customer_id}}
+    fault: {type: none}
+    observe: [kafka.partition_distribution, kafka.consumer_lag]
+    expected: {facts: [kafka.partition.hot], findings: [SF-KAFKA-HOT-PARTITION], must_not_find: [], unresolved: [], analyzers: [streaming-integrations], artifact_paths: [kafka]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "concentrated keys create hot partition", independent_variable: skew, controlled: [seed, partitions], measure: [partition_distribution], success: distribution_imbalanced}
+  - id: LAB-006
+    slug: kafka-broker-restart
+    title: Kafka broker restart and recovery
+    version: 1
+    profile: {<<: *standard, profile: kafka, mode: standard}
+    fidelity: *local
+    topology: {source: generator, transport: kafka, processor: consumer_validator}
+    dataset: {schema: clickstream, seed: 106, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {kafka: {partitions: 4, brokers: 1}}
+    workload: {rate: 1000, steps: 5, partition_key: {strategy: customer_id}}
+    fault: {type: restart_broker, duration: 5s}
+    observe: [kafka.consumer_errors, kafka.recovery_timestamp, kafka.catchup_duration]
+    expected: {facts: [kafka.broker.restart, kafka.consumer.recovery], findings: [SF-KAFKA-RECOVERY], must_not_find: [], unresolved: [], analyzers: [streaming-integrations], artifact_paths: [kafka, logs]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "broker restart produces bounded recovery", independent_variable: broker_process, controlled: [seed, partitions], measure: [recovery_timestamp], success: recovered}
+  - id: LAB-007
+    slug: streaming-processing-slower-than-input
+    title: Processing slower than input
+    version: 1
+    profile: {<<: *standard, profile: streaming}
+    fidelity: *local
+    topology: {source: kafka, transport: kafka, processor: spark}
+    dataset: {schema: clickstream, seed: 107, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {spark: {processing_delay_ms: 200}}
+    workload: {rate: 5000, steps: 4, partition_key: {strategy: customer_id}}
+    fault: {type: consumer_slowdown, duration: 2s}
+    observe: [spark.streaming.input_rate, spark.streaming.processing_rate, kafka.consumer_lag]
+    expected: {facts: [spark.streaming.processing_rate], findings: [SF-STREAM-BACKLOG], must_not_find: [], unresolved: [], analyzers: [streaming, streaming-composition], artifact_paths: [spark, kafka]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "processing rate below input rate grows backlog", independent_variable: processing_delay_ms, controlled: [seed, rate], measure: [input_rate, processing_rate], success: processing_below_input}
+  - id: LAB-008
+    slug: streaming-late-events
+    title: Late events and watermark
+    version: 1
+    profile: {<<: *standard, profile: streaming}
+    fidelity: *local
+    topology: {source: generator, transport: kafka, processor: spark}
+    dataset: {schema: clickstream, seed: 108, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0.2, duplicate_ratio: 0}
+    setup: {spark: {watermark: 10m}}
+    workload: {rate: 1000, steps: 4, partition_key: {strategy: customer_id}, late_events: {percent: 20}}
+    fault: {type: none}
+    observe: [spark.streaming.watermark, spark.streaming.dropped_late_rows]
+    expected: {facts: [spark.streaming.watermark], findings: [SF-STREAM-LATE-EVENTS], must_not_find: [], unresolved: [], analyzers: [streaming], artifact_paths: [spark]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "late event ratio exercises watermark boundary", independent_variable: late_event_ratio, controlled: [seed, watermark], measure: [dropped_late_rows], success: fact_present}
+  - id: LAB-009
+    slug: streaming-state-growth
+    title: State store growth
+    version: 1
+    profile: {<<: *standard, profile: streaming, mode: standard}
+    fidelity: *local
+    topology: {source: generator, transport: kafka, processor: spark}
+    dataset: {schema: clickstream, seed: 109, records: 1000, key_cardinality: 1000, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {spark: {state_store: enabled}}
+    workload: {rate: 1000, steps: 5, partition_key: {strategy: customer_id}}
+    fault: {type: none}
+    observe: [spark.streaming.state_store_size, spark.streaming.batch_duration]
+    expected: {facts: [spark.streaming.state_store], findings: [SF-STREAM-STATE-GROWTH], must_not_find: [], unresolved: [], analyzers: [streaming], artifact_paths: [spark]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "unbounded keys increase state", independent_variable: key_cardinality, controlled: [seed, rate], measure: [state_store_size], success: state_grows}
+  - id: LAB-010
+    slug: flink-backpressure
+    title: Flink backpressure
+    version: 1
+    profile: {<<: *standard, profile: flink}
+    fidelity: *local
+    topology: {source: kafka, transport: kafka, processor: flink, sink: iceberg_rest}
+    dataset: {schema: clickstream, seed: 110, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {flink: {parallelism: 2}}
+    workload: {rate: 10000, steps: 4, partition_key: {strategy: customer_id}}
+    fault: {type: consumer_slowdown, duration: 2s}
+    observe: [flink.backpressure, flink.busy_time, kafka.consumer_lag]
+    expected: {facts: [flink.operator.backpressure], findings: [SF-FLINK-BACKPRESSURE], must_not_find: [], unresolved: [], analyzers: [flink, streaming-composition], artifact_paths: [flink, kafka]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "slow sink propagates backpressure", independent_variable: sink_rate, controlled: [seed, parallelism], measure: [backpressure, busy_time], success: backpressure_present}
+  - id: LAB-011
+    slug: flink-slow-checkpoint
+    title: Flink slow checkpoint
+    version: 1
+    profile: {<<: *standard, profile: flink}
+    fidelity: *local
+    topology: {source: kafka, transport: kafka, processor: flink, sink: iceberg_rest}
+    dataset: {schema: transaction, seed: 111, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {flink: {checkpoint_interval: 1s}}
+    workload: {rate: 1000, steps: 4, partition_key: {strategy: entity_id}}
+    fault: {type: latency, target: checkpoint_store, duration: 2s}
+    observe: [flink.checkpoint.duration, flink.checkpoint.failed]
+    expected: {facts: [flink.checkpoint.slow], findings: [SF-FLINK-CHECKPOINT], must_not_find: [], unresolved: [], analyzers: [flink], artifact_paths: [flink]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "checkpoint store latency increases checkpoint duration", independent_variable: checkpoint_store_latency, controlled: [seed, interval], measure: [checkpoint_duration], success: duration_increases}
+  - id: LAB-012
+    slug: flink-taskmanager-crash
+    title: Flink TaskManager crash
+    version: 1
+    profile: {<<: *standard, profile: flink, mode: standard}
+    fidelity: *local
+    topology: {source: kafka, transport: kafka, processor: flink, sink: iceberg_rest}
+    dataset: {schema: transaction, seed: 112, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {flink: {parallelism: 2}}
+    workload: {rate: 1000, steps: 5, partition_key: {strategy: entity_id}}
+    fault: {type: restart_taskmanager, duration: 5s}
+    observe: [flink.restart_count, flink.checkpoint.recovery, flink.job_status]
+    expected: {facts: [flink.taskmanager.restart], findings: [SF-FLINK-RECOVERY], must_not_find: [], unresolved: [], analyzers: [flink], artifact_paths: [flink, logs]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "TaskManager restart recovers from checkpoint", independent_variable: taskmanager_process, controlled: [seed, parallelism], measure: [restart_count, recovery], success: recovered}
+  - id: LAB-013
+    slug: cdc-initial-snapshot
+    title: Debezium initial snapshot
+    version: 1
+    profile: {<<: *standard, profile: cdc}
+    fidelity: *local
+    topology: {source: postgres, capture: debezium, transport: kafka, validator: cdc_validator}
+    dataset: {schema: cdc_customer, seed: 113, records: 100, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {postgres: {wal_level: logical}, debezium: {snapshot_mode: initial}}
+    workload: {rate: 10, steps: 3, partition_key: {strategy: entity_id}}
+    fault: {type: none}
+    observe: [cdc.snapshot_complete, cdc.offset, cdc.reconciliation]
+    expected: {facts: [cdc.snapshot], findings: [SF-CDC-SNAPSHOT-SEAM], must_not_find: [], unresolved: [], analyzers: [cdc], artifact_paths: [cdc, kafka]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "snapshot has explicit seam before streaming changes", independent_variable: snapshot_mode, controlled: [seed, rows], measure: [snapshot_complete, offset], success: seam_present}
+  - id: LAB-014
+    slug: cdc-delete-tombstone
+    title: CDC delete and tombstone
+    version: 1
+    profile: {<<: *standard, profile: cdc}
+    fidelity: *local
+    topology: {source: postgres, capture: debezium, transport: kafka, validator: cdc_validator}
+    dataset: {schema: cdc_customer, seed: 114, records: 100, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {postgres: {wal_level: logical}, debezium: {tombstones_on_delete: true}}
+    workload: {rate: 10, steps: 3, partition_key: {strategy: entity_id}}
+    fault: {type: schema_change, operation: delete}
+    observe: [cdc.delete, cdc.tombstone, cdc.reconciliation]
+    expected: {facts: [cdc.delete, cdc.tombstone], findings: [SF-CDC-DELETE], must_not_find: [], unresolved: [], analyzers: [cdc], artifact_paths: [cdc, kafka]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "delete emits declared delete and tombstone behavior", independent_variable: delete_operation, controlled: [seed, tombstones_on_delete], measure: [delete, tombstone], success: delete_reconciles}
+  - id: LAB-015
+    slug: cdc-duplicate-restart
+    title: CDC duplicate after restart
+    version: 1
+    profile: {<<: *standard, profile: cdc}
+    fidelity: *local
+    topology: {source: postgres, capture: debezium, transport: kafka, validator: cdc_validator}
+    dataset: {schema: cdc_customer, seed: 115, records: 100, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0.05}
+    setup: {postgres: {wal_level: logical}, debezium: {offset_flush_interval: 0}}
+    workload: {rate: 10, steps: 4, partition_key: {strategy: entity_id}}
+    fault: {type: stop_connect, duration: 2s}
+    observe: [cdc.offset, cdc.duplicate_count, cdc.reconciliation]
+    expected: {facts: [cdc.restart, cdc.duplicate], findings: [SF-CDC-IDEMPOTENCY], must_not_find: [], unresolved: [], analyzers: [cdc], artifact_paths: [cdc, kafka, logs]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "connector restart exposes duplicate handling seam", independent_variable: offset_flush_interval, controlled: [seed, rate], measure: [duplicate_count, reconciliation], success: idempotency_observed}
+  - id: LAB-016
+    slug: cdc-schema-incompatible
+    title: CDC incompatible schema
+    version: 1
+    profile: {<<: *standard, profile: cdc}
+    fidelity: {tier: L2, environment: contract, implementation: schema-registry-fixture, proves: [schema_compatibility_contract], does_not_prove: [database_runtime_semantics, aws_networking]}
+    topology: {source: postgres, capture: debezium, transport: kafka, contract: schema_registry}
+    dataset: {schema: cdc_customer, seed: 116, records: 100, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {schema: {version: v1, compatibility: backward}}
+    workload: {rate: 10, steps: 3, partition_key: {strategy: entity_id}}
+    fault: {type: schema_change, operation: incompatible}
+    observe: [schema.compatibility, cdc.rejects, cdc.offset]
+    expected: {facts: [schema.incompatible], findings: [SF-SCHEMA-BREAKING-CHANGE], must_not_find: [], unresolved: [], analyzers: [schema-registry, cdc], artifact_paths: [cdc, schemas]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "incompatible schema is rejected by contract", independent_variable: schema_change, controlled: [seed, compatibility], measure: [rejects, compatibility], success: rejected}
+  - id: LAB-017
+    slug: iceberg-frequent-commits
+    title: Frequent Iceberg commits
+    version: 1
+    profile: {<<: *standard, profile: lakehouse}
+    fidelity: *local
+    topology: {source: kafka, processor: spark, catalog: iceberg_rest, sink: iceberg_rest}
+    dataset: {schema: order, seed: 117, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {iceberg: {commit_interval: 1}}
+    workload: {rate: 1000, steps: 5, partition_key: {strategy: entity_id}}
+    fault: {type: none}
+    observe: [iceberg.snapshot_count, iceberg.commit_interval, iceberg.metadata_bytes]
+    expected: {facts: [iceberg.commit.frequency], findings: [SF-ICE-METADATA-GROWTH], must_not_find: [], unresolved: [], analyzers: [iceberg], artifact_paths: [iceberg]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "frequent commits grow metadata", independent_variable: commit_interval, controlled: [seed, records], measure: [snapshot_count, metadata_bytes], success: metadata_grows}
+  - id: LAB-018
+    slug: iceberg-concurrent-writers
+    title: Iceberg concurrent writers
+    version: 1
+    profile: {<<: *standard, profile: lakehouse, mode: standard}
+    fidelity: *local
+    topology: {source: generator, processors: [spark, flink], catalog: iceberg_rest, sink: iceberg_rest}
+    dataset: {schema: order, seed: 118, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {iceberg: {writers: 2}}
+    workload: {rate: 1000, steps: 4, partition_key: {strategy: entity_id}}
+    fault: {type: none}
+    observe: [iceberg.commit_conflict, iceberg.snapshot_count, iceberg.retry_count]
+    expected: {facts: [iceberg.commit.conflict], findings: [SF-ICE-COMMIT-CONFLICT], must_not_find: [], unresolved: [], analyzers: [iceberg], artifact_paths: [iceberg, logs]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "concurrent writers expose commit conflict and retry", independent_variable: writer_count, controlled: [seed, table], measure: [commit_conflict, retry_count], success: conflict_observed}
+  - id: LAB-019
+    slug: sink-slowdown-backpressure
+    title: Sink slowdown propagation
+    version: 1
+    profile: {<<: *standard, profile: streaming}
+    fidelity: *local
+    topology: {source: kafka, processor: flink, sink: iceberg_rest}
+    dataset: {schema: order, seed: 119, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {sink: {write_latency_ms: 200}}
+    workload: {rate: 10000, steps: 4, partition_key: {strategy: entity_id}}
+    fault: {type: latency, target: sink, duration: 2s}
+    observe: [kafka.consumer_lag, flink.backpressure, iceberg.commit_latency, dataset.freshness]
+    expected: {facts: [streaming.sink_slowdown], findings: [SF-STREAM-BLAST-RADIUS], must_not_find: [], unresolved: [], analyzers: [streaming-composition, data-observability], artifact_paths: [kafka, flink, iceberg, metrics]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "sink latency propagates upstream", independent_variable: write_latency_ms, controlled: [seed, rate], measure: [lag, backpressure, commit_latency, freshness], success: causal_chain_observed}
+  - id: LAB-020
+    slug: multi-engine-network-latency
+    title: Multi-engine network latency
+    version: 1
+    profile: {<<: *standard, profile: lakehouse, mode: standard}
+    fidelity: *local
+    topology: {catalog: polaris, object_store: minio, writers: [spark, flink], readers: [trino, duckdb]}
+    dataset: {schema: order, seed: 120, records: 1000, key_cardinality: 100, skew: 0, late_event_ratio: 0, duplicate_ratio: 0}
+    setup: {catalog: {mode: platform}, object_store: {implementation: minio}}
+    workload: {rate: 1000, steps: 4, partition_key: {strategy: entity_id}}
+    fault: {type: latency, target: object_store, duration: 2s}
+    observe: [catalog.request_latency, engine.read_latency, iceberg.commit_latency]
+    expected: {facts: [multi_engine.latency], findings: [SF-LAKEHOUSE-LATENCY], must_not_find: [], unresolved: [], analyzers: [lakehouse-catalog, duckdb-microscope], artifact_paths: [iceberg, logs, metrics]}
+    cleanup: {preserve_artifacts: true}
+    experiment_plan: {hypothesis: "object store latency affects all engines through catalog path", independent_variable: network_latency, controlled: [seed, catalog], measure: [request_latency, read_latency], success: relative_latency_observed}

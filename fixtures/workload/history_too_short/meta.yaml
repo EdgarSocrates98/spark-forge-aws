@@ -1,0 +1,11 @@
+name: history_too_short
+job_name: etl_pedidos_diario
+job_run_id: jr_003
+proves: >
+  `--history` aponta para um diretorio com apenas DOIS runs anteriores.
+  Menos de tres runs nao sustenta a afirmacao de um p99 -- anunciar
+  percentil sobre dois pontos e teatro de precisao -- entao `scan_intensity`
+  recusa e sai `unknown` com `missing: history_too_short`, distinto de
+  `history_absent` (que e o caso de historico ZERO, provado em
+  `no_history`). `file_pressure` continua medido: ele nao depende do
+  historico ter tamanho nenhum.

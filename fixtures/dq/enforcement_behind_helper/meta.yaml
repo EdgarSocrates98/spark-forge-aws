@@ -1,0 +1,36 @@
+name: enforcement_behind_helper
+proves: >
+  Consequencia atras de um helper e VISTA, e a regra que existe para achar
+  validacao decorativa deixa de acusar quem protegeu o pipeline. `main` conta as
+  vendas negativas e passa a contagem a `aborta_se`, que faz
+  `if quantidade > 0: raise`. O `raise` esta no corpo de OUTRA funcao, um salto
+  adiante do escopo do check.
+  Esta e a fixture da divida que a Fase 5c registrou e a 5c.2 remediu: ate ela,
+  `SF-DQ-002` saia em P1 sobre este job -- "validacao sem consequencia" sobre um
+  job que para antes de publicar dado ruim. Falso positivo numa regra de
+  validacao decorativa e o pior modo de falha da area, porque ensina o leitor a
+  ignora-la inteira.
+  O `dq.enforcement` sai com `attrs.via: aborta_se` e `attrs.via_line`, e as duas
+  chaves sao a fixture inteira: `measures.line` e a linha da CHAMADA, no mesmo
+  escopo do check, e `via_line` e a linha do `raise` dentro do helper. Sem elas o
+  fact afirmaria que o aborto esta onde ele nao esta.
+  A ligacao e por PARAMETRO, nao por nome parecido: `_argument_for` casa o
+  argumento `negativas` ao parametro `quantidade`, e o `if` do helper le esse
+  parametro. Afrouxe a ligacao e o par com `helper_only_logs_the_result` acusa --
+  la o mesmo formato de chamada nao produz enforcement nenhum, porque o helper
+  nao aborta.
+  Nenhuma das quatro regras SF-DQ dispara aqui, e cada uma por um motivo proprio:
+  SF-DQ-001 nao, porque o check vem antes do write; SF-DQ-002 nao, porque agora
+  ha `dq.enforcement` sobre o mesmo subject; SF-DQ-003 nao, porque `vendas` esta
+  cacheado quando o check chega; SF-DQ-004 nao, porque ha um unico check sobre o
+  alvo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules: []

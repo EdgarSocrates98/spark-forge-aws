@@ -1,0 +1,18 @@
+name: photon_join
+proves: >
+  Plano fisico com Photon, observado em Databricks Free Edition (serverless,
+  Spark 4.2.0, 2026-09-18) sobre dados sinteticos de `spark.range`: agregacao
+  e join por broadcast inteiramente em operadores de prefixo `Photon`, com a
+  secao `== Photon Explanation ==` no fim. O extrator emite `plan.photon` com
+  a contagem de nos Photon contra o total de nos, os nomes distintos e a
+  primeira linha da explicacao. O plano nao e final (`isFinalPlan=false`), e
+  por isso SF-PLAN-004 dispara.
+runtime:
+  databricks: "19"
+  spark: "4.2.0"
+expects_kinds:
+  - plan.analyzed
+  - plan.aqe
+  - plan.photon
+expects_rules:
+  - SF-PLAN-004

@@ -1,0 +1,67 @@
+{
+  "Cluster": {
+    "Id": "j-7CUSTOACIMADETEMPO",
+    "Name": "reprocessamento-historico",
+    "ReleaseLabel": "emr-6.15.0",
+    "InstanceCollectionType": "INSTANCE_GROUP",
+    "LogUri": "s3://lake-emr-logs/elasticmapreduce/",
+    "ScaleDownBehavior": "TERMINATE_AT_TASK_COMPLETION",
+    "AutoTerminate": true,
+    "Status": {
+      "State": "TERMINATED",
+      "StateChangeReason": {"Code": "ALL_STEPS_COMPLETED"}
+    },
+    "Applications": [
+      {"Name": "Spark", "Version": "3.4.1-amzn-2"},
+      {"Name": "Hadoop", "Version": "3.3.6-amzn-1"}
+    ],
+    "Configurations": [
+      {
+        "Classification": "spark",
+        "Properties": {"maximizeResourceAllocation": "true"}
+      },
+      {
+        "Classification": "yarn-site",
+        "Properties": {
+          "yarn.node-labels.enabled": "true",
+          "yarn.node-labels.am.default-node-label-expression": "CORE"
+        }
+      }
+    ]
+  },
+  "InstanceGroups": [
+    {
+      "Id": "ig-MASTER",
+      "InstanceGroupType": "MASTER",
+      "Market": "SPOT",
+      "InstanceType": "m5.xlarge",
+      "RequestedInstanceCount": 1,
+      "RunningInstanceCount": 1
+    },
+    {
+      "Id": "ig-CORE",
+      "InstanceGroupType": "CORE",
+      "Market": "SPOT",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 6,
+      "RunningInstanceCount": 6
+    },
+    {
+      "Id": "ig-TASK",
+      "InstanceGroupType": "TASK",
+      "Market": "SPOT",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 20,
+      "RunningInstanceCount": 18
+    }
+  ],
+  "BootstrapActions": [
+    {
+      "Name": "instala-dependencias",
+      "ScriptBootstrapAction": {
+        "Path": "s3://lake-emr-scripts/bootstrap.sh",
+        "Args": ["--repo", "interno"]
+      }
+    }
+  ]
+}

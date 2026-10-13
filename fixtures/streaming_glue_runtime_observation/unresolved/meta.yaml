@@ -1,0 +1,7 @@
+name: unresolved
+description: Definition exists, but terminal run observation is absent.
+expects_kinds:
+  - glue.streaming.job
+  - glue.job_run.analyzed
+  - glue.streaming.runtime.unresolved
+  - fusion.summary

@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_el1",
+      "message": "2026-09-09 10:05:41,120 ERROR [dispatcher] scheduler.TaskSetManager: Lost task 12.0 in stage 4.0: ExecutorLostFailure (executor 3 exited caused by one of the running tasks)",
+      "timestamp": 1788948000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "etl-curated",
+  "job_run_id": "jr_el1",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_el1",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

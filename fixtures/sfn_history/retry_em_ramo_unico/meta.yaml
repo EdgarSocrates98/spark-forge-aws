@@ -1,0 +1,24 @@
+name: retry_em_ramo_unico
+proves: >
+  AC4, e e a NEGATIVA de D1. O MESMO estado entra TRES vezes, uma depois da outra, por
+  um `Choice` que volta: as entradas (ids 2, 9 e 16) se alcancam pela cadeia de
+  `previousEventId`, e por isso o nome continua identificando um estado so. Saem tres
+  `sfn.attempt` com `attempt_index` 1, 2 e 3, e tres `sfn.job_run` ligados a eles. E ela
+  que mata a troca do teste de ancestralidade por um teste so de CONTAGEM de entradas:
+  com "mais de uma entrada => recusa", esta fixture ficaria vermelha, e a SF-SFNX-001
+  perderia a medida que existe para fazer. SEM ASL de proposito -- com um teto
+  declarado, ela seria uma segunda fixture exatamente na fronteira da `expr` da
+  SF-SFNX-001, territorio de `tests/test_rules_threshold_mutation.py`, que ja tem
+  `retry_dentro_do_declarado`. Aqui a lacuna do confronto sai em `asl_absent`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: []

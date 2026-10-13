@@ -1,0 +1,10 @@
+name: heartbeat_vence_wall_clock
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: Os dois sinais presentes. A precedencia escolhe `heartbeat`, porque o relogio do Glue
+  estourou COMO CONSEQUENCIA do executor perdido, e `also_seen` mantem `wall_clock` legivel.
+  Escolher em silencio seria escolher pelo operador.

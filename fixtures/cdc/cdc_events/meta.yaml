@@ -1,0 +1,8 @@
+artifact: cdc
+expects_kinds:
+  - cdc.connector
+  - cdc.analyzed
+  - cdc.duplicate
+  - cdc.event
+  - cdc.snapshot
+  - cdc.transaction

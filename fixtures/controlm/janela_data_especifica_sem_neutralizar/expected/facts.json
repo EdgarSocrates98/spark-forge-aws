@@ -1,0 +1,140 @@
+[
+  {
+    "id": "f_0b8c1f",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 1,
+      "job_count": 1,
+      "dependency_count": 0,
+      "capability_probe_count": 0,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abc7ac516ab408c0931d5cc049b4441386bbaab209e812c6484504ce28b44d34",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_05e8eb",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "FechamentoContabil",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "FechamentoContabil",
+      "application": "Contabilidade",
+      "sub_application": "Apuracao"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abc7ac516ab408c0931d5cc049b4441386bbaab209e812c6484504ce28b44d34",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_2092ed",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "FechamentoContabil/ApuraImpostos",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "ApuraImpostos",
+      "run_as": "ctmagent",
+      "host": "agente-cont-01"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abc7ac516ab408c0931d5cc049b4441386bbaab209e812c6484504ce28b44d34",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_bc9a26",
+    "schema_version": 1,
+    "kind": "ctm.schedule",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "FechamentoContabil/ApuraImpostos",
+      "snippet": ""
+    },
+    "measures": {
+      "specific_dates_count": 4
+    },
+    "attrs": {
+      "from_time": "0200",
+      "to_time": "0500",
+      "specific_dates": true,
+      "specific_dates_conflict": true,
+      "specific_dates_conflict_by_omission": [
+        "MonthDays",
+        "Months",
+        "WeekDays"
+      ],
+      "specific_dates_conflict_declared": []
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abc7ac516ab408c0931d5cc049b4441386bbaab209e812c6484504ce28b44d34",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.22.010",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abc7ac516ab408c0931d5cc049b4441386bbaab209e812c6484504ce28b44d34",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,74 @@
+schema_version: 1
+platform: synthetic-order-platform
+provenance:
+  - source: fixture
+    artifact: graph.yaml
+nodes:
+  - id: postgres.orders
+    kind: dataset
+    name: orders
+    subtype: postgres_table
+    attrs:
+      schema: public
+      primary_key: order_id
+    evidence:
+      - ref: synthetic://postgres/orders
+  - id: debezium.orders
+    kind: producer
+    name: Debezium orders connector
+    subtype: debezium
+    evidence:
+      - ref: synthetic://debezium/orders
+  - id: kafka.orders
+    kind: topic
+    name: orders
+    subtype: kafka
+    evidence:
+      - ref: synthetic://kafka/orders
+  - id: flink.orders_enriched
+    kind: job
+    name: orders-enriched
+    subtype: flink
+    evidence:
+      - ref: synthetic://flink/orders-enriched
+  - id: iceberg.orders
+    kind: dataset
+    name: orders
+    subtype: iceberg
+    attrs:
+      catalog: rest
+      table_format: iceberg
+    evidence:
+      - ref: synthetic://iceberg/orders
+  - id: athena.orders
+    kind: consumer
+    name: Athena orders dashboard query
+    subtype: athena
+    evidence:
+      - ref: synthetic://athena/orders
+edges:
+  - source: postgres.orders
+    relation: produces
+    target: debezium.orders
+    evidence:
+      - ref: synthetic://lineage/postgres-debezium
+  - source: debezium.orders
+    relation: publishes
+    target: kafka.orders
+    evidence:
+      - ref: synthetic://lineage/debezium-kafka
+  - source: kafka.orders
+    relation: reads
+    target: flink.orders_enriched
+    evidence:
+      - ref: synthetic://lineage/kafka-flink
+  - source: flink.orders_enriched
+    relation: writes
+    target: iceberg.orders
+    evidence:
+      - ref: synthetic://lineage/flink-iceberg
+  - source: iceberg.orders
+    relation: serves
+    target: athena.orders
+    evidence:
+      - ref: synthetic://lineage/iceberg-athena

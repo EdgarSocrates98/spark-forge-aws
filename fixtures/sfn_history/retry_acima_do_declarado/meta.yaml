@@ -1,0 +1,22 @@
+name: retry_acima_do_declarado
+proves: >
+  O POSITIVO de SF-SFNX-001. O ASL declara um retrier com `MaxAttempts: 1` sobre
+  `States.TaskFailed` -- teto efetivo de DUAS execucoes do Task --, e o historico
+  registra TRES agendamentos do mesmo estado, cada um com um JobRun proprio. O
+  confronto e derivado em `fuse`, como `bridge.py` faz entre codigo e execucao.
+  SF-SFN-002 dispara junto, pelo lado da definicao, e deve: o retrier reexecuta o job
+  inteiro. Nenhum achado atribui custo (regra 13) -- o que fica no fact e o JobRunId.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.retry_observado
+  - sfn.state_machine
+  - sfn.task
+expects_rules: [SF-SFN-002, SF-SFNX-001]

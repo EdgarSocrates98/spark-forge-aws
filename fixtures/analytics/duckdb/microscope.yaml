@@ -1,0 +1,30 @@
+database: synthetic.duckdb
+objects:
+  - id: main.orders
+    kind: iceberg_table
+    source_ref: synthetic://iceberg/orders
+    columns:
+      - {name: order_id, type: BIGINT, nullable: false}
+      - {name: amount, type: DECIMAL, nullable: true}
+    stats: {row_count: 1000, file_count: 4, total_bytes: 4096}
+    snapshots: [{id: snap-1, committed_at: "2026-10-02T00:00:00Z"}]
+  - id: parquet.orders
+    kind: parquet_file
+    source_ref: synthetic://parquet/orders
+    columns: [{name: order_id, type: BIGINT}]
+    stats: {row_count: 1000, row_group_count: 1}
+queries:
+  - id: inspect_orders
+    purpose: describe table and stats
+    sql: "SELECT order_id, amount FROM main.orders WHERE order_id > 10"
+    result_ref: synthetic://duckdb/result/inspect_orders
+  - id: explain_orders
+    purpose: inspect physical plan
+    sql: "EXPLAIN SELECT order_id FROM parquet.orders"
+    result_ref: synthetic://duckdb/result/explain_orders
+comparisons:
+  - id: orders_equivalence
+    left_query: inspect_orders
+    right_query: explain_orders
+    status: declared
+    evidence: [{ref: synthetic://duckdb/equivalence/orders}]

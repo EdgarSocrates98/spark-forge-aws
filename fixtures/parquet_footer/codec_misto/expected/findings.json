@@ -1,0 +1,64 @@
+[
+  {
+    "rule_id": "SF-PQ-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Codec de compressão divergente entre arquivos do mesmo prefixo",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/curated/codec_misto/",
+      "file": "footer.json"
+    },
+    "evidence": [
+      "f_e4ea8a"
+    ],
+    "measured": {
+      "files_seen": 2.0,
+      "files_read": 2.0,
+      "row_groups_read": 4.0,
+      "distinct_codecs": 2.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A mesma coluna, no mesmo prefixo, aparece com mais de um codec. Isso não quebra leitura nenhuma — o Parquet carrega o codec por column chunk, e o leitor resolve cada um. O que ele indica é que os arquivos foram escritos por caminhos diferentes: um backfill com outra configuração, um job antigo que ninguém atualizou, ou duas escritas concorrentes com propriedades distintas.\n\nA severidade é P3 porque o custo é indireto: razão de compressão e custo de CPU por leitura passam a variar entre arquivos, e qualquer medida agregada sobre o prefixo mistura dois regimes. É sinal de PROCEDÊNCIA, não de defeito de performance.\n\n**Esta regra não diz qual codec é o certo.** Snappy e ZSTD trocam CPU por tamanho em direções opostas, e a escolha depende do perfil de leitura — nada aqui mediu isso.",
+    "proposed_change": [
+      "Identificar quais arquivos usam cada codec — `parquet.column_profile` traz a lista, e `parquet.file.created_by` costuma separar as duas origens.",
+      "Decidir um codec para o prefixo e declará-lo na configuração de escrita de TODOS os caminhos que escrevem nele, incluindo backfill e correção manual.",
+      "Uniformizar os arquivos existentes só se houver motivo além da consistência: reescrever para trocar codec é reprocessamento, e o ganho costuma ser pequeno."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Uniformizar por reescrita custa reprocessamento completo por um ganho que ninguém mediu — é a correção que parece óbvia e raramente se paga.",
+      "A divergência pode ser INTENCIONAL: dado quente em Snappy e frio em ZSTD no mesmo prefixo é decisão legítima, e a regra não a distingue de descuido."
+    ],
+    "tradeoffs": [
+      "Um codec só simplifica a medida agregada e a previsão de custo; dois codecs permitem otimizar por faixa de dado, ao custo de qualquer agregado sobre o prefixo misturar dois regimes."
+    ],
+    "validation": [
+      "`parquet.footer_analyzed.attrs.codecs` com um elemento só no censo seguinte, se a decisão foi uniformizar.",
+      "Nenhum eixo de dado é exigido, e declarar isso é parte da validação: trocar codec não muda o conteúdo lido. Se houve reescrita, contagem e agregados de controle contra a tabela anterior."
+    ],
+    "rollback": [
+      "Reverter a propriedade de compressão na escrita. Os arquivos já escritos continuam com o codec que tinham, e isso é inofensivo."
+    ],
+    "sources": [
+      {
+        "url": "https://parquet.apache.org/docs/file-format/data-pages/compression/",
+        "retrieved": "2026-09-09",
+        "note": "O formato registra o codec por column chunk, e é por isso que dois codecs no mesmo prefixo são lidos sem erro — o que torna a divergência um sinal de procedência, não uma falha.\n"
+      }
+    ],
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "parquet.compression_codec",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

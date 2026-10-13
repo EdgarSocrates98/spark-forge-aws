@@ -1,0 +1,130 @@
+[
+  {
+    "rule_id": "SF-PQ-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Partition pruning ausente no plano físico",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 10,
+      "symbol": "(1) Scan parquet analytics.transacoes",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.transacoes"
+    },
+    "evidence": [
+      "f_553798"
+    ],
+    "measured": {
+      "read_schema_columns": 3,
+      "output_columns": 4,
+      "referenced_columns": 3,
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Tabela particionada cuja leitura tem PartitionFilters vazio está lendo tudo. É o achado mais valioso e mais rápido de obter num plano físico. As causas mais comuns são: filtro aplicado depois de um join, filtro dentro de UDF, e incompatibilidade de tipo entre a coluna de partição e o literal do filtro, que provoca cast implícito sem gerar erro. Ver knowledge/spark/plan-reading.md secao 3.",
+    "proposed_change": [
+      "Mover o filtro para antes do join, verificando que aparece em PartitionFilters.",
+      "Alinhar o tipo do literal ao tipo da coluna de partição.",
+      "Remover UDF do caminho do filtro.",
+      "Se a leitura é via DynamicFrame, usar push_down_predicate ou catalogPartitionPredicate."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Mover filtro para antes de outer join altera o resultado; verificar o tipo de join."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "PartitionFilters preenchido no plano físico após a mudança.",
+      "Bytes lidos antes e depois.",
+      "Razão entre bytes lidos e tamanho da tabela, que resume o pruning efetivo.",
+      "Contagem total e agregados de controle idênticos."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ],
+    "action": {
+      "kind": "scan.push_filter_earlier",
+      "target": "plan.file_scan.partition_filters",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-PLAN-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Plano não-final do AQE — estratégia e partições ainda podem mudar",
+    "severity": "P4",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 35,
+      "symbol": "(6) AdaptiveSparkPlan",
+      "node_id": 6,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "evidence": [
+      "f_eececc"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "`AdaptiveSparkPlan isFinalPlan=false` significa que este plano é o inicial: o AQE ainda vai reotimizá-lo com estatísticas de runtime. A documentação do Spark lista o que ele troca em execução -- coalescing de partições de shuffle, split de partição enviesada, e conversão de sort-merge join em broadcast join. `EXPLAIN` não executa a query, então o plano exibido é sempre o inicial. Consequência prática, e o motivo desta regra existir: contagem de partições e estratégia de join lidas daqui não são o que vai rodar. Recomendar broadcast manual contra um SortMergeJoin visto neste plano é recomendar o que o AQE já faria sozinho. P4 porque não é defeito do job -- é um limite da evidência, e o relatório precisa dizer isso em vez de deixar o operador tratar plano inicial como final.",
+    "proposed_change": [
+      "Para afirmar estratégia de join ou número de partições, usar o plano final da Spark UI (aba SQL, query concluída) ou o event log, não este.",
+      "Reservar recomendação de join hint para depois de confirmar a estratégia no plano final."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [],
+    "tradeoffs": [
+      "Obter o plano final exige executar o job, o que custa tempo e compute."
+    ],
+    "validation": [
+      "Conferir na Spark UI se o AdaptiveSparkPlan da query concluída mostra isFinalPlan=true."
+    ],
+    "rollback": [],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-performance-tuning.html",
+        "retrieved": "2026-07-31",
+        "note": "spark.sql.adaptive.enabled default true desde o Spark 3.2.0; lista as reotimizações de runtime, incluindo converter sort-merge join em broadcast join."
+      },
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html",
+        "retrieved": "2026-07-31",
+        "note": "AQE default no Glue 4.0; no Glue 3.0 exige spark.sql.adaptive.enabled=true."
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "spark.plan.final",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

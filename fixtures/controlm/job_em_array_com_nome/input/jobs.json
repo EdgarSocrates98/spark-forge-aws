@@ -1,0 +1,20 @@
+{
+  "CargaDiaria": {
+    "Type": "Folder",
+    "Application": "DataLake",
+    "Jobs": [
+      {
+        "Type": "Job:Command",
+        "Name": "Job1",
+        "Command": "echo I am a Job with name Job1",
+        "RunAs": "ctmagent"
+      },
+      {
+        "Type": "Job:Command",
+        "Name": "Job1",
+        "Command": "echo I am another Job with the same name",
+        "RunAs": "ctmagent"
+      }
+    ]
+  }
+}

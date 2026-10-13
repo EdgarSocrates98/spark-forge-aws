@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "cd infra && terraform destroy -auto-approve"
+  },
+  "cwd": "."
+}

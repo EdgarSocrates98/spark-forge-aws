@@ -1,0 +1,114 @@
+[
+  {
+    "id": "f_632d90",
+    "schema_version": 1,
+    "kind": "env.consumer",
+    "subject": {
+      "type": "table",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "table": "glue_catalog.curated.pedidos",
+      "service": "athena",
+      "known_service": true
+    },
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "ef8947add9904569c7b89574b702b647058455bf0fdbe58017aca4ce7288276d",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_5f469b",
+    "schema_version": 1,
+    "kind": "env.consumers_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "consumers.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "consumer_count": 1,
+      "unresolved_count": 3
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "ef8947add9904569c7b89574b702b647058455bf0fdbe58017aca4ce7288276d",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_d5bc3a",
+    "schema_version": 1,
+    "kind": "env.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "consumers.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_table"
+    },
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "ef8947add9904569c7b89574b702b647058455bf0fdbe58017aca4ce7288276d",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_d5bc3a",
+    "schema_version": 1,
+    "kind": "env.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "consumers.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_service",
+      "table": "glue_catalog.curated.itens"
+    },
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "ef8947add9904569c7b89574b702b647058455bf0fdbe58017aca4ce7288276d",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_d5bc3a",
+    "schema_version": 1,
+    "kind": "env.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "consumers.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_inventory",
+      "section": "consumers[]"
+    },
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "ef8947add9904569c7b89574b702b647058455bf0fdbe58017aca4ce7288276d",
+      "extractor": "consumers@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,6 @@
+artifact: kinesis
+expects_kinds:
+  - kinesis.analyzed
+  - kinesis.metric
+  - kinesis.shard
+  - kinesis.stream

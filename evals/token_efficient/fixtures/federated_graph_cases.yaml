@@ -1,0 +1,180 @@
+schema_version: 1
+cases:
+  - case_id: graph-success
+    class: success
+    root_node: "job:orders"
+    fragments:
+      - source_id: "semantic:orders"
+        source_kind: semantic
+        current_fingerprint: "fp-semantic-orders"
+        indexed_fingerprint: "fp-semantic-orders"
+        provenance:
+          - source_id: "semantic:orders"
+            artifact: "fixtures/semantic/orders.sqlite3"
+        nodes:
+          - {id: "job:orders", kind: job}
+          - {id: "dataset:orders", kind: dataset}
+          - {id: "test:orders", kind: test}
+        edges:
+          - {source: "job:orders", relation: writes, target: "dataset:orders"}
+          - {source: "dataset:orders", relation: tested_by, target: "test:orders"}
+        unresolved: []
+      - source_id: "aws:offline:orders"
+        source_kind: aws_artifact
+        current_fingerprint: "fp-aws-orders"
+        indexed_fingerprint: "fp-aws-orders"
+        provenance:
+          - source_id: "aws:offline:orders"
+            artifact: "fixtures/aws/orders.json"
+            collected_at: "2026-09-27T00:00:00Z"
+        nodes:
+          - {id: "cloud:orders-table", kind: cloud_resource}
+        edges:
+          - {source: "dataset:orders", relation: corresponds_to, target: "cloud:orders-table"}
+        unresolved: []
+    bounds: {max_nodes: 20, max_edges: 20, max_provenance: 20, max_unresolved: 20}
+    expected_freshness: fresh
+    expected_nodes: ["cloud:orders-table", "dataset:orders", "job:orders", "test:orders"]
+    expected_edges:
+      - ["dataset:orders", corresponds_to, "cloud:orders-table"]
+      - ["dataset:orders", tested_by, "test:orders"]
+      - ["job:orders", writes, "dataset:orders"]
+    expected_impact:
+      affected_jobs: []
+      affected_datasets: ["dataset:orders"]
+      affected_tests: ["test:orders"]
+      affected_cloud_resources: ["cloud:orders-table"]
+    expected_unresolved: []
+
+  - case_id: graph-conflict
+    class: conflict
+    root_node: "dataset:orders"
+    fragments:
+      - source_id: "semantic:orders-a"
+        source_kind: semantic
+        current_fingerprint: "fp-a"
+        indexed_fingerprint: "fp-a"
+        provenance: [{source_id: "semantic:orders-a", artifact: "a.sqlite3"}]
+        nodes: [{id: "dataset:orders", kind: dataset, owner: team-a}]
+        edges: []
+        unresolved: []
+      - source_id: "semantic:orders-b"
+        source_kind: semantic
+        current_fingerprint: "fp-b"
+        indexed_fingerprint: "fp-b"
+        provenance: [{source_id: "semantic:orders-b", artifact: "b.sqlite3"}]
+        nodes: [{id: "dataset:orders", kind: dataset, owner: team-b}]
+        edges: []
+        unresolved: []
+    bounds: {max_nodes: 20, max_edges: 20, max_provenance: 20, max_unresolved: 20}
+    expected_freshness: fresh
+    expected_nodes: ["dataset:orders"]
+    expected_edges: []
+    expected_impact:
+      affected_jobs: []
+      affected_datasets: []
+      affected_tests: []
+      affected_cloud_resources: []
+    expected_unresolved: [graph_node_conflict]
+
+  - case_id: graph-endpoint-absent
+    class: endpoint_absent
+    root_node: "job:orders"
+    fragments:
+      - source_id: "semantic:orders"
+        source_kind: semantic
+        current_fingerprint: "fp-orders"
+        indexed_fingerprint: "fp-orders"
+        provenance: [{source_id: "semantic:orders", artifact: "orders.sqlite3"}]
+        nodes: [{id: "job:orders", kind: job}]
+        edges:
+          - {source: "job:orders", relation: writes, target: "cloud:missing"}
+        unresolved: []
+    bounds: {max_nodes: 20, max_edges: 20, max_provenance: 20, max_unresolved: 20}
+    expected_freshness: fresh
+    expected_nodes: ["job:orders"]
+    expected_edges: []
+    expected_impact:
+      affected_jobs: []
+      affected_datasets: []
+      affected_tests: []
+      affected_cloud_resources: []
+    expected_unresolved: [graph_edge_unresolved]
+
+  - case_id: graph-truncation
+    class: truncation
+    root_node: "job:orders"
+    fragments:
+      - source_id: "semantic:orders"
+        source_kind: semantic
+        current_fingerprint: "fp-orders"
+        indexed_fingerprint: "fp-orders"
+        provenance:
+          - {source_id: "semantic:orders", artifact: "orders.sqlite3"}
+          - {source_id: "semantic:orders", artifact: "orders.ast.json"}
+        nodes:
+          - {id: "job:orders", kind: job}
+          - {id: "dataset:orders", kind: dataset}
+          - {id: "test:orders", kind: test}
+        edges:
+          - {source: "job:orders", relation: writes, target: "dataset:orders"}
+          - {source: "dataset:orders", relation: tested_by, target: "test:orders"}
+        unresolved: [{code: source_blind_spot}]
+    bounds: {max_nodes: 2, max_edges: 1, max_provenance: 1, max_unresolved: 20}
+    expected_freshness: fresh
+    expected_nodes: ["dataset:orders", "job:orders"]
+    expected_edges:
+      - ["job:orders", writes, "dataset:orders"]
+    expected_impact:
+      affected_jobs: []
+      affected_datasets: []
+      affected_tests: []
+      affected_cloud_resources: []
+    expected_unresolved: [source_blind_spot, graph_edge_unresolved]
+    expected_truncated: true
+
+  - case_id: graph-freshness-stale
+    class: freshness
+    root_node: "job:orders"
+    fragments:
+      - source_id: "semantic:orders"
+        source_kind: semantic
+        current_fingerprint: "fp-current"
+        indexed_fingerprint: "fp-indexed-old"
+        provenance: [{source_id: "semantic:orders", artifact: "orders.sqlite3"}]
+        nodes: [{id: "job:orders", kind: job}]
+        edges: []
+        unresolved: []
+    bounds: {max_nodes: 20, max_edges: 20, max_provenance: 20, max_unresolved: 20}
+    expected_freshness: stale
+    expected_nodes: ["job:orders"]
+    expected_edges: []
+    expected_impact:
+      affected_jobs: []
+      affected_datasets: []
+      affected_tests: []
+      affected_cloud_resources: []
+    expected_unresolved: []
+
+  - case_id: graph-freshness-unknown
+    class: freshness
+    root_node: "job:orders"
+    fragments:
+      - source_id: "semantic:orders"
+        source_kind: semantic
+        current_fingerprint: "fp-current"
+        indexed_fingerprint: null
+        provenance: [{source_id: "semantic:orders", artifact: "orders.sqlite3"}]
+        nodes: [{id: "job:orders", kind: job}]
+        edges: []
+        unresolved: [{code: fingerprint_unresolved}]
+    bounds: {max_nodes: 20, max_edges: 20, max_provenance: 20, max_unresolved: 20}
+    expected_freshness: unknown
+    expected_nodes: ["job:orders"]
+    expected_edges: []
+    expected_impact:
+      affected_jobs: []
+      affected_datasets: []
+      affected_tests: []
+      affected_cloud_resources: []
+    expected_unresolved: [fingerprint_unresolved]

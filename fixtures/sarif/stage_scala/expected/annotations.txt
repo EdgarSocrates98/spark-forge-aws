@@ -1,0 +1,1 @@
+::error file=src/Etl.scala,line=120,title=SF-UI-001 P0::Skew de duração de task no stage (medido: max_ms=15000, mean_ms=3333.3333333333335, min_ms=1000, p50_ms=1000, p95_ms=15000, task_count=6) -- linha da acao `save` que originou o stage 2 (nao e a causa)

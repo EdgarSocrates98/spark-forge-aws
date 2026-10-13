@@ -1,0 +1,3 @@
+artifact: input/contract.json
+expects_kinds: [streaming.slo, streaming.finops, streaming.security, streaming.serving, streaming.lakehouse, streaming_ops.analyzed]
+expects_findings: []

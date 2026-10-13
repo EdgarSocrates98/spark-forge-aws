@@ -1,0 +1,24 @@
+name: clean_equivalence
+proves: >
+  O negativo das CINCO regras juntas, e a fixture que decide se elas sao
+  usaveis. Os cinco checks que o plano pediu vieram dos dois lados e
+  bateram: mesma contagem, mesmo mapa coluna->tipo, mesma soma inteira,
+  mesma soma de ponto flutuante ate o ultimo bit, e nenhum valor de chave
+  repetido de nenhum dos lados. `undeclared_axes` sai VAZIO -- os quatro
+  eixos foram cobertos --, `planned_check_count` e `reported_check_count`
+  sao ambos 5, `diverged_check_count` e 0 e nao ha um unico
+  `funcval.unresolved`. Se qualquer regra SF-FVAL disparar aqui, ela
+  acusa equivalencia limpa de divergencia, que e o pior falso positivo
+  possivel neste dominio -- e o P0 que ninguem vai investigar duas vezes.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+funcval:
+  keys:
+    - pedido_id
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules: []

@@ -1,0 +1,8 @@
+name: no_usage
+mode: transcript
+question: q-alt
+proves: >
+  AT-013: transcript sem usage em nenhuma mensagem de assistente. Custo com
+  tokens_unresolved true e tokens nulos -- nunca zero --, com tool_calls e
+  tool_result_bytes presentes. Tambem prova a alternativa de required_tools:
+  release_describe satisfaz [runtime_detect, release_describe].

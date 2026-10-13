@@ -1,0 +1,6 @@
+artifact: schema_registry
+expects_kinds:
+  - schema.analyzed
+  - schema.definition
+  - schema.registry
+  - schema.unresolved

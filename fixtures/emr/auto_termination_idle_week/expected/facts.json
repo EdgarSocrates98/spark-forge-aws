@@ -1,0 +1,221 @@
+[
+  {
+    "id": "f_33cdd1",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 2,
+      "configuration_count": 0,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_e2a423",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/application/Hadoop"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Hadoop",
+      "version": "3.4.0-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_09ee0e",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/application/Hue"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Hue",
+      "version": "4.11.0"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_e859db",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/application/JupyterHub"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "JupyterHub",
+      "version": "1.5.0"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea6861",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.5.2-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_9252ad",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/application/Zeppelin"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Zeppelin",
+      "version": "0.11.1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_385a17",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA"
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_seconds": 604800
+    },
+    "attrs": {
+      "cluster_id": "j-9SEMANAOCIOSA",
+      "name": "plataforma-analitica-interativa",
+      "release_label": "emr-7.5.0",
+      "release": "7.5.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": "TERMINATE_AT_TASK_COMPLETION",
+      "auto_terminate": false,
+      "unhealthy_node_replacement": true,
+      "state": "WAITING",
+      "state_change_reason_code": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_93da46",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/ig-CORE"
+    },
+    "measures": {
+      "requested_instance_count": 8,
+      "running_instance_count": 8
+    },
+    "attrs": {
+      "id": "ig-CORE",
+      "cluster_id": "j-9SEMANAOCIOSA",
+      "role": "CORE",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "r5.4xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_619e31",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA/ig-MASTER"
+    },
+    "measures": {
+      "requested_instance_count": 1,
+      "running_instance_count": 1
+    },
+    "attrs": {
+      "id": "ig-MASTER",
+      "cluster_id": "j-9SEMANAOCIOSA",
+      "role": "MASTER",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "m5.xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "364db1912ef7fa1aad53f588c54318ddfb21f2349c4221a7420aac75bb4d4a15",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

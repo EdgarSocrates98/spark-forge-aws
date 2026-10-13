@@ -1,0 +1,6 @@
+name: default_escrito_a_mao
+runtime:
+  glue: '5.0'
+proves: 'Alguem escreveu 200, que e exatamente o default do Spark. Procedencia `spark_default_explicit`
+  -- o sintoma que a seccao 36 do documento persegue: configuracao que alguem escreveu, ninguem
+  mais entende, e que nao muda nada.'

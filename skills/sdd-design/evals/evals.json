@@ -1,0 +1,33 @@
+{
+  "skill_name": "sdd-design",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the sdd-design skill to review a case about manifesto, decisões e rollback do design SDD. The supplied artifact is partial; produce an evidence-first handoff and do not invent measurements.",
+      "expected_output": "A structured handoff for manifesto, decisões e rollback do design SDD using sparkforge-aws sdd check, with anchored facts, unresolved gaps, recommendation schema when applicable, validation, and rollback.",
+      "files": [],
+      "expectations": [
+        "The response uses the primary evidence path `sparkforge-aws sdd check` or explains why the available artifact cannot support it.",
+        "The response separates anchored facts from findings and cites a fact_id or source path.",
+        "The response reports unresolved evidence instead of guessing missing runtime, cost, capacity, or authorization facts.",
+        "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",
+        "The response cites at least one local reference and preserves version or provenance constraints."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Apply sdd-design to a before/after change involving manifesto, decisões e rollback do design SDD. Decide what can be concluded, what must be measured, and how an operator can safely revert.",
+      "expected_output": "A bounded decision that distinguishes observed result from hypothesis, records provenance, and names the next deterministic validation command.",
+      "files": [],
+      "expectations": [
+        "The response uses the primary evidence path `sparkforge-aws sdd check` or explains why the available artifact cannot support it.",
+        "The response separates anchored facts from findings and cites a fact_id or source path.",
+        "The response reports unresolved evidence instead of guessing missing runtime, cost, capacity, or authorization facts.",
+        "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",
+        "The response cites at least one local reference and preserves version or provenance constraints.",
+        "The response does not claim a performance or cost gain without a same-case measurement."
+      ]
+    }
+  ]
+}

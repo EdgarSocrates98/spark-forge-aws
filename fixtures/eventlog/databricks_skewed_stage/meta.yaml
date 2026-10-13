@@ -1,0 +1,33 @@
+name: databricks_skewed_stage
+proves: >
+  O par de skewed_stage sob Databricks Runtime 15.4: o mesmo event log, com a
+  versao do runtime nas Spark Properties e Spark 3.5.0. As seis regras
+  spark-ui disparam iguais, porque nenhuma depende de plataforma, e o texto
+  delas nao cita so a AWS.
+runtime:
+  databricks: "15.4"
+  spark: 3.5.0
+expects_kinds:
+- spark.cluster.cores
+- spark.conf_effective
+- spark.conf_excluded
+- spark.executor.lost
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.shuffle
+- spark.stage.slow_tasks
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+- spark.unresolved
+expects_rules:
+- SF-UI-001
+- SF-UI-002
+- SF-UI-003
+- SF-UI-004
+- SF-UI-005
+- SF-UI-006

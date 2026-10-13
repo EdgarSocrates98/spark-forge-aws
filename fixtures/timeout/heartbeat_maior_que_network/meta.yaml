@@ -1,0 +1,11 @@
+name: heartbeat_maior_que_network
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'A relacao invertida: o pulso do executor e mais lento que a espera do driver, entao
+  o driver desiste antes do proximo pulso chegar e passa a declarar morto executor vivo. `SF-TIMEOUT-002`
+  dispara sobre a RELACAO, e nao sobre o valor: `network.timeout = 120s` nao e certo nem errado
+  sozinho.'

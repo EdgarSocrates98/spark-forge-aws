@@ -1,0 +1,1 @@
+::error file=infra/main.tf,line=20,title=SF-LF-005 P0::Controle de acesso fino e Full Table Access declarados no mesmo job

@@ -1,0 +1,7 @@
+mode: temporal
+transport_key: orders-group
+query_name: orders-query
+max_skew_seconds: 3
+expects_pairs: 2
+expects_kinds: [env.runtime_signal, kafka.analyzed, kafka.consumer_group, kafka.lag, streaming.composition.analyzed, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series, streaming.temporal.diagnostic]
+expects_findings: [SF-STREAMOBS-002]

@@ -1,0 +1,44 @@
+[
+  {
+    "kind": "tf.resource",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 1, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {"attribute_count": 5},
+    "attrs": {"resource_type": "aws_glue_job", "resource_name": "rtm"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "terraform@0.1.0"}
+  },
+  {
+    "kind": "tf.attribute",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 2, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {},
+    "attrs": {"key": "name", "value": "rtm-valid", "literal": true, "present": true, "block": "root"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "terraform@0.1.0"}
+  },
+  {
+    "kind": "tf.attribute",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 3, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {},
+    "attrs": {"key": "glue_version", "value": "5.0", "literal": true, "present": true, "block": "root"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "terraform@0.1.0"}
+  },
+  {
+    "kind": "tf.attribute",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 4, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {"value": 2},
+    "attrs": {"key": "number_of_workers", "value": "2", "literal": true, "present": true, "block": "root"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "terraform@0.1.0"}
+  },
+  {
+    "kind": "tf.attribute",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 5, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {},
+    "attrs": {"key": "--enable-real-time-mode", "value": "false", "literal": true, "present": true, "block": "default_arguments"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "terraform@0.1.0"}
+  },
+  {
+    "kind": "tf.attribute",
+    "subject": {"type": "tf_resource", "file": "main.tf", "line": 6, "col": 0, "symbol": "aws_glue_job.rtm"},
+    "measures": {},
+    "attrs": {"key": "--job-language", "value": "python", "literal": true, "present": true, "block": "default_arguments"},
+    "provenance": {"artifact": "main.tf", "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "extractor": "terraform@0.1.0"}
+  }
+]

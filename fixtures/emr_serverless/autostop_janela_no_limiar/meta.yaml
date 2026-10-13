@@ -1,0 +1,35 @@
+name: autostop_janela_no_limiar
+proves: >
+  Duas coisas que nenhum outro golden do corpus prova, e as duas sao sobre
+  `SF-EMRS-005`.
+  Primeira: o ramo de severidade P2, que era o `severity_default` e nao tinha
+  golden nenhum. `autostop_longo` fixa 10080, que cai no ramo `severity_by` de
+  P1; com so ela, o `severity_default: P2` podia virar qualquer coisa com a
+  suite inteira verde. Medido na revisao final da Fase 5d: das 7 regras do
+  catalogo com `severity_by`, 6 tinham ao menos um ramo sem golden.
+  Segunda: o limiar `idle_timeout_minutes: 1440`, que e `field-heuristic` --
+  nenhum ponto entre 1 e 10080 e declarado pela AWS -- e por isso precisa de
+  fixture nos dois lados para ser apagavel. Ate aqui os goldens eram 10080
+  (dispara) e 15 (`app_saudavel`, nao dispara), e um limiar de 720 ou de 4320
+  passaria pelos dois sem nenhum vermelho.
+  Dois payloads, um de cada lado do corte, identicos exceto pelo numero -- mesma
+  forma do par `auto_termination_idle_day` x `auto_termination_near_threshold`
+  do EMR on EC2:
+    * `no_limiar.json` -- `idleTimeoutMinutes: 1440`, exatamente o limiar.
+      Dispara em P2.
+    * `abaixo_do_limiar.json` -- `1439`, um minuto abaixo. Nao dispara.
+  Pre-init de 4 workers nos dois: e o segundo termo da regra, e sem ele nenhum
+  dos dois dispararia por outra razao, o que faria o par provar a coisa errada.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules:
+  - SF-EMRS-005

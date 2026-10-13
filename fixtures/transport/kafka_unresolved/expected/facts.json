@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_40f1a6",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "bad.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "bad.json",
+      "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_81c464",
+    "schema_version": 1,
+    "kind": "kafka.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "bad.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_json",
+      "detail": "Expecting property name enclosed in double quotes"
+    },
+    "provenance": {
+      "artifact": "bad.json",
+      "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

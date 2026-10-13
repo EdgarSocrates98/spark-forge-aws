@@ -1,0 +1,13 @@
+name: taskflow_decorador
+proves: >
+  A fronteira que o `define` poe fora de escopo, contada em vez de ignorada. `@dag` e
+  `@task` viram `af.unresolved` com `taskflow_decorador` e o nome da funcao; nenhum
+  `af.dag` nem `af.task` sai, porque a leitura adotada reconhece operador por classe
+  instanciada e a TaskFlow nao instancia nenhuma. Nenhum achado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.unresolved]
+expects_rules: []

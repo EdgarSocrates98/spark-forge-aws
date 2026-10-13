@@ -1,0 +1,18 @@
+name: engine_v3_ok
+proves: >
+  Dois workgroups na engine version 3, que e a versao corrente. SF-ATH-004 nao
+  pode disparar. Existe pelo sentido negativo do golden: acusar quem ja esta na
+  engine 3 mandaria o operador fazer uma migracao que ja aconteceu, e um
+  achado assim queima a confianca no relatorio inteiro. Cobre tambem o caminho
+  de `bytes_scanned_cutoff` presente em um workgroup e ausente no outro --
+  measure opcional nao pode virar zero inventado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+  athena: "3"
+expects_kinds:
+  - athena.analyzed
+  - athena.workgroup
+expects_rules: []

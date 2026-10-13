@@ -1,0 +1,22 @@
+name: exigencia_indecidivel
+proves: >
+  Tres pontos cegos, um por chamada, e nenhuma acusacao. O posicional
+  (`connectedComponents("graphx")`) porque a ordem dos parametros mudou entre
+  linhagens e um posicional pode SER a saida; o `algorithm=escolha` porque o
+  valor nao esta no arquivo; e o receptor anonimo (`carregar(spark).pageRank`)
+  porque nao ha nome de dado a que ancorar.
+  Prova tambem o limite de UM `graph.unresolved` por chamada (`Fact.id` deixa
+  `attrs` de fora, entao dois sobre o mesmo no sairiam com id identico) e a
+  precedencia argumento-antes-de-receptor.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.unresolved
+  - graph.module_analyzed
+expects_rules: []

@@ -1,0 +1,21 @@
+{
+  "connector": {
+    "name": "orders-connector",
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database": "orders",
+    "snapshot.mode": "initial",
+    "topic.prefix": "orders",
+    "heartbeat.interval.ms": "10000",
+    "schema.history.internal": "io.debezium.storage.kafka.history.KafkaSchemaHistory",
+    "delete.handling.mode": "rewrite",
+    "tombstones.on.delete": true,
+    "provide.transaction.metadata": true,
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "errors.tolerance": "none"
+  },
+  "status": {
+    "connector": {"state": "RUNNING"},
+    "tasks": [{"id": 0, "state": "RUNNING"}]
+  }
+}

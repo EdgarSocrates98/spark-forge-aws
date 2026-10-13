@@ -1,0 +1,32 @@
+{
+  "application": {
+    "applicationId": "00feixoausente000001",
+    "name": "sem-disco-no-worker",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "initialCapacity": {
+      "DRIVER": {
+        "workerCount": 1,
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "16GB"
+        }
+      }
+    },
+    "maximumCapacity": {
+      "cpu": "400vCPU",
+      "memory": "3000GB",
+      "disk": "20000GB"
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

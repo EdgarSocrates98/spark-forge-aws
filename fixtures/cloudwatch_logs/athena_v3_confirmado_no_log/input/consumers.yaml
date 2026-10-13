@@ -1,0 +1,5 @@
+consumers:
+  - table: glue_catalog.curated.pedidos
+    service: athena
+    owner: squad-analytics
+    note: dashboard executivo, consulta diaria

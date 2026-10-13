@@ -1,0 +1,78 @@
+[
+  {
+    "id": "f_900535",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_d4e5f6",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_d4e5f6",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:11:02,110 ERROR [main] executor.Executor: java.lang.NoSuchMethodError: scala.Predef$.refArrayOps([Ljava/lang/Object;)Lscala/collection/mutable/ArrayOps;",
+      "log_stream": "jr_d4e5f6"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_d4e5f6_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_b2e6e6",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_d4e5f6",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_d4e5f6"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_d4e5f6"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_d4e5f6_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_4fb699",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_d4e5f6",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_d4e5f6",
+      "event": 0,
+      "signature_id": "ERR-GLUE-002"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-GLUE-002",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:11:02,110 ERROR [main] executor.Executor: java.lang.NoSuchMethodError: scala.Predef$.refArrayOps([Ljava/lang/Object;)Lscala/collection/mutable/ArrayOps;"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_d4e5f6_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

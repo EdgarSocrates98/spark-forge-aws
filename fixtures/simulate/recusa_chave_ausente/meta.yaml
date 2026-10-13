@@ -1,0 +1,6 @@
+description: >-
+  A camada tf nao declara a chave. O simulate so altera o que existe: criar a
+  chave seria inventar o default que o artefato nao declarou.
+facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
+sets: ["tf:nao_existe=1"]
+refusal: chave_ausente_na_camada

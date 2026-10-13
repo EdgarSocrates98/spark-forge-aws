@@ -1,0 +1,1 @@
+[{"consumer_groups":[{"group":"orders-group","offsets":[{"topic":"orders","partition":0,"current_offset":100,"log_end_offset":130,"lag":30,"timestamp":1790942401}]}]},{"consumer_groups":[{"group":"orders-group","offsets":[{"topic":"orders","partition":0,"current_offset":200,"log_end_offset":240,"lag":40,"timestamp":1790942412}]}]}]

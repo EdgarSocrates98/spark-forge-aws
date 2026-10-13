@@ -1,0 +1,19 @@
+{
+  "required": ["sdd", "feature", "phase", "profile", "status"],
+  "properties": {
+    "sdd": {"const": 1},
+    "feature": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+    "phase": {"enum": ["explore", "define", "design", "plan", "build_report", "ship"]},
+    "profile": {"enum": ["dev", "operator"]},
+    "status": {"enum": ["draft", "ready", "done", "superseded"]},
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^([0-9a-f]{64})?$"}
+      }
+    }
+  }
+}

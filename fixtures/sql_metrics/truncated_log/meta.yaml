@@ -1,0 +1,19 @@
+name: truncated_log
+proves: >
+  `SparkListenerSQLExecutionStart` sobre db.clientes seguido de
+  `SparkListenerDriverAccumUpdates`, sem nenhum
+  `SparkListenerSQLExecutionEnd` -- o log foi cortado antes do fim. O scan
+  ainda carrega a measure parcial que chegou a ser publicada, e a execucao
+  vira `spark.sql.unresolved` com razao `incomplete_execution`, deixando
+  explicito que o numero e parcial.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.scan
+  - spark.sql.execution
+  - spark.sql.unresolved
+  - spark.sql.analyzed
+expects_rules: []

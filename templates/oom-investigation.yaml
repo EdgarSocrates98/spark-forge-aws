@@ -1,0 +1,37 @@
+failure:
+  timestamp:
+  glue_run_id:
+  exception:
+  component:
+  stage:
+  task:
+  executor:
+  batch_number:
+
+memory:
+  driver_heap:
+  executor_heap:
+  gc_ratio:
+  memory_spill:
+  disk_spill:
+  peak_execution_memory:
+  python_worker_memory:
+  broadcast_size:
+  driver_result_size:
+
+structure:
+  active_caches:
+  unpersist_calls:
+  loop_actions:
+  plan_size:
+  lineage_growth:
+  files_planned:
+  manifests:
+  snapshots_created:
+
+classification:
+  location:
+  root_cause:
+  confidence:
+  mitigation:
+  structural_fix:

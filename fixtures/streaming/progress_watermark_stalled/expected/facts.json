@@ -1,0 +1,553 @@
+[
+  {
+    "id": "f_a55de2",
+    "schema_version": 1,
+    "kind": "env.runtime_signal",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "measures": {
+      "distinct_versions": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "component": "spark",
+      "resolved": "3.5.6",
+      "observed": [
+        "3.5.6"
+      ],
+      "source": "resolved",
+      "spark_minor": 3.5
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
+    "id": "f_b75ed6",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 3,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_4681b5",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 100,
+      "observed_index": 0,
+      "batch_duration_ms": 1000,
+      "num_input_rows": 500,
+      "input_rows_per_second": 500.0,
+      "processed_rows_per_second": 500.0,
+      "duration_ms_addBatch": 700,
+      "duration_ms_commitOffsets": 100
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T12:00:00.000Z",
+      "query_id": "q-depth",
+      "run_id": "r-depth",
+      "query_name": "orders"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_20b6ca",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 101,
+      "observed_index": 1,
+      "batch_duration_ms": 1100,
+      "num_input_rows": 500,
+      "input_rows_per_second": 500.0,
+      "processed_rows_per_second": 500.0,
+      "duration_ms_addBatch": 800,
+      "duration_ms_commitOffsets": 100
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T12:00:01.000Z",
+      "query_id": "q-depth",
+      "run_id": "r-depth",
+      "query_name": "orders"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_6a5571",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 102,
+      "observed_index": 2,
+      "batch_duration_ms": 1200,
+      "num_input_rows": 500,
+      "input_rows_per_second": 500.0,
+      "processed_rows_per_second": 500.0,
+      "duration_ms_addBatch": 900,
+      "duration_ms_commitOffsets": 100
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T12:00:02.000Z",
+      "query_id": "q-depth",
+      "run_id": "r-depth",
+      "query_name": "orders"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_de8c43",
+    "schema_version": 1,
+    "kind": "streaming.progress.event_time",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 100,
+      "observed_index": 0
+    },
+    "attrs": {
+      "values": {
+        "avg": "2026-10-01T11:59:30.000Z",
+        "watermark": "2026-10-01T11:59:00.000Z"
+      }
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_e927d0",
+    "schema_version": 1,
+    "kind": "streaming.progress.event_time",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 101,
+      "observed_index": 1
+    },
+    "attrs": {
+      "values": {
+        "avg": "2026-10-01T11:59:31.000Z",
+        "watermark": "2026-10-01T11:59:00.000Z"
+      }
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_e67f69",
+    "schema_version": 1,
+    "kind": "streaming.progress.event_time",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 102,
+      "observed_index": 2
+    },
+    "attrs": {
+      "values": {
+        "avg": "2026-10-01T11:59:32.000Z",
+        "watermark": "2026-10-01T11:59:00.000Z"
+      }
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_085c08",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 3,
+      "first_batch_id": 100,
+      "last_batch_id": 102,
+      "input_rows_per_second_first": 500.0,
+      "input_rows_per_second_last": 500.0,
+      "processed_rows_per_second_first": 500.0,
+      "processed_rows_per_second_last": 500.0,
+      "batch_duration_ms_first": 1000.0,
+      "batch_duration_ms_last": 1200.0,
+      "batch_duration_ms_max": 1200.0,
+      "batch_duration_ms_avg": 1100.0,
+      "state_rows_total_first": 100.0,
+      "state_rows_total_last": 100.0,
+      "state_memory_used_bytes_first": 2048.0,
+      "state_memory_used_bytes_last": 8192.0,
+      "state_memory_used_bytes_max": 8192.0,
+      "observed_span_seconds": 2.0,
+      "watermark_advance_ms": 0.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 2,
+      "all_processed_below_input": false,
+      "state_growth_observed": false,
+      "state_memory_growth_observed": true,
+      "observed_timestamp_first": "2026-10-01T12:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T12:00:02+00:00",
+      "watermark_first": "2026-10-01T11:59:00+00:00",
+      "watermark_last": "2026-10-01T11:59:00+00:00",
+      "watermark_stalled": true
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_0d5fc7",
+    "schema_version": 1,
+    "kind": "streaming.progress.sink",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 100,
+      "observed_index": 0,
+      "num_output_rows": 500
+    },
+    "attrs": {
+      "description": "IcebergSink"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_aa6522",
+    "schema_version": 1,
+    "kind": "streaming.progress.sink",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 101,
+      "observed_index": 1,
+      "num_output_rows": 500
+    },
+    "attrs": {
+      "description": "IcebergSink"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_3a2afc",
+    "schema_version": 1,
+    "kind": "streaming.progress.sink",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 102,
+      "observed_index": 2,
+      "num_output_rows": 500
+    },
+    "attrs": {
+      "description": "IcebergSink"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_30184a",
+    "schema_version": 1,
+    "kind": "streaming.progress.source",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 100,
+      "observed_index": 0,
+      "num_input_rows": 500,
+      "input_rows_per_second": 500.0,
+      "processed_rows_per_second": 500.0
+    },
+    "attrs": {
+      "source_index": 0,
+      "description": "KafkaV2[Subscribe[orders]]",
+      "start_offset": "{\"orders\":{\"0\":100}}",
+      "end_offset": "{\"orders\":{\"0\":110}}",
+      "latest_offset": "{\"orders\":{\"0\":120}}"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_66b9d4",
+    "schema_version": 1,
+    "kind": "streaming.progress.source",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 101,
+      "observed_index": 1,
+      "num_input_rows": 500,
+      "input_rows_per_second": 500.0,
+      "processed_rows_per_second": 500.0
+    },
+    "attrs": {
+      "source_index": 0,
+      "description": "KafkaV2[Subscribe[orders]]",
+      "start_offset": "{\"orders\":{\"0\":110}}",
+      "end_offset": "{\"orders\":{\"0\":120}}",
+      "latest_offset": "{\"orders\":{\"0\":130}}"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_6cd2ab",
+    "schema_version": 1,
+    "kind": "streaming.progress.source",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 102,
+      "observed_index": 2,
+      "num_input_rows": 500,
+      "input_rows_per_second": 500.0,
+      "processed_rows_per_second": 500.0
+    },
+    "attrs": {
+      "source_index": 0,
+      "description": "KafkaV2[Subscribe[orders]]",
+      "start_offset": "{\"orders\":{\"0\":120}}",
+      "end_offset": "{\"orders\":{\"0\":130}}",
+      "latest_offset": "{\"orders\":{\"0\":140}}"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_f794d8",
+    "schema_version": 1,
+    "kind": "streaming.progress.state_operator",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 100,
+      "observed_index": 0,
+      "num_rows_total": 100,
+      "num_rows_updated": 10,
+      "memory_used_bytes": 2048
+    },
+    "attrs": {
+      "state_index": 0,
+      "operator_name": "stateStore",
+      "custom_metrics": {}
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_22dce1",
+    "schema_version": 1,
+    "kind": "streaming.progress.state_operator",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 101,
+      "observed_index": 1,
+      "num_rows_total": 100,
+      "num_rows_updated": 10,
+      "memory_used_bytes": 4096
+    },
+    "attrs": {
+      "state_index": 0,
+      "operator_name": "stateStore",
+      "custom_metrics": {}
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_0b4626",
+    "schema_version": 1,
+    "kind": "streaming.progress.state_operator",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 102,
+      "observed_index": 2,
+      "num_rows_total": 100,
+      "num_rows_updated": 10,
+      "memory_used_bytes": 8192
+    },
+    "attrs": {
+      "state_index": 0,
+      "operator_name": "stateStore",
+      "custom_metrics": {}
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  }
+]

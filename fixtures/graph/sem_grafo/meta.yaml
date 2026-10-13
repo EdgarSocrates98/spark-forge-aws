@@ -1,0 +1,15 @@
+name: sem_grafo
+proves: >
+  Arquivo PySpark sem grafo nenhum. A sentinela `graph.module_analyzed` sai
+  assim mesmo, com os quatro contadores em zero: sem ela, "este arquivo nao
+  processa grafo" e "o extrator nao rodou aqui" seriam a mesma saida, e uma
+  condicao `absent:` do catalogo seria vazamente verdadeira sobre todo
+  repositorio que ninguem analisou.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.module_analyzed
+expects_rules: []

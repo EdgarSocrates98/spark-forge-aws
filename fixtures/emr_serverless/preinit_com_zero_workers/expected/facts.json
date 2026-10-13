@@ -1,0 +1,217 @@
+[
+  {
+    "id": "f_6f44ac",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "autostop_desligado.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 1,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "499105f51ed0329bac8f17ac881051130bbe01a2d3b0de8a9821e67607c50375",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_f59f3b",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "janela_longa.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 1,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "12e2d3dea2777289118501c1eb31e66e3c3f39cd0a96a8c8a622bf99bb237ee6",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_bd72cd",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fzerowork00000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "application_id": "00fzerowork00000001",
+      "name": "preinit-zerada",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "architecture": "X86_64",
+      "auto_start_declared": true,
+      "auto_stop_declared": true,
+      "auto_start_enabled": true,
+      "auto_stop_enabled": false,
+      "initial_exceeds_maximum": false,
+      "capacity_axes_exceeded": []
+    },
+    "provenance": {
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "499105f51ed0329bac8f17ac881051130bbe01a2d3b0de8a9821e67607c50375",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_e3759c",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fzerowork00000002"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 10080
+    },
+    "attrs": {
+      "application_id": "00fzerowork00000002",
+      "name": "preinit-zerada-janela-larga",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "architecture": "X86_64",
+      "auto_start_declared": true,
+      "auto_stop_declared": true,
+      "auto_start_enabled": true,
+      "auto_stop_enabled": true,
+      "initial_exceeds_maximum": false,
+      "capacity_axes_exceeded": []
+    },
+    "provenance": {
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "12e2d3dea2777289118501c1eb31e66e3c3f39cd0a96a8c8a622bf99bb237ee6",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_5a7dcb",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fzerowork00000001/initial_capacity/DRIVER"
+    },
+    "measures": {
+      "worker_count": 0,
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "499105f51ed0329bac8f17ac881051130bbe01a2d3b0de8a9821e67607c50375",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_fcd7ec",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fzerowork00000002/initial_capacity/EXECUTOR"
+    },
+    "measures": {
+      "worker_count": 0,
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "12e2d3dea2777289118501c1eb31e66e3c3f39cd0a96a8c8a622bf99bb237ee6",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_686e0d",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fzerowork00000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "499105f51ed0329bac8f17ac881051130bbe01a2d3b0de8a9821e67607c50375",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_d5c3c4",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fzerowork00000002/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "12e2d3dea2777289118501c1eb31e66e3c3f39cd0a96a8c8a622bf99bb237ee6",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

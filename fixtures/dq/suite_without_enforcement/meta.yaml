@@ -1,0 +1,28 @@
+name: suite_without_enforcement
+proves: >
+  A suite roda, o relatorio e gravado em `s3://lake/quality/clientes/`, e
+  NADA no job le esse resultado para decidir se a carga continua: o dado
+  reprovado e publicado do mesmo jeito.
+  A prova e uma AUSENCIA -- ha `dq.check` e NAO ha `dq.enforcement` --, e e por
+  isso que os `expects_kinds` desta fixture sao a evidencia principal dela.
+  SF-DQ-002 dispara sobre `absent: dq.enforcement` com `same_subject`: o
+  enforcement herda o subject do check, entao check protegido e check
+  desprotegido caem em grupos distintos e um nao mascara o outro.
+  Contraparte obrigatoria de `pydeequ_suite`, que e a MESMA forma de suite com
+  consequencia: sem as duas, uma regra que nunca reconhecesse enforcement
+  passaria aqui por acidente.
+  SF-DQ-003 dispara aqui TAMBEM, e nao por acidente: `clientes` nao esta em
+  `cache()` e e reusado pelo write depois da suite, entao o lineage roda duas
+  vezes. E o segundo defeito real deste job, e e o contraste com `pydeequ_suite`
+  -- mesma forma de suite, alvo persistido, SF-DQ-003 calada la.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-002
+  - SF-DQ-003

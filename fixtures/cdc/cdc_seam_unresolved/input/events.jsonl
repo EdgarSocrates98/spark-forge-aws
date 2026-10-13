@@ -1,0 +1,2 @@
+{"op":"r","after":{"id":1,"status":"open"},"key":{"id":1},"source":{"lsn":"10","txId":"tx-1","table":"orders","snapshot":"true"}}
+{"op":"u","before":{"id":1,"status":"open"},"after":{"id":1,"status":"paid"},"key":{"id":1},"source":{"txId":"tx-2","table":"orders","snapshot":"false"}}

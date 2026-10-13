@@ -1,0 +1,220 @@
+[
+  {
+    "id": "f_76f840",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 3,
+      "configuration_count": 1,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_f6332d",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK/application/Hadoop"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Hadoop",
+      "version": "3.3.6-amzn-5"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_80eb90",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.5.1-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_6f596b",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK"
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 3
+    },
+    "attrs": {
+      "cluster_id": "j-3AMSOLTONOTASK",
+      "name": "agregacao-diaria",
+      "release_label": "emr-7.3.0",
+      "release": "7.3.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": "TERMINATE_AT_TASK_COMPLETION",
+      "auto_terminate": false,
+      "unhealthy_node_replacement": true,
+      "state": "RUNNING",
+      "state_change_reason_code": "ALL_STEPS_COMPLETED"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a39ce",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK/configuration/yarn-site/yarn.node-labels.enabled"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "yarn-site",
+      "key": "yarn.node-labels.enabled",
+      "value": "true",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_b95cc1",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK/ig-CORE"
+    },
+    "measures": {
+      "requested_instance_count": 3,
+      "running_instance_count": 3
+    },
+    "attrs": {
+      "id": "ig-CORE",
+      "cluster_id": "j-3AMSOLTONOTASK",
+      "role": "CORE",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "r5.2xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_fc2f4b",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK/ig-MASTER"
+    },
+    "measures": {
+      "requested_instance_count": 1,
+      "running_instance_count": 1
+    },
+    "attrs": {
+      "id": "ig-MASTER",
+      "cluster_id": "j-3AMSOLTONOTASK",
+      "role": "MASTER",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "m5.xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_b8cf55",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3AMSOLTONOTASK/ig-TASK"
+    },
+    "measures": {
+      "requested_instance_count": 12,
+      "running_instance_count": 12
+    },
+    "attrs": {
+      "id": "ig-TASK",
+      "cluster_id": "j-3AMSOLTONOTASK",
+      "role": "TASK",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "SPOT",
+      "has_spot_capacity": true,
+      "has_on_demand_capacity": false,
+      "instance_types": [
+        "r5.4xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "ab138b381bae5351288b129cd577fbde7961d609d365aa807c3f612c9f3be830",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

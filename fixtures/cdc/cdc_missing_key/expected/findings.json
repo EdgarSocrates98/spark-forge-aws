@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-CDC-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Evento CDC sem chave primária observada",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "events.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_44c3d7"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O artefato de mudança não traz uma chave observável para o evento. Isso impede provar idempotência, ordenação por entidade e aplicação segura de update/delete; não prova que a origem não tenha chave.",
+    "proposed_change": [
+      "Coletar a chave primária declarada e o evento completo na mesma captura.",
+      "Definir deduplicação e aplicação por chave antes de reprocessar o stream."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aplicar evento sem chave pode duplicar ou atualizar linha errada."
+    ],
+    "tradeoffs": [
+      "Coletar metadados de chave aumenta evidência e retenção do dump."
+    ],
+    "validation": [
+      "Comparar chave, contagem, deletes e valores em replay controlado."
+    ],
+    "rollback": [
+      "Pausar aplicação e reverter somente a política de replay configurada."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Troubleshooting.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "cdc.primary_key",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

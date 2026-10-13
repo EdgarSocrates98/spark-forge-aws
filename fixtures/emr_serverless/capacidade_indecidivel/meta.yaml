@@ -1,0 +1,34 @@
+name: capacidade_indecidivel
+proves: >
+  O caso COMUM, e o que este corpus existe para contar em vez de silenciar.
+  `maximumCapacity` e `Required: No` na referencia de API, e `disk` e opcional
+  no `workerConfiguration`: "nao da para decidir se a capacidade inicial estoura
+  o teto" e o estado normal de uma application real, nao a excecao.
+  Dois payloads, um por causa, porque as duas produzem `detail` diferente e a
+  Task 5 pode querer distinguir:
+    * `sem_teto.json` -- nao ha `maximumCapacity`. `detail: missing_maximum_capacity`.
+    * `eixo_ausente.json` -- ha teto nos tres eixos, mas o worker nao declara
+      `disk`. `detail: missing_capacity_axis`, `axes: ["disk_gb"]`.
+  Nos dois casos `initial_exceeds_maximum` e `capacity_axes_exceeded` sao chaves
+  OMITIDAS de `emrs.application` -- nao `false`. `false` afirmaria que a
+  capacidade cabe, que e o falso negativo silencioso; a omissao faz
+  `engine._where_matches` nao casar, e o `emrs.unresolved` deixa o ponto cego
+  CONTADO na sentinela.
+  Se um dia estas duas fixtures passarem a trazer `initial_exceeds_maximum:
+  false`, o motor comecou a afirmar a partir do silencio do payload.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+  - emrs.unresolved
+expects_rules: []

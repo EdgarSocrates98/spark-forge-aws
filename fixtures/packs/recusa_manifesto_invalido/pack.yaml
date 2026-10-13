@@ -1,0 +1,5 @@
+# Recusa `manifesto_invalido`: falta `prefix`.
+pack:
+  id: sem-prefixo
+  version: 1.0.0
+  core: ">=0.5"

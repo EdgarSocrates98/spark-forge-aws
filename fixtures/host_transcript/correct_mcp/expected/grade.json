@@ -1,0 +1,34 @@
+{
+  "id": "q-mcp",
+  "status": "graded",
+  "answer": "correct",
+  "abstention": null,
+  "tools": {
+    "verdict": "ok",
+    "missing": [],
+    "order_violated": []
+  },
+  "cost": {
+    "tool_calls": 2,
+    "other_calls": 0,
+    "tool_errors": 0,
+    "tool_result_bytes": 86,
+    "tool_result_bytes_by_channel": {
+      "mcp": 86,
+      "bash": 0,
+      "other": 0
+    },
+    "tool_result_bytes_by_tool": {
+      "mcp__sparkforge-aws__sparkforge_aws_judge": 55,
+      "mcp__sparkforge-aws__sparkforge_aws_analyze_pyspark": 31
+    },
+    "tokens": {
+      "input": 30,
+      "output": 60,
+      "cache_read": 300,
+      "cache_creation": 15
+    },
+    "tokens_unresolved": false
+  },
+  "unresolved": []
+}

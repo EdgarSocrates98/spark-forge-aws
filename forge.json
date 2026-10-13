@@ -1,0 +1,16 @@
+{
+  "forge_id": "spark-forge-aws",
+  "package": "sparkforge_aws",
+  "distribution": "sparkforge-aws",
+  "cli": "sparkforge-aws",
+  "python": ">=3.10",
+  "mcp_server_name": "sparkforge-aws",
+  "mcp_command": [
+    "sparkforge-aws",
+    "mcp",
+    "serve"
+  ],
+  "extras": [
+    "mcp"
+  ]
+}

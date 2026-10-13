@@ -1,0 +1,135 @@
+[
+  {
+    "id": "f_d69b38",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "ev-sem-forma.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_eb2198",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-9",
+      "stage_id": 9
+    },
+    "measures": {
+      "shuffle_read_bytes": 1024,
+      "shuffle_write_bytes": 2048
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "ev-sem-callsite.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_28d4b8",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "count at GraphFrame.scala:112",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "arquivo_nao_python",
+      "file": "GraphFrame.scala"
+    },
+    "provenance": {
+      "artifact": "ev-scala.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_9e9479",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/lib/job.py:5",
+      "stage_id": 6
+    },
+    "measures": {
+      "line": 5
+    },
+    "attrs": {
+      "resolved": true,
+      "method": "collect",
+      "file": "job.py",
+      "path": "/opt/spark/work/lib/job.py"
+    },
+    "provenance": {
+      "artifact": "ev-ambiguo.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_e17082",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/x/um.py:1",
+      "stage_id": 7
+    },
+    "measures": {
+      "line": 1
+    },
+    "attrs": {
+      "resolved": true,
+      "method": "collect",
+      "file": "um.py",
+      "path": "/opt/x/um.py"
+    },
+    "provenance": {
+      "artifact": "ev-dup-a.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_178df3",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/x/dois.py:2",
+      "stage_id": 7
+    },
+    "measures": {
+      "line": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "method": "collect",
+      "file": "dois.py",
+      "path": "/opt/x/dois.py"
+    },
+    "provenance": {
+      "artifact": "ev-dup-b.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  }
+]

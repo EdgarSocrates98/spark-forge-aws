@@ -1,0 +1,368 @@
+[
+  {
+    "id": "f_a55de2",
+    "schema_version": 1,
+    "kind": "env.runtime_signal",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "measures": {
+      "distinct_versions": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "component": "spark",
+      "resolved": "3.5.6",
+      "observed": [
+        "3.5.6"
+      ],
+      "source": "resolved",
+      "spark_minor": 3.5
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
+    "id": "f_469f88",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "artifact_sha256": "4d20d8f4db1d9744b8ea094aae59ec3e489346472e8ce2e0126233d71a7a0ed4",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_661d6e",
+    "schema_version": 1,
+    "kind": "kafka.consumer_group",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "group": "orders-group",
+      "state": null
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "artifact_sha256": "4d20d8f4db1d9744b8ea094aae59ec3e489346472e8ce2e0126233d71a7a0ed4",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_567291",
+    "schema_version": 1,
+    "kind": "kafka.consumer_group",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "group": "orders-group",
+      "state": null
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "artifact_sha256": "4d20d8f4db1d9744b8ea094aae59ec3e489346472e8ce2e0126233d71a7a0ed4",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_aca472",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "current_offset": 100,
+      "log_end_offset": 130,
+      "lag": 30,
+      "timestamp": 1790942401
+    },
+    "attrs": {
+      "group": "orders-group",
+      "topic": "orders"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "artifact_sha256": "4d20d8f4db1d9744b8ea094aae59ec3e489346472e8ce2e0126233d71a7a0ed4",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_ddfba9",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "current_offset": 200,
+      "log_end_offset": 240,
+      "lag": 40,
+      "timestamp": 1790942412
+    },
+    "attrs": {
+      "group": "orders-group",
+      "topic": "orders"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+      "artifact_sha256": "4d20d8f4db1d9744b8ea094aae59ec3e489346472e8ce2e0126233d71a7a0ed4",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_543223",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "temporal",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 10,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "temporal",
+      "table": null,
+      "query_name": "orders-query",
+      "transport_key": "orders-group",
+      "max_skew_seconds": 3
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+        "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_1fe36c",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "artifact_sha256": "0d66d927af543ff083993057feb59a8d0c949fbf31a14b922d2700d0ed12d196",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_f67956",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "batch_duration_ms": 900,
+      "num_input_rows": 1000,
+      "input_rows_per_second": 100,
+      "processed_rows_per_second": 80
+    },
+    "attrs": {
+      "timestamp": "2026-10-02T12:00:00Z",
+      "query_id": "query-1",
+      "run_id": "run-1",
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "artifact_sha256": "0d66d927af543ff083993057feb59a8d0c949fbf31a14b922d2700d0ed12d196",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_f91f03",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "batch_duration_ms": 950,
+      "num_input_rows": 1100,
+      "input_rows_per_second": 110,
+      "processed_rows_per_second": 90
+    },
+    "attrs": {
+      "timestamp": "2026-10-02T12:00:10Z",
+      "query_id": "query-1",
+      "run_id": "run-1",
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "artifact_sha256": "0d66d927af543ff083993057feb59a8d0c949fbf31a14b922d2700d0ed12d196",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_82604a",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100,
+      "input_rows_per_second_last": 110,
+      "processed_rows_per_second_first": 80,
+      "processed_rows_per_second_last": 90
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 1,
+      "all_processed_below_input": true
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl",
+      "artifact_sha256": "0d66d927af543ff083993057feb59a8d0c949fbf31a14b922d2700d0ed12d196",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_a19f50",
+    "schema_version": 1,
+    "kind": "streaming.temporal.diagnostic",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query<->orders-group",
+      "snippet": ""
+    },
+    "measures": {
+      "progress_observation_count": 2,
+      "transport_observation_count": 2,
+      "paired_observation_count": 2,
+      "progress_timestamped_count": 2,
+      "transport_timestamped_count": 2,
+      "max_skew_seconds": 2,
+      "max_transport_value": 40,
+      "min_transport_value": 30,
+      "comparable_progress_count": 2
+    },
+    "attrs": {
+      "query_name": "orders-query",
+      "transport_key": "orders-group",
+      "transport_kinds": [
+        "kafka"
+      ],
+      "transport_metrics": [
+        "lag"
+      ],
+      "processed_below_input_observed": true,
+      "all_paired_processed_below_input": true,
+      "transport_backlog_observed": true,
+      "temporal_window_complete": true,
+      "max_skew_seconds_declared": 3,
+      "link_kind": "declared_temporal_window",
+      "causal_inference": false,
+      "source_fact_ids": [
+        "f_aca472",
+        "f_ddfba9",
+        "f_f67956",
+        "f_f91f03"
+      ],
+      "progress_window_start": "2026-10-02T12:00:00Z",
+      "progress_window_end": "2026-10-02T12:00:10Z"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\kafka_paired\\input\\kafka.json",
+        "fixtures\\streaming_temporal\\kafka_paired\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_temporal@0.1.0"
+    }
+  }
+]

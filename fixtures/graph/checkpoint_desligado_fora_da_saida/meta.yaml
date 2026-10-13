@@ -1,0 +1,35 @@
+name: checkpoint_desligado_fora_da_saida
+proves: >
+  A outra metade do que o veto `V-GR-2` exigia: um caso `checkpointInterval <= 0`
+  que NAO seja tambem saida legitima de `V-GF-1`.
+  O corpus ja tinha o valor nao positivo em `saida_intervalo_nao_positivo`, e la
+  ele e uma das cinco saidas documentadas da exigencia de checkpoint de
+  `connectedComponents` -- o proprio `meta.yaml` daquela fixture a declara
+  "segunda forma de escrever certo". Acusa-la faria o relatorio dizer as duas
+  coisas ao mesmo tempo sobre o mesmo artefato: "voce escapou da exigencia" e
+  "voce escapou errado".
+  Aqui o algoritmo e `labelPropagation`. Ele e iterativo do mesmo jeito e expoe
+  `checkpoint_interval` na linhagem `io.graphframes` (§4.4 da pesquisa), mas nao
+  levanta `IOException` sem diretorio -- entao nao ha excecao da qual escapar, e
+  `checkpoint_interval=0` e so o truncamento de lineage desligado.
+  O DISCRIMINADOR MEDIDO E `attrs.name`, e nao `attrs.checkpoint_required`:
+  fora de `connectedComponents` o extrator OMITE aquele atributo (V-GF-4), e
+  `_expr_matches` devolve `False` para a expressao inteira quando um caminho
+  esta ausente. Uma condicao escrita sobre a ausencia do atributo apagaria
+  exatamente este ramo.
+  UM EIXO SO: checkpoint configurado, vertices e arestas persistidos, sem laco.
+  `maxIter=5` sai como `iteration_arg` observado e nunca julgado (V-GF-2,
+  V-GF-3).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules:
+  - SF-GRAPH-006

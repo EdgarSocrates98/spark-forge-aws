@@ -1,0 +1,150 @@
+[
+  {
+    "id": "f_378bf7",
+    "schema_version": 1,
+    "kind": "schema.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "provider": "glue",
+      "subject": "orders-value",
+      "format": "AVRO"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_f75071",
+    "schema_version": 1,
+    "kind": "schema.compatibility",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "subject": "orders-value",
+      "mode": "BACKWARD"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_d48f23",
+    "schema_version": 1,
+    "kind": "schema.definition",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "measures": {
+      "field_count": 3
+    },
+    "attrs": {
+      "subject": "orders-value",
+      "type": "record",
+      "fields": {
+        "id": "string",
+        "total": "double",
+        "status": "string"
+      },
+      "field_names": [
+        "id",
+        "status",
+        "total"
+      ],
+      "required_fields": [
+        "id",
+        "total"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_f806b4",
+    "schema_version": 1,
+    "kind": "schema.diff",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "measures": {
+      "changed_field_count": 1
+    },
+    "attrs": {
+      "subject": "orders-value",
+      "compatibility": "BACKWARD",
+      "added": [
+        "status"
+      ],
+      "removed": [],
+      "type_changes": [],
+      "required_changes": [],
+      "backward_breaking": false,
+      "forward_breaking": false,
+      "compatible": true
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_1f2f47",
+    "schema_version": 1,
+    "kind": "schema.registry",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "registry": "orders",
+      "provider": "glue",
+      "subject": "orders-value",
+      "format": "AVRO",
+      "compatibility": "BACKWARD",
+      "auto_register": false,
+      "version": 2
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
+      "extractor": "schema_registry@0.1.0"
+    }
+  }
+]

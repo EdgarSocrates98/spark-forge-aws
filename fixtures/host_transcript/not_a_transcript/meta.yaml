@@ -1,0 +1,7 @@
+name: not_a_transcript
+mode: transcript
+question: q-mcp
+proves: >
+  Um event log do Spark com o nome de transcript: primeira linha sem type.
+  O extrator devolve UM host.transcript.unresolved (host_format_unknown) sem
+  ler o resto, e a pergunta sai ungraded.

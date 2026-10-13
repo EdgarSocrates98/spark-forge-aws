@@ -1,0 +1,6 @@
+--- a/lib/job.py
++++ b/lib/job.py
+@@ -1,2 +1,2 @@
+ def configurar(spark):
+-    spark.conf.set("spark.sql.shuffle.partitions", "800")
++    return spark

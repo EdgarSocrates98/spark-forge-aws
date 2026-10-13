@@ -1,0 +1,33 @@
+{
+  "skill_name": "diagnose-data-skew",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the diagnose-data-skew skill to review a case about skew de dados, distribuição de tasks e custo de shuffle. The supplied artifact is partial; produce an evidence-first handoff and do not invent measurements.",
+      "expected_output": "A structured handoff for skew de dados, distribuição de tasks e custo de shuffle using sparkforge-aws collect event-log, with anchored facts, unresolved gaps, recommendation schema when applicable, validation, and rollback.",
+      "files": [],
+      "expectations": [
+        "The response uses the primary evidence path `sparkforge-aws collect event-log` or explains why the available artifact cannot support it.",
+        "The response separates anchored facts from findings and cites a fact_id or source path.",
+        "The response reports unresolved evidence instead of guessing missing runtime, cost, capacity, or authorization facts.",
+        "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",
+        "The response cites at least one local reference and preserves version or provenance constraints."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Apply diagnose-data-skew to a before/after change involving skew de dados, distribuição de tasks e custo de shuffle. Decide what can be concluded, what must be measured, and how an operator can safely revert.",
+      "expected_output": "A bounded decision that distinguishes observed result from hypothesis, records provenance, and names the next deterministic validation command.",
+      "files": [],
+      "expectations": [
+        "The response uses the primary evidence path `sparkforge-aws collect event-log` or explains why the available artifact cannot support it.",
+        "The response separates anchored facts from findings and cites a fact_id or source path.",
+        "The response reports unresolved evidence instead of guessing missing runtime, cost, capacity, or authorization facts.",
+        "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",
+        "The response cites at least one local reference and preserves version or provenance constraints.",
+        "The response does not claim a performance or cost gain without a same-case measurement."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+{"batchId":1,"timestamp":"2026-10-01T00:00:00Z","name":"orders-query","inputRowsPerSecond":100.0,"processedRowsPerSecond":80.0,"numInputRows":100}
+{"batchId":2,"timestamp":"2026-10-01T00:00:05Z","name":"orders-query","inputRowsPerSecond":100.0,"processedRowsPerSecond":70.0,"numInputRows":100}

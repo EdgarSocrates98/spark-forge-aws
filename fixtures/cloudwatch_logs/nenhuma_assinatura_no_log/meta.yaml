@@ -1,0 +1,20 @@
+name: nenhuma_assinatura_no_log
+proves: >
+  Log de execucao bem-sucedida: tres linhas INFO, nenhuma assinatura conhecida.
+  Sai UM `error.signature.unresolved` com `reason:
+  nenhuma_assinatura_casou_no_log` e `lines_examined: 3` -- a recusa AGREGADA
+  por (run, log group), nao uma por linha.
+
+  Sem esse fact, "nenhuma assinatura conhecida aparece neste log" seria
+  indistinguivel de "ninguem coletou log nenhum", e os dois devolvem zero
+  matches.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature.unresolved
+expects_rules: []

@@ -1,0 +1,52 @@
+[
+  {
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0001",
+      "symbol": "jr_0001"
+    },
+    "measures": {
+      "execution_time_s": 3600,
+      "number_of_workers": 10,
+      "timeout_min": 60,
+      "dpu_seconds": 36000.0
+    },
+    "attrs": {
+      "state": "TIMEOUT",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    }
+  },
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.heartbeatInterval"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.heartbeatInterval",
+      "value": "130s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.network.timeout"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.network.timeout",
+      "value": "120s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  }
+]

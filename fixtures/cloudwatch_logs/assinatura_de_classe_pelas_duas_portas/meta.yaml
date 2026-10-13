@@ -1,0 +1,17 @@
+name: assinatura_de_classe_pelas_duas_portas
+proves: >
+  `NoSuchMethodError` (ERR-GLUE-002) e uma das duas assinaturas que JA casavam
+  por `spark.exception`, e aqui ela casa pela linha de log. E por isso que
+  `matched_on` existe: sem ele, o match por classe e o match por linha do mesmo
+  `signature_id` seriam indistinguiveis, e um case com as duas fontes teria dois
+  facts dizendo a mesma coisa sem dizer de onde vieram.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules: []

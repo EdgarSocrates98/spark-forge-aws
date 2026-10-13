@@ -1,0 +1,550 @@
+[
+  {
+    "id": "f_e64252",
+    "schema_version": 1,
+    "kind": "pyspark.action",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 9,
+      "col": 13,
+      "end_line": 9,
+      "symbol": "principal",
+      "snippet": "linhas = ativos.collect()"
+    },
+    "measures": {},
+    "attrs": {
+      "method": "collect"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_3a86cd",
+    "schema_version": 1,
+    "kind": "pyspark.callgraph_edge",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 15,
+      "col": 11,
+      "end_line": 15,
+      "symbol": "main",
+      "snippet": "return principal(spark)"
+    },
+    "measures": {},
+    "attrs": {
+      "caller": "main",
+      "callee": "principal"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_640857",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 14,
+      "col": 12,
+      "end_line": 14,
+      "symbol": "main",
+      "snippet": "spark = SparkSession.builder.getOrCreate()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "builder",
+        "getOrCreate"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_900817",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 7,
+      "col": 15,
+      "end_line": 7,
+      "symbol": "principal",
+      "snippet": "clientes = spark.read.parquet(\"s3://bucket/clientes\")"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "read",
+        "parquet"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_100caf",
+    "schema_version": 1,
+    "kind": "pyspark.driver_collect",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 9,
+      "col": 13,
+      "end_line": 9,
+      "symbol": "principal",
+      "snippet": "linhas = ativos.collect()"
+    },
+    "measures": {},
+    "attrs": {
+      "method": "collect",
+      "bounded": false,
+      "inside_loop": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_463b32",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "end_line": 10,
+      "symbol": "principal",
+      "snippet": "def principal(spark):"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_0a467f",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 0,
+      "end_line": 15,
+      "symbol": "main",
+      "snippet": "def main():"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_7be437",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 6,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true,
+      "referenced_names": [
+        "SparkSession",
+        "ativo",
+        "ativos",
+        "builder",
+        "clientes",
+        "collect",
+        "filter",
+        "getOrCreate",
+        "len",
+        "linhas",
+        "parquet",
+        "principal",
+        "read",
+        "spark"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_77f2e9",
+    "schema_version": 1,
+    "kind": "pyspark.read",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 7,
+      "col": 15,
+      "end_line": 7,
+      "symbol": "principal",
+      "snippet": "clientes = spark.read.parquet(\"s3://bucket/clientes\")"
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet",
+      "target": "s3://bucket/clientes"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9991b4fbc3123c3afe6f3fbbee936b5997aa2e8c97136364d961f1b014117d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_373ee4",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {
+      "available_cores": 0,
+      "executor_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_e86330",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {
+      "stages_with_spill": 0,
+      "total_memory_spill_bytes": 0,
+      "total_disk_spill_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_5d70eb",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 6,
+      "event_count": 6,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f55918",
+    "schema_version": 1,
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.4",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_5651c1",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "line": 9
+    },
+    "attrs": {
+      "resolved": true,
+      "method": "collect",
+      "file": "job.py",
+      "path": "/opt/spark/work/job.py"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_9d7fac",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "gc_ms": 0,
+      "executor_run_ms": 2000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_2cabb1",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "read_bytes": 0,
+      "remote_read_bytes": 0,
+      "local_read_bytes": 0,
+      "read_records": 0,
+      "fetch_wait_ms": 0,
+      "write_bytes": 0,
+      "write_records": 0,
+      "write_time_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_812143",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "memory_spill_bytes": 0,
+      "disk_spill_bytes": 0,
+      "input_bytes": 4100000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_d6989c",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "task_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_ec95a0",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 1000,
+      "max_ms": 1000,
+      "mean_ms": 1000.0,
+      "task_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_27fd1d",
+    "schema_version": 1,
+    "kind": "spark.stage.task_input",
+    "subject": {
+      "type": "stage",
+      "symbol": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_bytes": 2050000000,
+      "p50_bytes": 2050000000,
+      "p95_bytes": 2050000000,
+      "max_bytes": 2050000000,
+      "total_bytes": 4100000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_a9d3df",
+    "schema_version": 1,
+    "kind": "bridge.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "collect_corroborado_pelo_stage",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "confirmed": 1,
+      "static_facts": 1,
+      "resolved_callsites": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "collect_corroborado_pelo_stage",
+      "artifact_sha256": "",
+      "extractor": "bridge@0.1.0"
+    }
+  },
+  {
+    "id": "f_9799df",
+    "schema_version": 1,
+    "kind": "bridge.driver_collect_confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 9,
+      "col": 13,
+      "end_line": 9,
+      "symbol": "principal",
+      "snippet": "linhas = ativos.collect()"
+    },
+    "measures": {
+      "stage_min_bytes": 2050000000,
+      "stage_p50_bytes": 2050000000,
+      "stage_p95_bytes": 2050000000,
+      "stage_max_bytes": 2050000000,
+      "stage_total_bytes": 4100000000
+    },
+    "attrs": {
+      "stage_name": "collect at /opt/spark/work/job.py:9",
+      "stage_id": 0,
+      "stage_method": "collect",
+      "volume_kind": "spark.stage.task_input",
+      "bounded": false
+    },
+    "provenance": {
+      "artifact": "collect_corroborado_pelo_stage",
+      "artifact_sha256": "",
+      "extractor": "bridge@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,28 @@
+name: link_que_o_coletor_nao_pode_ler
+proves: >
+  A distincao que este corpus inteiro existe para preservar: "nao consegui" NAO
+  e "nao ha".
+
+  O principal que coleta nao tem `glue:GetTable` sobre o objeto na conta
+  consumidora, e a resposta e `AccessDeniedException`. Nenhum
+  `glue.resource_link` sai -- e ele NAO sai com `is_resource_link: false`, que
+  seria a leitura errada e indistinguivel de "e uma tabela comum".
+
+  Os DOIS blocos viram recusa, e por razoes diferentes: o link por permissao, o
+  alvo porque sem link medido nao ha alvo a conferir. `unblocked_by` de cada um
+  nomeia a permissao que destrava.
+
+  `expects_rules` sai vazio: SF-XACC-002 e SF-XACC-003 exigem facts que este
+  artefato nao produz, e regra que dispara sem medida e o defeito que o corpus
+  existe para impedir.
+
+  Fixture SINTETICA: nenhuma conta, banco ou tabela real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - glue.resource_link.analyzed
+  - glue.resource_link.unresolved
+expects_rules: []

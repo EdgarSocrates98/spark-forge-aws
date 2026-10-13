@@ -1,0 +1,12 @@
+[
+  {
+    "kind": "spark.executor.memory_usage",
+    "subject": {"type": "job_run", "symbol": "1"},
+    "measures": {
+      "peak_jvm_heap_bytes": 3221225472.0,
+      "peak_jvm_offheap_bytes": 268435456.0
+    },
+    "attrs": {"executor_id": "1"},
+    "provenance": {"extractor": "event_log@0.1.0", "artifact": "eventlog.jsonl"}
+  }
+]

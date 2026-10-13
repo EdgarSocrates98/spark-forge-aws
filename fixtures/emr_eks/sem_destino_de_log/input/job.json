@@ -1,0 +1,35 @@
+{
+  "virtualCluster": {
+    "id": "0abcdefghijklmnop",
+    "name": "analytics",
+    "state": "RUNNING",
+    "containerProvider": {
+      "type": "EKS",
+      "id": "producao-eks",
+      "info": {"eksInfo": {"namespace": "spark"}}
+    }
+  },
+  "jobRun": {
+    "id": "0000000klmnopqrst",
+    "name": "etl-sem-log",
+    "virtualClusterId": "0abcdefghijklmnop",
+    "state": "COMPLETED",
+    "releaseLabel": "emr-7.5.0-latest",
+    "executionRoleArn": "arn:aws:iam::111122223333:role/EMRContainersJobRole",
+    "jobDriver": {
+      "sparkSubmitJobDriver": {
+        "entryPoint": "s3://bucket/etl.py",
+        "entryPointArguments": ["--data", "s3://bucket/in/"],
+        "sparkSubmitParameters": "--conf spark.executor.instances=4"
+      }
+    },
+    "configurationOverrides": {
+      "applicationConfiguration": [
+        {
+          "classification": "spark-defaults",
+          "properties": {"spark.sql.shuffle.partitions": "400"}
+        }
+      ]
+    }
+  }
+}

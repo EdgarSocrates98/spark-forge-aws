@@ -1,0 +1,27 @@
+name: pydeequ_suite
+proves: >
+  A `VerificationSuite` do PyDeequ e reconhecida pela FORMA -- cadeia que
+  contem `onData` e termina em `run` --, e nao por casar a sequencia exata de
+  metodos: aqui `addCheck` carrega tres restricoes encadeadas e a cadeia inteira
+  ocupa varias linhas.
+  O `dq.check` sai com attrs.shares_scan == true, e os DOIS nomes vetados nao
+  aparecem: nao ha `single_pass` (o runner agrupa as agregacoes que
+  compartilham agrupamento, e `isUnique` paga passada propria -- D-5c-1), e nao
+  ha `declared_checks` (contar restricoes no `.py` nao diz quantas passadas
+  sao -- D-5c-2).
+  O alvo do check e o argumento de `onData`, e nunca a raiz da cadeia: a raiz
+  aqui e `VerificationSuite(spark)`, e registrar `spark` como alvo dataria este
+  check contra o write de outro dado.
+  Ha `dq.enforcement` com form: exit -- `sys.exit(1)` conta como consequencia
+  tanto quanto `raise`, e provar as duas formas separa "reconhece consequencia"
+  de "reconhece a palavra raise".
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules: []

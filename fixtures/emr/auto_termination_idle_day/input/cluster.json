@@ -1,0 +1,39 @@
+{
+  "Cluster": {
+    "Id": "j-8DIAOCIOSO",
+    "Name": "agregacao-noturna",
+    "ReleaseLabel": "emr-7.5.0",
+    "InstanceCollectionType": "INSTANCE_GROUP",
+    "LogUri": "s3://lake-emr-logs/elasticmapreduce/",
+    "ScaleDownBehavior": "TERMINATE_AT_TASK_COMPLETION",
+    "AutoTerminate": false,
+    "UnhealthyNodeReplacement": true,
+    "Status": {
+      "State": "WAITING",
+      "StateChangeReason": {"Code": "ALL_STEPS_COMPLETED"}
+    },
+    "Applications": [
+      {"Name": "Spark", "Version": "3.5.2-amzn-1"},
+      {"Name": "Hadoop", "Version": "3.4.0-amzn-1"}
+    ]
+  },
+  "InstanceGroups": [
+    {
+      "Id": "ig-MASTER",
+      "InstanceGroupType": "MASTER",
+      "Market": "ON_DEMAND",
+      "InstanceType": "m5.xlarge",
+      "RequestedInstanceCount": 1,
+      "RunningInstanceCount": 1
+    },
+    {
+      "Id": "ig-CORE",
+      "InstanceGroupType": "CORE",
+      "Market": "ON_DEMAND",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 4,
+      "RunningInstanceCount": 4
+    }
+  ],
+  "AutoTerminationPolicy": {"IdleTimeout": 86400}
+}

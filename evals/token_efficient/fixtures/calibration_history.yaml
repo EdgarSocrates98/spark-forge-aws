@@ -1,0 +1,16 @@
+schema_version: 1
+calibration_version: control-plane-calibration-v1
+method: isotonic_pava_v1
+cases:
+  - {case_id: cal-01, raw_confidence: 0.10, label: 0, partition: train, source_hash: sha256:cal-01}
+  - {case_id: cal-02, raw_confidence: 0.20, label: 0, partition: train, source_hash: sha256:cal-02}
+  - {case_id: cal-03, raw_confidence: 0.30, label: 1, partition: train, source_hash: sha256:cal-03}
+  - {case_id: cal-04, raw_confidence: 0.40, label: 0, partition: train, source_hash: sha256:cal-04}
+  - {case_id: cal-05, raw_confidence: 0.50, label: 1, partition: train, source_hash: sha256:cal-05}
+  - {case_id: cal-06, raw_confidence: 0.60, label: 1, partition: train, source_hash: sha256:cal-06}
+  - {case_id: cal-07, raw_confidence: 0.70, label: 1, partition: train, source_hash: sha256:cal-07}
+  - {case_id: cal-08, raw_confidence: 0.80, label: 1, partition: train, source_hash: sha256:cal-08}
+  - {case_id: cal-09, raw_confidence: 0.25, label: 0, partition: holdout, source_hash: sha256:cal-09}
+  - {case_id: cal-10, raw_confidence: 0.45, label: 1, partition: holdout, source_hash: sha256:cal-10}
+  - {case_id: cal-11, raw_confidence: 0.65, label: 1, partition: holdout, source_hash: sha256:cal-11}
+  - {case_id: cal-12, raw_confidence: 0.90, label: 1, partition: holdout, source_hash: sha256:cal-12}

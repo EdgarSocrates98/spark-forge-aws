@@ -1,0 +1,79 @@
+[
+  {
+    "id": "f_672558",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 0,
+      "job_count": 0,
+      "dependency_count": 0,
+      "capability_probe_count": 0,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abe0b9e3897405cd0b210a0adb2614432866d6c0017c647c5245427e920ecdee",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_3665eb",
+    "schema_version": 1,
+    "kind": "ctm.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abe0b9e3897405cd0b210a0adb2614432866d6c0017c647c5245427e920ecdee",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.21.300",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "abe0b9e3897405cd0b210a0adb2614432866d6c0017c647c5245427e920ecdee",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

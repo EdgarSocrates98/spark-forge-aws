@@ -1,0 +1,5 @@
+mode: iceberg
+table: db.events
+query_name: orders-query
+expects_findings: [SF-STREAMICE-001]
+expects_kinds: [iceberg.files_summary, iceberg.format_version, iceberg.snapshot, iceberg.snapshots_summary, iceberg.table_analyzed, streaming.composition.analyzed, streaming.iceberg.link, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series]

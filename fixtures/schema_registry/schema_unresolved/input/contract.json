@@ -1,0 +1,5 @@
+{
+  "registry": {"name": "payments", "provider": "confluent"},
+  "schema": {"name": "payments-value", "format": "JSON",
+    "definition": {"type": "record", "fields": [{"name": "id", "type": "string"}]}}
+}

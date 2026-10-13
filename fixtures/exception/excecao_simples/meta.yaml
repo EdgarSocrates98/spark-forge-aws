@@ -1,0 +1,42 @@
+name: excecao_simples
+proves: >
+  A forma CANONICA que `_CABECA` foi escrita para casar: `com.pacote.Classe:
+  mensagem` no INICIO da primeira linha, seguida de frames indentados por TAB. O
+  fact separa as duas metades que o texto junta -- `exception_class` e
+  `message_head` -- e os tres `spark.exception.frame` saem na ordem em que a
+  pilha os escreveu, com `class`, `method`, `file` e `line` estruturados em vez
+  de uma string que a proxima etapa teria de reparsear.
+
+  `is_chained` e `false` e `caused_by` e lista vazia, porque nao ha `Caused by:`
+  nenhum -- e essa e a diferenca medida contra `excecao_encadeada`, que carrega o
+  mesmo formato de cabeca e duas causas.
+
+  O par com o corpus INTEIRO tambem esta aqui: `java.lang.IllegalArgumentException`
+  nao casa nenhuma das seis assinaturas de `knowledge/errors/`, entao sai
+  `error.signature.unresolved` com `reason: nenhuma_assinatura_casou` e a classe
+  que nao casou junto. Sem esse fact, "nenhuma assinatura conhecida cobre esta
+  excecao" seria indistinguivel de "ninguem rodou o matcher" -- e o segundo
+  devolve zero exatamente como o primeiro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - error.signature.unresolved
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+expects_rules: []

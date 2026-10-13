@@ -1,0 +1,38 @@
+name: managed_scaling_static_executors
+proves: >
+  O golden POSITIVO de SF-EMR-003, e a unica fixture do corpus em que as tres
+  condicoes dela coexistem: `spark.dynamicAllocation.enabled=false` no NIVEL
+  CLUSTER, `measures.overriding_group_count == 0` (nenhum grupo redefine a
+  chave), politica de managed scaling presente, e nenhum
+  `emr.configuration.unapplied` para degradar a evidencia. E a combinacao que a
+  AWS documenta como problema pelo nome -- cluster sobe ate
+  `MaximumCapacityUnits` e fica la, sem trabalho correspondente --, e o modo de
+  falha e caro e mudo: nenhum job quebra, nenhuma metrica de erro sobe, e a
+  fatura e a unica evidencia. `MaximumCapacityUnits: 60` contra
+  `spark.executor.instances: 40` esta no dump de proposito: e o teto que a
+  demanda estatica alcanca e nao devolve.
+  O contraste com `instance_groups_spot_task` e o ponto do corpus: la a MESMA
+  propriedade esta `false` no cluster, mas o grupo TASK a redefine para `true`,
+  `overriding_group_count` vale 1, e a regra NAO dispara -- porque "o cluster
+  esta com alocacao dinamica desligada" deixa de ser verdade assim que um grupo
+  discorda. Sem essa measure no `when`, a regra afirmaria sobre o cluster
+  inteiro o que so vale onde ninguem redefiniu.
+  Prova tambem o lado negativo de quatro outras regras num cluster realista:
+  `LogUri` presente (nao dispara SF-EMR-006), instance GROUPS sem
+  `maximizeResourceAllocation` (nao dispara SF-EMR-001), primary e core On-Demand
+  (nao dispara SF-EMR-004), e nenhuma propriedade com padrao de segredo (nao
+  dispara SF-EMR-002).
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.configuration
+  - emr.instance_capacity
+  - emr.managed_scaling
+expects_rules:
+  - SF-EMR-003

@@ -1,0 +1,34 @@
+name: enforcement_two_helpers_deep
+proves: >
+  O limite de UM salto e um numero declarado, e o que passa dele e CONTADO. A
+  contagem do check chega a `aborta_se`, que nao decide nada e repassa a
+  `exige_zero`; o `raise` esta dois corpos adiante. Nenhum `dq.enforcement` sai,
+  e `SF-DQ-002` dispara em P1 -- este job protege o pipeline e mesmo assim e
+  acusado.
+  A fixture existe para que essa acusacao nunca seja silenciosa. Junto do achado
+  sai `dq.unresolved` com reason `enforcement_beyond_one_hop`, `via: aborta_se` e
+  `deeper: exige_zero`, e `dq.module_analyzed.unresolved_count` sobe para 1.
+  Quem ler o achado ve, no mesmo lote de facts, exatamente por que o motor parou
+  e onde continuar a leitura. E a mesma disciplina de `unresolved_target`:
+  ponto cego declarado, nunca omitido.
+  POR QUE UM SALTO, e nao dois: a atribuicao que o `dq.enforcement` afirma e "o
+  aborto responde ao valor que o check produziu", e cada salto a enfraquece. No
+  primeiro, `_argument_for` prova a ligacao argumento -> parametro. No segundo o
+  valor ja atravessou um corpo que pode te-lo transformado, e a mesma travessia
+  veria um nome dentro de uma expressao sem saber que o valor mudou -- afirmacao
+  mais forte do que a evidencia. O par positivo (`enforcement_behind_helper`) e
+  esta fixture juntos sao o que fixa o numero: mova o limite para dois e este
+  golden acusa.
+  So SF-DQ-002 dispara entre as regras SF-DQ: `vendas` esta cacheado, o check vem
+  antes do write, e ha um unico check sobre o alvo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.unresolved
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-002

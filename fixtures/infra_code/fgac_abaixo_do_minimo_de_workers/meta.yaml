@@ -1,0 +1,33 @@
+name: fgac_abaixo_do_minimo_de_workers
+proves: >
+  O POSITIVO de `SF-LF-006`, com o par negativo no MESMO arquivo.
+
+  `etl_dois_workers` declara FGAC com `number_of_workers = 2`; a AWS declara
+  minimo de QUATRO sob controle de acesso fino, porque a alocacao passa a ter
+  quatro papeis -- user driver, system driver, system executor e um user executor
+  de reserva. `etl_quatro_workers` tem os mesmos argumentos e quatro workers, e
+  nao e acusado.
+
+  O par prova `same_subject`, e este e o caso em que ele FUNCIONA -- ao contrario
+  de `SF-LF-003`, onde nao funciona. A diferenca e medida:
+  `lakeformation.access_model` herda o subject do `tf.attribute` que declara a
+  flag, cujo `symbol` e o RECURSO, e `number_of_workers` e outro `tf.attribute`
+  do mesmo recurso com o mesmo symbol. Ja `tf.spark_conf` tem symbol
+  `<recurso>#<chave>`, e por isso a regra do catalogo nao pode agrupar.
+
+  Sem o par, uma regra que ignorasse `same_subject` cruzaria a flag do primeiro
+  job com a contagem do segundo, e acusaria os dois.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - lakeformation.access_model
+  - lakeformation.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-LF-006

@@ -1,0 +1,55 @@
+schema_version: 1
+service: orders-platform
+slos:
+  - id: orders_freshness
+    indicator: freshness
+    unit: seconds
+    operator: lte
+    target: 900
+    objective: 0.99
+    window: 1h
+  - id: orders_completeness
+    indicator: completeness
+    unit: ratio
+    operator: gte
+    target: 0.999
+    objective: 0.99
+    window: 1d
+  - id: orders_lag
+    indicator: consumer_lag
+    unit: records
+    operator: lte
+    target: 1000
+    objective: 0.99
+    window: 15m
+  - id: orders_latency_missing
+    indicator: latency
+    unit: milliseconds
+    operator: lte
+    target: 500
+    objective: 0.99
+    window: 15m
+measurements:
+  - {slo_id: orders_freshness, value: 120, unit: seconds, timestamp: "2026-10-02T10:00:00Z"}
+  - {slo_id: orders_freshness, value: 1400, unit: seconds, timestamp: "2026-10-02T10:05:00Z"}
+  - {slo_id: orders_completeness, value: 0.9995, unit: ratio, timestamp: "2026-10-02T10:00:00Z"}
+  - {slo_id: orders_lag, value: 400, unit: records, timestamp: "2026-10-02T10:00:00Z"}
+incidents:
+  - id: inc-2026-10-02-001
+    severity: P1
+    started_at: "2026-10-02T09:00:00Z"
+    resolved_at: "2026-10-02T09:45:00Z"
+    impacted_nodes: [kafka.orders, flink.orders_enriched, iceberg.orders]
+    runbook_ref: synthetic://runbook/consumer-lag
+  - id: inc-open
+    severity: P2
+    started_at: "2026-10-02T10:30:00Z"
+    impacted_nodes: [athena.orders]
+dependencies:
+  - {id: kafka.orders, status: healthy, owner: streaming}
+  - {id: flink.orders_enriched, status: degraded, owner: streaming}
+  - {id: iceberg.orders, status: healthy, owner: lakehouse}
+blast_radius:
+  - root: postgres.orders
+    affected: [debezium.orders, kafka.orders, flink.orders_enriched, iceberg.orders, athena.orders]
+    evidence: [synthetic://graph/impact/orders]

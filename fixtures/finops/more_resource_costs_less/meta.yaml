@@ -1,0 +1,6 @@
+name: more_resource_costs_less
+job_name: etl_pedidos_diario
+proves: 'G.2X x20 roda em 200s (8000 dpu-segundos) contra G.2X x10 em 500s (10000
+  dpu-segundos): o DOBRO de workers, e MAIS BARATO por run, porque o tempo caiu para
+  40% -- mais que compensando o dobro de capacidade. A fronteira nao e uma linha reta
+  de ''mais worker custa mais''.'

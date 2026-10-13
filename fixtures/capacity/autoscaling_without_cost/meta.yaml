@@ -1,0 +1,9 @@
+name: autoscaling_without_cost
+job_name: etl_pedidos_diario
+job_run_id: jr_hoje_005
+proves: 'Duas capacidades de mesmo worker/contagem (G.2X x10), diferindo so em `autoscaling`:
+  a versao SEM Auto Scaling tem `dpu_seconds` medido em todos os 10 runs. A versao COM Auto
+  Scaling nunca publicou `DPUSeconds` (o coletor recusa derivar sob autoscaling, porque `number_of_workers`
+  e teto e nao uso) -- os 10 runs chegam sem `dpu_seconds`. O grupo autoscaling e RECUSADO
+  por `cost_unobservable` e nunca aparece em `candidates`: sem custo medido nao ha o que minimizar,
+  e nao ha capacidade `autoscaling: true` na lista final.'

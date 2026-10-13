@@ -1,0 +1,4 @@
+artifact: cdc
+expects_kinds:
+  - cdc.analyzed
+  - cdc.unresolved

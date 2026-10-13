@@ -1,0 +1,41 @@
+[
+  {
+    "id": "f_fb519c",
+    "schema_version": 1,
+    "kind": "spark.timeout.relation",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {
+      "heartbeat_s": 10.0,
+      "network_timeout_s": 120.0
+    },
+    "attrs": {
+      "heartbeat_raw": "10s",
+      "network_timeout_raw": "120s"
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_ca8c3f",
+    "schema_version": 1,
+    "kind": "spark.timeout.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "no_timeout_evidence",
+      "detail": "Nenhuma fonte trouxe sinal de timeout: o run nao esta em TIMEOUT, nenhum executor foi removido por heartbeat, e nenhuma stage falhou com frase de broadcast ou de RPC."
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

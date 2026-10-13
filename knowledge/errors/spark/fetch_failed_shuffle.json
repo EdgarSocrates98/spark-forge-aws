@@ -1,0 +1,38 @@
+{
+  "id": "ERR-SPARK-001",
+  "signature": "FetchFailedException",
+  "service": "spark",
+  "versions": ["*"],
+  "symptoms": [
+    "Stage retried several times with the same failure, and the job eventually aborts",
+    "The failure names a remote block and a host, not a line of the job's own code",
+    "A stage that read fine in earlier runs starts failing as the shuffle grows"
+  ],
+  "likely_causes": [
+    "Executor holding the shuffle block died or was preempted, and the block went with it",
+    "Long GC pause on the block holder made the fetch time out",
+    "Too many concurrent fetch requests against one host, saturating inbound connections",
+    "Transient network failure between executors"
+  ],
+  "evidence_required": ["spark.executor.lost", "spark.stage.shuffle"],
+  "diagnostic_steps": [
+    "Check whether an executor was lost around the failed stage: the fact spark.executor.lost carries the removal reason",
+    "Read spark.stage.shuffle for the volume moved by the stage that failed",
+    "Read the effective values of spark.shuffle.io.maxRetries and spark.reducer.maxReqsInFlight from spark.conf_effective, and treat the Spark defaults (3 and Int.MaxValue) as the baseline"
+  ],
+  "fixes": [
+    "Find out why the executor died before touching retry settings: a fetch failure caused by an OOM kill is a memory problem wearing a network problem's clothes",
+    "Cap spark.reducer.maxReqsInFlight when the failure concentrates on one host, since the documented default is unbounded and a large cluster can saturate a node with inbound connections",
+    "Raise spark.shuffle.io.maxRetries or spark.shuffle.io.retryWait only for genuinely transient network failures, and record that the cause was diagnosed as transient"
+  ],
+  "unsafe_fixes": [
+    "Raising the retry count while an executor keeps dying: it converts a fast failure into a slow one and hides the reason the executor died",
+    "Setting spark.reducer.maxReqsInFlight to a small arbitrary number without measuring, which serialises the fetch and slows every healthy stage as well"
+  ],
+  "verification": "Re-run the job and confirm the stage completes without retries, with the same input volume as the failing run",
+  "rollback": "Revert the shuffle configuration overrides; they are runtime settings and change no data",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

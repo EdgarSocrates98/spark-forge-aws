@@ -1,0 +1,42 @@
+== Physical Plan ==
+PhotonResultStage (8)
++- PhotonColumnarToRow (7)
+   +- PhotonProject (6)
+      +- PhotonArrowBatchSource (5)
+         +- ArrowEvalPython (4)
+            +- PhotonArrowResultStage (3)
+               +- PhotonArrowBatchSink (2)
+                  +- PhotonRange (1)
+
+
+(1) PhotonRange
+Output [1]: [id#11274L]
+Arguments: Range (0, 2000000, step=1, splits=8)
+
+(2) PhotonArrowBatchSink
+Input [1]: [id#11274L]
+Arguments: -1, 4096, 5242880, 33554432, false, false, -1, false, 0, true, HashSet()
+
+(3) PhotonArrowResultStage
+Input [1]: [id#11274L]
+
+(4) ArrowEvalPython
+Input [1]: [id#11274L]
+Arguments: [dobro(id#11274L)#11279L], [pythonUDF0#11281L], 101
+
+(5) PhotonArrowBatchSource
+Input [2]: [id#11274L, pythonUDF0#11281L]
+
+(6) PhotonProject
+Input [2]: [id#11274L, pythonUDF0#11281L]
+Arguments: [pythonUDF0#11281L AS d#11280L]
+
+(7) PhotonColumnarToRow
+Input [1]: [d#11280L]
+
+(8) PhotonResultStage
+Input [1]: [d#11280L]
+
+
+== Photon Explanation ==
+The query is fully supported by Photon.

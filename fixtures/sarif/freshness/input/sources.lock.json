@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html": {
+      "pinned": false,
+      "rules": [
+        "SF-ERR-006"
+      ],
+      "docs": [],
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "checked_at": "2026-09-08",
+      "changed_at": "2026-09-01",
+      "retrieved": [
+        "2026-08-15"
+      ]
+    },
+    "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm": {
+      "pinned": false,
+      "rules": [
+        "SF-CTM-001"
+      ],
+      "docs": [],
+      "retrieved": [
+        "2026-09-01"
+      ]
+    },
+    "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm": {
+      "pinned": false,
+      "rules": [
+        "SF-CTM-001"
+      ],
+      "docs": [],
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "checked_at": "2026-09-05",
+      "retrieved": [
+        "2026-09-01",
+        "2026-09-02"
+      ]
+    },
+    "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm": {
+      "pinned": false,
+      "rules": [
+        "SF-CTM-001"
+      ],
+      "docs": [],
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "checked_at": "2026-09-05",
+      "retrieved": [
+        "2026-09-01"
+      ]
+    },
+    "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm": {
+      "pinned": false,
+      "rules": [
+        "SF-CTM-001"
+      ],
+      "docs": [],
+      "retrieved": [
+        "2026-09-01"
+      ]
+    },
+    "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html": {
+      "pinned": false,
+      "rules": [
+        "SF-PLAN-003"
+      ],
+      "docs": [],
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "checked_at": "2026-08-20",
+      "retrieved": [
+        "2026-07-31"
+      ]
+    }
+  }
+}

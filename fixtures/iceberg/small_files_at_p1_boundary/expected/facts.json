@@ -1,0 +1,266 @@
+[
+  {
+    "id": "f_88ece1",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {
+      "data_file_count": 24,
+      "total_bytes": 201326592,
+      "avg_file_bytes": 8388608.0,
+      "p50_file_bytes": 8388608,
+      "p95_file_bytes": 8388608,
+      "min_file_bytes": 8388608,
+      "max_file_bytes": 8388608,
+      "total_records": 2880000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_27c775",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "property": "2",
+      "declared": "2",
+      "diverges": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_e06f29",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados",
+      "snapshot_id": 1
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 1,
+      "committed_at": "2026-07-01T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f36b02",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados",
+      "snapshot_id": 2
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 2,
+      "committed_at": "2026-07-08T00:00:00+00:00",
+      "operation": "replace"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_037282",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados",
+      "snapshot_id": 3
+    },
+    "measures": {
+      "snapshot_index": 2
+    },
+    "attrs": {
+      "snapshot_index": 2,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 3,
+      "committed_at": "2026-07-15T00:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_caf001",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {
+      "snapshot_count": 3,
+      "span_hours": 336.0
+    },
+    "attrs": {
+      "operations": [
+        "append",
+        "replace"
+      ],
+      "oldest": "2026-07-01T00:00:00+00:00",
+      "newest": "2026-07-15T00:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_85a53b",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {
+      "section_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f4736e",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "format-version",
+      "value": "2",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f4736e",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f4736e",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "sort-order",
+      "present": false,
+      "non_empty": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f4736e",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "partition-spec",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e6b2b4e3059c24f2a761d6689b856cbe4d72901428dfedede2c1b5c8534ac767",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]

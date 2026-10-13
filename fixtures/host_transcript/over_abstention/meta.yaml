@@ -1,0 +1,6 @@
+name: over_abstention
+mode: transcript
+question: q-mcp
+proves: >
+  AT-006: respondeu unresolved onde o gabarito tem valor. Sai
+  over_abstention, distinto de wrong.

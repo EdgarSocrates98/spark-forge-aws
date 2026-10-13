@@ -1,0 +1,5 @@
+budget:
+  max_debates: 1
+  max_rounds: 3
+case_id: debate-graph005-lf001
+schema_version: 1

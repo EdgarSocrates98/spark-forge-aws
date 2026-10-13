@@ -1,0 +1,7 @@
+description: >-
+  case_get sem case (outcome error, pelo MCP), analyze_pyspark recusado pela cadeia de autorizacao (unauthorized, sem canal), uma chamada ok, e um span `task` do AgentOpsTracker no mesmo banco, que nao vira execute_tool (recusa componente_nao_tool).
+run_id: run_otel_erro
+provider: null
+host_transcript: null
+origem:
+  - fixtures/pyspark/collect_unbounded/input (entrada do analyze_pyspark)

@@ -1,0 +1,27 @@
+name: autoscaling_with_max_workers
+proves: >
+  aws_glue_job com --enable-auto-scaling = "true" e number_of_workers definido ao
+  mesmo tempo -- e configuracao CORRETA, nao um conflito. A documentacao da AWS
+  (auto-scaling.html) descreve exatamente esta combinacao: com Auto Scaling
+  habilitado, number_of_workers e o teto (o exemplo de CLI daquela pagina traz
+  "NumberOfWorkers": 20 comentado como "Maximum number of workers"). Esta
+  fixture existe para travar a regressao do falso positivo que SF-GLUE-001
+  (aposentada em 2026-08-28, ver rules/catalog/glue-infra.yaml) disparava aqui:
+  a regra acusava esta configuracao correta em P1 e propunha uma mudanca --
+  remover number_of_workers em favor de MinCapacity/MaxCapacity, campos que a
+  propria fonte citada nem menciona -- que pioraria o job. expects_rules vazio
+  e o aceite: nenhuma regra do catalogo pode voltar a acusar esta combinacao.
+  Job pelo resto configurado corretamente (spark-ui + event-logs-path
+  presentes, bookmark desligado, sem segredo), para isolar o cenario de
+  qualquer outra regra da area.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules: []

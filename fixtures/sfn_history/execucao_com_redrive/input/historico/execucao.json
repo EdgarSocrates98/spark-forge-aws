@@ -1,0 +1,19 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T07:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T07:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaDiaria"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T07:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T07:00:03.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_cccccccc1\", \"JobName\": \"carga-diaria\"}"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T07:12:00.000000+00:00", "type": "TaskFailed", "taskFailedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "error": "Glue.AWSGlueException", "cause": "JobRun jr_cccccccc1 FAILED"}},
+    {"id": 6, "previousEventId": 5, "timestamp": "2026-09-18T07:12:01.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 7, "previousEventId": 6, "timestamp": "2026-09-18T07:12:02.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_cccccccc2\", \"JobName\": \"carga-diaria\"}"}},
+    {"id": 8, "previousEventId": 7, "timestamp": "2026-09-18T07:24:00.000000+00:00", "type": "TaskFailed", "taskFailedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "error": "Glue.AWSGlueException", "cause": "JobRun jr_cccccccc2 FAILED"}},
+    {"id": 9, "previousEventId": 8, "timestamp": "2026-09-18T07:24:01.000000+00:00", "type": "ExecutionFailed", "executionFailedEventDetails": {"error": "Glue.AWSGlueException", "cause": "JobRun jr_cccccccc2 FAILED"}},
+    {"id": 10, "previousEventId": 9, "timestamp": "2026-09-18T09:00:00.000000+00:00", "type": "ExecutionRedriven"},
+    {"id": 11, "previousEventId": 10, "timestamp": "2026-09-18T09:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaDiaria"}},
+    {"id": 12, "previousEventId": 11, "timestamp": "2026-09-18T09:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 3600}},
+    {"id": 13, "previousEventId": 12, "timestamp": "2026-09-18T09:00:03.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_cccccccc3\", \"JobName\": \"carga-diaria\"}"}},
+    {"id": 14, "previousEventId": 13, "timestamp": "2026-09-18T09:11:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 15, "previousEventId": 14, "timestamp": "2026-09-18T09:11:01.000000+00:00", "type": "ExecutionSucceeded"}
+  ]
+}

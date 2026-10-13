@@ -1,0 +1,102 @@
+[
+  {
+    "id": "f_bc56b9",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "describe-state-machine.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_machine_count": 1,
+      "task_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "describe-state-machine.json",
+      "artifact_sha256": "ac1b4db3f66b6491c5e8c9fbcfc117085fb38f0138a5f31b28369f4938776696",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_5044cf",
+    "schema_version": 1,
+    "kind": "sfn.state_machine",
+    "subject": {
+      "type": "source_location",
+      "file": "describe-state-machine.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_count": 1,
+      "task_count": 1
+    },
+    "attrs": {
+      "type": "EXPRESS",
+      "type_declared": true,
+      "query_language": "JSONPath",
+      "source": "describe_state_machine",
+      "name": "carga-expressa"
+    },
+    "provenance": {
+      "artifact": "describe-state-machine.json",
+      "artifact_sha256": "ac1b4db3f66b6491c5e8c9fbcfc117085fb38f0138a5f31b28369f4938776696",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_f86904",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "describe-state-machine.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/RodarCarga",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "RodarCarga",
+      "resource": "arn:aws:states:::glue:startJobRun.sync",
+      "service": "glue",
+      "api": "startJobRun",
+      "pattern": "sync",
+      "integration": "optimized",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
+      "retriers": [],
+      "failure_retry_matched": false,
+      "failure_retry_defaulted": false,
+      "has_catch": false,
+      "has_next": false,
+      "end": true,
+      "enclosing_has_next": false,
+      "effective_has_next": false,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "EXPRESS",
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": false
+    },
+    "provenance": {
+      "artifact": "describe-state-machine.json",
+      "artifact_sha256": "ac1b4db3f66b6491c5e8c9fbcfc117085fb38f0138a5f31b28369f4938776696",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  }
+]

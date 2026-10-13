@@ -1,0 +1,68 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [
+    {
+      "key": "spark.sql.files.maxPartitionBytes",
+      "current": {
+        "value": "",
+        "provenance": "unset",
+        "evidence": []
+      },
+      "derived": {
+        "value": 117440512,
+        "formula": "ceil(median(row_group.total_compressed_bytes))",
+        "basis": {
+          "source": "s3://bucket-sintetico/pedidos/",
+          "row_groups": 3,
+          "median_compressed_row_group_bytes": 117440512,
+          "min_compressed_row_group_bytes": 100663296,
+          "max_compressed_row_group_bytes": 134217728
+        }
+      },
+      "safety": "REVIEW",
+      "supported_in_runtime": true,
+      "explanation": "Alinha o split de leitura ao row group mediano COMPRIMIDO da fonte: split menor que o row group faz tasks disputarem o mesmo row group, e o Parquet so e dividido nessa unidade."
+    }
+  ],
+  "refused": [
+    {
+      "reason": "no_shuffle_measured",
+      "property": "spark.sql.shuffle.partitions",
+      "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge-aws analyze event-log` produz a medida."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memoryOverhead",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge-aws analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memory",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge-aws analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_explain_cost",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Nenhuma estimativa de join. Gere o plano com `df.explain(\"cost\")` (ou `EXPLAIN COST`) e extraia com `sparkforge-aws analyze plan`."
+    },
+    {
+      "reason": "sem_tasks_por_executor",
+      "property": "spark.speculation",
+      "detail": "Nenhuma duracao de task nos facts. `sparkforge-aws analyze event-log` a extrai de `SparkListenerTaskEnd`, com o executor de cada task."
+    },
+    {
+      "reason": "sem_relacao_observada",
+      "property": "spark.network.timeout",
+      "detail": "Sem `spark.timeout.relation`: o run nao reportou `spark.executor.heartbeatInterval` e `spark.network.timeout` juntos em `spark.conf_effective`. `sparkforge-aws analyze event-log` seguido de `sparkforge-aws fuse` a produz."
+    },
+    {
+      "reason": "sem_diagnostico_de_broadcast",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Nenhum `spark.timeout.diagnosis` com categoria `broadcast`. Sem o broadcast estourando o limite nao tem o que sustentar; `wall_clock` e `heartbeat` nunca tem valor proposto (regra 15)."
+    }
+  ]
+}

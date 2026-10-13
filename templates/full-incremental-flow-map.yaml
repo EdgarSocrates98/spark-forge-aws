@@ -1,0 +1,37 @@
+flows:
+  full:
+    entrypoint:
+    trigger:
+    inputs: []
+    steps:
+      - id:
+        function:
+        input_rows:
+        input_bytes:
+        operation:
+        shuffle:
+        action:
+        output_rows:
+        output_bytes:
+    writes: []
+  incremental:
+    entrypoint:
+    trigger:
+    source_of_changes:
+    affected_keys:
+    steps: []
+    writes: []
+
+global_operations_in_incremental:
+  - operation:
+    evidence:
+    cost:
+
+batching:
+  enabled:
+  batch_size:
+  implementation:
+  actions_per_batch:
+  scans_repeated:
+  joins_repeated:
+  commits_per_run:

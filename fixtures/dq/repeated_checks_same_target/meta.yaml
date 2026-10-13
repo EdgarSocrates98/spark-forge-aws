@@ -1,0 +1,27 @@
+name: repeated_checks_same_target
+proves: >
+  Dois `count()` artesanais sobre `pagamentos` sao duas varreduras: cada check
+  sai com measures.checks_on_target == 2 e attrs.shares_scan == false. E o
+  positivo de SF-DQ-004, e os DOIS checks aparecem como DOIS achados: a regra
+  declara `same_subject`, entao cada `count()` e um grupo proprio e corrigir o
+  primeiro nao esconde o segundo.
+  DOIS, e nao tres, de proposito: dois e o limiar minimo de "repetido", e uma
+  regra com o limiar invertido ou deslocado em um passa despercebida num
+  corpus que so exercita o caso folgado.
+  O alvo esta em `cache()` antes dos checks (target_persisted == true), entao
+  SF-DQ-003 nao dispara aqui: a fixture isola o custo da varredura repetida do
+  custo do recomputo de lineage, que e o de `check_recomputes_lineage`. Duas
+  passadas sobre dado persistido continuam sendo duas passadas.
+  O contraste com `pydeequ_suite` -- mesma quantidade de restricoes, uma suite
+  so -- e exatamente o que SF-DQ-004 precisa poder distinguir.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-004

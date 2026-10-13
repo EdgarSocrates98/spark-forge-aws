@@ -1,0 +1,217 @@
+[
+  {
+    "id": "f_6178f0",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_35d994",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 1,
+      "lag": 5
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:00:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_74007d",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 1,
+      "lag": 3
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:01:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_9034de",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "lag": 9
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:01:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_922994",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "lag": 4
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:00:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5a711",
+    "schema_version": 1,
+    "kind": "kafka.lag.series",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders:events:0",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_lag": 4,
+      "last_lag": 9,
+      "delta_lag": 5,
+      "increasing_step_count": 1,
+      "timestamp_span_seconds": 60.0
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "partition": 0,
+      "timestamp_start": "2026-10-03T00:00:00Z",
+      "timestamp_end": "2026-10-03T00:01:00Z",
+      "monotonic_increase": true,
+      "causal_inference": false,
+      "observation_fact_ids": [
+        "f_922994",
+        "f_9034de"
+      ]
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_c0b778",
+    "schema_version": 1,
+    "kind": "kafka.lag.series",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders:events:1",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_lag": 5,
+      "last_lag": 3,
+      "delta_lag": -2,
+      "increasing_step_count": 0,
+      "timestamp_span_seconds": 60.0
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "partition": 1,
+      "timestamp_start": "2026-10-03T00:00:00Z",
+      "timestamp_end": "2026-10-03T00:01:00Z",
+      "monotonic_increase": false,
+      "causal_inference": false,
+      "observation_fact_ids": [
+        "f_35d994",
+        "f_74007d"
+      ]
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

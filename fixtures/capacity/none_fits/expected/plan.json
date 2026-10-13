@@ -1,0 +1,56 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_hoje_002",
+  "sla_minutes": 1.0,
+  "reliability_target": 0.8,
+  "volume_tolerance": 0.25,
+  "current_volume_bytes": 2000000000,
+  "candidates": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.1X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs_total": 10,
+      "runs_comparable": 10,
+      "runs_within_sla": 0,
+      "reliability": 0.0,
+      "resolution": 0.1,
+      "dpu_seconds_p95": 900.0,
+      "meets_sla": false,
+      "safety": "REVIEW"
+    },
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs_total": 10,
+      "runs_comparable": 10,
+      "runs_within_sla": 0,
+      "reliability": 0.0,
+      "resolution": 0.1,
+      "dpu_seconds_p95": 1000.0,
+      "meets_sla": false,
+      "safety": "REVIEW"
+    },
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 20,
+      "autoscaling": false,
+      "runs_total": 10,
+      "runs_comparable": 10,
+      "runs_within_sla": 0,
+      "reliability": 0.0,
+      "resolution": 0.1,
+      "dpu_seconds_p95": 2000.0,
+      "meets_sla": false,
+      "safety": "REVIEW"
+    }
+  ],
+  "chosen": null,
+  "refused": [],
+  "discarded_runs": {},
+  "only_one_capacity_observed": false
+}

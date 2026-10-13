@@ -1,0 +1,7 @@
+jobs:
+  - name: etl_pedidos_diario
+    sla_minutes: 45
+    primary_source: db.pedidos
+  - name: etl_pedidos_diario
+    sla_minutes: 999
+    primary_source: db.eventos

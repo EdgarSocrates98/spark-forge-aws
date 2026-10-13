@@ -1,0 +1,22 @@
+name: versao_nao_declarada
+proves: >
+  A D-1 da spec, medida: sem versao declarada o cruzamento NAO acontece, e a
+  ausencia e NOMEADA em vez de silenciosa.
+  O mesmo `jobs.json` das duas fixtures do contrafactual, sem `controlm_version`.
+  A capacidade continua sendo OBSERVADA -- `ctm.capability_unresolved` sai com
+  `reason: version_not_declared` e com `unblocked_by` dizendo qual medida a
+  destrava --, `ctm.version_declared` nao existe, e por isso SF-CTM-001 fica
+  pulada por `requires_facts`, visivel em `judge --show-skipped`.
+  E o inverso do erro que a divida do `judge --emr` cometeu por tres fases:
+  julgar com uma versao que ninguem declarou.
+runtime: {}
+expects_kinds:
+  - ctm.action
+  - ctm.analyzed
+  - ctm.capability_unresolved
+  - ctm.dependency
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.variable
+expects_rules: []

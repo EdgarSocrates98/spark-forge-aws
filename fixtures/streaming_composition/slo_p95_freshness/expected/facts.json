@@ -1,0 +1,395 @@
+[
+  {
+    "id": "f_cd8c4e",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "slo",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 10,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "slo",
+      "table": null,
+      "query_name": "orders-query",
+      "transport_key": null,
+      "max_skew_seconds": null,
+      "slo_name": "freshness"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "contract.json",
+        "progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_b75ed6",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 3,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_796474",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "batch_duration_ms": 1000,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 100.0,
+      "freshness_ms": 5000.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:05Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_da7667",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "batch_duration_ms": 1000,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 100.0,
+      "freshness_ms": 10000.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:05:10Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_d5c20b",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 3,
+      "observed_index": 2,
+      "batch_duration_ms": 1000,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 100.0,
+      "freshness_ms": 20000.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:10:20Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_d497b3",
+    "schema_version": 1,
+    "kind": "streaming.progress.event_time",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0
+    },
+    "attrs": {
+      "values": {
+        "max": "2026-10-01T00:00:00Z",
+        "watermark": "2026-09-30T23:59:00Z"
+      }
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_431a42",
+    "schema_version": 1,
+    "kind": "streaming.progress.event_time",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1
+    },
+    "attrs": {
+      "values": {
+        "max": "2026-10-01T00:05:00Z",
+        "watermark": "2026-10-01T00:04:00Z"
+      }
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_f677e8",
+    "schema_version": 1,
+    "kind": "streaming.progress.event_time",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 3,
+      "observed_index": 2
+    },
+    "attrs": {
+      "values": {
+        "max": "2026-10-01T00:10:00Z",
+        "watermark": "2026-10-01T00:09:00Z"
+      }
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_0eac4e",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 3,
+      "first_batch_id": 1,
+      "last_batch_id": 3,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 100.0,
+      "processed_rows_per_second_last": 100.0,
+      "batch_duration_ms_first": 1000.0,
+      "batch_duration_ms_last": 1000.0,
+      "batch_duration_ms_max": 1000.0,
+      "batch_duration_ms_avg": 1000.0,
+      "observed_span_seconds": 615.0,
+      "watermark_advance_ms": 600000.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 2,
+      "all_processed_below_input": false,
+      "observed_timestamp_first": "2026-10-01T00:00:05+00:00",
+      "observed_timestamp_last": "2026-10-01T00:10:20+00:00",
+      "watermark_first": "2026-09-30T23:59:00+00:00",
+      "watermark_last": "2026-10-01T00:09:00+00:00",
+      "watermark_stalled": false
+    },
+    "provenance": {
+      "artifact": "progress.jsonl",
+      "artifact_sha256": "95d69d555f70c00a8b9251649cb53469975d9d6bea97618e946e52a47bb41cfa",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_16288d",
+    "schema_version": 1,
+    "kind": "streaming.slo",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "freshness",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 15000
+    },
+    "attrs": {
+      "name": "freshness",
+      "metric": "freshness_ms",
+      "operator": "lte",
+      "unit": "ms",
+      "window": "10m",
+      "source": "spark_progress",
+      "statistic": "p95"
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "e3b32ff2560f342b48631a329aae6770aca3dab031fbb7b1482a1eeaa89232d4",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_1c1a62",
+    "schema_version": 1,
+    "kind": "streaming.slo.evaluation",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query:freshness",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 15000,
+      "observed_min": 5000.0,
+      "observed_max": 20000.0,
+      "observation_count": 3,
+      "observed_span_seconds": 615.0,
+      "window_seconds": 600.0,
+      "violated_count": 1,
+      "observed_p95": 20000.0
+    },
+    "attrs": {
+      "name": "freshness",
+      "metric": "freshness_ms",
+      "operator": "lte",
+      "unit": "ms",
+      "window": "10m",
+      "source": "spark_progress",
+      "query_name": "orders-query",
+      "status": "violated",
+      "window_covered": true,
+      "causal_inference": false,
+      "source_fact_ids": [
+        "f_16288d",
+        "f_796474",
+        "f_d5c20b",
+        "f_da7667"
+      ],
+      "statistic": "p95"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "contract.json",
+        "progress.jsonl"
+      ],
+      "extractor": "streaming_slo@0.1.0"
+    }
+  },
+  {
+    "id": "f_2ff6da",
+    "schema_version": 1,
+    "kind": "streaming_ops.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 1
+    },
+    "attrs": {
+      "sections": [
+        "finops",
+        "lakehouse",
+        "security",
+        "serving",
+        "slo"
+      ]
+    },
+    "provenance": {
+      "artifact": "contract.json",
+      "artifact_sha256": "e3b32ff2560f342b48631a329aae6770aca3dab031fbb7b1482a1eeaa89232d4",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "cli": {
+    "databricks_runtime": "15.4"
+  },
+  "event_log": {
+    "spark_version": "3.5.2"
+  }
+}

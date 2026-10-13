@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-008",
+  "signature": "AnalysisException",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The job fails before any stage runs -- the plan was never built",
+    "The message names a table or a column",
+    "The same code worked against another catalog or another environment"
+  ],
+  "likely_causes": [
+    "The table or the column the query names does not exist in the catalog the session resolved",
+    "The session resolved a different catalog than the author assumed, so the name points elsewhere",
+    "The schema of the table changed and the query still names the old column"
+  ],
+  "evidence_required": [
+    "catalog.table_schema"
+  ],
+  "diagnostic_steps": [
+    "Read the schema of the table the query names, from the catalog dump, and compare column by column with what the query projects",
+    "Read which catalog the session resolved: a name that resolves in one catalog and not in another is a catalog problem, not a schema one",
+    "Separate the two halves of the message: a missing TABLE and a missing COLUMN have different causes and different fixes"
+  ],
+  "fixes": [
+    "Correct the name the query uses, when the catalog shows the object under another name",
+    "Point the session at the catalog where the object lives",
+    "Update the query to the current schema when a column was renamed or dropped"
+  ],
+  "unsafe_fixes": [
+    "Recreating the table to make the name resolve, which loses the data that was there",
+    "Disabling schema enforcement so the read stops complaining, which moves the failure to the consumer"
+  ],
+  "verification": "Re-run and confirm the plan builds. Then compare the output schema with the expected one: a query that resolves is not yet a query that returns the right columns",
+  "rollback": "Restore the previous query text. If the fix changed the schema of a table, the rollback is of data and the consumers have to be inventoried first",
+  "sources": [
+    "https://spark.apache.org/docs/latest/sql-getting-started.html"
+  ],
+  "last_verified": "2026-09-09"
+}

@@ -1,0 +1,30 @@
+name: intervalo_de_checkpoint_acima_do_limite
+proves: >
+  O golden positivo que o veto `V-GR-2` registrava como faltando: o caso `> 2`
+  nao tinha fixture nenhuma no corpus, e regra sem ele reprova
+  `test_every_rule_has_a_fixture_that_fires_it`.
+  `checkpointInterval=10` contra o teto `2` que a fonte publica -- a doc diz
+  "It is recommended to keep this value at `2` or below" e o codigo avisa em
+  `value <= 0 || value > 2`. E o unico limiar numerico com fonte primaria desta
+  area.
+  UM EIXO SO, como todo o corpus: o checkpoint esta configurado em outra funcao,
+  vertices e arestas estao persistidos e nao ha laco. Se `SF-GRAPH-001`, `-003`
+  ou `-004` aparecerem aqui, a fixture parou de isolar o eixo e o golden
+  reclama.
+  O par de contraste e `saida_intervalo_nao_positivo`, que fica MUDA: la o valor
+  nao positivo e uma das saidas legitimas de `V-GF-1` em `connectedComponents`,
+  e acusar a saida documentada faria o relatorio dizer duas coisas ao mesmo
+  tempo sobre o mesmo artefato.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules:
+  - SF-GRAPH-006

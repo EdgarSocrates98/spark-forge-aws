@@ -1,0 +1,10 @@
+{
+  "consumer_groups": [{
+    "group": "orders-group",
+    "offsets": [
+      {"topic": "orders", "partition": 0, "lag": 40, "observed_at": "2026-10-01T00:00:00Z"},
+      {"topic": "orders", "partition": 0, "lag": 50, "observed_at": "2026-10-01T00:05:00Z"},
+      {"topic": "orders", "partition": 0, "lag": 45, "observed_at": "2026-10-01T00:10:00Z"}
+    ]
+  }]
+}

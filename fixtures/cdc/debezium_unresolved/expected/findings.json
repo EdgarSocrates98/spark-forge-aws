@@ -1,0 +1,120 @@
+[
+  {
+    "rule_id": "SF-DEBEZIUM-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Debezium sem schema history observada",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_7b2186"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A configuração observada não traz o armazenamento de schema history. Sem esse artefato não é possível avaliar recuperação após restart ou DDL.",
+    "proposed_change": [
+      "Coletar a configuração efetiva de schema history e o tópico/armazenamento usado.",
+      "Validar DDL, restart e replay em ambiente controlado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Perder histórico pode interpretar colunas futuras com schema errado."
+    ],
+    "tradeoffs": [
+      "Schema history exige retenção e governança de acesso adicionais."
+    ],
+    "validation": [
+      "Reiniciar a task após DDL e comparar schema/valores do consumidor."
+    ],
+    "rollback": [
+      "Restaurar o conector anterior preservando offsets e histórico."
+    ],
+    "sources": [
+      {
+        "url": "https://debezium.io/documentation/reference/stable/configuration/storage.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "debezium.schema_history",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-DEBEZIUM-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Debezium declara tombstone desligado para deletes",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-connector",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_e9b61b"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O conector observado desabilita tombstones. A consequência depende de consumidores, compactação e delete handling; o finding não presume o uso.",
+    "proposed_change": [
+      "Inventariar consumidores do tópico e testar deletes/compactação.",
+      "Declarar a política de tombstone no contrato do evento."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Consumidores compactados podem reter registros apagados."
+    ],
+    "tradeoffs": [
+      "Habilitar tombstone aumenta mensagens e retenção transitória."
+    ],
+    "validation": [
+      "Reprocessar delete em consumidor real e confirmar remoção por chave."
+    ],
+    "rollback": [
+      "Restaurar a configuração anterior mantendo offsets e evidência."
+    ],
+    "sources": [
+      {
+        "url": "https://debezium.io/documentation/reference/stable/connectors/postgresql.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "debezium.tombstones_on_delete",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

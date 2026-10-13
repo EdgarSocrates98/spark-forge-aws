@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_1899ae",
+    "schema_version": 1,
+    "kind": "mig.legacy_conf",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.legacy.timeParserPolicy"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "77ae70c2df560b4862a54c1b957fa72c4a21c65d0e202009fc7d87ebd59146ba",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

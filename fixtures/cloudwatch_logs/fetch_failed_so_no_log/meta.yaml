@@ -1,0 +1,22 @@
+name: fetch_failed_so_no_log
+proves: >
+  O NEGATIVO de `fetch_failed_com_executor_perdido`: MESMO log, sem o event log.
+
+  `FetchFailedException` continua casando `ERR-SPARK-001` -- o fato nao mudou. O
+  que muda e que sem `spark.executor.lost` o motor PULA `SF-ERR-007` com
+  `missing: ["spark.executor.lost"]`.
+
+  E a recusa esta CERTA, e nao e conservadorismo: um fetch que falha sem
+  executor perdido pode ser transitorio de verdade, e ali retry e a resposta
+  adequada. Acusar sem o event log mandaria o operador cacar uma morte de
+  executor que nao aconteceu.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules: []

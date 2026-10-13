@@ -1,0 +1,370 @@
+[
+  {
+    "id": "f_c3a5c8",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "artifact_sha256": "9a378117dbc0c3c8cf5588d7d3b60f2097cf74bdd31ee970b558cdb842cd4f3d",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_01925a",
+    "schema_version": 1,
+    "kind": "kafka.consumer_group",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "group": "missing-group",
+      "state": null
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "artifact_sha256": "9a378117dbc0c3c8cf5588d7d3b60f2097cf74bdd31ee970b558cdb842cd4f3d",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_8307a8",
+    "schema_version": 1,
+    "kind": "kafka.consumer_group",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "group": "missing-group",
+      "state": null
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "artifact_sha256": "9a378117dbc0c3c8cf5588d7d3b60f2097cf74bdd31ee970b558cdb842cd4f3d",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_44ccb9",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "current_offset": 100,
+      "log_end_offset": 130,
+      "lag": 30
+    },
+    "attrs": {
+      "group": "missing-group",
+      "topic": "orders"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "artifact_sha256": "9a378117dbc0c3c8cf5588d7d3b60f2097cf74bdd31ee970b558cdb842cd4f3d",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_11c153",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "current_offset": 200,
+      "log_end_offset": 240,
+      "lag": 40
+    },
+    "attrs": {
+      "group": "missing-group",
+      "topic": "orders"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+      "artifact_sha256": "9a378117dbc0c3c8cf5588d7d3b60f2097cf74bdd31ee970b558cdb842cd4f3d",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_364f80",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "temporal",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 9,
+      "derived_fact_count": 3,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "mode": "temporal",
+      "table": null,
+      "query_name": "missing-query",
+      "transport_key": "missing-group",
+      "max_skew_seconds": 3
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_4aefca",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "artifact_sha256": "6a3ad9dc09b9090d51ac97175e35cc3ad4b88b08414d7acbe3f56bbfdaeaa816",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_36d245",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "batch_duration_ms": 900,
+      "num_input_rows": 1000,
+      "input_rows_per_second": 100,
+      "processed_rows_per_second": 80
+    },
+    "attrs": {
+      "timestamp": "2026-10-02T12:00:00Z",
+      "query_id": "query-3",
+      "run_id": "run-3",
+      "query_name": "missing-query"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "artifact_sha256": "6a3ad9dc09b9090d51ac97175e35cc3ad4b88b08414d7acbe3f56bbfdaeaa816",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_914f08",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "batch_duration_ms": 950,
+      "num_input_rows": 1100,
+      "input_rows_per_second": 110,
+      "processed_rows_per_second": 90
+    },
+    "attrs": {
+      "timestamp": "2026-10-02T12:00:10Z",
+      "query_id": "query-3",
+      "run_id": "run-3",
+      "query_name": "missing-query"
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "artifact_sha256": "6a3ad9dc09b9090d51ac97175e35cc3ad4b88b08414d7acbe3f56bbfdaeaa816",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_087a6d",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100,
+      "input_rows_per_second_last": 110,
+      "processed_rows_per_second_first": 80,
+      "processed_rows_per_second_last": 90
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 1,
+      "all_processed_below_input": true
+    },
+    "provenance": {
+      "artifact": "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl",
+      "artifact_sha256": "6a3ad9dc09b9090d51ac97175e35cc3ad4b88b08414d7acbe3f56bbfdaeaa816",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_3b560c",
+    "schema_version": 1,
+    "kind": "streaming.temporal.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "temporal",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_transport_timestamp",
+      "transport_key": "missing-group",
+      "missing_count": 2,
+      "required_field": "timestamp_or_observed_at"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_temporal@0.1.0"
+    }
+  },
+  {
+    "id": "f_3b560c",
+    "schema_version": 1,
+    "kind": "streaming.temporal.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "temporal",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "insufficient_transport_observations",
+      "transport_key": "missing-group",
+      "observed_observations": 0,
+      "required_observations": 2
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_temporal@0.1.0"
+    }
+  },
+  {
+    "id": "f_3b560c",
+    "schema_version": 1,
+    "kind": "streaming.temporal.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "temporal",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "insufficient_temporal_pairs",
+      "query_name": "missing-query",
+      "transport_key": "missing-group",
+      "paired_observations": 0,
+      "required_observations": 2,
+      "max_skew_seconds": 3
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\kafka.json",
+        "fixtures\\streaming_temporal\\missing_timestamp\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_temporal@0.1.0"
+    }
+  }
+]

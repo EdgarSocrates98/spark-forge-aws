@@ -1,0 +1,17 @@
+name: saida_local_checkpoints
+proves: >
+  Terceira forma de escrever certo: `use_local_checkpoints=True` (0.9.3+). Sem
+  diretorio persistente nao ha excecao. O nome vem em `snake_case`, da linhagem
+  `io.graphframes`, e a fixture e tambem a prova de que as duas convencoes de
+  nome convivem no mesmo vocabulario (veto V-GF-6).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.module_analyzed
+expects_rules: []

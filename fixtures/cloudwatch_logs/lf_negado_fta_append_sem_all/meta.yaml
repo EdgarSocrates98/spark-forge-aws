@@ -1,0 +1,39 @@
+name: lf_negado_fta_append_sem_all
+proves: >
+  O POSITIVO de `SF-LF-011` pelo caminho inteiro. O log do run tem `ERR-LF-001`
+  sobre `analytics.dim_cliente`, o Terraform declara Full Table Access (resolver
+  do Lake Formation e EMRFS restaurado), o codigo faz append nessa tabela, e o
+  grant coletado do role do job e so `DESCRIBE` + `SELECT`. Sob FTA, escrita de
+  job Spark do Glue exige `ALL`: o fact sai com `missing: [ALL]`, `side: lf`.
+  A negativa e `lf_negado_fta_grant_all`: mesmo log, mesmo job, grant `ALL`.
+  O job declara FTA, e o golden prova que `SF-LF-010` NAO o acusa: o resolver
+  do Lake Formation vira `lakeformation.fta_declared`, e a regra pergunta
+  `absent:` dele ao lado de `absent: lakeformation.access_model` (feature
+  LF_FTA_DECLARADO; ate ela a regra disparava aqui).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - lakeformation.data_lake_settings
+  - lakeformation.filesystem
+  - lakeformation.fta_declared
+  - lakeformation.grant
+  - lakeformation.grants.analyzed
+  - lakeformation.missing_grant
+  - lakeformation.registered_location
+  - pyspark.chain
+  - pyspark.module_analyzed
+  - pyspark.read
+  - pyspark.write
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-LF-011

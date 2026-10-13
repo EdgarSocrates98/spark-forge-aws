@@ -1,0 +1,15 @@
+name: janela_vazia
+proves: >
+  Recusa nomeada 3 de 4, e a mais facil de confundir com sucesso: o grupo
+  existe, a permissao existe, e nao ha evento na janela. O extrator NAO decide
+  entre as causas possiveis (janela fora do run, prefixo de stream errado,
+  `filter_pattern` que nao casa nada) -- ele nomeia o estado e para.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.logs.analyzed
+  - cloudwatch.logs.unresolved
+expects_rules: []

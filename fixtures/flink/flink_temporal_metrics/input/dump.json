@@ -1,0 +1,41 @@
+{
+  "job": {
+    "name": "orders",
+    "version": "1.20.1"
+  },
+  "checkpoints": [
+    {
+      "id": 12,
+      "status": "COMPLETED",
+      "duration_ms": 840
+    }
+  ],
+  "metrics": [
+    {
+      "name": "busyTimeMsPerSecond",
+      "value": 750,
+      "observed_at": "2026-10-03T00:00:00Z",
+      "unit": "MillisecondsPerSecond",
+      "stat": "Average",
+      "scope": "operator",
+      "operator_id": "aggregate",
+      "labels": {
+        "drop": true
+      }
+    },
+    {
+      "metricName": "backpressuredRatio",
+      "value": 0.12,
+      "timestamp": "2026-10-03T00:00:00Z",
+      "unit": "Ratio",
+      "statistic": "Average",
+      "scope": "operator",
+      "operatorId": "aggregate"
+    },
+    {
+      "name": "lateRecordsPerSecond",
+      "value": 4.0,
+      "unit": "CountPerSecond"
+    }
+  ]
+}

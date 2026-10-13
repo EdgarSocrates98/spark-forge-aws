@@ -1,0 +1,41 @@
+{
+  "changes": [
+    {
+      "basis": {
+        "basis": {
+          "heartbeat_s": 60.0,
+          "network_timeout_s": 30.0,
+          "ratio": 12,
+          "ratio_source": "spark_defaults_120s_over_10s"
+        },
+        "formula": "ceil(heartbeat_s * 12)",
+        "safety": "REVIEW",
+        "source": "tune"
+      },
+      "evidence": [
+        "f_201975"
+      ],
+      "file": "main.tf",
+      "from": "30",
+      "key": "spark.network.timeout",
+      "line": 13,
+      "provenance": "terraform",
+      "to": "720"
+    }
+  ],
+  "diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.network.timeout=30\"\n+    \"--conf\" = \"spark.network.timeout=720\"\n   }\n }\n",
+  "files": [
+    "main.tf"
+  ],
+  "refused": [],
+  "rollback_diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.network.timeout=720\"\n+    \"--conf\" = \"spark.network.timeout=30\"\n   }\n }\n",
+  "tune_refused": [
+    "runtime_unknown",
+    "sem_diagnostico_de_broadcast",
+    "sem_explain_cost",
+    "sem_footer",
+    "sem_memoria_por_executor",
+    "sem_memoria_por_executor",
+    "sem_tasks_por_executor"
+  ]
+}

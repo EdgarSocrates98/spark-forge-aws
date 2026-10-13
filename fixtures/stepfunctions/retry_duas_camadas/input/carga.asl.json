@@ -1,0 +1,13 @@
+{
+  "Comment": "Fixture sintetica: o mesmo job com retry nas duas camadas.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 300, "MaxAttempts": 2, "BackoffRate": 1.0}],
+      "End": true
+    }
+  }
+}

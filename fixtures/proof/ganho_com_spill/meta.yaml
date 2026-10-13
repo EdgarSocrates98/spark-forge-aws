@@ -1,0 +1,14 @@
+description: >-
+  SF-PY-008 move runtime.wall_clock e shuffle.spill_bytes; o benchmark de
+  faster_but_spilling dispara SF-BENCH-003 (tempo melhor, spill pior). O eixo de
+  spill sai refuted e o de tempo not_refuted -- cada veredito vale para o eixo
+  que ele olha.
+findings: [fixtures/pyspark/cache_no_unpersist/expected/findings.json]
+facts:
+  - fixtures/pyspark/cache_no_unpersist/expected/facts.json
+  - fixtures/bench/faster_but_spilling/expected/facts.json
+after_facts: [fixtures/pyspark/cache_no_unpersist/expected/facts.json]
+applied: [SF-PY-008]
+expect:
+  - {rule_id: SF-PY-008, kind: axis, axis: shuffle.spill_bytes, outcome: refuted}
+  - {rule_id: SF-PY-008, kind: axis, axis: runtime.wall_clock, outcome: not_refuted}

@@ -1,0 +1,227 @@
+[
+  {
+    "id": "f_15a5be",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_a8773e",
+    "schema_version": 1,
+    "kind": "catalog.table_partitions",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.cliques_sem_projection_a"
+    },
+    "measures": {
+      "partition_count": 150000,
+      "distinct_values": 150000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_1c60be",
+    "schema_version": 1,
+    "kind": "catalog.table_partitions",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.cliques_sem_projection_b"
+    },
+    "measures": {
+      "partition_count": 300000,
+      "distinct_values": 300000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_96dd85",
+    "schema_version": 1,
+    "kind": "catalog.table_partitions",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos_projetado"
+    },
+    "measures": {
+      "partition_count": 250000,
+      "distinct_values": 250000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_303f28",
+    "schema_version": 1,
+    "kind": "catalog.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos_projetado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "projection.enabled",
+      "value": "true",
+      "present": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea9e24",
+    "schema_version": 1,
+    "kind": "catalog.table_property.projection_enabled",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos_projetado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "projection.enabled",
+      "value": "true",
+      "present": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_d9334c",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.cliques_sem_projection_a"
+    },
+    "measures": {
+      "column_count": 4,
+      "partition_key_count": 2
+    },
+    "attrs": {
+      "table": "db.cliques_sem_projection_a",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt",
+        "hora"
+      ],
+      "column_types": {
+        "cliente_id": "bigint",
+        "url": "string",
+        "dt": "string",
+        "hora": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_075cde",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.cliques_sem_projection_b"
+    },
+    "measures": {
+      "column_count": 4,
+      "partition_key_count": 2
+    },
+    "attrs": {
+      "table": "db.cliques_sem_projection_b",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt",
+        "regiao"
+      ],
+      "column_types": {
+        "cliente_id": "bigint",
+        "url": "string",
+        "dt": "string",
+        "regiao": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_690626",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.eventos_projetado"
+    },
+    "measures": {
+      "column_count": 3,
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "db.eventos_projetado",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "cliente_id": "bigint",
+        "valor": "double",
+        "dt": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "7104c4d1dc73e0073097b3c2a910fa144b9c2f692cc0bb4a45e614b356223698",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,29 @@
+name: capacidade_abaixo_da_fronteira
+proves: >
+  O POSITIVO de SF-CTM-001, e a primeira metade do contrafactual que prova que o
+  cruzamento com a matriz existe. O job `ExtraiExtrato` usa
+  `Job:DetachedEmbeddedScript`, cuja fronteira a matriz le em `9.0.22.005`, e a
+  versao DECLARADA aqui e `9.0.21.300` -- abaixo dela. O achado sai com a
+  capacidade, a fronteira e as duas versoes dentro da evidencia, e nenhum numero
+  de versao aparece na regra.
+  A segunda metade e `capacidade_acima_da_fronteira`, que tem o MESMO
+  `jobs.json` byte a byte e so troca `controlm_version`. Se as duas produzirem o
+  mesmo achado, nao ha cruzamento -- ha numero embutido em algum lugar.
+  Este e tambem o artefato rico do corpus: folder com `When`, dois jobs, evento
+  adicionado e evento esperado, `Flow` com sequencia, `Type: If` batizado de
+  `ActionIfFailure` pelo autor, e duas variaveis -- uma delas com valor que casa
+  o detector compartilhado e sai REDIGIDA.
+runtime: {}
+controlm_version: "9.0.21.300"
+expects_kinds:
+  - ctm.action
+  - ctm.analyzed
+  - ctm.capability_incompatible
+  - ctm.dependency
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.variable
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-001

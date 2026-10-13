@@ -1,0 +1,20 @@
+name: clean_job
+proves: >
+  aws_glue_job com IaC plausivel de producao -- capacidade fixa sem Auto
+  Scaling, observabilidade completa, bookmark desligado, sem retry, sem
+  segredo -- nao deve produzir nenhum finding. A fixture mais importante do
+  corpus Terraform: se ela disparar algo, e falso positivo do catalogo ou do
+  extrator. (SF-GLUE-004 e SF-GLUE-005 tambem exigem Facts que este corpus
+  terraform-only nao produz -- pyspark.write e spark.stage.spill -- entao
+  ficam skipped por requires_facts, nunca "quase disparando".)
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules: []

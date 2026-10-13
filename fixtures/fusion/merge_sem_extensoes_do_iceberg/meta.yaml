@@ -1,0 +1,63 @@
+name: merge_sem_extensoes_do_iceberg
+proves: >
+  O POSITIVO de `SF-ICE-008`, e a primeira fixture deste corpus com `.tf`.
+
+  Um `MERGE INTO` sobre tabela Iceberg, numa sessao cuja configuracao NAO declara
+  `spark.sql.extensions` com `IcebergSparkSessionExtensions`. A tabela de suporte
+  de escrita do Apache Iceberg marca tres operacoes com "Requires Iceberg Spark
+  extensions" -- `merge into`, `update` e `delete from` row-level -- e nao marca
+  `insert into` nem `insert overwrite`, que pedem so
+  `storeAssignmentPolicy=ANSI`.
+
+  O QUE A FIXTURE PROVA SOBRE A FUSAO, e nao sobre a regra: nenhum dos dois lados
+  da condicao existe sozinho. A OPERACAO vem do texto SQL (`sql_literal.py`
+  emite `sql.write_statement` com `operation: merge_into`), e a EXTENSAO vem da
+  configuracao (`tf.spark_conf`). `fusion.py` cruza os dois em
+  `sql.write_statement.enriched` -- mesmo molde de `table_format_columnar`, que e
+  propriedade da TABELA e nunca do texto.
+
+  O TERNARIO E O PONTO da conf declarar `spark.sql.shuffle.partitions`. Com ela,
+  `iceberg_extensions_declared` sai `false` -- alguma superficie foi lida e a
+  chave nao estava nela. Sem conf NENHUMA o valor seria `null` e a regra ficaria
+  MUDA, porque ali ninguem mediu a sessao e afirmar ausencia seria inventar.
+
+  O `.tf` traz um `aws_glue_job` completo em vez de so o `--conf` porque
+  `extract_terraform_tree` le recurso, e um bloco solto nao produz
+  `tf.spark_conf`. `--enable-spark-ui` esta la para `SF-GLUE-002` nao contaminar.
+
+  O `MERGE` traz `USING (SELECT ... FROM ...)` de proposito, e o golden mostra
+  POR QUE o kind novo era necessario -- os dois facts discordam sobre qual tabela
+  o statement toca, e os dois estao certos:
+
+    `sql.projection.attrs.table`      -> `stage.venda_novos`   (a SUBQUERY)
+    `sql.write_statement.attrs.table` -> `curated.fato_venda`  (o ALVO)
+
+  A projecao casa o SELECT/FROM mais interno, que e o residual declarado no
+  docstring de `sql_literal.py` desde sempre. `_write_statement` e ancorado no
+  INICIO do texto limpo e por isso acerta o alvo. Uma regra sobre escrita que
+  lesse `sql.projection.attrs.table` apontaria a tabela de origem.
+
+  `sql.unresolved` com `reason: unparsed_clause` tambem sai, e ele e honesto: o
+  `WHERE` da subquery continua no texto quando o parse de predicado chega, e o
+  corpo do `MERGE` (`ON`, `WHEN MATCHED`, `VALUES`) nao e clausula que este
+  extrator entenda. Ele NAO tem gramatica SQL de proposito, e recusa nomeada e o
+  que a §20 do `CLAUDE.md` exige em vez de predicado adivinhado.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - fusion.summary
+  - sql.analyzed
+  - sql.projection
+  - sql.unresolved
+  - sql.write_statement
+  - sql.write_statement.enriched
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-ICE-008

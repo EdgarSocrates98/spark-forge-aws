@@ -1,0 +1,131 @@
+[
+  {
+    "id": "f_a4affb",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 24,
+      "control_object_count": 0,
+      "group_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "prefix": "s3://lake/analytics/pedidos_por_hora/",
+      "truncated": false
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "405d4a204036e3317261eb9fe394d9c5b1f5d5d206030747372dca719b6ac08f",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_77faa0",
+    "schema_version": 1,
+    "kind": "s3.prefix_summary",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/analytics/pedidos_por_hora/ [parquet/snappy]"
+    },
+    "measures": {
+      "file_count": 24,
+      "total_bytes": 25165824,
+      "avg_file_bytes": 1048576.0,
+      "min_file_bytes": 1048576,
+      "p50_file_bytes": 1048576,
+      "p95_file_bytes": 1048576,
+      "max_file_bytes": 1048576
+    },
+    "attrs": {
+      "prefix": "s3://lake/analytics/pedidos_por_hora/",
+      "format": "parquet",
+      "compression": "snappy"
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "405d4a204036e3317261eb9fe394d9c5b1f5d5d206030747372dca719b6ac08f",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_ddf1c8",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "catalog/tables.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "catalog/tables.json",
+      "artifact_sha256": "20d20c134fc71537ae99b86301ba071b52b572a3a97c2f5a7fc0257b7f063210",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_d082fc",
+    "schema_version": 1,
+    "kind": "catalog.table_partitions",
+    "subject": {
+      "type": "table",
+      "file": "catalog/tables.json",
+      "symbol": "pedidos_por_hora"
+    },
+    "measures": {
+      "partition_count": 3,
+      "distinct_values": 3,
+      "avg_bytes_per_partition": 8388608.0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "catalog/tables.json",
+      "artifact_sha256": "20d20c134fc71537ae99b86301ba071b52b572a3a97c2f5a7fc0257b7f063210",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_8f16bb",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "catalog/tables.json",
+      "symbol": "pedidos_por_hora"
+    },
+    "measures": {
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "pedidos_por_hora",
+      "storage_format": null,
+      "columnar": null,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "dt": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "catalog/tables.json",
+      "artifact_sha256": "20d20c134fc71537ae99b86301ba071b52b572a3a97c2f5a7fc0257b7f063210",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  }
+]

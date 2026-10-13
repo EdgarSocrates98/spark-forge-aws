@@ -1,0 +1,26 @@
+{
+  "counts": {
+    "findings": 2,
+    "located": 0,
+    "refused": 2
+  },
+  "refused": [
+    {
+      "rule_id": "SF-BENCH-001",
+      "severity": "P0",
+      "reason": "runtime",
+      "subject_type": "job_run"
+    },
+    {
+      "rule_id": "SF-BENCH-002",
+      "severity": "P1",
+      "reason": "runtime",
+      "subject_type": "job_run"
+    }
+  ],
+  "gate": {
+    "fail_on": "P1",
+    "tripped": true
+  },
+  "exit_code": 1
+}

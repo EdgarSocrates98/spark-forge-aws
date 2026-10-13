@@ -1,0 +1,7 @@
+{
+  "skill_name": "review-streaming-operations",
+  "evals": [
+    {"id": "complete", "prompt": "Review declared SLO, FinOps and security contract.", "expected_output": "preserve measures, redaction and unresolved without calculating price.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "redaction"]},
+    {"id": "serving", "prompt": "Review serving and lakehouse declarations.", "expected_output": "compare matrix and refuse unsupported benchmark claims.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "serving"]}
+  ]
+}

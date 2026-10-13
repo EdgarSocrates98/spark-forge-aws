@@ -1,0 +1,8 @@
+name: drift
+description: Terminal run differs from effective Glue Streaming definition.
+expects_kinds:
+  - glue.streaming.job
+  - glue.job_run
+  - glue.streaming.runtime_link
+  - spark.timeout.unresolved
+  - fusion.summary

@@ -1,0 +1,36 @@
+name: shuffle_tracking_desligado
+proves: >
+  O positivo de SF-EMRK-004: os DOIS valores escritos na linha de submit --
+  `spark.dynamicAllocation.enabled=true` e
+  `spark.dynamicAllocation.shuffleTracking.enabled=false` --, que e a unica forma
+  em que a relacao e acusavel. Na versao FIXADA da doc do Spark (`docs/3.5.6/`, a
+  que corresponde ao Spark `3.5.2-amzn-1` de `emr-7.5.0`), `shuffleTracking`
+  tem default `true`: por isso a ausencia dele NAO e o positivo, e
+  `alocacao_dinamica_no_default` existe para provar essa metade.
+  Prova tambem a PRECEDENCIA declarada pela AWS, e e por isso que o
+  `applicationConfiguration` daqui declara
+  `spark.dynamicAllocation.shuffleTracking.enabled: "true"` -- o valor OPOSTO ao
+  da linha de submit. "If you pass the same configuration in an application
+  override and in Spark submit parameters, the Spark submit parameters take
+  precedence": o `false` da linha de submit vence, e o achado esta certo em sair.
+  Uma regra escrita sobre `emrc.configuration` em vez de
+  `emrc.spark_submit_parameters` NAO dispararia aqui -- e estaria lendo o valor
+  que perdeu.
+  O par negativo direto e `shuffle_tracking_ligado`, que troca so o valor da
+  linha de submit; `job_run_saudavel` e o negativo pelo outro lado, sem alocacao
+  dinamica nenhuma.
+  Nao dispara SF-EMRK-002 nem SF-EMRK-003: ha destino S3 e `persistentAppUI:
+  ENABLED`. `spark.dynamicAllocation.maxExecutors=40` esta na linha para provar
+  que a tokenizacao separa tres pares `--conf` e que uma propriedade vizinha da
+  familia nao interfere na condicao.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules:
+  - SF-EMRK-004

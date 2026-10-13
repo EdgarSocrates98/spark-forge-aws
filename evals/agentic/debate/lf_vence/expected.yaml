@@ -1,0 +1,17 @@
+# Gabarito. NUNCA copiado para o workspace de prova (scripts/run_debate.py copia
+# por allowlist: case.yaml, artifacts/ e a uniao).
+#
+# O dump de `collect lakeformation` da tabela mostra grant do Lake Formation
+# para o runtime role, sem IAM_ALLOWED_PRINCIPALS, e a localizacao registrada:
+# o Lake Formation governa a tabela, o FGAC carrega peso, e derruba-lo para
+# manter o JAR afrouxa acesso medido. Fica o FGAC; sai o JAR (SF-LF-001).
+schema_version: 1
+rules: [SF-GRAPH-005, SF-LF-001]
+outcome: winner
+winner: SF-LF-001
+decided_by:
+  kind: lakeformation.grant
+  extractor: lakeformation-grants
+  artifact: artifacts/lakeformation/curated_arestas.json
+  attr: is_iam_allowed_principals
+  value: false

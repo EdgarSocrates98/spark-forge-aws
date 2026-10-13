@@ -1,0 +1,5 @@
+--- a/../fora.txt
++++ b/../fora.txt
+@@ -1,1 +1,1 @@
+-antes
++depois

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "f_2e2b7f",
+    "schema_version": 1,
+    "kind": "workload.declared",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "sla_minutes": 45
+    },
+    "attrs": {
+      "primary_source": "db.pedidos"
+    },
+    "provenance": {
+      "extractor": "workload@0.1.0",
+      "artifact": "workload.yaml"
+    }
+  },
+  {
+    "id": "f_c54e06",
+    "schema_version": 1,
+    "kind": "workload.declared_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "workload.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "jobs_declared": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "workload@0.1.0",
+      "artifact": "workload.yaml"
+    }
+  },
+  {
+    "id": "f_7d029c",
+    "schema_version": 1,
+    "kind": "workload.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "workload.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "job_declared_twice",
+      "detail": "O job 'etl_pedidos_diario' aparece duas vezes. A primeira declaracao vale; aceitar as duas faria o perfil depender da ordem do arquivo.",
+      "job_name": "etl_pedidos_diario"
+    },
+    "provenance": {
+      "extractor": "workload@0.1.0",
+      "artifact": "workload.yaml"
+    }
+  }
+]

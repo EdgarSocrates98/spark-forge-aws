@@ -1,0 +1,26 @@
+[
+  {
+    "id": "f_2212bd",
+    "schema_version": 1,
+    "kind": "pyspark.conf_set",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 4,
+      "col": 4,
+      "end_line": 6,
+      "symbol": "",
+      "snippet": "SparkSession.builder"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "b7190db45e3b736cbfcc4e71fa975acb15d9864fe0e2d310183f3fe0138bc806",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

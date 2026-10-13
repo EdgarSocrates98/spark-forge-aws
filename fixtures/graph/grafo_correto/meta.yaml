@@ -1,0 +1,25 @@
+name: grafo_correto
+proves: >
+  A metade negativa do corpus, e a mais importante: o mesmo job de grafo, feito
+  do jeito certo. Checkpoint configurado NOUTRA funcao -- alcance de arquivo,
+  porque `SparkContext` e singleton do processo e correlacionar por escopo
+  acusaria a forma canonica de job Glue/EMR --, vertices e arestas persistidos
+  pela forma mais comum (`v = vertices.cache()`, que registra o evento nos DOIS
+  nomes), e um `pageRank` limitado por `tol`.
+  `iteration_arg: tol` e OBSERVACAO e nao juizo: a regra "algoritmo iterativo
+  sem maxIter" foi vetada pela pesquisa (V-GF-2, V-GF-3), e nenhum fact deste
+  corpus carrega booleano de ausencia de limite.
+  Nenhuma regra SF-GRAPH pode disparar aqui -- por isso `expects_rules` continua
+  vazio depois da Task 5, e nao so nesta task.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules: []

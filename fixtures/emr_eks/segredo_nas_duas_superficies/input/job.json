@@ -1,0 +1,42 @@
+{
+  "virtualCluster": {
+    "id": "0abcdefghijklmnop",
+    "name": "analytics",
+    "state": "RUNNING",
+    "containerProvider": {
+      "type": "EKS",
+      "id": "producao-eks",
+      "info": {"eksInfo": {"namespace": "spark"}}
+    }
+  },
+  "jobRun": {
+    "id": "0000000segredo123",
+    "name": "etl-com-credencial",
+    "virtualClusterId": "0abcdefghijklmnop",
+    "state": "COMPLETED",
+    "releaseLabel": "emr-7.5.0-latest",
+    "executionRoleArn": "arn:aws:iam::111122223333:role/EMRContainersJobRole",
+    "jobDriver": {
+      "sparkSubmitJobDriver": {
+        "entryPoint": "s3://bucket/etl.py",
+        "entryPointArguments": ["--data", "s3://bucket/in/"],
+        "sparkSubmitParameters": "--conf spark.executor.instances=4 --conf spark.sql.catalog.meta.uri=jdbc:postgresql://usuario:trocar-esta-senha@db.interno:5432/metastore"
+      }
+    },
+    "configurationOverrides": {
+      "applicationConfiguration": [
+        {
+          "classification": "spark-defaults",
+          "properties": {
+            "spark.hadoop.fs.s3a.secret.key": "AKIAIOSFODNN7EXAMPLE",
+            "spark.sql.shuffle.partitions": "400"
+          }
+        }
+      ],
+      "monitoringConfiguration": {
+        "persistentAppUI": "ENABLED",
+        "s3MonitoringConfiguration": {"logUri": "s3://bucket/logs/"}
+      }
+    }
+  }
+}

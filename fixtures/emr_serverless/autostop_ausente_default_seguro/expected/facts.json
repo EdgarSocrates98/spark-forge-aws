@@ -1,0 +1,107 @@
+[
+  {
+    "id": "f_07e222",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 1,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "bc33ac7ee766e1997eda8d19cf7feb88b9a8ce2eea795e8fe2d4fa9d66a0d95e",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_8a0ca8",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fdefault0000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 1,
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "application_id": "00fdefault0000000001",
+      "name": "etl-no-default",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "architecture": "X86_64",
+      "auto_start_declared": false,
+      "auto_stop_declared": false,
+      "initial_exceeds_maximum": false,
+      "capacity_axes_exceeded": []
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "bc33ac7ee766e1997eda8d19cf7feb88b9a8ce2eea795e8fe2d4fa9d66a0d95e",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_2a8115",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fdefault0000000001/initial_capacity/DRIVER"
+    },
+    "measures": {
+      "worker_count": 1,
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "bc33ac7ee766e1997eda8d19cf7feb88b9a8ce2eea795e8fe2d4fa9d66a0d95e",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_7e1d1b",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fdefault0000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "bc33ac7ee766e1997eda8d19cf7feb88b9a8ce2eea795e8fe2d4fa9d66a0d95e",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

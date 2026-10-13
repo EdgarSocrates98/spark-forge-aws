@@ -1,0 +1,20 @@
+{
+  "table": {"database": "quality", "name": "payments"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "source_region": "us-east-1",
+  "inference_region": "us-east-1",
+  "runtime_version": "5.1",
+  "sampling": {
+    "workgroup": "glue-dataquality-sampling",
+    "bucket": "aws-glue-dataquality-sampling-111122223333-us-east-1",
+    "retention_days": 14
+  },
+  "kms": {"status": "sufficient"},
+  "authorization": {
+    "key_policy_status": "declared",
+    "runtime_role_status": "insufficient",
+    "lakeformation_status": "unresolved"
+  },
+  "human_review_status": "declared"
+}

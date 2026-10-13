@@ -1,0 +1,20 @@
+name: regression_slower
+proves: >
+  O depois soma MAIS tempo de task que o antes: 34,4 s contra 22,0 s, +56,4%.
+  Os tres stages casam por symbol, o volume lido e o mesmo nos dois lados
+  (140 MB, 0,0%) e nenhum dos dois derramou -- entao a piora nao e atribuivel
+  ao dado nem a memoria, e sobra a mudanca de codigo. `total_task_ms` e tempo
+  de task somado, nao tempo de relogio: este run pode ter terminado antes no
+  relogio se passou a paralelizar melhor, e por isso o achado da Task 5 pede
+  confirmacao no relogio antes de reverter.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - bench.analyzed
+  - bench.run_delta
+  - bench.stage_delta
+expects_rules:
+  - SF-BENCH-002

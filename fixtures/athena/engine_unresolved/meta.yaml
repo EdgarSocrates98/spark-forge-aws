@@ -1,0 +1,20 @@
+name: engine_unresolved
+proves: >
+  As quatro formas de o dump nao responder a pergunta, num corpus so:
+  engine version que nao contem inteiro reconhecivel
+  (`unparseable_engine_version`), workgroup sem bloco `engine_version`
+  (`missing_engine_version`), entrada sem `name` (`missing_workgroup_name`) e
+  entrada que nem objeto e (`malformed_json`). Nenhuma delas pode virar
+  `athena.workgroup`: `measures.engine_version` inventado faria SF-ATH-004
+  disparar sobre versao desconhecida, que e pior que nao disparar. Zero
+  findings, quatro `athena.unresolved` contados na sentinela.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+  athena: "3"
+expects_kinds:
+  - athena.analyzed
+  - athena.unresolved
+expects_rules: []

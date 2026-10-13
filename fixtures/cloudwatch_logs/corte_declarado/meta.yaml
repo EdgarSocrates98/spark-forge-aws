@@ -1,0 +1,19 @@
+name: corte_declarado
+proves: >
+  O teto de eventos mordeu: `truncated: 1` no `cloudwatch.logs.analyzed`, com
+  `max_events: 2` ao lado. Um corte que nao se declara e log parcial com cara de
+  completo -- a mesma classe de defeito da serie de metrica truncada achada na
+  auditoria de fakes de 2026-09-03.
+
+  `truncated` entra em `measures` e nao em `attrs` de proposito: e ali que uma
+  regra o consulta, e ponto cego que so aparece em anotacao some do julgamento.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules: []

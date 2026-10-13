@@ -1,0 +1,30 @@
+name: release_sem_serie
+proves: >
+  Release label fora da forma `emr-<major>.<minor>.<patch>`, e as duas measures
+  de serie OMITIDAS -- nunca forcadas. Os dois labels sao reais: a lista oficial
+  de releases do EMR Serverless traz `emr-spark-8.0.0` (GA) e
+  `emr-spark-8.0-preview`, e a pagina do primeiro mostra
+  `create-application --release-label emr-spark-8.0.0` (D-5d-6,
+  `knowledge/emr-serverless/runtime-matrix.md` secao 4).
+  `emr-spark-8.0-preview` tem DOIS segmentos numericos e nenhum patch: um regex
+  frouxo extrairia `8` e a application passaria a ser julgada como serie 8 sem
+  que ninguem tenha afirmado isso. `_RELEASE_RE` e estrito de proposito, e
+  `attrs.release_label` continua saindo cru -- o label e transcricao do artefato,
+  a serie e derivacao, e so a derivacao pode faltar.
+  Corolario que fecha D-5d-5: `EMR_MATRIX` nao tem chave para nenhum destes dois,
+  entao derivar runtime por ela falharia calada justamente na release mais nova.
+  E por isso que `releaseLabel` do Serverless nao alimenta `RuntimeContext`.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.monitoring
+expects_rules: []

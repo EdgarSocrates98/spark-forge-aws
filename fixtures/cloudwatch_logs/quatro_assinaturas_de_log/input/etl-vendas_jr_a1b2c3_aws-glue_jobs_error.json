@@ -1,0 +1,50 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_a1b2c3",
+      "message": "2026-09-09 10:03:11,204 INFO [main] glue.ProcessLauncher: Loading job script",
+      "timestamp": 1788948000000
+    },
+    {
+      "eventId": "e1",
+      "ingestionTime": 1788948000501,
+      "logStreamName": "jr_a1b2c3_g-abc",
+      "message": "2026-09-09 10:07:42,881 ERROR [Executor task launch worker for task 12] executor.Executor: Container killed by YARN for exceeding memory limits. 10.4 GB of 10 GB physical memory used",
+      "timestamp": 1788948000137
+    },
+    {
+      "eventId": "e2",
+      "ingestionTime": 1788948000502,
+      "logStreamName": "jr_a1b2c3",
+      "message": "2026-09-09 10:07:59,003 ERROR [main] iceberg.SparkWrite: org.apache.iceberg.exceptions.CommitFailedException: Commit failed: Table was updated concurrently by another writer",
+      "timestamp": 1788948000274
+    },
+    {
+      "eventId": "e3",
+      "ingestionTime": 1788948000503,
+      "logStreamName": "jr_a1b2c3_g-abc",
+      "message": "2026-09-09 10:08:01,442 ERROR [main] athena.Reader: HIVE_UNSUPPORTED_FORMAT: Cannot read unsupported version 3 of the Iceberg table metadata",
+      "timestamp": 1788948000411
+    },
+    {
+      "eventId": "e4",
+      "ingestionTime": 1788948000504,
+      "logStreamName": "jr_a1b2c3",
+      "message": "2026-09-09 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on default.dim_cliente",
+      "timestamp": 1788948000548
+    }
+  ],
+  "events_collected": 5,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "etl-vendas",
+  "job_run_id": "jr_a1b2c3",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_a1b2c3",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

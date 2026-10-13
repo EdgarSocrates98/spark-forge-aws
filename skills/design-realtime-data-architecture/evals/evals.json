@@ -1,0 +1,7 @@
+{
+  "skill_name": "design-realtime-data-architecture",
+  "evals": [
+    {"id": "unique", "prompt": "Choose runtime from hard streaming constraints.", "expected_output": "select only one candidate when constraints eliminate others.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "constraints"]},
+    {"id": "ambiguous", "prompt": "Choose runtime with incomplete requirements.", "expected_output": "keep ADR unresolved and name unlocking evidence.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "unresolved"]}
+  ]
+}

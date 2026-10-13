@@ -1,0 +1,37 @@
+{
+  "id": "ERR-SPARK-002",
+  "signature": "Python worker exited unexpectedly",
+  "service": "spark",
+  "versions": ["*"],
+  "symptoms": [
+    "The job dies inside a UDF or a pandas UDF, with no Java stack pointing at the job's own code",
+    "The executor JVM stays alive and healthy while the Python side disappears",
+    "Raising spark.executor.memory changes nothing, because the memory that ran out is outside the JVM heap"
+  ],
+  "likely_causes": [
+    "The Python worker exceeded the memory available to it outside the JVM heap",
+    "A pandas UDF materialised an Arrow batch larger than the worker could hold",
+    "The container was killed by the platform for exceeding its total memory, taking the Python worker with it"
+  ],
+  "evidence_required": ["pyspark.udf", "spark.executor.lost"],
+  "diagnostic_steps": [
+    "Confirm whether a UDF or pandas UDF runs in the failing stage: the fact pyspark.udf carries the call site",
+    "Check spark.executor.lost for whether the whole container died or only the Python side",
+    "Read the effective spark.python.worker.memory from spark.conf_effective; the Spark default is 512m, and it governs aggregation spill, not the whole worker"
+  ],
+  "fixes": [
+    "Replace the Python UDF with a native Spark SQL expression when the operation has a native equivalent, which removes the Python worker from the path entirely",
+    "Reduce the batch size of the pandas UDF so the Arrow batch fits, after confirming the UDF is row-by-row",
+    "Raise the memory available outside the JVM heap on the executor, which is the container overhead and not spark.executor.memory"
+  ],
+  "unsafe_fixes": [
+    "Raising spark.executor.memory, which grows the JVM heap and takes room away from the Python worker inside the same container",
+    "Reducing the pandas UDF batch size without checking whether the function looks at the whole batch: normalisation, ranking and neighbour fill return different values under a different batch size, and nothing in the physical plan reports it"
+  ],
+  "verification": "Re-run the job and confirm the stage completes; if a Python UDF was replaced by a native expression, compare the resulting column value by value on a sample that includes nulls and boundary values, plus total row count and null count",
+  "rollback": "Revert the memory override, or restore the Python UDF. If the UDF was replaced, the output has to be compared before the old code is discarded",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

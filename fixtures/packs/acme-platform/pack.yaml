@@ -1,0 +1,9 @@
+# Pack SINTETICO de exemplo (Forge Pack, §5). Nenhuma regra real de empresa:
+# o repositorio e publico. As regras consomem `tf.attribute`, que o extrator de
+# Terraform do core ja emite.
+pack:
+  id: acme-platform
+  version: 1.0.0
+  prefix: ACME
+  core: ">=0.5,<1.0"
+  description: Padroes de plataforma de dados da ACME (sintetico)

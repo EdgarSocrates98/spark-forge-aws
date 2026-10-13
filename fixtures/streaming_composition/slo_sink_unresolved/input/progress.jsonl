@@ -1,0 +1,3 @@
+{"batchId":1,"timestamp":"2026-10-01T00:00:00Z","name":"orders-query","inputRowsPerSecond":120,"processedRowsPerSecond":100,"sink":{"description":"iceberg-orders","numOutputRows":100}}
+{"batchId":2,"timestamp":"2026-10-01T00:05:00Z","name":"orders-query","inputRowsPerSecond":120,"processedRowsPerSecond":100,"sink":{"description":"iceberg-orders","numOutputRows":90}}
+{"batchId":3,"timestamp":"2026-10-01T00:10:00Z","name":"orders-query","inputRowsPerSecond":120,"processedRowsPerSecond":100,"sink":{"description":"iceberg-orders","numOutputRows":110}}

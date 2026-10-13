@@ -1,0 +1,134 @@
+[
+  {
+    "id": "f_545657",
+    "schema_version": 1,
+    "kind": "glue.streaming.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "mode": "REAL_TIME"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_667615",
+    "schema_version": 1,
+    "kind": "glue.streaming.job",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-valid",
+      "snippet": ""
+    },
+    "measures": {
+      "partition_count": 4,
+      "task_slots": 4
+    },
+    "attrs": {
+      "name": "rtm-valid",
+      "mode": "REAL_TIME",
+      "command": "GLUESTREAMING",
+      "glue_version": "6.0",
+      "language": "SCALA",
+      "source_type": "KAFKA",
+      "output_mode": "UPDATE",
+      "stateful": false,
+      "foreach_batch": false,
+      "autoscaling": false
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_1b9d34",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "glue_version": "6.0"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_dbe90a",
+    "schema_version": 1,
+    "kind": "glue.streaming.sink",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "num_records_out": 100,
+      "pending_commits": 0
+    },
+    "attrs": {
+      "sink_id": "orders-sink",
+      "connector": "iceberg",
+      "table": "prod.orders"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_b297ac",
+    "schema_version": 1,
+    "kind": "glue.streaming.source",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition_count": 4,
+      "lag_records": 2
+    },
+    "attrs": {
+      "source_id": "orders-source",
+      "connector": "kafka",
+      "topic": "orders"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  }
+]

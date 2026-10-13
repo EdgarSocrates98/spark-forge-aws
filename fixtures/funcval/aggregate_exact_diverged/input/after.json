@@ -1,0 +1,23 @@
+{
+  "target": "db.eventos",
+  "side": "after",
+  "checks": {
+    "count": {
+      "value": 1800000000
+    },
+    "schema": {
+      "value": {
+        "pedido_id": "string",
+        "cliente_id": "bigint",
+        "valor": "double",
+        "dt": "string"
+      }
+    },
+    "agg:sum:cliente_id": {
+      "value": 500500123001
+    },
+    "agg:sum:valor": {
+      "value": 1000000.0
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"table":"db.events","snapshots":[{"snapshot_id":1,"committed_at":"2026-10-01T00:00:00Z","operation":"append"},{"snapshot_id":2,"committed_at":"2026-10-01T00:00:05Z","operation":"replace"}],"format_version":2}

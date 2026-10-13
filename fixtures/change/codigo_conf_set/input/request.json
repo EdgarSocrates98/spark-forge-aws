@@ -1,0 +1,6 @@
+{
+  "kind": "plan",
+  "sets": [
+    "spark.sql.shuffle.partitions=320"
+  ]
+}

@@ -1,0 +1,8 @@
+name: truncated_answer
+mode: transcript
+question: q-mcp
+proves: >
+  Resposta despejada na linha ANSWER: com mais de 200 caracteres. O fact
+  guarda so os 200 primeiros e truncated true; a pontuacao compara o valor
+  truncado e sai wrong. O teto existe para o scorecard commitado nao carregar
+  texto longo do transcript.

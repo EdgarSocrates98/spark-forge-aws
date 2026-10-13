@@ -1,0 +1,5 @@
+mode: slo
+slo_name: transport-slo
+transport_key: clicks-stream
+expects_findings: [SF-STREAM-011]
+expects_kinds: [kinesis.analyzed, kinesis.shard, kinesis.stream, streaming.composition.analyzed, streaming.slo, streaming.slo.evaluation, streaming_ops.analyzed]

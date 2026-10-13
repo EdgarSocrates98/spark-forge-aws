@@ -1,0 +1,192 @@
+[
+  {
+    "id": "f_4b4f55",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-scores",
+      "job_run_id": "jr_py1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_py1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:14:22,908 ERROR [Executor task launch worker for task 88] executor.Executor: Python worker exited unexpectedly (crashed)",
+      "log_stream": "jr_py1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-scores_jr_py1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_c11f5b",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-scores",
+      "job_run_id": "jr_py1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_py1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_py1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-scores_jr_py1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_157b97",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 7,
+      "col": 11,
+      "end_line": 7,
+      "symbol": "normaliza",
+      "snippet": "return valor.strip().lower()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "strip",
+        "lower"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "32edf27e05625641b39d5fc4e448becd5dcb6343136678d16b8a53f430be06f2",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_248378",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "end_line": 7,
+      "symbol": "normaliza",
+      "snippet": "def normaliza(valor):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [
+        "udf"
+      ],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "32edf27e05625641b39d5fc4e448becd5dcb6343136678d16b8a53f430be06f2",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_3ec316",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true,
+      "referenced_names": [
+        "StringType",
+        "lower",
+        "strip",
+        "udf",
+        "valor"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "32edf27e05625641b39d5fc4e448becd5dcb6343136678d16b8a53f430be06f2",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_0d2d14",
+    "schema_version": 1,
+    "kind": "pyspark.udf",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 1,
+      "end_line": 5,
+      "symbol": "normaliza",
+      "snippet": "@udf(returnType=StringType())"
+    },
+    "measures": {},
+    "attrs": {
+      "udf_type": "python"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "32edf27e05625641b39d5fc4e448becd5dcb6343136678d16b8a53f430be06f2",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_6e9482",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-scores",
+      "job_run_id": "jr_py1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_py1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-002"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-002",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:14:22,908 ERROR [Executor task launch worker for task 88] executor.Executor: Python worker exited unexpectedly (crashed)"
+    },
+    "provenance": {
+      "artifact": "logs/etl-scores_jr_py1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

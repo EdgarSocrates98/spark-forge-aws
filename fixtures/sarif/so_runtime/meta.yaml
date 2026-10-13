@@ -1,0 +1,7 @@
+description: >-
+  So findings de job_run (benchmark de event log): SARIF valido com results vazio, e tudo no resumo como recusa `runtime`. Gate P1 dispara com o P0.
+origem:
+  - fixtures/bench/different_input_volume
+source_roots: [.]
+fail_on: P1
+category: fixture-runtime

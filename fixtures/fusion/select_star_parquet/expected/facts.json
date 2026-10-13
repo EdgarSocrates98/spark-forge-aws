@@ -1,0 +1,161 @@
+[
+  {
+    "id": "f_0efeb7",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "catalog.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "catalog.json",
+      "artifact_sha256": "40d78ef4ef5746b829ae6d920a9ef7dd956dc0c2088eab860a17d77a8941534a",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_b5745d",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "catalog.json",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "column_count": 3,
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "db.eventos",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "cliente_id": "bigint",
+        "valor": "double",
+        "dt": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "catalog.json",
+      "artifact_sha256": "40d78ef4ef5746b829ae6d920a9ef7dd956dc0c2088eab860a17d77a8941534a",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_0a4f23",
+    "schema_version": 1,
+    "kind": "fusion.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "enriched_count": 1,
+      "unmatched_projection_count": 0,
+      "unmatched_predicate_count": 0,
+      "tables_known": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  },
+  {
+    "id": "f_4549f5",
+    "schema_version": 1,
+    "kind": "sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "projection_count": 1,
+      "predicate_count": 0,
+      "unresolved_count": 0,
+      "statement_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "e57e662219753ee66e05a119f75e78b7c8a41a441318c6bea2d50ee023ea9e02",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_2f8afa",
+    "schema_version": 1,
+    "kind": "sql.projection",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "star": true,
+      "has_limit": false,
+      "table": "db.eventos",
+      "table_format_columnar": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "e57e662219753ee66e05a119f75e78b7c8a41a441318c6bea2d50ee023ea9e02",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_0a31ef",
+    "schema_version": 1,
+    "kind": "sql.projection.enriched",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "star": true,
+      "has_limit": false,
+      "table": "db.eventos",
+      "table_format_columnar": true,
+      "fused_from": [
+        "f_2f8afa",
+        "f_b5745d"
+      ]
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "",
+      "extractor": "fusion@0.1.0"
+    }
+  }
+]

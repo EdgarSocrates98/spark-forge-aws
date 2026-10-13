@@ -1,0 +1,25 @@
+{
+  "Defaults": {
+    "Application": "SampleApp",
+    "SubApplication": "SampleSubApp",
+    "RunAs": "USERNAME",
+    "Host": "HOST"
+  },
+  "AutomationAPISampleFlow": {
+    "Type": "Folder",
+    "Comment": "Code reviewed by John",
+    "CommandJob": {
+      "Type": "Job:Command",
+      "Command": "echo my 1st job"
+    },
+    "ScriptJob": {
+      "Type": "Job:Script",
+      "FilePath": "/opt/ctm/scripts",
+      "FileName": "carga.sh"
+    },
+    "Flow": {
+      "Type": "Flow",
+      "Sequence": ["CommandJob", "ScriptJob"]
+    }
+  }
+}

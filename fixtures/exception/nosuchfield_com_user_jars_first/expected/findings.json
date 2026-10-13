@@ -1,0 +1,71 @@
+[
+  {
+    "rule_id": "SF-ERR-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "NoSuchFieldError confirmado em runtime com JAR customizado à frente do classpath por --user-jars-first",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "signature_id": "ERR-GLUE-003"
+    },
+    "evidence": [
+      "f_13c34e",
+      "f_538993",
+      "f_19febb"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=6.0"
+    },
+    "explanation": "O job LANÇOU `NoSuchFieldError`, há um `.jar` customizado no diretório do job, e o `aws_glue_job` declara `--user-jars-first: true`. As três evidências juntas são o que a assinatura `ERR-GLUE-003` declara precisar.\n\n`--user-jars-first` põe os JARs do usuário À FRENTE do classpath do runtime. Quando o JAR customizado empacota o AWS SDK for Java 2.x numa versão anterior à 2.44.6 que o AWS Glue 6.0 traz, é o SDK antigo que vence -- e o runtime do Glue depende de classes, campos e métodos que aquele SDK não tem. O sintoma é campo, classe ou método faltando num pacote `software.amazon.awssdk`, e ele aparece SÓ com a flag ligada: sem ela o mesmo JAR convive com o runtime sem reclamar.\n\n**Esta regra NÃO afirma qual versão do SDK está empacotada dentro do JAR.** Isso não está no nome do arquivo e nenhum extrator a leu -- o que está medido é que existe JAR customizado, que a flag está ligada, e que a exceção aconteceu. Comparar o SDK empacotado contra 2.44.6 é o primeiro passo de `proposed_change`, e é o operador que o executa.",
+    "proposed_change": [
+      "Listar a versão do AWS SDK for Java 2.x empacotada dentro de cada JAR customizado e compará-la com a 2.44.6 que o Glue 6.0 traz -- esta é a medida que a regra não tem e que decide o resto.",
+      "Reconstruir o JAR contra o AWS SDK for Java 2.x 2.44.6 ou posterior, se ele precisa mesmo empacotar o SDK.",
+      "Ou parar de empacotar o SDK dentro do JAR e deixar o runtime fornecê-lo -- isso remove a razão de existir de `--user-jars-first`.",
+      "Ou remover `--user-jars-first` se ela foi ligada por um motivo que já não vale; confirmar antes qual dependência dependia da precedência, porque removê-la muda o classpath inteiro e não só o SDK."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Manter `--user-jars-first` e prender o runtime a uma versão mais velha de Glue para casar com o SDK empacotado adia a migração sem registrar por quê -- a dívida fica, e o motivo dela some.",
+      "Remover `--user-jars-first` muda a precedência de TODO o classpath, não só a do SDK. Alguma outra dependência do job pode ter sido a razão de a flag existir, e ela passa a perder para o runtime sem aviso.",
+      "Subir o SDK empacotado troca o comportamento das chamadas de serviço AWS que o JAR faz -- defaults de retry, paginação e assinatura mudaram entre linhas do 2.x."
+    ],
+    "tradeoffs": [
+      "Deixar o runtime fornecer o SDK elimina o conflito para sempre, ao custo de a versão passar a mudar quando a AWS mudar o runtime, sem o job pedir -- previsibilidade contra manutenção.",
+      "Empacotar e sombrear (`shade`) o SDK dentro do JAR mantém o controle de versão e evita o conflito de classpath, ao custo de um artefato maior e de um build mais complicado de manter."
+    ],
+    "validation": [
+      "Rodar o job no AWS Glue 6.0 com `--user-jars-first` AINDA ligado e o JAR reconstruído, e confirmar que o campo resolve -- rodar com a flag desligada testaria outro classpath, não o consertado.",
+      "Versão do AWS SDK efetivamente carregada em runtime, lida de dentro do job, contra a 2.44.6 do runtime -- o build declara a intenção, o classpath é o fato.",
+      "`tf.attribute` de `--user-jars-first` no run seguinte, para registrar se a flag sobreviveu à correção ou foi removida junto."
+    ],
+    "rollback": [
+      "Remover `--user-jars-first` para que o SDK do próprio runtime vença o classpath, e re-executar.",
+      "Reverter `--extra-jars` para o artefato anterior. É mudança de classpath, não de dado -- mas a saída parcial do run que falhou precisa ser descartada ou reconciliada à parte."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+        "retrieved": "2026-08-23",
+        "note": "Fonte declarada por `knowledge/errors/glue/sdk_v2_user_jars_first.json` (`ERR-GLUE-003`), com `last_verified: 2026-08-23`. Ela registra o AWS SDK for Java 2.44.6 que o Glue 6.0 empacota e o efeito de `--user-jars-first` sobre a precedência do classpath.\n"
+      }
+    ],
+    "action": {
+      "kind": "dependency.align_version_with_runtime",
+      "target": "job.extra_jars.sdk_version",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

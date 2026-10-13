@@ -1,0 +1,9 @@
+description: >-
+  Callsite da JVM (`save at Etl.scala:120`): o extrator nao resolve callsite nao-Python, e a linha e lida do nome do stage; com src/Etl.scala no repositorio, o finding sai na linha 120.
+origem:
+  - fixtures/cloudwatch_logs\fetch_failed_com_executor_perdido (modelo do finding de stage)
+  - fixtures/waste\ocioso_por_skew (modelo do finding de job_run)
+  - fixtures/bridge/collect_corroborado_pelo_stage (forma do callsite)
+source_roots: [src]
+fail_on: null
+category: null

@@ -1,0 +1,57 @@
+[
+  {
+    "rule_id": "SF-XACC-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "O recurso de origem que o resource link declara não resolveu, e a resposta é ambígua",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_curated.json",
+      "symbol": "curated",
+      "catalog_id": "111111111111"
+    },
+    "evidence": [
+      "f_ff80b4"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O link declara um recurso de origem, e a leitura dele respondeu `EntityNotFoundException`. Sob Lake Formation esse código é a MESMA resposta para recurso inexistente e para recurso a que o principal não tem permissão -- ausência e negação chegam pelo mesmo caminho.\nPor isso este achado não diz que o link está pendurado. Ele diz que as duas leituras seguem abertas, e que elas exigem consertos diferentes: um link órfão se conserta na conta consumidora, uma permissão faltante na conta de origem. `aws_error_code` no fact carrega o código verbatim, e `target_absence_is_ambiguous` marca que a distinção não foi medida.",
+    "proposed_change": [
+      "Repetir a leitura com um principal que comprovadamente tenha permissão na conta de ORIGEM -- se ela responder, o link está intacto e o que falta é permissão.",
+      "Conferir na conta de origem se o recurso que o link declara ainda existe com aquele nome, e se o compartilhamento do AWS RAM continua aceito."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar a resposta como \"o recurso não existe\" leva a recriar o link, conserto que não toca o caso em que o problema era permissão -- e o sintoma volta idêntico."
+    ],
+    "tradeoffs": [
+      "Coletar com um principal mais privilegiado desfaz a ambiguidade, e em troca a coleta deixa de rodar com a identidade que o job usa."
+    ],
+    "validation": [
+      "`aws glue get-table --catalog-id ORIGEM --database-name DB --name NOME` com um principal da conta de origem.",
+      "`aws ram get-resource-shares --resource-owner OTHER-ACCOUNTS` na conta consumidora, conferindo que o compartilhamento continua aceito."
+    ],
+    "rollback": [
+      "Não há estado aplicado -- este achado propõe uma medida, não uma mudança.\n"
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-10"
+      }
+    ],
+    "action": {
+      "kind": "catalog.resolve_link_target",
+      "target": "glue.resource_link",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

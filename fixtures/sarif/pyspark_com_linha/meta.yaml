@@ -1,0 +1,7 @@
+description: >-
+  Finding source_location com linha, analisado com `analyze pyspark --path jobs`: a uri do SARIF ganha o prefixo da raiz declarada, e o gate P0 sai 1.
+origem:
+  - fixtures/pyspark/action_in_loop
+source_roots: [jobs]
+fail_on: P0
+category: fixture-pyspark

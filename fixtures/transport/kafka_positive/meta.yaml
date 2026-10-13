@@ -1,0 +1,9 @@
+artifact: kafka
+expects_kinds:
+  - kafka.analyzed
+  - kafka.cluster
+  - kafka.config
+  - kafka.consumer_group
+  - kafka.lag
+  - kafka.partition
+  - kafka.topic

@@ -1,0 +1,24 @@
+name: check_recomputes_lineage
+proves: >
+  O alvo do check nao esta persistido e e reusado depois dele: o `count()` da
+  validacao paga o join com broadcast e a janela inteiros, e o `write` seguinte
+  paga tudo de novo.
+  O `dq.check` sai com attrs.target_persisted == false E
+  attrs.action_after_check == true -- os DOIS atributos juntos sao o positivo
+  de SF-DQ-003. Um sozinho nao prova nada: alvo nao
+  persistido sem reuso nao recomputa (e o caso de `validation_after_write`), e
+  reuso sobre alvo persistido nao recomputa (o de `validated_correctly`).
+  A validacao vem ANTES do write (position_vs_write == before_write), entao
+  SF-DQ-001 nao tem o que dizer aqui, e ha `dq.enforcement`, entao SF-DQ-002
+  tambem nao: o defeito desta fixture e so o custo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-003

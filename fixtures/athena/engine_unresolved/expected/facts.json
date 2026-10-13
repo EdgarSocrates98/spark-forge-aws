@@ -1,0 +1,117 @@
+[
+  {
+    "id": "f_0659dc",
+    "schema_version": 1,
+    "kind": "athena.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "workgroups.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "workgroup_count": 2,
+      "unresolved_count": 4
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "9b78d00b71caba97d6a0636069fad627beed3d6b1149e8325b7e4188997cacb2",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf3907",
+    "schema_version": 1,
+    "kind": "athena.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "workgroups.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "unparseable_engine_version",
+      "name": "preview-engine",
+      "effective_engine_version": "Athena engine version PREVIEW"
+    },
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "9b78d00b71caba97d6a0636069fad627beed3d6b1149e8325b7e4188997cacb2",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf3907",
+    "schema_version": 1,
+    "kind": "athena.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "workgroups.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_engine_version",
+      "name": "sem-bloco-de-engine"
+    },
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "9b78d00b71caba97d6a0636069fad627beed3d6b1149e8325b7e4188997cacb2",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf3907",
+    "schema_version": 1,
+    "kind": "athena.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "workgroups.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_workgroup_name"
+    },
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "9b78d00b71caba97d6a0636069fad627beed3d6b1149e8325b7e4188997cacb2",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf3907",
+    "schema_version": 1,
+    "kind": "athena.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "workgroups.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "workgroups[]"
+    },
+    "provenance": {
+      "artifact": "workgroups.json",
+      "artifact_sha256": "9b78d00b71caba97d6a0636069fad627beed3d6b1149e8325b7e4188997cacb2",
+      "extractor": "athena_workgroup@0.1.0"
+    }
+  }
+]

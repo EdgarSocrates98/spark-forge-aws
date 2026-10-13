@@ -1,0 +1,94 @@
+[
+  {
+    "id": "f_b70edf",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.serializer"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.serializer",
+      "value": "org.apache.spark.serializer.KryoSerializer",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "92e71eb1bb44b5dc5815c7911e2b3d9d622886c58dafdc25ccba613b92f0e2dc",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_91cc5e",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.sql.adaptive.enabled"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.adaptive.enabled",
+      "value": "true",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "92e71eb1bb44b5dc5815c7911e2b3d9d622886c58dafdc25ccba613b92f0e2dc",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d5ef06",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.sql.files.maxPartitionBytes"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.files.maxPartitionBytes",
+      "value": "134217728",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "92e71eb1bb44b5dc5815c7911e2b3d9d622886c58dafdc25ccba613b92f0e2dc",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea876c",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.sql.shuffle.partitions"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "92e71eb1bb44b5dc5815c7911e2b3d9d622886c58dafdc25ccba613b92f0e2dc",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

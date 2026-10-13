@@ -1,0 +1,20 @@
+name: retry_so_no_step_functions
+proves: >
+  Uma fronteira de SF-SFN-004: o vinculo existe, o retrier tem efetivo 2 e o job
+  declara `max_retries = 0`. Uma camada so, e a regra calada. E o golden que muda se
+  alguem trocar `glue_max_retries > 0` por `>= 0`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.glue_job_link
+  - sfn.state_machine
+  - sfn.task
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: [SF-SFN-002]

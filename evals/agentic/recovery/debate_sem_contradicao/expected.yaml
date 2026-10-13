@@ -1,0 +1,4 @@
+schema_version: 1
+action: stop
+terminal: true
+reason_prefix: "stop_gate:stop_no_gain"

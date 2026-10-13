@@ -1,0 +1,6 @@
+{
+  "table": {"database": "quality", "name": "unknown_runtime"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "kms": {"required": true}
+}

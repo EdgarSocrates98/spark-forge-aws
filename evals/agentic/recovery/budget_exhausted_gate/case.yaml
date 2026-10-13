@@ -1,0 +1,13 @@
+schema_version: 1
+case_id: recovery-budget-exhausted-gate
+failure: transient_host
+attempt: 0
+strategy_fingerprint: bg-001
+history: []
+profile: economy
+risk: low
+gain_state:
+  pending_action: agent
+  evidence_gaps: 3
+  novel_evidence_potential: true
+  remaining_budget: 0

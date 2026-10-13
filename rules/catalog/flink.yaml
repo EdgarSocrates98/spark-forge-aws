@@ -1,0 +1,94 @@
+# Regras de Flink leem somente evidência observada no dump salvo.
+# Ausência de métrica fica em `*.unresolved` e não vira finding.
+catalog_version: 1
+schema_version: 1
+area: SF-FLINK
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-FLINK-001
+    category: streaming
+    title: Falha de checkpoint observada no job Flink
+    requires_facts: [flink.checkpoint]
+    when:
+      all:
+        - fact: flink.checkpoint
+          where: {attrs.status: FAILED}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump contém um checkpoint cujo status observado é FAILED. Isso prova
+      falha naquele checkpoint, mas não identifica sozinho causa, impacto no
+      resultado ou estratégia de recuperação.
+    proposed_change:
+      - Correlacionar o checkpoint com logs do job, duração, state size e causa registrada.
+      - Confirmar a política de restart, externalização e replay antes de alterar a configuração.
+      - Reexecutar uma amostra controlada e validar o resultado funcional.
+    action:
+      kind: measurement.localize_divergence
+      target: flink.checkpoint.failure
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    risks:
+      - Reiniciar ou trocar checkpoint pode alterar o ponto de retomada e gerar replay.
+      - Remover checkpoint externalizado pode eliminar evidência de recuperação.
+    tradeoffs:
+      - Retenção maior de checkpoints aumenta armazenamento e operação.
+    validation:
+      - Confirmar causa e timestamp no artefato de execução correspondente.
+      - Testar parada, retomada e replay com sink idempotente.
+      - Comparar contagem, chaves, schema e agregados do resultado.
+    rollback:
+      - Reverter a alteração de configuração e preservar o checkpoint anterior para replay controlado.
+    sources:
+      - {url: "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/state/checkpoints/", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/flink-streaming.md}
+
+  - id: SF-FLINK-002
+    category: streaming
+    title: Backpressure observado em operador Flink
+    requires_facts: [flink.operator]
+    when:
+      any:
+        - fact: flink.operator
+          expr: "measures.backpressured_ratio > 0"
+        - fact: flink.operator
+          expr: "measures.backpressured_ms > 0"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump traz medida positiva de tempo ou razão de backpressure para um
+      operador. A observação não define limiar de incidente nem prova causa
+      raiz; é necessário correlacionar throughput, capacidade, downstream e
+      janela da medição.
+    proposed_change:
+      - Comparar a série de backpressure com throughput, busy time, idle time e backlog.
+      - Localizar o operador dominante e a dependência downstream antes de dimensionar capacidade.
+      - Alterar uma única variável e validar o resultado funcional e a latência observada.
+    action:
+      kind: measurement.collect_baseline
+      target: flink.operator.backpressure
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    risks:
+      - Tratar uma amostra isolada como incidente pode provocar escala sem causa comprovada.
+      - Alterar paralelismo pode mudar ordenação, estado e custo operacional.
+    tradeoffs:
+      - Coleta mais frequente de métricas aumenta observabilidade e retenção.
+    validation:
+      - Confirmar unidade, janela e operador de cada medida.
+      - Comparar backlog, throughput e duração antes e depois de uma variável.
+      - Executar proxies de contagem, schema, chaves e agregados.
+    rollback:
+      - Reverter a única alteração experimental e manter o baseline e os dumps.
+    sources:
+      - {url: "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/monitoring/back_pressure/", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/flink-streaming.md}

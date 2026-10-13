@@ -1,0 +1,7 @@
+{
+  "skill_name": "review-event-driven-architecture",
+  "evals": [
+    {"id": "delivery", "prompt": "Review retry and DLQ declarations.", "expected_output": "separate configuration from delivery evidence.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "delivery"]},
+    {"id": "blind-spot", "prompt": "Review event architecture without execution log.", "expected_output": "preserve unresolved and request temporal evidence.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "temporal"]}
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "assumptions": {
+    "latency_target_ms": 5000,
+    "region": "unknown"
+  }
+}

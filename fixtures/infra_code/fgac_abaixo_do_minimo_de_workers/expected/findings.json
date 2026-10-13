@@ -1,0 +1,69 @@
+[
+  {
+    "rule_id": "SF-LF-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Job com controle de acesso fino abaixo do mínimo de quatro workers",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.etl_dois_workers"
+    },
+    "evidence": [
+      "f_b5e696",
+      "f_20eb51"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "A AWS declara: *\"Jobs with FGAC require a minimum of 4 workers: one user driver, one system driver, one system executor, and one standby user executor.\"* É o dobro do mínimo de 2 de um job Glue comum, e não é recomendação de dimensionamento: é o piso da alocação que o modelo exige.\n\n**Sob controle de acesso fino o job deixa de ter um driver e N executores.** A alocação passa a ter quatro papéis, e dois deles são drivers. Um job declarado com menos de quatro workers não tem como preencher os quatro papéis, e o que acontece com ele não é escolha de quem escreveu o Terraform.\n\nEste é um achado que se lê **antes de qualquer execução** — está no Terraform, e a severidade é P0 pela mesma razão de `SF-LF-001` e `SF-LF-002`: não é risco de degradação, é configuração que a documentação declara insuficiente. Ver `knowledge/glue/lakeformation-fgac.md` §1 e §3.",
+    "proposed_change": [
+      "Subir `number_of_workers` para no mínimo 4. Este é um dos raros casos em que o número vem da documentação da AWS e não de medição — é piso declarado, não alvo de tuning.",
+      "Reler o dimensionamento inteiro depois de subir, e não só o mínimo. Sob controle de acesso fino, de N workers pagos dois são drivers e uma fração é reservada para user executors, então **a contagem de workers deixa de ser comparável com a do mesmo job sem FGAC**. Comparar runtime antes e depois de ligar FGAC sem levar isso em conta atribui ao controle de acesso uma lentidão que é, em parte, capacidade que mudou de papel.",
+      "A proporção reservada para user executors é ajustável por `--conf spark.dynamicAllocation.maxExecutorsRatio`, e mexer nela é decisão separada — o mínimo de quatro vale de qualquer forma."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir o número de workers sobe o custo do run, e este achado **não** estima quanto: `dpu_seconds` do run que não aconteceu não existe. O que ele afirma é que abaixo de quatro a configuração está fora do que a AWS declara suportado.",
+      "Quatro é o PISO, não o dimensionamento. Um job que precisava de dez workers sem FGAC não passa a caber em quatro por ter subido para o mínimo.",
+      "A regra lê `number_of_workers` do Terraform. Um job que declare `max_capacity` em vez de `number_of_workers`, ou que receba a contagem por variável interpolada, não é visto — valor interpolado vira `tf.unresolved`, e a regra fica calada."
+    ],
+    "tradeoffs": [
+      "Controle de acesso fino custa capacidade em papéis que não rodam trabalho do usuário. Quando o dado não precisa de controle de linha, coluna ou célula, Full Table Access dispensa o system driver e os system executors — mas os dois modelos não coexistem no mesmo job."
+    ],
+    "validation": [
+      "O job completa a execução no runtime alvo. Submissão bem-sucedida não é validação: a alocação dos quatro papéis acontece na execução.",
+      "Contagem de linhas na saída, antes e depois, sobre o mesmo recorte de entrada — mudança de capacidade não deve mover o resultado, e provar que não moveu é parte da entrega.",
+      "Nenhum eixo de dado é exigido além do acima, porque a mudança é de capacidade e não de conteúdo. Declarar isso é parte da validação."
+    ],
+    "rollback": [
+      "Restaurar `number_of_workers` e reaplicar. É rollback de configuração, não de dado.",
+      "Rollback que devolva o job para menos de quatro workers o devolve ao estado que a AWS declara insuficiente."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "capacity.investigate_sizing",
+      "target": "glue.number_of_workers",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

@@ -1,0 +1,6 @@
+name: compare_flip
+mode: compare
+proves: >
+  AT-016: q-mcp cai de 3/3 para 1/3 (pass->mixed) e q-abst de 3/3 para 2/3
+  (uma false_certainty). O compare mostra os k/N crus e a transicao, e nenhum
+  rotulo agregado de melhorou ou piorou.

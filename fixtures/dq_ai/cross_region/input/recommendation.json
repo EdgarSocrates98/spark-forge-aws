@@ -1,0 +1,9 @@
+{
+  "table": {"database": "quality", "name": "events"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "source_region": "us-east-1",
+  "inference_region": "eu-west-1",
+  "kms": {"status": "sufficient"},
+  "human_review_status": "declared"
+}

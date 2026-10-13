@@ -1,0 +1,21 @@
+name: janela_no_teto_de_datas
+proves: >
+  O NEGATIVO de `SF-CTM-002` e a metade que PASSA da fronteira de `SF-CTM-003`,
+  no mesmo artefato e de proposito.
+  Como negativo de `SF-CTM-002`: as tres opcoes estao anuladas com "NONE", na
+  forma exata que o exemplo da propria pagina publica -- lista de um item, e nao
+  escalar. E a terceira das tres fixtures que a `J-1` exige.
+  Como fronteira de `SF-CTM-003`: sao EXATAMENTE 400 datas. A fonte diz "You can
+  list up to 400 dates", e "up to 400" INCLUI 400 -- entao aqui a regra e calada.
+  O par e `janela_acima_do_teto_de_datas`, com 401. As duas juntas provam que o
+  limiar e estritamente maior e nao maior-ou-igual; uma regra escrita com
+  maior-ou-igual passaria despercebida sem esta metade.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.version_declared
+expects_rules: []

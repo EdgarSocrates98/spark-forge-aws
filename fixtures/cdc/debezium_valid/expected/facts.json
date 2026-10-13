@@ -1,0 +1,85 @@
+[
+  {
+    "id": "f_bf733d",
+    "schema_version": 1,
+    "kind": "debezium.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "debezium"
+    },
+    "provenance": {
+      "artifact": "connector.json",
+      "artifact_sha256": "870f31f769c7223910f8fae5a97881ed62d27c33fb443172687bb84399594005",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_e9b61b",
+    "schema_version": 1,
+    "kind": "debezium.connector",
+    "subject": {
+      "type": "source_location",
+      "file": "connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-connector",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-connector",
+      "connector_class": "io.debezium.connector.postgresql.PostgresConnector",
+      "database": "orders",
+      "snapshot_mode": "initial",
+      "topic_prefix": "orders",
+      "heartbeat": "10000",
+      "schema_history": "io.debezium.storage.kafka.history.KafkaSchemaHistory",
+      "delete_handling": "rewrite",
+      "tombstones_on_delete": true,
+      "transaction_metadata": true,
+      "key_converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value_converter": "io.confluent.connect.avro.AvroConverter",
+      "error_tolerance": "none"
+    },
+    "provenance": {
+      "artifact": "connector.json",
+      "artifact_sha256": "870f31f769c7223910f8fae5a97881ed62d27c33fb443172687bb84399594005",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_10010f",
+    "schema_version": 1,
+    "kind": "debezium.status",
+    "subject": {
+      "type": "source_location",
+      "file": "connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "task_count": 1
+    },
+    "attrs": {
+      "connector_state": "RUNNING",
+      "task_states": [
+        "RUNNING"
+      ]
+    },
+    "provenance": {
+      "artifact": "connector.json",
+      "artifact_sha256": "870f31f769c7223910f8fae5a97881ed62d27c33fb443172687bb84399594005",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

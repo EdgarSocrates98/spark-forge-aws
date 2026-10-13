@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_de5ba5",
+    "schema_version": 1,
+    "kind": "glue.utilization.summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "worker_utilization_p50": 0.82,
+      "memory_used_pct_p95": 71.0,
+      "disk_used_pct_p95": 44.0,
+      "skew_p95_over_p50": 1.3
+    },
+    "attrs": {
+      "utilization_metric": "glue.driver.workerUtilization"
+    },
+    "provenance": {
+      "extractor": "utilization@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

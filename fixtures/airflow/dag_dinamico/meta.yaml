@@ -1,0 +1,12 @@
+name: dag_dinamico
+proves: >
+  O ponto cego contado. O DAG e o operador nascem dentro de um `for`, e o extrator NAO
+  executa o arquivo para descobrir quantos saem: os dois viram `af.unresolved` com
+  `dag_dinamico`, e nenhum `af.dag` nem `af.task` e afirmado. Nenhum achado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.unresolved]
+expects_rules: []

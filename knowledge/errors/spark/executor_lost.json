@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-010",
+  "signature": "ExecutorLostFailure",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "A stage retries and the task set reports an executor that stopped answering",
+    "The failure repeats on different executors as the stage is retried",
+    "Other stages of the same run complete normally"
+  ],
+  "likely_causes": [
+    "The executor process died -- memory outside the heap, or the container manager killed it",
+    "The executor was removed by dynamic allocation while a task was still assigned to it",
+    "The node hosting the executor was reclaimed, which is the expected behaviour on interruptible capacity"
+  ],
+  "evidence_required": [
+    "spark.executor.lost"
+  ],
+  "diagnostic_steps": [
+    "Read the reason the event log records for the loss: a killed container, an exit code and a decommission are three different stories under the same message",
+    "Compare how many executors were lost against how many the run had: losing one of forty is not the same event as losing most of them",
+    "Read whether the stage that failed is the same one every time, which separates a data-shaped cause from an infrastructure-shaped one"
+  ],
+  "fixes": [
+    "Treat the memory outside the heap when the reason is a killed container -- it is a different budget from the heap",
+    "Read the purchasing option of the capacity when losses are spread and the reason is decommission: interruptible capacity being reclaimed is not a defect",
+    "Reduce the data a single task carries when the same stage dies repeatedly"
+  ],
+  "unsafe_fixes": [
+    "Raising the number of task retries so the run finishes: it hides the loss and pays for it in wall clock every time",
+    "Raising executor memory before reading the reason -- a decommissioned node does not care how much memory the executor had"
+  ],
+  "verification": "Re-run and compare the number of executors lost against the previous run, over the same input volume. A run that completes with the same number of losses did not fix the cause",
+  "rollback": "Revert the capacity or memory change. If the treatment changed data distribution, the output has to be compared before the previous version is discarded",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

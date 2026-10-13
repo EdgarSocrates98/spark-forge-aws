@@ -1,0 +1,7 @@
+# Pack VALIDO para o loader e vermelho no `pack check`: a regra nunca dispara
+# no fixture que diz prova-la.
+pack:
+  id: morta-platform
+  version: 1.0.0
+  prefix: MORTA
+  core: ">=0.5"

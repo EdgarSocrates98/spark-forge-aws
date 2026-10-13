@@ -1,0 +1,6 @@
+name: shuffle_medido_com_aqe
+runtime:
+  glue: '5.0'
+proves: '640 MiB de shuffle medido sobre o alvo de 64 MiB que o AQE persegue: dez particoes.
+  Glue 5.0 roda Spark 3.5.4, onde AQE e default -- entao o numero e o PISO de paralelismo
+  inicial, e a explicacao diz isso.'

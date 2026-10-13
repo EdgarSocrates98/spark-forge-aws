@@ -1,0 +1,58 @@
+[
+  {
+    "id": "f_1740dd",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 13,
+      "control_object_count": 1,
+      "group_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/pedidos/",
+      "truncated": false
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "acbecae33262643988127a8c3de997ddb2aa3f738bb8824da7031885f4c064f6",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_6d795d",
+    "schema_version": 1,
+    "kind": "s3.prefix_summary",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/curated/pedidos/ [parquet/snappy]"
+    },
+    "measures": {
+      "file_count": 12,
+      "total_bytes": 3221293056,
+      "avg_file_bytes": 268441088.0,
+      "min_file_bytes": 268435456,
+      "p50_file_bytes": 268441600,
+      "p95_file_bytes": 268446720,
+      "max_file_bytes": 268446720
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/pedidos/",
+      "format": "parquet",
+      "compression": "snappy"
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "acbecae33262643988127a8c3de997ddb2aa3f738bb8824da7031885f4c064f6",
+      "extractor": "s3_listing@0.1.0"
+    }
+  }
+]

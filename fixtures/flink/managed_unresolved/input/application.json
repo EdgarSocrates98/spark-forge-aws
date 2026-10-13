@@ -1,0 +1,9 @@
+{
+  "application": {
+    "application_name": "metrics-missing",
+    "status": "RUNNING"
+  },
+  "configuration": {
+    "checkpointing_enabled": true
+  }
+}

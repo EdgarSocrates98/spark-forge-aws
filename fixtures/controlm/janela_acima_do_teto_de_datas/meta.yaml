@@ -1,0 +1,23 @@
+name: janela_acima_do_teto_de_datas
+proves: >
+  O POSITIVO de `SF-CTM-003`, um degrau acima do teto: 401 datas contra as 400
+  que a fonte permite. As tres opcoes exclusivas estao anuladas, entao
+  `SF-CTM-002` NAO dispara aqui -- o eixo medido e um so, e um achado a mais
+  significaria contaminacao entre as duas regras de janela.
+  UMA CONSEQUENCIA DO FORMATO, e ela explica a forma deste arquivo: "MM/DD" nao
+  carrega ano, entao existem no maximo 366 datas DISTINTAS. O teto de 400 esta
+  acima disso, e portanto QUALQUER lista que o exceda repete datas por
+  construcao. A repeticao aqui nao e desleixo da fixture: e a unica forma de
+  passar de 400 no formato que a fonte publica. Nenhuma regra a julga -- a
+  pagina nao declara que repetir seja defeito, e inventa-lo seria o sexto defeito
+  sem fonte.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-003

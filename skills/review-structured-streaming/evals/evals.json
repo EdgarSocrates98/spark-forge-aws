@@ -1,0 +1,17 @@
+{
+  "skill_name": "review-structured-streaming",
+  "evals": [
+    {
+      "id": "progress-series",
+      "prompt": "Review a Structured Streaming source file and two progress records.",
+      "expected_output": "Separate declared configuration from observed temporal evidence and preserve unresolved limits.",
+      "expectations": ["fact_id", "rule_id", "unresolved", "runtime", "validation", "rollback"]
+    },
+    {
+      "id": "checkpoint-semantics",
+      "prompt": "Assess a query with checkpoint and sink metadata but no functional replay result.",
+      "expected_output": "Do not claim end-to-end exactly-once; name the functional validation artifact required.",
+      "expectations": ["fact_id", "checkpoint", "exactly-once", "validation", "rollback", "unresolved"]
+    }
+  ]
+}

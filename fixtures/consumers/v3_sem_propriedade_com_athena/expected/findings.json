@@ -1,0 +1,68 @@
+[
+  {
+    "rule_id": "SF-ENV-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tabela Iceberg em format V3 com consumo por Athena",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "evidence": [
+      "f_3d102c",
+      "f_632d90"
+    ],
+    "measured": {
+      "version": 3
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.1",
+      "iceberg": ">=1.10.0"
+    },
+    "explanation": "AWS Glue 5.1 pode escrever tabelas Iceberg format version 3. Amazon Athena não lê V3. O modo de falha é perverso: a migração de runtime passa, o job roda, e dias depois as queries e dashboards em Athena quebram, com a causa a semanas de distância no log de mudanças. Ver knowledge/cross-service-constraints.md secao 1.",
+    "proposed_change": [
+      "Escrever a tabela em format version 2. Fixar apenas a table property `format-version` NAO basta: o `format_version` do metadata e o que a engine le, e a propriedade pode divergir dele -- `iceberg.format_version` reporta os dois lado a lado com `attrs.diverges`.\n",
+      "Ou permanecer em Glue 5.0 até que Athena suporte V3.",
+      "Inventariar todos os consumidores da tabela antes de qualquer mudança de format version."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fixar V2 renuncia às capacidades novas do V3, incluindo deletion vectors e row lineage."
+    ],
+    "tradeoffs": [
+      "V3 traz ganhos reais em merge-on-read; o custo é perder o consumo por Athena."
+    ],
+    "validation": [
+      "format-version confirmado nas table properties.",
+      "Query de smoke test em Athena sobre a tabela, executada com sucesso.",
+      "Inventário de consumidores documentado."
+    ],
+    "rollback": [
+      "Reverter format-version não é trivial após escritas em V3. Verificar a documentação da versão de Iceberg em uso antes de assumir que é reversível, e tratar a mudança para V3 como decisão de ida.\n"
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
+        "retrieved": "2026-07-29"
+      }
+    ],
+    "action": {
+      "kind": "storage.change_storage_format",
+      "target": "iceberg.table.format_version",
+      "direction": "replace",
+      "requires_absent": [
+        "env.unresolved"
+      ],
+      "moves": [],
+      "depends_on": [
+        "SF-ENV-001"
+      ]
+    }
+  }
+]

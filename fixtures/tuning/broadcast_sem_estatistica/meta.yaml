@@ -1,0 +1,4 @@
+name: broadcast_sem_estatistica
+runtime:
+  glue: '5.0'
+proves: 'Os dois lados com a estimativa default do Spark (8.0 EiB): sem estatistica, a estimativa nao diz nada, e o threshold sai recusado por `estimativa_sem_estatistica` com o `ANALYZE TABLE` que a destrava, em vez de virar proposta.'

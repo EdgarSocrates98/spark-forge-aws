@@ -1,0 +1,23 @@
+[
+  {
+    "kind": "parquet.row_group",
+    "subject": {"type": "table", "symbol": "s3://bucket-sintetico/pedidos/part-0.parquet", "row_group": 0},
+    "measures": {"num_rows": 1000000.0, "total_byte_size": 268435456.0, "num_columns": 4.0},
+    "attrs": {"prefix": "s3://bucket-sintetico/pedidos/", "total_compressed_bytes": 100663296},
+    "provenance": {"extractor": "parquet_footer@0.1.0", "artifact": "footer.json"}
+  },
+  {
+    "kind": "parquet.row_group",
+    "subject": {"type": "table", "symbol": "s3://bucket-sintetico/pedidos/part-0.parquet", "row_group": 1},
+    "measures": {"num_rows": 1000000.0, "total_byte_size": 268435456.0, "num_columns": 4.0},
+    "attrs": {"prefix": "s3://bucket-sintetico/pedidos/", "total_compressed_bytes": 134217728},
+    "provenance": {"extractor": "parquet_footer@0.1.0", "artifact": "footer.json"}
+  },
+  {
+    "kind": "parquet.row_group",
+    "subject": {"type": "table", "symbol": "s3://bucket-sintetico/pedidos/part-1.parquet", "row_group": 0},
+    "measures": {"num_rows": 1000000.0, "total_byte_size": 268435456.0, "num_columns": 4.0},
+    "attrs": {"prefix": "s3://bucket-sintetico/pedidos/", "total_compressed_bytes": 117440512},
+    "provenance": {"extractor": "parquet_footer@0.1.0", "artifact": "footer.json"}
+  }
+]

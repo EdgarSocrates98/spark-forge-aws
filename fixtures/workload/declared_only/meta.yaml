@@ -1,0 +1,17 @@
+name: declared_only
+job_name: etl_pedidos_diario
+job_run_id: jr_004
+proves: >
+  `workload.yaml` presente e NENHUM fact de medicao (`input/facts.json` e a
+  lista vazia): todo eixo que dependeria de artefato medido sai `unknown`
+  com o comando que o produz, e so os dois eixos DECLARADOS respondem.
+  `sla_class` sai `declared` -- nunca `measured` -- a partir de
+  `sla_minutes: 45`. `primary_input_class` sai `unknown` com
+  `missing: declared_source_not_observed`, porque sem scan nenhum nao ha
+  como casar a fonte declarada com nada medido.
+
+  O `workload.yaml` tambem declara o mesmo job DUAS vezes (a segunda com
+  `sla_minutes` e `primary_source` diferentes), de proposito: a primeira
+  declaracao vale, a segunda vira `workload.unresolved` com
+  `reason: job_declared_twice` -- e e este fixture, nao um setimo cenario,
+  que da ao extrator declarado a fixture que o exercita.

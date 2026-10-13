@@ -1,0 +1,7 @@
+{
+  "stream_name": "events",
+  "stream_mode": "ON_DEMAND",
+  "status": "ACTIVE",
+  "shards": [{"shard_id": "shardId-000", "iterator_age_ms": 1200, "incoming_bytes": 100, "record_count": 3}],
+  "metrics": [{"name": "GetRecords.IteratorAgeMilliseconds", "value": 1200, "unit": "Milliseconds"}]
+}

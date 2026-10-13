@@ -1,0 +1,4 @@
+description: >-
+  Conferida por hash, sem `changed_at`: nada mudou, e o radar devolve a lista
+  vazia com as contagens do lock -- o estado real do lock em 2026-09-13.
+args: []

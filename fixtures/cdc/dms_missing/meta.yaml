@@ -1,0 +1,5 @@
+artifact: dms
+expects_kinds:
+  - dms.analyzed
+  - dms.task
+  - dms.unresolved

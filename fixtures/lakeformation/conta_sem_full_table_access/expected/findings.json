@@ -1,0 +1,68 @@
+[
+  {
+    "rule_id": "SF-LF-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Full Table Access configurado no job, e a conta não permite acesso por query engine de terceiro",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 24,
+      "symbol": "aws_glue_job.etl_fta#spark.hadoop.fs.s3.credentialsResolverClass"
+    },
+    "evidence": [
+      "f_d37b52",
+      "f_b2f052"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "O job pede que o acesso ao S3 use a credencial que o Lake Formation vende, e a conta **não permite** que ela seja vendida para query engine de terceiro. `AllowFullTableExternalDataAccess` está desligado.\n\n**Este é o passo 1 do procedimento da AWS, e ele precede qualquer concessão.** A documentação de Full Table Access o descreve como *\"allow third-party query engines to access data without the IAM session tag validation\"*, e é configuração de **conta** — nenhum artefato do job revela o estado dele, e nenhuma permissão concedida na tabela o compensa.\n\n**É por isso que este achado é `confirmed` e P0:** não é risco nem configuração discutível. As duas metades foram medidas — o job pediu, a conta recusa — e a operação não vai acontecer enquanto as duas continuarem assim.\n\nVer `knowledge/glue/lakeformation-fgac.md` §5.",
+    "proposed_change": [
+      "Habilitar a integração de aplicação para full table access na conta que detém o catálogo, seguindo o passo 1 da documentação da AWS. É decisão de plataforma, não de job.",
+      "Ou remover a configuração de Full Table Access do job, se o modelo pretendido era outro. As chaves de credencial do Lake Formation não ligam nada sem o passo de conta, e mantê-las declaradas faz o próximo leitor acreditar que o caminho está ativo.",
+      "Conferir, antes de qualquer uma das duas, se as tabelas que o job lê têm regra de linha, coluna ou célula: com regra de FGAC, o caminho é FGAC e não FTA, e sob FTA um job que referencia tabela com regra de FGAC **falha**."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Habilitar a integração de conta muda o que **toda** a conta permite, não só este job: ela é o que autoriza query engine de terceiro a receber credencial do Lake Formation. É decisão de governança, e precisa de dono declarado.",
+      "A regra afirma que o job PEDIU e a conta RECUSA. Ela **não** afirma que habilitar a integração faz a operação passar — grant, policy de IAM e filesystem continuam sendo condições próprias, e cada uma tem regra própria nesta área.",
+      "O artefato de data lake settings é de uma conta. Num cenário cross-account, é o settings da conta que detém o **catálogo** que decide, e coletar o da conta errada produz um achado sobre a conta errada."
+    ],
+    "tradeoffs": [
+      "A integração de conta afrouxa a validação de session tag do IAM para engines de terceiro. É o preço de usar Full Table Access, e quem decide pagá-lo é quem responde pela governança do dado."
+    ],
+    "validation": [
+      "Uma leitura de controle sobre tabela **registrada**, com o runtime role SEM permissão S3 direta no caminho: é o único teste que prova que a credencial do Lake Formation está sendo vendida, porque um role com permissão ampla passa nos dois casos.",
+      "Contagem de linhas no destino antes e depois, sobre o mesmo recorte de entrada.",
+      "O `data_lake_settings` recoletado, e não o lembrado: o passo de conta é alterável por fora do job, e o que vale é a resposta de agora."
+    ],
+    "rollback": [
+      "Desabilitar a integração de conta reverte para toda a conta, e não só para este job. Se outros engines passaram a depender dela no intervalo, o rollback os quebra junto."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/full-table-credential-vending.html",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.account_integration",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

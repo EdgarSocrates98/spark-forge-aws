@@ -1,0 +1,26 @@
+name: no_observability_multi_job
+proves: >
+  Prova decisiva contra o defeito de mascaramento por `absent` sem
+  `same_subject` que `no_observability` sozinha nao consegue provar: tres
+  `aws_glue_job` no mesmo arquivo, um configurado corretamente
+  (--enable-spark-ui e --spark-event-logs-path) e dois sem nenhum dos dois.
+  Antes do conserto em `a038a46`, `absent: tf.observability.spark_ui`
+  avaliava contra a lista inteira de facts do arquivo -- bastava o job
+  correto emitir `tf.observability.spark_ui` uma vez para a regra nao
+  disparar para NENHUM dos dois ofensores, e o relatorio diria "nenhum
+  problema de observabilidade" sobre um arquivo com dois jobs indiagnosticaveis.
+  Com `same_subject: true`, cada job e julgado pelos seus proprios facts:
+  o job correto nunca e acusado, e cada ofensor produz o seu proprio finding,
+  ancorado ao seu proprio symbol.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-GLUE-002

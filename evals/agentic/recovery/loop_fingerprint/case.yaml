@@ -1,0 +1,8 @@
+schema_version: 1
+case_id: recovery-loop-fingerprint
+failure: transient_host
+attempt: 0
+strategy_fingerprint: loop-aa
+history: [loop-aa]
+profile: economy
+risk: low

@@ -1,0 +1,26 @@
+name: plan_com_chave_declarada
+proves: >
+  A outra metade de `plan_sem_chave`, e o unico lugar do corpus onde a
+  PROCEDENCIA do eixo de chaves fica visivel: o check
+  `key:pedido_id+dt` sai com `origin: "declared"` e `derived_from: []`,
+  ao lado dos quatro derivados, que saem com `origin: "derived"` e o
+  `fact_id` de onde vieram. Sem esse contraste no golden a procedencia
+  mentiria -- declarado e derivado ficariam com a mesma cara, e um plano
+  que afirma o que o operador disse pareceria plano que o motor derivou.
+  `undeclared_axes` sai VAZIO, porque os quatro eixos foram cobertos.
+  A virgula do `--key pedido_id,dt` faz chave COMPOSTA, uma so de duas
+  colunas -- nao duas chaves --, e o nome do check preserva isso com o
+  `+`. E a chave declarada NAO e conferida contra o schema do catalogo
+  (D-4c-8): a afirmacao e do operador, e julga-la seria SF-DQ. Aqui as
+  duas colunas por acaso existem; se nao existissem, o plano sairia igual.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+funcval:
+  keys:
+    - pedido_id,dt
+expects_kinds:
+  - funcval.plan
+expects_rules: []

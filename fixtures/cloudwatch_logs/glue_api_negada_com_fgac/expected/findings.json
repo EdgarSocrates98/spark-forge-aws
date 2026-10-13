@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-ERR-016",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "API do Glue negada num job com controle de acesso -- é o plano de IAM, e não o de concessão",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "curated-fato",
+      "job_run_id": "jr_gapi1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_gapi1",
+      "event": 0,
+      "signature_id": "ERR-LF-004"
+    },
+    "evidence": [
+      "f_d7d953",
+      "f_9daedd"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A negação nomeia uma ação da API do Glue, não uma do Lake Formation, e o job declara modelo de acesso do Lake Formation. **São dois planos de autorização, e falhar em qualquer um derruba a operação.**\n\nA documentação da AWS é explícita: ter a permissão do Lake Formation para acessar a tabela no Data Catalog não salva uma operação que não tem a permissão de IAM sobre a operação de API do Glue. Concessão do Lake Formation governa o recurso e o dado; IAM governa a chamada.\n\n**É por isso que \"eu já dei SELECT\" não é resposta para este achado.** O plano que falhou é o outro, e acrescentar concessão de dado não muda autorização de API. Ver `knowledge/glue/lakeformation-fgac.md` §1.",
+    "proposed_change": [
+      "Conceder ao runtime role as ações da API do Glue que a operação usa, sobre os três ARNs que o exemplo da AWS nomeia: o catálogo, o banco e a tabela. Um ARN que não cobre o recurso resolvido produz exatamente esta negação.",
+      "Quando a tabela é de outra conta, ler a resource policy do Glue da conta produtora e o resource link na conta consumidora. A documentação exige que o resource link tenha **o mesmo nome** do recurso na conta de origem.",
+      "Não conceder a permissão do Lake Formation que \"parece faltar\": o plano que falhou é o de IAM."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Conceder toda ação do Glue sobre todo recurso faz a resolução passar autorizando mutação de catálogo que o job nunca precisou.",
+      "Mexer na resource policy do Glue da conta produtora afeta **todo** consumidor daquele catálogo, e não só este job.",
+      "A regra afirma que a negação nomeou uma ação do Glue num job com modelo de acesso declarado. Ela **não** decide qual das três causas prováveis é a verdadeira -- policy do role, ARN que não cobre, ou resource policy da outra conta --, porque nenhuma delas entra em artefato coletado."
+    ],
+    "tradeoffs": [
+      "Restringir por ARN é mais seguro e mais frágil: cada banco ou tabela nova exige a policy ser revisitada. Conceder por curinga é o oposto nos dois eixos."
+    ],
+    "validation": [
+      "Reexecutar e confirmar que a tabela resolve.",
+      "Executar com um principal que **não** tem a concessão de dado e confirmar que ele continua sendo recusado: o conserto de IAM não pode ter alargado o plano de dado, e este é o teste que separa os dois."
+    ],
+    "rollback": [
+      "Remover os statements de IAM acrescentados.",
+      "Alteração de resource policy na conta produtora não é rollback deste job -- exige inventário de quem mais depende dela."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/lakeformation/glue_api_denied_under_lf.json` (`ERR-LF-004`). É desta página que sai a separação entre os dois planos de autorização e a policy de exemplo com os três ARNs.\n"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "iam.glue.catalog_api",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

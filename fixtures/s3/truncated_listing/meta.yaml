@@ -1,0 +1,18 @@
+name: truncated_listing
+proves: >
+  `IsTruncated: true` com 1000 objetos de 1 MB. Se o extrator contasse a
+  pagina, SF-PQ-001 dispararia -- media de 1 MB, contagem de 1000 -- sobre uma
+  amostra de um prefixo que pode ter milhoes de objetos, e o numero apresentado
+  ao operador seria falso. Nenhum `s3.prefix_summary` e emitido; sai
+  `s3.unresolved` com reason `truncated_listing`, e nenhuma regra dispara.
+  E a mesma decisao de `fixtures/plan/truncated_plan`, do outro lado do
+  pacote.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.unresolved
+expects_rules: []

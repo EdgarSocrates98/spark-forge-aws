@@ -1,0 +1,10 @@
+schema_version: 1
+source_of_truth: machine_readable
+probes:
+  - {id: prometheus.query_range, source: prometheus, artifact_category: metrics}
+  - {id: flink.rest.metrics, source: flink_rest, artifact_category: flink}
+  - {id: spark.streaming.progress, source: spark_progress, artifact_category: spark}
+  - {id: kafka.consumer_offsets, source: kafka_api, artifact_category: kafka}
+  - {id: iceberg.metadata_tables, source: iceberg_catalog, artifact_category: iceberg}
+  - {id: cdc.offsets, source: debezium, artifact_category: cdc}
+forbidden_primary_sources: [grafana_screenshot]

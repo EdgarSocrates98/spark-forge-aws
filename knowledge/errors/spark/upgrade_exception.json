@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-012",
+  "signature": "SparkUpgradeException",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The job failed after a runtime upgrade and not after a code change",
+    "The message names a legacy configuration and tells the reader to set it",
+    "The same code against the same data succeeded on the previous runtime"
+  ],
+  "likely_causes": [
+    "The upgraded Spark changed a default, and the value the data was written with is no longer the value the read assumes",
+    "Datetime values written by an older writer are being read under a calendar the new runtime resolves differently",
+    "The job carries a legacy configuration that the new runtime removed or renamed"
+  ],
+  "evidence_required": [
+    "mig.legacy_conf"
+  ],
+  "diagnostic_steps": [
+    "Read which legacy configuration the message names -- this exception is unusual in that it tells the reader what to set, and the name is the diagnosis",
+    "Read the legacy configuration the job already declares: a job that carries one the new runtime removed fails for a different reason than one that carries none",
+    "Confirm the runtime versions on both sides of the upgrade, because the exception says a behaviour changed and not which change"
+  ],
+  "fixes": [
+    "Set the configuration the message names, when preserving the previous behaviour is the intent",
+    "Rewrite the affected data under the new behaviour, when moving forward is the intent -- and this is a data change, not a configuration one",
+    "Replace a removed legacy configuration with the property that succeeded it"
+  ],
+  "unsafe_fixes": [
+    "Setting the legacy configuration and moving on without recording it: the flag preserves old behaviour indefinitely, and the next upgrade finds the same problem plus one more",
+    "Rewriting data to satisfy the read without comparing values before and after"
+  ],
+  "verification": "Value-by-value comparison over the declared business key when the fix touched data. When the fix was a configuration, the output of the same query on both runtimes has to match",
+  "rollback": "Remove the configuration, or restore the data from before the rewrite. The second is a data rollback and needs the consumers inventoried first",
+  "sources": [
+    "https://spark.apache.org/docs/latest/sql-migration-guide.html"
+  ],
+  "last_verified": "2026-09-09"
+}

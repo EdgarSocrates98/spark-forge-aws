@@ -1,0 +1,22 @@
+name: task_timed_out_sem_submissao
+proves: >
+  O NEGATIVO de SF-SFNX-002 na fronteira que importa: o Task `.sync` expirou ANTES da
+  submissao. Nao ha `TaskSubmitted`, e por isso nao ha `sfn.job_run` nenhum -- nenhum
+  `JobRunId` foi lido, e nenhum existe. A regra tem de ficar CALADA: a explicacao dela
+  diz "o `JobRunId` esta em `sfn.job_run`" e o `proposed_change` manda rodar
+  `aws glue get-job-run` sobre ele. Disparando aqui, ela mandaria o operador consultar
+  um identificador que o historico nao registra. E esta fixture que mata a remocao de
+  `attrs.submitted: true` do `where`. A execucao terminou em `ExecutionFailed` e o Task
+  tem terminal proprio, entao a SF-SFNX-003 tambem fica calada. Sem ASL no case: o
+  confronto de retry nao acontece, e a lacuna sai nomeada em `asl_absent`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.unresolved
+expects_rules: []

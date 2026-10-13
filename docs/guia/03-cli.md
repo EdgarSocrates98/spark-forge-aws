@@ -1,0 +1,836 @@
+# A CLI `sparkforge-aws`
+
+Este guia ensina a usar a linha de comando. Termos novos estão no
+[glossário](01-conceitos.md#glossário).
+
+## Receita rápida
+
+O caso mais comum: analisar o código de um job e ver os achados. Rode na raiz
+do repositório clonado. O exemplo usa um fixture (caso de teste sintético)
+que já vem no repositório.
+
+```bash
+# 1. Uma pasta temporária para as saídas
+export TMP=/tmp/sparkforge_aws_guia && mkdir -p "$TMP"
+
+# 2. Extrair fatos do código (troque pelo caminho do seu job)
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
+
+# 3. Julgar os fatos, informando a versão do Glue
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --out "$TMP/findings.json"
+
+# 4. Conferir que os achados seguem o formato oficial
+sparkforge-aws validate --findings "$TMP/findings.json"
+```
+
+Resultado esperado: o passo 3 mostra `"total_count": 1` com o achado
+`SF-PY-001` (P1) na linha 5 de `lib/job.py`, e o passo 4 imprime
+`"valid": true`. A seção [Fluxo ponta a ponta](#fluxo-ponta-a-ponta-rodado-de-verdade)
+explica cada campo.
+
+No seu projeto, troque o passo 2 por
+`sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json`.
+
+## Para que serve
+
+A CLI é a forma mais direta de usar o SparkForge. Tudo o que as tools MCP
+fazem, a CLI também faz. Ela é o caminho natural quando:
+
+- você quer rodar a análise num terminal ou num pipeline de CI;
+- você usa um assistente sem suporte a MCP;
+- você quer um resultado reproduzível para anexar a um ticket ou a um PR.
+
+Quando **não** usar a CLI: se o seu assistente já está ligado ao servidor MCP,
+deixe que ele chame as tools. O resultado é o mesmo.
+
+## Pré-requisitos
+
+- SparkForge instalado (veja [Instalação](02-instalacao.md)). Confira com
+  `sparkforge-aws --version`.
+- Um artefato para analisar. Os exemplos usam `fixtures/`, que está no
+  repositório clonado. Se instalou só pelo PyPI, clone o repositório para
+  ter os fixtures.
+- Uma pasta temporária para gravar saídas. Nos exemplos ela se chama
+  `$TMP`. Crie a sua, por exemplo:
+
+  ```bash
+  export TMP=/tmp/sparkforge_aws_guia     # Linux/macOS
+  mkdir -p "$TMP"
+  ```
+
+  ```powershell
+  $env:TMP_GUIA = "$env:TEMP\sparkforge_aws_guia"   # Windows PowerShell
+  New-Item -ItemType Directory -Force $env:TMP_GUIA
+  ```
+
+  Nos comandos em PowerShell, troque `$TMP` por `$env:TMP_GUIA`.
+
+## Anatomia de um comando
+
+```text
+sparkforge-aws <comando> [subcomando] --opções
+```
+
+- **comando**: o comando de topo, como `analyze`, `judge`, `case`.
+- **subcomando**: alguns comandos se dividem. `analyze pyspark`,
+  `analyze event-log`, `case open`, `case get`. Outros não têm subcomando,
+  como `judge` e `tune`.
+- **opções**: começam com `--`. Algumas são obrigatórias (o `--help` mostra
+  quais, sem colchetes em volta).
+
+Todo comando e todo subcomando têm `--help`:
+
+```bash
+sparkforge-aws --help
+sparkforge-aws analyze --help
+sparkforge-aws analyze pyspark --help
+```
+
+Se o comando `sparkforge-aws` não estiver no PATH, use
+`python -m sparkforge_aws.adapters.cli` no lugar dele. Os argumentos são os
+mesmos.
+
+## O que sai na tela
+
+### JSON no stdout
+
+A resposta de quase todos os comandos é um JSON impresso na saída padrão
+(stdout). Mensagens de erro vão para a saída de erro (stderr). Isso permite
+encadear com outras ferramentas, por exemplo `jq`, sem misturar erro com
+dado.
+
+A exceção documentada no código é `report github`: a saída dele é o formato de
+anotação do GitHub Actions, porque é isso que o GitHub lê.
+
+### O envelope das listas
+
+Comandos que devolvem listas (`analyze ...`, `judge`, `rules lookup`, `fuse`,
+`benchmark`) usam o mesmo envelope. Exemplo real de
+`analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1 --detail-level summary`:
+
+```json
+{
+  "total_count": 3,
+  "returned_count": 1,
+  "next_cursor": "1",
+  "filters_applied": { "kind": null, "limit": 1, "cursor": null },
+  "by_kind": {
+    "pyspark.function_def": 1,
+    "pyspark.module_analyzed": 1,
+    "pyspark.udf": 1
+  },
+  "items": [
+    {
+      "id": "f_5fa5ca",
+      "kind": "pyspark.function_def",
+      "measures": { "name_reference_count": 0 },
+      "at": "lib/job.py:6",
+      "symbol": "trivial",
+      "provenance_ref": "8a9110e6230d2c54"
+    }
+  ],
+  "provenance": { "8a9110e6230d2c54": { "artifact": "lib/job.py", "...": "..." } },
+  "schema_version": 1
+}
+```
+
+| Campo | Significado |
+|---|---|
+| `total_count` | Quantos itens existem no total. |
+| `returned_count` | Quantos vieram nesta página. |
+| `next_cursor` | O valor para pedir a próxima página. `null` quer dizer que não há mais. |
+| `filters_applied` | Os filtros que você usou, para conferência. |
+| `by_kind` (ou `by_severity`, `by_category`) | Contagem por tipo, sobre o total, não só sobre a página. |
+| `items` (ou `rules`) | Os itens da página. |
+
+### Paginação: `--limit` e `--cursor`
+
+A tela mostra uma página por vez. O tamanho padrão da página aparece em
+`filters_applied.limit` (nos exemplos rodados, 50). Para ver a próxima página,
+repita o comando com `--cursor` igual ao `next_cursor` recebido:
+
+```bash
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --limit 1 --cursor 1
+```
+
+Paginação só vale para a tela. Para ter tudo de uma vez, use `--out`.
+
+### `--out`: gravar a lista completa em arquivo
+
+`--out` grava a lista **completa**, sem paginação, num arquivo JSON. É esse
+arquivo que você passa para o próximo comando. No `analyze`, o arquivo contém a
+lista de facts. No `judge`, a lista de findings. A tela continua mostrando o
+envelope paginado.
+
+### `--detail-level`: quanto detalhe por item
+
+Disponível em `analyze ...` e `fuse`. Os valores são `summary`, `normal` e
+`full`; o padrão é `full`. O exemplo acima usou `summary`. Com `normal`, cada
+item mantém `subject` e `attrs`, e a procedência sai uma vez no envelope,
+referenciada por `provenance_ref`. Detalhes no
+[glossário](01-conceitos.md#detail_level).
+
+### `--kind`: filtrar por tipo de fact
+
+Disponível em `analyze ...`, `fuse` e `benchmark`. É repetível. Exemplo real:
+
+```bash
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --kind pyspark.udf --detail-level normal
+```
+
+Saída encurtada: `total_count` passa a ser `1` e `items` traz só o fact de
+`kind` `pyspark.udf`. O filtro vale para a tela; o arquivo de `--out`
+continua com a lista completa.
+
+No `judge`, o filtro equivalente é `--severity` (repetível), por exemplo
+`--severity P0`.
+
+## Códigos de saída
+
+O código de saída é o número que o processo devolve ao terminar. Em shell ele
+fica em `$?` (Bash) ou `$LASTEXITCODE` (PowerShell). Conferido em
+`sparkforge_aws/adapters/cli.py`:
+
+| Código | Significado | Exemplos reais |
+|---|---|---|
+| `0` | O comando rodou. **Atenção:** um resultado vazio, uma recusa em `refused` ou um fact `*.unresolved` também saem com `0`, porque "não sei" é uma resposta válida. | `judge` com ou sem findings; `rules lookup` com id inexistente devolve `total_count: 0` e código 0. |
+| `1` | Um gate ou uma verificação reprovou. | `validate` quando algum finding viola o schema; `report github` quando o limiar de `--fail-on` dispara; `pack check` quando uma regra do pack não dispara no fixture que a declara; `agents inspect` com id inválido ou inexistente. |
+| `2` | Erro de uso ou de entrada: opção obrigatória ausente, arquivo não encontrado, JSON inválido, combinação recusada. | `judge` sem `--facts`; `analyze pyspark --path` para um caminho que não existe; `--emr` sobre facts de EMR on EKS. |
+
+Exemplo real de código 2, com a mensagem que já diz o que fazer:
+
+```bash
+sparkforge-aws analyze pyspark --path fixtures/nao_existe
+```
+
+```text
+Caminho nao encontrado para analise: fixtures/nao_existe
+  Aponte para o diretorio da biblioteca ou para um arquivo .py:
+    sparkforge-aws analyze pyspark --path <dir-ou-arquivo> --out .sparkforge_aws/facts.json
+```
+
+Em CI, use o código de saída para decidir se o passo passa. Não use a
+presença de texto na tela.
+
+## Mapa dos comandos de topo
+
+A lista abaixo foi conferida com `sparkforge-aws --help`. Cada linha resume o que
+o próprio `--help` diz. As opções exatas estão na referência gerada de cada
+comando.
+
+### Extrair (lê artefato)
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `analyze` | Extrai facts determinísticos de um artefato. Cada subcomando é um tipo de artefato: `pyspark`, `event-log`, `plan`, `terraform`, `iceberg`, `sql`, `catalog-schema`, `parquet-footer` e outros. | [analyze](referencia/cli/analyze.md) |
+| `collect` | Baixa artefatos reais da AWS (event log, job Glue, CloudWatch, metadata Iceberg, Athena, EMR e outros). Precisa de credenciais AWS e do extra `aws`. | [collect](referencia/cli/collect.md) |
+| `fuse` | Correlaciona facts de SQL com o schema do catálogo, ou facts de Glue Streaming efetivo com Terraform, antes do `judge`. | [fuse](referencia/cli/fuse.md) |
+
+### Julgar
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `judge` | Aplica o catálogo de regras sobre facts já extraídos e produz findings. | [judge](referencia/cli/judge.md) |
+| `rules` | Consulta o catálogo (`rules lookup --id` ou `--category`). | [rules](referencia/cli/rules.md) |
+| `validate` | Valida findings contra o JSON Schema e recusa finding que promete ganho sem `benchmark_ref`. | [validate](referencia/cli/validate.md) |
+| `migrate` | Avalia migração entre versões de runtime (`glue`, `emr`, `controlm`) com o catálogo. | [migrate](referencia/cli/migrate.md) |
+
+### Compor e decidir (verbos de topo, consomem facts)
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `workload` | Perfil do workload por eixos. | [workload](referencia/cli/workload.md) |
+| `capacity` | A capacidade mais barata que cumpre o SLA, entre as que o job já rodou. Nunca aplica. | [capacity](referencia/cli/capacity.md) |
+| `finops` | Custo, a troca entre recurso e tempo, e se a alavanca está na capacidade ou no código. | [finops](referencia/cli/finops.md) |
+| `tune` | Configuração Spark derivada da medida, com a procedência de cada propriedade. Nunca aplica. | [tune](referencia/cli/tune.md) |
+| `benchmark` | Compara duas execuções a partir dos facts de event log de cada uma. | [benchmark](referencia/cli/benchmark.md) |
+| `funcval` | Validação funcional: `plan` deriva o que medir; `compare` compara antes e depois. | [funcval](referencia/cli/funcval.md) |
+| `simulate` | O que uma mudança de configuração move estruturalmente: quais achados somem e aparecem. Nunca prevê tempo nem custo. | [simulate](referencia/cli/simulate.md) |
+| `gain` | Ganho observado entre runs medidos antes e depois. Nunca projeta economia. | [gain](referencia/cli/gain.md) |
+| `proof` | Obrigações de prova de cada recomendação aplicada. | [proof](referencia/cli/proof.md) |
+| `root-cause` | Ordena os achados por consequência declarada e nomeia a lacuna. | [root-cause](referencia/cli/root-cause.md) |
+| `arbitrate` | Arbitra findings já julgados e grava claims, evidências e contradições no blackboard do case. Grava no disco. | [arbitrate](referencia/cli/arbitrate.md) |
+| `debate` | Conduz e arbitra o protocolo de debate do case. Não gera argumento. | [debate](referencia/cli/debate.md) |
+| `analyze streaming-composition` | Compõe progress Structured Streaming, transporte ou Iceberg; `--mode slo` avalia SLO observado em progress, sink, Kafka ou Kinesis. | [analyze](referencia/cli/analyze.md) |
+
+## Avaliar SLO observado de streaming
+
+Extraia os contratos e as observações separadamente. O compositor preserva os
+`fact_id` de origem e não consulta runtime live:
+
+```bash
+# Progress Structured Streaming
+sparkforge-aws analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+# Saída do sink Structured Streaming
+sparkforge-aws analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
+# Transporte Kafka/Kinesis
+sparkforge-aws analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+
+sparkforge-aws judge --facts transport-slo.facts.json --show-skipped
+```
+
+Para sink, `query_name` identifica a query, `sink_name` desambigua o sink e
+`num_output_rows` usa a unidade canônica `rows`; o timestamp vem do batch único
+ligado por `batch_id`. Para Kafka, `transport_key` identifica grupo/topic e a unidade canônica é
+`records` sobre `kafka.lag`. Para Kinesis, identifica stream e a unidade é `ms`
+para `iterator_age_ms` em `kinesis.shard`. O resultado resolvido informa
+`streaming.slo.evaluation` com `met` ou `violated`; falta de identidade,
+timestamps, cobertura da janela, unidade ou série única produz
+`streaming.slo.unresolved`. Séries de grupos, topics, partições ou shards
+misturados são recusadas, nunca agregadas silenciosamente.
+
+Esse modo aceita `statistic: p95` por nearest-rank e `freshness_ms` quando o
+progress traz `timestamp` + `eventTime.max` timezone-aware; não consulta
+CloudWatch/Kafka live nem prova disponibilidade, causalidade, custo ou saúde
+end-to-end. Ausência de finding não significa SLO atendido; reporte também
+todo `*.unresolved`.
+
+### Correlacionar Glue Streaming efetivo com Terraform
+
+Extraia a definição efetiva do job e o módulo Terraform no mesmo pool de facts.
+O `fuse` liga apenas um `aws_glue_job` cujo `name` seja literal e único:
+
+```bash
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
+sparkforge-aws analyze terraform --path infra/ --out terraform.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts terraform.facts.json --out fused.facts.json
+sparkforge-aws judge --facts fused.facts.json --show-skipped
+```
+
+O fact `glue.streaming.terraform_link` compara versão Glue, RTM, linguagem e
+workers. `drifts` alimenta `SF-GLUESTREAM-004`; `unresolved_fields` ou a falta
+de identidade alimenta `SF-GLUESTREAM-005`. O resultado mantém
+`source_fact_ids`; não substitui evidência de execução, capacidade, custo ou
+validação funcional.
+
+### Glue Streaming efetivo e runs terminais
+
+Com um diretório de runs Glue já coletado, use o analyzer existente e o mesmo
+compositor:
+
+```bash
+sparkforge-aws analyze glue-job-runs --path .sparkforge_aws/artifacts/glue_job_run --out runs.facts.json
+sparkforge-aws fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge-aws judge --facts runtime.facts.json --show-skipped
+```
+
+O link literal compara `glue_version`, `worker_type` e `worker_count`, mantém
+`observed_run_ids`/`source_fact_ids` e separa `SF-GLUESTREAM-006` de
+`SF-GLUESTREAM-007`. Sem run ou eixo comparável, a saída é unresolved; não
+interprete `execution_time_s` ou DPU como latência de evento.
+
+### Endpoints Glue Streaming
+
+`analyze glue-streaming` preserva endpoints declarados no bloco `stream` sem
+novo comando:
+
+```bash
+sparkforge-aws analyze glue-streaming --path effective-job.json --out glue.facts.json
+```
+
+Leia `glue.streaming.source` e `glue.streaming.sink` para identidade,
+connector e medidas numéricas observadas. `glue.streaming.unresolved` nomeia
+ausência, formato inválido ou falta de métrica; nenhum campo é preenchido com
+zero. Source/sink do dump não provam execução live, throughput, saúde,
+exactly-once ou capacidade.
+
+### Analisar endpoints Apache Flink
+
+`analyze flink` mantém source e sink como facts independentes quando o dump os
+declara. Não há novo comando: `--artifact managed_flink` continua selecionando
+o namespace do serviço gerenciado.
+
+```bash
+sparkforge-aws analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge-aws judge --facts flink.facts.json --show-skipped
+```
+
+O resultado pode conter `flink.source` e `flink.sink`, com identidade,
+connector, `delivery_semantics` e métricas numéricas observadas. Contadores não
+são throughput sem timestamp/janela. Source/sink ausente ou inválido aparece
+em `flink.unresolved` com razão nomeada; nenhum valor é preenchido com zero.
+Consulte `fact_id` e correlacione com checkpoint, operator e transporte antes
+de propor mudança.
+
+O mesmo artifact pode declarar `metrics` ou `metrics.observations`. Cada ponto
+precisa de nome, valor numérico e `observed_at`/`timestamp` textual para emitir
+`flink.metric`; shape inválido, valor não numérico ou timestamp ausente/inválido
+emite `flink.unresolved`. A métrica upstream é uma observação explícita, não
+health, SLO, causalidade ou série longa. Não misture com
+`managed_flink.metric`, que nasce da janela CloudWatch bounded do serviço
+gerenciado. O contrato completo está em
+[`knowledge/flink-streaming.md`](../../knowledge/flink-streaming.md) e no
+[ship SDD](../sdd/STREAMING_FLINK_TEMPORAL_METRICS/ship.md).
+
+### Forge Lab / Digital Twin
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `lab doctor` | Verifica host, registry e profiles sem iniciar serviços. | [lab](referencia/cli/lab.md) |
+| `lab verify` | Valida registry, Golden 20, schemas e planos de ações offline. | [lab](referencia/cli/lab.md) |
+| `lab scenarios`, `describe`, `profiles` | Lista e explica cenários, fidelidades, perfis e requisitos declarados. | [lab](referencia/cli/lab.md) |
+| `lab plan`, `run` | Compila ou executa um cenário; a execução mutável exige `--execute --confirm`. | [lab](referencia/cli/lab.md) |
+| `lab inspect`, `analyze`, `compare`, `reproduce` | Inspeciona evidências, analisa artifacts, compara receipts e recria planos. | [lab](referencia/cli/lab.md) |
+| `lab promote-fixture` | Promove run revisado para fixture somente com receipt válido e `--reviewed`. | [lab](referencia/cli/lab.md) |
+| `lab up`, `down`, `shell`, `gc` | Planeja lifecycle Compose; mutação local exige `--execute --confirm`. | [lab](referencia/cli/lab.md) |
+
+### Estado da investigação
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `case` | Abre, lê e atualiza `.sparkforge_aws/case.yaml` (`open`, `get`, `update`). | [case](referencia/cli/case.md) |
+| `next-step` | Próximo passo recomendado, calculado a partir de `rules/catalog/routing.yaml`. | [next-step](referencia/cli/next-step.md) |
+| `resume` | Payload para retomar o case. | [resume](referencia/cli/resume.md) |
+| `handoff` | Escreve `.sparkforge_aws/handoff.md` e imprime o payload. | [handoff](referencia/cli/handoff.md) |
+| `playbook` | Passos sequenciais de um coordenador, para ferramentas sem subagentes. | [playbook](referencia/cli/playbook.md) |
+| `runtime` | Detecção de versões (`runtime detect`). | [runtime](referencia/cli/runtime.md) |
+| `agents` | Lista e inspeciona agents. | [agents](referencia/cli/agents.md) |
+| `blackboard` | Lê o blackboard do case (`.sparkforge_aws/blackboard/`). | [blackboard](referencia/cli/blackboard.md) |
+| `decisions` | Lista e explica decisões registradas. | [decisions](referencia/cli/decisions.md) |
+| `budget` | Mostra o budget declarado do case. | [budget](referencia/cli/budget.md) |
+| `autonomy` | Mostra os níveis de autonomia L0 a L5. | [autonomy](referencia/cli/autonomy.md) |
+
+### Relatórios, prova e observabilidade
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `report` | `sign` e `verify` provam que o relatório corresponde à evidência; `github` gera SARIF e anotações para o PR. | [report](referencia/cli/report.md) |
+| `receipt` | Recibo da execução do case (`emit`, `verify`). | [receipt](referencia/cli/receipt.md) |
+| `economy` | Quanto a execução pôs na janela de contexto, em bytes medidos (`economy report`). | [economy](referencia/cli/economy.md) |
+| `telemetry` | Exporta os registros das tools em OTLP/JSON (`telemetry export`). | [telemetry](referencia/cli/telemetry.md) |
+
+### Conhecimento e packs
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `knowledge` | `path` localiza os arquivos de `knowledge/`; `drift` mostra o que foi afetado por fontes que mudaram. | [knowledge](referencia/cli/knowledge.md) |
+| `pack` | Forge Packs de terceiros (`list`, `check`). | [pack](referencia/cli/pack.md) |
+| `release` | O que uma release publica e o que muda entre duas (`describe`, `diff`). | [release](referencia/cli/release.md) |
+
+### Plataformas específicas
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `glue` | Comandos específicos do AWS Glue (`dependency-audit`). | [glue](referencia/cli/glue.md) |
+| `iceberg` | Comandos específicos de Apache Iceberg (`assess-upgrade`). | [iceberg](referencia/cli/iceberg.md) |
+| `lakeformation` | Eixo de versão do Lake Formation por runtime Glue (`matrix`, `access-graph`). | [lakeformation](referencia/cli/lakeformation.md) |
+| `controlm` | Conhecimento versionado do Control-M Automation API (`describe`). | [controlm](referencia/cli/controlm.md) |
+
+### Integração por usuário
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user` (obrigatório), `--dry-run`, `--on-conflict overwrite\|merge\|ignore` para a cópia em dobro no repositório atual. | [integrate](referencia/cli/integrate.md) |
+| `detach` | Remove a integração de usuário: só o que `~/.sparkforge_aws/integrations.json` registrou e ainda tem o sha256 gravado; `--dry-run` lista sem remover. | [detach](referencia/cli/detach.md) |
+
+Os dois saem 1 quando há recusa, do host ou da cópia em dobro (`conflict.refused`);
+`sem_repositorio` e `mantido_host_nao_integrado` são informação e não mudam o código.
+Não há tool MCP de propósito: escrever no HOME é
+decisão do operador, e um agente não deve dispará-la sozinho. O detalhe (caminhos por
+host, manifesto, cópia em dobro e cada recusa) está em
+[Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-aws-integrate).
+
+### Inteligência de código
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `code` | Índice local de código: `init`, `sync`, `status`, `search`, `symbol`, `path`, `shape`, `context`, `read`, `export`, `doctor`, `purge`. | [code](referencia/cli/code.md) |
+
+O índice completo, gerado a partir do código, está em
+[referencia/cli/README.md](referencia/cli/README.md).
+
+## Fluxo ponta a ponta, rodado de verdade
+
+Vamos analisar o fixture `fixtures/pyspark/python_udf/`, que contém um job
+PySpark sintético com uma UDF em Python. Rode os comandos a partir da raiz do
+repositório clonado.
+
+### 1. Declarar o runtime
+
+```bash
+sparkforge-aws runtime detect --glue 5.0
+```
+
+```json
+{
+  "glue": "5.0",
+  "emr": "",
+  "spark": "3.5.4",
+  "python": "3.11",
+  "iceberg": "1.7.1",
+  "athena": "",
+  "detected_from": ["cli"],
+  "divergences": []
+}
+```
+
+Você informou só o Glue; as outras versões vieram da matriz de runtime do
+Glue 5.0 que o projeto mantém.
+
+### 2. Extrair facts
+
+```bash
+sparkforge-aws analyze pyspark --path fixtures/pyspark/python_udf/input --out "$TMP/facts.json"
+```
+
+Saída encurtada:
+
+```json
+{
+  "total_count": 3,
+  "returned_count": 3,
+  "next_cursor": null,
+  "filters_applied": { "kind": null, "limit": 50, "cursor": null },
+  "by_kind": {
+    "pyspark.function_def": 1,
+    "pyspark.module_analyzed": 1,
+    "pyspark.udf": 1
+  },
+  "items": [
+    { "id": "f_5fa5ca", "kind": "pyspark.function_def", "...": "..." },
+    { "id": "f_9e2037", "kind": "pyspark.module_analyzed", "...": "..." },
+    {
+      "id": "f_726c0b",
+      "kind": "pyspark.udf",
+      "subject": { "file": "lib/job.py", "line": 5, "snippet": "@udf(returnType=StringType())", "...": "..." },
+      "measures": {},
+      "attrs": { "udf_type": "python" },
+      "provenance": { "extractor": "pyspark_ast@0.1.0", "...": "..." }
+    }
+  ]
+}
+```
+
+Três facts. Nenhum deles diz se algo está errado; eles só constatam o que há no
+código. O arquivo `$TMP/facts.json` agora contém essa lista.
+
+Um fact interessante é `pyspark.module_analyzed`: ele informa
+`resolved_calls` e `unresolved_count`. Se `unresolved_count` fosse maior que
+zero, haveria chamadas que o extrator não conseguiu resolver, e você saberia
+que a análise daquele módulo é parcial.
+
+### 3. Julgar
+
+```bash
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0
+```
+
+Saída encurtada:
+
+```json
+{
+  "total_count": 1,
+  "returned_count": 1,
+  "next_cursor": null,
+  "filters_applied": { "severity": null, "limit": 50, "cursor": null },
+  "by_severity": { "P1": 1 },
+  "runtime": {
+    "glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1",
+    "detected_from": ["cli"], "divergences": [], "...": "..."
+  },
+  "plan": {
+    "scope": "todos os 1 achados deste case, nao a pagina",
+    "order": ["SF-PY-001"],
+    "order_unresolved": {},
+    "contradictions": [],
+    "unresolved": [],
+    "persisted": false,
+    "note": "calculado, nao gravado. O registro auditavel e `sparkforge-aws arbitrate`.",
+    "...": "..."
+  },
+  "items": [
+    {
+      "rule_id": "SF-PY-001",
+      "title": "Python UDF em transformação expressável nativamente",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "structural",
+      "subject": { "file": "lib/job.py", "line": 5, "symbol": "trivial", "...": "..." },
+      "evidence": ["f_726c0b"],
+      "proposed_change": ["Reescrever com funções Spark SQL nativas.", "..."],
+      "expected_effect": "",
+      "validation": ["Contagem total idêntica.", "..."],
+      "rollback": ["Reverter o commit; a UDF original não depende de mudança de infraestrutura."],
+      "evidence_standing": {
+        "value": "high",
+        "source_tier": "T1_OFFICIAL_DOCS",
+        "in_version_scope": true,
+        "measures_present": true
+      },
+      "...": "..."
+    }
+  ]
+}
+```
+
+Para gravar os findings em arquivo, acrescente `--out "$TMP/findings.json"`.
+
+### 4. Ler o finding
+
+Leia nesta ordem:
+
+1. **`rule_id` e `title`**: qual regra disparou. `SF-PY-001`, "Python UDF em
+   transformação expressável nativamente". Para ver a regra inteira:
+   `sparkforge-aws rules lookup --id SF-PY-001`.
+2. **`subject`**: onde está. Arquivo `lib/job.py`, linha 5, função `trivial`.
+3. **`evidence`**: o fact que sustenta o achado, `f_726c0b`. Procure esse id no
+   `facts.json` para ver a observação crua.
+4. **`severity`, `confidence` e `status`**: prioridade `P1`, confiança
+   `high`, e `structural`, ou seja, a regra viu um padrão no código sem
+   medida de execução.
+5. **`explanation`**: por que é um problema. Aqui, a UDF em Python serializa
+   cada linha para um processo Python separado e impede otimizações do Spark.
+6. **`proposed_change`**: o que fazer. Reescrever com funções nativas.
+7. **`risks`, `validation` e `rollback`**: o que pode mudar no resultado, como
+   conferir que não mudou e como voltar atrás. Não pule esta parte: trocar uma
+   UDF por função nativa pode mudar o tratamento de valores nulos.
+8. **`expected_effect`**: vazio. O SparkForge não promete ganho sem medir.
+   Para medir, compare dois runs com `benchmark` ou `gain`.
+9. **`plan`**: quando há vários findings, a ordem sugerida de aplicação e as
+   contradições entre eles. `persisted: false` avisa que esse plano não foi
+   gravado; o registro auditável é o comando `arbitrate`.
+
+### 5. Validar e perguntar o próximo passo (opcional)
+
+Grave os findings e valide contra o schema:
+
+```bash
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --out "$TMP/findings.json"
+sparkforge-aws validate --findings "$TMP/findings.json"
+```
+
+```json
+{
+  "valid": true,
+  "count": 1
+}
+```
+
+Para acompanhar a investigação num case, abra um no diretório do projeto
+analisado (aqui, um diretório temporário de exemplo):
+
+```bash
+sparkforge-aws case open --repo "$TMP/repo_demo" --case-id demo-udf --now 2026-09-13T10:00:00Z --glue 5.0
+sparkforge-aws next-step --repo "$TMP/repo_demo" --findings "$TMP/findings.json"
+```
+
+Saída real do `next-step`:
+
+```json
+{
+  "phase": "intake",
+  "recommended_skill": "analyze-library-call-graph",
+  "reason": "ROUTE-002: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.",
+  "evidence": ["case:facts_index.count count_eq=0"],
+  "missing_artifacts": [],
+  "collect_commands": [
+    "sparkforge-aws analyze pyspark --path <lib> --out .sparkforge_aws/facts.json"
+  ],
+  "blocked_by": [],
+  "alternatives": [],
+  "recommended_agent": null,
+  "recommended_agent_reason": null
+}
+```
+
+O `next-step` leu o case, viu que o índice de facts do case está vazio
+(`facts_index.count` igual a zero, porque o `case open` acima não recebeu
+`--facts`) e recomendou mapear o código primeiro. A recomendação vem de uma
+regra de roteamento (`ROUTE-002`), não de opinião. Para registrar os facts no
+case, passe `--facts "$TMP/facts.json"` ao `case open` ou ao `case update`.
+
+## Como ler as recusas
+
+Nem todo comando termina com uma resposta completa, e isso é esperado.
+
+- **`skipped` no `judge --show-skipped`**: regras que não foram avaliadas.
+  No fluxo acima, sem `--glue`, a saída lista regras com
+  `"reason": "requires_facts"` (faltou o tipo de fact, e o campo `missing`
+  diz qual) e com `"reason": "runtime_scope"` (a regra depende de uma versão
+  que não foi informada). Exemplo real:
+
+  ```json
+  { "rule_id": "SF-ATH-002", "reason": "requires_facts", "missing": ["catalog.table_schema", "sql.projection"] }
+  ```
+
+  Isso quer dizer: "para avaliar esta regra, rode o extrator que produz
+  `catalog.table_schema` e `sql.projection`".
+
+- **`refused` em `tune` e `capacity`**: propriedades para as quais não há
+  medida que sustente um valor. Rode
+  `sparkforge-aws tune --facts fixtures/tuning/sem_shuffle_medido/input/facts.json`
+  e veja `properties: []` e uma lista `refused` em que cada item nomeia a
+  medida que faltou.
+
+- **Facts `*.unresolved`**: lacunas registradas como fact. Por exemplo,
+  `glue.run_cost.unresolved` quando o run não tem `dpu_seconds`.
+
+Nos três casos o código de saída é `0`. O comando funcionou; ele só está
+dizendo, com precisão, o que ainda não pode afirmar.
+
+## Erros comuns e como resolver
+
+| Sintoma | Causa | Correção |
+|---|---|---|
+| `error: the following arguments are required: --facts` (código 2) | Opção obrigatória ausente. | Veja o `--help` do comando e acrescente a opção. |
+| `Arquivo de facts nao encontrado: ...` (código 2) | O caminho de `--facts` está errado ou o `analyze` não foi rodado com `--out`. | A mensagem mostra o comando `analyze` que produz o arquivo. |
+| `Caminho nao encontrado para analise: ...` (código 2) | O `--path` do `analyze` não existe. | Aponte para a pasta do código ou para um `.py`. |
+| `judge` devolve `total_count: 0` | Os facts não satisfazem nenhuma regra, ou faltam facts ou versão para as regras que interessam. | Rode de novo com `--show-skipped` e leia `missing` e `runtime_scope`. |
+| O `runtime` do `judge` sai todo vazio | Nenhuma versão foi informada e nenhum fact trazia versão. | Passe `--glue` (ou `--emr`, `--spark` etc.), ou inclua facts que carregam a versão, como os de `analyze terraform` ou `analyze event-log`. |
+| Uma regra que correlaciona duas fontes nunca dispara | Os facts das duas fontes foram julgados em chamadas separadas. | Passe os dois arquivos na mesma chamada, repetindo `--facts`. |
+
+## Dicas
+
+### Combine vários arquivos de facts
+
+`--facts` é repetível em `judge`, `case open`, `case update`, `runtime detect`
+e `arbitrate`. O `judge` une as listas antes de julgar. Isso é necessário para
+regras que cruzam extratores diferentes (por exemplo, `SF-GLUE-004` cruza o
+Terraform com a escrita no PySpark). Exemplo real, com dois fixtures:
+
+```bash
+sparkforge-aws analyze pyspark --path fixtures/pyspark/coalesce_one/input --out "$TMP/facts_coalesce.json"
+sparkforge-aws judge --facts "$TMP/facts.json" --facts "$TMP/facts_coalesce.json" --glue 5.0
+```
+
+Resultado resumido: `total_count: 2`, `by_severity: {"P0": 1, "P1": 1}`, com
+`SF-PY-005` (P0) e `SF-PY-001` (P1).
+
+### Informe as versões
+
+`judge`, `case open`, `runtime detect`, `arbitrate`, `root-cause`, `simulate` e
+`proof` aceitam `--glue`, `--spark`, `--python`, `--iceberg`, `--athena` e
+`--emr`. `--emr` aceita `emr-7.5.0` ou `7.5.0`.
+
+A versão que você declara é **declaração**, não observação. Quando um
+artefato (um event log, um `.tf`) traz outra versão, ela entra como fonte
+própria, e a discordância aparece em `runtime.divergences`. Sobre facts de EMR
+on EKS, `--emr` é recusado com código 2.
+
+### Filtre por severidade
+
+```bash
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --severity P0
+```
+
+### Veja o estado das fontes
+
+```bash
+sparkforge-aws judge --facts "$TMP/facts.json" --glue 5.0 --source-freshness
+```
+
+Acrescenta o estado de cada fonte citada, calculado sobre
+`knowledge/sources.lock.json`. O resultado depende do dia; para fixar o dia,
+use `--as-of AAAA-MM-DD`.
+
+### Grave em `.sparkforge_aws/` no projeto real
+
+No seu próprio projeto, a convenção é gravar em `.sparkforge_aws/`:
+
+```bash
+sparkforge-aws analyze pyspark --path lib/ --out .sparkforge_aws/facts.json
+sparkforge-aws judge --facts .sparkforge_aws/facts.json --glue 5.0 --out .sparkforge_aws/findings.json
+sparkforge-aws next-step --repo . --findings .sparkforge_aws/findings.json
+```
+
+### Comandos que falam com a AWS
+
+Os comandos `collect ...` acessam a sua conta AWS e precisam de credenciais e
+do extra `aws`. Por exemplo, a skill `tune-glue-job` usa:
+
+```bash
+sparkforge-aws collect glue-job --repo . --job-name <nome> --now <ISO8601>
+```
+
+Ele baixa a definição real do job pela API do Glue, para comparar com o que o
+Terraform declara. Confira as opções de cada coletor em
+[referencia/cli/collect.md](referencia/cli/collect.md) antes de rodar.
+
+Para Glue Schema Registry, a coleta é read-only e registra a versão mais recente
+observada junto com metadata e definição:
+
+```bash
+sparkforge-aws collect schema-registry --repo . --registry-name events \
+  --max-schemas 100 --now <ISO8601>
+sparkforge-aws analyze schema-registry \
+  --path .sparkforge_aws/artifacts/schema_registry/events.json
+```
+
+`--schema-name` filtra um schema; `--schema-arn` consulta por ARN. Os limites
+`--max-schemas` e `--max-definition-bytes` evitam downloads ilimitados e
+preservam `unresolved` quando a evidência não cabe no contrato. O collector
+nunca cria, registra, atualiza ou exclui objetos no registry.
+
+Para obter uma janela temporal de métricas do Kinesis, combine o stream com as
+duas pontas ISO 8601. O período padrão é 60 segundos e precisa ser múltiplo de
+60 entre 60 e 86400:
+
+```bash
+sparkforge-aws collect streaming-integrations --repo . --kinesis-stream orders \
+  --metrics-start 2026-10-02T00:00:00Z \
+  --metrics-end 2026-10-02T00:05:00Z --metrics-period 60 \
+  --now 2026-10-02T00:10:00Z
+sparkforge-aws analyze transport \
+  --artifact kinesis \
+  --path .sparkforge_aws/artifacts/streaming_integrations/kinesis_orders__metrics_*.json
+```
+
+O collector consulta cinco métricas stream-level do CloudWatch e preserva
+observações, unidade, estatística, timestamp e lacunas. Ausência não vira zero;
+enhanced/shard-level, reshard history, KCL/EFO, replay e causalidade continuam
+fora do contrato.
+
+Para obter a configuração observada de uma aplicação Managed Flink, use a
+coleta somente leitura abaixo. Ela não pede detalhes adicionais, portanto não
+baixa código nem job plan:
+
+```bash
+sparkforge-aws collect managed-flink --repo . --application-name orders \
+  --region us-east-1 --now <ISO8601>
+sparkforge-aws analyze flink \
+  --path .sparkforge_aws/artifacts/managed_flink_application/orders__us-east-1.json \
+  --artifact managed_flink
+```
+
+O artifact preserva runtime, status, versão, checkpoint, paralelismo, VPC e
+logging observados. Para uma janela bounded de CloudWatch, use:
+
+```bash
+sparkforge-aws collect managed-flink --repo . --application-name orders \
+  --region us-east-1 \
+  --metrics-start 2026-10-03T00:00:00Z \
+  --metrics-end 2026-10-03T02:00:00Z --metrics-period 60 \
+  --now 2026-10-03T02:05:00Z
+```
+
+O collector consulta cinco métricas de aplicação do namespace
+`AWS/KinesisAnalytics`, preserva `observed_at`, unidade, estatística, respostas
+e `metrics_missing`, e alimenta `managed_flink.metric`. As pontas precisam ser
+timezone-aware; período é múltiplo de 60 entre 60 e 86400. Ausência, status
+parcial e shape inválido são `unresolved`, nunca zero. Task/Operator/Parallelism,
+custom metrics, conectores, job plan, replay, benchmark, SLO, causalidade,
+custo e saúde continuam fora do contrato.
+
+## Próximos passos
+
+- [Conceitos](01-conceitos.md): o glossário de fact, finding, recusa e os
+  demais termos.
+- [Instalação](02-instalacao.md): extras e problemas de instalação.
+- [Índice de comandos](referencia/cli/README.md), com as opções exatas de cada
+  um.
+- [judge](referencia/cli/judge.md) e [analyze](referencia/cli/analyze.md) em
+  detalhe.
+- [Índice de tools MCP](referencia/tools/README.md), se você usa um assistente
+  com MCP.

@@ -1,0 +1,23 @@
+{
+  "changes": [
+    {
+      "basis": null,
+      "evidence": [
+        "f_4e6128"
+      ],
+      "file": "lib/job.py",
+      "from": "800",
+      "key": "spark.sql.shuffle.partitions",
+      "line": 6,
+      "provenance": "code",
+      "to": "320"
+    }
+  ],
+  "diff": "--- a/lib/job.py\n+++ b/lib/job.py\n@@ -3,4 +3,4 @@\n \n \n def configurar(spark):\n-    registrar(\"configuração\", spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\"))\n+    registrar(\"configuração\", spark.conf.set(\"spark.sql.shuffle.partitions\", \"320\"))\n",
+  "files": [
+    "lib/job.py"
+  ],
+  "refused": [],
+  "rollback_diff": "--- a/lib/job.py\n+++ b/lib/job.py\n@@ -3,4 +3,4 @@\n \n \n def configurar(spark):\n-    registrar(\"configuração\", spark.conf.set(\"spark.sql.shuffle.partitions\", \"320\"))\n+    registrar(\"configuração\", spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\"))\n",
+  "tune_refused": []
+}

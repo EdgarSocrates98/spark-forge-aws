@@ -1,0 +1,71 @@
+{
+  "Name": "lake",
+  "Prefix": "curated/pedidos/",
+  "IsTruncated": false,
+  "Contents": [
+    {
+      "Key": "curated/pedidos/_SUCCESS",
+      "Size": 0
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-29/part-000.snappy.parquet",
+      "Size": 268435456,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-29/part-001.snappy.parquet",
+      "Size": 268436480,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-29/part-002.snappy.parquet",
+      "Size": 268437504,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-29/part-003.snappy.parquet",
+      "Size": 268438528,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-30/part-004.snappy.parquet",
+      "Size": 268439552,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-30/part-005.snappy.parquet",
+      "Size": 268440576,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-30/part-006.snappy.parquet",
+      "Size": 268441600,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-30/part-007.snappy.parquet",
+      "Size": 268442624,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-31/part-008.snappy.parquet",
+      "Size": 268443648,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-31/part-009.snappy.parquet",
+      "Size": 268444672,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-31/part-010.snappy.parquet",
+      "Size": 268445696,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "curated/pedidos/dt=2026-07-31/part-011.snappy.parquet",
+      "Size": 268446720,
+      "StorageClass": "STANDARD"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+name: basic
+proves: BASIC metadata path with no provider call or row payload.
+runtime:
+  glue: "4.0"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.analyzed
+expects_rules: []

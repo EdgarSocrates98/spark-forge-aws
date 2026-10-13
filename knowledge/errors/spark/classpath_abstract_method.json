@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-005",
+  "signature": "AbstractMethodError",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The class is present and the method is not, which no missing-jar explanation covers",
+    "The failure appears after a runtime upgrade with no change to the job's own code",
+    "The named method belongs to an interface the job never calls directly"
+  ],
+  "likely_causes": [
+    "Two versions of the same artifact are on the classpath, and the one that won does not implement a method added later",
+    "A connector compiled against an older interface runs against a newer runtime",
+    "User jars take precedence over the runtime's own, so an older implementation shadows the newer one"
+  ],
+  "evidence_required": [
+    "mig.jar_binary",
+    "tf.attribute"
+  ],
+  "diagnostic_steps": [
+    "List every jar on the classpath and look for two that carry the same package: this error is the signature of a duplicate, not of an absence",
+    "Read whether user jars take precedence: spark.driver.userClassPathFirst and spark.executor.userClassPathFirst default to false and are documented as experimental",
+    "Compare the interface version the connector was compiled against with the one the runtime provides"
+  ],
+  "fixes": [
+    "Remove the older copy of the artifact from the classpath, so only one implementation remains",
+    "Rebuild the connector against the interface the current runtime provides",
+    "Reconsider giving user jars precedence: the Spark documentation marks that behaviour as experimental, and it is what lets an older implementation win"
+  ],
+  "unsafe_fixes": [
+    "Turning user class path precedence on to force the older artifact to win: it makes this failure disappear by moving the conflict to whatever the runtime expected from the newer interface"
+  ],
+  "verification": "Re-run the job and exercise the code path that calls the method, and confirm only one copy of the artifact is on the classpath",
+  "rollback": "Restore the previous classpath. It changes no data, but a third-party artifact swapped for another release line can change the value of what it produces, and that needs comparing",
+  "sources": [
+    "https://spark.apache.org/docs/latest/configuration.html"
+  ],
+  "last_verified": "2026-09-09"
+}

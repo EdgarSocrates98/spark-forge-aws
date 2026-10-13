@@ -1,0 +1,325 @@
+{
+  "platform": "glue",
+  "source_runtime": "5.1",
+  "target_runtime": "6.0",
+  "steps": [
+    [
+      "5.1",
+      "6.0"
+    ]
+  ],
+  "findings": [
+    {
+      "rule_id": "SF-MIG-003",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Cast sem guarda sob ANSI mode",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_vendas.py",
+        "line": 32,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_6f82bc",
+        "f_5e1057"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=6.0"
+      },
+      "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+      "proposed_change": [
+        "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+        "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+      ],
+      "tradeoffs": [
+        "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+      ],
+      "validation": [
+        "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+        "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+      ],
+      "rollback": [
+        "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+          "retrieved": "2026-08-21"
+        }
+      ],
+      "action": {
+        "kind": "code.rewrite_expression",
+        "target": "job.source.cast_expression",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
+    }
+  ],
+  "by_step": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Cast sem guarda sob ANSI mode",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_vendas.py",
+          "line": 32,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_6f82bc",
+          "f_5e1057"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=6.0"
+        },
+        "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+        "proposed_change": [
+          "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+          "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+        ],
+        "tradeoffs": [
+          "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+        ],
+        "validation": [
+          "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+          "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+        ],
+        "rollback": [
+          "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-21"
+          }
+        ],
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    }
+  ],
+  "report": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Cast sem guarda sob ANSI mode",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_vendas.py",
+          "line": 32,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_6f82bc",
+          "f_5e1057"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=6.0"
+        },
+        "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+        "proposed_change": [
+          "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+          "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+        ],
+        "tradeoffs": [
+          "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+        ],
+        "validation": [
+          "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+          "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+        ],
+        "rollback": [
+          "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-21"
+          }
+        ],
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    }
+  ],
+  "gates": {
+    "compatibilidade": "FAIL",
+    "lakeformation": "BLOCKED",
+    "consumidor": "BLOCKED",
+    "iam_kms": "BLOCKED",
+    "rede": "BLOCKED",
+    "cross_account": "BLOCKED",
+    "dados": "BLOCKED",
+    "performance": "BLOCKED",
+    "custo": "BLOCKED",
+    "canary": "BLOCKED"
+  },
+  "missing_evidence": {
+    "lakeformation": "nenhum `tf.attribute` nos facts -- a topologia de controle de acesso fino e declarada nos `default_arguments` do job no Terraform, entao aponte a analise para o diretorio que contem os `.tf` do job",
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge_aws/consumers.yaml` (ver `sparkforge_aws/facts/consumers.py`)",
+    "iam_kms": "nenhum `tf.attribute` nos facts -- security configuration, papel de execucao e a rota ate o KMS sao declarados no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "rede": "nenhum `tf.attribute` nos facts -- a conexao que coloca o job dentro da VPC e declarada no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",
+    "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
+    "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
+    "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
+    "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
+  },
+  "recommendation": "NO_GO",
+  "coverage": {
+    "platform": "glue",
+    "platform_axis": "glue",
+    "source_runtime": "5.1",
+    "target_runtime": "6.0",
+    "steps": 1,
+    "catalog_rules": 221,
+    "version_guarded_rules": 26,
+    "unguarded_rules": 195,
+    "reachable_rules": 220,
+    "axes": [
+      {
+        "axis": "glue",
+        "catalog_rules": 21,
+        "reachable_rules": 21,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "iceberg",
+        "catalog_rules": 1,
+        "reachable_rules": 1,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "spark",
+        "catalog_rules": 5,
+        "reachable_rules": 4,
+        "runtime_key_present": true
+      }
+    ],
+    "activated_axes": [
+      "glue",
+      "iceberg",
+      "spark"
+    ],
+    "statement": "COBERTURA DECLARADA. Plataforma: AWS Glue. Caminho: 5.1 -> 6.0, 1 degrau(s). Catalogo: 221 regras, das quais 26 guardadas por versao (27 contagens por eixo -- uma regra com dois eixos conta nos dois) e 195 sem guarda, alcancaveis em qualquer runtime. Por eixo de `runtime_scope` -- `glue`: 21 no catalogo, 21 alcancadas por este caminho, chave de runtime presente; `iceberg`: 1 no catalogo, 1 alcancadas por este caminho, chave de runtime presente; `spark`: 5 no catalogo, 4 alcancadas por este caminho, chave de runtime presente. O eixo `glue` tem 21 regras neste catalogo, e este caminho alcancou 21 delas. Portanto: assessment sem achado significa `nenhuma das regras alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao cobre esta nomeado -- aqui, em `missing_evidence` e em `component_diff_unresolved` --, porque listar a recusa e a diferenca entre nao saber e nao ter perguntado."
+  },
+  "component_diff": [
+    {
+      "step": [
+        "5.1",
+        "6.0"
+      ],
+      "changed": [
+        {
+          "component": "iceberg",
+          "from": "1.10.0",
+          "to": "1.11.0"
+        },
+        {
+          "component": "python",
+          "from": "3.11",
+          "to": "3.13"
+        },
+        {
+          "component": "scala",
+          "from": "2.12.18",
+          "to": "2.13.17"
+        },
+        {
+          "component": "spark",
+          "from": "3.5.6",
+          "to": "4.1.1"
+        }
+      ],
+      "added": [
+        "java"
+      ],
+      "removed": [],
+      "unchanged": [],
+      "unresolved": {}
+    }
+  ],
+  "component_diff_unresolved": {
+    "compatibility_changes": "exige uma tabela de compatibilidade por release, com o par (componente, versao) e a consequencia declarada; hoje o que existe estruturado sobre compatibilidade e o CATALOGO DE REGRAS (rules/catalog/glue-migration.yaml, SF-MIG-*, com runtime_scope real), e consumi-lo aqui transformaria este verbo de leitor em juiz -- a D-6 da spec proibe regra neste sub-projeto. Em knowledge/ ha prosa (secao 2 de knowledge/glue/runtime-matrix.md, knowledge/runtime-compatibility.md), so para o Glue e nao por release",
+    "component.delta": "a fonte do AWS Glue nao publica `delta` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `delta` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hadoop": "a fonte do AWS Glue nao publica `hadoop` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hadoop` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hudi": "a fonte do AWS Glue nao publica `hudi` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hudi` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.python_installed": "a fonte do AWS Glue nao publica `python_installed` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `python_installed` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "default_changes": "exige as viradas de default declaradas por release e com fonte; hoje knowledge/glue/runtime-matrix.md as discute em PROSA e chaveadas por versao de Spark ('AQE e default desde Spark 3.2', 'ANSI mode e default no Spark 4.1'), e knowledge/emr/, knowledge/emr-eks/ e knowledge/emr-serverless/ nao tem nem a prosa. Destrava com knowledge/<plataforma>/default-changes.yaml, chaveado por release, com propriedade, valor antes, valor depois e fonte",
+    "deprecated": "exige release notes estruturadas por release; hoje knowledge/emr/, knowledge/emr-eks/, knowledge/emr-serverless/ e knowledge/glue/ tem prosa e tabela de COMPONENTES, nao changelog. Destrava com knowledge/<plataforma>/release-notes.yaml carregando, por release, entradas `deprecated: [{api, desde, substituto, source, retrieved}]`. Sem isso este verbo nao distingue 'a plataforma parou de embarcar' de 'a fonte parou de publicar', que e a mesma ausencia de celula vista de dois lados",
+    "performance_changes": "exige baseline medido dos dois lados, nao documento: mudanca de desempenho entre releases e diferenca de tempo e de recurso no MESMO workload, e nenhuma matriz de knowledge/ carrega medida de execucao. Destrava com dois conjuntos de facts de event log e o verbo `benchmark`, que ja existe neste motor para exatamente essa pergunta -- nao com uma coluna nova de knowledge/",
+    "security_changes": "exige boletim de seguranca por release, com CVE e componente afetado; hoje nenhuma das quatro paginas de knowledge/<plataforma>/runtime-matrix.md cita CVE, e as matrizes carregam versao de componente e nada mais. Destrava com knowledge/<plataforma>/security-bulletins.yaml chaveado por release, com CVE, componente, severidade e fonte oficial em knowledge/sources.lock.json"
+  }
+}

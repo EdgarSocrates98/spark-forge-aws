@@ -1,0 +1,20 @@
+name: execucao_abortada_com_task_em_voo
+proves: >
+  O POSITIVO de SF-SFNX-003. A execucao terminou em `ExecutionAborted` --
+  `execution_outcome_class: stopped` -- com o Task `.sync` agendado e submetido e SEM
+  evento terminal proprio: `terminal_present` e falso. O JobRun `jr_dddddddd1` pode
+  estar em voo, e o historico nao diz. A regra nomeia o sintoma e NAO afirma custo
+  (regra 13): quem responde custo e `finops`, com o JobRunId e `dpu_seconds` medido.
+  SF-SFNX-002 fica calada porque nao houve `TaskTimedOut`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: [SF-SFNX-003]

@@ -1,0 +1,32 @@
+name: identidade_ausente
+proves: >
+  Os tres jeitos de o payload nao ter identidade, cada um com a sua razao, e nos
+  tres a extracao aborta CEDO -- sem application nao ha o que ancorar -- mas a
+  sentinela sai assim mesmo. Esse e o ponto: abortar cedo nao pode virar
+  "nenhum fact", porque nenhum fact e indistinguivel de "o extrator nunca rodou".
+    * `lista.json` -- o JSON e valido e nao e objeto. `malformed_json`, sem
+      secao.
+    * `application_nao_e_objeto.json` -- a chave existe com o tipo errado.
+      `malformed_json`, `section: application`. Distinto de `missing_application`
+      de proposito: aqui o comando rodou e devolveu algo.
+    * `sem_application_id.json` -- ha application, ha nome e release, e nao ha
+      `applicationId`. `missing_application_id`. Toda entidade deste extrator e
+      ancorada em `<application>/...`; sem o id, dois payloads diferentes
+      colidiriam no mesmo subject e o `evidence` de um achado apontaria para o
+      par errado.
+  Repare no que NAO sai: nenhum `emrs.application`, nenhum `emrs.monitoring`.
+  Emitir monitoramento com os defaults da AWS aqui seria afirmar sobre uma
+  application que nao se conseguiu identificar.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.unresolved
+expects_rules: []

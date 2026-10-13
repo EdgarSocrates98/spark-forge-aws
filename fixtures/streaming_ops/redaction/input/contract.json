@@ -1,0 +1,16 @@
+{
+  "security": [
+    {
+      "system": "kinesis",
+      "transport": "tls",
+      "auth": "iam",
+      "tls": true,
+      "kms": true,
+      "vpc": true,
+      "secrets_manager": true,
+      "cross_account": false,
+      "resource_policy": true,
+      "password": "must-not-persist"
+    }
+  ]
+}

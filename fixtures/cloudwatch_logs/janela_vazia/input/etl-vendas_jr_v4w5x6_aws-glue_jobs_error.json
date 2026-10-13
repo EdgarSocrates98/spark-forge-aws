@@ -1,0 +1,14 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [],
+  "events_collected": 0,
+  "filter_pattern": "",
+  "job_name": "etl-vendas",
+  "job_run_id": "jr_v4w5x6",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_v4w5x6",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "vazio",
+  "truncated": false
+}

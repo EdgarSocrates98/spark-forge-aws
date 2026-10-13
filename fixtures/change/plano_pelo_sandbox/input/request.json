@@ -1,0 +1,6 @@
+{
+  "kind": "sandbox",
+  "plan_sets": [
+    "spark.sql.shuffle.partitions=320"
+  ]
+}

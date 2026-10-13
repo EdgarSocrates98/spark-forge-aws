@@ -1,0 +1,7 @@
+{
+  "skill_name": "analyze-streaming-composition",
+  "evals": [
+    {"id": "linked", "prompt": "Correlate streaming and lakehouse facts.", "expected_output": "use declared identity and preserve unresolved.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "identity"]},
+    {"id": "unlinked", "prompt": "Assess facts with mismatched query identity.", "expected_output": "refuse causal conclusion and name missing evidence.", "expectations": ["fact_id", "*.unresolved", "validation", "rollback", "refused"]}
+  ]
+}

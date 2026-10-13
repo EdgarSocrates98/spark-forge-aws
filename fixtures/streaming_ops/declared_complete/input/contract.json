@@ -1,0 +1,69 @@
+{
+  "slo": [
+    {
+      "name": "end_to_end_latency",
+      "metric": "p95_end_to_end_latency",
+      "target": 5000,
+      "operator": "lt",
+      "unit": "ms",
+      "window": "5m",
+      "source": "cloudwatch"
+    }
+  ],
+  "finops": [
+    {
+      "metric": "glue_worker_hours",
+      "value": 12.5,
+      "unit": "worker_hour",
+      "period": "2026-10-01T00:00:00Z/2026-10-01T01:00:00Z",
+      "region": "us-east-1",
+      "tier": "standard",
+      "source": "billing_export"
+    }
+  ],
+  "security": [
+    {
+      "system": "msk",
+      "source": "kafka",
+      "transport": "tls",
+      "auth": "iam",
+      "tls": true,
+      "kms": true,
+      "vpc": true,
+      "secrets_manager": false,
+      "cross_account": false,
+      "resource_policy": true
+    }
+  ],
+  "serving": [
+    {
+      "name": "redshift",
+      "system": "redshift_streaming",
+      "source": "kinesis",
+      "mode": "materialized_view",
+      "schema": "analytics.v1",
+      "consumer_count": 3,
+      "latency_target_ms": 5000
+    }
+  ],
+  "lakehouse": [
+    {
+      "name": "orders_delta",
+      "format": "delta",
+      "mode": "append",
+      "change_feed": true,
+      "checkpoint": true,
+      "schema_evolution": "additive",
+      "features": ["merge", "streaming_reads"]
+    },
+    {
+      "name": "events_hudi",
+      "format": "hudi",
+      "mode": "mor",
+      "change_feed": true,
+      "checkpoint": true,
+      "schema_evolution": "declared",
+      "features": ["incremental_query", "clustering"]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+[
+  {
+    "id": "f_c0f271",
+    "schema_version": 1,
+    "kind": "host.final_answer",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {},
+    "attrs": {
+      "answer": "SF-PY-005:2",
+      "truncated": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.2.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "943296a459c12c6bf2e62523967feb2d14933a7b85a2f2755c498329d75655da"
+    }
+  },
+  {
+    "id": "f_6069ec",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 3
+    },
+    "measures": {
+      "ordinal": 1,
+      "result_bytes": 55
+    },
+    "attrs": {
+      "channel": "mcp",
+      "tool": "mcp__sparkforge-aws__sparkforge_aws_judge",
+      "verb": "judge",
+      "call_id": "toolu_judge",
+      "started_at": "2026-09-10T00:00:03.000Z",
+      "ended_at": "2026-09-10T00:00:04.000Z",
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.2.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "943296a459c12c6bf2e62523967feb2d14933a7b85a2f2755c498329d75655da"
+    }
+  },
+  {
+    "id": "f_a77397",
+    "schema_version": 1,
+    "kind": "host.transcript",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "assistant_message_count": 2,
+      "line_count": 5
+    },
+    "attrs": {
+      "source": "claude_code_transcript",
+      "models": [
+        "synthetic-model-a"
+      ],
+      "host_versions": [
+        "2.1.268"
+      ],
+      "first_timestamp": "2026-09-10T00:00:01.000Z",
+      "last_timestamp": "2026-09-10T00:00:05.000Z"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.2.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "943296a459c12c6bf2e62523967feb2d14933a7b85a2f2755c498329d75655da"
+    }
+  },
+  {
+    "id": "f_27ec84",
+    "schema_version": 1,
+    "kind": "host.usage",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "input_tokens": 20,
+      "output_tokens": 40,
+      "cache_read_tokens": 200,
+      "cache_creation_tokens": 10,
+      "message_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "host_transcript@0.2.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "943296a459c12c6bf2e62523967feb2d14933a7b85a2f2755c498329d75655da"
+    }
+  }
+]

@@ -1,0 +1,71 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# `sparkforge-aws policy`
+
+Politica de seguranca do repositorio (.sparkforge_aws/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json.
+
+## Subcomandos
+
+| Subcomando | O que faz |
+|---|---|
+| [`sparkforge-aws policy check`](#sparkforge-aws-policy-check) | Valida a policy e lista as regras; sai 2 se ela for invalida. |
+| [`sparkforge-aws policy explain`](#sparkforge-aws-policy-explain) | Diz a decisao (allow, ask, deny), a regra que casou e qual porta a impoe. |
+| [`sparkforge-aws policy sync-settings`](#sparkforge-aws-policy-sync-settings) | Gera permissions.ask no .claude/settings.json a partir das regras ask; --check so confere e sai 1 se divergir. |
+
+## `sparkforge-aws policy check`
+
+Valida a policy e lista as regras; sai 2 se ela for invalida.
+
+```bash
+sparkforge-aws policy check --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | não | texto |  | `.` | Raiz do repositorio (padrao: .). |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_policy_explain`](../tools/sparkforge_aws_policy_explain.md)
+
+## `sparkforge-aws policy explain`
+
+Diz a decisao (allow, ask, deny), a regra que casou e qual porta a impoe.
+
+```bash
+sparkforge-aws policy explain --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | não | texto |  | `.` | Raiz do repositorio (padrao: .). |
+| `--bash` | não | texto |  |  | Comando de shell a conferir. |
+| `--path` | não | texto |  |  | Caminho de escrita a conferir. |
+| `--tool` | não | texto |  |  | Nome de tool MCP a conferir. |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_policy_explain`](../tools/sparkforge_aws_policy_explain.md)
+
+## `sparkforge-aws policy sync-settings`
+
+Gera permissions.ask no .claude/settings.json a partir das regras ask; --check so confere e sai 1 se divergir.
+
+```bash
+sparkforge-aws policy sync-settings --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | não | texto |  | `.` | Raiz do repositorio (padrao: .). |
+| `--check` | não | liga/desliga |  |  | So confere; nao grava. Sai 1 se divergir. |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_policy_explain`](../tools/sparkforge_aws_policy_explain.md)

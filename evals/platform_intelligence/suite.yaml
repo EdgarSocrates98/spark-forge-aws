@@ -1,0 +1,125 @@
+schema_version: 1
+id: platform-intelligence-control-plane
+baseline_id: deterministic-platform-v1
+corpus_status: seed_offline
+provider_token_policy: host_transcript_only
+quality_axes:
+  - fact_recall
+  - finding_precision
+  - false_positive_rate
+  - false_negative_rate
+  - unresolved_recall
+  - evidence_recall
+  - routing_accuracy
+  - architecture_conformance
+economy_axes:
+  - context_bytes
+  - tool_calls
+  - provider_tokens_when_observable
+  - elapsed_ms
+domains: [graph, forge_lab, catalog, dbt, duckdb, observability, orchestration, ecosystem]
+cases:
+  - id: graph-schema-change
+    domain: graph
+    intent: "schema change in postgres.orders"
+    artifact: fixtures/platform/graph.yaml
+    expected:
+      facts: [platform.node, platform.edge, platform.impact]
+      findings: []
+      architecture: [explicit_lineage, bounded_impact]
+    forbidden: [inferred_edge_without_evidence, unbounded_blast_radius]
+    unresolved: []
+    required_evidence: [synthetic://lineage/postgres-debezium, synthetic://lineage/iceberg-athena]
+    routing: {recommended_agent: metadata-graph-specialist, phase: analyze}
+    economy: {max_context_bytes: 16000, max_tool_calls: 2, provider_tokens: unresolved_without_host_transcript}
+  - id: forge-lab-broker-failure
+    domain: forge_lab
+    intent: "reproduce consumer lag after broker failure"
+    artifact: labs/forge-lab/lab.yaml
+    expected:
+      facts: [forge_lab.component, forge_lab.scenario]
+      findings: []
+      architecture: [offline_spec_only, confirmation_required]
+    forbidden: [docker_started_by_analyze, broker_killed_without_confirmation]
+    unresolved: [operator_image_compatibility]
+    required_evidence: [synthetic://forge-lab]
+    routing: {recommended_agent: streaming-platform-specialist, phase: analyze}
+    economy: {max_context_bytes: 8000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}
+  - id: catalog-engine-binding
+    domain: catalog
+    intent: "Athena and Spark bindings for Iceberg catalog"
+    artifact: fixtures/platform/catalog.yaml
+    expected:
+      facts: [catalog.identity, catalog.binding, catalog.unresolved]
+      findings: []
+      architecture: [multi_engine, explicit_binding]
+    forbidden: [catalog_protocol_negotiated_without_dump]
+    unresolved: []
+    required_evidence: [synthetic://binding/spark-rest, synthetic://binding/athena-glue]
+    routing: {recommended_agent: lakehouse-catalog-specialist, phase: analyze}
+    economy: {max_context_bytes: 12000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}
+  - id: dbt-lineage
+    domain: dbt
+    intent: "incremental model and failed test review"
+    artifact: fixtures/analytics/dbt
+    expected:
+      facts: [dbt.model, dbt.test, dbt.dependency, dbt.run_result]
+      findings: []
+      architecture: [manifest_authoritative]
+    forbidden: [dbt_executed_by_analyze, dependency_guessed_from_label]
+    unresolved: []
+    required_evidence: [fixtures/analytics/dbt/manifest.json, fixtures/analytics/dbt/run_results.json]
+    routing: {recommended_agent: analytics-engineering-specialist, phase: analyze}
+    economy: {max_context_bytes: 12000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}
+  - id: duckdb-small-files
+    domain: duckdb
+    intent: "inspect Iceberg snapshots and Parquet stats"
+    artifact: fixtures/analytics/duckdb/microscope.yaml
+    expected:
+      facts: [duckdb.object, duckdb.query, duckdb.snapshot]
+      findings: []
+      architecture: [read_only_microscope]
+    forbidden: [mutating_sql_executed, duckdb_extension_loaded]
+    unresolved: []
+    required_evidence: [synthetic://iceberg/orders, synthetic://duckdb/equivalence/orders]
+    routing: {recommended_agent: lakehouse-microscope-specialist, phase: analyze}
+    economy: {max_context_bytes: 10000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}
+  - id: sre-freshness
+    domain: observability
+    intent: "orders freshness SLO breach"
+    artifact: fixtures/observability/sre.yaml
+    expected:
+      facts: [slo.measurement, slo.breach, incident.mttr, dependency.health]
+      findings: []
+      architecture: [measurement_first, unresolved_missing_metric]
+    forbidden: [missing_latency_marked_healthy, root_cause_inferred]
+    unresolved: [slo_measurement_unresolved, incident_mttr_unresolved]
+    required_evidence: [synthetic://runbook/consumer-lag]
+    routing: {recommended_agent: data-observability-specialist, phase: analyze}
+    economy: {max_context_bytes: 10000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}
+  - id: orchestration-controls
+    domain: orchestration
+    intent: "workflow retry and idempotency review"
+    artifact: fixtures/orchestration/control-plane.yaml
+    expected:
+      facts: [orchestrator.workflow, workflow.retry, workflow.unresolved]
+      findings: []
+      architecture: [source_platform_preserved, no_trigger]
+    forbidden: [workflow_triggered_by_analyze, retry_inferred]
+    unresolved: [workflow_control_unresolved, workflow_dependency_unresolved]
+    required_evidence: [synthetic://airflow/dags, synthetic://step-functions/definitions]
+    routing: {recommended_agent: orchestration-specialist, phase: analyze}
+    economy: {max_context_bytes: 10000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}
+  - id: connector-radar
+    domain: ecosystem
+    intent: "CDC connector reliability and optional metadata radar"
+    artifact: fixtures/platform/ecosystem.yaml
+    expected:
+      facts: [ecosystem.system, reliability.control, radar.optional]
+      findings: []
+      architecture: [connector_reliability_model, radar_not_dependency]
+    forbidden: [radar_runtime_dependency_inferred, connector_health_invented]
+    unresolved: [reliability_model_unresolved]
+    required_evidence: [synthetic://lineage/debezium-feast, synthetic://radar/datahub]
+    routing: {recommended_agent: platform-ecosystem-specialist, phase: analyze}
+    economy: {max_context_bytes: 12000, max_tool_calls: 1, provider_tokens: unresolved_without_host_transcript}

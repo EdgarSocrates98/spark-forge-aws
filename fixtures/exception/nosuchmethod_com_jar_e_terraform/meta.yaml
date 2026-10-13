@@ -1,0 +1,58 @@
+name: nosuchmethod_com_jar_e_terraform
+proves: >
+  O POSITIVO de `SF-ERR-001`, com as tres evidencias que a assinatura
+  `ERR-GLUE-002` declara precisar, no mesmo case:
+
+    * `spark.exception` com `exception_class: java.lang.NoSuchMethodError`,
+      derivado do `spark.stage.failure` de um event log real -- a falha
+      ACONTECEU, e e isso que separa `status: confirmed` de uma regra estrutural;
+    * `error.signature_match` com `signature_id: ERR-GLUE-002` e
+      `matched_on: exception_class` (aqui a classe do topo JA e a que importa, ao
+      contrario de `excecao_encadeada`);
+    * `mig.jar_binary` com `scala_minor: 12` -- INTEIRO, nao string, porque o
+      avaliador de `expr` do catalogo compara numero e nao versao --, lido do NOME
+      do arquivo `conector_2.12-1.4.0.jar`;
+    * `tf.attribute` com `key: glue_version`, `block: root`.
+
+  O runtime e Glue 6.0, dentro do `runtime_scope: {glue: ">=6.0"}` da regra. O
+  achado sai em P0.
+
+  `SF-SPARK4-004` dispara JUNTO, tambem em P0, e as duas nao sao duplicata -- e o
+  que o comentario de cabeca de `rules/catalog/errors.yaml` afirma, e esta fixture
+  e onde a afirmacao vira medida. A estrutural diz "este JAR nao pode carregar
+  neste runtime" a partir do artefato; a confirmada diz "ele NAO carregou, neste
+  run". Uma e migracao a planejar, a outra e run a reprocessar, e a diferenca muda
+  a decisao. Nenhuma das duas afirma custo, nem economia (regra 13).
+
+  O NEGATIVO deste fixture e `nosuchmethod_sem_jar`: mesmo event log, mesmo
+  `main.tf`, um arquivo a menos.
+runtime:
+  glue: "6.0"
+  spark: "4.0.0"
+  python: "3.11"
+  iceberg: "1.9.1"
+expects_kinds:
+  - error.signature_match
+  - mig.jar_binary
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-001
+  - SF-SPARK4-004

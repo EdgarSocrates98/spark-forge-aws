@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-GLUE-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Segredo em default argument",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 21,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "evidence": [
+      "f_c1ff8b"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Default arguments aparecem na job definition, na resposta da API e em logs. Segredo colocado ali é exposto a qualquer principal com permissão de leitura da definição do job. É achado de segurança e tem precedência sobre qualquer recomendação de performance no mesmo relatório.",
+    "proposed_change": [
+      "Mover para AWS Secrets Manager ou Parameter Store, referenciando por nome no argumento.",
+      "Rotacionar o segredo exposto, porque ele deve ser considerado comprometido.",
+      "Revisar histórico do repositório de IaC, onde o valor pode persistir."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Rotacionar segredo em uso exige coordenação com os consumidores."
+    ],
+    "tradeoffs": [
+      "Nenhum. Não há justificativa de performance para manter segredo em argumento."
+    ],
+    "validation": [
+      "Argumento não contém mais o valor.",
+      "Job executa com sucesso lendo do cofre.",
+      "Segredo antigo revogado."
+    ],
+    "rollback": [
+      "Não reverter para o segredo em texto claro. Se a leitura do cofre falha, corrigir a permissão de IAM, não o método de armazenamento.\n"
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Prática de segurança padrão; a superfície de exposição de default arguments é documentada no comportamento da API do Glue."
+      }
+    ],
+    "action": {
+      "kind": "security.move_secret_to_manager",
+      "target": "glue.default_arguments",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "security.secret_exposure"
+      ],
+      "depends_on": []
+    }
+  }
+]

@@ -1,0 +1,25 @@
+# Collector do job `otel-collector` (ci.yml): le os goldens de fixtures/otel com
+# o receiver `otlp_json_file` (o nome `otlpjsonfile` e alias obsoleto desde o 0.160.0) e grava o que recebeu com o exporter `file`.
+# `scripts/check_otel_collector.py` confere a saida contra os goldens.
+receivers:
+  otlp_json_file/traces:
+    include: [/data/*/expected/traces.jsonl]
+    start_at: beginning
+  otlp_json_file/metrics:
+    include: [/data/*/expected/metrics.jsonl]
+    start_at: beginning
+
+exporters:
+  file/traces:
+    path: /out/traces.json
+  file/metrics:
+    path: /out/metrics.json
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp_json_file/traces]
+      exporters: [file/traces]
+    metrics:
+      receivers: [otlp_json_file/metrics]
+      exporters: [file/metrics]

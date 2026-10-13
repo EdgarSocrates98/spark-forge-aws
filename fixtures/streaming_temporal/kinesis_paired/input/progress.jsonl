@@ -1,0 +1,2 @@
+{"id":"query-2","runId":"run-2","name":"clicks-query","batchId":1,"timestamp":"2026-10-02T12:00:00Z","batchDuration":900,"numInputRows":1000,"inputRowsPerSecond":100,"processedRowsPerSecond":80}
+{"id":"query-2","runId":"run-2","name":"clicks-query","batchId":2,"timestamp":"2026-10-02T12:00:10Z","batchDuration":950,"numInputRows":1100,"inputRowsPerSecond":110,"processedRowsPerSecond":90}

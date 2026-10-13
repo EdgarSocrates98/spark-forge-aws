@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-STREAM-012",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "SLO de streaming sem janela observada suficiente",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "<query>:transport-slo",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_92f8f6"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A declaração SLO existe ou foi solicitada, mas o artefato fornecido não sustenta comparação: identidade, métrica direta, unidade, source, timestamp, observações ou cobertura da janela ficaram unresolved. Isso não é sucesso nem falha do SLO.",
+    "proposed_change": [
+      "Coletar batches com query, métrica, unidade e timestamps suficientes para a janela declarada.",
+      "Corrigir a declaração somente quando o contrato estiver incompleto; não preencher observações ausentes."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar janela incompleta como met pode esconder violação operacional."
+    ],
+    "tradeoffs": [
+      "Instrumentação e retenção maiores aumentam custo de observabilidade."
+    ],
+    "validation": [
+      "Conferir motivo unresolved, source_fact_ids e cobertura temporal antes de julgar novamente."
+    ],
+    "rollback": [
+      "Remover apenas a conclusão não comprovada e preservar o artefato parcial para reauditoria."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.slo",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  }
+]

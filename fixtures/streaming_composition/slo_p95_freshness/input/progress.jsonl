@@ -1,0 +1,3 @@
+{"batchId":1,"timestamp":"2026-10-01T00:00:05Z","name":"orders-query","batchDuration":1000,"inputRowsPerSecond":100.0,"processedRowsPerSecond":100.0,"eventTime":{"max":"2026-10-01T00:00:00Z","watermark":"2026-09-30T23:59:00Z"}}
+{"batchId":2,"timestamp":"2026-10-01T00:05:10Z","name":"orders-query","batchDuration":1000,"inputRowsPerSecond":100.0,"processedRowsPerSecond":100.0,"eventTime":{"max":"2026-10-01T00:05:00Z","watermark":"2026-10-01T00:04:00Z"}}
+{"batchId":3,"timestamp":"2026-10-01T00:10:20Z","name":"orders-query","batchDuration":1000,"inputRowsPerSecond":100.0,"processedRowsPerSecond":100.0,"eventTime":{"max":"2026-10-01T00:10:00Z","watermark":"2026-10-01T00:09:00Z"}}

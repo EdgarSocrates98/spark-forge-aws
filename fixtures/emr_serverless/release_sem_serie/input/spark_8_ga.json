@@ -1,0 +1,18 @@
+{
+  "application": {
+    "applicationId": "00fspark8ga000000001",
+    "name": "spark-8-ga",
+    "releaseLabel": "emr-spark-8.0.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

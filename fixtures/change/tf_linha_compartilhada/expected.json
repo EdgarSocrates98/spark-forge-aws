@@ -1,0 +1,23 @@
+{
+  "changes": [
+    {
+      "basis": null,
+      "evidence": [
+        "f_ea876c"
+      ],
+      "file": "main.tf",
+      "from": "800",
+      "key": "spark.sql.shuffle.partitions",
+      "line": 13,
+      "provenance": "terraform",
+      "to": "320"
+    }
+  ],
+  "diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=800 --conf spark.sql.adaptive.enabled=true --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.files.maxPartitionBytes=134217728\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=320 --conf spark.sql.adaptive.enabled=true --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.files.maxPartitionBytes=134217728\"\n   }\n }\n",
+  "files": [
+    "main.tf"
+  ],
+  "refused": [],
+  "rollback_diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=320 --conf spark.sql.adaptive.enabled=true --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.files.maxPartitionBytes=134217728\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=800 --conf spark.sql.adaptive.enabled=true --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.files.maxPartitionBytes=134217728\"\n   }\n }\n",
+  "tune_refused": []
+}

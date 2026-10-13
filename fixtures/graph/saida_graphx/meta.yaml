@@ -1,0 +1,18 @@
+name: saida_graphx
+proves: >
+  Primeira das quatro formas de escrever certo: `algorithm="graphx"`. A
+  implementacao GraphX nao faz checkpoint e a exigencia nao se aplica --
+  `checkpoint_required: false` com o mesmo `checkpoint_configured_in_module:
+  false` da fixture positiva. A diferenca entre as duas prova que a regra le o
+  argumento, e nao so a ausencia do diretorio.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.module_analyzed
+expects_rules: []

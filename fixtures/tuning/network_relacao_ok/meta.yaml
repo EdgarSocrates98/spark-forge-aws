@@ -1,0 +1,4 @@
+name: network_relacao_ok
+runtime:
+  glue: '5.0'
+proves: 'Heartbeat de 10s dentro de 120s: `relacao_ok`. O mesmo pool traz o broadcast estourado sem tempo medido, e o `broadcastTimeout` sai `sem_broadcast_medido`.'

@@ -1,0 +1,73 @@
+[
+  {
+    "rule_id": "SF-ERR-014",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Credencial temporária do Lake Formation negada num job que declara controle de acesso fino",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "curated-fato",
+      "job_run_id": "jr_cv1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_cv1",
+      "event": 0,
+      "signature_id": "ERR-LF-002"
+    },
+    "evidence": [
+      "f_8a26c1",
+      "f_9daedd"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A operação parou no ponto em que o Lake Formation entrega a credencial temporária que dá acesso ao dado da tabela, e o job declara controle de acesso fino. **Esses dois fatos juntos dizem em qual plano o problema está, e é o plano que a maioria das tentativas não toca.**\n\nO acesso a uma tabela governada atravessa camadas distintas: a permissão concedida no Lake Formation, a permissão de IAM sobre as APIs do Lake Formation e do Glue, e a credencial que o Lake Formation vende para o caminho de dado. Uma negação nomeando a API de credencial diz que as duas primeiras podem estar corretas e a terceira não completou.\n\n**Trocar a API de escrita não muda nada aqui.** `writeTo`, `insertInto` e `INSERT INTO` chegam ao mesmo caminho de credencial, e é por isso que falham juntas quando é ele que falha. Ver `knowledge/glue/lakeformation-fgac.md` §2 e §6.",
+    "proposed_change": [
+      "Ler a policy do runtime role à procura de `lakeformation:GetDataAccess`, que é a permissão de IAM que autoriza o Lake Formation a vender a credencial. A AWS a concede na policy de exemplo tanto de controle de acesso fino quanto de Full Table Access.",
+      "Separar `DESCRIBE` de `SELECT` nas concessões do Lake Formation sobre a tabela: descrever uma tabela não é lê-la, e sob Full Table Access escrever ou apagar exige `ALL`, não `SELECT`.",
+      "Ler se a localização da tabela está registrada no Lake Formation. Localização não registrada não tem credencial armazenada para ser vendida, e a operação nunca chega a usar esse caminho.",
+      "Não trocar a API de escrita antes de fechar as três leituras acima. A API não é o caminho de autorização."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Alargar a policy S3 do runtime role para contornar o caminho de credencial não funciona para localização REGISTRADA: a documentação declara que ali o caminho de dado usa a credencial armazenada do Lake Formation independentemente do IAM do role. A permissão a mais fica, e o efeito não vem.",
+      "Conceder `Super` no catálogo a `IAMAllowedPrincipals` faz o erro sumir removendo a governança que o job tinha. É decisão de governança, nunca conserto.",
+      "A regra afirma que a negação aconteceu num job que declara o modelo de acesso. Ela **não** afirma qual das quatro causas prováveis é a verdadeira: nenhuma policy de IAM e nenhuma concessão do Lake Formation entra em artefato que este motor colete."
+    ],
+    "tradeoffs": [
+      "Conceder a permissão que falta pode alargar o que o job enxerga. Sob controle de acesso fino isso muda linhas e colunas do resultado, e é por isso que a validação abaixo pede o teste com dois principais."
+    ],
+    "validation": [
+      "Reexecutar e confirmar que a mesma tabela é lida.",
+      "Executar com um principal que **não** tem a concessão e confirmar que a leitura continua sendo recusada. Conserto que funciona para todo mundo removeu o controle em vez de corrigi-lo, e sem este segundo teste os dois desfechos são indistinguíveis.",
+      "Contagem de linhas e conjunto de colunas do resultado, antes e depois: sob controle de acesso fino, mudar concessão muda o que a consulta devolve."
+    ],
+    "rollback": [
+      "Revogar a permissão de IAM e a concessão do Lake Formation que foram acrescentadas.",
+      "Registrar uma localização no Lake Formation muda o caminho de acesso de **todo** consumidor daquela localização. Desregistrar não é rollback deste job, e exige inventário de quem mais a lê."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/lake-formation/latest/APIReference/API_GetTemporaryGlueTableCredentials.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/lakeformation/credential_vending_denied.json` (`ERR-LF-002`). A referência publica o NOME da API e a permissão de IAM que a autoriza; o texto exato da mensagem de negação não é publicado por ela nem por nenhuma outra página da AWS.\n"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-09",
+        "note": "É desta página que sai o `risks` sobre localização registrada: \"the data access path goes through the Lake Formation stored credentials regardless of the IAM permission for the AWS Glue job runtime role\".\n"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.credential_vending",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

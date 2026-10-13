@@ -1,0 +1,160 @@
+[
+  {
+    "id": "f_915124",
+    "schema_version": 1,
+    "kind": "dms.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "dms"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_0c4083",
+    "schema_version": 1,
+    "kind": "dms.endpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "port": 9092
+    },
+    "attrs": {
+      "endpoint_type": "TARGET",
+      "engine": "kafka",
+      "server": "msk.example"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_9dc743",
+    "schema_version": 1,
+    "kind": "dms.endpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "port": 5432
+    },
+    "attrs": {
+      "endpoint_type": "SOURCE",
+      "engine": "postgres",
+      "server": "orders.example"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_8d82ea",
+    "schema_version": 1,
+    "kind": "dms.mapping",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "rule_type": "selection",
+      "rule_action": "include",
+      "schema": "public",
+      "table": "orders",
+      "target_schema": null,
+      "target_table": null,
+      "key_columns_declared": null
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_b2f8dd",
+    "schema_version": 1,
+    "kind": "dms.stats",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "full_load_rows": 10,
+      "cdc_changes": 4,
+      "latency_seconds": 2
+    },
+    "attrs": {
+      "schema": "public",
+      "table": "orders",
+      "status": null
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_b9d4fd",
+    "schema_version": 1,
+    "kind": "dms.task",
+    "subject": {
+      "type": "source_location",
+      "file": "task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-full-cdc",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-full-cdc",
+      "migration_type": "FULL-LOAD-AND-CDC",
+      "status": "RUNNING",
+      "source_engine": "postgres",
+      "target_engine": "kafka",
+      "validation_enabled": true,
+      "cdc_start_position": "0/16B6C50"
+    },
+    "provenance": {
+      "artifact": "task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

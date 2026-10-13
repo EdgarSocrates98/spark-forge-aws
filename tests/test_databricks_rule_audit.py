@@ -1,0 +1,229 @@
+"""Regra que um job Databricks alcanca nao remedia so para AWS.
+
+O conjunto e recalculado dos EMITTED_KINDS de TODO extrator de `sparkforge_aws/facts/`,
+menos uma lista NOMEADA de extratores que so leem artefato de AWS -- nunca de uma
+lista de inclusao, que envelhece calada quando nasce extrator generico novo, e nunca
+de uma lista de regras escrita a mao.
+
+Alcancavel e a regra sem eixo de PLATAFORMA AWS no `runtime_scope`: a escopada so
+por `spark`, `python` ou `iceberg` entra em escopo num Databricks Runtime, que
+preenche os tres.
+"""
+import dataclasses
+import importlib
+import pkgutil
+import re
+
+import sparkforge_aws.facts
+from sparkforge_aws.findings.models import RuntimeContext
+from sparkforge_aws.rules.loader import load_catalog
+
+# Eixo de `RuntimeContext` que so um runtime AWS preenche. Regra com um deles no
+# `runtime_scope` fica fora de escopo num job Databricks, que nao tem nenhum.
+EIXOS_DE_PLATAFORMA_AWS = {"glue", "emr", "athena"}
+
+# Extrator cujo artefato so existe na AWS. Um job Databricks nunca produz os kinds
+# dele, entao a regra que os exige nao alcanca o usuario Databricks. Na duvida, o
+# extrator NAO entra aqui. `iam_access` NAO entra: a simulacao de politica vale
+# para qualquer role IAM, e o instance profile de um cluster Databricks na AWS e
+# um role IAM.
+SO_AWS = {
+    "terraform": "le recurso `aws_glue_job` (e irmaos `aws_*`) do Terraform",
+    "glue_job_run": "le a resposta de `get_job_runs` da API do Glue",
+    "run_cost": "custo sobre `dpu_seconds` de `glue.job_run`, a API do Glue",
+    "catalog_schema": (
+        "le dump de `GetTables`/`GetTable` do Glue Data Catalog. O metastore Glue sob "
+        "um workspace Databricks, se usado, fica FORA do escopo da feature "
+        "DATABRICKS_SPARK; as regras que exigem estes kinds (SF-ATH-002, SF-ATH-003, "
+        "SF-PQ-005, SF-ERR-018, SF-ERR-019) ficam fora da auditoria com ele"
+    ),
+    "glue_resource_link": "le resource link do Glue Data Catalog",
+    "emr_cluster": "le `describe-cluster` do EMR on EC2",
+    "emr_serverless": "le `get-application` do EMR Serverless",
+    "emr_eks": "le job run e cluster virtual do EMR on EKS (`emr-containers`)",
+    "athena_workgroup": "le `get_work_group` do Athena",
+    "lakeformation": "le o modelo de acesso do Lake Formation declarado no job",
+    "lakeformation_grants": "le grants e settings do Lake Formation",
+    "cloudwatch": "le `get_metric_data` do CloudWatch (`glue.metric`)",
+    "cloudwatch_logs": "le `filter_log_events` do CloudWatch Logs",
+    "stepfunctions": (
+        "le a definicao ASL do AWS Step Functions (`arn:aws:states`) e deriva "
+        "`sfn.glue_job_link` do `aws_glue_job` do Terraform"
+    ),
+    # Sem esta entrada, as tres regras SF-SFNX (sem eixo de plataforma no
+    # `runtime_scope`) contariam como alcancaveis num job Databricks -- e o artefato
+    # que elas leem so existe na AWS.
+    "sfn_history": (
+        "le o historico de execucao do AWS Step Functions (`get-execution-history`) e "
+        "deriva `sfn.retry_observado` contra o `sfn.task` do ASL"
+    ),
+    # O ARTEFATO nao e da AWS -- o arquivo .py de um DAG do Apache Airflow --, e a
+    # entrada aqui nao e sobre ele: as quatro regras SF-AIRFLOW julgam so o
+    # `GlueJobOperator`, que chama `StartJobRun` da API do AWS Glue, e a derivacao
+    # `af.glue_job_link` le o `aws_glue_job` do Terraform. Sem esta entrada, as
+    # quatro (sem eixo de plataforma no `runtime_scope`) contariam como alcancaveis
+    # num job Databricks, e o texto delas cita Glue.
+    "airflow_dag": (
+        "le o DAG do Airflow, e as regras julgam so o `GlueJobOperator` (StartJobRun "
+        "da API do AWS Glue); deriva `af.glue_job_link` do `aws_glue_job` do Terraform"
+    ),
+    # O gatilho e `error.signature_match` (generico), mas o fact so sai cruzando
+    # `ERR-LF-001` com `lakeformation.grant`/`registered_location` e
+    # `lakeformation.access_model`, de extratores desta lista. Sem esta entrada,
+    # SF-LF-011 (`runtime_scope: {}`, o gate e `requires_facts`) contaria como
+    # alcancavel num job Databricks. Acrescentada em 2026-09-25 (LF_GRANTS).
+    "lakeformation_missing_grant": (
+        "deriva de `ERR-LF-001` cruzado com grant e registro do Lake Formation "
+        "(`collect lakeformation`) e com o modelo de acesso declarado no job"
+    ),
+    "utilization": (
+        "deriva de `glue.metric` (seu `SOURCE_KINDS`), a metrica do Glue no CloudWatch; "
+        "sem ela o `fuse` nem deriva"
+    ),
+    "glue_streaming": (
+        "le dump de `get_job` de um job Glue Streaming/RTM (`collect glue-streaming`); "
+        "o artefato so existe na API do Glue"
+    ),
+    "streaming_glue_cross": (
+        "deriva `glue.streaming.terraform_link`/`cross.unresolved` somente cruzando "
+        "`glue.streaming.job` com `tf.resource`/`tf.attribute` de `aws_*` do Terraform; "
+        "sem os dois lados AWS o fact nao existe"
+    ),
+    "streaming_glue_runtime": (
+        "deriva `glue.streaming.runtime_link`/`runtime.unresolved` somente cruzando "
+        "`glue.streaming.job` com o contexto de runtime; sem o job Glue nao ha link"
+    ),
+}
+# Kind de extrator generico que so nasce de fonte AWS: o extrator e generico, mas
+# este kind dele so sai cruzando com um fact de extrator de `SO_AWS`.
+KINDS_SO_DE_FONTE_AWS = {
+    "sql.projection.enriched": (
+        "`fusion` so o emite cruzando `sql.projection` com `catalog.table_schema`, "
+        "do Glue Data Catalog (`_catalog_lookup`)"
+    ),
+    "iceberg.library_conflict": (
+        "`fusion` so compara contra o Iceberg embarcado derivado do `glue_version` "
+        "de `tf.attribute`, do Terraform (`_iceberg_embarcado`)"
+    ),
+}
+# Por palavra, entao `GlueContext` precisa de termo proprio: "Glue" nao casa dentro dele.
+TERMOS_AWS = (
+    "Glue", "GlueContext", "DPU", "G.1X", "G.2X", "EMR", "Lake Formation", "Athena",
+    "DynamicFrame",
+)
+CAMPOS = (
+    "proposed_change", "rollback", "validation", "explanation", "expected_effect",
+    "risks", "tradeoffs",
+)
+EXCECOES = {
+    "SF-PQ-002": (
+        "o passo com DynamicFrame e condicional a leitura via DynamicFrame, que so "
+        "existe no Glue; os demais passos da regra sao neutros"
+    ),
+}
+
+
+def _padrao(termo: str) -> re.Pattern[str]:
+    # Sem diferenciar caixa e por palavra: `glue.driver.*` casa "Glue", porque o
+    # ponto conta como fronteira, e `glue_version` nao casa, porque `_` nao conta.
+    return re.compile(r"(?<![A-Za-z0-9_])" + re.escape(termo) + r"(?![A-Za-z0-9_])", re.IGNORECASE)
+
+
+_PADROES = {termo: _padrao(termo) for termo in TERMOS_AWS}
+_DATABRICKS = _padrao("Databricks")
+
+
+def _extratores() -> list[str]:
+    nomes = []
+    for modulo in pkgutil.iter_modules(sparkforge_aws.facts.__path__):
+        if hasattr(importlib.import_module(f"sparkforge_aws.facts.{modulo.name}"), "EMITTED_KINDS"):
+            nomes.append(modulo.name)
+    return sorted(nomes)
+
+
+def _kinds() -> set[str]:
+    kinds: set[str] = set()
+    for nome in _extratores():
+        if nome in SO_AWS:
+            continue
+        kinds |= set(importlib.import_module(f"sparkforge_aws.facts.{nome}").EMITTED_KINDS)
+    return kinds - set(KINDS_SO_DE_FONTE_AWS)
+
+
+def _texto(regra: dict) -> str:
+    return " ".join(str(regra.get(campo, "")) for campo in CAMPOS)
+
+
+def _termos(texto: str) -> list[str]:
+    return [termo for termo, padrao in _PADROES.items() if padrao.search(texto)]
+
+
+def _alcancaveis() -> list[dict]:
+    kinds = _kinds()
+    saida = []
+    for regra in load_catalog():
+        if set(regra.get("runtime_scope") or {}) & EIXOS_DE_PLATAFORMA_AWS:
+            continue
+        if regra.get("executable") is False:
+            continue
+        exigidos = set(regra.get("requires_facts") or [])
+        if exigidos and exigidos <= kinds:
+            saida.append(regra)
+    return saida
+
+
+def test_exclusao_so_nomeia_extrator_e_kind_que_existem():
+    eixos = {campo.name for campo in dataclasses.fields(RuntimeContext)}
+    assert EIXOS_DE_PLATAFORMA_AWS <= eixos
+    assert set(SO_AWS) - set(_extratores()) == set()
+    assert all(motivo.strip() for motivo in SO_AWS.values())
+    emitidos = set().union(
+        *(importlib.import_module(f"sparkforge_aws.facts.{n}").EMITTED_KINDS for n in _extratores())
+    )
+    assert set(KINDS_SO_DE_FONTE_AWS) - emitidos == set()
+    assert all(motivo.strip() for motivo in KINDS_SO_DE_FONTE_AWS.values())
+
+
+def test_regra_sem_escopo_nao_remedia_com_termo_aws():
+    violadoras = {}
+    for regra in _alcancaveis():
+        texto = _texto(regra)
+        termos = _termos(texto)
+        if termos and not _DATABRICKS.search(texto) and regra["id"] not in EXCECOES:
+            violadoras[regra["id"]] = termos
+    assert violadoras == {}
+    mortas = set(EXCECOES) - {r["id"] for r in _alcancaveis() if _termos(_texto(r))}
+    assert mortas == set()
+
+
+# Campos que sao PASSO A PASSO: o operador executa um item, nao o campo inteiro.
+CAMPOS_DE_PASSOS = ("proposed_change", "validation")
+
+
+def _passos_so_aws(regra: dict) -> dict[str, list[str]]:
+    """Itens que citam termo AWS sem que o usuario Databricks tenha o que fazer.
+
+    O item passa se ele mesmo cita Databricks, ou se outro item do MESMO campo
+    cita -- e esse outro item e o equivalente neutro. Citar Databricks na
+    explicacao nao conta: quem segue a lista de passos nao volta ao texto.
+    """
+    saida: dict[str, list[str]] = {}
+    for campo in CAMPOS_DE_PASSOS:
+        itens = [str(item) for item in regra.get(campo) or []]
+        com_databricks = [bool(_DATABRICKS.search(item)) for item in itens]
+        for i, item in enumerate(itens):
+            if not _termos(item) or com_databricks[i]:
+                continue
+            if any(com_databricks[j] for j in range(len(itens)) if j != i):
+                continue
+            saida.setdefault(campo, []).append(item[:80])
+    return saida
+
+
+def test_passo_com_termo_aws_tem_equivalente_neutro_no_mesmo_campo():
+    violadoras = {}
+    for regra in _alcancaveis():
+        passos = _passos_so_aws(regra)
+        if passos and regra["id"] not in EXCECOES:
+            violadoras[regra["id"]] = passos
+    assert violadoras == {}

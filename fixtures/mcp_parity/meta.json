@@ -1,0 +1,19 @@
+{
+  "amostra": [
+    "sucesso_analyze",
+    "sucesso_verbo_lookup",
+    "sucesso_verbo_release",
+    "sucesso_debate",
+    "sucesso_collect_offline",
+    "erro_fronteira",
+    "input_tipo_invalido",
+    "input_obrigatorio_ausente",
+    "fora_do_catalogo_http",
+    "nome_desconhecido"
+  ],
+  "jsonschema": "4.23.0",
+  "mcp": "1.29.0",
+  "motivo_regeneracao": null,
+  "python": "3.14.6",
+  "regenerado_sob_2x": false
+}

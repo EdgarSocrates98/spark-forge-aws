@@ -1,0 +1,16 @@
+schema_version: 1
+profiles:
+  core: [minio, iceberg-rest]
+  spark: [spark, minio, iceberg-rest]
+  kafka: [kafka]
+  streaming: [kafka, spark, jobmanager, taskmanager]
+  flink: [kafka, jobmanager, taskmanager]
+  lakehouse: [spark, jobmanager, taskmanager, minio, iceberg-rest, trino]
+  cdc: [postgres, kafka, debezium]
+  polaris: [polaris, minio]
+  observability: [prometheus, otel-collector, grafana]
+  chaos: [toxiproxy]
+  full: [all]
+execution:
+  default: plan_only
+  mutating_requires: [execute, confirm]

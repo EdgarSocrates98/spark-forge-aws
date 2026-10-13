@@ -1,0 +1,177 @@
+schema_version: 1
+id: token-efficient-matrix
+baseline_id: local-deterministic-v1
+profiles: [economy, balanced, deep]
+quality_axes: [status, evidence_recall, false_positive_rate, unresolved, execution_plan]
+quality_fixture: fixtures/quality_cases.yaml
+federated_graph_fixture: fixtures/federated_graph_cases.yaml
+provider_transcript_fixture: fixtures/provider_transcripts.yaml
+decision_fixture: fixtures/decision_plane_cases.yaml
+decision_control_plane_fixture: fixtures/decision_control_plane_cases.yaml
+calibration_fixture: fixtures/calibration_history.yaml
+host_replay_fixture: fixtures/host_replay.yaml
+calibration_version: control-plane-calibration-v1
+replay_contract:
+  minimum_labeled_tasks: 50
+  minimum_domains: 6
+  require_holdout_per_domain: true
+  route_metric: independent
+  transcript_integrity: canonical_transcript_v1
+  cost_requires_basis: true
+cases:
+  - id: glue-routing
+    intent: Glue FGAC Iceberg
+    max_bytes: 6000
+    answer_status: resolved
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: critical-budget
+    intent: diagnose Glue
+    max_bytes: 5
+    items:
+      - fact_id: f-critical
+        kind: fact
+        evidence: critical evidence
+    expected_status: refused
+    expected_evidence: [f-critical]
+    expected_unresolved: [budget_unresolved]
+  - id: planner-partial
+    intent: diagnose Spark skew
+    max_bytes: 6000
+    answer_status: partial
+    triggers: [high_risk_change]
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: workspace-unresolved
+    intent: workspace dependency graph
+    max_bytes: 6000
+    items:
+      - id: workspace-edge
+        kind: unresolved
+        code: workspace_repository_unresolved
+        message: declared target is unavailable
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: quality-evidence
+    intent: Iceberg data quality
+    max_bytes: 6000
+    items:
+      - fact_id: f-quality
+        kind: fact
+        relevance: 100
+        value: observed
+    expected_status: ok
+    expected_evidence: [f-quality]
+    expected_unresolved: []
+  - id: authority-conflict
+    intent: Lake Formation cross account access
+    items:
+      - fact_id: f-authority
+        kind: fact
+        authority_conflict: true
+        relevance: 100
+    expected_status: ok
+    expected_evidence: [f-authority]
+    expected_unresolved: []
+  - id: risk-and-confidence
+    intent: Glue production write review
+    items:
+      - fact_id: f-risk
+        kind: finding
+        finding_id: finding-risk
+        risk_level: critical
+        confidence: 0.2
+        relevance: 100
+    expected_status: ok
+    expected_evidence: [f-risk, finding-risk]
+    expected_findings: [finding-risk]
+    expected_unresolved: []
+  - id: unresolved-reference
+    intent: investigate missing evidence
+    items:
+      - id: missing-reference
+        kind: unresolved
+        code: unresolved_reference
+        message: source is unavailable
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: confidence-gap
+    intent: Spark skew diagnosis
+    items:
+      - fact_id: f-low-confidence
+        kind: fact
+        confidence: low
+        relevance: 90
+    expected_status: ok
+    expected_evidence: [f-low-confidence]
+    expected_unresolved: []
+  - id: critical-knowledge
+    intent: Iceberg schema migration
+    max_bytes: 5
+    items:
+      - fact_id: f-critical-knowledge
+        kind: knowledge
+        critical: true
+        content: migration evidence
+    expected_status: refused
+    expected_evidence: [f-critical-knowledge]
+    expected_unresolved: [budget_unresolved]
+  - id: code-and-knowledge
+    intent: optimize pyspark join
+    items:
+      - id: code-1
+        kind: code
+        relevance: 90
+        content: adaptive query execution
+      - id: knowledge-1
+        kind: knowledge
+        relevance: 80
+        content: skew join guidance
+    expected_status: ok
+    expected_evidence: [code-1, knowledge-1]
+    expected_unresolved: []
+  - id: planner-debate
+    intent: production data access conflict
+    answer_status: partial
+    triggers: [conflicting_rules, authority_conflict]
+    items:
+      - fact_id: f-conflict
+        kind: fact
+        conflicting_rules: true
+        relevance: 100
+    expected_status: ok
+    expected_evidence: [f-conflict]
+    expected_unresolved: []
+  - id: explicit-unavailable
+    intent: unknown Glue table
+    answer_status: unavailable
+    answer_reasons: [catalog evidence unavailable]
+    items: []
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: bounded-payload
+    intent: summarize Iceberg maintenance
+    max_bytes: 6000
+    items:
+      - id: large-knowledge
+        kind: knowledge
+        relevance: 75
+        content: maintenance guidance
+    expected_status: ok
+    expected_evidence: [large-knowledge]
+    expected_unresolved: []
+  - id: missing-evidence
+    intent: audit Lake Formation data access
+    items:
+      - fact_id: f-missing
+        kind: fact
+        missing_evidence: true
+        relevance: 100
+    expected_status: ok
+    expected_evidence: [f-missing]
+    expected_unresolved: []

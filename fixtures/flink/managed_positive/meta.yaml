@@ -1,0 +1,7 @@
+artifact: managed_flink
+expects_kinds:
+  - managed_flink.analyzed
+  - managed_flink.application
+  - managed_flink.config
+  - managed_flink.connector
+  - managed_flink.metric

@@ -1,0 +1,15 @@
+{
+  "changes": [],
+  "diff": "",
+  "files": [],
+  "refused": [
+    {
+      "detail": "spark.sql.shuffle.partitions: recebe expressao na linha 2",
+      "key": "spark.sql.shuffle.partitions",
+      "reason": "valor_nao_literal",
+      "unlock": "escreva o valor como literal simples na chamada, ou mude a mao"
+    }
+  ],
+  "rollback_diff": "",
+  "tune_refused": []
+}

@@ -1,0 +1,35 @@
+name: metadata_fetch_failed_com_shuffle
+proves: >
+  O POSITIVO de `SF-ERR-021`. `MetadataFetchFailedException`, com os bytes de shuffle que a recomputacao vai
+  custar.
+
+  O stage que LE o shuffle nao encontrou a localizacao de saida, e o que a
+  escreveu tinha reportado sucesso. O custo nao e a falha: e o map stage
+  inteiro rodando de novo, e ele e proporcional aos bytes escritos -- que e
+  exatamente o que o companheiro mede.
+
+  E diferente de `ERR-SPARK-001` (`FetchFailedException`): ali uma conexao
+  falhou, aqui o executor inteiro sumiu, e por isso sao duas assinaturas.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.gc
+  - spark.stage.shuffle
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+expects_rules:
+  - SF-ERR-021

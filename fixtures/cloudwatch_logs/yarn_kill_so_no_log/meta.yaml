@@ -1,0 +1,23 @@
+name: yarn_kill_so_no_log
+proves: >
+  O NEGATIVO de `yarn_kill_nas_duas_fontes`: MESMO log do CloudWatch, sem o
+  event log.
+
+  A linha `Container killed by YARN` continua casando `ERR-GLUE-001` -- o fato
+  nao mudou. O que muda e que sem `spark.executor.lost` o motor PULA
+  `SF-ERR-004` com `missing: ["spark.executor.lost"]`.
+
+  Este e o caso do operador que coletou SO o log, e ele e comum: o log do
+  CloudWatch e a primeira coisa que se olha quando um job falha. A regra recusa
+  julgar dai, porque uma linha de log e texto, e texto casado e o comeco da
+  pergunta.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules: []
