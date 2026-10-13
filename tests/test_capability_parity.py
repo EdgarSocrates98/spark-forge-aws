@@ -309,6 +309,10 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         "update": "atualiza a instalacao; muta o disco do chamador.",
         "uninstall": "remove a instalacao; muta o disco do chamador.",
         "mcp verify": "verifica a propria configuracao MCP do chamador.",
+        "mcp serve": (
+            "sobe o servidor MCP no host do chamador; transporte e ciclo de vida, "
+            "nao uma capacidade de analise MCP."
+        ),
     }
 
     def _subcomandos(self, parser):
