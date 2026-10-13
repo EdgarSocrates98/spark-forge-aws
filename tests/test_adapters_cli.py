@@ -63,6 +63,22 @@ def test_cli_exposes_observed_economy_and_live_graph_commands():
     assert (graph.command, graph.collect_action) == ("collect", "workspace-graph")
 
 
+def test_graph_build_creates_persistent_index(repo, capsys):
+    code, output = run(["graph", "build", "--root", str(repo)], capsys)
+    assert code == 0
+    payload = json.loads(output)
+    assert payload["integrity"] == "ok"
+    assert payload["nodes"] > 0
+    db = repo / ".sparkforge_aws" / "local" / "codeintel" / "graph.sqlite3"
+    assert db.is_file()
+
+    code, output = run(["graph", "view", "--root", str(repo), "--limit", "5"], capsys)
+    assert code == 0
+    view = json.loads(output)
+    assert view["schema"] == "forge/ForgeGraphView/v1"
+    assert view["descriptor"]["node_count"] > 0
+
+
 class TestAnalyze:
     def test_writes_facts_json(self, repo, capsys):
         out = repo / "facts.json"

@@ -11172,7 +11172,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Projecao ForgeGraphView/v1 do indice de codigo persistido — a mesma "
             "saida de `sparkforge-aws graph view`, produtora do Graph Studio. "
             "Somente leitura sobre `.sparkforge_aws/local/codeintel/graph.sqlite3`; "
-            "sem indice recusa SF-GRAPH-NO-INDEX com o unlock `code index`."
+            "sem indice recusa SF-GRAPH-NO-INDEX com o unlock `graph build`."
         ),
         "inputSchema": {
             "type": "object",
@@ -12607,7 +12607,7 @@ def _h_graph_view(args: dict[str, Any]) -> dict[str, Any]:
     )
     if view is None:
         return {
-            "error": "SF-GRAPH-NO-INDEX — run `sparkforge-aws code index --root <repo>`",
+            "error": "SF-GRAPH-NO-INDEX — run `sparkforge-aws graph build --root <repo>`",
             "exit_code": 2,
         }
     return view.to_dict()
