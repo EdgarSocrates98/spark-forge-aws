@@ -14,8 +14,23 @@ import pytest
 
 from sparkforge_aws import _installkit as kit
 from sparkforge_aws.install import lifecycle
+from sparkforge_aws.ui import wizard
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_fresh_directory_hides_repository_scope(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    ctx = wizard.UIContext(interactive=False, color=False, unicode=False, width=80)
+    assert wizard._scope_choices(ctx) == ["workspace", "user"]
+    assert "No repository detected" in capsys.readouterr().out
+
+
+def test_install_accepts_canonical_host_keyword(tmp_path):
+    receipt = lifecycle.install(
+        host="none", scope="workspace", root=tmp_path, dry_run=True,
+    )
+    assert receipt["status"] == "planned"
 
 
 @pytest.fixture(autouse=True)

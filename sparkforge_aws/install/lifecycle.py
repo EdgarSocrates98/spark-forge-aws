@@ -118,6 +118,7 @@ def _marker_body() -> str:
 def install(
     alvo: str = "all",
     *,
+    host: str | None = None,
     scope: str = "project",
     root: Path | None = None,
     profile: str = "recommended",
@@ -129,6 +130,11 @@ def install(
     components: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Instala o Forge no projeto/workspace (ou no HOME via `integrate`)."""
+    # Shared wizard contract calls every forge with ``host=``. Keep legacy
+    # positional ``alvo`` compatible for CLI/portal callers while accepting
+    # canonical keyword spelling.
+    if host is not None:
+        alvo = host
     if profile not in PROFILES:
         raise kit.InstallError(kit.E_PROFILE, f"profile {profile!r}; {PROFILES}")
     if scope == "user":
