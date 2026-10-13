@@ -133,6 +133,43 @@ def _mcp_verify(args: argparse.Namespace) -> dict[str, Any]:
     return lifecycle.mcp_verify()
 
 
+def _mcp_serve(args: argparse.Namespace) -> dict[str, Any]:
+    """Run the declared stdio MCP server through the installed CLI.
+
+    Keeping this entry point on the main executable makes ``forge.json``
+    portable across hosts. The server owns stdout while it is alive; the
+    structured document is only returned if the server exits.
+    """
+    from sparkforge_aws.adapters.mcp import main as mcp_main
+
+    argv = [
+        "--transport", _p(args, "transport", "stdio"),
+        "--mode", _p(args, "mode", "full"),
+        "--host", _p(args, "host", "127.0.0.1"),
+        "--port", str(_p(args, "port", 8765)),
+    ]
+    try:
+        code = mcp_main(argv)
+    except SystemExit as exc:
+        return {
+            "schema": kit.SCHEMA_RECEIPT,
+            "forge_id": "spark-forge-aws",
+            "status": "failed",
+            "checks": [],
+            "managed_files": [],
+            "verification": {"status": "FAIL"},
+            "error": {"kind": "SF-MCP-SDK", "detail": str(exc)},
+        }
+    return {
+        "schema": kit.SCHEMA_RECEIPT,
+        "forge_id": "spark-forge-aws",
+        "status": "completed" if code == 0 else "failed",
+        "checks": [],
+        "managed_files": [],
+        "verification": {"status": "PASS" if code == 0 else "FAIL"},
+    }
+
+
 def _wrap(fn) -> Any:
     def run(args: argparse.Namespace) -> dict[str, Any]:
         try:
@@ -157,6 +194,7 @@ _HANDLERS = {
     ("update", None): _update,
     ("uninstall", None): _uninstall,
     ("mcp", "verify"): _mcp_verify,
+    ("mcp", "serve"): _mcp_serve,
 }
 
 _COMMANDS = {"install", "status", "repair", "update", "uninstall"}
@@ -240,6 +278,13 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     mcp_sub.add_parser(
         "verify",
         help="Handshake JSON-RPC real: initialize + tools/list contra o server.")
+    serve_p = mcp_sub.add_parser(
+        "serve",
+        help="Sobe servidor MCP no transporte selecionado (default: stdio).")
+    serve_p.add_argument("--transport", choices=("stdio", "http"), default="stdio")
+    serve_p.add_argument("--mode", choices=("full", "compact"), default="full")
+    serve_p.add_argument("--host", default="127.0.0.1")
+    serve_p.add_argument("--port", type=int, default=8765)
 
 
 __all__ = ["add_parsers", "dispatch", "run_guided_install", "_COMMANDS"]

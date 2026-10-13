@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -334,6 +335,31 @@ def test_mcp_verify_documento():
     assert out["id"] == "mcp-handshake"
     assert out["status"] in ("PASS", "FAIL", "BLOCKED", "NOT_APPLICABLE",
                              "UNVERIFIED")
+
+
+def test_mcp_serve_delega_transporte_e_modo(monkeypatch):
+    from sparkforge_aws.adapters import mcp
+    from sparkforge_aws.install import cli as install_cli
+
+    recebido = []
+    monkeypatch.setattr(mcp, "main", lambda argv: recebido.append(argv) or 0)
+    out = install_cli._mcp_serve(SimpleNamespace(
+        transport="stdio", mode="compact", host="127.0.0.1", port=9876))
+
+    assert recebido == [[
+        "--transport", "stdio", "--mode", "compact",
+        "--host", "127.0.0.1", "--port", "9876",
+    ]]
+    assert out["status"] == "completed"
+
+
+def test_mcp_serve_declara_comando_na_ajuda(capsys):
+    from sparkforge_aws.adapters import cli
+
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["mcp", "serve", "--help"])
+    assert exc.value.code == 0
+    assert "--transport {stdio,http}" in capsys.readouterr().out
 
 
 def test_cli_dispatch_install_dry_run(projeto, capsys, monkeypatch):

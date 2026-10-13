@@ -4441,18 +4441,18 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-   "text": "1018",
+    "text": "1022",
    "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-324",
    "state": "PROVADA",
-   "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic: ALLOWED_CLI_ONLY ganhou 8 verbos agentic. Remedido no checkpoint/resume/event journal (2026-09-15): tests/test_capability_parity.py ganhou a razao de `journal verify` em ALLOWED_CLI_ONLY. Numero relido pela propria prova. Remedido na T5 do DATABRICKS_SPARK (2026-09-18): tests/test_capability_parity.py ganhou `AXES_DECLARED_ONLY` (photon, eixo so declarado) e a trava que a reprova quando o eixo ganhar produtor. Numero relido pela propria prova. Remedido na TX do DATABRICKS_PHOTON_PLAN (2026-09-18): textos publicos de Photon em `cli.py`/`tools.py`/`engine.py`/`models.py` e a derivacao de produtor de `photon` em `tests/test_capability_parity.py` moveram bytes e linhas; a prova le o artefato real. Relida no rebase da INTEGRACAO_USUARIO sobre a main (2026-09-26): 930 -> 939. Relida após declarar os dois novos verbos CLI-only no PR 107 (2026-09-27): 939 -> 952.",
+    "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic: ALLOWED_CLI_ONLY ganhou 8 verbos agentic. Remedido no checkpoint/resume/event journal (2026-09-15): tests/test_capability_parity.py ganhou a razao de `journal verify` em ALLOWED_CLI_ONLY. Numero relido pela propria prova. Remedido na T5 do DATABRICKS_SPARK (2026-09-18): tests/test_capability_parity.py ganhou `AXES_DECLARED_ONLY` (photon, eixo so declarado) e a trava que a reprova quando o eixo ganhar produtor. Numero relido pela propria prova. Remedido na TX do DATABRICKS_PHOTON_PLAN (2026-09-18): textos publicos de Photon em `cli.py`/`tools.py`/`engine.py`/`models.py` e a derivacao de produtor de `photon` em `tests/test_capability_parity.py` moveram bytes e linhas; a prova le o artefato real. Relida no rebase da INTEGRACAO_USUARIO sobre a main (2026-09-26): 930 -> 939. Relida após declarar os dois novos verbos CLI-only no PR 107 (2026-09-27): 939 -> 952. Relida após declarar `mcp serve` como verbo CLI-only de ciclo de vida (2026-10-13): 952 -> 1022.",
    "proof": {
     "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"tests/test_capability_parity.py\").read_text(encoding=\"utf-8\").splitlines()))'",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 1018
+        "value": 1022
     },
     "kind": "command",
     "tier": "fast"
@@ -4501,18 +4501,18 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-   "text": "1818",
+    "text": "1822",
    "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-327",
    "state": "PROVADA",
-   "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic + skills AWS. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge_aws/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao. Remedido no checkpoint/resume/event journal (2026-09-15): tests/test_capability_parity.py ganhou a razao de `journal verify` em ALLOWED_CLI_ONLY. Numero relido pela propria prova. Remedido na T5 do DATABRICKS_SPARK (2026-09-18): tests/test_capability_parity.py ganhou `AXES_DECLARED_ONLY` (photon, eixo so declarado) e a trava que a reprova quando o eixo ganhar produtor. Numero relido pela propria prova. Remedido na TX do DATABRICKS_PHOTON_PLAN (2026-09-18): textos publicos de Photon em `cli.py`/`tools.py`/`engine.py`/`models.py` e a derivacao de produtor de `photon` em `tests/test_capability_parity.py` moveram bytes e linhas; a prova le o artefato real. Relida no rebase da INTEGRACAO_USUARIO sobre a main (2026-09-26): 1730 -> 1739. Relida após declarar os dois novos verbos CLI-only no PR 107 (2026-09-27): 1739 -> 1752.",
+    "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic + skills AWS. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge_aws/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao. Remedido no checkpoint/resume/event journal (2026-09-15): tests/test_capability_parity.py ganhou a razao de `journal verify` em ALLOWED_CLI_ONLY. Numero relido pela propria prova. Remedido na T5 do DATABRICKS_SPARK (2026-09-18): tests/test_capability_parity.py ganhou `AXES_DECLARED_ONLY` (photon, eixo so declarado) e a trava que a reprova quando o eixo ganhar produtor. Numero relido pela propria prova. Remedido na TX do DATABRICKS_PHOTON_PLAN (2026-09-18): textos publicos de Photon em `cli.py`/`tools.py`/`engine.py`/`models.py` e a derivacao de produtor de `photon` em `tests/test_capability_parity.py` moveram bytes e linhas; a prova le o artefato real. Relida no rebase da INTEGRACAO_USUARIO sobre a main (2026-09-26): 1730 -> 1739. Relida após declarar os dois novos verbos CLI-only no PR 107 (2026-09-27): 1739 -> 1752. Relida após declarar `mcp serve` como verbo CLI-only de ciclo de vida (2026-10-13): 1752 -> 1822.",
    "proof": {
     "cmd": "python -c 'import pathlib; files=[\"tests/test_capability_parity.py\",\"tests/test_agents_parity.py\",\"tests/test_platform_divergence.py\"]; print(sum(len(pathlib.Path(f).read_text(encoding=\"utf-8\").splitlines()) for f in files))'",
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-     "value": 1818
+        "value": 1822
     },
     "kind": "command",
     "tier": "fast"
