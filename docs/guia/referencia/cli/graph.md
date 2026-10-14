@@ -8,9 +8,29 @@ Grafo do indice de codigo: status, ForgeGraphView e Graph Studio local.
 
 | Subcomando | O que faz |
 |---|---|
+| [`sparkforge-aws graph build`](#sparkforge-aws-graph-build) | Constroi ou atualiza indice SQLite que alimenta o grafo. Alias semantico de code init. |
 | [`sparkforge-aws graph status`](#sparkforge-aws-graph-status) | Estado do grafo: contagens e origem do indice. |
 | [`sparkforge-aws graph ui`](#sparkforge-aws-graph-ui) | Abre o Graph Studio local (read-only, 127.0.0.1). |
 | [`sparkforge-aws graph view`](#sparkforge-aws-graph-view) | Emite o documento ForgeGraphView/v1 (contrato do Graph Studio). |
+
+## `sparkforge-aws graph build`
+
+Constroi ou atualiza indice SQLite que alimenta o grafo. Alias semantico de code init.
+
+```bash
+sparkforge-aws graph build --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--root` | não | texto |  | `.` |  |
+| `--db` | não | texto |  |  | Arquivo do indice. Default: `.sparkforge_aws/local/codeintel/graph.sqlite3` sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora dali e escolha de quem chama, e o arquivo passa a ser candidato a commit. |
+
+### Tool MCP equivalente
+
+Nenhuma: este verbo existe só na CLI.
 
 ## `sparkforge-aws graph status`
 
