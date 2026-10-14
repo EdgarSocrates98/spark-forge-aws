@@ -159,6 +159,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # `os` permanece lista explícita para o contrato do workflow; `include`
+        # escolhe qual gate caro cada SO executa.
+        os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
             gate: full

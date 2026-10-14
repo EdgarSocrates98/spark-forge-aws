@@ -124,7 +124,14 @@ class TestLockIntegrity:
         Acrescentar 3.12 ao CI sem gerar o lock correspondente quebra aqui, e
         nao no runner com uma mensagem de arquivo ausente.
         """
-        matriz = _workflow(CI)["jobs"]["test"]["strategy"]["matrix"]["python-version"]
+        matriz_raw = _workflow(CI)["jobs"]["test"]["strategy"]["matrix"]["python-version"]
+        # PR usa 3.11; dispatch/nightly expande 3.10/3.11/3.12 via fromJSON.
+        # YAML parser local não avalia expressão GitHub, então extraímos as
+        # versões declaradas para validar locks sem fingir que PR roda matriz.
+        if isinstance(matriz_raw, str):
+            matriz = tuple(dict.fromkeys(re.findall(r'"(3\.\d+)"', matriz_raw)))
+        else:
+            matriz = tuple(matriz_raw)
         assert set(matriz) == set(gen_lock.PYTHON_VERSIONS)
         for version in matriz:
             assert gen_lock.lock_path(version).is_file()
