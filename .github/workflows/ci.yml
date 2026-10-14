@@ -28,6 +28,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -148,6 +149,7 @@ jobs:
 
   wheel:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 30
     # Job proprio, fora da matriz 3.10/3.11/3.12: construir artefato e criar venv
     # custa mais de um minuto e o resultado nao depende da versao de Python.
     # Depende do sistema operacional -- golden e gravado com LF forcado e path
@@ -174,6 +176,7 @@ jobs:
 
   audit:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 15
     # Job PROPRIO, e a separacao e o desenho, nao arrumacao.
     #
     # Auditoria de vulnerabilidade consulta base de dados externa por natureza:
@@ -229,6 +232,7 @@ jobs:
 
   otel-collector:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 15
     # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge-aws
     # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda apenas no
     # full audit caro: nightly ou dispatch; nao escreve fora do runner.
