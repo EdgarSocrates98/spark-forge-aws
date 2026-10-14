@@ -3345,8 +3345,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 217,
-   "text": "576609",
-   "context": "| `authorize` | 3 | 611 | 576609 | 4479 | 123 |",
+   "text": "576611",
+   "context": "| `authorize` | 3 | 611 | 576611 | 4479 | 123 |",
    "type": "number",
    "id": "VNX-844",
    "state": "PROVADA",
@@ -3356,7 +3356,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 576609
+     "value": 576611
     },
     "kind": "command",
     "tier": "fast"
@@ -3425,8 +3425,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 219,
-   "text": "2518535",
-   "context": "Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2518535**;",
+   "text": "2518537",
+   "context": "Somadas as cinco perguntas: o índice devolve **1,939** bytes; ler os arquivos custaria **2518537**;",
    "type": "number",
    "id": "VNX-845",
    "state": "PROVADA",
@@ -3436,7 +3436,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 2518535
+     "value": 2518537
     },
     "kind": "command",
     "tier": "fast"
@@ -4441,7 +4441,7 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-    "text": "1022",
+    "text": "1026",
    "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-324",
@@ -4452,7 +4452,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-        "value": 1022
+        "value": 1026
     },
     "kind": "command",
     "tier": "fast"
@@ -4501,7 +4501,7 @@
   {
    "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
    "line": 83,
-    "text": "1822",
+   "text": "1826",
    "context": "Confirmado por tamanho: `tools.py` (538,6 KB) e `_core.py` (400,8 KB) são, disparado, os dois maiores arquivos do pacote",
    "type": "number",
    "id": "VNX-327",
@@ -4512,7 +4512,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(\\d+)",
-        "value": 1822
+        "value": 1826
     },
     "kind": "command",
     "tier": "fast"
