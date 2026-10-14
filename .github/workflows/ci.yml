@@ -31,9 +31,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # PR valida caminho rápido em uma versão representativa; main, nightly
-        # e dispatch preservam matriz completa de compatibilidade.
-        python-version: ${{ fromJSON(github.event_name == 'pull_request' && '["3.11"]' || '["3.10","3.11","3.12"]') }}
+        # PR valida caminho rápido em uma versão representativa; push em main
+        # executa a suíte completa em 3.11; nightly e dispatch preservam a
+        # matriz completa de compatibilidade.
+        python-version: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["3.10","3.11","3.12"]' || '["3.11"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -146,7 +147,7 @@ jobs:
           fi
 
   wheel:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     # Job proprio, fora da matriz 3.10/3.11/3.12: construir artefato e criar venv
     # custa mais de um minuto e o resultado nao depende da versao de Python.
     # Depende do sistema operacional -- golden e gravado com LF forcado e path
@@ -172,7 +173,7 @@ jobs:
         run: python scripts/verify_wheel.py
 
   audit:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     # Job PROPRIO, e a separacao e o desenho, nao arrumacao.
     #
     # Auditoria de vulnerabilidade consulta base de dados externa por natureza:
@@ -227,10 +228,10 @@ jobs:
         run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt
 
   otel-collector:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge-aws
-    # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda no full audit:
-    # push em main, nightly ou dispatch; nao escreve em lugar nenhum fora do runner.
+    # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda apenas no
+    # full audit caro: nightly ou dispatch; nao escreve fora do runner.
     # O `otelcol-contrib` le os
     # goldens de fixtures/otel com o receiver `otlp_json_file` e grava o que recebeu
     # com o exporter `file`; `scripts/check_otel_collector.py` cobra os mesmos
