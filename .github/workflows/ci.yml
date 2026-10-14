@@ -11,6 +11,8 @@ on:
         required: false
         default: false
         type: boolean
+  schedule:
+    - cron: "17 3 * * *"
 
 # Defesa em profundidade: o job so faz checkout, lint, teste e build local,
 # nunca escreve no repositorio. Sem isto, herdaria o default do repositorio,
@@ -18,27 +20,30 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # Commits sucessivos no mesmo PR nao precisam consumir runners em paralelo.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        # PR valida caminho rápido em uma versão representativa; main, nightly
+        # e dispatch preservam matriz completa de compatibilidade.
+        python-version: ${{ fromJSON(github.event_name == 'pull_request' && '["3.11"]' || '["3.10","3.11","3.12"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
-          # HISTORICO INTEIRO, e nao o clone raso do default.
+          # O clone raso basta para PR: o gate historico e o teste dedicado de
+          # claims rodam no caminho completo. Main/nightly/dispatch usam o
+          # historico inteiro para validar provas historicas.
           #
-          # `actions/checkout` traz `fetch-depth: 1` por padrao: so o commit
-          # sendo testado. As provas `historical` do manifesto de lastro citam
-          # commits ANTIGOS -- `docs/harness/BASELINE.md` cita `6a76b7a` -- e
-          # `check_vnext_claims.py` as confere com `git cat-file -t`. Num clone
-          # raso esse commit nao existe, e o gate recusa por
-          # "proof.commit nao existe neste repositorio": um falso vermelho
-          # sobre uma alegacao que esta certa. Este job e o unico que precisa
-          # do historico; `wheel` e `audit` seguem rasos.
-          fetch-depth: 0
+          # Em PR, claims historicos ficam fora do caminho rápido; nos demais
+          # eventos, `check_vnext_claims.py` recebe o histórico necessário.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -77,7 +82,14 @@ jobs:
       - name: Mirror sync
         run: python scripts/sync_skills.py --check
       - name: Test suite
-        run: python -m pytest -q
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # `test_vnext_claims.py` valida commits históricos e pertence ao
+            # full audit. A suíte funcional continua completa no PR.
+            python -m pytest -q --ignore=tests/test_vnext_claims.py
+          else
+            python -m pytest -q
+          fi
       - name: Requirements mirror
         run: python scripts/gen_requirements.py --check
       - name: Lock integrity
@@ -93,6 +105,7 @@ jobs:
       - name: Eval corpus consistency
         run: python scripts/check_evals.py
       - name: vNext claims lastro
+        if: github.event_name != 'pull_request'
         run: python scripts/check_vnext_claims.py
       # O gate acima audita `docs/vnext/` e `docs/harness/`, e NAO o STATUS.md
       # -- que e a fonte da verdade sobre onde o projeto esta. A auditoria de
@@ -121,6 +134,7 @@ jobs:
           fi
 
   wheel:
+    if: github.event_name != 'pull_request'
     # Job proprio, fora da matriz 3.10/3.11/3.12: construir artefato e criar venv
     # custa mais de um minuto e o resultado nao depende da versao de Python.
     # Depende do sistema operacional -- golden e gravado com LF forcado e path
@@ -146,6 +160,7 @@ jobs:
         run: python scripts/verify_wheel.py
 
   audit:
+    if: github.event_name != 'pull_request'
     # Job PROPRIO, e a separacao e o desenho, nao arrumacao.
     #
     # Auditoria de vulnerabilidade consulta base de dados externa por natureza:
@@ -200,6 +215,7 @@ jobs:
         run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt
 
   otel-collector:
+    if: github.event_name != 'pull_request'
     # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge-aws
     # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda em todo push
     # e PR: nao escreve em lugar nenhum fora do runner. O `otelcol-contrib` le os
