@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Projecao ForgeGraphView/v1 do indice de codigo persistido — a mesma saida de `sparkforge-aws graph view`, produtora do Graph Studio. Somente leitura sobre `.sparkforge_aws/local/codeintel/graph.sqlite3`; sem indice recusa SF-GRAPH-NO-INDEX com o unlock `code index`.
+Projecao ForgeGraphView/v1 do indice de codigo persistido — a mesma saida de `sparkforge-aws graph view`, produtora do Graph Studio. Somente leitura sobre `.sparkforge_aws/local/codeintel/graph.sqlite3`; sem indice recusa SF-GRAPH-NO-INDEX com o unlock `graph build`.
 
 ## Parâmetros
 

@@ -2455,6 +2455,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     graph_sub = graph_p.add_subparsers(dest="graph_action", required=True)
 
+    graph_build_p = graph_sub.add_parser(
+        "build",
+        help=(
+            "Constroi ou atualiza indice SQLite que alimenta o grafo. "
+            "Alias semantico de code init."
+        ),
+    )
+    _code_comum(graph_build_p)
+
     graph_status_p = graph_sub.add_parser(
         "status", help="Estado do grafo: contagens e origem do indice."
     )
@@ -5904,6 +5913,12 @@ def _cmd_code_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_graph_build(args: argparse.Namespace) -> int:
+    """Build the persistent code-intelligence graph used by Graph Studio."""
+    _print(_core.code_init(args.root, db=args.db))
+    return 0
+
+
 def _cmd_graph_status(args: argparse.Namespace) -> int:
     from sparkforge_aws import graphview
 
@@ -5919,7 +5934,7 @@ def _cmd_graph_view(args: argparse.Namespace) -> int:
         _print(
             {
                 "refusal": "SF-GRAPH-NO-INDEX",
-                "unlock": "sparkforge-aws code index --root <repo>",
+                "unlock": "sparkforge-aws graph build --root <repo>",
             }
         )
         return 2
@@ -5950,7 +5965,7 @@ def _cmd_graph_ui(args: argparse.Namespace) -> int:
         _print(
             {
                 "refusal": "SF-GRAPH-NO-INDEX",
-                "unlock": "sparkforge-aws code index --root <repo>",
+                "unlock": "sparkforge-aws graph build --root <repo>",
             }
         )
         return 2
@@ -6458,6 +6473,7 @@ _DISPATCH = {
     ("code", "context"): _cmd_code_context,
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
+    ("graph", "build"): _cmd_graph_build,
     ("graph", "status"): _cmd_graph_status,
     ("graph", "view"): _cmd_graph_view,
     ("graph", "ui"): _cmd_graph_ui,

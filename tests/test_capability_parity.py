@@ -293,6 +293,10 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         # `graph ui` abre um BROWSER no host: o efeito colateral e a janela, nao
         # o payload. A projecao que ele renderiza ja chega por
         # `sparkforge_aws_graph_view`.
+        "graph build": (
+            "constroi o indice persistente local no disco do chamador; as tools "
+            "MCP leem o indice por `sparkforge_aws_graph_status`/`graph_view`."
+        ),
         "graph ui": "abre browser no host; projecao coberta por sparkforge_aws_graph_view.",
         # `portal` sobe um servidor web local (127.0.0.1) na maquina do
         # chamador: o efeito colateral e o processo/janela, nao um payload.

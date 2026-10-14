@@ -36,7 +36,7 @@ def index_status(root: str | Path = ".") -> dict:
         return {
             "provider": PROVIDER,
             "graph": "unavailable",
-            "reason": "no code-intel index — run `sparkforge-aws code index` first",
+            "reason": "no code-intel index — run `sparkforge-aws graph build` first",
         }
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     try:
