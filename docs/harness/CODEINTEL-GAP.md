@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1342** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening após `sparkforge_aws/agentic/handoff.py` e `tests/test_agentic_handoff.py` entrarem no corpus; relido na onda Rui após `tests/test_ui_resilience.py` entrar no corpus).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1343** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening após `sparkforge_aws/agentic/handoff.py` e `tests/test_agentic_handoff.py` entrarem no corpus; relido na onda Rui após `tests/test_ui_resilience.py` entrar no corpus; relido em 2026-10-15 após `scripts/lab/sparkforge_aws_lab.py` (emissor Forge Lab, cyc9-04) entrar no corpus).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
 `buscar(banco, "source")` devolve **50** símbolos em **11567** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **396123** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável;
+  no mesmo corpus, tem **396239** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável; relido em 2026-10-15 após `scripts/lab/sparkforge_aws_lab.py` entrar no corpus;
   o valor foi lido pela própria prova e não ajustado à mão, após o `_trust` entrar em
   `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
 (**16122** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
