@@ -104,3 +104,4 @@ pip/
 # Environment stubs/secrets — never commit filled .env files
 .env
 .env.*
+graphify-out/
