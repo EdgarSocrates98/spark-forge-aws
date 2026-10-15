@@ -100,3 +100,7 @@ test-runs/
 .pytest*
 uv.lock
 pip/
+
+# Environment stubs/secrets — never commit filled .env files
+.env
+.env.*
