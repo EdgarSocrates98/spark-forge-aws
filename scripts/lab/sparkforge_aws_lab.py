@@ -7,10 +7,12 @@ Two real deterministic scenarios, stdlib-only:
   2. holdout-corpus      — every evals/holdout case must carry expected/
      ground truth + meta.yaml; integrity is measured, not assumed.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
+import re as _re
 import sys
 import time
 from datetime import datetime, timezone
@@ -19,8 +21,6 @@ from pathlib import Path
 FORGE = "spark-forge-aws"
 SUITE = "spark-forge-aws-lab"
 
-
-import re as _re
 
 def _slug(s: object) -> str:
     return _re.sub(r"[^a-z0-9-]+", "-", str(s).lower()).strip("-") or "scenario"
@@ -54,9 +54,7 @@ def main() -> int:
                 "scenario_id": "lab-doctor",
                 "verdict": "pass" if ready else "fail",
                 "duration_ms": int((time.monotonic() - started) * 1000),
-                "detail": "; ".join(
-                    str(u) for u in (d.get("unresolved") or [])[:3]
-                ),
+                "detail": "; ".join(str(u) for u in (d.get("unresolved") or [])[:3]),
                 "evidence_ref": "sparkforge/lab/doctor",
                 "judge": None,
                 "metrics": {
@@ -77,8 +75,10 @@ def main() -> int:
                 "detail": f"{type(exc).__name__}: {exc}"[:300],
                 "evidence_ref": "",
                 "judge": None,
-                "metrics": {"success": m("measured", 0.0, "ratio"),
-                            "cost_usd": m("not_applicable")},
+                "metrics": {
+                    "success": m("measured", 0.0, "ratio"),
+                    "cost_usd": m("not_applicable"),
+                },
             }
         )
 
@@ -89,9 +89,11 @@ def main() -> int:
     complete = 0
     missing: list[str] = []
     for case in cases:
-        ok = (case / "meta.yaml").is_file() and any(
-            (case / "expected").iterdir()
-        ) if (case / "expected").is_dir() else False
+        ok = (
+            (case / "meta.yaml").is_file() and any((case / "expected").iterdir())
+            if (case / "expected").is_dir()
+            else False
+        )
         if ok:
             complete += 1
         else:
@@ -102,7 +104,9 @@ def main() -> int:
             "scenario_id": "holdout-corpus",
             "verdict": verdict,
             "duration_ms": int((time.monotonic() - started) * 1000),
-            "detail": ("missing ground truth: " + ", ".join(missing[:5])) if missing else ("" if cases else "no cases under evals/holdout"),
+            "detail": ("missing ground truth: " + ", ".join(missing[:5]))
+            if missing
+            else ("" if cases else "no cases under evals/holdout"),
             "evidence_ref": "evals/holdout",
             "judge": None,
             "metrics": {
@@ -121,7 +125,10 @@ def main() -> int:
         "suite": SUITE,
         "forge": FORGE,
         "mode": a.mode,
-        "notes": ["domain benchmark scenarios pending case-runner wiring (cyc9-04/05 scope: declaration + integrity gates)"],
+        "notes": [
+            "domain benchmark scenarios pending case-runner wiring "
+            "(cyc9-04/05 scope: declaration + integrity gates)"
+        ],
         "producer": {"id": FORGE, "version": "lab-script"},
         "results": results,
     }
