@@ -1,7 +1,7 @@
 ---
 id: cyc9-04
 title: scenarios-data-engineering-aws
-status: inbox
+status: active
 created: 2026-10-15
 owner: spark-forge-aws
 scope: repo
