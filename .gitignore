@@ -105,3 +105,5 @@ pip/
 .env
 .env.*
 graphify-out/
+factory/runs/*
+.forge/
