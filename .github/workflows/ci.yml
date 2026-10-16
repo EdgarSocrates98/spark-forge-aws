@@ -37,7 +37,7 @@ jobs:
         # matriz completa de compatibilidade.
         python-version: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["3.10","3.11","3.12"]' || '["3.11"]') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           # O clone raso basta para PR: o gate historico e o teste dedicado de
           # claims rodam no caminho completo. Main/nightly/dispatch usam o
@@ -46,7 +46,7 @@ jobs:
           # Em PR, claims historicos ficam fora do caminho rápido; nos demais
           # eventos, `check_vnext_claims.py` recebe o histórico necessário.
           fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install (frozen)
@@ -168,8 +168,8 @@ jobs:
           - os: windows-latest
             gate: package
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
       - name: Install build tooling
@@ -207,8 +207,8 @@ jobs:
     # consultada", que e o que nunca pode ser lido como aprovacao.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
       - name: Install pip-audit
@@ -254,8 +254,8 @@ jobs:
     # spans, atributos e pontos de metrica. Versao do Collector fixada.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
       - name: Subir o Collector
@@ -299,8 +299,8 @@ jobs:
           - caso: stage_python
             roots: "--source-root fixtures/sarif/stage_python/input/repo"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
       - name: Install
@@ -314,7 +314,7 @@ jobs:
             --category sparkforge-aws-fixtures-${{ matrix.caso }}
       - name: Upload SARIF
         id: upload
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@ce5e7eeac396d720fe2d802714996c8ce561e311 # v3
         with:
           sarif_file: .sparkforge_aws/report/sparkforge-aws.sarif
           category: sparkforge-aws-fixtures-${{ matrix.caso }}
