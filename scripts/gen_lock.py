@@ -54,8 +54,9 @@ Um lock por versao de Python, e por que nao da para ser um so
 A resolucao DIVERGE entre 3.10 e 3.11, e nao por capricho: `rpds-py` tem versao
 cujo `requires-python` exclui 3.10, entao as duas linhas resolvem para versoes
 diferentes do MESMO pacote; e `tomli`, `importlib-metadata` e `zipp` so existem
-na linha 3.10. Um lock unico teria que mentir sobre uma das linhas. Sao tres
-arquivos (3.12 entrou em 2026-09-15), um por entrada da matriz do CI, e o nome
+na linha 3.10. Um lock unico teria que mentir sobre uma das linhas. Sao cinco
+arquivos (3.12 entrou em 2026-09-15; 3.13 e 3.14 no ciclo 11.2), um por
+entrada da matriz do CI, e o nome
 do arquivo carrega a versao para que o workflow os enderece sem tabela de conversao.
 
 O alvo e Linux x86_64, que e onde o job `test` roda (`ubuntu-latest`). O job
@@ -114,11 +115,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOCK_DIR = ROOT / "locks"
 
-# As duas entradas da matriz de `.github/workflows/ci.yml`. Uma lista aqui e a
-# mesma lista la e drift esperando para acontecer -- `tests/test_supply_chain.py`
-# le a matriz do workflow e compara com esta tupla, entao acrescentar 3.12 no CI
-# sem gerar o lock correspondente quebra a suite em vez de quebrar o CI.
-PYTHON_VERSIONS = ("3.10", "3.11", "3.12")
+# As cinco entradas da matriz completa de `.github/workflows/ci.yml`. Uma lista
+# aqui e a mesma lista la e drift esperando para acontecer --
+# `tests/test_supply_chain.py` le a matriz do workflow e compara com esta
+# tupla, entao acrescentar uma versao no CI sem gerar o lock correspondente
+# quebra a suite em vez de quebrar o CI. 3.13 e 3.14 entraram no ciclo 11.2
+# (P1-004), cobrindo todo o intervalo de `requires-python >=3.10`.
+PYTHON_VERSIONS = ("3.10", "3.11", "3.12", "3.13", "3.14")
 
 # O alvo de `ubuntu-latest`, no vocabulario do `--python-platform` do uv.
 #

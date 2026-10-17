@@ -17,6 +17,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: System :: Monitoring",
 ]
@@ -28,6 +30,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/EdgarSocrates98/spark-forge-aws"
 Repository = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Documentation = "https://github.com/EdgarSocrates98/spark-forge-aws/blob/main/GUIA_DE_USO.md"
+Changelog = "https://github.com/EdgarSocrates98/spark-forge-aws/blob/main/CHANGELOG.md"
 Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
 
 [project.optional-dependencies]

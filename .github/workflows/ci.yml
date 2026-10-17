@@ -34,8 +34,9 @@ jobs:
       matrix:
         # PR valida caminho rápido em uma versão representativa; push em main
         # executa a suíte completa em 3.11; nightly e dispatch preservam a
-        # matriz completa de compatibilidade.
-        python-version: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["3.10","3.11","3.12"]' || '["3.11"]') }}
+        # matriz completa de compatibilidade — todo minor dentro de
+        # `requires-python >=3.10`, de 3.10 a 3.14 (ciclo 11.2, P1-004).
+        python-version: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["3.10","3.11","3.12","3.13","3.14"]' || '["3.11"]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
