@@ -3582,8 +3582,8 @@
   {
    "doc": "docs/harness/CODEINTEL-GAP.md",
    "line": 248,
-   "text": "396239",
-   "context": "no mesmo corpus, tem **396239** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável;",
+   "text": "396244",
+   "context": "no mesmo corpus, tem **396244** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável;",
    "type": "number",
    "id": "VNX-827",
    "state": "PROVADA",
@@ -3593,7 +3593,7 @@
     "expect": {
      "kind": "number",
      "pattern": "^(-?[0-9]+)",
-     "value": 396239
+     "value": 396244
     },
     "kind": "command",
     "tier": "fast"
