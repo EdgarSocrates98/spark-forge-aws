@@ -247,3 +247,39 @@ def test_docs_search_vazio_sem_query(server):
     code, env = _call(server, "GET", "/docs/search")
     assert code == 200
     assert env["data"] == []
+
+
+# ---------------------------------------------------------------------------
+# telemetria forge/PortalEvent/1
+# ---------------------------------------------------------------------------
+
+def test_telemetria_events_e_metrics_via_http(server):
+    """Opt-in da telemetria vendored: o servidor grava os limites reais de
+    cada op no EventRecorder do adapter; GET /events + /metrics projetam o
+    que realmente rodou — nada fabricado, vazio significa ocioso."""
+    code, _env = _call(server, "GET", "/health")
+    assert code == 200
+
+    code, env = _call(server, "GET", "/events")
+    assert code == 200
+    doc = env["data"]
+    assert doc["schema"] == "forge/PortalEventReport/1"
+    assert doc["forge_id"] == "spark-forge-aws"
+    ends = [e for e in doc["events"] if e.get("event_type") == "operation.end"]
+    assert ends, "GET /health autenticado tem que gravar operation.end"
+    ev = ends[-1]
+    assert ev["schema"] == "forge/PortalEvent/1"
+    assert ev["status"] == "ok"
+    assert isinstance(ev["duration_ms"], (int, float))
+    assert ev["correlation_id"]
+    assert ev["source"] and ev["target"]
+    assert ev["timestamp"]
+
+    code, env = _call(server, "GET", "/metrics")
+    assert code == 200
+    metrics = env["data"]
+    assert metrics["counters"]["operation.end"] >= 1
+    kinds = {e["kind"] for e in metrics["events"]}
+    assert "operation.end" in kinds
+    assert metrics["events"][-1]["correlation_id"]
+    assert metrics["truncated"] is False
