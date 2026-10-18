@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
         ("0.5", ">=0.5.0", True),
         ("0.4.9", ">0.4.9", False),
         ("2.0", "==2", True),
-        ("0.5.1", "<=0.5", False),
+        ("0.5.2", "<=0.5", False),
     ],
 )
 def test_faixa(instalada, faixa, ok):

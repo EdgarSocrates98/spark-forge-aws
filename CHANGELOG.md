@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.2] - 2026-10-18
+
+### Changed
+- Portal 2.2 vendored generation (44-asset frontend, telemetry,
+  py3.10-safe server); hardened PyPI pipeline (build-once/
+  publish-same-artifact, version gate, post-publish verify)
+
 ## [0.5.1] - 2026-10-18
 
 ### Fixed
