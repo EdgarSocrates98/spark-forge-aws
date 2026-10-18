@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sparkforge-aws"
-version = "0.5.0"
+version = "0.5.1"
 description = "Agent skills and deterministic analyzers for AWS Glue PySpark, Parquet, Iceberg and Athena performance engineering"
 readme = "README.md"
 license = { file = "LICENSE" }
