@@ -230,3 +230,4 @@ ignore = [
 # Vendored portal server (canonical: forge-portal/portal_core) — byte-identical
 # to the shared source, linted in the canonical repo.
 "sparkforge_aws/_forge_portal.py" = ["ALL"]
+"sparkforge_aws/_portal_telemetry.py" = ["ALL"]
