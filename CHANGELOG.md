@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] - 2026-10-18
+
+### Fixed
+- Portal vendored 2.1 final (Cycles 0-6)
+
 ## [Unreleased]
 
 ### Fixed
