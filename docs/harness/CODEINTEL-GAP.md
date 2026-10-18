@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
 `buscar(banco, "source")` devolve **50** símbolos em **11567** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **396244** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável; relido em 2026-10-15 após `scripts/lab/sparkforge_aws_lab.py` entrar no corpus;
+  no mesmo corpus, tem **396648** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável; relido em 2026-10-15 após `scripts/lab/sparkforge_aws_lab.py` entrar no corpus; relido em 2026-10-18 após o `_forge_portal.py` vendored crescer com a telemetria nova do portal — valor lido pela prova;
   o valor foi lido pela própria prova e não ajustado à mão, após o `_trust` entrar em
   `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
 (**16122** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
