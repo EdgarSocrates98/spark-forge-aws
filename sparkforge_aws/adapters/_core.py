@@ -6255,6 +6255,8 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
     term_norm = term.strip().lower()
     if not term_norm:
         raise AdapterError("knowledge search exige um termo nao vazio.", exit_code=2)
+    if not isinstance(limit, int) or limit <= 0:
+        raise AdapterError("knowledge search exige --limit inteiro > 0.", exit_code=2)
     listado = knowledge_list()
     hits: list[dict[str, Any]] = []
     matched_files: list[str] = []

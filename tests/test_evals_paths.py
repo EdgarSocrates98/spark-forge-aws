@@ -62,3 +62,16 @@ def test_wheel_path_constant_points_inside_the_package():
     dentro de `sparkforge_aws/` para o fallback empacotado funcionar."""
     assert PACKAGED_EVALS.name == "evals_data"
     assert PACKAGED_EVALS.parent.name == "sparkforge_aws"
+
+
+def test_suites_disponiveis_refuses_broken_env_override(monkeypatch, tmp_path):
+    """Override env quebrado nomeia a var — nao devolve lista vazia."""
+    monkeypatch.setenv("SPARKFORGE_AWS_EVALS", str(tmp_path / "inexistente"))
+    with pytest.raises(EvalsError, match="SPARKFORGE_AWS_EVALS"):
+        suites_disponiveis(cwd=tmp_path)
+
+
+def test_suites_disponiveis_alias_env_refuses(monkeypatch, tmp_path):
+    monkeypatch.setenv("SPARK_FORGE_AWS_EVALS", str(tmp_path / "inexistente"))
+    with pytest.raises(EvalsError, match="SPARK_FORGE_AWS_EVALS"):
+        suites_disponiveis(cwd=tmp_path)

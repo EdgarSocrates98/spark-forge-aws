@@ -3525,6 +3525,50 @@ _KNOWLEDGE_DRIFT_SCHEMA: dict[str, Any] = {
     },
 }
 
+_KNOWLEDGE_LIST_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["root", "docs"],
+    "properties": {
+        "root": {"type": "string"},
+        "docs": {"type": "array", "items": {"type": "string"}},
+        "packs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "root", "docs"],
+                "properties": {
+                    "id": {"type": "string"},
+                    "root": {"type": "string"},
+                    "docs": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+    },
+}
+
+_KNOWLEDGE_SEARCH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["term", "matched", "matched_total", "hits", "truncated"],
+    "properties": {
+        "term": {"type": "string"},
+        "matched": {"type": "array", "items": {"type": "string"}},
+        "matched_total": {"type": "integer"},
+        "hits": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["file", "line", "text"],
+                "properties": {
+                    "file": {"type": "string"},
+                    "line": {"type": "integer"},
+                    "text": {"type": "string"},
+                },
+            },
+        },
+        "truncated": {"type": "boolean"},
+    },
+}
+
 _GAIN_MARCAS = [
     "amostra_insuficiente",
     "volume_diverge",
@@ -9463,6 +9507,48 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_aws_knowledge_list": {
+        "description": (
+            "Knowledge List: enumera os documentos de knowledge versionado (e dos packs "
+            "ativos em `packs/<id>/<rel>`) sobre a mesma raiz resolvida por "
+            "`knowledge_path` — env override, workspace, checkout com marcador ou o "
+            "bundle do wheel. Resposta fina: `root` + `docs` (paths relativos). O QUE "
+            "ELA NAO FAZ: nao le conteudo (isso e `knowledge_search`/`code_read`), nao "
+            "atualiza a raiz e nao acessa rede."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+        "outputSchema": _may_fail(
+            _KNOWLEDGE_LIST_SCHEMA,
+            "A raiz resolvida e os docs, ou erro se knowledge nao existe em nenhuma raiz.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_aws_knowledge_search": {
+        "description": (
+            "Knowledge Search: busca textual deterministica e offline sobre os `.md`/"
+            "`.yaml` da raiz resolvida e dos packs ativos — casa o termo sem case em "
+            "nome e conteudo. Devolve `matched` (docs com hit, enderecados "
+            "`packs/<id>/<rel>`), `matched_total` e as primeiras `limit` ocorrencias "
+            "`{file, line, text}` — nunca o arquivo inteiro; `truncated` marca o corte. "
+            "O QUE ELA NAO FAZ: nao ranqueia, nao interpreta, nao acessa rede."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["term"],
+            "properties": {
+                "term": {"type": "string", "description": "Termo buscado (sem case)."},
+                "limit": {
+                    "type": "integer",
+                    "description": "Teto de ocorrencias devolvidas (default 20).",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _KNOWLEDGE_SEARCH_SCHEMA,
+            "Os hits ate `limit`, ou erro se o termo e vazio / knowledge ausente.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_aws_gain": {
         "description": (
             "Realized Gain Ledger: o ganho OBSERVADO entre runs ja medidos de um job Glue "
@@ -12317,6 +12403,14 @@ def _h_knowledge_drift(args: dict[str, Any]) -> dict[str, Any]:
     return _core.knowledge_drift(url=args.get("source"), as_of=args.get("as_of"))
 
 
+def _h_knowledge_list(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.knowledge_list()
+
+
+def _h_knowledge_search(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.knowledge_search(args["term"], limit=args.get("limit", 20))
+
+
 def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:
     from sparkforge_aws.observability.context_ledger import shared_ledger
 
@@ -12726,6 +12820,8 @@ _HANDLERS = {
     "sparkforge_aws_simulate": _h_simulate,
     "sparkforge_aws_pack_list": _h_pack_list,
     "sparkforge_aws_knowledge_drift": _h_knowledge_drift,
+    "sparkforge_aws_knowledge_list": _h_knowledge_list,
+    "sparkforge_aws_knowledge_search": _h_knowledge_search,
     "sparkforge_aws_gain": _h_gain,
     "sparkforge_aws_scan": _h_scan,
     "sparkforge_aws_doctor": _h_doctor,

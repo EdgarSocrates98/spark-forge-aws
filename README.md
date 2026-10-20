@@ -59,7 +59,7 @@ acesso a:
   pedido: "meu job Glue tá lento" ativa `sparkforge-aws-diagnose` antes de
   qualquer análise; "dá pra subir pra Glue 6?" ativa `migrate-glue-6`; "por que
   a escrita falha no Lake Formation" ativa `diagnose-lakeformation-access`.
-- 146 tools MCP (`python -m sparkforge_aws.adapters.mcp --transport stdio`,
+- 148 tools MCP (`python -m sparkforge_aws.adapters.mcp --transport stdio`,
   registrado como `mcpServers["sparkforge-aws"]` em `.mcp.json` no
   projeto) — os verbos determinísticos que as skills chamam: `analyze`,
   `judge`, `collect`, `rules_lookup`, `validate_output`, `next_step`.
@@ -406,7 +406,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge_aws/adapters/_core.py`), e o servidor publica **146 tools MCP** no catálogo atual.
+(`sparkforge_aws/adapters/_core.py`), e o servidor publica **148 tools MCP** no catálogo atual.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|

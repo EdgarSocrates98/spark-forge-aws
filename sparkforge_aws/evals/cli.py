@@ -145,15 +145,16 @@ def _suite_dir(nome: str) -> Path:
 
 def _conjunto(suite: str, nome: str, flag: str) -> Path:
     alvo = _nome(nome, flag)
+    suite_dir = _suite_dir(suite)
     candidatos = [
         base / alvo
-        for base in (_suite_dir(suite) / "baselines", RUNS_ROOT)
+        for base in (suite_dir / "baselines", RUNS_ROOT)
         if (base / alvo).is_dir()
     ]
     if len(candidatos) != 1:
         raise EvalError(
             f"{flag} {nome!r}: precisa existir em exatamente um de "
-            f"evals/agentic/{suite}/baselines/ e {RUNS_ROOT} (achado em {len(candidatos)})"
+            f"{suite_dir / 'baselines'} e {RUNS_ROOT} (achado em {len(candidatos)})"
         )
     return candidatos[0]
 
@@ -225,9 +226,13 @@ def main(argv: list[str] | None = None) -> int:
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
         elif args.action == "list":
+            from sparkforge_aws.evals.paths import EvalsError as _EvalsError
             from sparkforge_aws.evals.paths import suites_disponiveis
 
-            payload = {"suites": suites_disponiveis()}
+            try:
+                payload = {"suites": suites_disponiveis()}
+            except _EvalsError as exc:
+                raise EvalError(str(exc)) from exc
         elif args.action == "debate":
             execucao = DEBATE_RUNS_ROOT / _nome(args.run, "--run")
             if not execucao.is_dir():

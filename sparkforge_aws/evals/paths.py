@@ -78,9 +78,26 @@ def suite_dir(nome: str, *, cwd: Path | None = None) -> Path:
 
 
 def suites_disponiveis(*, cwd: Path | None = None) -> list[str]:
-    """Os nomes de suite visiveis (workspace + versionadas), ordenados."""
+    """Os nomes de suite visiveis (workspace + versionadas), ordenados.
+
+    Override env quebrado e configuracao, nao "lista vazia": se a var
+    aponta para algo inexistente o erro nomeia a var, igual a
+    `suite_dir` — `evals list` nunca encobre um override invalido.
+    """
+    override = os.environ.get("SPARKFORGE_AWS_EVALS") or os.environ.get("SPARK_FORGE_AWS_EVALS")
+    bases = _bases((cwd or Path.cwd()).resolve())
+    if override and not bases[0].is_dir():
+        env_name = (
+            "SPARKFORGE_AWS_EVALS"
+            if os.environ.get("SPARKFORGE_AWS_EVALS")
+            else "SPARK_FORGE_AWS_EVALS"
+        )
+        raise EvalsError(
+            f"{env_name} aponta para {Path(override).expanduser()}, "
+            "que nao contem agentic/"
+        )
     nomes: set[str] = set()
-    for base in _bases((cwd or Path.cwd()).resolve()):
+    for base in bases:
         if base.is_dir():
             nomes.update(p.name for p in base.iterdir() if p.is_dir())
     return sorted(nomes)

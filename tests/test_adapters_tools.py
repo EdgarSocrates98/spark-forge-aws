@@ -133,6 +133,10 @@ class TestToolSurface:
             "sparkforge_aws_simulate",
             "sparkforge_aws_pack_list",
             "sparkforge_aws_knowledge_drift",
+            # Cycle 12: os verbos `knowledge list|search` que so existiam na
+            # CLI — paridade MCP pedida pela §4.6 e pelo review R11.
+            "sparkforge_aws_knowledge_list",
+            "sparkforge_aws_knowledge_search",
             "sparkforge_aws_gain",
             "sparkforge_aws_scan",
             "sparkforge_aws_doctor",
@@ -3175,6 +3179,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["prefixes"] == {"ACME": "acme-platform"}, result
         assert [r["reason"] for r in result["refused"]] == ["prefixo_reservado"], result
         return result
+
+    if name == "sparkforge_aws_knowledge_list":
+        return call_tool("sparkforge_aws_knowledge_list", {})
+
+    if name == "sparkforge_aws_knowledge_search":
+        return call_tool(
+            "sparkforge_aws_knowledge_search", {"term": "iceberg", "limit": 3}
+        )
 
     if name == "sparkforge_aws_knowledge_drift":
         # Lock sintetico com uma fonte mudada: o schema e validado com citacoes,
