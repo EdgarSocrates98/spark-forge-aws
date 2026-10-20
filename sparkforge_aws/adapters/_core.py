@@ -6259,13 +6259,17 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
     hits: list[dict[str, Any]] = []
     matched_files: list[str] = []
     truncated = False
-    # estrutura plana de (root, rel): docs do core + docs por pack
-    roots: list[tuple[str, str]] = [
-        (listado["root"], rel) for rel in listado["docs"]
+    # (display, root, rel): docs do core com rel puro; packs endereçados
+    # como `packs/<id>/<rel>` — o esquema que _pack_do_arquivo já lê, e que
+    # evita colapsar docs homônimos de origens distintas em `matched`.
+    roots: list[tuple[str, str, str]] = [
+        (rel, listado["root"], rel) for rel in listado["docs"]
     ]
     for pack in listado.get("packs", []):
-        roots += [(pack["root"], rel) for rel in pack["docs"]]
-    for root_s, rel in roots:
+        roots += [
+            (f"packs/{pack['id']}/{rel}", pack["root"], rel) for rel in pack["docs"]
+        ]
+    for display, root_s, rel in roots:
         path = Path(root_s) / rel
         try:
             lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -6275,11 +6279,11 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
         name_hit = term_norm in rel.lower()
         if not matching and not name_hit:
             continue
-        if rel not in matched_files:  # pack pode re-publicar doc do core
-            matched_files.append(rel)
+        if display not in matched_files:
+            matched_files.append(display)
         remaining = limit - len(hits)
         for i in matching[:remaining]:
-            hits.append({"file": rel, "line": i, "text": lines[i - 1].strip()[:160]})
+            hits.append({"file": display, "line": i, "text": lines[i - 1].strip()[:160]})
         if len(matching) > remaining:
             truncated = True
     return {
