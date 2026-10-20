@@ -6681,12 +6681,15 @@ def main(argv: list[str] | None = None) -> int:
         return run_guided_install()
     args = parser.parse_args(argv)
     from sparkforge_aws.distribution.config import PortableError
+    from sparkforge_aws.integrate.sources import SourcesError
     try:
         return _dispatch(args)
     except _core.AdapterError as exc:
         print(exc.message, file=sys.stderr)
         return exc.exit_code
-    except PortableError as exc:
+    except (PortableError, SourcesError) as exc:
+        # SourcesError: install degradado (sem checkout nem bundle) — recusa
+        # nomeada, nao traceback.
         print(str(exc), file=sys.stderr)
         return 2
 

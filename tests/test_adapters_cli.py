@@ -2932,3 +2932,16 @@ class TestEconomyReportCommand:
         assert not any(
             item.get("reason") == "run_unresolved" for item in payload["unresolved"]
         )
+
+
+def test_main_envelopa_sources_error(monkeypatch, capsys):
+    """Install degradado (sem checkout nem bundle) deve sair como recusa rc=2."""
+    from sparkforge_aws.adapters import cli
+    from sparkforge_aws.integrate.sources import SourcesError
+
+    monkeypatch.setattr(cli, "_dispatch", lambda args: (_ for _ in ()).throw(
+        SourcesError("bundle ausente")
+    ))
+    rc = cli.main(["economy", "report", "--run-id", "r1"])
+    assert rc == 2
+    assert "bundle ausente" in capsys.readouterr().err

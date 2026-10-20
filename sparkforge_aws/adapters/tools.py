@@ -12888,6 +12888,8 @@ def call_tool(
     # O journal (`sparkforge_aws.journal.record`) grava `started`/`finished` so para
     # verbo que muda estado, e so DEPOIS da policy: chamada recusada nao rodou.
     # Ele nunca derruba a chamada -- falha dele vira `journal: "unrecorded"`.
+    from sparkforge_aws.integrate.sources import SourcesError
+
     with recording(name, "mcp", argumentos, now=argumentos.get("now")) as registro:
         try:
             resultado = handler(argumentos)
@@ -12903,6 +12905,11 @@ def call_tool(
             desfecho = "error"
         except _core.AdapterError as exc:
             resultado = {"error": exc.message, "exit_code": exc.exit_code}
+            desfecho = "error"
+        except SourcesError as exc:
+            # install degradado (sem checkout nem bundle): recusa envelopada,
+            # nao traceback — mesma convencao do AdapterError.
+            resultado = {"error": str(exc), "exit_code": 2}
             desfecho = "error"
         resultado = registro.finish(resultado, desfecho)
 
