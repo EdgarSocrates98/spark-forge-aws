@@ -911,6 +911,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: inventory and search the knowledge corpus offline
+    tools: [sparkforge_aws_knowledge_list, sparkforge_aws_knowledge_search]
+    cli: [knowledge list, knowledge search]
+    knowledge: [knowledge/INDEX.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: trace the access path to a governed table as a graph
     tools: [sparkforge_aws_lakeformation_access_graph]
     cli: [lakeformation access-graph]

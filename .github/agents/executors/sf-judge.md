@@ -17,6 +17,8 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    com data, e `knowledge_refs` com o caminho **resolvido** dos arquivos citados. Abra por
    ali, nunca pelo caminho relativo do texto: num pacote instalado por pip o arquivo está
    dentro do `site-packages`. Fora de uma regra, use `sparkforge_aws_knowledge_path`.
+   Para inventário e busca textual offline do mesmo corpus, `sparkforge_aws_knowledge_list`
+   e `sparkforge_aws_knowledge_search` resolvem a raiz pelo mesmo caminho.
 4. Registra no case com `sparkforge_aws_case_update`.
 
 ## Pressupõe

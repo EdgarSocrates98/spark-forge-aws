@@ -327,11 +327,18 @@ class TestSuperficieMCP:
         # uma lista de itens com `provenance`. O `limit` e o teto de nos da
         # projecao (default 5000), sem cursor nem envelope de pagina -- um
         # `summary` nao teria campo de item para projetar.
+        #
+        # `knowledge_search` segue o padrao de `code_search`: devolve
+        # ocorrencias `{file, line, text}` -- referencia de documento, ja o
+        # minimo para alguem abrir o trecho. O `limit` e o teto de
+        # ocorrencias (default 20), sem cursor; um `summary` so tiraria o
+        # `text`, que e o conteudo do resultado.
         assert sem_flag == {
             "sparkforge_aws_judge",
             "sparkforge_aws_rules_lookup",
             "sparkforge_aws_code_search",
             "sparkforge_aws_graph_view",
+            "sparkforge_aws_knowledge_search",
         }
 
     def test_nenhuma_superficie_promete_buscar_fato_por_id(self):

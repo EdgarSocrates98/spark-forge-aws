@@ -110,6 +110,8 @@ atribui é T5 na escala de autoridade e não sustenta decisão sozinho.
 | quem chama um símbolo | `sparkforge-aws code symbol <node_id>` | `sparkforge_aws_code_symbol` |
 | regra do catálogo | `sparkforge-aws rules lookup --category <área>` | `sparkforge_aws_rules_lookup` |
 | documento de conhecimento | `sparkforge-aws knowledge path --file <arquivo>` | `sparkforge_aws_knowledge_path` |
+| inventário do conhecimento | `sparkforge-aws knowledge list` | `sparkforge_aws_knowledge_list` |
+| busca no conhecimento | `sparkforge-aws knowledge search <termo>` | `sparkforge_aws_knowledge_search` |
 | case do operador | `sparkforge-aws case get --repo .` | `sparkforge_aws_case_get` |
 | conferir a fase | `sparkforge-aws sdd check --repo . --feature <F>` | `sparkforge_aws_sdd_check` |
 
