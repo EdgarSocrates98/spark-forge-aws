@@ -9,7 +9,9 @@ Precedencia, espelhando `knowledge_dir()`:
 
   1. `SPARKFORGE_AWS_EVALS` -- override explicito; tem de conter
      `agentic/<suite>`, senao `EvalsError` (override quebrado e configuracao,
-     nao ausencia de recurso);
+     nao ausencia de recurso). Divergencia deliberada do modelo §4.3 (env
+     abaixo do workspace): aqui env e escolha explicita do operador e por
+     isso vence o cwd — consistente com `knowledge_dir()`/`catalog_dir()`;
   2. `<cwd>/evals` -- o workspace do usuario continua podendo ter suites
      proprias, e elas vencem as versionadas;
   3. a raiz do repositorio (com marcador `pyproject.toml`, como em
@@ -46,7 +48,14 @@ def _bases(cwd: Path) -> list[Path]:
 
 
 def suite_dir(nome: str, *, cwd: Path | None = None) -> Path:
-    """O diretorio `evals/agentic/<nome>` resolvido, ou `EvalsError`."""
+    """O diretorio `evals/agentic/<nome>` resolvido, ou `EvalsError`.
+
+    `nome` e um nome de diretorio, nao um path: separadores, `..` e paths
+    absolutos sao recusados — sem isto um caller (CLI ou MCP) poderia
+    atravessar para fora das raizes de eval.
+    """
+    if not nome or Path(nome).name != nome or nome in (".", ".."):
+        raise EvalsError(f"nome de suite invalido: {nome!r}")
     override = os.environ.get("SPARKFORGE_AWS_EVALS") or os.environ.get("SPARK_FORGE_AWS_EVALS")
     candidatos = [b / nome for b in _bases((cwd or Path.cwd()).resolve())]
     for candidato in candidatos:

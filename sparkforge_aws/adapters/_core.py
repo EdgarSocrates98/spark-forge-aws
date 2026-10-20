@@ -6258,6 +6258,7 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
     listado = knowledge_list()
     hits: list[dict[str, Any]] = []
     matched_files: list[str] = []
+    truncated = False
     # estrutura plana de (root, rel): docs do core + docs por pack
     roots: list[tuple[str, str]] = [
         (listado["root"], rel) for rel in listado["docs"]
@@ -6275,15 +6276,17 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
         if not matching and not name_hit:
             continue
         matched_files.append(rel)
-        for i in matching[: max(0, limit - len(hits))]:
+        remaining = limit - len(hits)
+        for i in matching[:remaining]:
             hits.append({"file": rel, "line": i, "text": lines[i - 1].strip()[:160]})
-        if len(hits) >= limit:
-            break
+        if len(matching) > remaining:
+            truncated = True
     return {
         "term": term,
-        "matched": matched_files,
+        "matched": matched_files[:100],
+        "matched_total": len(matched_files),
         "hits": hits,
-        "truncated": len(hits) >= limit,
+        "truncated": truncated,
     }
 
 
