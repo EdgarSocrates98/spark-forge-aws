@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+## [0.5.3] - 2026-10-20
+
+### Changed
+- Cycle 12 portable distribution: `evals_data` packaged corpus +
+  `evals/paths.py` resolver (env → cwd → repo-marker → packaged);
+  `evals list`; `knowledge list|search` on CLI and MCP (surface lock
+  regenerated, 148 tools); `SourcesError` enveloped as named refusal;
+  lazy bundle resolution in `playbook`; pyproject marker guards on
+  `knowledge_dir`/`catalog_dir`.
 
 ## [0.5.2] - 2026-10-18
 

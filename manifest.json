@@ -1,6 +1,6 @@
 {
   "name": "sparkforge-aws",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "skills": [
     "analyze-batch-loop",
     "review-cdc-replication",
