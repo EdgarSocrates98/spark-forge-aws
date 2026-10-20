@@ -77,11 +77,11 @@ confirmação, não menos —, e nenhuma capacidade foi removida.
 ## Duas classes ficam sem membro, e não são as esperadas
 
 Distribuição depois da correção, derivada executando `tool_class()` sobre as
-146 tools:
+148 tools:
 
 | classe | tools |
 |---|---|
-| `READ_ONLY` | 105 |
+| `READ_ONLY` | 107 |
 | `LOCAL_MUTATION` | 24 |
 | `CLOUD_MUTATION` | 17 |
 | `CLOUD_READ` | 0 |
@@ -169,21 +169,23 @@ sistema de arquivos, com a classe derivada por `tool_class()`:
 
 | classe | declaram caminho | não declaram |
 |---|---|---|
-| `READ_ONLY` | 95 | 10 |
+| `READ_ONLY` | 95 | 12 |
 | `LOCAL_MUTATION` | 24 | 0 |
 | `CLOUD_MUTATION` | 17 | 0 |
 
 Medido: **91** das tools `READ_ONLY` declaram algum argumento de caminho
 (`path`, `repo`, `facts_path`, `before`/`after`, `file`, `report_path`,
-`findings_path`), e as **dez** exceções são `sparkforge_aws_rules_lookup`, que só
+`findings_path`), e as **doze** exceções são `sparkforge_aws_rules_lookup`, que só
 aceita `category`, `id`, `limit` e `cursor`; `sparkforge_aws_economy_report`, que lê
 o ledger pelo `run_id` e aceita `host_transcript`;
 `sparkforge_aws_release_describe`, `sparkforge_aws_release_diff`,
-`sparkforge_aws_controlm_describe`, `sparkforge_aws_pack_list`,
-`sparkforge_aws_knowledge_drift`, `sparkforge_aws_gain` e
-`sparkforge_aws_telemetry_export`, que leem MATRIZ de versão, ledger ou
-transcript e não artefato; e `sparkforge_aws_lakeformation_matrix` (2026-09-09) —
-nenhuma das dez nomeia caminho de arquivo. (A prosa dizia "as duas exceções"
+`sparkforge_aws_controlm_describe` e `sparkforge_aws_pack_list`, que leem MATRIZ
+de versão, ledger ou pack e não artefato; `sparkforge_aws_knowledge_drift`,
+`sparkforge_aws_lakeformation_matrix` (2026-09-09),
+`sparkforge_aws_knowledge_list` e `sparkforge_aws_knowledge_search` (2026-10-20),
+que leem conhecimento versionado do pacote; e `sparkforge_aws_context_inspect` e
+`sparkforge_aws_lakeformation_architect`, que recebem o `payload` inteiro na
+chamada — nenhuma das doze nomeia caminho de arquivo. (A prosa dizia "as duas exceções"
 enquanto `tests/test_harness_authorization.py::SEM_CAMINHO` já listava cinco;
 o texto ficou para trás das três últimas e foi relido em 2026-09-09.)
 
@@ -193,14 +195,18 @@ ampla. A lista explícita usada na medição documental mais estreita fica regis
 na frase de contagem abaixo.
 
 
-**A décima é diferente das nove, e a diferença vale registrar.** As outras
+**Três das doze são de outra natureza, e a diferença vale registrar.** As demais
 recebem um IDENTIFICADOR — `run_id`, `id` de regra, versão de release, versão do
-Control-M — e vão buscar o dado com ele. `sparkforge_aws_lakeformation_matrix` **não
+Control-M — e vão buscar o dado com ele, ou já o recebem inteiro como `payload`
+na chamada. `sparkforge_aws_lakeformation_matrix` **não
 recebe nada que aponte para fora**: `runtime` e `axis` filtram o que ela já
 carrega, e o que ela carrega é conhecimento versionado que viaja no próprio
-pacote (`knowledge/glue/lakeformation-matrix.yaml`, por `safe_knowledge_file`).
+pacote (`knowledge/glue/lakeformation-matrix.yaml`, por `safe_knowledge_file`) —
+e `sparkforge_aws_knowledge_list`/`sparkforge_aws_knowledge_search` seguem o
+mesmo padrão, com `term` e `limit` filtrando o conhecimento resolvido por
+`knowledge_path` em vez de um caminho escolhido pelo chamador.
 Não há caminho a autorizar porque não há caminho que o chamador escolha. Estendendo às outras classes, o total é
-**136** de 146 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram
+**136** de 148 — as vinte e quatro `LOCAL_MUTATION` e as dezessete `CLOUD_MUTATION` declaram
 caminho sem exceção. Receber caminho é a forma normal da chamada neste
 catálogo, não um caso de borda. As onze tools que a SPEC do `SFCI` propõe
 recebem todas caminho, e é o caminho que decide se a chamada é legítima.
@@ -282,7 +288,7 @@ chamar a tool direto.
 > **Superado em `5cc065d`.** O parágrafo acima registra o que a fase J2 não
 > fechou e fica como está — é o registro dela. O que mudou depois:
 > `sparkforge_aws/adapters/tools.py:call_tool` passou a chamar a cadeia via
-> `CallPolicy.decide`, e o despacho é único para as 146 tools, então fechar ali
+> `CallPolicy.decide`, e o despacho é único para as 148 tools, então fechar ali
 > cobre `adapters/mcp.py` junto. Ver *A imposição no despacho* abaixo.
 
 Isso é o gap do hook `PreToolUse` do §41, e ele **não** fecha aqui. O que
@@ -328,7 +334,7 @@ pública; a afirmação de fato que a acompanhava não era verdade e foi corrigi
 ## A imposição no despacho
 
 `sparkforge_aws/adapters/tools.py:call_tool(name, arguments, *, policy=None)` chama
-a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 146
+a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 148
 tools passam por ele, e `adapters/mcp.py` o usa, então fechar ali cobre os dois
 de uma vez em vez de uma checagem por porta.
 
