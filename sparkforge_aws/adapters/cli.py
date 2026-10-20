@@ -5267,10 +5267,12 @@ def _cmd_pack_check(args: argparse.Namespace) -> int:
 
 def _cmd_knowledge_drift(args: argparse.Namespace) -> int:
     _print(_core.knowledge_drift(url=args.source, as_of=args.as_of))
+    return 0
 
 
 def _cmd_knowledge_list(args: argparse.Namespace) -> int:
     _print(_core.knowledge_list())
+    return 0
 
 
 def _cmd_knowledge_search(args: argparse.Namespace) -> int:

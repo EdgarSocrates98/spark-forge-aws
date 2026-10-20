@@ -62,8 +62,13 @@ def suite_dir(nome: str, *, cwd: Path | None = None) -> Path:
         if candidato.is_dir():
             return candidato
     if override:
+        env_name = (
+            "SPARKFORGE_AWS_EVALS"
+            if os.environ.get("SPARKFORGE_AWS_EVALS")
+            else "SPARK_FORGE_AWS_EVALS"
+        )
         raise EvalsError(
-            f"SPARKFORGE_AWS_EVALS aponta para {Path(override).expanduser()}, "
+            f"{env_name} aponta para {Path(override).expanduser()}, "
             f"que nao contem agentic/{nome}"
         )
     raise EvalsError(
