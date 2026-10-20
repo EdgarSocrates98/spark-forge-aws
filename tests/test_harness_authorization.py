@@ -896,6 +896,12 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # repositorio -- conhecimento versionado, como a matriz de Lake
             # Formation. Nenhum caminho e escolhido pelo chamador.
             "sparkforge_aws_knowledge_drift",
+            # `knowledge_list`/`knowledge_search` (2026-10-20) leem o conhecimento
+            # versionado na raiz resolvida por `knowledge_path` (env override,
+            # workspace, checkout ou bundle do wheel) e dos packs ativos -- o
+            # chamador escolhe no maximo um `term`/`limit`, nunca um caminho.
+            "sparkforge_aws_knowledge_list",
+            "sparkforge_aws_knowledge_search",
             # `lakeformation_architect` (2026-10-01) recebe contrato JSON
             # declarativo e lê apenas matriz versionada; nenhum caminho do
             # chamador é aceito.

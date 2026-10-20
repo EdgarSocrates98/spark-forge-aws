@@ -249,7 +249,9 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_aws_knowledge_drift`](sparkforge_aws_knowledge_drift.md) | só leitura | Knowledge Drift Radar: para cada fonte oficial vigiada cujo hash mudou (`changed_at` em knowledge/sources.lock.json), o que ela arrasta. |
+| [`sparkforge_aws_knowledge_list`](sparkforge_aws_knowledge_list.md) | só leitura | Knowledge List: enumera os documentos de knowledge versionado (e dos packs ativos em `packs/<id>/<rel>`) sobre a mesma raiz resolvida por `knowledge_path` — env override, worksp... |
 | [`sparkforge_aws_knowledge_path`](sparkforge_aws_knowledge_path.md) | só leitura | Resolve a raiz dos arquivos de conhecimento versionado e, opcionalmente, um arquivo dentro dela. |
+| [`sparkforge_aws_knowledge_search`](sparkforge_aws_knowledge_search.md) | só leitura | Knowledge Search: busca textual deterministica e offline sobre os `.md`/`.yaml` da raiz resolvida e dos packs ativos — casa o termo sem case em nome e conteudo. |
 
 ## lakeformation
 

@@ -345,7 +345,7 @@ Superfície: **14 coordenadores**, **5 executores**, **60 skills**.
 | SUPPORTED_HOSTS | todos via `playbook`; inline em Claude/Devin |
 | REQUIRED_SKILLS | — |
 | AVAILABLE_TOOLS | Read, Bash |
-| MCP_DEPENDENCIES | `sparkforge_aws_case_update`, `sparkforge_aws_judge`, `sparkforge_aws_knowledge_path`, `sparkforge_aws_rules_lookup` |
+| MCP_DEPENDENCIES | `sparkforge_aws_case_update`, `sparkforge_aws_judge`, `sparkforge_aws_knowledge_list`, `sparkforge_aws_knowledge_path`, `sparkforge_aws_knowledge_search`, `sparkforge_aws_rules_lookup` |
 | INPUTS | ver `## Pressupõe` na fonte |
 | EXPECTED_OUTPUT | `case.findings_index` — caminho, contagem e `by_severity`; `case.skills_used` — a skill aplicada e o resultado |
 | VERIFICATION | contrato `## Pressupõe`/`## Entrega` na fonte |
@@ -1146,7 +1146,7 @@ Superfície: **14 coordenadores**, **5 executores**, **60 skills**.
 | SUPPORTED_HOSTS | host pai apenas — não-despachável — pergunta uma coisa por vez e espera o operador escolher a abordagem; despachada, ninguem estaria la para responder |
 | ACTIVATION_METHOD | descrição do frontmatter — ativa por linguagem natural |
 | RELATED_AGENTS | — |
-| RELATED_MCP_TOOLS | `sparkforge_aws_case_get`, `sparkforge_aws_code_search`, `sparkforge_aws_code_symbol`, `sparkforge_aws_knowledge_path`, `sparkforge_aws_rules_lookup`, `sparkforge_aws_sdd_check`, `sparkforge_aws_sdd_status` |
+| RELATED_MCP_TOOLS | `sparkforge_aws_case_get`, `sparkforge_aws_code_search`, `sparkforge_aws_code_symbol`, `sparkforge_aws_knowledge_list`, `sparkforge_aws_knowledge_path`, `sparkforge_aws_knowledge_search`, `sparkforge_aws_rules_lookup`, `sparkforge_aws_sdd_check`, `sparkforge_aws_sdd_status` |
 | EXAMPLE | “quero fazer X” |
 | VERIFICATION | saída ancora em `rule_id`/`fact_id` ou recusa nomeada |
 

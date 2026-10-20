@@ -15,7 +15,9 @@ def test_full_and_compact_surfaces_have_declared_sizes() -> None:
     # 145 -> 146 em 2026-10-16 (FASE 1 §1.2): `sparkforge_aws_ai` observa o
     # estado do host (detect/versao/auth/integracao); read-only, nunca lanca
     # processo. HTTP/full sobe para 145 na mesma medida.
-    assert len(tools_do_transporte("stdio", "full")) == 146
+    # 146 -> 148 em 2026-10-20: `knowledge_list` e `knowledge_search` leem o
+    # conhecimento versionado na raiz resolvida; read-only. HTTP/full 147.
+    assert len(tools_do_transporte("stdio", "full")) == 148
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
 

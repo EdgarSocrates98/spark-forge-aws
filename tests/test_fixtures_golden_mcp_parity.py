@@ -217,6 +217,14 @@ NOVAS_DEPOIS_DO_GOLDEN = {
         "2026-10-25: painel read-only do host agentico (binario, versao, auth, "
         "estado da instalacao) — o `ai --launch` fica CLI-only, fronteira humana"
     ),
+    "sparkforge_aws_knowledge_list": (
+        "2026-10-20: inventario do knowledge versionado (e dos packs ativos) na "
+        "raiz resolvida por `knowledge_path` — `root` + `docs` relativos"
+    ),
+    "sparkforge_aws_knowledge_search": (
+        "2026-10-20: busca textual offline sobre os `.md`/`.yaml` da raiz "
+        "resolvida e dos packs — hits `{file, line, text}` ate `limit`"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

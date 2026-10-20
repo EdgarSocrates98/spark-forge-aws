@@ -9,7 +9,9 @@ Localiza os arquivos de conhecimento versionado.
 | Subcomando | O que faz |
 |---|---|
 | [`sparkforge-aws knowledge drift`](#sparkforge-aws-knowledge-drift) | Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), as regras e documentos que a leram antes da mudanca e os goldens, evals e agentes dessas regras. Sem rede. |
+| [`sparkforge-aws knowledge list`](#sparkforge-aws-knowledge-list) | Enumera os documentos de knowledge (e dos packs ativos). |
 | [`sparkforge-aws knowledge path`](#sparkforge-aws-knowledge-path) | Imprime a raiz de knowledge e, com --file, um arquivo dentro dela. |
+| [`sparkforge-aws knowledge search`](#sparkforge-aws-knowledge-search) | Busca textual offline sobre os documentos de knowledge. |
 
 ## `sparkforge-aws knowledge drift`
 
@@ -30,6 +32,22 @@ sparkforge-aws knowledge drift --help
 
 [`sparkforge_aws_knowledge_drift`](../tools/sparkforge_aws_knowledge_drift.md)
 
+## `sparkforge-aws knowledge list`
+
+Enumera os documentos de knowledge (e dos packs ativos).
+
+```bash
+sparkforge-aws knowledge list --help
+```
+
+### Opções
+
+Este comando não recebe opções.
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_knowledge_list`](../tools/sparkforge_aws_knowledge_list.md), [`sparkforge_aws_knowledge_search`](../tools/sparkforge_aws_knowledge_search.md)
+
 ## `sparkforge-aws knowledge path`
 
 Imprime a raiz de knowledge e, com --file, um arquivo dentro dela.
@@ -49,3 +67,22 @@ sparkforge-aws knowledge path --help
 ### Tool MCP equivalente
 
 [`sparkforge_aws_knowledge_path`](../tools/sparkforge_aws_knowledge_path.md)
+
+## `sparkforge-aws knowledge search`
+
+Busca textual offline sobre os documentos de knowledge.
+
+```bash
+sparkforge-aws knowledge search --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `term` (posicional) | sim | texto |  |  |  |
+| `--limit` | não | texto |  | `20` |  |
+
+### Tool MCP equivalente
+
+[`sparkforge_aws_knowledge_list`](../tools/sparkforge_aws_knowledge_list.md), [`sparkforge_aws_knowledge_search`](../tools/sparkforge_aws_knowledge_search.md)
