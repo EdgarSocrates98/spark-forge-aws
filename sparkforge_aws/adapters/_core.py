@@ -6275,7 +6275,8 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
         name_hit = term_norm in rel.lower()
         if not matching and not name_hit:
             continue
-        matched_files.append(rel)
+        if rel not in matched_files:  # pack pode re-publicar doc do core
+            matched_files.append(rel)
         remaining = limit - len(hits)
         for i in matching[:remaining]:
             hits.append({"file": rel, "line": i, "text": lines[i - 1].strip()[:160]})
@@ -7819,6 +7820,8 @@ def playbook(
     (ver `build_playbook`) do mesmo jeito que `next_step()` acima: cada item e
     um dict de finding, e so o `rule_id` importa aqui.
     """
+    from sparkforge_aws.integrate.sources import SourcesError
+
     try:
         case = store.load_case(repo)
     except store.CaseError:
@@ -7828,9 +7831,7 @@ def playbook(
     ]
     try:
         return build_playbook(coordinator, case, finding_ids)
-    except ValueError as exc:
-        raise AdapterError(str(exc), exit_code=2) from exc
-    except CatalogError as exc:
+    except (ValueError, CatalogError, SourcesError) as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 

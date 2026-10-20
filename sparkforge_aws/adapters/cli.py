@@ -61,6 +61,13 @@ def _ensure_utf8_streams() -> None:
 _ULTIMA_SAIDA: list[Any] = []
 
 
+def _positive_int(value: str) -> int:
+    n = int(value)
+    if n < 1:
+        raise argparse.ArgumentTypeError("--limit deve ser >= 1")
+    return n
+
+
 def _print(payload: Any) -> None:
     _ULTIMA_SAIDA[:] = [payload]
     print(json.dumps(payload, indent=2, ensure_ascii=False))
@@ -2550,7 +2557,7 @@ def build_parser() -> argparse.ArgumentParser:
         "search", help="Busca textual offline sobre os documentos de knowledge."
     )
     knowledge_search_p.add_argument("term")
-    knowledge_search_p.add_argument("--limit", type=int, default=20)
+    knowledge_search_p.add_argument("--limit", type=_positive_int, default=20)
 
     # rules lookup --------------------------------------------------------
     # debate referee ---------------------------------------------------
