@@ -180,6 +180,9 @@ def build_parser() -> argparse.ArgumentParser:
     compare_p.add_argument("--suite", required=True, help="Nome da suite em evals/agentic/.")
     compare_p.add_argument("--baseline", required=True, help="Nome do conjunto de referencia.")
     compare_p.add_argument("--candidate", required=True, help="Nome do conjunto candidato.")
+    sub.add_parser(
+        "list", help="Enumera as suites visiveis (workspace + versionadas/packaged)."
+    )
     debate_p = sub.add_parser(
         "debate",
         help=(
@@ -221,6 +224,10 @@ def main(argv: list[str] | None = None) -> int:
             (execucao / SCORECARD).write_text(
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
+        elif args.action == "list":
+            from sparkforge_aws.evals.paths import suites_disponiveis
+
+            payload = {"suites": suites_disponiveis()}
         elif args.action == "debate":
             execucao = DEBATE_RUNS_ROOT / _nome(args.run, "--run")
             if not execucao.is_dir():
