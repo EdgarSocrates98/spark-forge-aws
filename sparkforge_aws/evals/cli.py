@@ -145,16 +145,16 @@ def _suite_dir(nome: str) -> Path:
 
 def _conjunto(suite: str, nome: str, flag: str) -> Path:
     alvo = _nome(nome, flag)
-    suite_dir = _suite_dir(suite)
+    suite_root = _suite_dir(suite)
     candidatos = [
         base / alvo
-        for base in (suite_dir / "baselines", RUNS_ROOT)
+        for base in (suite_root / "baselines", RUNS_ROOT)
         if (base / alvo).is_dir()
     ]
     if len(candidatos) != 1:
         raise EvalError(
             f"{flag} {nome!r}: precisa existir em exatamente um de "
-            f"{suite_dir / 'baselines'} e {RUNS_ROOT} (achado em {len(candidatos)})"
+            f"{suite_root / 'baselines'} e {RUNS_ROOT} (achado em {len(candidatos)})"
         )
     return candidatos[0]
 
