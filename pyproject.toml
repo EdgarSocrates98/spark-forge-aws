@@ -165,6 +165,10 @@ packages = ["sparkforge_aws"]
 # integrate/bundle. Sem isto `sparkforge-aws portal` num pip install cairia na
 # recusa SFA-PORTAL-NO-ASSETS.
 "portal/assets" = "sparkforge_aws/portal_assets"
+# Suites versionadas de `evals/agentic/` para `sparkforge_aws/evals_data/`:
+# `evals/` ja e pacote Python (a CLI de grading), entao o dado vai para um nome
+# que nao colide com ele. `evals/paths.py` resolve env -> cwd -> pacote.
+"evals/agentic" = "sparkforge_aws/evals_data/agentic"
 
 # O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
 # realocar. `include` basta: preserva os dois onde o force-include do wheel
@@ -185,6 +189,7 @@ include = [
     "skills",
     "agents",
     "portal",
+    "evals/agentic",
     "README.md",
     "LICENSE",
     "pyproject.toml",

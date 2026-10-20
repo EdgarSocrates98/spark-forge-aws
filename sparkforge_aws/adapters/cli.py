@@ -2543,6 +2543,14 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge_drift_p.add_argument(
         "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
     )
+    knowledge_sub.add_parser(
+        "list", help="Enumera os documentos de knowledge (e dos packs ativos)."
+    )
+    knowledge_search_p = knowledge_sub.add_parser(
+        "search", help="Busca textual offline sobre os documentos de knowledge."
+    )
+    knowledge_search_p.add_argument("term")
+    knowledge_search_p.add_argument("--limit", type=int, default=20)
 
     # rules lookup --------------------------------------------------------
     # debate referee ---------------------------------------------------
@@ -5259,6 +5267,14 @@ def _cmd_pack_check(args: argparse.Namespace) -> int:
 
 def _cmd_knowledge_drift(args: argparse.Namespace) -> int:
     _print(_core.knowledge_drift(url=args.source, as_of=args.as_of))
+
+
+def _cmd_knowledge_list(args: argparse.Namespace) -> int:
+    _print(_core.knowledge_list())
+
+
+def _cmd_knowledge_search(args: argparse.Namespace) -> int:
+    _print(_core.knowledge_search(args.term, limit=args.limit))
     return 0
 
 
@@ -6479,6 +6495,8 @@ _DISPATCH = {
     ("graph", "ui"): _cmd_graph_ui,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("knowledge", "drift"): _cmd_knowledge_drift,
+    ("knowledge", "list"): _cmd_knowledge_list,
+    ("knowledge", "search"): _cmd_knowledge_search,
     ("pack", "list"): _cmd_pack_list,
     ("pack", "check"): _cmd_pack_check,
     ("debate", "referee"): _cmd_debate_referee,

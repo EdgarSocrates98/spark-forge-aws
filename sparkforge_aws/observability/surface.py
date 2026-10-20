@@ -117,11 +117,26 @@ def measure_skills(root: Path) -> dict[str, Any]:
 
 
 def measure_surface(root: Path | None = None) -> dict[str, Any]:
-    """As tres superficies, medidas sem executar nada."""
-    raiz = root or ROOT
+    """As tres superficies, medidas sem executar nada.
+
+    Sem `root` explicito cada superficie resolve pela sua propria fonte: skills
+    pelo `integrate.sources` (repositorio ou bundle do wheel) e knowledge pelo
+    `knowledge_dir()` (env -> repositorio -> pacote). Um `parents[2]` cego cai
+    em `site-packages` num `pip install` e mediria duas superficies vazias --
+    o numero 0 e mentira, nao ausencia.
+    """
+    if root is not None:
+        skills_root = root / "skills"
+        knowledge_root = root / "knowledge"
+    else:
+        from sparkforge_aws.integrate import sources
+        from sparkforge_aws.knowledge_ref import knowledge_dir
+
+        skills_root = sources.skills_dir()
+        knowledge_root = knowledge_dir()
     return {
         "tools": measure_tool_catalogue(),
         "compact": measure_compact_catalogue(),
-        "skills": measure_skills(raiz / "skills"),
-        "knowledge": measure_directory(raiz / "knowledge", "*.md"),
+        "skills": measure_skills(skills_root),
+        "knowledge": measure_directory(knowledge_root, "*.md"),
     }

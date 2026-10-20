@@ -6222,6 +6222,71 @@ def knowledge_path(
     return payload
 
 
+def knowledge_list() -> dict[str, Any]:
+    """Enumera os documentos de knowledge versionado (e dos packs ativos).
+
+    Projecao fina sobre a mesma raiz resolvida por `knowledge_path` — a lista
+    ja vem curada em `available` la, aqui vira a resposta inteira do verbo.
+    """
+    try:
+        root = knowledge_dir()
+    except KnowledgeError as exc:
+        raise _knowledge_root_missing(str(exc)) from exc
+    if not root.is_dir():
+        raise _knowledge_root_missing(f"diretorio de knowledge nao encontrado em {root}.")
+    payload: dict[str, Any] = {"root": str(root), "docs": _arquivos_de(root)}
+    conjunto = _packs_ativos()
+    if conjunto.active:
+        payload["packs"] = [
+            {"id": p.id, "root": str(p.knowledge_dir), "docs": _arquivos_de(p.knowledge_dir)}
+            for p in conjunto.active
+        ]
+    return payload
+
+
+def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
+    """Busca textual sobre os documentos de knowledge (nome e conteudo).
+
+    Deterministica e offline: varre os `.md`/`.yaml` da raiz resolvida e dos
+    packs ativos, casa o termo sem case. Devolve por documento o numero de
+    linhas que casam e as primeiras `limit` ocorrencias totais — nunca o
+    arquivo inteiro.
+    """
+    term_norm = term.strip().lower()
+    if not term_norm:
+        raise AdapterError("knowledge search exige um termo nao vazio.", exit_code=2)
+    listado = knowledge_list()
+    hits: list[dict[str, Any]] = []
+    matched_files: list[str] = []
+    # estrutura plana de (root, rel): docs do core + docs por pack
+    roots: list[tuple[str, str]] = [
+        (listado["root"], rel) for rel in listado["docs"]
+    ]
+    for pack in listado.get("packs", []):
+        roots += [(pack["root"], rel) for rel in pack["docs"]]
+    for root_s, rel in roots:
+        path = Path(root_s) / rel
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+        matching = [i for i, ln in enumerate(lines, 1) if term_norm in ln.lower()]
+        name_hit = term_norm in rel.lower()
+        if not matching and not name_hit:
+            continue
+        matched_files.append(rel)
+        for i in matching[: max(0, limit - len(hits))]:
+            hits.append({"file": rel, "line": i, "text": lines[i - 1].strip()[:160]})
+        if len(hits) >= limit:
+            break
+    return {
+        "term": term,
+        "matched": matched_files,
+        "hits": hits,
+        "truncated": len(hits) >= limit,
+    }
+
+
 def knowledge_drift(url: str | None = None, as_of: str | None = None) -> dict[str, Any]:
     """Knowledge Drift Radar (§17): o que cada fonte vigiada com `changed_at`
     arrasta -- regras e documentos que a leram antes da mudanca, e os goldens,

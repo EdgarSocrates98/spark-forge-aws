@@ -29,10 +29,21 @@ from typing import Any
 import yaml
 
 from sparkforge_aws.case.router import next_step
+from sparkforge_aws.integrate import sources
 
-ROOT = Path(__file__).resolve().parents[2]
-AGENTS = ROOT / "agents"
-EXECUTORS = AGENTS / "executors"
+
+def _agents_dir() -> Path:
+    """Bundle de agentes, resolvido na primeira chamada — nunca em import.
+
+    Em wheel sem bundle (instalacao minima), `agents_dir()` levanta
+    `SourcesError`: resolver isso no import quebraria `import
+    sparkforge_aws.case.playbook` inteiro por um recurso ausente.
+    """
+    return sources.agents_dir()
+
+
+def _executors_dir() -> Path:
+    return sources.executors_dir()
 
 
 def _frontmatter(path: Path) -> dict[str, Any]:
@@ -49,7 +60,7 @@ def _section(text: str, title: str) -> str:
 
 
 def available_coordinators() -> list[str]:
-    return sorted(p.stem for p in AGENTS.glob("*.md"))
+    return sorted(p.stem for p in _agents_dir().glob("*.md"))
 
 
 def build_playbook(
@@ -76,7 +87,7 @@ def build_playbook(
     de fidelidade, que so verifica a decomposicao de passos) recebe o
     `next_step` que o case e a fase sozinhos determinam.
     """
-    path = AGENTS / f"{coordinator}.md"
+    path = _agents_dir() / f"{coordinator}.md"
     if not path.is_file():
         raise ValueError(
             f"coordenador desconhecido: {coordinator}. Rode `sparkforge-aws playbook "
@@ -86,11 +97,11 @@ def build_playbook(
     front = _frontmatter(path)
     steps: list[dict[str, Any]] = []
     for order, name in enumerate(front.get("executors") or [], start=1):
-        executor_path = EXECUTORS / f"{name}.md"
+        executor_path = _executors_dir() / f"{name}.md"
         if not executor_path.is_file():
             raise ValueError(
                 f"{coordinator} declara o executor {name}, que nao existe em "
-                f"{EXECUTORS.relative_to(ROOT)}"
+                f"{_executors_dir()}"
             )
         text = executor_path.read_text(encoding="utf-8")
         steps.append(

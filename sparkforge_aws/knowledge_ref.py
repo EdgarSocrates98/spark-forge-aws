@@ -29,7 +29,11 @@ def knowledge_dir() -> Path:
     comportamento e identico ao de sempre; instalado por pip, so o fallback
     existe.
     """
-    override = os.environ.get("SPARKFORGE_AWS_KNOWLEDGE") or os.environ.get("SPARKFORGE_KNOWLEDGE")
+    override = (
+        os.environ.get("SPARKFORGE_AWS_KNOWLEDGE")
+        or os.environ.get("SPARKFORGE_KNOWLEDGE")
+        or os.environ.get("SPARK_FORGE_AWS_KNOWLEDGE")
+    )
     if override:
         resolved = Path(override).expanduser().resolve()
         if not resolved.is_dir():
@@ -40,7 +44,8 @@ def knowledge_dir() -> Path:
 
     repo_root = Path(__file__).resolve().parents[1]
     candidate = repo_root / "knowledge"
-    if candidate.is_dir():
+    # Marcador `pyproject.toml`, mesmo guard do `catalog_dir()`.
+    if (repo_root / "pyproject.toml").is_file() and candidate.is_dir():
         return candidate
 
     # Fallback deliberadamente sem checagem de is_dir(), espelhando catalog_dir().

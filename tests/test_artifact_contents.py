@@ -70,6 +70,11 @@ class TestWheelCarriesTheKnowledgeLayer:
         """
         assert "sparkforge_aws/codeintel/domain_terms.yaml" in wheel.namelist()
 
+    def test_evals_suites_are_inside_the_package(self, wheel):
+        """`evals/agentic` -> `evals_data`: sem isto `python -m sparkforge_aws.evals`
+        instalado por pip so enxerga suites se o cwd tiver uma copia."""
+        assert _names(wheel, "sparkforge_aws/evals_data/agentic/")
+
     def test_the_counts_are_not_zero(self, wheel):
         """Asserção de contagem: `force-include` sumindo num upgrade do
         hatchling nao quebraria import nenhum -- so devolveria catalogo

@@ -62,6 +62,23 @@ from typing import Any
 # A raiz do repositorio, a partir deste arquivo: sparkforge_aws/economy/goldset.py
 _RAIZ = Path(__file__).resolve().parent.parent.parent
 
+
+def _raiz_fixtures(raiz: Path | None = None) -> Path:
+    """A raiz onde `fixtures/` mora.
+
+    Default e o repositorio (duas subidas deste arquivo); num wheel o glob de
+    `_casos` simplesmente nao encontra nada e o gold set sai vazio -- vazio e
+    a verdade: `fixtures/` nao embarca no artefato, e gate de recall e
+    operacao de desenvolvimento. `SPARKFORGE_AWS_FIXTURES` ou o parametro
+    `raiz` apontam para um checkout quando alguem quiser medir fora dele.
+    """
+    if raiz is not None:
+        return Path(raiz)
+    override = os.environ.get("SPARKFORGE_AWS_FIXTURES")
+    if override:
+        return Path(override).expanduser()
+    return _RAIZ
+
 # So `.py` porque so `.py` e o que `codeintel.index.indexar` percorre. Estender
 # esta tupla sem estender o indexador produziria pergunta que o pack nao tem
 # como responder, e um vermelho que nao aponta defeito nenhum.
@@ -81,6 +98,7 @@ class PerguntaDeOuro:
     rule_id: str
     pergunta: str
     simbolos_exigidos: tuple[tuple[str, str], ...]
+    raiz_fixtures: Path | None = None
 
     @property
     def chave(self) -> str:
@@ -90,7 +108,7 @@ class PerguntaDeOuro:
     @property
     def entrada(self) -> Path:
         """O diretorio `input/` que o indexador recebe."""
-        return _RAIZ / self.fixture / "input"
+        return (self.raiz_fixtures or _raiz_fixtures()) / self.fixture / "input"
 
 
 @dataclass(frozen=True)
@@ -155,9 +173,9 @@ def _titulo(rule_id: str, catalogo: dict[str, str]) -> str:
     return catalogo.get(rule_id, rule_id)
 
 
-def _casos() -> Iterable[tuple[str, Path, Path]]:
+def _casos(raiz: Path) -> Iterable[tuple[str, Path, Path]]:
     """Cada `(fixture, findings.json, facts.json)` com `.py` no `input/`."""
-    for entrada in sorted(_RAIZ.glob("fixtures/*/*/input")):
+    for entrada in sorted(raiz.glob("fixtures/*/*/input")):
         # `any(gerador for ...)` testaria a verdade do OBJETO gerador, que e
         # sempre verdadeira, e o filtro nao filtraria nada -- foi o defeito da
         # primeira versao, medido: 244 casos onde ha 85. `next(..., None)` forca
@@ -171,17 +189,20 @@ def _casos() -> Iterable[tuple[str, Path, Path]]:
         achados = base / "expected" / "findings.json"
         fatos = base / "expected" / "facts.json"
         if achados.exists() and fatos.exists():
-            yield base.relative_to(_RAIZ).as_posix(), achados, fatos
+            yield base.relative_to(raiz).as_posix(), achados, fatos
 
 
-def _derivar() -> tuple[tuple[PerguntaDeOuro, ...], tuple[ForaDoAlcance, ...]]:
+def _derivar(
+    raiz: Path | None = None,
+) -> tuple[tuple[PerguntaDeOuro, ...], tuple[ForaDoAlcance, ...]]:
     from sparkforge_aws.rules.loader import load_catalog
 
     catalogo = {r["id"]: r.get("title", r["id"]) for r in load_catalog()}
     perguntas: list[PerguntaDeOuro] = []
     fora: list[ForaDoAlcance] = []
 
-    for fixture, caminho_achados, caminho_fatos in _casos():
+    raiz_resolvida = _raiz_fixtures(raiz)
+    for fixture, caminho_achados, caminho_fatos in _casos(raiz_resolvida):
         achados = _carregar(caminho_achados)
         indice = _fatos(_carregar(caminho_fatos))
         if not isinstance(achados, list):
@@ -212,6 +233,7 @@ def _derivar() -> tuple[tuple[PerguntaDeOuro, ...], tuple[ForaDoAlcance, ...]]:
                         rule_id=achado["rule_id"],
                         pergunta=_titulo(achado["rule_id"], catalogo),
                         simbolos_exigidos=tuple(sorted(ancorados)),
+                        raiz_fixtures=raiz_resolvida,
                     )
                 )
             elif extensoes:
@@ -237,19 +259,19 @@ def _derivar() -> tuple[tuple[PerguntaDeOuro, ...], tuple[ForaDoAlcance, ...]]:
     return tuple(perguntas), tuple(fora)
 
 
-def derivar_goldset() -> tuple[PerguntaDeOuro, ...]:
+def derivar_goldset(raiz: Path | None = None) -> tuple[PerguntaDeOuro, ...]:
     """As perguntas com simbolo `.py` exigido, ordenadas por `(rule_id, fixture)`."""
-    return _derivar()[0]
+    return _derivar(raiz)[0]
 
 
-def fora_do_alcance() -> tuple[ForaDoAlcance, ...]:
+def fora_do_alcance(raiz: Path | None = None) -> tuple[ForaDoAlcance, ...]:
     """Os pares que ancoram fora de arquivo indexado, NOMEADOS.
 
     Existe para que a saida do gate possa listar o que ficou de fora. Um gate
     que mede 23 perguntas e nao diz que outras 25 existem esconde o denominador
     do proprio recorte.
     """
-    return _derivar()[1]
+    return _derivar(raiz)[1]
 
 
 __all__ = [

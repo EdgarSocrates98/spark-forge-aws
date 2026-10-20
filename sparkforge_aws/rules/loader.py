@@ -47,7 +47,11 @@ def catalog_dir() -> Path:
     para que um valor com `..` ou apontando para um arquivo nao vire uma leitura
     arbitraria de sistema de arquivos.
     """
-    override = os.environ.get("SPARKFORGE_AWS_CATALOG") or os.environ.get("SPARKFORGE_CATALOG")
+    override = (
+        os.environ.get("SPARKFORGE_AWS_CATALOG")
+        or os.environ.get("SPARKFORGE_CATALOG")
+        or os.environ.get("SPARK_FORGE_AWS_CATALOG")
+    )
     if override:
         resolved = Path(override).expanduser().resolve()
         if not resolved.is_dir():
@@ -58,7 +62,9 @@ def catalog_dir() -> Path:
 
     repo_root = Path(__file__).resolve().parents[2]
     candidate = repo_root / "rules" / "catalog"
-    if candidate.is_dir():
+    # O marcador `pyproject.toml` distingue checkout de site-packages: sem ele um
+    # diretorio `rules/catalog` perdido no venv sombrearia os dados empacotados.
+    if (repo_root / "pyproject.toml").is_file() and candidate.is_dir():
         return candidate
 
     return Path(__file__).resolve().parent / "catalog"

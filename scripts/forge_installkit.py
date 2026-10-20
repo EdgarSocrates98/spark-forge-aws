@@ -25,6 +25,7 @@ import platform
 import sys
 import tempfile
 import time
+from importlib import metadata as importlib_metadata
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -33,7 +34,7 @@ from typing import Any
 _INSTALLKIT_VERSION = "1.0.0"
 # Filled by the vendor step (scripts/installkit/vendor.py) — the sha256 of
 # the canonical source body, so drift checks can compare vendored copies.
-_SOURCE_SHA256 = "7830ed9c28a380e8"
+_SOURCE_SHA256 = "f7b61d76f6fc2d5e"
 
 SCHEMA_MANIFEST = "forge/InstallationManifest/v1"
 SCHEMA_RECEIPT = "forge/InstallReceipt/v1"
@@ -901,6 +902,18 @@ def apply_install(ctx: InstallContext, *, approved: bool = False) -> dict[str, A
         ) from exc
     written = sum(1 for f in files if f.get("action") in ("created", "updated"))
     checks.append({"id": "files-written", "status": "PASS", "detail": f"{written} writes"})
+    if "codex" in ctx.hosts and ctx.scope == "project":
+        # Observed on codex-cli 0.160.0: `codex mcp list` ignores project
+        # `.mcp.json` and `.codex/config.toml` — MCP only enters through
+        # `~/.codex/config.toml` (user scope) or `codex mcp add`.
+        checks.append(
+            {
+                "id": "mcp-scope:codex",
+                "status": "NOT_APPLICABLE",
+                "detail": "codex does not read project .mcp.json; MCP needs "
+                          "--scope user or `codex mcp add`",
+            }
+        )
     receipt = {
         "schema": SCHEMA_RECEIPT,
         "receipt_id": f"sha256:{_sha(_json_bytes({'f': files, 'm': markers}))}",
@@ -935,10 +948,19 @@ def apply_install(ctx: InstallContext, *, approved: bool = False) -> dict[str, A
         "status": "completed",
         "rollback": {"available": bool(files), "restore": "ledger"},
         "created_at": _utc_now(),
-        "created_by": f"{ctx.spec.distribution}",
+        "created_by": _created_by(ctx.spec.distribution),
     }
     _write_receipt(ctx.state_dir, receipt)
     return receipt
+
+
+def _created_by(distribution: str) -> str:
+    """``dist/version`` when the dist metadata is installed, bare ``dist``
+    otherwise — matches service.py's ``f"theforge/{__version__}"`` shape."""
+    try:
+        return f"{distribution}/{importlib_metadata.version(distribution)}"
+    except importlib_metadata.PackageNotFoundError:
+        return distribution
 
 
 def _write_receipt(state_dir: Path, receipt: dict[str, Any]) -> Path:
@@ -976,6 +998,7 @@ def status(ctx: InstallContext) -> dict[str, Any]:
             "missing": [d for d in bad if d["status"] == "missing"],
         },
         "receipts": [r.name for r in receipts],
+        "forge_portal": forge_portal_presence(),
         "status": ("healthy" if not bad else "degraded" if ok else "broken")
         if ledger.entries()
         else "unverified",
@@ -1034,6 +1057,19 @@ def doctor(ctx: InstallContext) -> dict[str, Any]:
                     "repairable": False,
                 }
             )
+    presence = forge_portal_presence()
+    found = presence["state"] == "installed"
+    checks.append(
+        {
+            "id": "forge-portal",
+            "status": "PASS" if found else "NOT_APPLICABLE",
+            "detail": presence["install_root"]
+            or ("vendored assets only — no local forge-portal install found"
+                if not found
+                else presence["manifest"]),
+            "repairable": False,
+        }
+    )
     overall = "healthy"
     if any(c["status"] == "FAIL" for c in checks):
         overall = "degraded" if installed else "broken"
@@ -1265,6 +1301,9 @@ def manifest_for(
             "satisfies": spec.python_spec,
         },
         "source": source,
+        "installation_method": (
+            "pypi-wheel" if source.get("kind") == "pypi" else source.get("kind")
+        ),
         "installed_at": _utc_now(),
         "installed_by": {"agent": "forge_bootstrap", "version": _INSTALLKIT_VERSION},
     }
@@ -1310,6 +1349,49 @@ def installed_forges() -> list[dict[str, Any]]:
                 doc["_manifest_path"] = str(f)
                 out.append(doc)
     return out
+
+
+def forge_portal_presence() -> dict[str, Any]:
+    """Whether a local forge-portal exists in an already-defined location:
+    ``FORGE_PORTAL_HOME`` env, ``~/.forge/installations/forge-portal.json``
+    (InstallationManifest registry) or ``~/.forge/installs/forge-portal/``.
+    Never fabricates paths — every reported location exists on disk."""
+    locations: list[dict[str, str]] = []
+
+    env_root = os.environ.get("FORGE_PORTAL_HOME", "").strip()
+    env_ok = bool(env_root) and Path(env_root).is_dir()
+    if env_ok:
+        locations.append({"kind": "env:FORGE_PORTAL_HOME", "path": env_root})
+
+    manifest_path = installations_dir() / "forge-portal.json"
+    install_root: str | None = None
+    installed_at: str | None = None
+    manifest_ok = manifest_path.is_file()
+    if manifest_ok:
+        locations.append({"kind": "registry", "path": str(manifest_path)})
+        doc = _load_json(manifest_path, None)
+        if isinstance(doc, dict):
+            install_root = doc.get("install_root") or None
+            installed_at = doc.get("installed_at") or None
+
+    if install_root and not Path(install_root).is_dir():
+        install_root = None  # manifest points somewhere gone — honest
+    if install_root:
+        locations.append({"kind": "install_root", "path": install_root})
+    elif not manifest_ok:
+        default_root = installs_root() / "forge-portal"
+        if default_root.is_dir():
+            install_root = str(default_root)
+            locations.append({"kind": "install_root", "path": install_root})
+
+    root = install_root or (env_root if env_ok else None)
+    return {
+        "state": "installed" if root or manifest_ok else "vendored",
+        "install_root": root,
+        "manifest": str(manifest_path) if manifest_ok else None,
+        "installed_at": installed_at,
+        "locations": locations,
+    }
 
 
 # --------------------------------------------------------------------------

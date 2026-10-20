@@ -8,14 +8,18 @@ permitido: este modulo importa o extrator `sparkforge_aws.facts.host_transcript`
 A CLI aceita NOMES, nunca caminhos. Cada nome passa por `os.path.basename` e e
 recusado se trouxer separador, e o diretorio sai de uma base fixa:
 
-  * suite    -> `<cwd>/evals/agentic/<suite>`
+  * suite    -> `suite_dir(<suite>)` em `evals/paths.py`: env
+    `SPARKFORGE_AWS_EVALS`/`SPARK_FORGE_AWS_EVALS` -> `<cwd>/evals/agentic` ->
+    `<repo>/evals/agentic` (so com marcador `pyproject.toml`) ->
+    `sparkforge_aws/evals_data/agentic` (wheel).
   * execucao -> `~/.sparkforge_aws/agentic-evals/<run_id>` (onde o runner grava)
-  * conjunto -> `<cwd>/evals/agentic/<suite>/baselines/<nome>` (commitado) ou
-    `~/.sparkforge_aws/agentic-evals/<nome>` (recem-rodado); precisa existir em
-    exatamente um dos dois.
-  * debate   -> a suite e CONSTANTE (`<cwd>/evals/agentic/debate`), e a execucao
-    e `~/.sparkforge_aws/debate-evals/<run>` (onde `scripts/run_debate.py` grava).
-    O placar vai para `grade.json` dentro da propria execucao.
+  * conjunto -> `<suite>/baselines/<nome>` (commitado, resolvido pela mesma
+    cadeia de `suite_dir`) ou `~/.sparkforge_aws/agentic-evals/<nome>`
+    (recem-rodado); precisa existir em exatamente um dos dois.
+  * debate   -> a suite e CONSTANTE (`evals/agentic/debate`, mesma cadeia), e a
+    execucao e `~/.sparkforge_aws/debate-evals/<run>` (onde
+    `scripts/run_debate.py` grava). O placar vai para `grade.json` dentro da
+    propria execucao.
 
 O scorecard de `grade` vai para `scorecard.json` dentro da propria execucao, e
 `compare` so imprime -- sem `--out`, nenhum caminho do argv chega a escrita. A
@@ -130,7 +134,13 @@ def eval_compare(baseline_dir: Path | str, candidate_dir: Path | str) -> dict[st
 
 
 def _suite_dir(nome: str) -> Path:
-    return Path.cwd() / "evals" / "agentic" / _nome(nome, "--suite")
+    from sparkforge_aws.evals.paths import EvalsError as _EvalsError
+    from sparkforge_aws.evals.paths import suite_dir
+
+    try:
+        return suite_dir(_nome(nome, "--suite"))
+    except _EvalsError as exc:
+        raise EvalError(str(exc)) from exc
 
 
 def _conjunto(suite: str, nome: str, flag: str) -> Path:
@@ -215,7 +225,7 @@ def main(argv: list[str] | None = None) -> int:
             execucao = DEBATE_RUNS_ROOT / _nome(args.run, "--run")
             if not execucao.is_dir():
                 raise EvalError(f"--run {args.run!r}: execucao ausente em {DEBATE_RUNS_ROOT}")
-            payload = grade_debate_run(Path.cwd().joinpath(*DEBATE_SUITE), execucao)
+            payload = grade_debate_run(_suite_dir(DEBATE_SUITE[2]), execucao)
             (execucao / GRADE_FILE).write_text(
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
