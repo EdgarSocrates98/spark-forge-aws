@@ -1625,6 +1625,74 @@ def build_parser() -> argparse.ArgumentParser:
     decision_receipt_p.add_argument("--path", required=True)
     decision_receipt_p.add_argument("--repo", default=".")
 
+    # delegation (lf-0029) ----------------------------------------------------
+    delegate_p = sub.add_parser(
+        "delegate",
+        help="Descobre, planeja e executa delegação governada a especialistas "
+        "opcionais (data-sentinel, forge-doctor-data).",
+    )
+    delegate_sub = delegate_p.add_subparsers(dest="delegate_action", required=True)
+    delegate_discover_p = delegate_sub.add_parser(
+        "discover",
+        help="Descobre especialistas declarados: PATH, pacote, handshake, "
+        "manifesto de capabilities.",
+    )
+    delegate_discover_p.add_argument(
+        "--provider", choices=["data-sentinel-forge", "forge-doctor-data"])
+    delegate_discover_p.add_argument("--no-probe", action="store_true")
+    delegate_discover_p.add_argument("--repo", default=".")
+    delegate_plan_p = delegate_sub.add_parser(
+        "plan",
+        help="Planeja a delegação para uma intenção — determinístico, sem executar.",
+    )
+    delegate_plan_p.add_argument("intent", help="Intenção em texto livre.")
+    delegate_plan_p.add_argument(
+        "--authorize",
+        action="append",
+        choices=[
+            "LOCAL_READ", "LOCAL_WRITE", "EXTERNAL_READ",
+            "EXTERNAL_WRITE", "DESTRUCTIVE", "COST_BEARING",
+        ],
+        default=[],
+        help="Concede autorização a um nível de risco (pode repetir).",
+    )
+    delegate_plan_p.add_argument("--no-probe", action="store_true")
+    delegate_plan_p.add_argument("--repo", default=".")
+    delegate_run_p = delegate_sub.add_parser(
+        "run",
+        help="Executa uma capability declarada de um especialista sob governança.",
+    )
+    delegate_run_p.add_argument("provider", choices=["data-sentinel-forge", "forge-doctor-data"])
+    delegate_run_p.add_argument("capability", help="Id da capability declarada.")
+    delegate_run_p.add_argument("--target", help="Arquivo/diretório alvo.")
+    delegate_run_p.add_argument("--job", help="Nome do Glue job (sentinel).")
+    delegate_run_p.add_argument("--run-id", dest="run_id", help="Job run id (sentinel).")
+    delegate_run_p.add_argument("--profile", help="AWS profile (sentinel cloud).")
+    delegate_run_p.add_argument("--region", help="AWS region (sentinel cloud).")
+    delegate_run_p.add_argument("--platform", help="Plataforma (sentinel analyze).")
+    delegate_run_p.add_argument("--check", help="Check único (doctor scan).")
+    delegate_run_p.add_argument("--timeout", type=float, help="Timeout em segundos.")
+    delegate_run_p.add_argument("--no-persist", action="store_true")
+    delegate_run_p.add_argument(
+        "--authorize",
+        action="append",
+        choices=[
+            "LOCAL_READ", "LOCAL_WRITE", "EXTERNAL_READ",
+            "EXTERNAL_WRITE", "DESTRUCTIVE", "COST_BEARING",
+        ],
+        default=[],
+        help="Concede autorização a um nível de risco (pode repetir). "
+        "Capabilities EXTERNAL_READ/COST_BEARING (glue diagnose, glue "
+        "runs, etc.) não executam sem este grant.",
+    )
+    delegate_run_p.add_argument("--repo", default=".")
+    delegate_handoffs_p = delegate_sub.add_parser(
+        "handoffs",
+        help="Lista EvidenceHandoffs persistidos em "
+        ".sparkforge_aws/delegation/handoffs/.",
+    )
+    delegate_handoffs_p.add_argument("--repo", default=".")
+
     # context gateway -------------------------------------------------------
     context_p = sub.add_parser(
         "context",
@@ -4876,6 +4944,50 @@ def _cmd_decision_receipt(args: argparse.Namespace) -> int:
     return 0 if payload["valid"] else 1
 
 
+def _cmd_delegate_discover(args: argparse.Namespace) -> int:
+    from sparkforge_aws.delegation import run as delegation_run
+
+    try:
+        code, payload = delegation_run.cmd_discover(args)
+    except (OSError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return code
+
+
+def _cmd_delegate_plan(args: argparse.Namespace) -> int:
+    from sparkforge_aws.delegation import run as delegation_run
+
+    try:
+        code, payload = delegation_run.cmd_plan(args)
+    except (OSError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return code
+
+
+def _cmd_delegate_run(args: argparse.Namespace) -> int:
+    from sparkforge_aws.delegation import run as delegation_run
+
+    try:
+        code, payload = delegation_run.cmd_run(args)
+    except (OSError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return code
+
+
+def _cmd_delegate_handoffs(args: argparse.Namespace) -> int:
+    from sparkforge_aws.delegation import run as delegation_run
+
+    try:
+        code, payload = delegation_run.cmd_handoffs(args)
+    except (OSError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return code
+
+
 def _write_decision_payload(payload: dict[str, Any], output: str | None) -> None:
     if output:
         Path(output).write_text(
@@ -6440,6 +6552,10 @@ _DISPATCH = {
     ("decision", "compare"): _cmd_decision_compare,
     ("decision", "benchmark"): _cmd_decision_benchmark,
     ("decision", "receipt"): _cmd_decision_receipt,
+    ("delegate", "discover"): _cmd_delegate_discover,
+    ("delegate", "plan"): _cmd_delegate_plan,
+    ("delegate", "run"): _cmd_delegate_run,
+    ("delegate", "handoffs"): _cmd_delegate_handoffs,
     ("context", "start"): _cmd_context_start,
     ("context", "expand"): _cmd_context_expand,
     ("context", "inspect"): _cmd_context_inspect,
@@ -6642,6 +6758,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "agentops_action", None)
         or getattr(args, "doctor_action", None)
         or getattr(args, "decision_action", None)
+        or getattr(args, "delegate_action", None)
         or getattr(args, "architecture_action", None)
         or getattr(args, "subcommand", None)
     )

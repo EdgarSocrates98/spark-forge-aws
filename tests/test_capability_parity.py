@@ -317,6 +317,31 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "sobe o servidor MCP no host do chamador; transporte e ciclo de vida, "
             "nao uma capacidade de analise MCP."
         ),
+        # Delegacao para especialistas opcionais (lf-0029): subprocesso
+        # governado na maquina do chamador com policy gate explicito
+        # (--authorize EXTERNAL_READ). Um cliente MCP que disparasse
+        # `delegate run` estaria autorizando, via transporte, a execucao de
+        # outro binario com credenciais locais scrubadas -- o grant e uma
+        # decisao do operador, exatamente como `integrate`/`collect *`. As
+        # evidencias que a delegacao produz chegam de volta como handoffs
+        # persistidos e inspecionados por `delegate handoffs` (tambem local:
+        # o diretorio de estado e do chamador).
+        "delegate discover": (
+            "descoberta local de especialistas na maquina do chamador "
+            "(PATH/pacote/handshake); o estado reflete este host, nao o grafo."
+        ),
+        "delegate plan": (
+            "planejamento deterministico de delegacao; nao executa nada e "
+            "nao toca superficie de dados MCP."
+        ),
+        "delegate run": (
+            "executa subprocesso de especialista opcional sob policy gate "
+            "--authorize; o grant e decisao do operador, nao de um cliente MCP."
+        ),
+        "delegate handoffs": (
+            "lista handoffs persistidos em .sparkforge_aws/delegation/ do "
+            "chamador; leitura de estado local, nao capacidade de dados."
+        ),
     }
 
     def _subcomandos(self, parser):
