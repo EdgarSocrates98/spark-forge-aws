@@ -337,6 +337,7 @@ A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
 | "Revisar um pull request PySpark" | [`pyspark-code-reviewer`](referencia/agents/pyspark-code-reviewer.md) | [`review-pyspark-pr`](referencia/skills/review-pyspark-pr.md) |
 | "Posso migrar para Glue 6.0 ou Spark 4?" | [`sf-runtime-specialist`](referencia/agents/sf-runtime-specialist.md) | [`migrate-glue-6`](referencia/skills/migrate-glue-6.md), [`spark4-compatibility`](referencia/skills/spark4-compatibility.md), [`compare-releases`](referencia/skills/compare-releases.md) |
 | "Dois achados se contradizem" | coordenador do case | [`run-debate`](referencia/skills/run-debate.md); veja [Arbitragem e debate](usos/arbitragem-e-debate.md) |
+| "Diagnosticar artefato que os extratores não leem" (log OOM de driver/executor, scan estático PySpark) | — | [`delegate-specialists`](referencia/skills/delegate-specialists.md) via `sparkforge-aws delegate`; evidência E2E no ciclo de integrações (`forge-cli/docs/integration/cases/`) |
 | "Quero especificar a mudança antes de construir" (spec, plano, TDD, entrega) | a sessão, sem despacho | [`sdd-explore`](referencia/skills/sdd-explore.md), [`sdd-define`](referencia/skills/sdd-define.md), [`sdd-design`](referencia/skills/sdd-design.md), [`sdd-plan`](referencia/skills/sdd-plan.md), [`sdd-build`](referencia/skills/sdd-build.md), [`sdd-ship`](referencia/skills/sdd-ship.md); veja [`docs/sdd/README.md`](../sdd/README.md) |
 
 Listas completas: [agents](referencia/agents/README.md) e [skills](referencia/skills/README.md).
