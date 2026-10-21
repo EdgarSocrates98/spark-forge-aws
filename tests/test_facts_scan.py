@@ -102,6 +102,12 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "da forja -- conjunto fechado que o proprio produto escreveu, para ler "
         "o profile da instalacao mais recente; nunca arvore de cliente"
     ),
+    "delegation/handoff.py": (
+        "lista os EvidenceHandoff `*.json` que o proprio modulo persistiu sob "
+        "`.sparkforge_aws/delegation/handoffs/` -- diretorio de estado que "
+        "esta forge escreve, confinado ao workspace root do chamador, nunca "
+        "arvore de cliente"
+    ),
 }
 
 
