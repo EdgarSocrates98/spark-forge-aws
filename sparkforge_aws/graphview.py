@@ -63,20 +63,34 @@ def build_view(root: str | Path = ".", *, limit: int = 5000) -> ForgeGraphView |
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     try:
         total_nodes = conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
+        # A janela de nós tem que ser a MESMA nos dois lados: a subquery de
+        # arestas antiga usava `LIMIT ?` sem ORDER BY (ordem de rowid), que não
+        # é o `ORDER BY qualified_name` da janela principal — em views
+        # truncadas isso emitia arestas para nós fora do view (penduradas).
+        # `qualified_name, id` é ordem total determinística (id é PK), então as
+        # duas LIMIT selecionam exatamente o mesmo subconjunto; o filtro em
+        # `keep` em Python abaixo é a garantia estrutural de que nenhuma aresta
+        # emitida aponta para fora da janela, mesmo sob drift futuro da query.
         rows = conn.execute(
             "SELECT nodes.id, nodes.kind, nodes.name, nodes.qualified_name,"
             "       files.path, nodes.start_line"
             "  FROM nodes JOIN files ON files.id = nodes.file_id"
-            " ORDER BY nodes.qualified_name LIMIT ?",
+            " ORDER BY nodes.qualified_name, nodes.id LIMIT ?",
             (limit,),
         ).fetchall()
         keep = {r[0] for r in rows}
-        edges = conn.execute(
-            "SELECT DISTINCT source_id, target_id, kind FROM edges"
-            " WHERE source_id IN (SELECT id FROM nodes LIMIT ?)"
-            "   AND target_id IN (SELECT id FROM nodes LIMIT ?)",
-            (limit, limit),
-        ).fetchall()
+        edges = [
+            e
+            for e in conn.execute(
+                "SELECT DISTINCT source_id, target_id, kind FROM edges"
+                " WHERE source_id IN (SELECT id FROM nodes"
+                "                   ORDER BY qualified_name, id LIMIT ?)"
+                "   AND target_id IN (SELECT id FROM nodes"
+                "                   ORDER BY qualified_name, id LIMIT ?)",
+                (limit, limit),
+            ).fetchall()
+            if e[0] in keep and e[1] in keep
+        ]
     finally:
         conn.close()
 
