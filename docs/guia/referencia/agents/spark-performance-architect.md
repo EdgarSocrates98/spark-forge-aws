@@ -321,6 +321,20 @@ recarimba a fase cujo upstream mudou. As duas
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
 despacham subagentes, e subagente não faz nenhum dos dois.
 
+#### Delegação opcional a especialistas
+
+Quando a pergunta pede diagnóstico sobre artefato exportado que os extratores nativos não
+leem — log de driver/executor (OOM, skew, shuffle, spill), EXPLAIN de outro runtime,
+metadata Iceberg, diagnose de job Glue/EMR — existe a pista `sparkforge-aws delegate`:
+`delegate discover` mede se `data-sentinel-forge` ou `forge-doctor-data` estão VERIFIED
+nesta máquina, `delegate plan` roteia a intenção para uma capability declarada sem executar,
+e `delegate run` executa sob gate de risco. As capabilities de nuvem (`glue-*`) exigem
+`--authorize` concedido pelo operador — você propõe, não concede. Especialista ausente
+degrada para `native-analysis`; nunca simule a execução. O `EvidenceHandoff` persistido em
+`.sparkforge_aws/delegation/handoffs/` é evidência externa a correlacionar com facts
+nativos — a skill `delegate-specialists` tem a disciplina completa de quando delegar, como
+consumir e como revalidar.
+
 #### Não faz
 
 **O seu caminho até a manutenção destrutiva passa pelo benchmark.** Medir antes e depois

@@ -92,6 +92,18 @@ nunca pela árvore do operador. `sparkforge-aws sdd check` confere cada fase. As
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
 despacham subagentes, e subagente não faz nenhum dos dois.
 
+#### Delegação opcional a especialistas
+
+OOM depois de horas e falhas de job Glue são o caso declarado de `data-sentinel-forge`:
+`sentinel.glue-diagnose` orquestra metadados do job + eventos CloudWatch num
+DiagnosticReport, e `sentinel.glue-runs` lê o histórico de runs — ambos `EXTERNAL_READ`
+(e o diagnose `COST_BEARING`), exigindo `--authorize` concedido pelo operador. Log de
+driver/executor exportado (`sentinel.log-analysis`) e metadata Iceberg
+(`sentinel.lakehouse-metadata`) são `LOCAL_READ`. A pista é
+`sparkforge-aws delegate discover|plan|run|handoffs`; especialista ausente degrada para
+`native-analysis`, nunca simulação. A skill `delegate-specialists` carrega a disciplina —
+inclusive a de revalidar com um `delegate run` novo, nunca relendo handoff velho.
+
 #### Não faz
 
 **A manutenção destrutiva desta investigação vem disfarçada de reprocessamento.** Rodar o

@@ -274,6 +274,15 @@ NON_DISPATCHABLE_SKILLS = {
         "push e de abrir o PR; despachada, ninguem estaria la para confirmar"
     ),
     "tool-specialist-routing": "valida roteamento no agente atual",
+    # `delegate run` executa capability declarada sob gate de risco:
+    # capabilities EXTERNAL_READ/COST_BEARING pedem `--authorize`, que é
+    # concessão do operador — dentro de subagente ninguém pode conceder
+    # nem perguntar (V-DV-10), e a recusa nomeada é a saída correta.
+    "delegate-specialists": (
+        "decide quando delegar e consome handoffs; `delegate run` de "
+        "capability de nuvem exige --authorize, concessão do operador que "
+        "subagente não pode pedir (V-DV-10)"
+    ),
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,
     # por default, nao gera subagente proprio (`max-nesting`): despachar quem
     # orquestra e perder justamente a orquestracao.

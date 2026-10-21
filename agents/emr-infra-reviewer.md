@@ -208,6 +208,16 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 `undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
 `SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
 
+## Delegação opcional a especialistas
+
+Diagnóstico de execução EMR sobre artefato exportado — logs de driver/executor,
+`emr analyze` — é capability declarada de `data-sentinel-forge`
+(`sentinel.emr-analyze`, `sentinel.log-analysis`), `LOCAL_READ` via
+`sparkforge-aws delegate`. A revisão de infraestrutura continua sua: o especialista lê
+runtime, você lê definição de cluster. Especialista ausente degrada para `native-analysis`;
+a disciplina de quando delegar, consumir o handoff e revalidar está na skill
+`delegate-specialists`.
+
 ## Não faz
 
 **Nesta área a manutenção destrutiva tem uma forma dominante: terminar o cluster.** Como

@@ -32,7 +32,7 @@ Para ver o que foi entregue nas waves de control plane, streaming, CDC, economia
 observada e Forge Lab, consulte o [mapa de evolução atual](https://github.com/EdgarSocrates98/spark-forge-aws/blob/v0.5.0/docs/EVOLUTION-CURRENT.md)
 e o [ledger completo de entrega](https://github.com/EdgarSocrates98/spark-forge-aws/blob/v0.5.0/docs/DELIVERY-LEDGER.md).
 
-Superfície operacional atual: **14 coordenadores**, **5 executores** e **60 skills**;
+Superfície operacional atual: **14 coordenadores**, **5 executores** e **61 skills**;
 o catálogo mantém rastreabilidade por artefato e as novas inspeções do Agentic OS v2
 continuam locais, determinísticas e sem provider no core.
 
@@ -55,7 +55,7 @@ acesso a:
 - 5 executores — `sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`,
   `sf-synthesizer` — a linha de montagem que os coordenadores disparam:
   inventário → extração de facts → julgamento → verificação → síntese.
-- 60 skills — os procedimentos versionados que disparam pela descrição do
+- 61 skills — os procedimentos versionados que disparam pela descrição do
   pedido: "meu job Glue tá lento" ativa `sparkforge-aws-diagnose` antes de
   qualquer análise; "dá pra subir pra Glue 6?" ativa `migrate-glue-6`; "por que
   a escrita falha no Lake Formation" ativa `diagnose-lakeformation-access`.

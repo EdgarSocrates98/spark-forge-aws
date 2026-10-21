@@ -1,0 +1,32 @@
+{
+  "skill_name": "delegate-specialists",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the delegate-specialists skill on a case where a Glue job OOMed after 3h and the driver log was exported to disk. Decide whether to delegate to data-sentinel-forge or stay on native extractors, then run the governed delegation lane and consume the EvidenceHandoff.",
+      "expected_output": "A routing decision that runs native extractors first, then `sparkforge-aws delegate discover|plan|run` for sentinel.log-analysis, with the handoff consumed as external evidence, refusal codes honored, validation and rollback stated.",
+      "files": [],
+      "expectations": [
+        "The response anchors claims in a fact_id or the persisted handoff_path/run_id, never in memory.",
+        "The response reports unresolved evidence (e.g. specialist not VERIFIED, missing artifact) instead of simulating a delegation.",
+        "The response cites validation steps: re-run the specialist on the new artifact after the change and compare finding ids by correlation_id.",
+        "The response includes rollback (non-mutation; do-not-execute for ungranted risk) and never invents specialist argv — the `delegate` surface only.",
+        "The response cites at least one local reference and separates facts, external findings and recommendations."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Apply delegate-specialists to a request to run `sentinel.glue-diagnose` on a live job and to a static project review. The operator granted no risk authorization. Decide what can run, what is refused, and how to revalidate after a fix.",
+      "expected_output": "A bounded decision: doctor.scan-project runs LOCAL_READ; sentinel.glue-diagnose is refused pending explicit --authorize for EXTERNAL_READ and COST_BEARING; revalidation is a new delegate run, never re-reading a stale handoff.",
+      "files": [],
+      "expectations": [
+        "The response anchors claims in a fact_id or the persisted handoff_path/run_id, never in memory.",
+        "The response reports unresolved evidence and the named refusal codes (policy-refusal, provider-absent) instead of guessing.",
+        "The response includes validation (new delegate run after the change) and rollback steps; any proposed change uses the mandatory recommendation fields.",
+        "The response does not execute or simulate EXTERNAL_READ/COST_BEARING capabilities without the operator-granted authorization.",
+        "The response does not claim a performance or cost gain without a same-case measurement."
+      ]
+    }
+  ]
+}

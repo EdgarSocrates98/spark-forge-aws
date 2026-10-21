@@ -6,7 +6,7 @@ Ficha §11 de cada coordenador, executor e skill, gerada dos canônicos.
 O valor de cada recurso está no campo — este arquivo não é uma lista
 de nomes.
 
-Superfície: **14 coordenadores**, **5 executores**, **60 skills**.
+Superfície: **14 coordenadores**, **5 executores**, **61 skills**.
 
 ## Coordenadores
 
@@ -644,6 +644,20 @@ Superfície: **14 coordenadores**, **5 executores**, **60 skills**.
 | RELATED_AGENTS | `sf-runtime-specialist` |
 | RELATED_MCP_TOOLS | `sparkforge_aws_migration_assess`, `sparkforge_aws_release_describe`, `sparkforge_aws_release_diff` |
 | EXAMPLE | “vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter” |
+| VERIFICATION | saída ancora em `rule_id`/`fact_id` ou recusa nomeada |
+
+### `delegate-specialists`
+
+| Campo | Valor |
+|---|---|
+| NAME | `delegate-specialists` |
+| PURPOSE | Use quando o caso pedir diagnóstico de runtime sobre artefato exportado (log de driver/executor, OOM, skew, shuffle, spill, diagnose de job Glue/EMR, metadata Iceberg) ou varredura estática independen… |
+| TRIGGERS | Use quando o caso pedir diagnóstico de runtime sobre artefato exportado (log de driver/executor, OOM, skew, shuffle, spill, diagnose de job Glue/EMR, metadata Iceberg) ou varredura estática independente do projeto (revisão PySpark, antipadrões, config, higiene de dependências, segurança, qualidade), quando precisar decidir SE delegar a data-sentinel-forge ou forge-doctor-data em vez de usar os extratores nativos, quando consumir um EvidenceHandoff persistido, verificar um finding vindo do especialista contra os fatos nativos, ou revalidar depois de uma mudança. Não use para inventar comando de especialista — a fronteira é `sparkforge-aws delegate`, e especialista ausente degrada para `native-analysis`, nunca para execução simulada. |
+| SUPPORTED_HOSTS | host pai apenas — não-despachável — decide quando delegar e consome handoffs; `delegate run` de capability de nuvem exige --authorize, concessão do operador que subagente não pode pedir (V-DV-10) |
+| ACTIVATION_METHOD | descrição do frontmatter — ativa por linguagem natural |
+| RELATED_AGENTS | — |
+| RELATED_MCP_TOOLS | — |
+| EXAMPLE | “pedido que case a descrição de `delegate-specialists`” |
 | VERIFICATION | saída ancora em `rule_id`/`fact_id` ou recusa nomeada |
 
 ### `design-data-architecture`

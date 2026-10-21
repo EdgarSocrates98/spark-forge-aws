@@ -45,7 +45,7 @@ def test_catalogo_em_dia(gerador, paginas):
 def test_toda_entidade_tem_ficha(paginas):
     texto = next(iter(paginas.values()))
     fichas = [t for t in texto.split("### `")[1:] if t.strip()]
-    assert len(fichas) == 14 + 5 + 60
+    assert len(fichas) == 14 + 5 + 61
 
 
 def test_campos_do_contrato_secao_11(paginas):

@@ -495,6 +495,14 @@ class TestRelacaoDerivada:
             # e para para confirmacao humana antes de push e de PR; despachada,
             # ninguem estaria la para confirmar.
             "propose-change-pr",
+            # `delegate-specialists` (lf-0032): os coordenadores a citam na
+            # PROSA (secao "Delegacao opcional a especialistas"), nunca no
+            # `skills:` -- declarada ela derivaria `agent:` como gatilho do
+            # motor, e `delegate run` de capability de nuvem exige `--authorize`
+            # concedido pelo operador, pergunta que subagente nao tem a quem
+            # fazer (V-DV-10). O motivo esta escrito em
+            # `sparkforge_aws/integrate/render.py::NON_DISPATCHABLE_SKILLS`.
+            "delegate-specialists",
             # As seis fases do SDD proprio (2026-09-16) dirigem a sessao e o
             # operador; declara-las no `skills:` de um coordenador as tornaria
             # despachaveis, e todas precisam perguntar ou despachar.

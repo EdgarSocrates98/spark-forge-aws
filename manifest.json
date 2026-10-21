@@ -20,6 +20,7 @@
     "aws-storage",
     "benchmark-pyspark-job",
     "compare-releases",
+    "delegate-specialists",
     "design-data-architecture",
     "design-incremental-processing",
     "design-s3-data-lake",

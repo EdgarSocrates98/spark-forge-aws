@@ -143,6 +143,16 @@ pergunta for sobre ela: onde ela está em relação ao write, se o resultado tem
 aborte, e quantas varreduras ela paga. Você enxerga a action; só ele sabe que aquela action
 é uma validação.
 
+#### A revisão estática independente também é pergunta de especialista
+
+`forge-doctor-data` (`doctor.scan-project`) varre o projeto por fora do seu namespace:
+antipadrões, config, higiene de dependências, segurança, estrutura e gates de qualidade —
+`LOCAL_READ`, via `sparkforge-aws delegate`. Dois findings sobre a mesma linha corroboram;
+divergência vira `unresolved`, não média. O especialista nunca substitui
+`sparkforge_aws_analyze_pyspark` — ele acrescenta uma leitura independente quando a pergunta
+pede revisão de projeto, não só de código Spark. A skill `delegate-specialists` ensina
+quando delegar, como consumir o handoff e como revalidar.
+
 #### Preservar o resultado é exigência com produtor, não frase
 
 Você entrega diff, e o diff é onde a semântica muda. Trocar Python UDF por função nativa muda
