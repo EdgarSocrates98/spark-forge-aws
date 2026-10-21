@@ -83,6 +83,53 @@ class TestWheelCarriesTheKnowledgeLayer:
         assert len(_names(wheel, "sparkforge_aws/knowledge/")) >= 15
 
 
+class TestWheelCarriesGraphStudio:
+    """lf-0025 — `graph ui` tem que funcionar numa instalacao wheel-only.
+
+    O frontend do Graph Studio e uma unica string inline (`STUDIO_HTML`)
+    dentro de `_graphstudio.py`: o "asset" que viaja e o proprio modulo.
+    O que este teste protege:
+
+    - o modulo esta DENTRO do wheel -- uma regressao de `packages=` que o
+      removesse deixaria `graph ui` morto num `pip install` e verde no
+      checkout (a forma de falha que esta classe inteira existe para pegar);
+    - os bytes no wheel sao os do checkout -- paridade no nivel do artefato,
+      nao da intencao;
+    - `STUDIO_HTML` nao referencia recurso externo -- um `<script src>`,
+      `<link href>` ou `url(http` seria dependencia de CDN/dev-machine que
+      nenhum wheel carrega. Os unicos `fetch()` permitidos sao same-origin
+      (`/api/...`), servidos pelo proprio handler.
+    """
+
+    def test_graphstudio_module_is_inside_the_wheel(self, wheel):
+        assert "sparkforge_aws/_graphstudio.py" in wheel.namelist()
+
+    def test_wheel_bytes_match_the_checkout(self, wheel):
+        import hashlib
+
+        packaged = wheel.read("sparkforge_aws/_graphstudio.py")
+        local = (ROOT / "sparkforge_aws" / "_graphstudio.py").read_bytes()
+        assert hashlib.sha256(packaged).hexdigest() == hashlib.sha256(local).hexdigest()
+
+    def test_studio_html_has_no_external_asset_reference(self, wheel):
+        import re
+
+        source = wheel.read("sparkforge_aws/_graphstudio.py").decode("utf-8")
+        # Referencia externa = src/href/url() apontando para http(s) fora do
+        # documento. `fetch('/api/...')` same-origin e o caminho de dados e nao
+        # casa com nenhum destes padroes.
+        for pattern in (
+            r"<script[^>]+src=",
+            r"<link[^>]+href=",
+            r"url\(['\"]?https?://",
+            r"https?://[^/'\") ]*(?:cdn|jsdelivr|unpkg|googleapis)",
+        ):
+            assert not re.search(pattern, source, re.IGNORECASE), (
+                f"STUDIO_HTML referencia asset externo ({pattern}) -- "
+                "o wheel nao pode carrega-lo"
+            )
+
+
 # A constante que o hatchling usa como `SOURCE_DATE_EPOCH` quando a variavel
 # nao esta no ambiente: 2020-02-02T00:00:00Z. O `datetime` deriva a tupla em vez
 # de repeti-la para que as duas nunca possam divergir na leitura.
