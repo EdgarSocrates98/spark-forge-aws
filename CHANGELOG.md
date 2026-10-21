@@ -32,6 +32,13 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+
+## [0.5.6] - 2026-10-21
+
+### Added
+
+- Integrations cycle: governed peer delegation (`sparkforge_aws/delegation/` — discovery, plans, argv-only execution, persisted EvidenceHandoffs, refusal/cycle handling) to data-sentinel-forge and forge-doctor-data; `delegate-specialists` skill + coordinator awareness; `sparkforge-aws delegate` CLI; Windows `.cmd` test fixture shim; surface lock regenerated (61 skills); portal bundle re-vendored with explorer pages.
+
 ## [0.5.4] - 2026-10-20
 
 ### Changed
