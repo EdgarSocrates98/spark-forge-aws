@@ -6,14 +6,16 @@
 
 ## O que faz
 
-Knowledge Search: busca textual deterministica e offline sobre os `.md`/`.yaml` da raiz resolvida e dos packs ativos — casa o termo sem case em nome e conteudo. Devolve `matched` (docs com hit, enderecados `packs/<id>/<rel>`), `matched_total` e as primeiras `limit` ocorrencias `{file, line, text}` — nunca o arquivo inteiro; `truncated` marca o corte. O QUE ELA NAO FAZ: nao ranqueia, nao interpreta, nao acessa rede.
+Knowledge Search: busca textual deterministica e offline sobre os `.md`/`.yaml` da raiz resolvida e dos packs ativos — casa o termo sem case em nome e conteudo. Devolve `documents` — uma entrada por documento (path, dominio, sha256, `line_hits` e as primeiras linhas que casam, enderecados `packs/<id>/<rel>`) — `documents_total`, `matched` (so os paths), `knowledge_root`/`knowledge_origin` e `next_cursor` para paginar por documento; `truncated` marca o corte. `domain` restringe ao primeiro segmento do caminho. O QUE ELA NAO FAZ: nao ranqueia, nao interpreta, nao acessa rede.
 
 ## Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `term` | string | sim | Termo buscado (sem case). |
-| `limit` | integer | não | Teto de ocorrencias devolvidas (default 20). |
+| `cursor` | string | não | Cursor da paginacao por documento (`next_cursor` da pagina anterior). |
+| `domain` | string | não | Restringe a documentos cujo primeiro segmento de caminho (ou nome de arquivo na raiz) leva o prefixo do dominio. |
+| `limit` | integer | não | Teto de documentos por pagina (default 20). |
 
 ## Na CLI
 
