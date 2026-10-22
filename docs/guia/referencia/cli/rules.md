@@ -24,6 +24,7 @@ sparkforge-aws rules lookup --help
 |---|---|---|---|---|---|
 | `--id` | não | texto | sim |  |  |
 | `--category` | não | texto |  |  |  |
+| `--query` | não | texto |  |  | Busca por palavra-chave (§6.3): substring sem case sobre id, title, category e explanation da regra. |
 | `--limit` | não | texto |  | `50` |  |
 | `--cursor` | não | texto |  |  |  |
 | `--severity` | não | `P0`, `P1`, `P2`, `P3`, `P4` |  |  | Filtra por severity_default. |

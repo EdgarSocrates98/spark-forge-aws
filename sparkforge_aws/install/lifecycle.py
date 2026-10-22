@@ -1024,12 +1024,14 @@ def _context_manifest(
                 "interface": "bundled",
             }
         )
-    evals_dir = _bundled_dir("evals")
-    eval_suites = [
-        {"id": p.name, "kind": "output-verification"}
-        for p in sorted(evals_dir.iterdir())
-        if p.is_dir()
-    ] if evals_dir else []
+    # §7.1 (lf-0038): a classificacao NAO vem do varrimento de `evals/` — ela
+    # e a tabela declarada de `sparkforge_aws.evals.taxonomy`, que cobre as 4
+    # categorias do enum EVAL_KINDS e marca as suites seladas. Suites novas
+    # entram na tabela; `evals describe <id>` e o command que o manifesto
+    # publica para cada uma.
+    from sparkforge_aws.evals import taxonomy as _evals_taxonomy
+
+    eval_suites = _evals_taxonomy.manifest_suites(CLI)
 
     checks: list[dict[str, Any]] = [
         {
@@ -1068,6 +1070,33 @@ def _context_manifest(
         rule_areas=rule_areas,
         knowledge_providers=providers,
         eval_suites=eval_suites,
+        # As mesmas seis capabilities que `build_manifest` montaria por
+        # default — declaradas aqui porque `evals` ganha `detail`: o resumo
+        # da classificacao §7.1 + a postura §7.3 (capability shape fechado,
+        # `detail` e o campo livre do contrato).
+        capabilities={
+            "skills": fctx._capability_doc(
+                bool(skills), discovery="workspace-file", count=len(skills)
+            ),
+            "agents": fctx._capability_doc(
+                bool(executors or coordinators),
+                discovery="workspace-file",
+                count=len(executors) + len(coordinators),
+            ),
+            "knowledge": fctx._capability_doc(
+                bool(providers), discovery="native-runtime", count=len(providers)
+            ),
+            "rules": fctx._capability_doc(
+                bool(rule_areas), discovery="native-runtime", count=len(rule_areas)
+            ),
+            "evals": fctx._capability_doc(
+                bool(eval_suites),
+                discovery="cli",
+                count=len(eval_suites),
+                detail=_evals_taxonomy.capability_detail(),
+            ),
+            "protocols": fctx._capability_doc(True, discovery="bundled", count=3),
+        },
         protocols=(
             {"id": "forge/v1", "version": "1"},
             {"id": "forge/context/v1", "version": "1"},
@@ -1110,6 +1139,10 @@ def _context_manifest(
                 "read_only": True,
                 "description": "environment + installation health",
             },
+            # §7.2 (lf-0038): evals.list/describe/run/result +
+            # verification.plan/run. `discovery.ops` e vocabulario fechado
+            # do §6.2 — os ops do §7.2 entram como commands nomeados.
+            *discovery_ops.eval_commands(),
         ),
         discovery_ops=discovery_ops.ops(),
         mcp={

@@ -6607,15 +6607,21 @@ def capabilities() -> dict[str, Any]:
     host."""
     from sparkforge_aws import __version__, discovery_ops
 
-    # Evals moram na raiz do clone e entram no wheel via force-include —
-    # a mesma resolucao `_bundled_dir` do lifecycle, sem importar install/.
+    # §7.1 (lf-0038): o inventario e a taxonomia declarada, nao o varrimento
+    # cru — cada suite carrega a categoria, o ambiente e a selagem do §7.3.
+    # O varrimento de `evals/` continua aqui como `dirs` informativo porque
+    # o que nao esta classificado tambem e dado, nao ausencia silenciosa.
+    from sparkforge_aws.evals import taxonomy as _evals_taxonomy
+
     suites: list[str] = []
     pkg_dir = Path(__file__).resolve().parents[1]  # sparkforge_aws/
     repo_dir = pkg_dir.parent
+    eval_dirs: list[str] = []
     for cand in (repo_dir / "evals", pkg_dir / "evals"):
         if cand.is_dir():
-            suites = sorted(p.name for p in cand.iterdir() if p.is_dir())
+            eval_dirs = sorted(p.name for p in cand.iterdir() if p.is_dir())
             break
+    suites = _evals_taxonomy.suite_ids()
     conhecimento = _knowledge_stats()
     return {
         "schema": "forge/capabilities/v1",
@@ -6629,7 +6635,18 @@ def capabilities() -> dict[str, Any]:
             "rules": _catalog_stats(),
             "knowledge": conhecimento,
             "content": _content_stats(),
-            "evals": {"available": bool(suites), "suites": suites},
+            "evals": {
+                "available": bool(suites),
+                "suites": suites,
+                "categories": list(_evals_taxonomy.KINDS),
+                "counts": _evals_taxonomy.kind_counts(),
+                "eval_dirs": eval_dirs,
+                "detail": _evals_taxonomy.capability_detail(),
+                # §7.2 — ops conceituais de evals/verification -> argv real.
+                # O mapa `discovery.ops` do manifesto e fechado no §6.2; os
+                # seis ops do §7.2 vivem aqui e como discovery.commands.
+                "ops": discovery_ops.eval_ops_expanded(),
+            },
         },
         "protocols": [dict(p) for p in discovery_ops.PROTOCOLS],
         "interfaces": {
