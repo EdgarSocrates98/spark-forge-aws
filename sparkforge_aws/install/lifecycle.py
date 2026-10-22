@@ -998,7 +998,6 @@ def _context_manifest(
 
     forge_json = _bundled_json("forge.json")
     agentic = _bundled_json("forge.agentic.json")
-    manifest_json = _bundled_json("manifest.json")
 
     skills: list[str] = []
     coordinators: list[str] = []
