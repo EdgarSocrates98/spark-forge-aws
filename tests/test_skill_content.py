@@ -96,7 +96,9 @@ def test_copias_conferem_com_a_renderizacao(skill_dir: Path) -> None:
         )
     claude = MIRRORS[0] / skill_dir.name / "SKILL.md"
     rewrite = sync_skills._render._rewrite_outgoing_links(
-        src.read_text(encoding="utf-8"), skill_name=skill_dir.name
+        src.read_text(encoding="utf-8"),
+        canonical_dir=f"skills/{skill_dir.name}",
+        skills_mirror=".claude/skills",
     )
     assert claude.read_bytes() == rewrite.encode("utf-8"), (
         f"{claude} divergiu da fonte por algo além do re-relativamento de links"

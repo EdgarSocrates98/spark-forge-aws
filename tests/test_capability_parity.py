@@ -342,6 +342,37 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "lista handoffs persistidos em .sparkforge_aws/delegation/ do "
             "chamador; leitura de estado local, nao capacidade de dados."
         ),
+        # §6.2/§7.2 (install-2.0): estes verbos sao a CAMADA DE INVOCACAO do
+        # protocolo de descoberta, nao capacidades de dados. O manifesto
+        # `forge/context/v1` ja os publica para o host como `discovery.ops`
+        # (`capabilities.list`, `context.build`) e `discovery.commands`/
+        # `capabilities.evals.ops` (os quatro `evals.*`) — o cliente MCP le a
+        # capacidade declarada e invoca o argv; uma tool por op duplicaria o
+        # manifesto dentro do catalogo de tools.
+        "capabilities": (
+            "capabilities.list (§6.2): emite o proprio manifesto de "
+            "capacidades; chega ao host via discovery.ops, nao como tool."
+        ),
+        "context pack": (
+            "context.build (§6.2): monta o Context Pack do manifesto; "
+            "publicado em discovery.ops como argv, nao como tool MCP."
+        ),
+        "evals list": (
+            "evals.list (§7.2): inventario das suites; publicado em "
+            "discovery.commands/capabilities.evals.ops, nao como tool."
+        ),
+        "evals describe": (
+            "evals.describe (§7.2): metadados da suite; publicado em "
+            "discovery.commands/capabilities.evals.ops, nao como tool."
+        ),
+        "evals run": (
+            "evals.run (§7.2): executa o runner da suite; publicado em "
+            "discovery.commands/capabilities.evals.ops, nao como tool."
+        ),
+        "evals result": (
+            "evals.result (§7.2): scorecard de execucao de host; publicado "
+            "em discovery.commands/capabilities.evals.ops, nao como tool."
+        ),
     }
 
     def _subcomandos(self, parser):

@@ -514,11 +514,25 @@ def setrlimit(recurso, valores):
 '''
 
 SCRIPT_LIMITES = '''
+import importlib.util
 import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, sys.argv[1])
+# `sys.path` sombreado nao basta em interpretadores que compilam `resource`
+# como builtin (ex.: builds uv/pbs de CPython — `resource` entra em
+# `sys.builtin_module_names` e o BuiltinImporter roda ANTES do PathFinder).
+# Carregar o falso por arquivo e prende-lo em `sys.modules` e o que garante
+# que `import resource` dentro de `apply_resource_limits` ache o duplo em
+# qualquer build. Sem arquivo (argv[1] vazio) nao ha duplo — e o teste do
+# ramo real, que quer o `resource` de verdade.
+_falso = Path(sys.argv[1]) / "resource.py"
+if _falso.is_file():
+    _espec = importlib.util.spec_from_file_location("resource", str(_falso))
+    _mod = importlib.util.module_from_spec(_espec)
+    sys.modules["resource"] = _mod
+    _espec.loader.exec_module(_mod)
 from sparkforge_aws.codeintel.security import apply_resource_limits  # noqa: E402
 
 limites = apply_resource_limits(

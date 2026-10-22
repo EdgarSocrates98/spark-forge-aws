@@ -328,10 +328,11 @@ class TestSuperficieMCP:
         # projecao (default 5000), sem cursor nem envelope de pagina -- um
         # `summary` nao teria campo de item para projetar.
         #
-        # `knowledge_search` segue o padrao de `code_search`: devolve
-        # ocorrencias `{file, line, text}` -- referencia de documento, ja o
-        # minimo para alguem abrir o trecho. O `limit` e o teto de
-        # ocorrencias (default 20), sem cursor; um `summary` so tiraria o
+        # `knowledge_search` segue o padrao de `code_search`: devolve uma
+        # entrada por documento (`path`, `domain`, `sha256` e as primeiras
+        # linhas `{line, text}` que casam) -- referencia de documento, ja o
+        # minimo para alguem abrir o trecho. O `limit` e o teto de documentos
+        # por pagina (default 20), com cursor; um `summary` so tiraria o
         # `text`, que e o conteudo do resultado.
         assert sem_flag == {
             "sparkforge_aws_judge",
