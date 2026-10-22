@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from sparkforge_aws import __version__
+from sparkforge_aws import __version__, discovery_ops
 from sparkforge_aws import _forgecontext as fctx
 from sparkforge_aws import _installkit as kit
 from sparkforge_aws.install.hosts import HOSTS, project_host, project_plan
@@ -989,12 +989,16 @@ def _context_manifest(
     """Manifesto forge/context/v1 montado das fontes reais: `forge.json` +
     `forge.agentic.json` + `manifest.json` no checkout (quando presente) e
     as raizes bundled de skills/agents/rules/knowledge que o install usou."""
-    forge_json = kit._load_json(_REPO_DIR / "forge.json", None)
-    forge_json = forge_json if isinstance(forge_json, dict) else None
-    agentic = kit._load_json(_REPO_DIR / "forge.agentic.json", None)
-    agentic = agentic if isinstance(agentic, dict) else None
-    manifest_json = kit._load_json(_REPO_DIR / "manifest.json", None)
-    manifest_json = manifest_json if isinstance(manifest_json, dict) else None
+    def _bundled_json(name: str) -> dict[str, Any] | None:
+        for cand in (_PKG_DIR / name, _REPO_DIR / name):
+            data = kit._load_json(cand, None)
+            if isinstance(data, dict):
+                return data
+        return None
+
+    forge_json = _bundled_json("forge.json")
+    agentic = _bundled_json("forge.agentic.json")
+    manifest_json = _bundled_json("manifest.json")
 
     skills: list[str] = []
     coordinators: list[str] = []
@@ -1070,7 +1074,15 @@ def _context_manifest(
             {"id": "forge/context/v1", "version": "1"},
             {"id": "forge/context-registry/v1", "version": "1"},
         ),
+        # discovery.commands: os verbos de retrieval do §6.2 (a fonte unica e
+        # `sparkforge_aws.discovery_ops`, a mesma tabela que `capabilities`
+        # emite) + os verbos de workflow que o manifesto ja declarava.
         discovery_commands=(
+            *[
+                c
+                for c in discovery_ops.commands()
+                if c["id"] != "doctor"  # `doctor` entra abaixo, ja declarado
+            ],
             {
                 "id": "analyze-pyspark",
                 "argv": [CLI, "analyze", "pyspark", "--path", "{target}"],
@@ -1100,6 +1112,7 @@ def _context_manifest(
                 "description": "environment + installation health",
             },
         ),
+        discovery_ops=discovery_ops.ops(),
         mcp={
             "server_name": "sparkforge-aws",
             "command": [CLI, "mcp", "serve"],

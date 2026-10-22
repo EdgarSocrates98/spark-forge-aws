@@ -1748,6 +1748,37 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="Tokens observados no transcript do host; omitido permanece unresolved.",
     )
+    context_pack_p = context_sub.add_parser(
+        "pack",
+        help=(
+            "context.build (install-2.0 §6.2): Context Pack limitado por "
+            "dominio — regras aplicaveis + knowledge + protocolos + hash."
+        ),
+    )
+    context_pack_p.add_argument(
+        "--domain",
+        required=True,
+        help=(
+            "Dominio pelo prefixo nativo: glue cobre glue-*/glue-infra, "
+            "spark cobre spark/* e spark-plan, ... (`capabilities` lista os "
+            "dominios conhecidos desta instalacao)."
+        ),
+    )
+    context_pack_p.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=20,
+        help="Teto de regras na pagina do pack (default 20).",
+    )
+    context_pack_p.add_argument(
+        "--knowledge-docs",
+        type=_positive_int,
+        default=5,
+        help="Teto de documentos de knowledge listados no pack (default 5).",
+    )
+    context_pack_p.add_argument(
+        "--as-of", help="Dia de referencia declarado no pack (AAAA-MM-DD)."
+    )
 
     # AgentOps --------------------------------------------------------------
     agentops_p = sub.add_parser(
@@ -2587,6 +2618,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pack_check_p.add_argument("dir", help="Diretorio do pack (com pack.yaml).")
 
+    # capabilities (install-2.0 §6.2) ---------------------------------------
+    sub.add_parser(
+        "capabilities",
+        help=(
+            "capabilities.list + protocol.describe (install-2.0 §6.2): o que "
+            "este forge instalado consegue fazer — contagens reais, dominios, "
+            "protocolos e o mapa ops->verbos que o manifesto forge/context/v1 "
+            "publica. Offline."
+        ),
+    )
+
     knowledge_p = sub.add_parser(
         "knowledge", help="Localiza os arquivos de conhecimento versionado."
     )
@@ -2626,6 +2668,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     knowledge_search_p.add_argument("term")
     knowledge_search_p.add_argument("--limit", type=_positive_int, default=20)
+    knowledge_search_p.add_argument(
+        "--domain",
+        help=(
+            "So documentos cujo primeiro segmento de caminho (ou nome na raiz) "
+            "e este dominio ou um sub-dominio `<dominio>-`: glue, spark, emr, ..."
+        ),
+    )
+    knowledge_search_p.add_argument(
+        "--cursor", help="Offset da pagina anterior (`next_cursor` da resposta)."
+    )
 
     # rules lookup --------------------------------------------------------
     # debate referee ---------------------------------------------------
@@ -2855,6 +2907,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     lookup_p.add_argument("--id", action="append")
     lookup_p.add_argument("--category")
+    lookup_p.add_argument(
+        "--query",
+        help=(
+            "Busca por palavra-chave (§6.3): substring sem case sobre id, "
+            "title, category e explanation da regra."
+        ),
+    )
     lookup_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     lookup_p.add_argument("--cursor")
     lookup_p.add_argument(
@@ -5044,6 +5103,18 @@ def _cmd_context_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_context_pack(args: argparse.Namespace) -> int:
+    _print(
+        _core.context_pack(
+            args.domain,
+            limit=args.limit,
+            knowledge_per_doc=args.knowledge_docs,
+            as_of=args.as_of,
+        )
+    )
+    return 0
+
+
 def _cmd_agentops_inspect(args: argparse.Namespace) -> int:
     _print(_core.agentops_inspect(args.repo, run_id=args.run_id, db_path=args.db_path))
     return 0
@@ -5395,7 +5466,16 @@ def _cmd_knowledge_list(args: argparse.Namespace) -> int:
 
 
 def _cmd_knowledge_search(args: argparse.Namespace) -> int:
-    _print(_core.knowledge_search(args.term, limit=args.limit))
+    _print(
+        _core.knowledge_search(
+            args.term, limit=args.limit, domain=args.domain, cursor=args.cursor
+        )
+    )
+    return 0
+
+
+def _cmd_capabilities(args: argparse.Namespace) -> int:
+    _print(_core.capabilities())
     return 0
 
 
@@ -5500,6 +5580,7 @@ def _cmd_rules_lookup(args: argparse.Namespace) -> int:
         severity=args.severity,
         runtime=args.runtime,
         index=args.index,
+        query=args.query,
     )
     _print(payload)
     return 0
@@ -6559,6 +6640,7 @@ _DISPATCH = {
     ("context", "start"): _cmd_context_start,
     ("context", "expand"): _cmd_context_expand,
     ("context", "inspect"): _cmd_context_inspect,
+    ("context", "pack"): _cmd_context_pack,
     ("agentops", "inspect"): _cmd_agentops_inspect,
     ("agentops", "compare"): _cmd_agentops_compare,
     ("agentops", "baseline"): _cmd_agentops_baseline,
@@ -6618,6 +6700,7 @@ _DISPATCH = {
     ("graph", "status"): _cmd_graph_status,
     ("graph", "view"): _cmd_graph_view,
     ("graph", "ui"): _cmd_graph_ui,
+    ("capabilities", None): _cmd_capabilities,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("knowledge", "drift"): _cmd_knowledge_drift,
     ("knowledge", "list"): _cmd_knowledge_list,

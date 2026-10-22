@@ -623,45 +623,176 @@ def agent_for_skill(name: str, agents_src: Path) -> str | None:
 _MD_LINK = re.compile(r"(\[[^\]]*\]\()([^)\s]+)((?:\s+\"[^\"]*\")?\))")
 
 
-def _rewrite_outgoing_links(text: str, *, skill_name: str) -> str:
-    """Re-relativiza links que escapam do diretorio da skill.
+def _mirror_dir_of(
+    canonical_dir: PurePosixPath,
+    skills_mirror: PurePosixPath,
+    agents_mirror: PurePosixPath | None,
+) -> PurePosixPath:
+    """O diretorio do ARQUIVO no espelho: troca a raiz `skills/`|`agents/` do
+    caminho canonico pela raiz espelhada, preservando os niveis internos
+    (`skills/<name>/references` -> `<host>/skills/<name>/references`)."""
+    partes = canonical_dir.parts
+    if partes and partes[0] == "skills":
+        return skills_mirror.joinpath(*partes[1:])
+    if partes and partes[0] == "agents" and agents_mirror is not None:
+        return agents_mirror.joinpath(*partes[1:])
+    return canonical_dir
 
-    O canonico mora em `skills/<name>/SKILL.md` (nivel 2); os espelhos em
-    `<plataforma>/skills/<name>/SKILL.md` (nivel 3). Um link
-    `../../knowledge/x.md` resolve contra o canonico mas aponta para
-    `<plataforma>/knowledge/` no espelho -- precisa de mais um `../`.
-    Links que ficam dentro de `skills/` (ex.: `references/x.md`,
-    `../_shared/...`) sao preservados pela copia da arvore inteira e nao
-    mudam. Alvos que nao existem no repo ficam como estao -- link quebrado
-    no canonico e achado do inventario, nao algo que o renderizador invente.
+
+def _rewrite_outgoing_links(
+    text: str,
+    *,
+    canonical_dir: str | PurePosixPath,
+    skills_mirror: str | PurePosixPath,
+    agents_mirror: str | PurePosixPath | None = None,
+    agent_pattern: str = "{stem}.md",
+    target_root: str | PurePosixPath | None = None,
+) -> str:
+    """Re-relativiza links de um `.md` da arvore skills/agents, em qualquer
+    profundidade.
+
+    `canonical_dir` e o diretorio do arquivo-FONTE, relativo a raiz do repo
+    (`skills/<name>`, `skills/<name>/references`, `agents`,
+    `agents/executors`). `skills_mirror`/`agents_mirror` sao os dirs
+    correspondentes NO ALVO (`.claude/skills`, `.agents/agents`; absolutos ou
+    relativos a `target_root`, desde que coerentes com `target_root`).
+
+    O alvo do link e resolvido contra `canonical_dir` -> `P` (repo-relativo):
+
+    - `P` dentro de `skills/` -> a mesma arvore espelhada em `skills_mirror`;
+    - `P` dentro de `agents/` -> `agents_mirror` (nome de perfil de topo
+      mapeado por `agent_pattern`; `executors/` preserva o nome);
+    - qualquer outro `P` (`knowledge/`, `rules/`...) -> `target_root/P`:
+      `../../knowledge/x.md` canonico vira `../../../knowledge/x.md` em
+      `.claude/skills/<name>/` e `../../../../knowledge/x.md` em
+      `.claude/skills/<name>/references/` — sempre resolvendo onde o install
+      grava os ponteiros de knowledge.
+
+    Alvos que saem do repo ficam como estao -- link quebrado no canonico e
+    achado do inventario, nao algo que o renderizador invente. A preservacao
+    e o que torna a renderizacao idempotente: `../../../knowledge/x.md`
+    re-renderizado resolve para fora do repo e nao muda.
     """
-    skills_root = PurePosixPath("skills")
-    src_dir = skills_root / skill_name
+    def _posix(p: str | PurePosixPath) -> PurePosixPath:
+        # Mirrors chegam como Path nativo (absoluto no install) ou string
+        # posix-relativa (sync_skills); os.sep do host garante que
+        # `C:\x\y` tambem parseie como caminho de partes.
+        return PurePosixPath(str(p).replace(os.sep, "/"))
+
+    src_dir = _posix(canonical_dir)
+    skills_mirror_p = _posix(skills_mirror)
+    agents_mirror_p = _posix(agents_mirror) if agents_mirror else None
+    espelho_dir = _mirror_dir_of(src_dir, skills_mirror_p, agents_mirror_p)
 
     def fix(match: re.Match[str]) -> str:
         target = match.group(2)
         if target.startswith(("http://", "https://", "mailto:", "#", "/")):
             return match.group(0)
         path_part, _, frag = target.partition("#")
-        resolved = PurePosixPath(
-            os.path.normpath(str(src_dir / path_part))
-        )
+        resolved = PurePosixPath(os.path.normpath(str(src_dir / path_part)))
         if str(resolved).startswith(".."):
-            # Resolvido contra skills/<name>/ o alvo sai do REPO: ou e um link
-            # quebrado de verdade na fonte (achado do inventario, nao algo que
-            # o renderizador conserte) ou e uma saida ja re-relativizada sendo
-            # re-renderizada -- `../../../` de skills/<name>/ aponta para fora.
-            # Preservar e o que torna a renderizacao idempotente.
             return match.group(0)
-        try:
-            resolved.relative_to(skills_root)
-            return match.group(0)  # link interno de skills/: espelho preserva
-        except ValueError:
-            pass
-        new_target = "../" + path_part + ("#" + frag if frag else "")
+        partes = resolved.parts
+        if partes and partes[0] == "skills":
+            destino = skills_mirror_p.joinpath(*partes[1:])
+        elif partes and partes[0] == "agents" and agents_mirror_p is not None:
+            if len(partes) == 2:
+                nome = agent_pattern.format(stem=PurePosixPath(partes[-1]).stem)
+                destino = agents_mirror_p / nome
+            else:
+                destino = agents_mirror_p.joinpath(*partes[1:])
+        else:
+            destino = (
+                _posix(target_root) / resolved
+                if target_root is not None
+                else resolved
+            )
+        new_target = (
+            os.path.relpath(str(destino), str(espelho_dir)).replace(os.sep, "/")
+            + ("#" + frag if frag else "")
+        )
         return match.group(1) + new_target + match.group(3)
 
     return _MD_LINK.sub(fix, text)
+
+
+# Mencao textual `knowledge/<doc>.<ext>` — cobre inline code (`` `knowledge/x.md` ``)
+# e prosa, que o agente segue como caminho tanto quanto um link `](`...`)`.
+# A exigencia de extensao deixa de fora "knowledge/ directory" e afins.
+_KNOWLEDGE_MENTION = re.compile(
+    r"knowledge/([A-Za-z0-9_./-]+\.(?:md|yaml|yml|sql|json|csv))"
+)
+
+
+def referenced_knowledge_paths(text: str, *, canonical_dir: str) -> set[str]:
+    """Os caminhos `knowledge/<rel>` que `text` cita — por link markdown
+    resolvido contra `canonical_dir` E por mencao textual
+    `` `knowledge/x.md` ``/prosa (a mesma coisa para o agente que le um
+    caminho e o abre). Serve para o install emitir ponteiros exatamente nos
+    docs referenciados, nao no knowledge inteiro."""
+    base = PurePosixPath(canonical_dir)
+    refs: set[str] = set()
+    for match in _MD_LINK.finditer(text):
+        target = match.group(2)
+        if target.startswith(("http://", "https://", "mailto:", "#", "/")):
+            continue
+        path_part = target.partition("#")[0]
+        resolved = PurePosixPath(os.path.normpath(str(base / path_part)))
+        partes = resolved.parts
+        if partes and partes[0] == "knowledge" and len(partes) > 1:
+            refs.add(resolved.relative_to("knowledge").as_posix())
+    refs.update(_KNOWLEDGE_MENTION.findall(text))
+    return refs
+
+
+_KNOWLEDGE_STUB = """\
+# Ponteiro de knowledge — sparkforge-aws
+
+Este arquivo e um PONTEIRO gerado na instalacao: os links
+`knowledge/<rel>` dos mirrors (.claude/skills, .agents/skills, ...) resolvem
+aqui, mas o CONTEUDO real mora no pacote `sparkforge-aws` instalado —
+fora de qualquer checkout, e propositalmente nao copiado para o workspace.
+
+Recupere o documento real com os verbos nativos (offline, deterministicos):
+
+    sparkforge-aws knowledge path --file {rel}
+    sparkforge-aws knowledge search "<termo>" --domain {dominio}
+    sparkforge-aws context pack --domain {dominio}
+
+`knowledge path` devolve o caminho absoluto e o sha256 do documento dentro do
+pacote (ou de `SPARKFORGE_AWS_KNOWLEDGE`, quando apontada). Para ver TODOS os
+documentos disponiveis: `sparkforge-aws knowledge list`.
+"""
+
+
+def knowledge_stub(rel: str) -> bytes:
+    """O conteudo do ponteiro `<alvo>/knowledge/<rel>` — responde ao link do
+    espelho com o caminho de retrieval, nao com uma copia do documento."""
+    partes = rel.split("/")
+    dominio = partes[0] if len(partes) > 1 else Path(rel).stem
+    return _KNOWLEDGE_STUB.format(rel=rel, dominio=dominio).encode("utf-8")
+
+
+_KNOWLEDGE_INDEX = """\
+# knowledge/ — ponteiros do sparkforge-aws
+
+Os arquivos neste diretorio sao PONTEIROS (um por documento referenciado
+pelas skills/agents instalados). O knowledge real e versionado dentro do
+pacote `sparkforge-aws` e se recupera offline pelos verbos:
+
+    sparkforge-aws knowledge list
+    sparkforge-aws knowledge path --file <doc>
+    sparkforge-aws knowledge search "<termo>" [--domain <d>]
+    sparkforge-aws context pack --domain <d>
+    sparkforge-aws capabilities          # mapa completo ops -> verbos (§6.2)
+
+Total referenciado nesta instalacao: {total} documento(s).
+"""
+
+
+def knowledge_index_stub(total: int) -> bytes:
+    """`knowledge/README.md` do alvo: o indice dos ponteiros + os verbos."""
+    return _KNOWLEDGE_INDEX.format(total=total).encode("utf-8")
 
 
 def _newline_of(lines: list[str]) -> str:
@@ -678,7 +809,17 @@ def _newline_of(lines: list[str]) -> str:
     return "\n"
 
 
-def render_skill(text: str, platform: str, *, name: str, agents_src: Path) -> str:
+def render_skill(
+    text: str,
+    platform: str,
+    *,
+    name: str,
+    agents_src: Path,
+    skills_mirror: str | PurePosixPath = ".claude/skills",
+    agents_mirror: str | PurePosixPath | None = None,
+    agent_pattern: str = "{stem}.md",
+    target_root: str | PurePosixPath | None = None,
+) -> str:
     """Devolve a skill `name` no formato que `platform` le.
 
     So o Devin recebe `subagent:`/`agent:`. Os campos entram no FIM do
@@ -697,7 +838,14 @@ def render_skill(text: str, platform: str, *, name: str, agents_src: Path) -> st
             "lado -- o default silencioso seria publicar a skill sem ninguem ter "
             "decidido se ela pode rodar sem poder perguntar."
         )
-    text = _rewrite_outgoing_links(text, skill_name=name)
+    text = _rewrite_outgoing_links(
+        text,
+        canonical_dir=PurePosixPath("skills") / name,
+        skills_mirror=skills_mirror,
+        agents_mirror=agents_mirror,
+        agent_pattern=agent_pattern,
+        target_root=target_root,
+    )
     if platform in PASSTHROUGH_PLATFORMS or platform == "codex":
         return text
 
@@ -721,29 +869,81 @@ def render_skill(text: str, platform: str, *, name: str, agents_src: Path) -> st
 
 
 def render_skill_file(
-    src: Path, skills_root: Path, platform: str, *, agents_src: Path
+    src: Path,
+    skills_root: Path,
+    platform: str,
+    *,
+    agents_src: Path,
+    skills_mirror: str | PurePosixPath = ".claude/skills",
+    agents_mirror: str | PurePosixPath | None = None,
+    agent_pattern: str = "{stem}.md",
+    target_root: str | PurePosixPath | None = None,
 ) -> bytes:
     """Os bytes de um arquivo de skill para `platform`.
 
     O nome da skill e o NOME DO DIRETORIO sob `skills_root`, o mesmo identificador
     que o Devin usa e que os coordenadores escrevem em `skills:`. Arquivo que nao
-    e `SKILL.md` sai como esta, sem passar por `decode`.
+    e `.md` sai como esta, sem passar por `decode`; `SKILL.md` recebe links +
+    frontmatter; qualquer outro `.md` (ex.: `references/x.md`) recebe so o
+    re-relativamento de links — e nele que os `../../knowledge/*` morrem quando
+    o arquivo mora um nivel mais fundo no espelho.
     """
     data = Path(src).read_bytes()
-    if Path(src).name != SKILL_FILENAME:
+    rel = Path(src).relative_to(skills_root)
+    name = rel.parts[0]
+    if Path(src).suffix != ".md":
         return data
-    name = Path(src).relative_to(skills_root).parts[0]
-    rendered = render_skill(data.decode("utf-8"), platform, name=name, agents_src=agents_src)
+    canonical_dir = PurePosixPath("skills").joinpath(*rel.parts[:-1])
+    if Path(src).name != SKILL_FILENAME:
+        rendered = _rewrite_outgoing_links(
+            data.decode("utf-8"),
+            canonical_dir=canonical_dir,
+            skills_mirror=skills_mirror,
+            agents_mirror=agents_mirror,
+            agent_pattern=agent_pattern,
+            target_root=target_root,
+        )
+        return rendered.encode("utf-8")
+    rendered = render_skill(
+        data.decode("utf-8"),
+        platform,
+        name=name,
+        agents_src=agents_src,
+        skills_mirror=PurePosixPath(skills_mirror),
+        agents_mirror=agents_mirror,
+        agent_pattern=agent_pattern,
+        target_root=target_root,
+    )
     return rendered.encode("utf-8")
 
 
-def render_agent_file(src: Path, platform: str) -> bytes:
+def render_agent_file(
+    src: Path,
+    platform: str,
+    *,
+    canonical_dir: str | PurePosixPath = "agents",
+    skills_mirror: str | PurePosixPath = ".claude/skills",
+    agents_mirror: str | PurePosixPath | None = None,
+    agent_pattern: str = "{stem}.md",
+    target_root: str | PurePosixPath | None = None,
+) -> bytes:
     """Os bytes de um perfil para `platform`.
 
     Le e escreve em bytes de proposito: `read_text` aplicaria newline universal e
-    um espelho com CRLF passaria a comparar igual a uma fonte LF.
+    um espelho com CRLF passaria a comparar igual a uma fonte LF. O
+    re-relativamento cobre links para fora de `agents/` (ex.:
+    `../knowledge/x.md`) — `canonical_dir` e `agents` ou `agents/executors`
+    conforme a subarvore do arquivo.
     """
     text = Path(src).read_bytes().decode("utf-8")
+    text = _rewrite_outgoing_links(
+        text,
+        canonical_dir=canonical_dir,
+        skills_mirror=skills_mirror,
+        agents_mirror=agents_mirror,
+        agent_pattern=agent_pattern,
+        target_root=target_root,
+    )
     return render_agent(text, platform).encode("utf-8")
 
 

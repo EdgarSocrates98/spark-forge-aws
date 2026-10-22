@@ -1379,8 +1379,6 @@ LISTA_PLUGINS = ["plugin", "list", "--json"]
 
 
 def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
-    from scripts import sync_skills
-
     home = tmp_path / "home"
     marketplace = home / ".sparkforge_aws" / "claude"
     plugin = marketplace / "plugins" / "sparkforge-aws"
@@ -1412,8 +1410,17 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
         "claude", "{stem}.md", executores=True
     )
     esperado_skills = {
-        src.relative_to(ROOT / "skills").as_posix(): sync_skills.rendered_skill_bytes(
-            src, ROOT / ".claude" / "skills" / src.relative_to(ROOT / "skills")
+        # O plugin mora mais fundo que `.claude/skills` — os links para fora
+        # da arvore resolvem contra `home`, a mesma coisa que o writer fez.
+        src.relative_to(ROOT / "skills").as_posix(): render.render_skill_file(
+            src,
+            ROOT / "skills",
+            "claude",
+            agents_src=sources.agents_dir(ROOT),
+            skills_mirror=plugin / "skills",
+            agents_mirror=plugin / "agents",
+            agent_pattern="{stem}.md",
+            target_root=home,
         )
         for src in sources.skill_files(ROOT)
     }

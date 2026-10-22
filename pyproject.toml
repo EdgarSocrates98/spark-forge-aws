@@ -169,10 +169,18 @@ packages = ["sparkforge_aws"]
 # `evals/` ja e pacote Python (a CLI de grading), entao o dado vai para um nome
 # que nao colide com ele. `evals/paths.py` resolve env -> cwd -> pacote.
 "evals/agentic" = "sparkforge_aws/evals_data/agentic"
+# Manifestos do forge (install-2.0 §8.2): `_context_manifest` os le da raiz do
+# checkout para compor o manifesto `forge/context/v1` (integrity digests,
+# host_adapters, `discovery.manifest`). Sob o wheel a raiz nao existe — os
+# arquivos vao DENTRO do pacote, na mesma convencao de `rules/`/`knowledge/`,
+# para o resolver bundled (install/lifecycle) servir sem checkout.
+"forge.json" = "sparkforge_aws/forge.json"
+"forge.agentic.json" = "sparkforge_aws/forge.agentic.json"
 
-# O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
-# realocar. `include` basta: preserva os dois onde o force-include do wheel
-# espera encontra-los quando o wheel e construido A PARTIR do sdist (o fluxo
+# O sdist so precisa CARREGAR `rules/catalog`, `knowledge` e os manifestos
+# `forge.json`/`forge.agentic.json` na raiz -- nao realocar. `include` basta:
+# preserva os arquivos onde o force-include do wheel espera encontra-los
+# quando o wheel e construido A PARTIR do sdist (o fluxo
 # padrao de `python -m build`, e o que `pip install` faz ao instalar por
 # sdist). Um `force-include` aqui tambem, como havia antes, MOVE os diretorios
 # para dentro de `sparkforge_aws/` dentro do proprio sdist -- e quando o backend
@@ -190,6 +198,8 @@ include = [
     "agents",
     "portal",
     "evals/agentic",
+    "forge.json",
+    "forge.agentic.json",
     "README.md",
     "LICENSE",
     "pyproject.toml",
@@ -201,6 +211,12 @@ testpaths = ["tests"]
 # `pytest` chamado como script (não `python -m pytest`) não põe o cwd no sys.path
 # e `import sparkforge_aws` falha sem que haja defeito no pacote.
 pythonpath = ["."]
+markers = [
+    # Wheel isolation (§8.4): constrói wheel + venv limpa — minutos, não
+    # segundos. O CI roda a suite inteira sem `-m`, então `slow` documenta o
+    # custo sem tirar o teste do gate (`verify_wheel.py` já custa mais).
+    "slow: builds wheels or runs subprocess-heavy checks",
+]
 
 # Regras explícitas: lint de CI que depende do default do ruff quebra em upgrade.
 [tool.ruff]

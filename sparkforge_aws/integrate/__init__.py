@@ -94,14 +94,22 @@ def _planejar(
             nome, home=disco.home, windows=windows, appdata=disco.appdata,
             codex_home=disco.codex_home,
         )
-        plano = writer.plan_files(h, raiz)
+        # target_root=HOME: os ponteiros `knowledge/<rel>` resolvem em
+        # `~/knowledge/` — o mesmo nivel que os espelhos `~/.agents/skills`
+        # esperam quando um link sai da arvore da skill.
+        plano = writer.plan_files(h, raiz, target_root=disco.home)
         if nome == "claude":
+            # `content` e o material do PLUGIN para o sha da versao — os
+            # ponteiros `~/knowledge/` moram fora do diretorio do plugin e
+            # nao podem entrar no `relative_to` de `content_version`.
+            plugin = _claude.claude_plugin_dir(disco.home)
+            plugin_content = [(c, d) for c, d in plano if Path(c).is_relative_to(plugin)]
             plano += _claude.plugin_files(
                 disco.home,
                 version=__version__,
                 python=python,
                 profile=profile,
-                content=list(plano),
+                content=plugin_content,
             )
         planos.append((h, plano))
     return planos
