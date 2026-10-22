@@ -50,12 +50,6 @@ def _spec() -> kit.ForgeSpec:
         mcp_command=(sys.executable, "-m", "sparkforge_aws.adapters.mcp", "--transport", "stdio"),
         mcp_server_name="sparkforge-aws",
         mcp_verify_tool="sparkforge_aws_runtime_detect",
-        marker_files=("AGENTS.md", "CLAUDE.md"),
-        marker_body=(
-            "**Spark Forge AWS** esta instalado neste projeto.\n\n"
-            "- MCP: `sparkforge-aws` (chave gerenciada em `.mcp.json`)\n"
-            "- Ciclo de vida: `sparkforge-aws status|repair|uninstall`"
-        ),
     )
 
 
@@ -105,15 +99,13 @@ def _hosts_for(alvo: str) -> list[str]:
     return list(dict.fromkeys(nomes))
 
 
-def _marker_body() -> str:
-    return (
-        "**Spark Forge AWS** esta instalado neste projeto.\n\n"
-        "- MCP server: `sparkforge-aws` (chave gerenciada em `.mcp.json`)\n"
-        "- Skills/agents: mirrors gerenciados nos diretorios de host\n"
-        "- Ciclo de vida: `sparkforge-aws status|repair|uninstall`\n\n"
-        "Conteudo entre os marcadores `sparkforge-aws:managed` e gerenciado; "
-        "o que estiver fora e do usuario."
-    )
+# Marcadores legados de geracoes anteriores do install — `install_docs` os
+# remove ao convergir AGENTS.md/CLAUDE.md para o contrato `forge:<tag>`.
+_LEGACY_DOC_TAGS: tuple[str, ...] = ("sparkforge-aws:managed",)
+
+# Documentos de consumer gerenciados pela camada forge_context (nao pela
+# ledger de arquivos — conteudo fora dos marcadores `forge:*` e do usuario).
+_CONSUMER_DOCS: tuple[str, ...] = ("AGENTS.md", "CLAUDE.md", "AGENT_PROTOCOL.md")
 
 
 def install(
@@ -202,27 +194,14 @@ def install(
             rel["config"] = configs
             relatorios.append(rel)
 
-        # Bloco gerenciado em AGENTS.md (CLAUDE.md so se ja existir).
-        markers = []
-        for marker_file in ("AGENTS.md", "CLAUDE.md"):
-            alvo_m = target / marker_file
-            if not alvo_m.exists() and marker_file != "AGENTS.md":
-                continue
-            original = alvo_m.read_text(encoding="utf-8") if alvo_m.exists() else ""
-            updated = kit.apply_marker_block(original, "sparkforge-aws", _marker_body())
-            if updated != original:
-                disco.gravar(alvo_m, updated.encode("utf-8"))
-            markers.append(
-                {
-                    "file": marker_file,
-                    "marker": "sparkforge-aws",
-                    "sha256": kit.marker_sha("sparkforge-aws", _marker_body()),
-                }
-            )
-            chave = disco.chave(alvo_m)
-            manifesto["files"].setdefault(
-                chave, {"sha256": kit._sha(updated.encode()), "owners": [], "marker": True}
-            )
+        # AGENTS.md/CLAUDE.md/AGENT_PROTOCOL.md sao gerenciados pela camada
+        # forge_context (blocos `forge:<forge-id>` + protocolo consolidado) —
+        # gravados em `_register_context`, fora do disco/ledger de assets.
+        # Entradas `marker` de installs antigos sao removidas da ledger: o
+        # arquivo agora tem dono na camada de docs, nao hash de arquivo
+        # inteiro (conteudo do usuario fora dos marcadores nao e drift).
+        for doc_name in _CONSUMER_DOCS:
+            manifesto["files"].pop(disco.chave(target / doc_name), None)
 
         escritos = sum(len(r.get("written") or []) for r in relatorios)
         removidos = sum(len(r.get("removed") or []) for r in relatorios)
@@ -263,7 +242,9 @@ def install(
             }
             for f in plano_total
         ],
-        markers=markers,
+        markers=[
+            {"file": d, "marker": f"forge:{FORGE_ID}"} for d in _CONSUMER_DOCS
+        ],
         checks=[
             {"id": "files", "status": "PASS", "detail": f"{escritos} written, {removidos} removed"},
             {
@@ -567,21 +548,43 @@ def repair(
                 continue  # entrada intacta: nada a reparar
             out = writer.apply_json_config(nome, caminho, entrada, disco=disco, manifesto=manifesto)
             (fixed if out["status"] == "written" else skipped).append(rel)
+    docs_check: dict[str, Any] | None = None
     if not dry_run:
         writer.save_manifest(target, manifesto)
+        # Blocos `forge:*` dos consumer docs: re-assert determinístico a
+        # partir dos manifests em `.forge/context/` — nunca toca conteúdo
+        # do usuário fora dos marcadores; marcador ambíguo recusa nomeado.
+        try:
+            out_docs = fctx.repair_docs(target, legacy_tags=_LEGACY_DOC_TAGS)
+            fixed.extend(f"docs:{w}" for w in out_docs["written"])
+            docs_check = {
+                "id": "consumer-docs",
+                "status": "PASS",
+                "detail": f"{out_docs['status']} ({len(out_docs['written'])} writes)",
+            }
+        except fctx.ContextError as exc:
+            skipped.append(f"docs:{exc.kind}")
+            docs_check = {
+                "id": "consumer-docs",
+                "status": "BLOCKED",
+                "detail": f"{exc.kind}: {exc.detail}",
+            }
+    checks = [
+        {
+            "id": "repair",
+            "status": "PASS" if not skipped else "FAIL",
+            "detail": f"{len(fixed)} restored, {len(skipped)} skipped",
+        }
+    ]
+    if docs_check is not None:
+        checks.append(docs_check)
     return _receipt(
         "repair",
         scope,
         target,
         "recommended",
         managed=[],
-        checks=[
-            {
-                "id": "repair",
-                "status": "PASS" if not skipped else "FAIL",
-                "detail": f"{len(fixed)} restored, {len(skipped)} skipped",
-            }
-        ],
+        checks=checks,
         repaired=fixed,
         skipped=skipped,
         status="completed" if not skipped else "failed",
@@ -628,25 +631,21 @@ def uninstall(
                 )
                 if cfg:
                     _mcp_unset(disco, manifesto, nome, h.mcp_config)
-        # marcadores
-        for marker_file in ("AGENTS.md", "CLAUDE.md"):
-            alvo_m = target / marker_file
-            if not alvo_m.exists():
-                continue
-            txt = kit.remove_marker_block(alvo_m.read_text(encoding="utf-8"), "sparkforge-aws")
-            if txt != alvo_m.read_text(encoding="utf-8"):
-                if txt.strip():
-                    disco.gravar(alvo_m, txt.encode())
-                    kept.append(marker_file)
-                else:
-                    disco.apagar(alvo_m)
-                    removed.append(marker_file)
-            manifesto.get("files", {}).pop(disco.chave(alvo_m), None)
+        # blocos `forge:*` + legado: removidos pela camada de docs depois do
+        # unregister (protocolo regen sem nos); entradas de ledger antigas
+        # dos 3 docs sao descartadas — o arquivo nao e mais file-asset nosso.
+        for doc_name in _CONSUMER_DOCS:
+            manifesto.get("files", {}).pop(disco.chave(target / doc_name), None)
         context_checks: list[dict[str, Any]] = []
         if not dry_run:
             writer.save_manifest(target, manifesto)
             _prune_empty(target, removed)
-            context_checks = [_unregister_context(target)]
+            # Só chama a camada de contexto quando há resíduo — ambas as
+            # ops adquirem lock e criariam `.forge/context/` num root
+            # pristino.
+            if _docs_leftovers(target):
+                context_checks = [
+                    _unregister_context(target), _uninstall_docs(target)]
     receipt = _receipt(
         "uninstall",
         scope,
@@ -1186,6 +1185,25 @@ def _register_context(
         receipt.setdefault("checks", []).append(
             {"id": "context-registry", "status": "BLOCKED", "detail": f"{exc.kind}: {exc.detail}"}
         )
+        return
+    try:
+        docs = fctx.install_docs(
+            target, manifest, owner=FORGE_ID, legacy_tags=_LEGACY_DOC_TAGS
+        )
+        receipt.setdefault("checks", []).append(
+            {
+                "id": "consumer-docs",
+                "status": "PASS",
+                "detail": (
+                    f"{docs['status']}: {len(docs['written'])} written, "
+                    f"{len(docs['kept'])} kept"
+                ),
+            }
+        )
+    except fctx.ContextError as exc:
+        receipt.setdefault("checks", []).append(
+            {"id": "consumer-docs", "status": "BLOCKED", "detail": f"{exc.kind}: {exc.detail}"}
+        )
 
 
 def _unregister_context(target: Path) -> dict[str, Any]:
@@ -1201,6 +1219,51 @@ def _unregister_context(target: Path) -> dict[str, Any]:
     except fctx.ContextError as exc:
         return {
             "id": "context-registry",
+            "status": "BLOCKED",
+            "detail": f"{exc.kind}: {exc.detail}",
+        }
+
+
+def _docs_leftovers(target: Path) -> bool:
+    """True quando o alvo ainda carrega resíduo forge_context: dir de
+    contexto, nosso bloco managed, o bloco compartilhado do ecossistema,
+    o sentinel do protocolo ou um marker legado. Leitura sem lock — só
+    um hit justifica o caminho de escrita."""
+    if (target / fctx.CONTEXT_DIR).exists():
+        return True
+    needles = (
+        f"forge:{FORGE_ID}:", f"{fctx.DOC_TAG_ECOSYSTEM}:",
+        fctx.PROTOCOL_SENTINEL, *_LEGACY_DOC_TAGS,
+    )
+    for name in _CONSUMER_DOCS:
+        path = target / name
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if any(n in text for n in needles):
+            return True
+    return False
+
+
+def _uninstall_docs(target: Path) -> dict[str, Any]:
+    """Retira os blocos `forge:spark-forge-aws` (+ legado) dos consumer docs
+    e regenera os documentos compartilhados sem nos. Roda depois de
+    ``_unregister_context`` para o protocolo sair sem a nossa seção."""
+    try:
+        out = fctx.uninstall_docs(
+            target, FORGE_ID, owner=FORGE_ID, legacy_tags=_LEGACY_DOC_TAGS
+        )
+        return {
+            "id": "consumer-docs",
+            "status": "PASS",
+            "detail": f"{out['status']}: {len(out['written'])} changed",
+        }
+    except fctx.ContextError as exc:
+        return {
+            "id": "consumer-docs",
             "status": "BLOCKED",
             "detail": f"{exc.kind}: {exc.detail}",
         }
