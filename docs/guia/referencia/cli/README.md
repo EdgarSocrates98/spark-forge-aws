@@ -16,6 +16,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws benchmark`](benchmark.md) | Compara duas execucoes a partir dos facts de event log de cada uma. |
 | [`sparkforge-aws blackboard`](blackboard.md) | Lê o shared blackboard (.sparkforge_aws/blackboard/). |
 | [`sparkforge-aws budget`](budget.md) | Mostra estado do budget do case. |
+| [`sparkforge-aws capabilities`](capabilities.md) | capabilities.list + protocol.describe (install-2.0 §6.2): o que este forge instalado consegue fazer — contagens reais, dominios, protocolos e o mapa ops->verbos que o manifesto... |
 | [`sparkforge-aws capacity`](capacity.md) | Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades que o job JA rodou. |
 | [`sparkforge-aws case`](case.md) | Gerencia o estado do case em .sparkforge_aws/case.yaml. |
 | [`sparkforge-aws change`](change.md) | Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff numa copia isolada para ver o que ele move nos achados (sandbox). |
@@ -32,6 +33,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge-aws doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. |
 | [`sparkforge-aws dq-ai`](dq-ai.md) | Avalia governanca Glue DQ ADVANCED sobre facts e artefatos observados. |
 | [`sparkforge-aws economy`](economy.md) | O que a execucao poe na janela de contexto: byte medido, nunca token estimado. |
+| [`sparkforge-aws evals`](evals.md) | Inventario classificado e execucao das suites de avaliacao (§7.1/§7.2): developer, runtime-decision, output-verification, host-conformance. |
 | [`sparkforge-aws finops`](finops.md) | O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- capacidade ou codigo. |
 | [`sparkforge-aws funcval`](funcval.md) | Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. |
 | [`sparkforge-aws fuse`](fuse.md) | Correlaciona facts de SQL com schema do catalogo (sparkforge_aws.facts.fusion), antes de judge. |

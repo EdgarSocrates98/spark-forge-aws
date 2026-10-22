@@ -10,6 +10,7 @@ Descobre capabilities e empacota contexto deterministico sob limite explicito.
 |---|---|
 | [`sparkforge-aws context expand`](#sparkforge-aws-context-expand) | Expande uma referencia ctx://v1 sob budget. |
 | [`sparkforge-aws context inspect`](#sparkforge-aws-context-inspect) | Inspeciona qualidade de contexto sem inferir tokens por bytes. |
+| [`sparkforge-aws context pack`](#sparkforge-aws-context-pack) | context.build (install-2.0 §6.2): Context Pack limitado por dominio — regras aplicaveis + knowledge + protocolos + hash. |
 | [`sparkforge-aws context resolve`](#sparkforge-aws-context-resolve) | Resolve locality repo/workspace/target sem ler fontes. |
 | [`sparkforge-aws context start`](#sparkforge-aws-context-start) | Inicia descoberta, selecao, reducao e materializacao de contexto. |
 
@@ -51,6 +52,27 @@ sparkforge-aws context inspect --help
 ### Tool MCP equivalente
 
 [`sparkforge_aws_agentops_baseline`](../tools/sparkforge_aws_agentops_baseline.md), [`sparkforge_aws_agentops_compare`](../tools/sparkforge_aws_agentops_compare.md), [`sparkforge_aws_agentops_critical_path`](../tools/sparkforge_aws_agentops_critical_path.md), [`sparkforge_aws_agentops_inspect`](../tools/sparkforge_aws_agentops_inspect.md), [`sparkforge_aws_agentops_timeline`](../tools/sparkforge_aws_agentops_timeline.md), [`sparkforge_aws_context_inspect`](../tools/sparkforge_aws_context_inspect.md), [`sparkforge_aws_doctor_agentic`](../tools/sparkforge_aws_doctor_agentic.md)
+
+## `sparkforge-aws context pack`
+
+context.build (install-2.0 §6.2): Context Pack limitado por dominio — regras aplicaveis + knowledge + protocolos + hash.
+
+```bash
+sparkforge-aws context pack --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--domain` | sim | texto |  |  | Dominio pelo prefixo nativo: glue cobre glue-*/glue-infra, spark cobre spark/* e spark-plan, ... (`capabilities` lista os dominios conhecidos desta instalacao). |
+| `--limit` | não | texto |  | `20` | Teto de regras na pagina do pack (default 20). |
+| `--knowledge-docs` | não | texto |  | `5` | Teto de documentos de knowledge listados no pack (default 5). |
+| `--as-of` | não | texto |  |  | Dia de referencia declarado no pack (AAAA-MM-DD). |
+
+### Tool MCP equivalente
+
+Nenhuma: este verbo existe só na CLI.
 
 ## `sparkforge-aws context resolve`
 

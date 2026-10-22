@@ -2629,6 +2629,42 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    # evals (install-2.0 §7.2) ------------------------------------------------
+    # evals.list/describe/run/result sobre a taxonomia classificada de
+    # `sparkforge_aws.evals.taxonomy`. Suites que so um host executa recusam
+    # EVALS-REQUIRES-HOST — a CLI nunca incorpora o executor (§7.3).
+    evals_p = sub.add_parser(
+        "evals",
+        help=(
+            "Inventario classificado e execucao das suites de avaliacao "
+            "(§7.1/§7.2): developer, runtime-decision, output-verification, "
+            "host-conformance. Gabaritos selados nunca sao emitidos."
+        ),
+    )
+    evals_sub = evals_p.add_subparsers(dest="evals_action", required=True)
+    evals_sub.add_parser(
+        "list", help="evals.list (§7.2): suites classificadas por categoria."
+    )
+    evals_describe_p = evals_sub.add_parser(
+        "describe",
+        help="evals.describe (§7.2): categoria, ambiente, selagem e sha256 da suite.",
+    )
+    evals_describe_p.add_argument("--suite", required=True)
+    evals_run_p = evals_sub.add_parser(
+        "run",
+        help=(
+            "evals.run (§7.2): executa o runner deterministico da suite; "
+            "suites de host recusam EVALS-REQUIRES-HOST."
+        ),
+    )
+    evals_run_p.add_argument("--suite", required=True)
+    evals_result_p = evals_sub.add_parser(
+        "result",
+        help="evals.result (§7.2): scorecard de uma execucao de host gravada.",
+    )
+    evals_result_p.add_argument("--suite", required=True)
+    evals_result_p.add_argument("--run", required=True)
+
     knowledge_p = sub.add_parser(
         "knowledge", help="Localiza os arquivos de conhecimento versionado."
     )
@@ -5474,6 +5510,27 @@ def _cmd_knowledge_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_evals(args: argparse.Namespace) -> int:
+    from sparkforge_aws.evals import surface as evals_surface
+    from sparkforge_aws.evals import taxonomy
+
+    try:
+        if args.evals_action == "list":
+            payload = taxonomy.listing()
+        elif args.evals_action == "describe":
+            payload = taxonomy.describe(args.suite)
+        elif args.evals_action == "run":
+            payload = evals_surface.run(args.suite)
+        elif args.evals_action == "result":
+            payload = evals_surface.result(args.suite, args.run)
+        else:  # pragma: no cover — argparse garante o conjunto
+            raise _core.AdapterError(f"evals action desconhecida: {args.evals_action}")
+    except taxonomy.TaxonomyError as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return 0
+
+
 def _cmd_capabilities(args: argparse.Namespace) -> int:
     _print(_core.capabilities())
     return 0
@@ -6701,6 +6758,7 @@ _DISPATCH = {
     ("graph", "view"): _cmd_graph_view,
     ("graph", "ui"): _cmd_graph_ui,
     ("capabilities", None): _cmd_capabilities,
+    ("evals", None): _cmd_evals,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("knowledge", "drift"): _cmd_knowledge_drift,
     ("knowledge", "list"): _cmd_knowledge_list,

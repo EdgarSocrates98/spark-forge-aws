@@ -82,6 +82,8 @@ sparkforge-aws knowledge search --help
 |---|---|---|---|---|---|
 | `term` (posicional) | sim | texto |  |  |  |
 | `--limit` | não | texto |  | `20` |  |
+| `--domain` | não | texto |  |  | So documentos cujo primeiro segmento de caminho (ou nome na raiz) e este dominio ou um sub-dominio `<dominio>-`: glue, spark, emr, ... |
+| `--cursor` | não | texto |  |  | Offset da pagina anterior (`next_cursor` da resposta). |
 
 ### Tool MCP equivalente
 

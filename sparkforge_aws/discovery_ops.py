@@ -198,3 +198,114 @@ def ops_expanded() -> dict[str, dict[str, Any]]:
     return {
         op: {"command": entry["id"], "argv": [CLI, *entry["argv"]]} for op, entry in OPS.items()
     }
+
+
+# ---------------------------------------------------------------------------
+# §7.2 (install-2.0 ciclo 5, lf-0038) — ops de evals/verification.
+#
+# `DISCOVERY_OPS` do `_forgecontext.py` canonico e um vocabulario FECHADO com
+# os oito ops do §6.2 — `evals.*`/`verification.*` nao podem entrar em
+# `discovery.ops` sem alterar o modulo vendored de outra forja (the-forge e
+# o dono). O que o manifesto publica e o que o schema aceita: estes seis ops
+# viram `discovery.commands` (`eval_commands()` abaixo) com o nome conceitual
+# na descricao, e o verbo `capabilities` os expoe em
+# `capabilities.evals.ops` via `eval_ops_expanded()` — mesmo padrao de fonte
+# unica, superficie correta para cada um.
+#
+# `evals.result`/`verification.plan` nao sao read_only: result pode gravar o
+# scorecard na execucao, plan grava o artefato `--out` que o compare rele.
+# ---------------------------------------------------------------------------
+
+EVAL_OPS: dict[str, dict[str, Any]] = {
+    "evals.list": {
+        "id": "evals-list",
+        "argv": ["evals", "list"],
+        "mode": "direct-capability",
+        "read_only": True,
+        "description": (
+            "evals.list (§7.2) — inventario classificado das suites nas 4 "
+            "categorias do §7.1 (developer, runtime-decision, "
+            "output-verification, host-conformance)"
+        ),
+    },
+    "evals.describe": {
+        "id": "evals-describe",
+        "argv": ["evals", "describe", "--suite", "{suite}"],
+        "mode": "direct-capability",
+        "read_only": True,
+        "description": (
+            "evals.describe (§7.2) — metadados da suite: categoria, ambiente, "
+            "selagem §7.3 e sha256 de integridade; gabarito selado nunca sai"
+        ),
+    },
+    "evals.run": {
+        "id": "evals-run",
+        "argv": ["evals", "run", "--suite", "{suite}"],
+        "mode": "direct-capability",
+        "read_only": True,
+        "description": (
+            "evals.run (§7.2) — executa o runner deterministico da suite; "
+            "suites de host recusam EVALS-REQUIRES-HOST (executor != avaliador)"
+        ),
+    },
+    "evals.result": {
+        "id": "evals-result",
+        "argv": ["evals", "result", "--suite", "{suite}", "--run", "{run}"],
+        "mode": "direct-capability",
+        "read_only": False,
+        "description": (
+            "evals.result (§7.2) — scorecard de uma execucao de host gravada "
+            "(grava scorecard.json na execucao quando ausente)"
+        ),
+    },
+    "verification.plan": {
+        "id": "verification-plan",
+        "argv": ["funcval", "plan", "--facts", "{facts}", "--out", "{plan}"],
+        "mode": "direct-capability",
+        "read_only": False,
+        "description": (
+            "verification.plan (§7.2/§7.4) — deriva o plano de validacao "
+            "(contagem, schema, chaves, agregados) dos facts ja extraidos"
+        ),
+    },
+    "verification.run": {
+        "id": "verification-run",
+        "argv": [
+            "funcval", "compare", "--plan", "{plan}",
+            "--before", "{before}", "--after", "{after}",
+        ],
+        "mode": "direct-capability",
+        "read_only": True,
+        "description": (
+            "verification.run (§7.2/§7.4) — executa o plano contra os "
+            "resultados medidos; falhas e ausentes ficam explicitos"
+        ),
+    },
+}
+
+
+def eval_commands() -> list[dict[str, Any]]:
+    """Os `discovery.commands` do §7.2 — ids com hifen (o ITEM_ID_RE nao
+    aceita ponto); o nome conceitual fica na descricao."""
+    return [
+        {
+            "id": entry["id"],
+            "argv": [CLI, *entry["argv"]],
+            "mode": entry["mode"],
+            "read_only": entry["read_only"],
+            "description": entry["description"],
+        }
+        for entry in EVAL_OPS.values()
+    ]
+
+
+def eval_ops_expanded() -> dict[str, dict[str, Any]]:
+    """O mapa §7.2 materializado para `capabilities.evals.ops`."""
+    return {
+        op: {
+            "command": entry["id"],
+            "argv": [CLI, *entry["argv"]],
+            "read_only": entry["read_only"],
+        }
+        for op, entry in EVAL_OPS.items()
+    }
