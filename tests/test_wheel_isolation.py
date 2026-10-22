@@ -39,7 +39,6 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 import venv
 from pathlib import Path
 
@@ -73,11 +72,12 @@ def _build_wheel(tmp: Path) -> Path:
     testar outro pacote."""
     dist = tmp / "dist"
     dist.mkdir()
-    result = subprocess.run(  # noqa: S603 - build chamado pelo proprio teste
+    result = subprocess.run(  # build chamado pelo proprio teste
         [sys.executable, "-m", "build", "--wheel", "--outdir", str(dist), str(ROOT)],
         capture_output=True,
         text=True,
         timeout=900,
+        check=False,
     )
     if result.returncode != 0:
         pytest.skip(f"`python -m build` indisponivel ou falhou: {result.stderr[-400:]}")
@@ -98,12 +98,13 @@ def _clean_env() -> dict[str, str]:
 
 
 def _run(argv: list[str], *, cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess:
-    return subprocess.run(  # noqa: S603 - CLI/venv criados pelo proprio teste
+    return subprocess.run(  # CLI/venv criados pelo proprio teste
         argv,
         cwd=str(cwd),
         env=env,
         capture_output=True,
         text=True,
+        check=False,
         timeout=300,
     )
 
@@ -162,10 +163,12 @@ def test_wheel_install_lifecycle_outside_checkout(tmp_path: Path):
         [
             str(python),
             "-c",
-            "import sys, sysconfig\n"
-            f"import {PACKAGE}\n"
-            f"print({PACKAGE}.__file__)\n"
-            "print(sysconfig.get_paths()['purelib'])",
+            (
+                "import sys, sysconfig\n"
+                f"import {PACKAGE}\n"
+                f"print({PACKAGE}.__file__)\n"
+                "print(sysconfig.get_paths()['purelib'])"
+            ),
         ],
         cwd=tmp_path,
         env=env,
