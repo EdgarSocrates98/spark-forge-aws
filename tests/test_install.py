@@ -308,7 +308,12 @@ def test_uninstall_reverte_tudo_menos_estado(projeto):
                              purge=True)
     assert un["status"] == "completed"
     resto = [p for p in _arquivos(projeto) if not p.startswith(".git/")]
-    assert resto == []
+    # `.forge/context/` e shared workspace state (ownership `shared`), nao
+    # state deste forge: uninstall so desregistra a propria entrada.
+    assert sorted(resto) == [
+        ".forge/context/ROUTING.md",
+        ".forge/context/registry.json",
+    ]
     assert not (projeto / ".devin").exists()
     assert not (projeto / ".agents").exists()
     assert not (projeto / ".mcp.json").exists()
@@ -495,3 +500,87 @@ def test_hosts_for_none_e_csv():
     assert set(_hosts_for("claude,devin")) == {"claude", "devin"}
     with pytest.raises(kit.InstallError):
         _hosts_for("nope")
+
+
+# --------------------------------------------------------------------------
+# forge/context/v1 — registry de workspace (install-2.0 ciclo 2)
+# --------------------------------------------------------------------------
+
+
+def test_install_escreve_forge_context(projeto):
+    from sparkforge_aws import _forgecontext as fctx
+
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    assert out["status"] == "completed"
+    check = next(c for c in out["checks"] if c["id"] == "context-registry")
+    assert check["status"] == "PASS"
+
+    ctx = projeto / ".forge" / "context"
+    registry = json.loads((ctx / "registry.json").read_text(encoding="utf-8"))
+    assert registry["schema"] == "forge/context-registry/v1"
+    entry = next(e for e in registry["forges"] if e["forge_id"] == "spark-forge-aws")
+    assert entry["scope"] == "project"
+
+    manifest = json.loads(
+        (ctx / "capabilities" / "spark-forge-aws.json").read_text(encoding="utf-8")
+    )
+    assert manifest["schema"] == "forge/context/v1"
+    assert manifest["forge_id"] == "spark-forge-aws"
+    assert fctx.validate_manifest(manifest) == []
+    assert manifest["skills"], "manifesto sem skills reais"
+    assert manifest["rule_areas"], "manifesto sem rule areas"
+    assert manifest["knowledge_providers"], "manifesto sem knowledge provider"
+    assert manifest["integrity"]["files"]["forge.json"].startswith("sha256:")
+
+    routing = (ctx / "ROUTING.md").read_text(encoding="utf-8")
+    assert "spark-forge-aws" in routing
+    assert "aws-glue" in routing
+
+
+def test_install_context_idempotente_byte_a_byte(projeto):
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    ctx = projeto / ".forge" / "context"
+    snap = {
+        p.relative_to(ctx).as_posix(): p.read_bytes()
+        for p in sorted(ctx.rglob("*"))
+        if p.is_file()
+    }
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    depois = {
+        p.relative_to(ctx).as_posix(): p.read_bytes()
+        for p in sorted(ctx.rglob("*"))
+        if p.is_file()
+    }
+    assert snap == depois
+
+
+def test_uninstall_desregistra_so_o_proprio_forge(projeto):
+    from sparkforge_aws import _forgecontext as fctx
+
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    estrangeiro = fctx.build_manifest(
+        forge_id="forge-alheia",
+        name="Forge Alheia",
+        version="1.0.0",
+        cli="forge-alheia",
+        package="forge_alheia",
+        distribution="forge-alheia",
+        python_spec=">=3.10",
+        scope="project",
+        domains=("dominio-alheio",),
+        skills=("skill-alheia",),
+    )
+    fctx.register_forge(projeto, estrangeiro, owner="forge-alheia")
+
+    un = lifecycle.uninstall(scope="project", host="all", root=projeto, purge=True)
+    assert un["status"] == "completed"
+
+    ctx = projeto / ".forge" / "context"
+    registry = json.loads((ctx / "registry.json").read_text(encoding="utf-8"))
+    ids = {e["forge_id"] for e in registry["forges"]}
+    assert ids == {"forge-alheia"}
+    assert not (ctx / "capabilities" / "spark-forge-aws.json").exists()
+    assert (ctx / "capabilities" / "forge-alheia.json").exists()
+    routing = (ctx / "ROUTING.md").read_text(encoding="utf-8")
+    assert "forge-alheia" in routing
+    assert "spark-forge-aws" not in routing
