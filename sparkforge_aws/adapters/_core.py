@@ -6605,13 +6605,13 @@ def capabilities() -> dict[str, Any]:
     de ops conceituais -> verbos reais que o manifesto `forge/context/v1`
     publica. Offline e deterministico: so le o pacote, nunca a rede nem o
     host."""
-    from sparkforge_aws import __version__, discovery_ops
-
     # §7.1 (lf-0038): o inventario e a taxonomia declarada, nao o varrimento
     # cru — cada suite carrega a categoria, o ambiente e a selagem do §7.3.
     # O varrimento de `evals/` continua aqui como `dirs` informativo porque
     # o que nao esta classificado tambem e dado, nao ausencia silenciosa.
     import importlib
+
+    from sparkforge_aws import __version__, discovery_ops
 
     _evals_taxonomy = importlib.import_module("sparkforge_aws.evals.taxonomy")
 
