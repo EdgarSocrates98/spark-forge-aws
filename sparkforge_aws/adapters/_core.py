@@ -6611,7 +6611,9 @@ def capabilities() -> dict[str, Any]:
     # cru — cada suite carrega a categoria, o ambiente e a selagem do §7.3.
     # O varrimento de `evals/` continua aqui como `dirs` informativo porque
     # o que nao esta classificado tambem e dado, nao ausencia silenciosa.
-    from sparkforge_aws.evals import taxonomy as _evals_taxonomy
+    import importlib
+
+    _evals_taxonomy = importlib.import_module("sparkforge_aws.evals.taxonomy")
 
     suites: list[str] = []
     pkg_dir = Path(__file__).resolve().parents[1]  # sparkforge_aws/
