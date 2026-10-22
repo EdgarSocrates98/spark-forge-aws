@@ -754,7 +754,9 @@ class TestSkillsReais:
         for skill in SKILL_DIRS:
             texto = (skill / "SKILL.md").read_text(encoding="utf-8")
             esperado = sync_skills._render._rewrite_outgoing_links(
-                texto, skill_name=skill.name
+                texto,
+                canonical_dir=f"skills/{skill.name}",
+                skills_mirror=".claude/skills",
             )
             for plataforma in ("claude", "github"):
                 assert (
@@ -848,7 +850,10 @@ class TestSkillsReais:
             texto = (skill / "SKILL.md").read_text(encoding="utf-8")
             corpo = texto.split("\n---\n", 1)[1]
             corpo_esperado = sync_skills._render._rewrite_outgoing_links(
-                corpo, skill_name=skill.name
+                corpo,
+                canonical_dir=f"skills/{skill.name}",
+                skills_mirror=".agents/skills",
+                agents_mirror=".agents/agents",
             )
             assert corpo_esperado in sync_skills.render_skill(
                 texto, "devin", name=skill.name

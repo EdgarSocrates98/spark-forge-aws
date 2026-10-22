@@ -446,24 +446,73 @@ def _adotar(
 # --------------------------------------------------------------------------
 
 
-def plan_files(h: Host, root: Path) -> list[tuple[Path, bytes]]:
-    """Os arquivos que o host `h` recebe, ja renderizados para a plataforma dele."""
+def plan_files(
+    h: Host, root: Path, target_root: Path | None = None
+) -> list[tuple[Path, bytes]]:
+    """Os arquivos que o host `h` recebe, ja renderizados para a plataforma dele.
+
+    Com `target_root` (a raiz do workspace/HOME onde o host e gravado) os links
+    que escapam de `skills/`/`agents/` sao re-relativizados ate ela — e cada
+    `knowledge/<rel>` citado ganha um PONTEIRO em `target_root/knowledge/<rel>`
+    (mais um `README.md` indice), para que `../../../knowledge/x.md` nos
+    espelhos nunca termine em arquivo morto: resolve num ponteiro que ensina
+    `sparkforge-aws knowledge path --file <rel>`.
+    """
     agents_src = sources.agents_dir(root)
     skills_root = sources.skills_dir(root)
     plano: list[tuple[Path, bytes]] = []
+    knowledge_refs: set[str] = set()
+
+    def _agent_bytes(src: Path, canonical_dir: str) -> bytes:
+        return render.render_agent_file(
+            src,
+            h.agent_platform,
+            canonical_dir=canonical_dir,
+            skills_mirror=h.skills_dir,
+            agents_mirror=h.agents_dir,
+            agent_pattern=h.agent_pattern,
+            target_root=target_root,
+        )
+
     for src in sources.agent_files(root):
         destino = h.agents_dir / h.agent_pattern.format(stem=src.stem)
-        plano.append((destino, render.render_agent_file(src, h.agent_platform)))
+        knowledge_refs |= render.referenced_knowledge_paths(
+            src.read_bytes().decode("utf-8"), canonical_dir="agents"
+        )
+        plano.append((destino, _agent_bytes(src, "agents")))
     if h.executors:
         for src in sources.executor_files(root):
             destino = h.agents_dir / "executors" / src.name
-            plano.append((destino, render.render_agent_file(src, h.agent_platform)))
+            knowledge_refs |= render.referenced_knowledge_paths(
+                src.read_bytes().decode("utf-8"), canonical_dir="agents/executors"
+            )
+            plano.append((destino, _agent_bytes(src, "agents/executors")))
     for src in sources.skill_files(root):
-        destino = h.skills_dir / src.relative_to(skills_root)
+        rel = src.relative_to(skills_root)
+        destino = h.skills_dir / rel
+        if src.suffix == ".md":
+            knowledge_refs |= render.referenced_knowledge_paths(
+                src.read_bytes().decode("utf-8"),
+                canonical_dir="skills/" + "/".join(rel.parts[:-1]),
+            )
         dados = render.render_skill_file(
-            src, skills_root, h.skill_platform, agents_src=agents_src
+            src,
+            skills_root,
+            h.skill_platform,
+            agents_src=agents_src,
+            skills_mirror=h.skills_dir,
+            agents_mirror=h.agents_dir,
+            agent_pattern=h.agent_pattern,
+            target_root=target_root,
         )
         plano.append((destino, dados))
+    if target_root is not None and knowledge_refs:
+        knowledge_root = Path(target_root) / "knowledge"
+        for rel in sorted(knowledge_refs):
+            plano.append((knowledge_root / rel, render.knowledge_stub(rel)))
+        plano.append(
+            (knowledge_root / "README.md", render.knowledge_index_stub(len(knowledge_refs)))
+        )
     return plano
 
 

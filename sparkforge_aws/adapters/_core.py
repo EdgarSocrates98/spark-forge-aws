@@ -6033,6 +6033,7 @@ def rules_lookup(
     severity: str | None = None,
     runtime: str | None = None,
     index: bool = False,
+    query: str | None = None,
 ) -> dict[str, Any]:
     """Regras do catalogo. Sem `source_freshness`, a resposta e a mesma para o
     mesmo catalogo, qualquer que seja o dia; com ela, entra o estado das fontes
@@ -6086,6 +6087,22 @@ def rules_lookup(
                 exit_code=2,
             )
         filtered = [r for r in filtered if runtime in (r.get("runtime_scope") or {})]
+    if query:
+        # Busca por palavra-chave (§6.3): substring case-insensitive sobre os
+        # campos textuais curtos da regra — nunca sobre o YAML inteiro, para
+        # a mesma resposta sair igual hoje e amanha sobre o mesmo catalogo.
+        term = query.strip().lower()
+        if not term:
+            raise AdapterError("rules lookup --query exige um termo nao vazio.", exit_code=2)
+        filtered = [
+            r
+            for r in filtered
+            if term
+            in " ".join(
+                str(r.get(k) or "")
+                for k in ("id", "title", "category", "explanation")
+            ).lower()
+        ]
 
     by_category = _count_by(filtered, lambda r: r.get("category", ""))
 
@@ -6124,6 +6141,7 @@ def rules_lookup(
             "severity": severity,
             "runtime": runtime,
             "index": index,
+            "query": query,
         },
         "by_category": by_category,
         "rules": [] if index else page,
@@ -6211,7 +6229,22 @@ def knowledge_path(
         except KnowledgeError as exc:
             raise AdapterError(str(exc), exit_code=2) from exc
 
-    payload: dict[str, Any] = {"root": str(root), "file": resolved, "available": available}
+    payload: dict[str, Any] = {
+        "root": str(root),
+        "origin": _knowledge_origin(root),
+        "file": resolved,
+        "available": available,
+    }
+    if resolved is not None:
+        # knowledge.get (§6.2): identidade do documento — sha256 + origem +
+        # tamanho — para o consumidor citar o que leu sem arrastar o conteudo.
+        resolved_path = Path(resolved)
+        payload["document"] = {
+            "path": resolved_path.name,
+            "rel": file,
+            "sha256": _sha256_of(resolved_path),
+            "bytes": resolved_path.stat().st_size if resolved_path.is_file() else None,
+        }
     if conjunto.active:
         payload["packs"] = [
             {"id": p.id, "root": str(p.knowledge_dir), "available": _arquivos_de(p.knowledge_dir)}
@@ -6244,26 +6277,148 @@ def knowledge_list() -> dict[str, Any]:
     return payload
 
 
-def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
+def _norm_seg(seg: str) -> str:
+    """Normaliza um segmento de caminho/categoria para comparacao de dominio:
+    minusculas e `_` virando `-` (catalogo mistura os dois)."""
+    return seg.strip().lower().replace("_", "-")
+
+
+def _domain_match(seg: str, prefix: str) -> bool:
+    """`seg` normalizado e exatamente o prefixo ou um sub-dominio `D-*`."""
+    return seg == prefix or seg.startswith(prefix + "-")
+
+
+def _matches_domain(seg: str, domain: str) -> bool:
+    """`seg` casa QUALQUER prefixo nativo do dominio — o nome publicado
+    (`aws-glue`) expande por `discovery_ops.domain_prefixes`; um nome cru
+    (`glue`) casa literal."""
+    from sparkforge_aws import discovery_ops
+
+    return any(_domain_match(seg, p) for p in discovery_ops.domain_prefixes(domain))
+
+
+def _doc_domain(rel: str) -> str | None:
+    """Dominio de um doc pelo primeiro segmento do caminho relativo; docs na
+    raiz do knowledge sao cross-service (dominio None — so aparecem em busca
+    sem filtro e na secao propria do context pack)."""
+    partes = rel.replace("\\", "/").split("/")
+    if len(partes) < 2:
+        return None
+    return _norm_seg(partes[0])
+
+
+def _doc_matches_domain(rel: str, domain: str) -> bool:
+    seg = _doc_domain(rel)
+    if seg is not None:
+        return _matches_domain(seg, domain)
+    # Doc na raiz: casa quando o nome do arquivo leva um prefixo do dominio
+    # (`glue-streaming-rtm.md` entra em `glue`/`aws-glue`), senao e
+    # cross-service.
+    stem = _norm_seg(Path(rel).stem)
+    return _matches_domain(stem, domain)
+
+
+def _sha256_of(path: Path) -> str | None:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _knowledge_origin(root: Path) -> str:
+    """Proveniencia da raiz de knowledge: `env` quando um override de
+    ambiente decidiu, `checkout` quando o marcador pyproject.toml identificou
+    o repositorio, senao `package` (wheel embarcado)."""
+    for var in (
+        "SPARKFORGE_AWS_KNOWLEDGE",
+        "SPARKFORGE_KNOWLEDGE",
+        "SPARK_FORGE_AWS_KNOWLEDGE",
+    ):
+        if os.environ.get(var):
+            return "env"
+    try:
+        if (Path(root).resolve().parent / "pyproject.toml").is_file():
+            return "checkout"
+    except OSError:
+        pass
+    return "package"
+
+
+def _knowledge_hits(
+    term_norm: str,
+    docs: list[tuple[str, str, str]],
+    *,
+    domain: str | None = None,
+    start: int = 0,
+    doc_limit: int = 20,
+    per_doc_lines: int = 5,
+) -> tuple[list[dict[str, Any]], int]:
+    """Varre `(display, root, rel)` e devolve `(pagina, matched_total)` —
+    conta TODOS os documentos que casam (`matched_total`) mas so materializa
+    a janela `[start, start+doc_limit)`: uma entrada por documento com path,
+    dominio, sha256, as primeiras `per_doc_lines` linhas e `line_hits` total.
+    """
+    pagina: list[dict[str, Any]] = []
+    matched_total = 0
+    for display, root_s, rel in docs:
+        if domain is not None and not _doc_matches_domain(rel, domain):
+            continue
+        path = Path(root_s) / rel
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            continue
+        lines = raw.decode("utf-8", errors="replace").splitlines()
+        matching = [i for i, ln in enumerate(lines, 1) if term_norm in ln.lower()]
+        name_hit = term_norm in _norm_seg(Path(rel).stem) or term_norm in rel.lower()
+        if not matching and not name_hit:
+            continue
+        indice = matched_total
+        matched_total += 1
+        if indice < start or len(pagina) >= doc_limit:
+            continue
+        pagina.append(
+            {
+                "path": display,
+                "domain": _doc_domain(rel),
+                "sha256": hashlib.sha256(raw).hexdigest(),
+                "line_hits": len(matching),
+                "name_hit": name_hit,
+                "hits": [
+                    {"line": i, "text": lines[i - 1].strip()[:160]}
+                    for i in matching[:per_doc_lines]
+                ],
+                "truncated": len(matching) > per_doc_lines,
+            }
+        )
+    return pagina, matched_total
+
+
+def knowledge_search(
+    term: str,
+    limit: int = 20,
+    domain: str | None = None,
+    cursor: str | None = None,
+) -> dict[str, Any]:
     """Busca textual sobre os documentos de knowledge (nome e conteudo).
 
     Deterministica e offline: varre os `.md`/`.yaml` da raiz resolvida e dos
-    packs ativos, casa o termo sem case. Devolve por documento o numero de
-    linhas que casam e as primeiras `limit` ocorrencias totais — nunca o
-    arquivo inteiro.
+    packs ativos, casa o termo sem case. `--domain` restringe a documentos
+    cujo primeiro segmento de caminho (ou nome de arquivo na raiz) leva o
+    prefixo do dominio. A resposta traz UMA entrada por documento — path,
+    dominio, sha256 e as primeiras linhas que casam — paginada por cursor
+    sobre a lista de documentos; `limit` e o teto de documentos por pagina.
     """
     term_norm = term.strip().lower()
     if not term_norm:
         raise AdapterError("knowledge search exige um termo nao vazio.", exit_code=2)
     if not isinstance(limit, int) or limit <= 0:
         raise AdapterError("knowledge search exige --limit inteiro > 0.", exit_code=2)
+    domain_norm = _norm_seg(domain) if domain else None
     listado = knowledge_list()
-    hits: list[dict[str, Any]] = []
-    matched_files: list[str] = []
-    truncated = False
     # (display, root, rel): docs do core com rel puro; packs endereçados
     # como `packs/<id>/<rel>` — o esquema que _pack_do_arquivo já lê, e que
-    # evita colapsar docs homônimos de origens distintas em `matched`.
+    # evita colapsar docs homônimos de origens distintas.
     roots: list[tuple[str, str, str]] = [
         (rel, listado["root"], rel) for rel in listado["docs"]
     ]
@@ -6271,29 +6426,28 @@ def knowledge_search(term: str, limit: int = 20) -> dict[str, Any]:
         roots += [
             (f"packs/{pack['id']}/{rel}", pack["root"], rel) for rel in pack["docs"]
         ]
-    for display, root_s, rel in roots:
-        path = Path(root_s) / rel
-        try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        except OSError:
-            continue
-        matching = [i for i, ln in enumerate(lines, 1) if term_norm in ln.lower()]
-        name_hit = term_norm in rel.lower()
-        if not matching and not name_hit:
-            continue
-        if display not in matched_files:
-            matched_files.append(display)
-        remaining = limit - len(hits)
-        for i in matching[:remaining]:
-            hits.append({"file": display, "line": i, "text": lines[i - 1].strip()[:160]})
-        if len(matching) > remaining:
-            truncated = True
+    # Pagina por DOCUMENTO (nao por linha): `limit` docs por pagina, cursor
+    # inteiro da paginacao compartilhada.
+    try:
+        start = int(cursor) if cursor else 0
+    except ValueError as exc:
+        raise AdapterError(f"cursor invalido: {cursor!r}", exit_code=2) from exc
+    if start < 0:
+        raise AdapterError(f"cursor invalido: {cursor!r}", exit_code=2)
+    page, matched_total = _knowledge_hits(
+        term_norm, roots, domain=domain_norm, start=start, doc_limit=limit
+    )
+    next_cursor = str(start + limit) if start + limit < matched_total else None
     return {
         "term": term,
-        "matched": matched_files[:100],
-        "matched_total": len(matched_files),
-        "hits": hits,
-        "truncated": truncated,
+        "filters_applied": {"domain": domain_norm, "limit": limit, "cursor": cursor},
+        "knowledge_root": listado["root"],
+        "knowledge_origin": _knowledge_origin(Path(listado["root"])),
+        "documents": page,
+        "documents_total": matched_total,
+        "matched": [d["path"] for d in page],
+        "next_cursor": next_cursor,
+        "truncated": next_cursor is not None,
     }
 
 
@@ -6361,6 +6515,223 @@ def _freshness_de_knowledge(root: Path, resolved: str | None, dia: Any) -> dict[
         },
         "freshness_policy": geral["freshness_policy"],
     }
+
+
+# --------------------------------------------------------------------------- #
+# capabilities.list / protocol.describe / context.build (install-2.0 §6.2)
+# --------------------------------------------------------------------------- #
+
+
+def _catalog_stats() -> dict[str, Any]:
+    """Contagens reais do catalogo instalado — a mesma leitura de
+    `rules_lookup`, degradada com `available: False` quando o catalogo nao
+    carrega (nunca um numero inventado)."""
+    try:
+        regras = load_catalog()
+    except CatalogError:
+        return {"available": False, "count": None, "areas": []}
+    areas = sorted({str(r.get("category") or "") for r in regras if r.get("category")})
+    return {"available": True, "count": len(regras), "areas": areas}
+
+
+def _knowledge_stats() -> dict[str, Any]:
+    """Contagem real do knowledge resolvido, com origem; degradado quando a
+    raiz nao existe."""
+    try:
+        root = knowledge_dir()
+    except KnowledgeError:
+        return {"available": False, "count": None, "origin": None, "domains": []}
+    if not root.is_dir():
+        return {"available": False, "count": None, "origin": None, "domains": []}
+    docs = _arquivos_de(root)
+    dominios = sorted(
+        {d for d in (_doc_domain(rel) for rel in docs) if d is not None}
+    )
+    return {
+        "available": True,
+        "count": len(docs),
+        "root": str(root),
+        "origin": _knowledge_origin(root),
+        "domains": dominios,
+    }
+
+
+def _content_stats() -> dict[str, Any]:
+    """Skills/agents do bundle ou do checkout — a mesma raiz que o integrate
+    escreve no alvo."""
+    from sparkforge_aws.integrate import sources
+
+    try:
+        raiz = sources.content_root()
+    except sources.SourcesError:
+        return {
+            "available": False,
+            "skills": None,
+            "agents": None,
+            "executors": None,
+        }
+    skills = sources.skill_names(raiz)
+    agents = [p.stem for p in sources.agent_files(raiz)]
+    executors = [p.stem for p in sources.executor_files(raiz)]
+    return {
+        "available": True,
+        "content_root": str(raiz),
+        "skills": skills,
+        "agents": agents,
+        "executors": executors,
+    }
+
+
+def known_domains() -> list[str]:
+    """O conjunto canonico de dominios DESTA instalacao — prefixos reais do
+    catalogo mais os diretorios reais do knowledge, normalizados. Difere de
+    `discovery_ops.DOMAINS` (lista estavel publicada) exatamente quando o
+    pacote instalado diverge do catalogo curado."""
+    dominios: set[str] = set()
+    catalogo = _catalog_stats()
+    for area in catalogo.get("areas") or []:
+        dominios.add(_norm_seg(area).split("-")[0])
+        dominios.add(_norm_seg(area))
+    conhecimento = _knowledge_stats()
+    for d in conhecimento.get("domains") or []:
+        dominios.add(d)
+    return sorted(dominios)
+
+
+def capabilities() -> dict[str, Any]:
+    """capabilities.list + protocol.describe (§6.2) num so verbo: o que este
+    forge INSTALADO consegue fazer — contagens reais de catalogo, knowledge,
+    skills, agentes e evals; os protocolos e interfaces declarados; e o mapa
+    de ops conceituais -> verbos reais que o manifesto `forge/context/v1`
+    publica. Offline e deterministico: so le o pacote, nunca a rede nem o
+    host."""
+    from sparkforge_aws import __version__, discovery_ops
+
+    # Evals moram na raiz do clone e entram no wheel via force-include —
+    # a mesma resolucao `_bundled_dir` do lifecycle, sem importar install/.
+    suites: list[str] = []
+    pkg_dir = Path(__file__).resolve().parents[1]  # sparkforge_aws/
+    repo_dir = pkg_dir.parent
+    for cand in (repo_dir / "evals", pkg_dir / "evals"):
+        if cand.is_dir():
+            suites = sorted(p.name for p in cand.iterdir() if p.is_dir())
+            break
+    conhecimento = _knowledge_stats()
+    return {
+        "schema": "forge/capabilities/v1",
+        "forge_id": "spark-forge-aws",
+        "name": "Spark Forge AWS",
+        "version": __version__,
+        "cli": discovery_ops.CLI,
+        "published_domains": list(discovery_ops.DOMAINS),
+        "known_domains": known_domains(),
+        "capabilities": {
+            "rules": _catalog_stats(),
+            "knowledge": conhecimento,
+            "content": _content_stats(),
+            "evals": {"available": bool(suites), "suites": suites},
+        },
+        "protocols": [dict(p) for p in discovery_ops.PROTOCOLS],
+        "interfaces": {
+            "cli": {
+                "name": discovery_ops.CLI,
+                "version_cmd": [discovery_ops.CLI, "--version"],
+            },
+            "mcp": dict(discovery_ops.MCP_INTERFACE),
+            "python": {"import": "sparkforge_aws", "version": __version__},
+        },
+        "ops": discovery_ops.ops_expanded(),
+        "provenance": {
+            "recorded_by": f"{discovery_ops.CLI} capabilities",
+            "schema": "forge/capabilities/v1",
+        },
+        "offline": True,
+    }
+
+
+def context_pack(
+    domain: str,
+    limit: int = 20,
+    knowledge_per_doc: int = 5,
+    as_of: str | None = None,
+) -> dict[str, Any]:
+    """context.build (§6.2): um Context Pack LIMITADO por dominio.
+
+    Compoe as superficies nativas reais — as regras do catalogo cuja
+    categoria leva o prefixo do dominio (campos §6.4 completos via
+    `rules_lookup`), os documentos de knowledge do mesmo dominio (path +
+    sha256, nunca o conteudo inteiro) e os protocolos declarados — num
+    payload unico com hash proprio, para um workspace consumir sem conhecer
+    o layout interno. `--domain` e um prefixo mecanico: `glue` cobre
+    `glue-infra`, `glue-kms`... e `glue/*`, `glue-*.md`. Docs de knowledge
+    na raiz sao cross-service e entram na secao propria `cross_service`.
+    """
+    domain_norm = _norm_seg(domain or "")
+    if not domain_norm:
+        raise AdapterError("context pack exige --domain nao vazio.", exit_code=2)
+    if not isinstance(limit, int) or limit <= 0:
+        raise AdapterError("context pack exige --limit inteiro > 0.", exit_code=2)
+    from sparkforge_aws import discovery_ops
+
+    # Regras do dominio: filtro mecanico por prefixo de categoria — a mesma
+    # normalizacao do filtro de knowledge (`_`->`-`, `D` ou `D-*`).
+    regras_resp = rules_lookup(limit=None, index=False)
+    regras_dominio = [
+        r
+        for r in regras_resp.get("rules", [])
+        if _matches_domain(_norm_seg(str(r.get("category") or "")), domain_norm)
+    ]
+    regras_pagina, proximo_cursor = paginate_items(regras_dominio, limit, None)
+
+    # Knowledge do dominio + docs cross-service (raiz) numa secao separada.
+    try:
+        root = knowledge_dir()
+    except KnowledgeError as exc:
+        raise _knowledge_root_missing(str(exc)) from exc
+    if not root.is_dir():
+        raise _knowledge_root_missing(f"diretorio de knowledge nao encontrado em {root}.")
+    docs = _arquivos_de(root)
+    dominio_docs = [rel for rel in docs if _doc_matches_domain(rel, domain_norm)]
+    cross_service = [rel for rel in docs if _doc_domain(rel) is None and rel != "INDEX.md"]
+    knowledge_docs = [
+        {
+            "path": rel,
+            "sha256": _sha256_of(root / rel),
+            "bytes": (root / rel).stat().st_size if (root / rel).is_file() else None,
+        }
+        for rel in dominio_docs[:knowledge_per_doc]
+    ]
+    pack: dict[str, Any] = {
+        "schema": "forge/context-pack/v1",
+        "forge_id": "spark-forge-aws",
+        "domain": domain_norm,
+        "domain_matching": (
+            "categoria|segmento normalizado igual ao dominio "
+            "ou com prefixo `<dominio>-`"
+        ),
+        "rules": {
+            "total": len(regras_dominio),
+            "returned": len(regras_pagina),
+            "items": regras_pagina,
+            "next_cursor": proximo_cursor,
+        },
+        "knowledge": {
+            "root": str(root),
+            "origin": _knowledge_origin(root),
+            "domain_docs_total": len(dominio_docs),
+            "documents": knowledge_docs,
+            "truncated": len(dominio_docs) > len(knowledge_docs),
+            "cross_service_docs": cross_service[:knowledge_per_doc],
+        },
+        "protocols": [dict(p) for p in discovery_ops.PROTOCOLS],
+        "ops": {op: discovery_ops.ops_expanded()[op] for op in ("rules.search", "knowledge.get")},
+        "as_of": as_of,
+        "offline": True,
+    }
+    # Hash do pacote: identidade do CONTEUDO retornado — o consumidor cita
+    # `pack_sha256` para provar que dois agentes viram o mesmo pack.
+    pack["pack_sha256"] = hashlib.sha256(_canonico(pack).encode("utf-8")).hexdigest()
+    return pack
 
 
 # --------------------------------------------------------------------------- #

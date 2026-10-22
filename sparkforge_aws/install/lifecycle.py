@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from sparkforge_aws import __version__
+from sparkforge_aws import __version__, discovery_ops
 from sparkforge_aws import _forgecontext as fctx
 from sparkforge_aws import _installkit as kit
 from sparkforge_aws.install.hosts import HOSTS, project_host, project_plan
@@ -1070,7 +1070,15 @@ def _context_manifest(
             {"id": "forge/context/v1", "version": "1"},
             {"id": "forge/context-registry/v1", "version": "1"},
         ),
+        # discovery.commands: os verbos de retrieval do §6.2 (a fonte unica e
+        # `sparkforge_aws.discovery_ops`, a mesma tabela que `capabilities`
+        # emite) + os verbos de workflow que o manifesto ja declarava.
         discovery_commands=(
+            *[
+                c
+                for c in discovery_ops.commands()
+                if c["id"] != "doctor"  # `doctor` entra abaixo, ja declarado
+            ],
             {
                 "id": "analyze-pyspark",
                 "argv": [CLI, "analyze", "pyspark", "--path", "{target}"],
@@ -1100,6 +1108,7 @@ def _context_manifest(
                 "description": "environment + installation health",
             },
         ),
+        discovery_ops=discovery_ops.ops(),
         mcp={
             "server_name": "sparkforge-aws",
             "command": [CLI, "mcp", "serve"],

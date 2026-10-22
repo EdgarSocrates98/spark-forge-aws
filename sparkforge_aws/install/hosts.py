@@ -86,10 +86,19 @@ SHARED_AGENT_HOSTS = {
 def project_plan(
     h: Host, content_root: Path, target_root: Path
 ) -> list[tuple[Path, bytes]]:
-    """`plan_files` do host + a copia `.agents/` compartilhada, quando houver."""
+    """`plan_files` do host + a copia `.agents/` compartilhada, quando houver.
+
+    `target_root` e a raiz onde `knowledge/` resolve: os links dos espelhos
+    sao re-relativizados ate ela e cada `knowledge/<rel>` citado vira um
+    ponteiro em `<target_root>/knowledge/<rel>` (escopo `project`; ver
+    `writer.plan_files`)."""
     from sparkforge_aws.integrate import writer
 
-    plano = writer.plan_files(h, content_root)
+    # Dedup por destino: o host primario e a copia `.agents/` emitem os MESMOS
+    # ponteiros de knowledge; sem o dict o plano gravaria cada stub duas vezes.
+    por_destino: dict[Path, bytes] = {}
+    for destino, dados in writer.plan_files(h, content_root, target_root):
+        por_destino[destino] = dados
     extra = SHARED_AGENT_HOSTS.get(h.name)
     if extra:
         agents_dir, skills_dir = extra
@@ -105,8 +114,9 @@ def project_plan(
             mcp_format=None,
             fonte=h.fonte,
         )
-        plano += writer.plan_files(shared, content_root)
-    return plano
+        for destino, dados in writer.plan_files(shared, content_root, target_root):
+            por_destino.setdefault(destino, dados)
+    return list(por_destino.items())
 
 
 __all__ = ["HOSTS", "SHARED_AGENT_HOSTS", "project_host", "project_plan"]

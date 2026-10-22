@@ -166,18 +166,48 @@ def skill_name_for(src: Path) -> str:
     return src.relative_to(CANONICAL).parts[0]
 
 
+def _skill_mirrors_for(dst: Path) -> tuple[str, str]:
+    """(skills_mirror, agents_mirror) do espelho de `dst`, relativos a ROOT.
+
+    `.claude/skills/<name>/x.md` -> (`.claude/skills`, `.claude/agents`) —
+    a arvore agents/ do MESMO host. Os dois roots de skill existentes
+    (`.claude/skills`, `.agents/skills`) moram a um nivel de ROOT, entao o
+    `../` a mais que links externos ganham e identico nos dois.
+    """
+    partes = dst.resolve().relative_to(ROOT).parts
+    return f"{partes[0]}/skills", f"{partes[0]}/agents"
+
+
 def rendered_skill_bytes(src: Path, dst: Path) -> bytes:
     """O que o espelho de skill `dst` DEVERIA conter.
 
-    Arquivo que nao e `SKILL.md` sai como esta, sem passar por `decode` -- um
+    Arquivo que nao e `.md` sai como esta, sem passar por `decode` -- um
     anexo binario numa skill futura quebraria a leitura, e ele nao tem
-    frontmatter para renderizar de todo jeito.
+    frontmatter para renderizar de todo jeito. `.md` que nao e `SKILL.md`
+    (`references/x.md`, ...) recebe so o re-relativamento de links: e onde os
+    `../../knowledge/*` morrem, um nivel abaixo da `SKILL.md`.
     """
     data = src.read_bytes()
-    if src.name != SKILL_FILENAME:
+    if src.suffix != ".md":
         return data
-    rendered = render_skill(
-        data.decode("utf-8"), platform_for(dst), name=skill_name_for(src)
+    skills_mirror, agents_mirror = _skill_mirrors_for(dst)
+    rel = src.relative_to(CANONICAL)
+    canonical_dir = "skills/" + "/".join(rel.parts[:-1])
+    if src.name != SKILL_FILENAME:
+        rendered = _render._rewrite_outgoing_links(
+            data.decode("utf-8"),
+            canonical_dir=canonical_dir,
+            skills_mirror=skills_mirror,
+            agents_mirror=agents_mirror,
+        )
+        return rendered.encode("utf-8")
+    rendered = _render.render_skill(
+        data.decode("utf-8"),
+        platform_for(dst),
+        name=skill_name_for(src),
+        agents_src=AGENTS_SRC,
+        skills_mirror=skills_mirror,
+        agents_mirror=agents_mirror,
     )
     return rendered.encode("utf-8")
 
@@ -201,9 +231,21 @@ def rendered_bytes(src: Path, dst: Path) -> bytes:
     Le e escreve em bytes de proposito. `Path.read_text()` aplica newline
     universal e devolveria CRLF como LF: um espelho gravado com CRLF passaria
     a comparar igual a uma fonte LF, e o gate deixaria de ser byte a byte sem
-    ninguem notar.
+    ninguem notar. Links para fora de `agents/` (ex.: `../knowledge/x.md`) sao
+    re-relativizados ate a raiz, como nos espelhos de skill.
     """
     text = src.read_bytes().decode("utf-8")
+    partes = dst.resolve().relative_to(ROOT).parts
+    canonical_dir = (
+        "agents/executors" if src.parent == EXECUTORS_SRC else "agents"
+    )
+    text = _render._rewrite_outgoing_links(
+        text,
+        canonical_dir=canonical_dir,
+        skills_mirror=f"{partes[0]}/skills",
+        agents_mirror=f"{partes[0]}/agents",
+        agent_pattern="{stem}.agent.md" if partes[0] == ".github" else "{stem}.md",
+    )
     return render_agent(text, platform_for(dst)).encode("utf-8")
 
 
