@@ -674,7 +674,7 @@ def test_install_recusa_marcador_ambiguo(projeto):
         encoding="utf-8")
     out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
     check = next(
-        (c for c in out["checks"] if c["id"] == "consumer-docs"), None)
+        (c for c in out["checks"] if c["id"] == "context-registry"), None)
     assert check is not None and check["status"] == "BLOCKED"
     assert "FORGE-CONTEXT-CONFLICT" in check["detail"]
 
@@ -684,7 +684,7 @@ def test_install_recusa_protocolo_estrangeiro(projeto):
                                                encoding="utf-8")
     out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
     check = next(
-        (c for c in out["checks"] if c["id"] == "consumer-docs"), None)
+        (c for c in out["checks"] if c["id"] == "context-registry"), None)
     assert check is not None and check["status"] == "BLOCKED"
     assert "FORGE-CONTEXT-CONFLICT" in check["detail"]
     assert (projeto / "AGENT_PROTOCOL.md").read_text(
