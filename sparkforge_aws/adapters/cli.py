@@ -5511,8 +5511,13 @@ def _cmd_knowledge_search(args: argparse.Namespace) -> int:
 
 
 def _cmd_evals(args: argparse.Namespace) -> int:
-    from sparkforge_aws.evals import surface as evals_surface
-    from sparkforge_aws.evals import taxonomy
+    # importlib: o runtime nao pode depender estaticamente da avaliacao
+    # (test_harness_boundary); o adapter carrega o pacote como plugin —
+    # mesmo padrao de `mcp/tools.py:load_all`.
+    import importlib
+
+    evals_surface = importlib.import_module("sparkforge_aws.evals.surface")
+    taxonomy = importlib.import_module("sparkforge_aws.evals.taxonomy")
 
     try:
         if args.evals_action == "list":
