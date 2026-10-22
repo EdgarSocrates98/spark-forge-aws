@@ -386,7 +386,10 @@ class SparkForgePortal(fp.PortalAdapter):
     # ------------------------------------------------------------------
     def _mcp_verify_doc(self) -> dict[str, Any]:
         try:
-            return lifecycle.mcp_verify()
+            # `--root` fixa o workspace servido: o portal pode rodar fora dele
+            # e o subprocesso herdaria o cwd errado, gravando `.sparkforge_aws/`
+            # fora do alvo verificado.
+            return lifecycle.mcp_verify(root=self._root)
         except Exception as e:  # noqa: BLE001
             return {
                 "status": "FAIL",

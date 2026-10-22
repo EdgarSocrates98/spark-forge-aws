@@ -174,8 +174,12 @@ packages = ["sparkforge_aws"]
 # host_adapters, `discovery.manifest`). Sob o wheel a raiz nao existe — os
 # arquivos vao DENTRO do pacote, na mesma convencao de `rules/`/`knowledge/`,
 # para o resolver bundled (install/lifecycle) servir sem checkout.
-"forge.json" = "sparkforge_aws/forge.json"
-"forge.agentic.json" = "sparkforge_aws/forge.agentic.json"
+# O destino e `sparkforge_aws/forge/` — um diretorio que a caminhada do pacote
+# nao tem: force-include entra DEPOIS do walk, e soltar os manifestos na raiz
+# do pacote partiria o bloco contiguo de `sparkforge_aws` no zip
+# (tests/test_artifact_contents.py cobra essa ordem).
+"forge.json" = "sparkforge_aws/forge/forge.json"
+"forge.agentic.json" = "sparkforge_aws/forge/forge.agentic.json"
 
 # O sdist so precisa CARREGAR `rules/catalog`, `knowledge` e os manifestos
 # `forge.json`/`forge.agentic.json` na raiz -- nao realocar. `include` basta:

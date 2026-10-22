@@ -130,8 +130,11 @@ def test_wheel_install_lifecycle_outside_checkout(tmp_path: Path):
     with zipfile.ZipFile(wheel) as zf:
         names = set(zf.namelist())
     for packaged in (
-        f"{PACKAGE}/forge.json",
-        f"{PACKAGE}/forge.agentic.json",
+        # `forge/` e um diretorio que o walk do pacote nao tem: soltar os
+        # manifestos na raiz de `sparkforge_aws/` partiria o bloco contiguo
+        # dela no zip (test_the_entries_follow_a_sorted_walk).
+        f"{PACKAGE}/forge/forge.json",
+        f"{PACKAGE}/forge/forge.agentic.json",
         f"{PACKAGE}/integrate/bundle/skills",
         f"{PACKAGE}/integrate/bundle/agents",
         f"{PACKAGE}/rules/catalog",

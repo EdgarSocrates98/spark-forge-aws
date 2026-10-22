@@ -346,7 +346,26 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o S
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=None,
+        help=(
+            "Workspace a servir quando o processo nao nasce nela — o `mcp verify` "
+            "do install spawna com o cwd do chamador e fixa a raiz aqui; sem a "
+            "flag o servidor serve o cwd, como sempre."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.root is not None:
+        root = args.root.expanduser().resolve()
+        if not root.is_dir():
+            parser.error(f"--root {args.root}: diretorio inexistente")
+        # Toda resolucao relativa do servidor (policy, estado .sparkforge_aws/,
+        # authorized_root do modo compact) ancora no cwd; chdir antes de
+        # construir e o mesmo que lancar o processo de dentro do workspace.
+        os.chdir(root)
 
     policy, erro = carregar_policy_do_servidor()
     server = build_server(

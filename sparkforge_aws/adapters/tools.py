@@ -3220,6 +3220,7 @@ _RULES_LOOKUP_SCHEMA: dict[str, Any] = {
                 "severity": {"type": ["string", "null"]},
                 "runtime": {"type": ["string", "null"]},
                 "index": {"type": ["boolean", "null"]},
+                "query": {"type": ["string", "null"]},
             },
         },
         "by_category": {"type": "object", "additionalProperties": {"type": "integer"}},
@@ -3548,23 +3549,75 @@ _KNOWLEDGE_LIST_SCHEMA: dict[str, Any] = {
 
 _KNOWLEDGE_SEARCH_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "required": ["term", "matched", "matched_total", "hits", "truncated"],
+    "required": [
+        "term",
+        "filters_applied",
+        "knowledge_root",
+        "knowledge_origin",
+        "documents",
+        "documents_total",
+        "matched",
+        "next_cursor",
+        "truncated",
+    ],
     "properties": {
         "term": {"type": "string"},
-        "matched": {"type": "array", "items": {"type": "string"}},
-        "matched_total": {"type": "integer"},
-        "hits": {
+        "filters_applied": {
+            "type": "object",
+            "properties": {
+                "domain": {"type": ["string", "null"]},
+                "limit": {"type": "integer"},
+                "cursor": {"type": ["string", "null"]},
+            },
+        },
+        "knowledge_root": {"type": "string"},
+        "knowledge_origin": {
+            "type": "string",
+            "enum": ["env", "checkout", "package"],
+        },
+        "documents": {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["file", "line", "text"],
+                "required": [
+                    "path",
+                    "domain",
+                    "sha256",
+                    "line_hits",
+                    "name_hit",
+                    "hits",
+                    "truncated",
+                ],
                 "properties": {
-                    "file": {"type": "string"},
-                    "line": {"type": "integer"},
-                    "text": {"type": "string"},
+                    "path": {"type": "string"},
+                    "domain": {
+                        "type": ["string", "null"],
+                        "description": (
+                            "Primeiro segmento do caminho relativo; null nos docs "
+                            "cross-service da raiz do knowledge."
+                        ),
+                    },
+                    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                    "line_hits": {"type": "integer"},
+                    "name_hit": {"type": "boolean"},
+                    "hits": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["line", "text"],
+                            "properties": {
+                                "line": {"type": "integer"},
+                                "text": {"type": "string"},
+                            },
+                        },
+                    },
+                    "truncated": {"type": "boolean"},
                 },
             },
         },
+        "documents_total": {"type": "integer"},
+        "matched": {"type": "array", "items": {"type": "string"}},
+        "next_cursor": {"type": ["string", "null"]},
         "truncated": {"type": "boolean"},
     },
 }
@@ -9206,6 +9259,13 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "category": {"type": "string"},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "query": {
+                    "type": "string",
+                    "description": (
+                        "Busca por palavra-chave (§6.3): substring sem case sobre id, "
+                        "title, category e explanation da regra."
+                    ),
+                },
                 "severity": {
                     "type": "string",
                     "enum": ["P0", "P1", "P2", "P3", "P4"],
@@ -9255,6 +9315,14 @@ TOOLS: dict[str, dict[str, Any]] = {
             "required": ["root", "available"],
             "properties": {
                 "root": {"type": "string"},
+                "origin": {
+                    "type": "string",
+                    "enum": ["env", "checkout", "package"],
+                    "description": (
+                        "Proveniencia da raiz: override de ambiente, checkout com "
+                        "pyproject.toml ou bundle do wheel."
+                    ),
+                },
                 "file": {"type": ["string", "null"]},
                 "available": {"type": "array", "items": {"type": "string"}},
                 **_FRESHNESS_OUTPUT,
@@ -9527,10 +9595,13 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Knowledge Search: busca textual deterministica e offline sobre os `.md`/"
             "`.yaml` da raiz resolvida e dos packs ativos — casa o termo sem case em "
-            "nome e conteudo. Devolve `matched` (docs com hit, enderecados "
-            "`packs/<id>/<rel>`), `matched_total` e as primeiras `limit` ocorrencias "
-            "`{file, line, text}` — nunca o arquivo inteiro; `truncated` marca o corte. "
-            "O QUE ELA NAO FAZ: nao ranqueia, nao interpreta, nao acessa rede."
+            "nome e conteudo. Devolve `documents` — uma entrada por documento "
+            "(path, dominio, sha256, `line_hits` e as primeiras linhas que casam, "
+            "enderecados `packs/<id>/<rel>`) — `documents_total`, `matched` (so os "
+            "paths), `knowledge_root`/`knowledge_origin` e `next_cursor` para "
+            "paginar por documento; `truncated` marca o corte. `domain` restringe "
+            "ao primeiro segmento do caminho. O QUE ELA NAO FAZ: nao ranqueia, "
+            "nao interpreta, nao acessa rede."
         ),
         "inputSchema": {
             "type": "object",
@@ -9539,13 +9610,26 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "term": {"type": "string", "description": "Termo buscado (sem case)."},
                 "limit": {
                     "type": "integer",
-                    "description": "Teto de ocorrencias devolvidas (default 20).",
+                    "description": "Teto de documentos por pagina (default 20).",
+                },
+                "domain": {
+                    "type": "string",
+                    "description": (
+                        "Restringe a documentos cujo primeiro segmento de caminho "
+                        "(ou nome de arquivo na raiz) leva o prefixo do dominio."
+                    ),
+                },
+                "cursor": {
+                    "type": "string",
+                    "description": (
+                        "Cursor da paginacao por documento (`next_cursor` da pagina anterior)."
+                    ),
                 },
             },
         },
         "outputSchema": _may_fail(
             _KNOWLEDGE_SEARCH_SCHEMA,
-            "Os hits ate `limit`, ou erro se o termo e vazio / knowledge ausente.",
+            "A pagina de documentos com hit, ou erro se o termo e vazio / knowledge ausente.",
         ),
         "annotations": _READ_ONLY,
     },
@@ -11667,6 +11751,7 @@ def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
         severity=args.get("severity"),
         runtime=args.get("runtime"),
         index=args.get("index", False),
+        query=args.get("query"),
     )
 
 
@@ -12408,7 +12493,12 @@ def _h_knowledge_list(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _h_knowledge_search(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.knowledge_search(args["term"], limit=args.get("limit", 20))
+    return _core.knowledge_search(
+        args["term"],
+        limit=args.get("limit", 20),
+        domain=args.get("domain"),
+        cursor=args.get("cursor"),
+    )
 
 
 def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:

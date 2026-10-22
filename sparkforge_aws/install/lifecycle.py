@@ -16,6 +16,7 @@ import json
 import sys
 from contextlib import nullcontext
 from dataclasses import dataclass
+from dataclasses import replace as _dc_replace
 from pathlib import Path
 from typing import Any
 
@@ -398,9 +399,13 @@ def status(
             "missing": [d for d in bad if d["status"] == "missing"],
         },
         "hosts": {n: sorted(writer.host_files(manifesto, n)) for n in manifesto.get("hosts", {})},
+        # `(files or ok)` cobre o install config-only (profile minimal): o
+        # ledger de assets fica vazio POR DESENHO, mas `hosts[*].config`
+        # (.mcp.json) e verificado no bloco de drift acima — zerado sem nada
+        # conferido continua "unverified", conferido e integro e "healthy".
         "status": (
             "healthy"
-            if files and not bad
+            if (files or ok) and not bad
             else "degraded"
             if ok
             else "unverified"
@@ -446,12 +451,17 @@ def doctor(
                     cli_name=CLI,
                     python_spec=PYTHON_SPEC,
                     state_dir=STATE_DIR,
+                    # `--root` fixa o workspace servido: sem ele o subprocesso
+                    # herda o cwd do CHAMADOR (portal, CI) e escreveria o estado
+                    # `.sparkforge_aws/` fora do alvo verificado.
                     mcp_command=(
                         sys.executable,
                         "-m",
                         "sparkforge_aws.adapters.mcp",
                         "--transport",
                         "stdio",
+                        "--root",
+                        st["target_root"],
                     ),
                     mcp_server_name="sparkforge-aws",
                     mcp_verify_tool="sparkforge_aws_runtime_detect",
@@ -812,8 +822,13 @@ def update(
     )
 
 
-def mcp_verify() -> dict[str, Any]:
-    return kit.mcp_verify(_spec())
+def mcp_verify(*, root: Path | None = None) -> dict[str, Any]:
+    spec = _spec()
+    if root is not None:
+        # `--root` fixa o workspace servido: sem ele o subprocesso herda o cwd
+        # do chamador (portal, CI) e escreveria `.sparkforge_aws/` fora do alvo.
+        spec = _dc_replace(spec, mcp_command=(*spec.mcp_command, "--root", str(root)))
+    return kit.mcp_verify(spec)
 
 
 # --------------------------------------------------------------------------
@@ -990,7 +1005,14 @@ def _context_manifest(
     `forge.agentic.json` + `manifest.json` no checkout (quando presente) e
     as raizes bundled de skills/agents/rules/knowledge que o install usou."""
     def _bundled_json(name: str) -> dict[str, Any] | None:
-        for cand in (_PKG_DIR / name, _REPO_DIR / name):
+        # Ordem: junto do pacote (layout antigo do wheel), na raiz do repo
+        # (checkout/editable), e em `forge/` (destino do force-include —
+        # a raiz do pacote partiria o bloco contiguo dela no zip).
+        for cand in (
+            _PKG_DIR / name,
+            _REPO_DIR / name,
+            _PKG_DIR / "forge" / name,
+        ):
             data = kit._load_json(cand, None)
             if isinstance(data, dict):
                 return data

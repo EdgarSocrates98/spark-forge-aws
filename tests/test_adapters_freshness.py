@@ -140,7 +140,11 @@ class TestKnowledgePath:
         # `_trust` e aditivo de call_tool (FASE 3); formato travado em
         # tests/test_runtime_convergence_trust.py
         payload.pop("_trust", None)
-        assert set(payload) == {"root", "file", "available"}
+        assert set(payload) == {"root", "file", "available", "origin"}
+        # `origin` e aditivo de proveniencia (`_knowledge_origin`): env quando
+        # um override de ambiente decidiu a raiz, checkout quando o
+        # pyproject.toml a identificou, package para o bundle do wheel.
+        assert payload["origin"] in {"env", "checkout", "package"}
 
     def test_documento_usa_a_data_que_ele_declara(self):
         resultado = call_tool(

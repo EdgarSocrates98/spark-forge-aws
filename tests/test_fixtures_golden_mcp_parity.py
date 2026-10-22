@@ -258,11 +258,16 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_aws_rules_lookup": (
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
-        "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma"
+        "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma. "
+        "2026-10-22: `query` opcional na entrada (espelho de `rules lookup --query` "
+        "do §6.3, que a CLI ja tinha) e `filters_applied.query` na saida; sem ele a "
+        "resposta e a mesma"
     ),
     "sparkforge_aws_knowledge_path": (
         "2026-09-11: `source_freshness`/`as_of` opcionais; estado das fontes do "
-        "documento, ou contagem por documento (frente de freshness)"
+        "documento, ou contagem por documento (frente de freshness). "
+        "2026-10-22: `origin` na saida — proveniencia da raiz resolvida "
+        "(`env`/`checkout`/`package`); aditivo, so em `properties`"
     ),
     "sparkforge_aws_tune": (
         "2026-09-14: `headroom` opcional (folga declarada sobre o piso do overhead); "
@@ -458,6 +463,9 @@ CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
         "(frente 2b); o resto da regra e da resposta nao mudou. "
         "2026-09-15: `rules_index` entrou na saida, VAZIO sem `index` -- a chamada "
         "gravada nao pede a forma compacta, entao o conteudo dela continua o mesmo. "
+        "2026-10-22: `filters_applied.query` entrou na saida, NULO sem `query` -- a "
+        "busca por palavra-chave (§6.3) chegou ao MCP espelhando `rules lookup "
+        "--query`; a chamada gravada nao a pede. "
         + _MOTIVO_TRUST
     ),
     "erro_fronteira": _MOTIVO_TRUST,
@@ -512,7 +520,7 @@ _CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
     r"(?:content\[0\]\.text"
     r"|structuredContent\._trust"
     r"|structuredContent\.rules_index"
-    r"|structuredContent\.filters_applied\.(?:severity|runtime|index|upstream)"
+    r"|structuredContent\.filters_applied\.(?:severity|runtime|index|upstream|query)"
     r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
 )
 
@@ -568,6 +576,7 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
                 ("runtime", None),
                 ("index", False),
                 ("upstream", None),
+                ("query", None),
             ):
                 if filtros.get(chave, nao_pedido) == nao_pedido:
                     filtros.pop(chave, None)
@@ -694,7 +703,11 @@ class TestHandshakeLegado:
         # 48 -> 49 em 2026-10-25: `findings_path` opcional na entrada de
         # `sparkforge_aws_case_update` (preenche `findings_index`; D-4b-5
         # estendido a findings). Uma chave.
-        assert aditivas == {"stdio": 49, "http": 49}
+        # 49 -> 52 em 2026-10-22: `query` opcional na entrada de
+        # `sparkforge_aws_rules_lookup` (espelho de `rules lookup --query`) e
+        # `filters_applied.query` na saida — duas chaves — e `origin` na saida
+        # de `sparkforge_aws_knowledge_path` (proveniencia da raiz). Tres chaves.
+        assert aditivas == {"stdio": 52, "http": 52}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
@@ -721,7 +734,10 @@ class TestHandshakeLegado:
         # 19 -> 20 em 2026-10-24: `sucesso_analyze` declara `upstream` nulo em
         # `structuredContent.filters_applied` — o texto serializado ja divergia
         # por `_trust`, entao a entrada nova soma um unico caminho.
-        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 20
+        # 20 -> 21 em 2026-10-22: `sucesso_verbo_lookup` declara `query` nulo em
+        # `structuredContent.filters_applied` — a busca §6.3 chegou ao MCP; o
+        # texto serializado ja divergia por `_trust`, soma um unico caminho.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 21
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
