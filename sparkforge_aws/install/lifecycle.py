@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge_aws import __version__
+from sparkforge_aws import _forgecontext as fctx
 from sparkforge_aws import _installkit as kit
 from sparkforge_aws.install.hosts import HOSTS, project_host, project_plan
 from sparkforge_aws.integrate import sources, writer
@@ -282,6 +283,14 @@ def install(
         if opts:
             state.mkdir(parents=True, exist_ok=True)
             (state / "components.json").write_text(json.dumps(opts, indent=2), encoding="utf-8")
+        _register_context(
+            target,
+            receipt,
+            scope=scope,
+            profile=profile,
+            hosts=nomes,
+            components=opts or None,
+        )
         _write_receipt(state, receipt)
         _write_workspace_doc(scope, target, receipt)
         _register(target)
@@ -633,16 +642,19 @@ def uninstall(
                     disco.apagar(alvo_m)
                     removed.append(marker_file)
             manifesto.get("files", {}).pop(disco.chave(alvo_m), None)
+        context_checks: list[dict[str, Any]] = []
         if not dry_run:
             writer.save_manifest(target, manifesto)
             _prune_empty(target, removed)
+            context_checks = [_unregister_context(target)]
     receipt = _receipt(
         "uninstall",
         scope,
         target,
         "recommended",
         managed=[],
-        checks=[{"id": "uninstall", "status": "PASS", "detail": f"{len(removed)} removed"}],
+        checks=[{"id": "uninstall", "status": "PASS", "detail": f"{len(removed)} removed"}]
+        + context_checks,
         removed=removed,
         kept=kept,
         status="completed",
@@ -934,6 +946,264 @@ def _register(target: Path) -> None:
         },
     )
     kit.register_installation(doc)
+
+
+# --------------------------------------------------------------------------
+# forge-context/v1 wiring (install-2.0 ciclo 2, the-forge ADR-0061)
+# `.forge/context/` e o registry de workspace compartilhado entre forges —
+# camada diferente de `~/.forge/installations/` (conta) e de
+# `.sparkforge_aws/integrations.json` (ledger de posse). Este forge so
+# registra e desregistra o proprio `forge_id`.
+# --------------------------------------------------------------------------
+
+_PKG_DIR = Path(__file__).resolve().parents[1]
+_REPO_DIR = _PKG_DIR.parent
+
+_AWS_DOMAINS: tuple[str, ...] = (
+    "pyspark",
+    "aws-glue",
+    "amazon-emr",
+    "amazon-athena",
+    "apache-iceberg",
+    "spark-streaming",
+    "terraform",
+    "data-quality",
+)
+
+
+def _bundled_dir(name: str) -> Path | None:
+    """`rules/catalog`/`knowledge` moram na raiz do clone e entram no wheel
+    via force-include (mesmo padrao do integrate/bundle)."""
+    for cand in (_REPO_DIR / name, _PKG_DIR / name):
+        if cand.is_dir():
+            return cand
+    return None
+
+
+def _mds(base: Path) -> list[str]:
+    return sorted(p.stem for p in base.glob("*.md"))
+
+
+def _context_manifest(
+    *, scope: str, profile: str, hosts: list[str], components: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Manifesto forge/context/v1 montado das fontes reais: `forge.json` +
+    `forge.agentic.json` + `manifest.json` no checkout (quando presente) e
+    as raizes bundled de skills/agents/rules/knowledge que o install usou."""
+    forge_json = kit._load_json(_REPO_DIR / "forge.json", None)
+    forge_json = forge_json if isinstance(forge_json, dict) else None
+    agentic = kit._load_json(_REPO_DIR / "forge.agentic.json", None)
+    agentic = agentic if isinstance(agentic, dict) else None
+    manifest_json = kit._load_json(_REPO_DIR / "manifest.json", None)
+    manifest_json = manifest_json if isinstance(manifest_json, dict) else None
+
+    skills: list[str] = []
+    coordinators: list[str] = []
+    executors: list[str] = []
+    try:
+        content = sources.content_root()
+    except sources.SourcesError:
+        content = None
+    if content is not None:
+        skills = sorted(d.name for d in (content / "skills").iterdir() if d.is_dir())
+        agents_root = content / "agents"
+        if agents_root.is_dir():
+            coordinators = _mds(agents_root)
+            executors = _mds(agents_root / "executors")
+
+    rules_dir = _bundled_dir("rules/catalog")
+    rule_areas = sorted(p.stem for p in rules_dir.glob("*.yaml")) if rules_dir else []
+    knowledge_dir = _bundled_dir("knowledge")
+    providers: list[dict[str, Any]] = []
+    if knowledge_dir is not None:
+        providers.append(
+            {
+                "id": "knowledge-base",
+                "interface": "bundled",
+            }
+        )
+    evals_dir = _bundled_dir("evals")
+    eval_suites = [
+        {"id": p.name, "kind": "output-verification"}
+        for p in sorted(evals_dir.iterdir())
+        if p.is_dir()
+    ] if evals_dir else []
+
+    checks: list[dict[str, Any]] = [
+        {
+            "id": "skills-bundle",
+            "status": "PASS" if skills else "UNVERIFIED",
+            "detail": f"{len(skills)} skills",
+        },
+        {
+            "id": "agent-specs",
+            "status": "PASS" if coordinators else "UNVERIFIED",
+            "detail": f"{len(coordinators)} coordinators, {len(executors)} executors",
+        },
+        {
+            "id": "rules-catalog",
+            "status": "PASS" if rule_areas else "UNVERIFIED",
+            "detail": f"{len(rule_areas)} rule files",
+        },
+    ]
+    return fctx.build_manifest(
+        forge_id=FORGE_ID,
+        name="Spark Forge AWS",
+        version=__version__,
+        cli=CLI,
+        package=PACKAGE,
+        distribution=DIST,
+        python_spec=PYTHON_SPEC,
+        scope=scope,
+        profile=profile,
+        hosts=hosts,
+        forge_json=forge_json,
+        agentic=agentic,
+        domains=_AWS_DOMAINS,
+        skills=skills,
+        coordinators=coordinators,
+        agents=executors,
+        rule_areas=rule_areas,
+        knowledge_providers=providers,
+        eval_suites=eval_suites,
+        protocols=(
+            {"id": "forge/v1", "version": "1"},
+            {"id": "forge/context/v1", "version": "1"},
+            {"id": "forge/context-registry/v1", "version": "1"},
+        ),
+        discovery_commands=(
+            {
+                "id": "analyze-pyspark",
+                "argv": [CLI, "analyze", "pyspark", "--path", "{target}"],
+                "mode": "direct-capability",
+                "read_only": True,
+                "description": "static AST analysis of PySpark sources",
+            },
+            {
+                "id": "next-step",
+                "argv": [CLI, "next-step"],
+                "mode": "specialist-workflow",
+                "read_only": True,
+                "description": "routing.yaml driven coordinator recommendation",
+            },
+            {
+                "id": "playbook",
+                "argv": [CLI, "playbook", "spark-performance-architect", "--repo", "{target}"],
+                "mode": "specialist-workflow",
+                "read_only": True,
+                "description": "coordinator decomposition playbook",
+            },
+            {
+                "id": "doctor",
+                "argv": [CLI, "doctor"],
+                "mode": "diagnostic-only",
+                "read_only": True,
+                "description": "environment + installation health",
+            },
+        ),
+        mcp={
+            "server_name": "sparkforge-aws",
+            "command": [CLI, "mcp", "serve"],
+            "verify_tool": "sparkforge_aws_runtime_detect",
+        },
+        resources={
+            "skills-bundle": {
+                "kind": "bundled",
+                "location": "sparkforge_aws/integrate/bundle/skills",
+                "optional": False,
+            },
+            "agents-bundle": {
+                "kind": "bundled",
+                "location": "sparkforge_aws/integrate/bundle/agents",
+                "optional": False,
+            },
+            "rules-catalog": {
+                "kind": "bundled",
+                "location": "sparkforge_aws/rules/catalog",
+                "optional": False,
+            },
+            "knowledge-base": {
+                "kind": "bundled",
+                "location": "sparkforge_aws/knowledge",
+                "optional": False,
+            },
+            "integration-ledger": {
+                "kind": "referenced",
+                "location": ".sparkforge_aws/integrations.json",
+                "optional": True,
+            },
+            "install-state": {
+                "kind": "referenced",
+                "location": ".sparkforge_aws/install",
+                "optional": True,
+            },
+        },
+        mutating_verbs=(
+            "install",
+            "uninstall",
+            "repair",
+            "integrate",
+            "detach",
+            "collect",
+            "case update",
+        ),
+        requires_approval=("install", "uninstall", "integrate", "detach"),
+        offline_available=True,
+        health={
+            "status": "healthy" if skills and coordinators and rule_areas else "degraded",
+            "checks": checks,
+        },
+        components=components,
+        recorded_by=DIST,
+    )
+
+
+def _register_context(
+    target: Path,
+    receipt: dict[str, Any],
+    *,
+    scope: str,
+    profile: str,
+    hosts: list[str],
+    components: dict[str, Any] | None,
+) -> None:
+    """Grava `.forge/context/` — manifesto de capacidades + entrada no
+    registry + ROUTING.md. Falha de contexto vira check BLOCKED nomeado no
+    recibo, nunca erro silencioso nem install falho."""
+    try:
+        manifest = _context_manifest(
+            scope=scope, profile=profile, hosts=hosts, components=components
+        )
+        out = fctx.register_forge(target, manifest, owner=FORGE_ID)
+        receipt.setdefault("checks", []).append(
+            {
+                "id": "context-registry",
+                "status": "PASS",
+                "detail": f".forge/context {out['status']} ({len(out['written'])} writes)",
+            }
+        )
+    except fctx.ContextError as exc:
+        receipt.setdefault("checks", []).append(
+            {"id": "context-registry", "status": "BLOCKED", "detail": f"{exc.kind}: {exc.detail}"}
+        )
+
+
+def _unregister_context(target: Path) -> dict[str, Any]:
+    """Remove somente o manifesto/entry deste forge — recusa nomeada se o
+    alvo for de outro instalador."""
+    try:
+        out = fctx.unregister_forge(target, FORGE_ID, owner=FORGE_ID)
+        return {
+            "id": "context-registry",
+            "status": "PASS",
+            "detail": f".forge/context {out['status']}",
+        }
+    except fctx.ContextError as exc:
+        return {
+            "id": "context-registry",
+            "status": "BLOCKED",
+            "detail": f"{exc.kind}: {exc.detail}",
+        }
 
 
 __all__ = [
