@@ -989,12 +989,16 @@ def _context_manifest(
     """Manifesto forge/context/v1 montado das fontes reais: `forge.json` +
     `forge.agentic.json` + `manifest.json` no checkout (quando presente) e
     as raizes bundled de skills/agents/rules/knowledge que o install usou."""
-    forge_json = kit._load_json(_REPO_DIR / "forge.json", None)
-    forge_json = forge_json if isinstance(forge_json, dict) else None
-    agentic = kit._load_json(_REPO_DIR / "forge.agentic.json", None)
-    agentic = agentic if isinstance(agentic, dict) else None
-    manifest_json = kit._load_json(_REPO_DIR / "manifest.json", None)
-    manifest_json = manifest_json if isinstance(manifest_json, dict) else None
+    def _bundled_json(name: str) -> dict[str, Any] | None:
+        for cand in (_PKG_DIR / name, _REPO_DIR / name):
+            data = kit._load_json(cand, None)
+            if isinstance(data, dict):
+                return data
+        return None
+
+    forge_json = _bundled_json("forge.json")
+    agentic = _bundled_json("forge.agentic.json")
+    manifest_json = _bundled_json("manifest.json")
 
     skills: list[str] = []
     coordinators: list[str] = []
