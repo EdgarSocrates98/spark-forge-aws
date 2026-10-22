@@ -83,7 +83,7 @@ def test_install_project_devin_escreve_mirrors_e_mcp(projeto):
     assert any(p.startswith(".agents/skills/") for p in paths)
     mcp = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
     assert "sparkforge-aws" in mcp["mcpServers"]
-    assert "sparkforge-aws:managed" in (projeto / "AGENTS.md").read_text(
+    assert "forge:spark-forge-aws:begin" in (projeto / "AGENTS.md").read_text(
         encoding="utf-8")
     receipts = list((projeto / ".sparkforge_aws" / "receipts").glob("install-*.json"))
     assert receipts and json.loads(receipts[0].read_text())["schema"] == kit.SCHEMA_RECEIPT
@@ -584,3 +584,130 @@ def test_uninstall_desregistra_so_o_proprio_forge(projeto):
     routing = (ctx / "ROUTING.md").read_text(encoding="utf-8")
     assert "forge-alheia" in routing
     assert "spark-forge-aws" not in routing
+
+
+# --------------------------------------------------------------------------
+# consumer docs — install-2.0 ciclo 3 (lf-0036)
+# --------------------------------------------------------------------------
+
+
+def test_install_escreve_consumer_docs(projeto):
+    """Workspace vazio recebe os 3 docs + registry + routing + manifesto."""
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    assert out["status"] == "completed"
+    check = next(c for c in out["checks"] if c["id"] == "consumer-docs")
+    assert check["status"] == "PASS"
+
+    agents = (projeto / "AGENTS.md").read_text(encoding="utf-8")
+    claude = (projeto / "CLAUDE.md").read_text(encoding="utf-8")
+    proto = (projeto / "AGENT_PROTOCOL.md").read_text(encoding="utf-8")
+
+    assert "<!-- forge:ecosystem:begin -->" in agents
+    assert "<!-- forge:spark-forge-aws:begin -->" in agents
+    assert "@AGENTS.md" in claude
+    for sec in (
+        "1. Discovery", "2. Classification", "3. Routing",
+        "4. Context Retrieval", "5. Planning", "6. Execution",
+        "7. Evaluation", "8. Verification", "9. Reporting",
+    ):
+        assert sec in proto
+    assert proto.startswith("<!-- forge:agent-protocol:v1 -->")
+    assert ".forge/context/registry.json" in proto
+
+
+def test_install_preserva_conteudo_do_usuario_nos_docs(projeto):
+    (projeto / "AGENTS.md").write_text("# Minhas regras\n\nTexto do usuario.\n",
+                                       encoding="utf-8")
+    (projeto / "CLAUDE.md").write_text("# Notas claude\n", encoding="utf-8")
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    agents = (projeto / "AGENTS.md").read_text(encoding="utf-8")
+    assert agents.startswith("# Minhas regras\n\nTexto do usuario.\n")
+    assert "forge:spark-forge-aws:begin" in agents
+    assert (projeto / "CLAUDE.md").read_text(encoding="utf-8").startswith(
+        "# Notas claude\n")
+
+
+def test_install_docs_idempotente_byte_a_byte(projeto):
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    nomes = ("AGENTS.md", "CLAUDE.md", "AGENT_PROTOCOL.md")
+    snap = {n: (projeto / n).read_bytes() for n in nomes}
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    assert {n: (projeto / n).read_bytes() for n in nomes} == snap
+
+
+def test_dois_forges_blocos_independentes_protocolo_compartilhado(projeto):
+    from sparkforge_aws import _forgecontext as fctx
+
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    alheio = fctx.build_manifest(
+        forge_id="forge-alheia", name="Forge Alheia", version="1.0.0",
+        cli="forge-alheia", package="forge_alheia", distribution="forge-alheia",
+        python_spec=">=3.10", scope="project", domains=("dominio-alheio",),
+        skills=("skill-alheia",),
+    )
+    fctx.register_forge(projeto, alheio, owner="forge-alheia")
+    fctx.install_docs(projeto, alheio, owner="forge-alheia")
+
+    agents = (projeto / "AGENTS.md").read_text(encoding="utf-8")
+    assert agents.count("forge:ecosystem:begin") == 1
+    assert "forge:spark-forge-aws:begin" in agents
+    assert "forge:forge-alheia:begin" in agents
+    proto = (projeto / "AGENT_PROTOCOL.md").read_text(encoding="utf-8")
+    assert "forge:spark-forge-aws:begin" in proto
+    assert "forge:forge-alheia:begin" in proto
+
+    # uninstall seletivo: some so o nosso, protocolo continua compartilhado
+    lifecycle.uninstall(scope="project", host="all", root=projeto, purge=True)
+    agents = (projeto / "AGENTS.md").read_text(encoding="utf-8")
+    assert "forge:spark-forge-aws" not in agents
+    assert "forge:forge-alheia:begin" in agents
+    proto = (projeto / "AGENT_PROTOCOL.md").read_text(encoding="utf-8")
+    assert "forge:forge-alheia:begin" in proto
+    assert "spark-forge-aws" not in proto
+
+
+def test_install_recusa_marcador_ambiguo(projeto):
+    (projeto / "AGENTS.md").write_text(
+        "# x\n<!-- forge:spark-forge-aws:begin -->\na\n"
+        "<!-- forge:spark-forge-aws:begin -->\nb\n"
+        "<!-- forge:spark-forge-aws:end -->\n",
+        encoding="utf-8")
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    check = next(
+        (c for c in out["checks"] if c["id"] == "consumer-docs"), None)
+    assert check is not None and check["status"] == "BLOCKED"
+    assert "FORGE-CONTEXT-CONFLICT" in check["detail"]
+
+
+def test_install_recusa_protocolo_estrangeiro(projeto):
+    (projeto / "AGENT_PROTOCOL.md").write_text("# protocolo do usuario\n",
+                                               encoding="utf-8")
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    check = next(
+        (c for c in out["checks"] if c["id"] == "consumer-docs"), None)
+    assert check is not None and check["status"] == "BLOCKED"
+    assert "FORGE-CONTEXT-CONFLICT" in check["detail"]
+    assert (projeto / "AGENT_PROTOCOL.md").read_text(
+        encoding="utf-8") == "# protocolo do usuario\n"
+
+
+def test_repair_reconstroi_bloco_danificado(projeto):
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    alvo = projeto / "AGENTS.md"
+    alvo.write_text(
+        alvo.read_text(encoding="utf-8").replace("Spark Forge AWS", "ADULTERADO"),
+        encoding="utf-8")
+    rep = lifecycle.repair(scope="project", root=projeto)
+    assert rep["status"] in ("completed", "failed")
+    assert "ADULTERADO" not in alvo.read_text(encoding="utf-8")
+
+
+def test_skill_instalada_referencia_protocolo_existente(projeto):
+    """Refs a AGENT_PROTOCOL.md em assets instalados devem resolver (lf-0034)."""
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    refs = 0
+    for skill in projeto.rglob("SKILL.md"):
+        if "AGENT_PROTOCOL.md" in skill.read_text(encoding="utf-8"):
+            refs += 1
+    if refs:
+        assert (projeto / "AGENT_PROTOCOL.md").exists()
