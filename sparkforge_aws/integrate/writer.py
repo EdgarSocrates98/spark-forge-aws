@@ -509,6 +509,11 @@ def plan_files(
     if target_root is not None and knowledge_refs:
         knowledge_root = Path(target_root) / "knowledge"
         for rel in sorted(knowledge_refs):
+            # Defesa em profundidade: `rel` vem de texto de documento — um
+            # `..` residiria fora de `knowledge_root` no syscall e viraria
+            # chave de manifesto com `..` (unlink fora da raiz no detach).
+            if not chave_segura(rel):
+                continue
             plano.append((knowledge_root / rel, render.knowledge_stub(rel)))
         plano.append(
             (knowledge_root / "README.md", render.knowledge_index_stub(len(knowledge_refs)))
@@ -535,6 +540,12 @@ def remove_owned(
     for relativo in sorted(relativos):
         registro = arquivos.get(relativo)
         if registro is None:
+            continue
+        if not chave_segura(relativo):
+            # Chave envenenada (ex. `..`): nunca resolve em unlink fora da
+            # raiz — sai do manifesto e fica reportada como recusa.
+            recusas.append({"reason": "path_fora_da_raiz", "path": relativo})
+            del arquivos[relativo]
             continue
         outros = [o for o in registro.get("owners") or [] if o != nome]
         caminho = disco.local(relativo)
@@ -583,6 +594,11 @@ def apply_files(
     vistos: set[str] = set()
     for destino, dados in plano:
         relativo = disco.chave(destino)
+        if not chave_segura(relativo):
+            # Defesa em profundidade: um destino que resolve fora das raizes
+            # declaradas nunca vira escrita nem chave de manifesto.
+            recusas.append({"reason": "path_fora_da_raiz", "path": relativo})
+            continue
         sha = sha256_bytes(dados)
         registro = manifesto["files"].get(relativo) or {}
         registrado = registro.get("sha256")

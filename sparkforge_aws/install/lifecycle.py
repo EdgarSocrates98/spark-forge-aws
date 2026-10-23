@@ -693,7 +693,11 @@ def uninstall(
         + context_checks,
         removed=removed,
         kept=kept,
-        status="completed",
+        status=(
+            "failed"
+            if any(c.get("status") == "BLOCKED" for c in context_checks)
+            else "completed"
+        ),
     )
     if not dry_run:
         _write_receipt(state, receipt)
@@ -1266,7 +1270,12 @@ def _register_context(
     registry + ROUTING.md + consumer docs, numa UNICA transacao (install-2.0
     §9.2: preflight → lock → conflicts → backup → write → verify → commit,
     rollback em falha). Falha de contexto vira check BLOCKED nomeado no
-    recibo, nunca erro silencioso nem install falho."""
+    recibo — e o recibo reporta a falha (componente mandatório), nunca
+    erro silencioso nem install "completed" sem registry.
+    ``scope=user`` já sai antes por `_install_user`, mas a guarda fica:
+    `~/.forge/` é nível de conta, contexto de workspace não se escreve lá."""
+    if scope == "user":
+        return
     try:
         manifest = _context_manifest(
             scope=scope, profile=profile, hosts=hosts, components=components
@@ -1296,6 +1305,9 @@ def _register_context(
         receipt.setdefault("checks", []).append(
             {"id": "context-registry", "status": "BLOCKED", "detail": f"{exc.kind}: {exc.detail}"}
         )
+        # BLOCKED num componente mandatório não sai exit 0 — os assets
+        # foram escritos mas o contrato install-2.0 falhou.
+        receipt["status"] = "failed"
 
 
 def _unregister_context(target: Path) -> list[dict[str, Any]]:

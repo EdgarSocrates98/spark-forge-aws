@@ -724,12 +724,23 @@ _KNOWLEDGE_MENTION = re.compile(
 )
 
 
+def _rel_seguro(rel: str) -> bool:
+    """Um `knowledge/<rel>` citado num doc vira path em disco no install —
+    `..`, absoluto, drive ou barra invertida escreveriam FORA da raiz
+    `knowledge/` (o `Path` nao normaliza `..` antes do syscall)."""
+    if not rel or "\\" in rel or ":" in rel or "%" in rel:
+        return False
+    partes = PurePosixPath(rel)
+    return not partes.is_absolute() and ".." not in partes.parts
+
+
 def referenced_knowledge_paths(text: str, *, canonical_dir: str) -> set[str]:
     """Os caminhos `knowledge/<rel>` que `text` cita — por link markdown
     resolvido contra `canonical_dir` E por mencao textual
     `` `knowledge/x.md` ``/prosa (a mesma coisa para o agente que le um
     caminho e o abre). Serve para o install emitir ponteiros exatamente nos
-    docs referenciados, nao no knowledge inteiro."""
+    docs referenciados, nao no knowledge inteiro. Refs que escapam a raiz
+    (`..`, absoluto) sao descartadas — nunca viram path."""
     base = PurePosixPath(canonical_dir)
     refs: set[str] = set()
     for match in _MD_LINK.finditer(text):
@@ -740,8 +751,10 @@ def referenced_knowledge_paths(text: str, *, canonical_dir: str) -> set[str]:
         resolved = PurePosixPath(os.path.normpath(str(base / path_part)))
         partes = resolved.parts
         if partes and partes[0] == "knowledge" and len(partes) > 1:
-            refs.add(resolved.relative_to("knowledge").as_posix())
-    refs.update(_KNOWLEDGE_MENTION.findall(text))
+            rel = resolved.relative_to("knowledge").as_posix()
+            if _rel_seguro(rel):
+                refs.add(rel)
+    refs.update(r for r in _KNOWLEDGE_MENTION.findall(text) if _rel_seguro(r))
     return refs
 
 
