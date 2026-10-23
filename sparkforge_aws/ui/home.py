@@ -15,29 +15,31 @@ from pathlib import Path
 from sparkforge_aws.ui.i18n import t
 from sparkforge_aws.ui.kit import NonInteractive, UIContext, _c, dashboard, select
 
-FORGE_NAME = 'spark-forge-aws'
-CLI_NAME = 'sparkforge-aws'
-CLI_ENTRY = 'sparkforge_aws.adapters.cli:main'
+FORGE_NAME = "spark-forge-aws"
+CLI_NAME = "sparkforge-aws"
+CLI_ENTRY = "sparkforge_aws.adapters.cli:main"
 
 _MENU: list[tuple[str, list[str] | None]] = [
-    ('Analyze PySpark project', ['analyze', 'pyspark', '--path', '.']),
-    ('Judge findings', ['judge', '--facts', '.sparkforge_aws/facts.json']),
-    ('Next step (routing)', ['next-step', '--repo', '.']),
-    ('Explore agents', ['agents', 'list']),
-    ('Case evidence', ['case', 'get', '--repo', '.']),
-    ('Glue rules catalog', ['rules', 'lookup', '--index', '--runtime', 'glue']),
-    ('EMR rules catalog', ['rules', 'lookup', '--index', '--runtime', 'emr']),
-    ('Iceberg rules catalog', ['rules', 'lookup', '--index', '--category', 'iceberg']),
-    ('Performance rules (Spark UI evidence)',
-     ['rules', 'lookup', '--index', '--category', 'spark-ui']),
-    ('Streaming rules catalog', ['rules', 'lookup', '--index', '--category', 'streaming']),
-    ('Lake Formation access matrix', ['lakeformation', 'matrix']),
-    ('Graph status', ['graph', 'status']),
-    ('Graph Studio (browser)', ['graph', 'ui']),
-    ('Installation status (ledger + drift)', ['status']),
-    ('Check installation health', ['doctor']),
-    ('MCP verify (real handshake)', ['mcp', 'verify']),
-    ('Open AI host (state + launch)', ['ai']),
+    ("Analyze PySpark project", ["analyze", "pyspark", "--path", "."]),
+    ("Judge findings", ["judge", "--facts", ".sparkforge_aws/facts.json"]),
+    ("Next step (routing)", ["next-step", "--repo", "."]),
+    ("Explore agents", ["agents", "list"]),
+    ("Case evidence", ["case", "get", "--repo", "."]),
+    ("Glue rules catalog", ["rules", "lookup", "--index", "--runtime", "glue"]),
+    ("EMR rules catalog", ["rules", "lookup", "--index", "--runtime", "emr"]),
+    ("Iceberg rules catalog", ["rules", "lookup", "--index", "--category", "iceberg"]),
+    (
+        "Performance rules (Spark UI evidence)",
+        ["rules", "lookup", "--index", "--category", "spark-ui"],
+    ),
+    ("Streaming rules catalog", ["rules", "lookup", "--index", "--category", "streaming"]),
+    ("Lake Formation access matrix", ["lakeformation", "matrix"]),
+    ("Graph status", ["graph", "status"]),
+    ("Graph Studio (browser)", ["graph", "ui"]),
+    ("Installation status (ledger + drift)", ["status"]),
+    ("Check installation health", ["doctor"]),
+    ("MCP verify (real handshake)", ["mcp", "verify"]),
+    ("Open AI host (state + launch)", ["ai"]),
     ("installation wizard", "__wizard__"),
     ("quit", None),
 ]
@@ -52,11 +54,10 @@ def _cli_argv(extra: list[str]) -> list[str] | None:
         module, _, fn = CLI_ENTRY.partition(":")
         checkout = next(
             (
-            a
-            for a in Path(__file__).resolve().parents
-            if (a / "forge.json").is_file()
-            and (a / "pyproject.toml").is_file()
-        ),
+                a
+                for a in Path(__file__).resolve().parents
+                if (a / "forge.json").is_file() and (a / "pyproject.toml").is_file()
+            ),
             None,
         )
         if checkout is None:
@@ -71,7 +72,7 @@ def _cli_argv(extra: list[str]) -> list[str] | None:
 
 
 def _run_argv(argv: list[str]) -> int:
-    env = dict(__import__('os').environ, FORGE_TEXT_OUTPUT="1")
+    env = dict(__import__("os").environ, FORGE_TEXT_OUTPUT="1")
     try:
         return subprocess.run(argv, check=False, env=env).returncode
     except FileNotFoundError:
@@ -84,6 +85,7 @@ def run_home(*, ctx: UIContext | None = None) -> int:
         raise NonInteractive("home requires a TTY")
     if ctx.ansi:  # full-screen path; ANSI-free terminals keep the inline kit
         from sparkforge_aws.ui.tui import run_tui
+
         return run_tui(ctx=ctx)
     dashboard(
         f"{FORGE_NAME}  workspace: {Path.cwd().name}",
