@@ -6,6 +6,14 @@ All notable changes to this project are documented here. Format follows
 
 
 
+## [0.7.0] - 2026-10-23
+
+### Fixed
+
+- `ui._has_vcs_root`/`_cli_argv`: stray `forge.json` in an ancestor no
+  longer marks a project root — requires sibling `pyproject.toml`.
+  Regression tests added; changelog ordering restored.
+
 ## [0.6.3] - 2026-10-23
 
 ### Security
