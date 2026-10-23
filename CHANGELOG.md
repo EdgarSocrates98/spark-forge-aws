@@ -2,14 +2,18 @@
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-## [0.6.3] - 2026-10-24
+## [Unreleased]
+
+
+
+## [0.6.3] - 2026-10-23
 
 ### Security
 
 - Vendored `_installkit` 1.0.4: unsafe ledger keys surfaced in
   `status().drift.unsafe`; `doctor` marks them non-repairable.
 
-## [0.6.2] - 2026-10-29
+## [0.6.2] - 2026-10-23
 
 ### Fixed
 
@@ -61,11 +65,34 @@ All notable changes to this project are documented here. Format follows
   `forge_bootstrap` v1.1.1 security backports (userinfo redaction, argv trim,
   empty-stdout smoke).
 
+## [0.5.6] - 2026-10-21
+
+### Added
+
+- Integrations cycle: governed peer delegation (`sparkforge_aws/delegation/` — discovery, plans, argv-only execution, persisted EvidenceHandoffs, refusal/cycle handling) to data-sentinel-forge and forge-doctor-data; `delegate-specialists` skill + coordinator awareness; `sparkforge-aws delegate` CLI; Windows `.cmd` test fixture shim; surface lock regenerated (61 skills); portal bundle re-vendored with explorer pages.
+
 ## [0.5.5] - 2026-10-21
 
 ### Changed
 
 - Cycle 13 (graph): Graph Studio vendored update — P0 physics fix (NaN blow-up on hubs/star), scalable visualization modes (overview/explore/full), navigation, inspectors and bounded analysis; post-lf-0023 portal explorer assets re-vendored; security/accessibility/reliability hardening.
+
+## [0.5.4] - 2026-10-20
+
+### Changed
+- Cycle 12.1: vendored `scripts/forge_bootstrap.py` re-stamped to the canonical ruff-formatted source; `install.windows.sh` added as the Git Bash/MSYS install route; CI gains a `bash -n` gate for it; knowledge list/search tools declared in manifest/capability surfaces with regenerated catalogs and surface lock.
+
+### Fixed
+
+- `doc_manifest._check_links` now verifies `#fragment` anchors on
+  tag-pinned repo URLs (they were silently dropped), exempts GitHub line
+  refs (`#L10`, `#L10-L20`) and rejects `%5C` backslash escapes.
+
+### Changed
+
+- `pip install sparkforge-aws` section added to the README;
+  links/images pinned to `v0.5.0` absolute URLs so the PyPI-rendered
+  page resolves.
 
 ## [0.5.3] - 2026-10-20
 
@@ -88,33 +115,6 @@ All notable changes to this project are documented here. Format follows
 
 ### Fixed
 - Portal vendored 2.1 final (Cycles 0-6)
-
-## [Unreleased]
-
-
-
-## [0.5.6] - 2026-10-21
-
-### Added
-
-- Integrations cycle: governed peer delegation (`sparkforge_aws/delegation/` — discovery, plans, argv-only execution, persisted EvidenceHandoffs, refusal/cycle handling) to data-sentinel-forge and forge-doctor-data; `delegate-specialists` skill + coordinator awareness; `sparkforge-aws delegate` CLI; Windows `.cmd` test fixture shim; surface lock regenerated (61 skills); portal bundle re-vendored with explorer pages.
-
-## [0.5.4] - 2026-10-20
-
-### Changed
-- Cycle 12.1: vendored `scripts/forge_bootstrap.py` re-stamped to the canonical ruff-formatted source; `install.windows.sh` added as the Git Bash/MSYS install route; CI gains a `bash -n` gate for it; knowledge list/search tools declared in manifest/capability surfaces with regenerated catalogs and surface lock.
-
-### Fixed
-
-- `doc_manifest._check_links` now verifies `#fragment` anchors on
-  tag-pinned repo URLs (they were silently dropped), exempts GitHub line
-  refs (`#L10`, `#L10-L20`) and rejects `%5C` backslash escapes.
-
-### Changed
-
-- `pip install sparkforge-aws` section added to the README;
-  links/images pinned to `v0.5.0` absolute URLs so the PyPI-rendered
-  page resolves.
 
 ## [0.5.0] - 2026-10-15
 
