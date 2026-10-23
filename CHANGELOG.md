@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+## [0.6.2] - 2026-10-29
+
+### Fixed
+
+- `_forgecontext` v1.3.3 + `_installkit` v1.0.3 (vendored): `repair_context`
+  reports malformed capability files per-file instead of crashing with an
+  untyped `KeyError`; context/install locks carry a unique token so
+  `__exit__` never unlinks a foreign lock and a lost reclaim race is a
+  named `FORGE-CONTEXT-LOCKED`/`FORGE-INSTALL-LOCKED`; poisoned journals
+  quarantine and report instead of wedging every later context op; asset
+  and ledger paths are validated before touching disk — `..`, absolute,
+  drive or backslash refs are refused as `FORGE-INSTALL-UNSAFE-PATH`,
+  never written or unlinked outside the install root; `_atomic_write`
+  preserves the existing file's mode.
+- `integrate`: `knowledge/<rel>` references extracted from emitted docs
+  now discard traversal refs (`..`, absolute, drive, backslash) at
+  extraction AND at the write layer — a doc mentioning
+  `knowledge/../../x.md` can no longer create or delete files outside
+  the install root. `apply_files`/`remove_owned` reject unsafe manifest
+  keys as named `path_fora_da_raiz` refusals.
+- `install --scope user` parity: `_register_context` is a no-op at user
+  scope — `~/.forge/` is account-level state, matching the sibling forges
+  and the documented model.
+- A `BLOCKED` check on the mandatory context-registry component now marks
+  the receipt `failed` (nonzero exit) instead of `completed`.
+
 ## [0.6.1] - 2026-10-22
 
 ### Fixed

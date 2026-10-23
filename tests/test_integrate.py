@@ -2228,3 +2228,18 @@ def test_host_com_config_pendente_nao_conta_como_integrado(tmp_path):
     assert devin.status == dr.WARN
     assert "config_pendente" in devin.detail and ".config/devin/mcp_config.json" in devin.detail
     assert devin.unlock == "sparkforge-aws detach devin"
+
+
+def test_knowledge_refs_descartam_traversal(tmp_path):
+    """Refs `knowledge/<rel>` citadas em docs nunca viram path fora da raiz:
+    `..`, absoluto, drive ou backslash sao descartados na extracao — um
+    doc que mencione `knowledge/../../x.md` nao pode escrever fora do
+    `knowledge_root` nem gerar chave de manifesto com `..`."""
+    texto = (
+        "veja `knowledge/glue/workers.md` e "
+        "`knowledge/../../fora.md` e `knowledge/%2e%2e/evil.md` "
+        "e `knowledge/sub/dir/x.yaml`"
+    )
+    refs = render.referenced_knowledge_paths(texto, canonical_dir="skills/x")
+    assert refs == {"glue/workers.md", "sub/dir/x.yaml"}
+    assert all(".." not in r for r in refs)
