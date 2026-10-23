@@ -17,6 +17,7 @@ Security contract (§7.3), enforced here and tested in
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -25,6 +26,10 @@ from typing import Any
 from sparkforge_aws.evals import taxonomy
 
 _REPO_DIR = Path(__file__).resolve().parents[2]
+
+# Run dir names: first char alnum, then word chars/dots/dashes — no
+# separators, no ``..`` escape, no absolute paths (§13.1).
+_SAFE_RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 # Timeout for delegated gates — deterministic, bounded, never a hang.
 _RUN_TIMEOUT_S = 300
@@ -188,6 +193,25 @@ def _run_decision_benchmark(suite: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _safe_run_dir(runs_root: Path, run_name: str) -> Path:
+    """Resolve ``runs_root / run_name`` refusing traversal and absolute
+    paths — a run is a directory *inside* the runs root, never an escape.
+    Belt-and-suspenders: the name must match a safe pattern AND the
+    resolved path must stay under the root."""
+    if not _SAFE_RUN_NAME.match(run_name or ""):
+        raise taxonomy.TaxonomyError(
+            f"{taxonomy.E_UNAVAILABLE}: run name {run_name!r} invalido — "
+            "use [A-Za-z0-9._-] sem separadores"
+        )
+    root = runs_root.resolve()
+    run_dir = (root / run_name).resolve()
+    if run_dir != root and root not in run_dir.parents:
+        raise taxonomy.TaxonomyError(
+            f"{taxonomy.E_UNAVAILABLE}: run {run_name!r} fora de {root}"
+        )
+    return run_dir
+
+
 def result(suite_id: str, run_name: str) -> dict[str, Any]:
     """evals.result — the scorecard of a recorded agentic run.
 
@@ -218,7 +242,7 @@ def result(suite_id: str, run_name: str) -> dict[str, Any]:
     agentic_name = suite_id[len("agentic-"):]
     debate = agentic_name == "debate"
     runs_root = DEBATE_RUNS_ROOT if debate else RUNS_ROOT
-    run_dir = runs_root / run_name
+    run_dir = _safe_run_dir(runs_root, run_name)
     if not run_dir.is_dir():
         raise taxonomy.TaxonomyError(
             f"{taxonomy.E_UNAVAILABLE}: run {run_name!r} ausente em {runs_root}; "
