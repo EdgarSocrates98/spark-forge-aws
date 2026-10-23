@@ -205,6 +205,24 @@ def test_evals_result_rejects_non_host_suites():
         surface.result("holdout", "qualquer")
 
 
+def test_evals_result_rejects_run_name_traversal():
+    """§13.1: --run nunca escapa do runs_root — traversal, absoluto e
+    separadores viram recusa nomeada antes de tocar o filesystem."""
+    for bad in ("../../x", "..", "/abs/path", "a/b", "C:\\runs\\x", ".hidden-ok?"):
+        with pytest.raises(taxonomy.TaxonomyError, match=taxonomy.E_UNAVAILABLE):
+            surface.result("agentic-recovery", bad)
+    assert not Path("/abs/path/scorecard.json").exists()
+
+
+def test_safe_run_dir_stays_under_root(tmp_path):
+    root = tmp_path / "runs"
+    root.mkdir()
+    good = surface._safe_run_dir(root, "run-2026-10-22.a1")
+    assert good.parent == root.resolve()
+    with pytest.raises(taxonomy.TaxonomyError):
+        surface._safe_run_dir(root, "../out")
+
+
 def test_unknown_suite_is_a_named_refusal():
     with pytest.raises(taxonomy.TaxonomyError, match=taxonomy.E_SUITE):
         taxonomy.describe("suite-inexistente")
