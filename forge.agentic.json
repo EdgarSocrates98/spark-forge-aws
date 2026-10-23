@@ -1,7 +1,7 @@
 {
   "schema": "forge/SpecialistAgenticManifest/v1",
   "provider": "spark-forge-aws",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "cli": "sparkforge-aws",
   "cli_entry": "sparkforge_aws.adapters.cli:main",
   "workflows": [
