@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import posixpath
 import re
 from pathlib import Path, PurePosixPath
 
@@ -689,7 +690,10 @@ def _rewrite_outgoing_links(
         if target.startswith(("http://", "https://", "mailto:", "#", "/")):
             return match.group(0)
         path_part, _, frag = target.partition("#")
-        resolved = PurePosixPath(os.path.normpath(str(src_dir / path_part)))
+        # All rendered links are repository-relative POSIX paths.  Using
+        # os.path here made Windows-generated mirrors differ from Linux CI
+        # mirrors because normpath/relpath used host separators and rules.
+        resolved = PurePosixPath(posixpath.normpath(str(src_dir / path_part)))
         if str(resolved).startswith(".."):
             return match.group(0)
         partes = resolved.parts
@@ -708,7 +712,7 @@ def _rewrite_outgoing_links(
                 else resolved
             )
         new_target = (
-            os.path.relpath(str(destino), str(espelho_dir)).replace(os.sep, "/")
+            posixpath.relpath(str(destino), str(espelho_dir))
             + ("#" + frag if frag else "")
         )
         return match.group(1) + new_target + match.group(3)

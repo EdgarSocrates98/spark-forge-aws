@@ -243,7 +243,7 @@ Look up the correct IAM actions for each requested API operation.
 
 The reference lives at `https://servicereference.us-east-1.amazonaws.com/v1/<service>/<service>.json`. These files are large. Use the `service_reference_query` tool or `curl` with `jq` to extract only what you need.
 
-See [service authorization reference details](../../../../skills/aws-iam/references/service-authorization.md) for all query patterns and the reference structure.
+See [service authorization reference details](service-authorization.md) for all query patterns and the reference structure.
 
 **Tool call example:**
 
@@ -341,7 +341,7 @@ Key rules for this pattern:
 2. The `Null` check MUST reference the SAME condition key (`aws:VpceOrgPaths`), not a different key like `aws:VpcEndpointId`
 3. Without the Null statement, requests not traversing any VPC endpoint bypass the deny entirely
 
-See [common pitfalls](../../../../skills/aws-iam/references/common-pitfalls.md) for additional examples.
+See [common pitfalls](common-pitfalls.md) for additional examples.
 
 ## Decision Guide
 
@@ -463,11 +463,11 @@ Do NOT omit `lambda:GetLayerVersion` — it is listed in `AuthorizedActions` and
 
 ### ForAnyValue/ForAllValues behaving unexpectedly
 
-These operators have critical edge cases with missing context keys. See [common pitfalls](../../../../skills/aws-iam/references/common-pitfalls.md) for the Null-check patterns required to use them safely.
+These operators have critical edge cases with missing context keys. See [common pitfalls](common-pitfalls.md) for the Null-check patterns required to use them safely.
 
 ### Access denied despite correct action (Reference path)
 
-Verify the resource ARN format matches what the service expects. Use query pattern 3 from the [service authorization reference](../../../../skills/aws-iam/references/service-authorization.md) to look up the correct ARN format.
+Verify the resource ARN format matches what the service expects. Use query pattern 3 from the [service authorization reference](service-authorization.md) to look up the correct ARN format.
 
 ## Supported Inputs (Autopilot)
 
@@ -500,5 +500,5 @@ In addition to source code, Autopilot accepts a **Terraform plan JSON** (`terraf
 - [IAM Actions, Resources, and Condition Keys](https://docs.aws.amazon.com/service-authorization/latest/reference/)
 - [IAM Policy Evaluation Logic](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html)
 - [IAM Best Practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
-- [Common pitfalls with condition operators](../../../../skills/aws-iam/references/common-pitfalls.md)
-- [Service authorization reference query patterns](../../../../skills/aws-iam/references/service-authorization.md)
+- [Common pitfalls with condition operators](common-pitfalls.md)
+- [Service authorization reference query patterns](service-authorization.md)

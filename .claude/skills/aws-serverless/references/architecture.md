@@ -62,7 +62,7 @@ Multi-step workflows, saga transactions, approval chains, data pipelines, AI age
 | Human approval | `.waitForTaskToken` | Lambda durable functions `waitForCallback` |
 | AI agent loops | Step Functions + Bedrock | Lambda durable functions (code-first, checkpointed) |
 
-Constraints: 256 KiB between states (use S3 for large data); Express lacks `.sync`/`.waitForTaskToken`/Distributed Map/Activities; 25,000 history entries (Standard). See [orchestration.md](../../../../skills/aws-serverless/references/orchestration.md).
+Constraints: 256 KiB between states (use S3 for large data); Express lacks `.sync`/`.waitForTaskToken`/Distributed Map/Activities; 25,000 history entries (Standard). See [orchestration.md](orchestration.md).
 
 ---
 
@@ -77,7 +77,7 @@ Chat, live dashboards, notifications, LLM token streaming, multiplayer.
 | Connection state | DynamoDB (connectionId → metadata, TTL to clean up after 2h max) | ElastiCache (higher throughput) |
 | Auth | `$connect` route authorizer | Cognito + custom auth in Lambda |
 
-Constraints: WebSocket 10-min idle / 2-hour max / 128 KB message; Function URL streaming 200 MB, 2 MBps after first 6 MB, Node.js native. **For streaming behind CloudFront, Function URLs should use `AWS_IAM` auth** — use Origin Access Control to sign requests rather than setting auth to `NONE`; if `NONE` is unavoidable, enforce auth at the edge (CloudFront + Lambda@Edge). (For a deliberately public, browser-reachable URL with no edge in front, `NONE` is the intended auth type — see [Function URLs in lambda.md](../../../../skills/aws-serverless/references/lambda.md#function-urls) for the required permissions.)
+Constraints: WebSocket 10-min idle / 2-hour max / 128 KB message; Function URL streaming 200 MB, 2 MBps after first 6 MB, Node.js native. **For streaming behind CloudFront, Function URLs should use `AWS_IAM` auth** — use Origin Access Control to sign requests rather than setting auth to `NONE`; if `NONE` is unavoidable, enforce auth at the edge (CloudFront + Lambda@Edge). (For a deliberately public, browser-reachable URL with no edge in front, `NONE` is the intended auth type — see [Function URLs in lambda.md](lambda.md#function-urls) for the required permissions.)
 
 ---
 

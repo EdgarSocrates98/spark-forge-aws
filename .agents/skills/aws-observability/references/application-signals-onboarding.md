@@ -152,7 +152,7 @@ For EC2/ECS/EKS with Python/Node.js/Java, add the ServiceEvents environment vari
 
 ### 5a. Git & deployment metadata (CI/CD propagation) — should be applied by default, best-effort
 
-Add these 5 env vars, using the exact names below. See [application-signals-cicd-metadata.md](../../../../skills/aws-observability/references/application-signals-cicd-metadata.md) for the full propagation-chain procedure and per-provider patterns.
+Add these 5 env vars, using the exact names below. See [application-signals-cicd-metadata.md](application-signals-cicd-metadata.md) for the full propagation-chain procedure and per-provider patterns.
 
 | Variable (exact name) | When set |
 |----------|----------|

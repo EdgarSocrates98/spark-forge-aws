@@ -130,4 +130,4 @@ The common, non-obvious failures (basic header setup is well understood):
 | Not redeploying after CORS changes | Redeploy the stage |
 | Gateway 4XX/5XX responses lack CORS headers | Add CORS headers to gateway responses too |
 
-For the full step-by-step procedure of wiring CORS, throttling, and access logging when connecting a Lambda, use the **connecting-lambda-to-api-gateway** skill (see SKILL.md routing). For 502/504 deep debugging, see [troubleshooting.md](../../../../skills/aws-serverless/references/troubleshooting.md).
+For the full step-by-step procedure of wiring CORS, throttling, and access logging when connecting a Lambda, use the **connecting-lambda-to-api-gateway** skill (see SKILL.md routing). For 502/504 deep debugging, see [troubleshooting.md](troubleshooting.md).
