@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
+## [0.7.3] — 2026-11-04
+
+### Fixed
+
+- Synced the hardened Forge Portal runtime and refreshed bundled portal assets.
+
 ## [0.7.2] — 2026-11-04
 
 ### Fixed
