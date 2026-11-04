@@ -259,12 +259,20 @@ def test_wheel_install_lifecycle_outside_checkout(tmp_path: Path):
     victim = target / ".mcp.json"
     assert victim.is_file()
     victim.unlink()
-    out = _run([str(cli), "repair", "--root", str(target)], cwd=target, env=env)
+    out = _run(
+        [str(cli), "repair", "--root", str(target), "--yes"],
+        cwd=target,
+        env=env,
+    )
     assert out.returncode == 0, out.stderr[-400:]
     assert victim.is_file(), "repair nao restaurou asset gerenciado removido"
 
     # -- uninstall + reinstall ---------------------------------------------------
-    out = _run([str(cli), "uninstall", "--root", str(target)], cwd=target, env=env)
+    out = _run(
+        [str(cli), "uninstall", "--root", str(target), "--yes"],
+        cwd=target,
+        env=env,
+    )
     assert out.returncode == 0, out.stderr[-400:]
     gone = _json(out, "uninstall")
     assert gone["status"] in ("completed", "uninstalled"), gone.get("status")

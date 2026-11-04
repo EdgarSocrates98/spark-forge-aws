@@ -129,6 +129,43 @@ def _uninstall(args: argparse.Namespace) -> dict[str, Any]:
         purge=_p(args, "purge", False), dry_run=_p(args, "dry_run", False))
 
 
+def _approve_mutation(args: argparse.Namespace, operation: str) -> bool:
+    """Require an explicit approval before a lifecycle mutation.
+
+    ``--dry-run`` is always safe. In a TTY, show the exact lifecycle preview
+    and reuse the same confirmation used by the install wizard. Pipes and CI
+    must opt in with ``--yes`` so a redirected command can never mutate a
+    project or the user installation accidentally.
+    """
+    if _p(args, "dry_run", False) or _p(args, "yes", False):
+        return True
+    if not _tty():
+        return False
+    try:
+        from sparkforge_aws.ui.kit import NonInteractive, approve_plan
+
+        preview_args = argparse.Namespace(**vars(args))
+        preview_args.dry_run = True
+        preview = {
+            "repair": _repair,
+            "update": _update,
+            "uninstall": _uninstall,
+        }[operation](preview_args)
+        try:
+            return approve_plan(preview)
+        except NonInteractive:
+            return False
+    except ImportError:
+        return False
+
+
+def _approval_refusal(operation: str) -> dict[str, Any]:
+    return kit.InstallError(
+        kit.E_NOTAPPROVED,
+        f"{operation} mutates the installation; use --yes or --dry-run",
+    ).document("spark-forge-aws")
+
+
 def _mcp_verify(args: argparse.Namespace) -> dict[str, Any]:
     return lifecycle.mcp_verify()
 
@@ -210,6 +247,11 @@ def dispatch(args: argparse.Namespace) -> int:
         print(json.dumps({"error": {"kind": "SF-INSTALL-VERB",
                                     "detail": f"unknown: {args.command} {sub}"}}))
         return 2
+    if args.command in {"repair", "update", "uninstall"}:
+        if not _approve_mutation(args, args.command):
+            out = _approval_refusal(args.command)
+            _print(out)
+            return 1
     out = _wrap(fn)(args)
     _print(out)
     return 0 if out.get("status") in ("completed", "planned") else 1
@@ -253,6 +295,8 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
         "repair", help="Regrava assets gerenciados que sumiram ou mudaram.")
     repair_p.add_argument("--scope", choices=scopes, default="project")
     repair_p.add_argument("--root", default=None)
+    repair_p.add_argument("--yes", "-y", action="store_true",
+                          help="Aprovacao explicita; sem ela, --dry-run.")
     repair_p.add_argument("--dry-run", action="store_true")
 
     update_p = sub.add_parser(
@@ -261,6 +305,8 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
                           help="Versao pinned (nunca 'latest').")
     update_p.add_argument("--repo", default=None,
                           help="Checkout para instalar/atualizar.")
+    update_p.add_argument("--yes", "-y", action="store_true",
+                          help="Aprovacao explicita; sem ela, --dry-run.")
     update_p.add_argument("--dry-run", action="store_true")
 
     uninstall_p = sub.add_parser(
@@ -271,6 +317,8 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     uninstall_p.add_argument("--root", default=None)
     uninstall_p.add_argument("--purge", action="store_true",
                              help="Apaga tambem o state dir .sparkforge_aws/install.")
+    uninstall_p.add_argument("--yes", "-y", action="store_true",
+                             help="Aprovacao explicita; sem ela, --dry-run.")
     uninstall_p.add_argument("--dry-run", action="store_true")
 
     mcp_p = sub.add_parser("mcp", help="Operacoes do servidor MCP.")

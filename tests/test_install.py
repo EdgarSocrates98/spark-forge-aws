@@ -410,6 +410,30 @@ def test_cli_erro_estruturado_sem_traceback(projeto, capsys, monkeypatch):
         "NOT-APPROVED" in json.dumps(doc)
 
 
+@pytest.mark.parametrize("operation", ["repair", "update", "uninstall"])
+def test_cli_mutacoes_exigem_yes_fora_do_tty(projeto, operation, capsys, monkeypatch):
+    from sparkforge_aws.adapters import cli
+
+    monkeypatch.chdir(projeto)
+    before = _arquivos(projeto)
+    code = cli.main([operation, "--root", str(projeto)]) if operation != "update" else cli.main([
+        operation, "--repo", str(projeto)
+    ])
+    assert code == 1
+    assert _arquivos(projeto) == before
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["error"]["kind"].endswith("NOT-APPROVED")
+
+
+def test_cli_mutacao_com_yes_preserva_o_fluxo_explicito(projeto, capsys, monkeypatch):
+    from sparkforge_aws.adapters import cli
+
+    monkeypatch.chdir(projeto)
+    assert cli.main(["uninstall", "--root", str(projeto), "--yes"]) == 0
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["status"] == "completed"
+
+
 def test_bare_install_tty_enters_guided_wizard(monkeypatch):
     from sparkforge_aws.adapters import cli
     from sparkforge_aws.install import cli as install_cli

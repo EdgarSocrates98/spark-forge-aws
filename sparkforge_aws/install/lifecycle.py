@@ -650,7 +650,8 @@ def uninstall(
     manifesto = writer.load_manifest(target)
     nomes = _hosts_for(host)
     removed, kept = [], []
-    with kit.acquire_lock(state):
+    lock = kit.acquire_lock(state) if not dry_run else nullcontext()
+    with lock:
         for nome in nomes:
             relativos = writer.host_files(manifesto, nome)
             out = writer.remove_owned(disco, manifesto, nome, relativos)
