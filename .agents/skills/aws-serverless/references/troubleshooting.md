@@ -32,7 +32,7 @@ aws lambda add-permission --function-name my-function \
   --invoked-via-function-url
 ```
 
-The `--invoked-via-function-url` flag sets the `lambda:InvokedViaFunctionUrl` condition on statement 2, scoping it to Function URL calls so it does not open direct `Invoke` access. This 403 is **not** an org SCP/RCP block — Lambda does not support RCPs, so don't chase that path. See [Function URLs](lambda.md#function-urls) and [Lambda function URL auth](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html).
+The `--invoked-via-function-url` flag sets the `lambda:InvokedViaFunctionUrl` condition on statement 2, scoping it to Function URL calls so it does not open direct `Invoke` access. This 403 is **not** an org SCP/RCP block — Lambda does not support RCPs, so don't chase that path. See [Function URLs](../../../../skills/aws-serverless/references/lambda.md#function-urls) and [Lambda function URL auth](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html).
 
 ### RecursiveInvocationException
 

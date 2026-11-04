@@ -554,9 +554,9 @@ recap.
 
 ## References
 
-- [breakpoint-creation.md](dynamic-instrumentation/breakpoint-creation.md) — instrumentation levels, BREAKPOINT vs PROBE, Python/Java
+- [breakpoint-creation.md](../../../../skills/aws-observability/references/dynamic-instrumentation/breakpoint-creation.md) — instrumentation levels, BREAKPOINT vs PROBE, Python/Java
   location mapping, argument names, `attribute_filters`, capture-limit fields, `max_hits`/DISABLED
   recovery, the void/None field-mutation rule, and ERROR-state troubleshooting.
-- [call-tree-and-directions.md](dynamic-instrumentation/call-tree-and-directions.md) — visual call-tree patterns and annotation legend.
-- [snapshot-parsing.md](dynamic-instrumentation/snapshot-parsing.md) — snapshot retrieval commands, the snapshot field map, and the
+- [call-tree-and-directions.md](../../../../skills/aws-observability/references/dynamic-instrumentation/call-tree-and-directions.md) — visual call-tree patterns and annotation legend.
+- [snapshot-parsing.md](../../../../skills/aws-observability/references/dynamic-instrumentation/snapshot-parsing.md) — snapshot retrieval commands, the snapshot field map, and the
   jq/python analysis recipe.

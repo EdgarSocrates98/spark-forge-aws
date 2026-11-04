@@ -1,6 +1,6 @@
 # Application Signals: Git & Deployment Metadata Propagation
 
-Propagate git and deployment metadata to an Application Signals service so ServiceEvents can correlate deployments with telemetry. This is **Tier 2** of onboarding (see [application-signals-onboarding.md](application-signals-onboarding.md)) — it applies only to **EC2/ECS/EKS** services in **Python, Node.js, or Java**. It does NOT apply to Lambda or .NET.
+Propagate git and deployment metadata to an Application Signals service so ServiceEvents can correlate deployments with telemetry. This is **Tier 2** of onboarding (see [application-signals-onboarding.md](../../../../skills/aws-observability/references/application-signals-onboarding.md)) — it applies only to **EC2/ECS/EKS** services in **Python, Node.js, or Java**. It does NOT apply to Lambda or .NET.
 
 Never modify application source code. Only edit the CI/CD workflow, Dockerfiles, and deployment manifests. Make minimum changes and present them for review.
 

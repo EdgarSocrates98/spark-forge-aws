@@ -180,10 +180,10 @@ The `lambda:InvokedViaFunctionUrl` condition on statement 2 (set by `--invoked-v
 
 ## Powertools and Packaging
 
-Use **Powertools for AWS Lambda** (Python, TypeScript, Java, .NET) for structured logging, X-Ray tracing, EMF metrics, idempotency, batch processing, event handling, and parameter caching. The APIs are well-documented at [docs.powertools.aws.dev](https://docs.powertools.aws.dev/lambda/); for a ready-to-use Python handler with Logger + Tracer + Metrics + Idempotency wired, start from [assets/powertools-handler.py](../assets/powertools-handler.py).
+Use **Powertools for AWS Lambda** (Python, TypeScript, Java, .NET) for structured logging, X-Ray tracing, EMF metrics, idempotency, batch processing, event handling, and parameter caching. The APIs are well-documented at [docs.powertools.aws.dev](https://docs.powertools.aws.dev/lambda/); for a ready-to-use Python handler with Logger + Tracer + Metrics + Idempotency wired, start from [assets/powertools-handler.py](../../../../skills/aws-serverless/assets/powertools-handler.py).
 
 Powertools adds cold-start overhead — use selective imports when cold start is critical.
 
 **Useful Powertools env vars:** `POWERTOOLS_SERVICE_NAME`, `POWERTOOLS_METRICS_NAMESPACE`, `POWERTOOLS_LOG_LEVEL`, `POWERTOOLS_TRACE_DISABLED` (tests), `POWERTOOLS_DEV` (pretty-print).
 
-**Packaging quick facts:** 50 MB zipped / 250 MB unzipped (incl. layers) → switch to container image (10 GB) past that. Max 5 layers/function; layers don't work with container images. Use `uv pip install` (10–100× faster than pip) and `--platform manylinux2014_{x86_64,aarch64} --only-binary=:all:` for cross-platform builds, or let `sam build` handle it. See [troubleshooting.md](troubleshooting.md) for size/import errors.
+**Packaging quick facts:** 50 MB zipped / 250 MB unzipped (incl. layers) → switch to container image (10 GB) past that. Max 5 layers/function; layers don't work with container images. Use `uv pip install` (10–100× faster than pip) and `--platform manylinux2014_{x86_64,aarch64} --only-binary=:all:` for cross-platform builds, or let `sam build` handle it. See [troubleshooting.md](../../../../skills/aws-serverless/references/troubleshooting.md) for size/import errors.

@@ -72,7 +72,7 @@ Prefer **micro-Lambda** (function per route) for greenfield: per-function least-
 
 ### Reserved vs Provisioned Concurrency
 
-Reserved = guarantee capacity + protect downstream (cold starts still possible, throttles at the limit). Provisioned = eliminate cold starts (spills to on-demand beyond the count). Need both → provisioned ≤ reserved. Try **SnapStart** before Provisioned for Java/Python 3.12+/.NET 8+ (no cost for Java). See [concurrency.md](concurrency.md).
+Reserved = guarantee capacity + protect downstream (cold starts still possible, throttles at the limit). Provisioned = eliminate cold starts (spills to on-demand beyond the count). Need both → provisioned ≤ reserved. Try **SnapStart** before Provisioned for Java/Python 3.12+/.NET 8+ (no cost for Java). See [concurrency.md](../../../../skills/aws-serverless/references/concurrency.md).
 
 ---
 

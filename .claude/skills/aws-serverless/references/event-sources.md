@@ -141,7 +141,7 @@ Response edge cases that cause a **complete batch retry**: `itemIdentifier` empt
 
 Streams interaction: an unhandled **exception** triggers `BisectBatchOnFunctionError` (no response returned, so `ReportBatchItemFailures` has no effect); a **success with `batchItemFailures`** checkpoints at the lowest failed sequence number.
 
-The Powertools Batch Processor (`process_partial_response`) handles all of this — prefer it over hand-rolled loops. See [assets/powertools-handler.py](../assets/powertools-handler.py).
+The Powertools Batch Processor (`process_partial_response`) handles all of this — prefer it over hand-rolled loops. See [assets/powertools-handler.py](../../../../skills/aws-serverless/assets/powertools-handler.py).
 
 ---
 
@@ -162,4 +162,4 @@ DynamoDB/Kinesis:   number_of_shards × ParallelizationFactor
 
 ### Idempotency
 
-All event sources deliver at-least-once — duplicates happen. Make handlers idempotent (Powertools Idempotency utility, keyed e.g. on SQS `messageId`). See [production.md](production.md#idempotency).
+All event sources deliver at-least-once — duplicates happen. Make handlers idempotent (Powertools Idempotency utility, keyed e.g. on SQS `messageId`). See [production.md](../../../../skills/aws-serverless/references/production.md#idempotency).
