@@ -4,6 +4,11 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
+## [0.7.2] — 2026-11-04
+
+### Fixed
+- Windows integration, installation health state and claim-drift evidence.
+
 ## [0.7.1] — 2026-10-23
 
 ### Fixed
