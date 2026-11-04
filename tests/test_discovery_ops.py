@@ -261,7 +261,7 @@ class TestPonteirosDeKnowledge:
     def test_todos_os_hosts_do_projeto_recebem_ponteiros(self, tmp_path):
         for nome in HOSTS:
             _, plano = self._plano(tmp_path / nome, host=nome)
-            assert any("knowledge/README.md" in str(d) for d in plano), nome
+            assert any("knowledge/README.md" in d.as_posix() for d in plano), nome
 
 
 class TestOffline:

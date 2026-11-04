@@ -752,7 +752,11 @@ def referenced_knowledge_paths(text: str, *, canonical_dir: str) -> set[str]:
         if target.startswith(("http://", "https://", "mailto:", "#", "/")):
             continue
         path_part = target.partition("#")[0]
-        resolved = PurePosixPath(os.path.normpath(str(base / path_part)))
+        # The canonical document graph uses POSIX separators even when the
+        # installer is running on Windows.  ``os.path.normpath`` would turn
+        # the graph into a backslash-containing single path component and
+        # hide valid ``knowledge/...`` references from the pointer planner.
+        resolved = PurePosixPath(posixpath.normpath(str(base / path_part)))
         partes = resolved.parts
         if partes and partes[0] == "knowledge" and len(partes) > 1:
             rel = resolved.relative_to("knowledge").as_posix()

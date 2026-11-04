@@ -45,20 +45,41 @@ def _version() -> str:
 def _health_state(status: dict[str, Any], doctor: dict[str, Any] | None) -> str:
     """Map the real lifecycle vocabulary — healthy|degraded|unverified|broken —
     onto the contract InstallState."""
-    st = str((doctor or status).get("status") or "unverified").lower()
-    if st == "unverified":
+    # Installation state is authoritative for the first distinction.  A
+    # fresh workspace can legitimately fail the optional MCP liveness probe
+    # (for example when its host dependencies are absent) while still being
+    # simply NOT_INSTALLED; the probe must not turn that honest state into
+    # DEGRADED.  Likewise, a completed install remains INSTALLED when only
+    # the external host probe is unavailable.
+    ledger_entries = int(status.get("ledger_entries") or 0)
+    # Minimal/config-only installs may own no regular files yet, but they do
+    # leave a host entry and a healthy installation document.  That is still
+    # an installed workspace, not an empty one.
+    has_installation = ledger_entries > 0 or bool(status.get("hosts"))
+    install_state = str(status.get("status") or "unverified").lower()
+    if not has_installation:
         return "NOT_INSTALLED"
-    if st in ("degraded", "broken"):
-        return "DEGRADED"
-    if st == "healthy":
-        checks = {c.get("id"): c.get("status") for c in (doctor or {}).get("checks", [])}
-        mcp = checks.get("mcp-handshake")
-        if mcp == "PASS":
-            return "VERIFIED"
-        if mcp in ("UNVERIFIED", "NOT_APPLICABLE"):
-            return "ACTIVE"
+    if install_state == "unverified":
         return "INSTALLED"
-    return "NOT_INSTALLED"
+    if install_state in ("degraded", "broken"):
+        install_check = next(
+            (
+                c.get("status")
+                for c in (doctor or {}).get("checks", [])
+                if c.get("id") == "install-state"
+            ),
+            None,
+        )
+        if install_check not in ("PASS", "OK"):
+            return "DEGRADED"
+
+    checks = {c.get("id"): c.get("status") for c in (doctor or {}).get("checks", [])}
+    mcp = checks.get("mcp-handshake")
+    if mcp == "PASS":
+        return "VERIFIED"
+    if mcp in ("UNVERIFIED", "NOT_APPLICABLE"):
+        return "ACTIVE"
+    return "INSTALLED"
 
 
 class SparkForgePortal(fp.PortalAdapter):

@@ -5,7 +5,9 @@ nenhuma decisao de rota. `analyze` e `judge` sao verbos separados de proposito
 -- extracao e julgamento sao passos independentes, o que permite rejulgar
 facts antigos com um catalogo novo sem reprocessar o codigo-fonte.
 
-Toda saida e JSON em stdout (`json.dumps(..., indent=2, ensure_ascii=False)`).
+    Toda saida e JSON em stdout. Em pipes, a serializacao e ASCII-safe para que
+    consumidores Windows que ainda decodificam a saida na code page local nao
+    quebrem ao encontrar texto UTF-8 do catalogo.
 Erros nunca sao genericos: cada um carrega a causa e o comando que resolve,
 via `_core.AdapterError`, tratado uma unica vez em `main()`.
 """
@@ -70,7 +72,11 @@ def _positive_int(value: str) -> int:
 
 def _print(payload: Any) -> None:
     _ULTIMA_SAIDA[:] = [payload]
-    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    # JSON escaped as ASCII is semantically identical and remains readable by
+    # old Windows subprocess readers that ignore the child's UTF-8 stream
+    # declaration. Interactive callers still receive valid JSON without a
+    # locale-dependent encoding contract.
+    print(json.dumps(payload, indent=2, ensure_ascii=True))
 
 
 def _load_json_list(path: str) -> list[dict[str, Any]]:
