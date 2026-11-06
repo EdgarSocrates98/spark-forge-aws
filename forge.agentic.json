@@ -45,7 +45,21 @@
   "skills": [
     "spark-performance-architect"
   ],
-  "agents": [],
+  "agents": [
+    "athena-query-optimizer",
+    "cdc-contract-reviewer",
+    "data-quality-reviewer",
+    "emr-infra-reviewer",
+    "glue-incremental-performance-architect",
+    "glue-infra-reviewer",
+    "iceberg-performance-engineer",
+    "pyspark-code-reviewer",
+    "sf-lake-formation-specialist",
+    "sf-runtime-specialist",
+    "sf-security-reviewer",
+    "sf-terraform-specialist",
+    "streaming-realtime-architect"
+  ],
   "coordinators": [
     "spark-performance-architect"
   ],
