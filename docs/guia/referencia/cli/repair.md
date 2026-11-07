@@ -14,6 +14,7 @@ sparkforge-aws repair --help
 |---|---|---|---|---|---|
 | `--scope` | não | `project`, `workspace`, `user` |  | `project` |  |
 | `--root` | não | texto |  |  |  |
+| `--yes`, `-y` | não | liga/desliga |  |  | Aprovacao explicita; sem ela, --dry-run. |
 | `--dry-run` | não | liga/desliga |  |  |  |
 
 ## Tool MCP equivalente

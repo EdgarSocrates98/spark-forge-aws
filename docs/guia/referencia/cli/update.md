@@ -14,6 +14,7 @@ sparkforge-aws update --help
 |---|---|---|---|---|---|
 | `--to` | não | texto |  |  | Versao pinned (nunca 'latest'). |
 | `--repo` | não | texto |  |  | Checkout para instalar/atualizar. |
+| `--yes`, `-y` | não | liga/desliga |  |  | Aprovacao explicita; sem ela, --dry-run. |
 | `--dry-run` | não | liga/desliga |  |  |  |
 
 ## Tool MCP equivalente
