@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "scenario_id": "spark-diagnostic-golden-path",
+  "provider": "spark-forge-aws",
+  "purpose": "Deterministic replay contract for a Spark diagnosis before any live execution.",
+  "evidence_states": [
+    "PREPARED",
+    "REPLAY_VERIFIED",
+    "LIVE_EXECUTED",
+    "INDEPENDENTLY_VERIFIED"
+  ],
+  "fixtures": {
+    "positive": {
+      "id": "collect_unbounded",
+      "input": "fixtures/pyspark/collect_unbounded/input",
+      "expected_facts": "fixtures/pyspark/collect_unbounded/expected/facts.json",
+      "expected_findings": "fixtures/pyspark/collect_unbounded/expected/findings.json",
+      "expected_rule_ids": ["SF-PY-002"],
+      "sha256": {
+        "fixtures/pyspark/collect_unbounded/input/lib/job.py": "6ed5761e86ec568c5f738c694a472d90fd7a83426ac1d7c50d492d477780b5a3",
+        "fixtures/pyspark/collect_unbounded/expected/facts.json": "2c1b08f1aa31d53f4921ffbff44bdccc4d9964307f1ad509fc2bfc6cba6e2e34",
+        "fixtures/pyspark/collect_unbounded/expected/findings.json": "8beb57f0d787d03d9e4915e32044280b866515f2fc6843328caef12d97fda91f"
+      }
+    },
+    "negative": {
+      "id": "clean_job",
+      "input": "fixtures/pyspark/clean_job/input",
+      "expected_facts": "fixtures/pyspark/clean_job/expected/facts.json",
+      "expected_findings": "fixtures/pyspark/clean_job/expected/findings.json",
+      "expected_rule_ids": [],
+      "sha256": {
+        "fixtures/pyspark/clean_job/input/lib/job.py": "7322f5e505a69dc65464d15d7bffc7148653ce83427e51120c182a5ebe6778d0",
+        "fixtures/pyspark/clean_job/expected/facts.json": "d9e1384ebbf092176e29f89f6ec8cb4ddbaaf7268f0c35849ecb9cebd522d804",
+        "fixtures/pyspark/clean_job/expected/findings.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      }
+    }
+  },
+  "evidence": {
+    "replay": {
+      "state": "REPLAY_VERIFIED",
+      "status": "VERIFIED",
+      "source": "checked_in_fixture_and_oracle",
+      "claims": ["facts", "findings", "rule_ids"]
+    },
+    "live": {
+      "state": "LIVE_EXECUTED",
+      "status": "NOT_RUN",
+      "source": "none",
+      "claims": [],
+      "reason": "This golden path never implies an AWS or Spark runtime execution."
+    },
+    "independent": {
+      "state": "INDEPENDENTLY_VERIFIED",
+      "status": "NOT_RUN",
+      "source": "none",
+      "claims": [],
+      "reason": "An independent receipt must be attached by an operator or verifier; the replay oracle is not independent evidence."
+    }
+  },
+  "failure_policy": {
+    "missing_input": "UNRESOLVED",
+    "hash_mismatch": "BLOCKED",
+    "oracle_mismatch": "BLOCKED",
+    "negative_finding": "BLOCKED"
+  }
+}
