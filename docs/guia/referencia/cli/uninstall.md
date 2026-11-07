@@ -16,6 +16,7 @@ sparkforge-aws uninstall --help
 | `--host` | não | `claude`, `devin`, `codex`, `copilot`, `all` |  | `all` |  |
 | `--root` | não | texto |  |  |  |
 | `--purge` | não | liga/desliga |  |  | Apaga tambem o state dir .sparkforge_aws/install. |
+| `--yes`, `-y` | não | liga/desliga |  |  | Aprovacao explicita; sem ela, --dry-run. |
 | `--dry-run` | não | liga/desliga |  |  |  |
 
 ## Tool MCP equivalente
