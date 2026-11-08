@@ -122,6 +122,19 @@ def test_resumo_saudavel_so_sem_fail():
     assert ruim["healthy"] is False
 
 
+def test_resumo_online_recusa_prontidao_sem_identidade_confirmada():
+    """An online gate cannot pass on skips/warnings from an unresolved identity."""
+    sem_identidade = dr.resumo(
+        [dr.Checagem("credencial_aws", dr.WARN, "nenhuma credencial")], online=True
+    )
+    assert sem_identidade["healthy"] is False
+
+    confirmado = dr.resumo(
+        [dr.Checagem("credencial_aws", dr.OK, "conta 123")], online=True
+    )
+    assert confirmado["healthy"] is True
+
+
 
 
 def test_doctor_de_verdade_tem_as_treze_checagens(tmp_path, home_isolado):

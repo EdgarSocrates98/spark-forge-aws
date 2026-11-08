@@ -243,9 +243,15 @@ def avaliar_integracoes(
 
 def resumo(checagens: list[Checagem], online: bool) -> dict[str, Any]:
     contagem = {s: sum(1 for c in checagens if c.status == s) for s in STATUS}
+    credencial = next((c for c in checagens if c.id == "credencial_aws"), None)
+    # `--online` is an explicit claim boundary: a live-ready doctor result must
+    # prove the AWS identity, not merely avoid a `fail` from the offline checks.
+    # In offline mode the credential check is intentionally advisory, so keep
+    # the historical healthy/degraded semantics for local-only workflows.
+    online_ready = not online or (credencial is not None and credencial.status == OK)
     return {
         "checks": [c.to_dict() for c in checagens],
         "counts": contagem,
-        "healthy": contagem[FAIL] == 0,
+        "healthy": contagem[FAIL] == 0 and online_ready,
         "online": online,
     }
