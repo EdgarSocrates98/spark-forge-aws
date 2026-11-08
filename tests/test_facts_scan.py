@@ -119,6 +119,12 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "esta forge escreve, confinado ao workspace root do chamador, nunca "
         "arvore de cliente"
     ),
+    "lab/runtime.py": (
+        "varre os arquivos de evento copiados para o diretorio de execucao "
+        "efemero criado pela propria live lab; a raiz e controlada pelo "
+        "runtime e os arquivos `.crc`/vazios sao descartados antes da analise, "
+        "nunca uma arvore de cliente"
+    ),
 }
 
 
