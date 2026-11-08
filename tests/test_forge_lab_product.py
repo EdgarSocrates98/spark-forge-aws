@@ -7,6 +7,7 @@ prompt. They stay executable and are not replaced by smoke-only assertions.
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from sparkforge_aws.lab.contract import load_version_registry
 from sparkforge_aws.lab.scenario import load_scenario_suite
@@ -46,6 +47,71 @@ def test_runtime_backends_share_plan_and_mutations_are_guarded() -> None:
 
     assert compose.actions == testcontainers.actions
     assert build_runtime_plan(scenario, backend="compose", execute=False).requires_confirmation
+
+
+def test_runtime_executor_proves_live_compose_and_engine(monkeypatch) -> None:
+    from sparkforge_aws.lab.runtime import execute_runtime_command
+
+    calls: list[list[str]] = []
+
+    def fake_run(argv, **kwargs):
+        command = list(argv)
+        calls.append(command)
+        if "ps" in command:
+            output = '{"Service":"spark","State":"running"}\n'
+        elif "image" in command:
+            output = '["apache/spark@sha256:' + "a" * 64 + '"]'
+        else:
+            output = "spark version 4.2.0"
+        return SimpleNamespace(returncode=0, stdout=output, stderr="")
+
+    monkeypatch.setattr("sparkforge_aws.lab.runtime.shutil.which", lambda _: "docker")
+    monkeypatch.setattr("sparkforge_aws.lab.runtime.subprocess.run", fake_run)
+    result = execute_runtime_command(
+        (
+            "docker",
+            "compose",
+            "--project-name",
+            "forge-lab-test",
+            "--profile",
+            "batch",
+            "-f",
+            "labs/forge-lab/compose.yaml",
+            "up",
+            "--detach",
+        ),
+        repo=ROOT,
+        probe_service="spark",
+    )
+
+    assert result["status"] == "LIVE_STARTED"
+    assert result["engine_probe"]["status"] == "PASS"
+    assert result["image_digests"]["spark"].startswith("sha256:")
+    assert all(
+        call[0:2] == ["docker", "compose"] or call[0:2] == ["docker", "image"]
+        for call in calls
+    )
+    assert all("shell=True" not in call for call in calls)
+
+
+def test_runtime_executor_reports_missing_docker(monkeypatch) -> None:
+    from sparkforge_aws.lab.runtime import execute_runtime_command
+
+    monkeypatch.setattr("sparkforge_aws.lab.runtime.shutil.which", lambda _: None)
+    result = execute_runtime_command(("docker", "compose", "up"), repo=ROOT)
+
+    assert result["status"] == "INFRA_FAILURE"
+    assert result["classification"] == "INFRA_FAILURE"
+
+
+def test_down_selects_all_profiles_for_cleanup() -> None:
+    from sparkforge_aws.lab.runtime import build_lifecycle_command
+
+    command = build_lifecycle_command(
+        "down", project_name="forge-lab-test", profile="*"
+    )
+
+    assert command[-4:] == ("--profile", "*", "down", "--remove-orphans")
 
 
 def test_receipt_oracle_and_equivalence_are_independent(tmp_path: Path) -> None:

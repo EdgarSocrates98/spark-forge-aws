@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${LAB_POSTGRES_PASSWORD:?Set LAB_POSTGRES_PASSWORD}
       POSTGRES_DB: ${LAB_POSTGRES_DB:-orders}
     healthcheck:
-      test: [CMD-SHELL, pg_isready -U ${LAB_POSTGRES_USER:-sparkforge-aws}]
+      test: ["CMD-SHELL", "pg_isready -U ${LAB_POSTGRES_USER:-sparkforge-aws}"]
 
   kafka:
     image: ${LAB_KAFKA_IMAGE:?Set LAB_KAFKA_IMAGE to a pinned local image}

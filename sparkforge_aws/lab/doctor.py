@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import platform
 import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -54,13 +55,42 @@ def run_doctor(
     checks: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
     docker = shutil.which("docker")
-    checks.append(
-        {"name": "docker", "status": "available" if docker else "unavailable", "path": docker or ""}
-    )
+    daemon_ready = False
+    if docker:
+        try:
+            daemon = subprocess.run(  # noqa: S603 - executable resolved by shutil.which
+                [docker, "info", "--format", "{{.ServerVersion}}"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            daemon = None
+            daemon_reason = str(exc)
+        else:
+            daemon_reason = daemon.stderr.strip() if daemon.returncode else ""
+            daemon_ready = daemon.returncode == 0
+        checks.append(
+            {
+                "name": "docker",
+                "status": "available" if daemon_ready else "unavailable",
+                "path": docker,
+                "daemon_version": (
+                    daemon.stdout.strip() if daemon and daemon.returncode == 0 else ""
+                ),
+                "reason": daemon_reason,
+            }
+        )
+    else:
+        checks.append({"name": "docker", "status": "unavailable", "path": ""})
     checks.append(
         {
             "name": "compose",
-            "status": "available" if docker else "unresolved",
+            "status": "available" if daemon_ready else "unavailable",
             "reason": "requires docker compose plugin",
         }
     )
