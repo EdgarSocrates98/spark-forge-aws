@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .contract import LabContractError, VersionRegistry, load_version_registry
+from .generators import generate_records, write_jsonl
 from .scenario import ScenarioAction, ScenarioSpec
 
 COMPOSE_PROFILES = {
@@ -337,6 +338,279 @@ def execute_runtime_command(
     return result
 
 
+def execute_scenario(
+    scenario: ScenarioSpec,
+    plan: RuntimePlan,
+    *,
+    repo: str | Path,
+    timeout: float = 300.0,
+) -> dict[str, Any]:
+    """Execute the implemented local golden path and preserve its receipt.
+
+    LAB-002 is the first real L1 scenario: it generates a bounded dataset,
+    submits a deterministic PySpark job to the live Compose service, copies
+    the event log out, runs the existing analyzer and rule judge, compares the
+    observed evidence with the independent oracle, and finally stops the lab
+    while preserving the run directory.
+    """
+
+    if plan.backend != "compose":
+        return {
+            "status": "UNRESOLVED",
+            "classification": "UNRESOLVED",
+            "reason": "live scenario execution is currently implemented for Compose only",
+            "scenario_actions_executed": False,
+        }
+    probe_service = (
+        "spark" if scenario.resource.profile in {"spark", "streaming", "lakehouse"} else ""
+    )
+    runtime = execute_runtime_command(
+        plan.command,
+        repo=repo,
+        timeout=timeout,
+        probe_service=probe_service,
+    )
+    if runtime.get("status") != "LIVE_STARTED":
+        runtime["scenario_actions_executed"] = False
+        return runtime
+    if scenario.scenario_id != "LAB-002":
+        runtime.update(
+            {
+                "status": "LIVE_STARTED",
+                "scenario_actions_executed": False,
+                "reason": "live engine bootstrap is proven; this scenario has no executor yet",
+            }
+        )
+        return runtime
+
+    from .evidence import compare_oracle, create_run, finalize_receipt, verify_receipt
+    from .oracle import ExpectedOracle
+
+    root = Path(repo).expanduser().resolve()
+    registry = runtime.get("registry", {})
+    run = create_run(
+        root,
+        scenario,
+        seed=int(scenario.dataset["seed"]),
+        environment={
+            "backend": "docker-compose",
+            "fidelity": "L1",
+            "scenario_actions": "live_local_spark",
+        },
+        versions={"registry": registry, "image_digests": runtime.get("image_digests", {})},
+    )
+    input_path = run / "input" / "dataset.jsonl"
+    write_jsonl(
+        input_path,
+        generate_records(
+            str(scenario.dataset["schema"]),
+            seed=int(scenario.dataset["seed"]),
+            record_count=int(scenario.dataset["records"]),
+            key_cardinality=int(scenario.dataset["key_cardinality"]),
+            skew=float(scenario.dataset["skew"]),
+            late_event_ratio=float(scenario.dataset.get("late_event_ratio", 0)),
+            duplicate_ratio=float(scenario.dataset.get("duplicate_ratio", 0)),
+        ),
+    )
+    compose_prefix = plan.command[: plan.command.index("up")]
+    run_token = run.name
+    remote_job = f"/tmp/forge-lab-{run_token}.py"  # noqa: S108 - unique in isolated container
+    remote_output = f"/tmp/forge-lab-{run_token}.json"  # noqa: S108 - unique in isolated container
+    remote_events = f"/tmp/forge-lab-events-{run_token}"  # noqa: S108 - unique in isolated container
+    job_source = Path(__file__).parent / "jobs" / "skew.py"
+    environment, _ = build_runtime_environment(root)
+    copy_job = _run_process(
+        tuple((*compose_prefix, "cp", str(job_source), f"spark:{remote_job}")),
+        root,
+        environment,
+        timeout,
+    )
+    if copy_job.get("returncode") != 0:
+        return _scenario_failure(
+            runtime,
+            run,
+            copy_job,
+            "failed to copy the Spark scenario job",
+            repo=root,
+            project_name=plan.project_name,
+            timeout=timeout,
+        )
+
+    partitions = int(scenario.setup.get("spark", {}).get("partitions", 4))
+    submit_command = tuple(
+        (
+            *compose_prefix,
+            "exec",
+            "-T",
+            "spark",
+            "/opt/spark/bin/spark-submit",
+            "--master",
+            "local[2]",
+            remote_job,
+            "--output",
+            remote_output,
+            "--event-dir",
+            remote_events,
+            "--records",
+            str(scenario.dataset["records"]),
+            "--cardinality",
+            str(scenario.dataset["key_cardinality"]),
+            "--skew",
+            str(scenario.dataset["skew"]),
+            "--partitions",
+            str(partitions),
+            "--seed",
+            str(scenario.dataset["seed"]),
+        )
+    )
+    submitted = _run_process(submit_command, root, environment, timeout)
+    (run / "logs" / "spark-submit.txt").write_text(
+        json.dumps(submitted, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    if submitted.get("returncode") != 0:
+        return _scenario_failure(
+            runtime,
+            run,
+            submitted,
+            "Spark scenario job failed",
+            repo=root,
+            project_name=plan.project_name,
+            timeout=timeout,
+        )
+
+    observed_path = run / "metrics" / "observed.json"
+    copied_observed = _run_process(
+        tuple((*compose_prefix, "cp", f"spark:{remote_output}", str(observed_path))),
+        root,
+        environment,
+        timeout,
+    )
+    if copied_observed.get("returncode") != 0 or not observed_path.is_file():
+        return _scenario_failure(
+            runtime,
+            run,
+            copied_observed,
+            "Spark observation artifact was not copied",
+            repo=root,
+            project_name=plan.project_name,
+            timeout=timeout,
+        )
+    observed = json.loads(observed_path.read_text(encoding="utf-8"))
+    if not isinstance(observed, dict) or not isinstance(observed.get("facts"), list):
+        return _scenario_failure(
+            runtime,
+            run,
+            {},
+            "Spark observation artifact has invalid shape",
+            repo=root,
+            project_name=plan.project_name,
+            timeout=timeout,
+        )
+
+    event_destination = run / "spark" / "event-log"
+    event_destination.mkdir(parents=True, exist_ok=True)
+    copied_events = _run_process(
+        tuple((*compose_prefix, "cp", f"spark:{remote_events}", str(event_destination))),
+        root,
+        environment,
+        timeout,
+    )
+    event_files = sorted(
+        path
+        for path in event_destination.rglob("*")
+        if path.is_file() and not path.name.endswith(".crc") and path.stat().st_size > 0
+    )
+    if copied_events.get("returncode") != 0 or not event_files:
+        return _scenario_failure(
+            runtime,
+            run,
+            copied_events,
+            "Spark event log was not copied",
+            repo=root,
+            project_name=plan.project_name,
+            timeout=timeout,
+        )
+
+    from sparkforge_aws.adapters import _core
+
+    event_files.sort(key=lambda path: path.stat().st_size, reverse=True)
+    event_analysis = _core.analyze_event_log(str(event_files[0]), kind=None, limit=None)
+    event_facts = list(event_analysis.get("items", []))
+    facts = [*event_facts, *observed["facts"]]
+    facts_path = run / "facts" / "event-log.json"
+    facts_path.write_text(json.dumps(facts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    judged = _core.judge_findings(facts_path=str(facts_path), limit=None)
+    findings = list(judged.get("items", []))
+    oracle = ExpectedOracle.from_scenario(scenario)
+    unresolved = event_analysis.get("unresolved", [])
+    if not isinstance(unresolved, list):
+        unresolved = [f"event_log_unresolved:{unresolved}"] if unresolved else []
+    oracle_result = compare_oracle(
+        oracle,
+        facts=facts,
+        findings=findings,
+        unresolved=unresolved,
+    )
+    receipt = finalize_receipt(run, oracle_result, facts=facts, findings=findings)
+    cleanup = execute_runtime_command(
+        build_lifecycle_command("down", project_name=plan.project_name, profile="*"),
+        repo=root,
+        timeout=timeout,
+    )
+    return {
+        **runtime,
+        "status": oracle_result.classification,
+        "classification": oracle_result.classification,
+        "runtime_status": "LIVE_STARTED",
+        "scenario_actions_executed": True,
+        "run": run.as_posix(),
+        "oracle": oracle_result.to_dict(),
+        "receipt": {
+            "path": (run / "receipt.json").as_posix(),
+            "verification": verify_receipt(run / "receipt.json"),
+            "sha256": receipt["receipt_sha256"],
+        },
+        "cleanup": cleanup,
+        "fidelity": {
+            "tier": "L1",
+            "name": "real_local_engine",
+            "scenario_actions_executed": True,
+            "does_not_prove": [
+                "cloud-provider behavior",
+                "production-scale performance",
+                "L3 AWS identity or authorization",
+            ],
+        },
+    }
+
+
+def _scenario_failure(
+    runtime: dict[str, Any],
+    run: Path,
+    evidence: dict[str, Any],
+    reason: str,
+    *,
+    repo: Path,
+    project_name: str,
+    timeout: float,
+) -> dict[str, Any]:
+    cleanup = execute_runtime_command(
+        build_lifecycle_command("down", project_name=project_name, profile="*"),
+        repo=repo,
+        timeout=timeout,
+    )
+    return {
+        **runtime,
+        "status": "INFRA_FAILURE",
+        "classification": "INFRA_FAILURE",
+        "reason": reason,
+        "scenario_actions_executed": False,
+        "run": run.as_posix(),
+        "evidence": evidence,
+        "cleanup": cleanup,
+    }
+
+
 def _run_process(
     command: tuple[str, ...], root: Path, environment: dict[str, str], timeout: float
 ) -> dict[str, Any]:
@@ -444,5 +718,6 @@ __all__ = [
     "build_runtime_environment",
     "build_runtime_plan",
     "execute_runtime_command",
+    "execute_scenario",
     "guard_mutation",
 ]

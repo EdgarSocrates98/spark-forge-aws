@@ -44,7 +44,7 @@ scenarios:
     workload: {rate: 100, steps: 3, partition_key: {strategy: entity_id}}
     fault: {type: none}
     observe: [spark.task_duration_spread, spark.partition_distribution]
-    expected: {facts: [spark.partition.skew], findings: [SF-PY-SKEW], must_not_find: [], unresolved: [], analyzers: [event-log], artifact_paths: [spark]}
+    expected: {facts: [spark.partition.skew], findings: [SF-UI-001], must_not_find: [], unresolved: [], analyzers: [event-log], artifact_paths: [spark]}
     cleanup: {preserve_artifacts: true}
     experiment_plan: {hypothesis: "hot keys create partition imbalance", independent_variable: skew, controlled: [seed, record_count], measure: [task_duration_spread], success: fact_present}
   - id: LAB-003

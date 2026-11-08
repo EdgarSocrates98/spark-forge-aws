@@ -14,6 +14,7 @@ from .runtime import (
     build_lifecycle_command,
     build_runtime_plan,
     execute_runtime_command,
+    execute_scenario,
     guard_mutation,
 )
 from .scenario import load_scenario_suite
@@ -79,17 +80,7 @@ def dispatch(args: Any) -> dict[str, Any]:
         if args.lab_action == "run":
             if args.execute:
                 guard_mutation(execute=True, confirm=args.confirm)
-                probe_service = (
-                    "spark"
-                    if scenario.resource.profile in {"spark", "streaming", "lakehouse"}
-                    else ""
-                )
-                payload["execution"] = execute_runtime_command(
-                    plan.command,
-                    repo=repo,
-                    probe_service=probe_service,
-                )
-                payload["execution"]["scenario_actions_executed"] = False
+                payload["execution"] = execute_scenario(scenario, plan, repo=repo)
             else:
                 payload["execution"] = {
                     "status": "planned",
