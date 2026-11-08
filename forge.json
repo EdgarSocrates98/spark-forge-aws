@@ -14,8 +14,9 @@
     "mcp"
   ],
   "lab": {
+    "extras": [],
     "command": [
-      "{checkout}/.venv/bin/python",
+      "{python}",
       "scripts/lab/sparkforge_aws_lab.py",
       "--checkout",
       "{checkout}",
