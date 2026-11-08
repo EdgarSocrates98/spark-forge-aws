@@ -10,7 +10,12 @@ from .compatibility import build_equivalence_plan
 from .contract import LabContractError, load_version_registry
 from .doctor import PROFILE_REQUIREMENTS, run_doctor
 from .evidence import promote_fixture, verify_receipt
-from .runtime import build_lifecycle_command, build_runtime_plan, guard_mutation
+from .runtime import (
+    build_lifecycle_command,
+    build_runtime_plan,
+    execute_runtime_command,
+    guard_mutation,
+)
 from .scenario import load_scenario_suite
 
 
@@ -74,10 +79,17 @@ def dispatch(args: Any) -> dict[str, Any]:
         if args.lab_action == "run":
             if args.execute:
                 guard_mutation(execute=True, confirm=args.confirm)
-                payload["execution"] = {
-                    "status": "unresolved",
-                    "reason": "runtime execution adapter must be enabled on host",
-                }
+                probe_service = (
+                    "spark"
+                    if scenario.resource.profile in {"spark", "streaming", "lakehouse"}
+                    else ""
+                )
+                payload["execution"] = execute_runtime_command(
+                    plan.command,
+                    repo=repo,
+                    probe_service=probe_service,
+                )
+                payload["execution"]["scenario_actions_executed"] = False
             else:
                 payload["execution"] = {
                     "status": "planned",
@@ -112,19 +124,23 @@ def dispatch(args: Any) -> dict[str, Any]:
         if args.lab_action == "up":
             command = build_lifecycle_command("up", project_name=args.project, profile=args.profile)
         elif args.lab_action == "down":
-            command = build_lifecycle_command("down", project_name=args.project)
+            command = build_lifecycle_command("down", project_name=args.project, profile="*")
         elif args.lab_action == "shell":
             command = build_lifecycle_command(
                 "shell", project_name=args.project, service=args.service
             )
         else:
             command = build_lifecycle_command("gc", project_name=args.project)
-        return {
+        result = {
             "action": args.lab_action,
             "command": list(command),
             "execute": args.execute,
             "status": "planned" if not args.execute else "unresolved_host_execution",
         }
+        if args.execute and args.lab_action in {"up", "down", "gc"}:
+            result["execution"] = execute_runtime_command(command, repo=repo)
+            result["status"] = result["execution"]["status"]
+        return result
     raise LabContractError(f"unknown lab action: {args.lab_action}")
 
 
