@@ -38,6 +38,15 @@ def test_golden_scenarios_compile_to_reusable_actions() -> None:
         assert kinds[-1] == "receipt"
 
 
+def test_spark_skew_golden_path_uses_catalogued_runtime_finding() -> None:
+    scenario = load_scenario_suite(ROOT / "lab" / "scenarios" / "golden.yaml").by_id("LAB-002")
+
+    assert scenario.expected["facts"] == ["spark.partition.skew"]
+    assert scenario.expected["findings"] == ["SF-UI-001"]
+    assert "SF-PY-SKEW" not in scenario.expected["findings"]
+    assert (ROOT / "sparkforge_aws" / "lab" / "jobs" / "skew.py").is_file()
+
+
 def test_runtime_backends_share_plan_and_mutations_are_guarded() -> None:
     from sparkforge_aws.lab.runtime import build_runtime_plan
 
