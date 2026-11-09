@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1298.8 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1295.8 vezes.** Contra a saída de um `grep`
 pelo nome, **13.2** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.9** vezes o que aquele `grep` custaria.
 
