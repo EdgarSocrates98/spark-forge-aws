@@ -350,6 +350,8 @@ sparkforge-aws collect parquet-footer --help
 | `--repo` | sim | texto |  |  |  |
 | `--prefix` | sim | texto |  |  | Diretorio local com .parquet, ou s3://bucket/prefixo/. |
 | `--max-files` | não | texto |  |  | Quantos arquivos ler, os primeiros pelo nome (padrao do coletor: 20; teto 500). |
+| `--profile` | não | texto |  |  | Perfil AWS nomeado para prefixos s3://; credenciais nunca entram no artefato. |
+| `--region` | não | texto |  |  | Regiao AWS para o filesystem S3 (ex.: us-east-1). |
 | `--now` | sim | texto |  |  | Timestamp ISO 8601. |
 
 ### Tool MCP equivalente

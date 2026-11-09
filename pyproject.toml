@@ -35,7 +35,7 @@ Changelog = "https://github.com/EdgarSocrates98/spark-forge-aws/blob/main/CHANGE
 Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
 
 [project.optional-dependencies]
-aws = ["boto3>=1.34"]
+aws = ["boto3[crt]>=1.34"]
 # `parquet` e o TERCEIRO extra, e o primeiro fora de `aws`/`mcp`. Ele existe
 # porque `sparkforge_aws/collect/parquet_footer.py` le o RODAPE de arquivos Parquet,
 # e ler o footer exige um parser do formato -- nao ha caminho puro-Python

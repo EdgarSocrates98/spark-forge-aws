@@ -3790,6 +3790,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Quantos arquivos ler, os primeiros pelo nome (padrao do coletor: 20; teto 500).",
     )
+    parquet_collect_p.add_argument(
+        "--profile",
+        dest="aws_profile",
+        help="Perfil AWS nomeado para prefixos s3://; credenciais nunca entram no artefato.",
+    )
+    parquet_collect_p.add_argument(
+        "--region",
+        dest="aws_region",
+        help="Regiao AWS para o filesystem S3 (ex.: us-east-1).",
+    )
     parquet_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
     athena_wg_collect_p = collect_sub.add_parser(
@@ -6082,7 +6092,12 @@ def _cmd_collect_iceberg_metadata(args: argparse.Namespace) -> int:
 
 def _cmd_collect_parquet_footer(args: argparse.Namespace) -> int:
     payload = _core.collect_parquet_footer(
-        args.repo, prefix=args.prefix, now=args.now, max_files=args.max_files
+        args.repo,
+        prefix=args.prefix,
+        now=args.now,
+        max_files=args.max_files,
+        aws_profile=args.aws_profile,
+        aws_region=args.aws_region,
     )
     _print(payload)
     return 0

@@ -77,7 +77,7 @@ sparkforge-aws collect iceberg-metadata --repo . --table <db.tabela> --workgroup
   --output-location <s3://bucket/resultados/> --now <ISO8601>
 aws s3api list-objects-v2 --bucket <bucket> --prefix <prefixo/> > listing.json
 sparkforge-aws collect parquet-footer --repo . --prefix <s3://bucket/tabela/ ou pasta local> \
-  --max-files 20 --now <ISO8601>
+  --max-files 20 [--profile <perfil>] [--region <região>] --now <ISO8601>
 ```
 
 **Sobre o footer.** O `collect parquet-footer` lê só o rodapé dos primeiros arquivos pelo nome

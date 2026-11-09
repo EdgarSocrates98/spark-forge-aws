@@ -47,13 +47,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from sparkforge_aws.collect.aws import (
     CollectionFailed,
     _offline_hit,
     _write_and_register,
 )
-from sparkforge_aws.collect.base import CollectorUnavailable
+from sparkforge_aws.collect.base import CollectorUnavailable, require_boto3
 from sparkforge_aws.facts.scan import iter_source_files
 
 # Teto de arquivos lidos por coleta. Existe pela mesma razao do teto de paginas
@@ -74,6 +75,10 @@ STATUS_PREFIXO_VAZIO = "prefixo_vazio"
 STATUS_SEM_PERMISSAO = "sem_permissao"
 STATUS_SEM_CREDENCIAL = "sem_credencial"
 STATUS_PYARROW_INDISPONIVEL = "pyarrow_indisponivel"
+
+
+class _AwsProfileUnavailable(CollectorUnavailable):
+    """Perfil AWS declarado, mas nao resolvido pelo provider do SDK."""
 
 # Codigos comparados como STRING porque botocore nunca e importado aqui -- mesma
 # disciplina de `require_boto3` em `cloudwatch_logs.py`.
@@ -134,6 +139,8 @@ def _classificar(exc: BaseException) -> str | None:
     """Traduz a excecao no `status` que o operador consegue agir, ou `None`
     quando ela nao e um dos estados nomeados -- e ai ela sobe, porque engolir
     erro desconhecido e como um coletor mente."""
+    if isinstance(exc, _AwsProfileUnavailable):
+        return STATUS_SEM_CREDENCIAL
     if isinstance(exc, CollectorUnavailable):
         return STATUS_PYARROW_INDISPONIVEL
     if type(exc).__name__ in _EXCECOES_SEM_CREDENCIAL:
@@ -189,9 +196,24 @@ def _do_column_chunk(cc: Any) -> dict[str, Any]:
     }
 
 
-def _ler_footer(pq: Any, caminho: str, file_bytes: int) -> dict[str, Any]:
+def _ler_footer(
+    pq: Any,
+    caminho: str,
+    file_bytes: int,
+    *,
+    filesystem: Any | None = None,
+) -> dict[str, Any]:
     """UM arquivo, so o footer. `pq.ParquetFile` le o rodape sob demanda."""
-    metadata = pq.ParquetFile(caminho).metadata
+    caminho_fisico = caminho
+    if filesystem is not None and caminho.startswith(("s3://", "s3a://")):
+        uri = urlsplit(caminho)
+        caminho_fisico = f"{uri.netloc}{uri.path}".strip("/")
+    fonte = (
+        pq.ParquetFile(caminho_fisico, filesystem=filesystem)
+        if filesystem is not None
+        else pq.ParquetFile(caminho)
+    )
+    metadata = fonte.metadata
     grupos = []
     for i in range(metadata.num_row_groups):
         rg = metadata.row_group(i)
@@ -239,6 +261,8 @@ def collect_parquet_footer(
     *,
     now: str,
     max_files: int = _MAX_FILES_PADRAO,
+    aws_profile: str | None = None,
+    aws_region: str | None = None,
 ) -> Any:
     """Le o footer dos primeiros `max_files` arquivos do prefixo e registra.
 
@@ -265,10 +289,17 @@ def collect_parquet_footer(
     status = STATUS_OK
     try:
         pq = require_pyarrow()
-        alvos = _listar(pq, prefix)
+        alvos, filesystem = _listar(
+            pq,
+            prefix,
+            aws_profile=aws_profile,
+            aws_region=aws_region,
+        )
         vistos = len(alvos)
         for caminho, tamanho in alvos[:max_files]:
-            arquivos.append(_ler_footer(pq, caminho, tamanho))
+            arquivos.append(
+                _ler_footer(pq, caminho, tamanho, filesystem=filesystem)
+            )
     except CollectionFailed:
         raise
     except Exception as exc:  # noqa: BLE001 -- reclassificado ou re-levantado abaixo
@@ -301,28 +332,101 @@ def collect_parquet_footer(
         content,
         kind="parquet_footer",
         source=f"parquet:footer:{prefix}",
-        collect_command=(
-            f"sparkforge-aws collect parquet-footer --prefix {prefix} "
-            f"--max-files {max_files}"
+        collect_command=_collect_command(
+            prefix,
+            max_files=max_files,
+            aws_profile=aws_profile,
+            aws_region=aws_region,
         ),
         now=now,
     )
 
 
-def _listar(pq: Any, prefix: str) -> list[tuple[str, int]]:
+def _collect_command(
+    prefix: str,
+    *,
+    max_files: int,
+    aws_profile: str | None,
+    aws_region: str | None,
+) -> str:
+    """Registra uma recoleta sem jamais materializar segredo no manifesto."""
+    comando = (
+        f"sparkforge-aws collect parquet-footer --prefix {prefix} "
+        f"--max-files {max_files}"
+    )
+    if aws_profile:
+        comando += f" --profile {aws_profile}"
+    if aws_region:
+        comando += f" --region {aws_region}"
+    return comando
+
+
+def _s3_filesystem(fs: Any, *, aws_profile: str | None, aws_region: str | None) -> Any:
+    """Cria o filesystem S3 respeitando perfil nomeado sem expor credencial.
+
+    PyArrow resolve variaveis de ambiente e alguns arquivos AWS, mas no Windows
+    um `AWS_PROFILE` sozinho pode nao ser aplicado ao provider nativo do S3.
+    Quando o operador declara `--profile`, usamos a Session do boto3 apenas
+    para obter credenciais congeladas e as entregamos ao PyArrow em memoria.
+    Nenhuma delas entra no artefato, journal ou comando de recoleta.
+    """
+    kwargs: dict[str, Any] = {}
+    if aws_region:
+        kwargs["region"] = aws_region
+    if aws_profile:
+        boto3 = require_boto3()
+        try:
+            session = boto3.Session(
+                profile_name=aws_profile,
+                region_name=aws_region or None,
+            )
+            credentials = session.get_credentials()
+        except Exception as exc:  # noqa: BLE001 -- fronteira nomeada abaixo
+            raise _AwsProfileUnavailable(
+                f"perfil AWS {aws_profile!r} nao pode ser resolvido pela cadeia do boto3"
+            ) from exc
+        if credentials is None:
+            raise _AwsProfileUnavailable(
+                f"perfil AWS {aws_profile!r} nao resolveu credenciais"
+            )
+        frozen = credentials.get_frozen_credentials()
+        kwargs.update(
+            access_key=frozen.access_key,
+            secret_key=frozen.secret_key,
+            session_token=frozen.token,
+        )
+    return fs.S3FileSystem(**kwargs)
+
+
+def _listar(
+    pq: Any,
+    prefix: str,
+    *,
+    aws_profile: str | None = None,
+    aws_region: str | None = None,
+) -> tuple[list[tuple[str, int]], Any | None]:
     """Listagem local ou em S3, sempre ordenada pelo nome."""
     if prefix.startswith(("s3://", "s3a://")):
         import pyarrow.fs as fs
 
-        sistema, caminho = fs.FileSystem.from_uri(prefix)
+        uri = urlsplit(prefix)
+        caminho = f"{uri.netloc}{uri.path}".strip("/")
+        sistema = _s3_filesystem(
+            fs,
+            aws_profile=aws_profile,
+            aws_region=aws_region,
+        )
         seletor = fs.FileSelector(caminho, recursive=True, allow_not_found=False)
         infos = [
             i
             for i in sistema.get_file_info(seletor)
             if i.type == fs.FileType.File and i.path.endswith(".parquet")
         ]
-        return sorted((f"{prefix.split('://')[0]}://{i.path}", i.size) for i in infos)
-    return _listar_local(Path(prefix))
+        return (
+            sorted((f"{uri.scheme}://{i.path}", i.size) for i in infos),
+            sistema,
+        )
+    return _listar_local(Path(prefix)), None
 
 
 __all__ = [

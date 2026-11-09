@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e registra o artefato no manifesto com `kind: parquet_footer`, que `sparkforge_aws_analyze_parquet_footer` e o `sparkforge_aws_scan` leem. Nenhuma linha de dado e lida. A amostra e DECLARADA (os N primeiros pelo nome, teto 500) e sai no artefato. Exige pyarrow (`pip install 'sparkforge-aws[parquet]'`); S3 usa a cadeia padrao de credencial. Prefixo inexistente, vazio ou sem permissao vira `status` no artefato, nao erro.
+Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e registra o artefato no manifesto com `kind: parquet_footer`, que `sparkforge_aws_analyze_parquet_footer` e o `sparkforge_aws_scan` leem. Nenhuma linha de dado e lida. A amostra e DECLARADA (os N primeiros pelo nome, teto 500) e sai no artefato. Exige pyarrow (`pip install 'sparkforge-aws[parquet]'`); S3 usa a cadeia padrao de credencial ou `aws_profile`/`aws_region` quando o host precisa selecionar um perfil nomeado. Prefixo inexistente, vazio ou sem permissao vira `status` no artefato, nao erro.
 
 ## Parâmetros
 
@@ -15,6 +15,8 @@ Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretor
 | `now` | string | sim | Timestamp ISO 8601. |
 | `prefix` | string | sim | Diretorio local com .parquet, ou s3://bucket/prefixo/. |
 | `repo` | string | sim |  |
+| `aws_profile` | string | não | Perfil AWS nomeado para S3; nunca materializa segredo. |
+| `aws_region` | string | não | Regiao AWS do filesystem S3, quando necessario. |
 | `max_files` | integer | não |  |
 
 ## Na CLI

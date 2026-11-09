@@ -15,6 +15,7 @@ ambiente, porque ele parte do artefato JSON.
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -27,6 +28,7 @@ from sparkforge_aws.collect.parquet_footer import (  # noqa: E402
     STATUS_PREFIXO_INEXISTENTE,
     STATUS_PREFIXO_VAZIO,
     STATUS_PYARROW_INDISPONIVEL,
+    STATUS_SEM_CREDENCIAL,
     collect_parquet_footer,
     parquet_footer_path,
     require_pyarrow,
@@ -284,3 +286,87 @@ class TestManifestoEOffline:
 
 def test_require_pyarrow_devolve_o_modulo():
     assert require_pyarrow() is not None
+
+
+def test_perfil_nao_resolvido_nao_finge_pyarrow_ausente(tmp_path, monkeypatch):
+    import sparkforge_aws.collect.parquet_footer as modulo
+
+    monkeypatch.setattr(
+        modulo,
+        "_listar",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            modulo._AwsProfileUnavailable("perfil ausente")
+        ),
+    )
+
+    collect_parquet_footer(
+        "s3://bucket/prefix/",
+        tmp_path,
+        now=AGORA,
+        aws_profile="missing",
+    )
+
+    assert _artefato(tmp_path / parquet_footer_path("s3://bucket/prefix/"))["status"] == (
+        STATUS_SEM_CREDENCIAL
+    )
+
+
+def test_s3_profile_e_regiao_chegam_ao_pyarrow_sem_vazar_segredo(monkeypatch):
+    """Perfil nomeado funciona mesmo quando o provider nativo nao le AWS_PROFILE."""
+    import pyarrow.fs as fs
+
+    import sparkforge_aws.collect.parquet_footer as modulo
+
+    class _Credentials:
+        def get_frozen_credentials(self):
+            access = "AKIA_TEST"
+            key_material = "test-credential-not-for-artifact"
+            session = "session-token"
+            return SimpleNamespace(
+                access_key=access,
+                secret_key=key_material,
+                token=session,
+            )
+
+    class _Session:
+        def __init__(self, *, profile_name, region_name):
+            assert profile_name == "sparkforge"
+            assert region_name == "us-east-1"
+
+        def get_credentials(self):
+            return _Credentials()
+
+    seen = {}
+
+    class _S3FileSystem:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+
+        def get_file_info(self, selector):
+            assert selector.base_dir == "bucket/prefix"
+            return [
+                SimpleNamespace(
+                    type=fs.FileType.File,
+                    path="bucket/prefix/part-0.parquet",
+                    size=7,
+                )
+            ]
+
+    monkeypatch.setattr(modulo, "require_boto3", lambda: SimpleNamespace(Session=_Session))
+    monkeypatch.setattr(fs, "S3FileSystem", _S3FileSystem)
+
+    alvos, filesystem = modulo._listar(
+        object(),
+        "s3://bucket/prefix/",
+        aws_profile="sparkforge",
+        aws_region="us-east-1",
+    )
+
+    assert alvos == [("s3://bucket/prefix/part-0.parquet", 7)]
+    assert filesystem is not None
+    assert seen == {
+        "access_key": "AKIA_TEST",
+        "secret_key": "test-credential-not-for-artifact",
+        "session_token": "session-token",
+        "region": "us-east-1",
+    }

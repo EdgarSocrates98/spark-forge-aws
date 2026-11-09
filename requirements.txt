@@ -11,7 +11,7 @@
 # Regenere com: python scripts/gen_requirements.py
 PyYAML>=6.0
 jsonschema>=4.0
-boto3>=1.34
+boto3[crt]>=1.34
 pyarrow>=23.0.1
 mcp>=2,<3
 starlette>=0.37

@@ -34,6 +34,17 @@ sparkforge-aws analyze lakeformation-grants --path .sparkforge_aws/artifacts/lak
   --out .sparkforge_aws/facts_lf.json
 ```
 
+Para o footer Parquet em `s3://`, o caminho mais explícito é declarar o perfil e a
+região na própria coleta. Isso também funciona com perfis AWS CLI Login no
+Windows e não grava credenciais no manifesto:
+
+```bash
+sparkforge-aws collect parquet-footer --repo . \
+  --prefix s3://meu-bucket/curated/fato_venda/ \
+  --profile leitura --region us-east-1 --max-files 20 \
+  --now 2026-09-13T12:00:00Z
+```
+
 Os nomes de banco, tabela, conta e bucket acima são exemplos: troque pelos
 seus. Os passos 1, 2, 3 e 5 dependem da sua conta e não têm saída mostrada
 aqui. O passo 4 tem exemplo real mais abaixo.
