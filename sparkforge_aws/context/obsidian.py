@@ -8,12 +8,16 @@ versioned note reference; it never reads or writes a vault.
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import UTC, datetime
 from typing import Any
 
 import yaml
 
 _SENSITIVE = ("secret", "token", "password", "credential", "access_key", "session_key")
+_SENSITIVE_TEXT = re.compile(
+    r"(?i)(\b(?:secret|token|password|credential|access[_-]?key|session[_-]?key)\s*[:=]\s*)([^\s,;]+)"
+)
 
 
 def _safe(value: Any, key: str = "") -> Any:
@@ -23,6 +27,8 @@ def _safe(value: Any, key: str = "") -> Any:
         return {str(k): _safe(v, str(k)) for k, v in value.items()}
     if isinstance(value, list):
         return [_safe(item, key) for item in value]
+    if isinstance(value, str):
+        return _SENSITIVE_TEXT.sub(r"\1[REDACTED]", value)
     return value
 
 

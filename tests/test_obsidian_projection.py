@@ -8,7 +8,7 @@ def test_aws_projection_is_versioned_and_redacts_secrets():
         workspace="analytics",
         vault_id="team-vault",
         findings=[{"rule": "SF-SPARK-001", "access_token": "do-not-write"}],
-        evidence=["job-123"],
+        evidence=["job-123", "token=do-not-write-text"],
         runtime="glue-5.0",
         versions={"spark": "3.5"},
     )
