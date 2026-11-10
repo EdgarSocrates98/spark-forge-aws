@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import tempfile
 import time
@@ -144,11 +145,26 @@ class AuthorizedCommandAdapter:
                 json.dumps(dict(input_mapping or {}), ensure_ascii=False, sort_keys=True),
                 encoding="utf-8",
             )
+            command_env = {
+                "PATH": str(executable_path.parent),
+                "PYTHONIOENCODING": "utf-8",
+            }
+            if os.name == "nt":
+                for name in (
+                    "SystemRoot",
+                    "WINDIR",
+                    "TEMP",
+                    "TMP",
+                    "USERPROFILE",
+                ):
+                    value = os.environ.get(name)
+                    if value:
+                        command_env[name] = value
             with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
                 process = subprocess.Popen(  # noqa: S603
                     (*command, "--input", str(input_path)),
                     cwd=self.repo,
-                    env={"PATH": str(executable_path.parent), "PYTHONIOENCODING": "utf-8"},
+                    env=command_env,
                     stdout=stdout,
                     stderr=stderr,
                     shell=False,
