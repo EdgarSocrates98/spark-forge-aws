@@ -2,7 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    # Branches de remediação Phase 2 precisam da mesma matriz completa do
+    # candidato antes do merge; PRs continuam com o caminho rápido abaixo.
+    branches: [main, "phase2/**"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -23,12 +25,18 @@ permissions:
 concurrency:
   # Commits sucessivos no mesmo PR nao precisam consumir runners em paralelo.
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # O branch Phase 2 também cancela uma execução parcial obsoleta: só o
+  # candidato mais recente deve ocupar a fila enquanto aguardamos a matriz.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/phase2/') }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # A matriz de compatibilidade executa a suíte integral em cada minor.
+    # Python 3.10 é substancialmente mais lento nos testes de CLI/subprocesso;
+    # 90 minutos cancelava o job sem falha funcional. O orçamento maior mantém
+    # a cobertura completa e torna o resultado do gate observável.
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +44,7 @@ jobs:
         # executa a suíte completa em 3.11; nightly e dispatch preservam a
         # matriz completa de compatibilidade — todo minor dentro de
         # `requires-python >=3.10`, de 3.10 a 3.14 (ciclo 11.2, P1-004).
-        python-version: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["3.10","3.11","3.12","3.13","3.14"]' || '["3.11"]') }}
+        python-version: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/phase2/')) && '["3.10","3.11","3.12","3.13","3.14"]' || '["3.11"]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -149,7 +157,7 @@ jobs:
           fi
 
   wheel:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/phase2/')
     timeout-minutes: 60
     # Job proprio, fora da matriz 3.10/3.11/3.12: construir artefato e criar venv
     # custa mais de um minuto e o resultado nao depende da versao de Python.
@@ -193,7 +201,7 @@ jobs:
         run: python scripts/verify_wheel.py
 
   audit:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/phase2/')
     timeout-minutes: 15
     # Job PROPRIO, e a separacao e o desenho, nao arrumacao.
     #
@@ -249,7 +257,7 @@ jobs:
         run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt
 
   otel-collector:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/phase2/')
     timeout-minutes: 15
     # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge-aws
     # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda apenas no

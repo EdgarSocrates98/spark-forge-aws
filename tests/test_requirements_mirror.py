@@ -43,8 +43,15 @@ class TestMirrorIsCurrent:
 
 class TestExtraction:
     def test_core_dependencies_are_present(self):
-        found = {r.split(">")[0].split("<")[0].split("=")[0].strip().lower()
-                 for r in requirements_from_pyproject()}
+        found = {
+            r.split(">", 1)[0]
+            .split("<", 1)[0]
+            .split("=", 1)[0]
+            .split("[", 1)[0]
+            .strip()
+            .lower()
+            for r in requirements_from_pyproject()
+        }
         assert {"pyyaml", "jsonschema"} <= found
 
     def test_every_extra_is_included(self):
@@ -54,8 +61,15 @@ class TestExtraction:
         pydantic-settings. Gerar o espelho so com o nucleo esconderia justamente
         a parte que mais precisa de scan.
         """
-        found = {r.split(">")[0].split("<")[0].split("=")[0].strip().lower()
-                 for r in requirements_from_pyproject()}
+        found = {
+            r.split(">", 1)[0]
+            .split("<", 1)[0]
+            .split("=", 1)[0]
+            .split("[", 1)[0]
+            .strip()
+            .lower()
+            for r in requirements_from_pyproject()
+        }
         assert {"boto3", "mcp", "starlette", "uvicorn", "pytest", "ruff"} <= found
 
     def test_the_entry_point_is_not_mistaken_for_a_requirement(self):

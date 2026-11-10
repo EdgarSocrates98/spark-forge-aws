@@ -25,7 +25,7 @@ import hashlib
 import json
 import re
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, Literal, TypeVar, get_type_hints
 
 # ---------------------------------------------------------------------------
@@ -224,7 +224,7 @@ def sha256_of(obj: Any) -> str:
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def _check_sha256(value: str, *, field: str) -> None:

@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1371** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-10-06 após os módulos e testes das fases 11-16 da onda de convergência entrarem no corpus; relido na onda de final-hardening após `sparkforge_aws/agentic/handoff.py` e `tests/test_agentic_handoff.py` entrarem no corpus; relido na onda Rui após `tests/test_ui_resilience.py` entrar no corpus; relido em 2026-10-15 após `scripts/lab/sparkforge_aws_lab.py` (emissor Forge Lab, cyc9-04) entrar no corpus; relido em 2026-10-22 após os módulos e testes do ciclo portal/lf-0023 entrarem no corpus versionado).
+lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` entrega, **1376** nesta árvore de checkout (a prova filtra o índice Git para excluir artefatos locais não versionados; remedido em 2026-11-09 após a entrada dos módulos e testes versionados posteriores ao ciclo portal/lf-0023; a prova continua sendo a fonte do número).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -210,13 +210,13 @@ lados — os arquivos `*.py` versionados que `iter_source_files(root, "*.py")` e
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 2 | 470 | 907913 | 14726 | 106 |
+| `iter_source_files` | 2 | 470 | 911173 | 14726 | 106 |
 | `looks_like_secret` | 2 | 470 | 198815 | 2790 | 89 |
-| `project_items` | 1 | 197 | 428702 | 2248 | 56 |
-| `tool_class` | 1 | 191 | 453827 | 3621 | 77 |
-| `authorize` | 4 | 873 | 858000 | 5746 | 123 |
+| `project_items` | 1 | 197 | 428965 | 2248 | 56 |
+| `tool_class` | 1 | 191 | 454090 | 3621 | 77 |
+| `authorize` | 4 | 873 | 859021 | 5746 | 123 |
 
-Somadas as cinco perguntas: o índice devolve **2,201** bytes; ler os arquivos custaria **2847257**;
+Somadas as cinco perguntas: o índice devolve **2,201** bytes; ler os arquivos custaria **2852064**;
 a saída do `grep` pelo nome, **29131**; a saída do `grep` pela definição, **451**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1293.6 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1295.8 vezes.** Contra a saída de um `grep`
 pelo nome, **13.2** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.9** vezes o que aquele `grep` custaria.
 
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
 `buscar(banco, "source")` devolve **50** símbolos em **11392** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **409872** bytes (remedido em 2026-10-12 após a reancoragem da prova de CI em commit alcançável; relido em 2026-10-15 após `scripts/lab/sparkforge_aws_lab.py` entrar no corpus; relido em 2026-10-18 após o `_forge_portal.py` vendored crescer com a telemetria nova do portal — valor lido pela prova; relido em 2026-10-21 após o bundle do portal cycle-13 entrar no corpus — valor lido pela prova; relido em 2026-10-22 — valor lido pela prova;
+  no mesmo corpus, tem **410364** bytes (remedido em 2026-11-09 pela própria prova após o crescimento versionado posterior ao hotfix ci-convergence; não é uma estimativa manual;
   o valor foi lido pela própria prova e não ajustado à mão, após o `_trust` entrar em
   `call_tool` e o `TRUST_RANK` explícito em `trust.py`). O `grep` pela definição contendo o fragmento continua menor
 (**16653** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que

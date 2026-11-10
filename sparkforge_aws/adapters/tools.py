@@ -10551,7 +10551,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "linha de "
             "dado e lida. A amostra e DECLARADA (os N primeiros pelo nome, teto 500) e sai no "
             "artefato. Exige pyarrow (`pip install 'sparkforge-aws[parquet]'`); S3 usa a "
-            "cadeia padrao de credencial. Prefixo inexistente, vazio ou sem permissao vira "
+            "cadeia padrao de credencial ou `aws_profile`/`aws_region` quando o host "
+            "precisa selecionar um perfil nomeado. Prefixo inexistente, vazio ou sem "
+            "permissao vira "
             "`status` no artefato, nao erro."
         ),
         "inputSchema": {
@@ -10564,6 +10566,14 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "description": "Diretorio local com .parquet, ou s3://bucket/prefixo/.",
                 },
                 "max_files": {"type": "integer", "minimum": 1},
+                "aws_profile": {
+                    "type": "string",
+                    "description": "Perfil AWS nomeado para S3; nunca materializa segredo.",
+                },
+                "aws_region": {
+                    "type": "string",
+                    "description": "Regiao AWS do filesystem S3, quando necessario.",
+                },
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
             },
         },
@@ -12659,7 +12669,12 @@ def _h_analyze_workload(args: dict[str, Any]) -> dict[str, Any]:
 
 def _h_collect_parquet_footer(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_parquet_footer(
-        args["repo"], prefix=args["prefix"], now=args["now"], max_files=args.get("max_files")
+        args["repo"],
+        prefix=args["prefix"],
+        now=args["now"],
+        max_files=args.get("max_files"),
+        aws_profile=args.get("aws_profile"),
+        aws_region=args.get("aws_region"),
     )
 
 

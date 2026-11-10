@@ -8468,7 +8468,13 @@ def collect_iceberg_metadata(
 
 
 def collect_parquet_footer(
-    repo: str, *, prefix: str, now: str, max_files: int | None = None
+    repo: str,
+    *,
+    prefix: str,
+    now: str,
+    max_files: int | None = None,
+    aws_profile: str | None = None,
+    aws_region: str | None = None,
 ) -> dict[str, Any]:
     """Le o FOOTER dos primeiros `max_files` Parquet do prefixo (local ou `s3://`).
     Ver `collect/parquet_footer.py`: nenhuma linha de dado e lida, e pyarrow e
@@ -8477,13 +8483,19 @@ def collect_parquet_footer(
     arquivos = collect_parquet._MAX_FILES_PADRAO if max_files is None else max_files
     try:
         entry = collect_parquet.collect_parquet_footer(
-            prefix, Path(repo), now=now, max_files=arquivos
+            prefix,
+            Path(repo),
+            now=now,
+            max_files=arquivos,
+            aws_profile=aws_profile,
+            aws_region=aws_region,
         )
     except ValueError as exc:
         raise AdapterError(
             f"collect parquet-footer: {exc}\n"
             f"  Rode: sparkforge-aws collect parquet-footer --repo {repo} --prefix {prefix} "
-            f"--max-files <1..{collect_parquet._MAX_FILES_TETO}> --now <ISO 8601>",
+            f"--max-files <1..{collect_parquet._MAX_FILES_TETO}> --now <ISO 8601> "
+            f"[--profile <aws-profile>] [--region <aws-region>]",
             exit_code=2,
         ) from exc
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:

@@ -133,7 +133,7 @@ extras reais, lidos do `pyproject.toml`, são:
 
 | Extra | O que instala | Para que serve |
 |---|---|---|
-| `aws` | `boto3` | Os comandos `collect ...`, que leem artefatos direto da sua conta AWS (event log, definição do job Glue, métricas do CloudWatch, metadata Iceberg e outros). |
+| `aws` | `boto3` + `awscrt` | Os comandos `collect ...`, que leem artefatos direto da sua conta AWS (event log, definição do job Glue, métricas do CloudWatch, metadata Iceberg e outros), inclusive perfis AWS CLI Login. |
 | `parquet` | `pyarrow` (versão mínima 23.0.1, fixada por causa de vulnerabilidades conhecidas em versões anteriores) | Ler o rodapé (footer) de arquivos Parquet na coleta. O comando `analyze parquet-footer` **não** precisa dele, porque parte de um JSON já coletado. |
 | `mcp` | `mcp`, `starlette`, `uvicorn` e pisos de versão de duas dependências indiretas | O servidor MCP, nos transportes `stdio` e `http`. Necessário para usar as tools em assistentes como Claude Code e Devin. |
 | `dev` | `pytest`, `ruff`, `defusedxml`, `build` e as mesmas dependências do extra `mcp` | Rodar os testes e o lint do projeto. Só para quem contribui. |
