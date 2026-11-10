@@ -19,3 +19,14 @@ def test_aws_projection_is_versioned_and_redacts_secrets():
     assert "do-not-write" not in note["content"]
     assert "[REDACTED]" in note["content"]
     assert len(note["content_hash"]) == 64
+
+
+def test_aws_projection_redacts_secrets_in_title_and_summary():
+    note = build_obsidian_diagnostic(
+        title="Token=do-not-write",
+        summary="password=do-not-write-summary",
+        workspace="analytics",
+        vault_id="team-vault",
+    )
+    assert "do-not-write" not in note["content"]
+    assert "[REDACTED]" in note["content"]

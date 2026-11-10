@@ -52,6 +52,8 @@ def build_obsidian_diagnostic(
     confidence: str = "unknown",
     provenance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    safe_title = str(_safe(title.strip() or "Spark diagnostic"))
+    safe_summary = str(_safe(summary.strip()))
     metadata = _safe(
         {
             "type": "spark-diagnostic",
@@ -70,9 +72,9 @@ def build_obsidian_diagnostic(
             "---",
             yaml.safe_dump(metadata, sort_keys=True, allow_unicode=True).rstrip(),
             "---",
-            f"# {title.strip() or 'Spark diagnostic'}",
+            f"# {safe_title}",
             "",
-            summary.strip(),
+            safe_summary,
             "",
             "## Findings",
             _lines(findings or []),
