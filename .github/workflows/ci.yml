@@ -2,7 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    # Branches de remediação Phase 2 precisam da mesma matriz completa do
+    # candidato antes do merge; PRs continuam com o caminho rápido abaixo.
+    branches: [main, "phase2/**"]
   pull_request:
   workflow_dispatch:
     inputs:
