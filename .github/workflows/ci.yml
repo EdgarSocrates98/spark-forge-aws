@@ -25,7 +25,9 @@ permissions:
 concurrency:
   # Commits sucessivos no mesmo PR nao precisam consumir runners em paralelo.
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # O branch Phase 2 também cancela uma execução parcial obsoleta: só o
+  # candidato mais recente deve ocupar a fila enquanto aguardamos a matriz.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/phase2/') }}
 
 jobs:
   test:
