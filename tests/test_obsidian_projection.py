@@ -1,4 +1,4 @@
-from sparkforge_aws.context.obsidian import build_obsidian_diagnostic
+from sparkforge_aws.context.obsidian import build_obsidian_diagnostic, to_obsidian_note_ref
 
 
 def test_aws_projection_is_versioned_and_redacts_secrets():
@@ -12,7 +12,10 @@ def test_aws_projection_is_versioned_and_redacts_secrets():
         runtime="glue-5.0",
         versions={"spark": "3.5"},
     )
-    assert note["schema"] == "theforge/ObsidianNoteRef/v1"
+    assert note["schema"] == "theforge/ObsidianNoteDraft/v1"
+    ref = to_obsidian_note_ref(note)
+    assert ref["schema"] == "theforge/ObsidianNoteRef/v1"
+    assert "content" not in ref
     assert note["version"] == "v1"
     assert note["workspace"] == "analytics"
     assert note["vault_id"] == "team-vault"
