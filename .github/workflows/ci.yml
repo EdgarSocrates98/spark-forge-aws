@@ -28,7 +28,11 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # A matriz de compatibilidade executa a suíte integral em cada minor.
+    # Python 3.10 é substancialmente mais lento nos testes de CLI/subprocesso;
+    # 90 minutos cancelava o job sem falha funcional. O orçamento maior mantém
+    # a cobertura completa e torna o resultado do gate observável.
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
