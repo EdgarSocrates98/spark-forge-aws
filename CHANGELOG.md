@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
+## [0.7.5] — 2026-11-10
+
+### Fixed
+
+- Published the Cycle 2.7 Windows command-environment compatibility fix.
+
 ## [0.7.4] — 2026-11-04
 
 ### Changed
