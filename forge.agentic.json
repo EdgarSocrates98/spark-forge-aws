@@ -76,5 +76,1804 @@
   ],
   "requires_network": false,
   "requires_credentials": false,
-  "read_only_default": true
+  "read_only_default": true,
+  "resources": [
+    {
+      "id": "analyze-batch-loop",
+      "kind": "skill",
+      "location": "skills/analyze-batch-loop/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "analyze-flink-job",
+      "kind": "skill",
+      "location": "skills/analyze-flink-job/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "analyze-functional-rules",
+      "kind": "skill",
+      "location": "skills/analyze-functional-rules/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "analyze-library-call-graph",
+      "kind": "skill",
+      "location": "skills/analyze-library-call-graph/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "analyze-spark-plan",
+      "kind": "skill",
+      "location": "skills/analyze-spark-plan/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "analyze-spark-ui",
+      "kind": "skill",
+      "location": "skills/analyze-spark-ui/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "analyze-streaming-composition",
+      "kind": "skill",
+      "location": "skills/analyze-streaming-composition/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-billing-and-cost-management",
+      "kind": "skill",
+      "location": "skills/aws-billing-and-cost-management/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-database",
+      "kind": "skill",
+      "location": "skills/aws-database/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-iam",
+      "kind": "skill",
+      "location": "skills/aws-iam/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-messaging-and-streaming",
+      "kind": "skill",
+      "location": "skills/aws-messaging-and-streaming/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-observability",
+      "kind": "skill",
+      "location": "skills/aws-observability/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-sdk-python-usage",
+      "kind": "skill",
+      "location": "skills/aws-sdk-python-usage/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-security",
+      "kind": "skill",
+      "location": "skills/aws-security/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-serverless",
+      "kind": "skill",
+      "location": "skills/aws-serverless/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "aws-storage",
+      "kind": "skill",
+      "location": "skills/aws-storage/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "benchmark-pyspark-job",
+      "kind": "skill",
+      "location": "skills/benchmark-pyspark-job/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "compare-releases",
+      "kind": "skill",
+      "location": "skills/compare-releases/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "delegate-specialists",
+      "kind": "skill",
+      "location": "skills/delegate-specialists/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "design-data-architecture",
+      "kind": "skill",
+      "location": "skills/design-data-architecture/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "design-incremental-processing",
+      "kind": "skill",
+      "location": "skills/design-incremental-processing/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "design-realtime-data-architecture",
+      "kind": "skill",
+      "location": "skills/design-realtime-data-architecture/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "design-s3-data-lake",
+      "kind": "skill",
+      "location": "skills/design-s3-data-lake/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "diagnose-data-skew",
+      "kind": "skill",
+      "location": "skills/diagnose-data-skew/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "diagnose-lakeformation-access",
+      "kind": "skill",
+      "location": "skills/diagnose-lakeformation-access/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "diagnose-oom",
+      "kind": "skill",
+      "location": "skills/diagnose-oom/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "glue-incremental-performance-architect",
+      "kind": "skill",
+      "location": "skills/glue-incremental-performance-architect/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "harden-s3-bucket",
+      "kind": "skill",
+      "location": "skills/harden-s3-bucket/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "iceberg-v3-readiness",
+      "kind": "skill",
+      "location": "skills/iceberg-v3-readiness/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "lakeformation-architecture",
+      "kind": "skill",
+      "location": "skills/lakeformation-architecture/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "lakeformation-fgac-guard",
+      "kind": "skill",
+      "location": "skills/lakeformation-fgac-guard/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "migrate-glue-6",
+      "kind": "skill",
+      "location": "skills/migrate-glue-6/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "optimize-iceberg-table",
+      "kind": "skill",
+      "location": "skills/optimize-iceberg-table/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "optimize-latest-per-key",
+      "kind": "skill",
+      "location": "skills/optimize-latest-per-key/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "optimize-parquet-layout",
+      "kind": "skill",
+      "location": "skills/optimize-parquet-layout/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "optimize-pyspark-code",
+      "kind": "skill",
+      "location": "skills/optimize-pyspark-code/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "optimize-variable-volume-job",
+      "kind": "skill",
+      "location": "skills/optimize-variable-volume-job/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "propose-change-pr",
+      "kind": "skill",
+      "location": "skills/propose-change-pr/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "provision-s3-tables-table",
+      "kind": "skill",
+      "location": "skills/provision-s3-tables-table/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-cdc-replication",
+      "kind": "skill",
+      "location": "skills/review-cdc-replication/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-data-validation",
+      "kind": "skill",
+      "location": "skills/review-data-validation/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-emr-cluster",
+      "kind": "skill",
+      "location": "skills/review-emr-cluster/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-emr-eks",
+      "kind": "skill",
+      "location": "skills/review-emr-eks/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-event-driven-architecture",
+      "kind": "skill",
+      "location": "skills/review-event-driven-architecture/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-glue-streaming",
+      "kind": "skill",
+      "location": "skills/review-glue-streaming/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-glue-terraform",
+      "kind": "skill",
+      "location": "skills/review-glue-terraform/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-pyspark-pr",
+      "kind": "skill",
+      "location": "skills/review-pyspark-pr/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-streaming-operations",
+      "kind": "skill",
+      "location": "skills/review-streaming-operations/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-structured-streaming",
+      "kind": "skill",
+      "location": "skills/review-structured-streaming/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "review-terraform-data-platform",
+      "kind": "skill",
+      "location": "skills/review-terraform-data-platform/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "run-debate",
+      "kind": "skill",
+      "location": "skills/run-debate/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sdd-build",
+      "kind": "skill",
+      "location": "skills/sdd-build/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sdd-define",
+      "kind": "skill",
+      "location": "skills/sdd-define/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sdd-design",
+      "kind": "skill",
+      "location": "skills/sdd-design/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sdd-explore",
+      "kind": "skill",
+      "location": "skills/sdd-explore/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sdd-plan",
+      "kind": "skill",
+      "location": "skills/sdd-plan/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sdd-ship",
+      "kind": "skill",
+      "location": "skills/sdd-ship/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "spark4-compatibility",
+      "kind": "skill",
+      "location": "skills/spark4-compatibility/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sparkforge-aws-diagnose",
+      "kind": "skill",
+      "location": "skills/sparkforge-aws-diagnose/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "tool-specialist-routing",
+      "kind": "skill",
+      "location": "skills/tool-specialist-routing/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "tune-glue-job",
+      "kind": "skill",
+      "location": "skills/tune-glue-job/SKILL.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "athena-query-optimizer",
+      "kind": "agent",
+      "location": "agents/athena-query-optimizer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "cdc-contract-reviewer",
+      "kind": "agent",
+      "location": "agents/cdc-contract-reviewer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "data-quality-reviewer",
+      "kind": "agent",
+      "location": "agents/data-quality-reviewer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "emr-infra-reviewer",
+      "kind": "agent",
+      "location": "agents/emr-infra-reviewer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "agent:glue-incremental-performance-architect",
+      "kind": "agent",
+      "location": "agents/glue-incremental-performance-architect.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "glue-infra-reviewer",
+      "kind": "agent",
+      "location": "agents/glue-infra-reviewer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "iceberg-performance-engineer",
+      "kind": "agent",
+      "location": "agents/iceberg-performance-engineer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "pyspark-code-reviewer",
+      "kind": "agent",
+      "location": "agents/pyspark-code-reviewer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sf-lake-formation-specialist",
+      "kind": "agent",
+      "location": "agents/sf-lake-formation-specialist.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sf-runtime-specialist",
+      "kind": "agent",
+      "location": "agents/sf-runtime-specialist.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sf-security-reviewer",
+      "kind": "agent",
+      "location": "agents/sf-security-reviewer.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "sf-terraform-specialist",
+      "kind": "agent",
+      "location": "agents/sf-terraform-specialist.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "spark-performance-architect",
+      "kind": "agent",
+      "location": "agents/spark-performance-architect.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "streaming-realtime-architect",
+      "kind": "agent",
+      "location": "agents/streaming-realtime-architect.md",
+      "resource_class": "agentic"
+    },
+    {
+      "id": "knowledge/agent-creation.md",
+      "kind": "knowledge",
+      "location": "knowledge/agent-creation.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/agent-evaluation.md",
+      "kind": "knowledge",
+      "location": "knowledge/agent-evaluation.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/agentic-engineering.md",
+      "kind": "knowledge",
+      "location": "knowledge/agentic-engineering.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/airflow/glue-operator.md",
+      "kind": "knowledge",
+      "location": "knowledge/airflow/glue-operator.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/airflow-pipelines.md",
+      "kind": "knowledge",
+      "location": "knowledge/airflow-pipelines.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/anti-patterns.md",
+      "kind": "knowledge",
+      "location": "knowledge/anti-patterns.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/athena/performance.md",
+      "kind": "knowledge",
+      "location": "knowledge/athena/performance.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/cdc-replication.md",
+      "kind": "knowledge",
+      "location": "knowledge/cdc-replication.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/controlm/automation-api-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/controlm/automation-api-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/controlm/automation-api-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/controlm/automation-api-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/cross-service-constraints.md",
+      "kind": "knowledge",
+      "location": "knowledge/cross-service-constraints.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/data-contracts-schema-evolution.md",
+      "kind": "knowledge",
+      "location": "knowledge/data-contracts-schema-evolution.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/data-lineage-impact.md",
+      "kind": "knowledge",
+      "location": "knowledge/data-lineage-impact.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/data-platform-architecture.md",
+      "kind": "knowledge",
+      "location": "knowledge/data-platform-architecture.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/data-platform-finops.md",
+      "kind": "knowledge",
+      "location": "knowledge/data-platform-finops.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/databricks/runtime-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/databricks/runtime-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/databricks/runtime-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/databricks/runtime-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/devin/agents-and-subagents.md",
+      "kind": "knowledge",
+      "location": "knowledge/devin/agents-and-subagents.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/domain-tool-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/domain-tool-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/dq/validation-frameworks.md",
+      "kind": "knowledge",
+      "location": "knowledge/dq/validation-frameworks.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr/cluster-configuration.md",
+      "kind": "knowledge",
+      "location": "knowledge/emr/cluster-configuration.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr/runtime-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/emr/runtime-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr/runtime-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/emr/runtime-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr-eks/job-run-configuration.md",
+      "kind": "knowledge",
+      "location": "knowledge/emr-eks/job-run-configuration.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr-eks/runtime-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/emr-eks/runtime-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr-eks/runtime-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/emr-eks/runtime-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr-serverless/application-configuration.md",
+      "kind": "knowledge",
+      "location": "knowledge/emr-serverless/application-configuration.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr-serverless/runtime-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/emr-serverless/runtime-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/emr-serverless/runtime-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/emr-serverless/runtime-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/athena/iceberg_v3_unsupported.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/athena/iceberg_v3_unsupported.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/glue/oom_executor.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/glue/oom_executor.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/glue/scala_212_jar_under_spark4.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/glue/scala_212_jar_under_spark4.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/glue/sdk_v2_user_jars_first.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/glue/sdk_v2_user_jars_first.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/iceberg/commit_conflict.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/iceberg/commit_conflict.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/lakeformation/access_denied_cross_account.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/lakeformation/access_denied_cross_account.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/lakeformation/credential_vending_denied.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/lakeformation/credential_vending_denied.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/lakeformation/get_data_access_denied.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/lakeformation/get_data_access_denied.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/lakeformation/glue_api_denied_under_lf.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/lakeformation/glue_api_denied_under_lf.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/lakeformation/security_validation_exception.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/lakeformation/security_validation_exception.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/analysis_exception.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/analysis_exception.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/classpath_abstract_method.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/classpath_abstract_method.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/classpath_class_not_found.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/classpath_class_not_found.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/classpath_no_class_def.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/classpath_no_class_def.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/executor_lost.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/executor_lost.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/fetch_failed_shuffle.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/fetch_failed_shuffle.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/file_not_found.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/file_not_found.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/gc_overhead_limit.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/gc_overhead_limit.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/heap_out_of_memory.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/heap_out_of_memory.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/metadata_fetch_failed.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/metadata_fetch_failed.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/no_such_table.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/no_such_table.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/python_worker_exited.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/python_worker_exited.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/errors/spark/upgrade_exception.json",
+      "kind": "knowledge",
+      "location": "knowledge/errors/spark/upgrade_exception.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/event-driven-architecture.md",
+      "kind": "knowledge",
+      "location": "knowledge/event-driven-architecture.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/flink-streaming.md",
+      "kind": "knowledge",
+      "location": "knowledge/flink-streaming.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/dq-advanced-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/dq-advanced-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/dq-advanced-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/glue/dq-advanced-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/job-arguments.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/job-arguments.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/lakeformation-fgac.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/lakeformation-fgac.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/lakeformation-index.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/lakeformation-index.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/lakeformation-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/glue/lakeformation-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/lakeformation-permissions.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/glue/lakeformation-permissions.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/observability.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/observability.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/observability.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/glue/observability.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/pricing.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/glue/pricing.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/runtime-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/runtime-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/runtime-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/glue/runtime-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue/workers-and-capacity.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue/workers-and-capacity.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/glue-streaming-rtm.md",
+      "kind": "knowledge",
+      "location": "knowledge/glue-streaming-rtm.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/graph/availability.md",
+      "kind": "knowledge",
+      "location": "knowledge/graph/availability.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/graph/graphframes-api.md",
+      "kind": "knowledge",
+      "location": "knowledge/graph/graphframes-api.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/graphs-neptune-dynamodb-athena.md",
+      "kind": "knowledge",
+      "location": "knowledge/graphs-neptune-dynamodb-athena.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/iceberg-parquet-s3.md",
+      "kind": "knowledge",
+      "location": "knowledge/iceberg-parquet-s3.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/INDEX.md",
+      "kind": "knowledge",
+      "location": "knowledge/INDEX.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/lake-governance.md",
+      "kind": "knowledge",
+      "location": "knowledge/lake-governance.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/lakeformation/architecture.md",
+      "kind": "knowledge",
+      "location": "knowledge/lakeformation/architecture.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/lakeformation/capability-matrix.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/lakeformation/capability-matrix.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/lakeformation/fgac-fta-improvements.md",
+      "kind": "knowledge",
+      "location": "knowledge/lakeformation/fgac-fta-improvements.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/lakeformation/operational-closure.md",
+      "kind": "knowledge",
+      "location": "knowledge/lakeformation/operational-closure.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/model-selection-observability.md",
+      "kind": "knowledge",
+      "location": "knowledge/model-selection-observability.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/offline-manifest.json",
+      "kind": "knowledge",
+      "location": "knowledge/offline-manifest.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/offline-policy.md",
+      "kind": "knowledge",
+      "location": "knowledge/offline-policy.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/performance-principles.md",
+      "kind": "knowledge",
+      "location": "knowledge/performance-principles.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/runtime-compatibility.md",
+      "kind": "knowledge",
+      "location": "knowledge/runtime-compatibility.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/schema-registry-data-contracts.md",
+      "kind": "knowledge",
+      "location": "knowledge/schema-registry-data-contracts.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/source_authority.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/source_authority.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/sources.lock.json",
+      "kind": "knowledge",
+      "location": "knowledge/sources.lock.json",
+      "format": "json",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/config-reference.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/config-reference.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/execution-model.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/execution-model.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/memory-and-oom.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/memory-and-oom.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/plan-reading.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/plan-reading.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/shuffle-join-skew.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/shuffle-join-skew.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/spark4-migration.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/spark4-migration.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/sql-metrics.md",
+      "kind": "knowledge",
+      "location": "knowledge/spark/sql-metrics.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/spark/sql-metrics.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/spark/sql-metrics.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/stepfunctions/execution-history.md",
+      "kind": "knowledge",
+      "location": "knowledge/stepfunctions/execution-history.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/stepfunctions/glue-integration.md",
+      "kind": "knowledge",
+      "location": "knowledge/stepfunctions/glue-integration.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/storage/iceberg-catalog.md",
+      "kind": "knowledge",
+      "location": "knowledge/storage/iceberg-catalog.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/storage/iceberg-feature-support.yaml",
+      "kind": "knowledge",
+      "location": "knowledge/storage/iceberg-feature-support.yaml",
+      "format": "yaml",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/storage/iceberg-performance.md",
+      "kind": "knowledge",
+      "location": "knowledge/storage/iceberg-performance.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/storage/iceberg-v3.md",
+      "kind": "knowledge",
+      "location": "knowledge/storage/iceberg-v3.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/storage/parquet-layout.md",
+      "kind": "knowledge",
+      "location": "knowledge/storage/parquet-layout.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming/runtime-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming/runtime-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-format-serving-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-format-serving-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-integrations.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-integrations.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-lakehouse-observability.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-lakehouse-observability.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-operations.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-operations.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-pipeline-diagnostics.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-pipeline-diagnostics.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-realtime-candidate-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-realtime-candidate-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/streaming-reliability.md",
+      "kind": "knowledge",
+      "location": "knowledge/streaming-reliability.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/terraform-data-platform.md",
+      "kind": "knowledge",
+      "location": "knowledge/terraform-data-platform.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/token-economy.md",
+      "kind": "knowledge",
+      "location": "knowledge/token-economy.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/tool-specialization-matrix.md",
+      "kind": "knowledge",
+      "location": "knowledge/tool-specialization-matrix.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "knowledge/transport-diagnostics.md",
+      "kind": "knowledge",
+      "location": "knowledge/transport-diagnostics.md",
+      "format": "markdown",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "rules/catalog",
+      "kind": "rule",
+      "location": "rules/catalog",
+      "resource_class": "policy"
+    },
+    {
+      "id": "contracts/lakehouse-catalog-v1.schema.json",
+      "kind": "contract",
+      "location": "contracts/lakehouse-catalog-v1.schema.json",
+      "format": "json",
+      "resource_class": "validation"
+    },
+    {
+      "id": "contracts/platform-graph-v1.schema.json",
+      "kind": "contract",
+      "location": "contracts/platform-graph-v1.schema.json",
+      "format": "json",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/agentic",
+      "kind": "eval",
+      "location": "evals/agentic",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/fase0.xml",
+      "kind": "eval",
+      "location": "evals/fase0.xml",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/holdout",
+      "kind": "eval",
+      "location": "evals/holdout",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/mcp-conformance",
+      "kind": "eval",
+      "location": "evals/mcp-conformance",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/platform_intelligence",
+      "kind": "eval",
+      "location": "evals/platform_intelligence",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/README.md",
+      "kind": "eval",
+      "location": "evals/README.md",
+      "format": "markdown",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/skills",
+      "kind": "eval",
+      "location": "evals/skills",
+      "resource_class": "validation"
+    },
+    {
+      "id": "evals/token_efficient",
+      "kind": "eval",
+      "location": "evals/token_efficient",
+      "resource_class": "validation"
+    },
+    {
+      "id": "examples/github",
+      "kind": "example",
+      "location": "examples/github",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "examples/glue_iceberg_job.py",
+      "kind": "example",
+      "location": "examples/glue_iceberg_job.py",
+      "format": "python",
+      "resource_class": "read-only"
+    },
+    {
+      "id": "fixtures/airflow",
+      "kind": "fixture",
+      "location": "fixtures/airflow",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/analytics",
+      "kind": "fixture",
+      "location": "fixtures/analytics",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/athena",
+      "kind": "fixture",
+      "location": "fixtures/athena",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/bench",
+      "kind": "fixture",
+      "location": "fixtures/bench",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/bridge",
+      "kind": "fixture",
+      "location": "fixtures/bridge",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/callgraph",
+      "kind": "fixture",
+      "location": "fixtures/callgraph",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/capacity",
+      "kind": "fixture",
+      "location": "fixtures/capacity",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/catalog",
+      "kind": "fixture",
+      "location": "fixtures/catalog",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/cdc",
+      "kind": "fixture",
+      "location": "fixtures/cdc",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/change",
+      "kind": "fixture",
+      "location": "fixtures/change",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/cloudwatch_logs",
+      "kind": "fixture",
+      "location": "fixtures/cloudwatch_logs",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/consumers",
+      "kind": "fixture",
+      "location": "fixtures/consumers",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/controlm",
+      "kind": "fixture",
+      "location": "fixtures/controlm",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/debate",
+      "kind": "fixture",
+      "location": "fixtures/debate",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/dq",
+      "kind": "fixture",
+      "location": "fixtures/dq",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/dq_ai",
+      "kind": "fixture",
+      "location": "fixtures/dq_ai",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/emr",
+      "kind": "fixture",
+      "location": "fixtures/emr",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/emr_eks",
+      "kind": "fixture",
+      "location": "fixtures/emr_eks",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/emr_serverless",
+      "kind": "fixture",
+      "location": "fixtures/emr_serverless",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/event_driven",
+      "kind": "fixture",
+      "location": "fixtures/event_driven",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/eventlog",
+      "kind": "fixture",
+      "location": "fixtures/eventlog",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/exception",
+      "kind": "fixture",
+      "location": "fixtures/exception",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/finops",
+      "kind": "fixture",
+      "location": "fixtures/finops",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/flink",
+      "kind": "fixture",
+      "location": "fixtures/flink",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/funcval",
+      "kind": "fixture",
+      "location": "fixtures/funcval",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/fusion",
+      "kind": "fixture",
+      "location": "fixtures/fusion",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/gain",
+      "kind": "fixture",
+      "location": "fixtures/gain",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/glue_job_run",
+      "kind": "fixture",
+      "location": "fixtures/glue_job_run",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/glue_streaming",
+      "kind": "fixture",
+      "location": "fixtures/glue_streaming",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/graph",
+      "kind": "fixture",
+      "location": "fixtures/graph",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/host_transcript",
+      "kind": "fixture",
+      "location": "fixtures/host_transcript",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/iam_access",
+      "kind": "fixture",
+      "location": "fixtures/iam_access",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/iceberg",
+      "kind": "fixture",
+      "location": "fixtures/iceberg",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/infra_code",
+      "kind": "fixture",
+      "location": "fixtures/infra_code",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/journal",
+      "kind": "fixture",
+      "location": "fixtures/journal",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/knowledge_drift",
+      "kind": "fixture",
+      "location": "fixtures/knowledge_drift",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/lakeformation",
+      "kind": "fixture",
+      "location": "fixtures/lakeformation",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/mcp_parity",
+      "kind": "fixture",
+      "location": "fixtures/mcp_parity",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/migration",
+      "kind": "fixture",
+      "location": "fixtures/migration",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/observability",
+      "kind": "fixture",
+      "location": "fixtures/observability",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/orchestration",
+      "kind": "fixture",
+      "location": "fixtures/orchestration",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/otel",
+      "kind": "fixture",
+      "location": "fixtures/otel",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/packs",
+      "kind": "fixture",
+      "location": "fixtures/packs",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/parquet_footer",
+      "kind": "fixture",
+      "location": "fixtures/parquet_footer",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/plan",
+      "kind": "fixture",
+      "location": "fixtures/plan",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/platform",
+      "kind": "fixture",
+      "location": "fixtures/platform",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/policy",
+      "kind": "fixture",
+      "location": "fixtures/policy",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/proof",
+      "kind": "fixture",
+      "location": "fixtures/proof",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/pyspark",
+      "kind": "fixture",
+      "location": "fixtures/pyspark",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/realtime_architecture",
+      "kind": "fixture",
+      "location": "fixtures/realtime_architecture",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/receipt",
+      "kind": "fixture",
+      "location": "fixtures/receipt",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/resource_link",
+      "kind": "fixture",
+      "location": "fixtures/resource_link",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/runtime",
+      "kind": "fixture",
+      "location": "fixtures/runtime",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/s3",
+      "kind": "fixture",
+      "location": "fixtures/s3",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/sarif",
+      "kind": "fixture",
+      "location": "fixtures/sarif",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/scan",
+      "kind": "fixture",
+      "location": "fixtures/scan",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/scenarios",
+      "kind": "fixture",
+      "location": "fixtures/scenarios",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/schema_registry",
+      "kind": "fixture",
+      "location": "fixtures/schema_registry",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/sdd",
+      "kind": "fixture",
+      "location": "fixtures/sdd",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/sfn_history",
+      "kind": "fixture",
+      "location": "fixtures/sfn_history",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/simulate",
+      "kind": "fixture",
+      "location": "fixtures/simulate",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/sql",
+      "kind": "fixture",
+      "location": "fixtures/sql",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/sql_metrics",
+      "kind": "fixture",
+      "location": "fixtures/sql_metrics",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/stepfunctions",
+      "kind": "fixture",
+      "location": "fixtures/stepfunctions",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming",
+      "kind": "fixture",
+      "location": "fixtures/streaming",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_composition",
+      "kind": "fixture",
+      "location": "fixtures/streaming_composition",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_glue_cross_artifact",
+      "kind": "fixture",
+      "location": "fixtures/streaming_glue_cross_artifact",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_glue_runtime_observation",
+      "kind": "fixture",
+      "location": "fixtures/streaming_glue_runtime_observation",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_integrations",
+      "kind": "fixture",
+      "location": "fixtures/streaming_integrations",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_ops",
+      "kind": "fixture",
+      "location": "fixtures/streaming_ops",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_pipeline",
+      "kind": "fixture",
+      "location": "fixtures/streaming_pipeline",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/streaming_temporal",
+      "kind": "fixture",
+      "location": "fixtures/streaming_temporal",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/terraform",
+      "kind": "fixture",
+      "location": "fixtures/terraform",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/tfdiff",
+      "kind": "fixture",
+      "location": "fixtures/tfdiff",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/timeout",
+      "kind": "fixture",
+      "location": "fixtures/timeout",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/transport",
+      "kind": "fixture",
+      "location": "fixtures/transport",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/tuning",
+      "kind": "fixture",
+      "location": "fixtures/tuning",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/waste",
+      "kind": "fixture",
+      "location": "fixtures/waste",
+      "resource_class": "test-only"
+    },
+    {
+      "id": "fixtures/workload",
+      "kind": "fixture",
+      "location": "fixtures/workload",
+      "resource_class": "test-only"
+    }
+  ]
 }
