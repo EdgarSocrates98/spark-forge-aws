@@ -59,3 +59,24 @@ claims:
 call_tool_envelope:
   section: "Alterar o resultado de `call_tool` — campo aditivo no envelope"
   registries: [tool_result_parity]
+data_persistence:
+  section: "Escrever tabela ou artefato persistente (Glue, Iceberg, Delta, Parquet)"
+  registries: [sdd_persistence_check]
+  # checklist que design e plan respondem em `persistence`; item sem
+  # tratamento declarado vira `persistence_undeclared` (lacuna, nao recusa)
+  persistence:
+    - atomicity
+    - isolation
+    - consistency
+    - idempotency
+    - concurrency
+    - versioning
+    - schema_evolution
+    - business_key
+    - reprocessing
+    - retry
+    - snapshot_commit_rollback
+    - recovery
+    - partial_update
+    - negative_tests
+    - functional_metrics

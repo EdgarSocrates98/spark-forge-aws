@@ -61,6 +61,23 @@
         }
       }
     },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "kind", "acceptance"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^(REQ|NFR|US)-[0-9]+$"},
+          "text": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["functional", "nonfunctional", "story"]},
+          "acceptance": {"type": "string", "minLength": 1},
+          "source": {"type": "string"},
+          "decision_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "critical": {"type": "boolean"}
+        }
+      }
+    },
     "case_id": {"type": ["string", "null"]},
     "change_kinds": {"type": "array", "items": {"type": "string"}}
   }

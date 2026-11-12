@@ -4,8 +4,8 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Use the sdd-ship skill to review a case about fechamento, gates, evidência e rollback do SDD. The supplied artifact is partial; produce an evidence-first handoff and do not invent measurements.",
-      "expected_output": "A structured handoff for fechamento, gates, evidência e rollback do SDD using sparkforge-aws sdd check, with anchored facts, unresolved gaps, recommendation schema when applicable, validation, and rollback.",
+      "prompt": "Use the sdd-ship skill to review a case about fechamento, gates e evidência do SDD. The supplied artifact is partial; produce an evidence-first handoff and do not invent measurements.",
+      "expected_output": "A structured handoff for fechamento, gates e evidência do SDD using sparkforge-aws sdd check, with anchored facts, unresolved gaps, recommendation schema when applicable, validation, and rollback.",
       "files": [],
       "expectations": [
         "The response uses the primary evidence path `sparkforge-aws sdd check` or explains why the available artifact cannot support it.",
@@ -17,7 +17,7 @@
     },
     {
       "id": 2,
-      "prompt": "Apply sdd-ship to a before/after change involving fechamento, gates, evidência e rollback do SDD. Decide what can be concluded, what must be measured, and how an operator can safely revert.",
+      "prompt": "Apply sdd-ship to a before/after change involving fechamento, gates e evidência do SDD. Decide what can be concluded, what must be measured, and how an operator can safely revert.",
       "expected_output": "A bounded decision that distinguishes observed result from hypothesis, records provenance, and names the next deterministic validation command.",
       "files": [],
       "expectations": [
@@ -27,6 +27,118 @@
         "The response includes validation and rollback steps; any proposed change uses the mandatory recommendation fields.",
         "The response cites at least one local reference and preserves version or provenance constraints.",
         "The response does not claim a performance or cost gain without a same-case measurement."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "ship.md is being written with `hypothesis_outcome: confirmed`. The define's prediction says \"o compare sai em menos de 2s\" — but no benchmark ran and nobody measured the time. The author says \"o teste passou, é rápido o suficiente\".",
+      "expected_output": "The unmeasured hypothesis stays draft or is marked abandoned — never confirmed — with the measurement named that would close it.",
+      "files": [],
+      "expectations": [
+        "The response refuses `confirmed` without the measured prediction: a passing test does not measure the stated threshold.",
+        "The response names the measurement that closes it (the benchmark/compare command producing an evidence_ref) or marks the outcome abandoned with the reason and the feature that will measure.",
+        "The response keeps the define's prediction untouched — the hypothesis is immutable; the ship records the outcome, not rewrites the premise.",
+        "The response explains that `hypothesis_open_at_ship` holds done until the outcome is real, and treats the missing measure as unresolved evidence.",
+        "The response describes validation (run the measurement, record the ref) and the rollback implication of shipping an unmeasured claim.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "The feature adds a new skill: change_kinds includes `agent_or_skill`. ship.md lists `registries: [sync_skills]` but `agents_parity` and the `tool_or_verb` registries (surface_lock, generated_reference) never ran. The author says \"sync já passa no CI\".",
+      "expected_output": "The missing gates are named as `registry_unchecked`-class defects and run before any registry is listed.",
+      "files": [],
+      "expectations": [
+        "The response derives the full registry list from change_kinds (agent_or_skill + tool_or_verb) and names each gate that has not run.",
+        "The response insists a registry is listed only after its gate ran and was seen to pass — \"CI passa\" is not the gate being run now on this tree.",
+        "The response treats the omission as a missing-gate defect the convergence pass classifies, not a paperwork nit.",
+        "The response cites the mapping evidence (change_kinds.yaml, gates-por-mudanca.md sections) for which registries apply.",
+        "The response describes validation (run each named gate, record exit) and rollback for a ship that listed gates it never ran.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "ship.md (operator profile) records `evidence: [{change_id: c-7, report_sha256: abc…}]`, but the change report on disk now hashes to a different value — the report was regenerated after the entry was written.",
+      "expected_output": "The mismatch is treated as ship_evidence_mismatch-class stale evidence: the report is re-read and the entry corrected before done.",
+      "files": [],
+      "expectations": [
+        "The response identifies the hash divergence as evidence-mismatch: the report changed after the ship recorded it.",
+        "The response requires re-reading the report (what changed, whether the change itself moved) before re-recording the hash — not blindly updating it.",
+        "The response classifies the divergence as stale evidence under convergence and asks who/what regenerated the report and why.",
+        "The response keeps both hashes visible (recorded vs. current) instead of silently overwriting the discrepancy.",
+        "The response describes validation of the corrected entry and notes that shipping with the stale hash leaves the receipt unverifiable.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Before offering integration, the controller reruns the delivery tests and `pytest tests/test_sdd_skills.py` fails 2 tests. The operator is eager to merge; the controller proposes \"marca como deviation e segue\".",
+      "expected_output": "The failing tests block the ship: a red at integration check returns to build, it does not become a deviation.",
+      "files": [],
+      "expectations": [
+        "The response applies the rule that a red test at integration check returns to build — deviations record differences from plan, not failures.",
+        "The response refuses to ship over failing tests regardless of operator eagerness, and names the failing tests as the blocking evidence.",
+        "The response distinguishes a regression the feature caused from a pre-existing failure — and requires verifying which, not assuming.",
+        "The response keeps the integration offer withheld until the tests pass, citing the exit code and the failing node ids.",
+        "The response describes the recovery path (fix in build, revalidate, return to ship) and rollback for each alternative.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Convergence check: define AC2 requires \"o verbo recusa com `missing_env` quando a variável falta\". The delivered code raises `KeyError` instead. The author wants to edit the define to say \"falha com erro claro\" so the chain converges.",
+      "expected_output": "The contradiction is classified `contradicts` and returns to define with operator approval — the ship never rewrites the requirement to match the code.",
+      "files": [],
+      "expectations": [
+        "The response classifies the divergence as `contradicts` (requirement and delivered behavior are incompatible) rather than editing it away.",
+        "The response refuses to rewrite the define at ship time: requirement changes need operator approval and put downstream phases in upstream_stale.",
+        "The response presents the two real options — fix the code to deliver `missing_env` (build) or change the requirement with operator sign-off (define) — and routes the decision.",
+        "The response cites both sides of the contradiction (the AC text, the delivered behavior with file/symbol) as evidence.",
+        "The response notes validation for each option and the rollback implication of having shipped a different contract than specified.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Reviewing the diff before ship, the convergence pass finds `src/cache_warmer.py` — a whole new module with tests — that no REQ, AC, design manifest entry or task covers. It works and tests pass.",
+      "expected_output": "The unrequested module is classified `unrequested` and either removed from this feature or escalated to the operator — working code is not a justification.",
+      "files": [],
+      "expectations": [
+        "The response classifies the module as `unrequested`: delivered code no requirement asked for, even though it works.",
+        "The response requires either splitting it out of the feature (separate commit/branch pending a real requirement) or operator approval to keep it — never silent acceptance.",
+        "The response explains why unrequested code is a defect: surface without an owner, tests nobody will trace, scope the operator never chose.",
+        "The response checks whether it is already recorded in `deviations` and requires the record if kept, with the operator's decision named.",
+        "The response describes validation after the split/decision and the rollback path for removing it.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "The delivery's rollback is \"reverter o PR\". The feature also migrated a Glue Catalog table to a new schema version and dropped the old job's output path. A reviewer asks: does reverting the PR restore the table and the path?",
+      "expected_output": "The rollback is found unverifiable: the receipt must name a recovery that actually restores the persisted state, or the ship waits for one.",
+      "files": [],
+      "expectations": [
+        "The response tests the rollback against what the delivery changed (code, catalog schema, dropped path) and shows reverting the PR does not restore persisted state.",
+        "The response requires a verifiable recovery plan — schema rollback path, data restore, or the explicit declaration of the no-return point with operator acceptance.",
+        "The response treats \"reverter o PR\" covering only code as `partial` rollback, and names which parts of the delivery it cannot undo.",
+        "The response cites the persisted-state evidence (catalog change, path drop) rather than a general rollback concern.",
+        "The response keeps the ship blocked or conditioned on the operator accepting the named residual risk, with validation of the recovery itself.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "The build is green, gates ran, and the controller is about to run `git push` and open the PR. The operator never chose an integration option — the controller is going ahead \"porque está tudo verde\".",
+      "expected_output": "The push is withheld until the operator picks one of the four integration options explicitly.",
+      "files": [],
+      "expectations": [
+        "The response refuses push/PR without the operator's explicit choice — green tests are a precondition for offering, not the authorization.",
+        "The response presents the four options (local merge, push+PR, keep branch, discard) and waits for the choice.",
+        "The response names the human-approval requirement as a divergence class of its own — missing approval — rather than a formality.",
+        "The response notes that discarding requires the typed confirmation (branch name), and no option is taken by silence.",
+        "The response describes validation per option (retest after merge) and rollback for each (branch kept, proposal closed).",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
       ]
     }
   ]

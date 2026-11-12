@@ -17,6 +17,8 @@ docs/sdd/
     plan.md
     build_report.md
     ship.md
+    decisions.json     opcional; arvore `forge/DecisionTree/v1` que o
+                       `decisions_ref` do explore aponta e valida
 ```
 
 `templates/` não é feature: só pasta no padrão `^[A-Z0-9_]+$` entra na
@@ -33,13 +35,14 @@ draft não deve ser promovida só para tornar o check global verde; as recusas
 O inventário detalhado por prompt e frente está em
 [`../DELIVERY-LEDGER.md`](../DELIVERY-LEDGER.md).
 
-## Os três verbos
+## Os quatro verbos
 
 | verbo | tool MCP | o que faz |
 |---|---|---|
-| `sparkforge-aws sdd check --repo . [--feature F]` | `sparkforge_sdd_check` | confere schema, ordem, cascata por hash, testes, manifesto, cobertura, hipótese e registros; `ok` só com zero recusa e zero lacuna |
-| `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` | a fase de cada feature e quem ficou `upstream_stale` |
+| `sparkforge-aws sdd check --repo . [--feature F]` | `sparkforge_sdd_check` | confere schema, ordem, cascata por hash, decisões, requisitos, grafo de tarefas, recibos, testes, manifesto, cobertura, hipótese e registros; `ok` só com zero recusa e zero lacuna |
+| `sparkforge-aws sdd status --repo .` | `sparkforge_sdd_status` | a fase de cada feature e quem ficou `upstream_stale`; `graph` traz a ordem topológica quando o plan declara `depends_on` |
 | `sparkforge-aws sdd stamp --repo . <artefato>` | `sparkforge_sdd_stamp` | grava o `sha256` do upstream; só a linha do hash muda |
+| `sparkforge-aws sdd converge --repo . [--feature F]` | só CLI | lê tudo e cruza o que veio com o que foi pedido (`forge/ConvergenceReport/v1`); nunca escreve; sai 1 com divergência |
 
 Toda fase termina igual (veja [O laço de cada fase](#o-laço-de-cada-fase)):
 `status: ready` só com zero recusa, e as lacunas esperadas daquela fase são

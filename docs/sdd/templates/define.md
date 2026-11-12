@@ -25,6 +25,12 @@ unknowns:
   - id: U1
     blocks: [AC1]
     unlock: "Ler o coordenador com sparkforge-aws code symbol para saber que campo ele consome."
+requirements:
+  - id: REQ-1
+    kind: functional
+    text: "O resumo por execução é gravado em JSON ao lado do relatório."
+    acceptance: "o teste test_exemplo em tests/test_exemplo.py falha sem o código e passa com ele"
+    decision_refs: [DEC-1]
 case_id: null
 change_kinds: [agent_or_skill]
 ---
@@ -36,6 +42,12 @@ change_kinds: [agent_or_skill]
 > feature tem `explore.md`; sem explore, apague o bloco inteiro. Rode
 > `sparkforge-aws sdd stamp` para preencher o `sha256`, nunca o calcule à mão.
 > `status: ready` só com zero recusa e depois da leitura do operador.
+> `requirements` é opcional: `acceptance` é o critério observável (métrica,
+> teste ou verbo do que se vê), `source` a fonte do número quando há métrica,
+> `decision_refs` aponta ids da árvore de decisões do explore, `critical` marca
+> o que não pode seguir bloqueado por `unknowns`. Requisito nunca é reescrito
+> sem aprovação: divergência vira `requirement_contradicts`, lacuna do
+> operador.
 
 ## Problema
 

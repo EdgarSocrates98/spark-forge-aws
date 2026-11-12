@@ -28,6 +28,84 @@
         "The response cites at least one local reference and preserves version or provenance constraints.",
         "The response does not claim a performance or cost gain without a same-case measurement."
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "A draft define.md contains: REQ-1 \"o pipeline deve ser robusto\", AC1 \"o sistema funciona bem sob carga\" verified_by command \"rodar e conferir\". The operator insists these are fine because \"todo mundo entende o que significa\".",
+      "expected_output": "The response rewrites the requirement into testable form or pushes it back, naming which observable each criterion must pin down.",
+      "files": [],
+      "expectations": [
+        "The response identifies both the requirement and the criterion as untestable and asks which observable (a fact_id, a node id, a command exit) would distinguish pass from fail.",
+        "The response does not accept \"todo mundo entende\" as a source or as verification, and records the missing source as unresolved.",
+        "The response proposes a concrete rewrite pattern (observable statement + verified_by kind) rather than only criticizing.",
+        "The response includes validation steps for the rewritten criterion and notes the rollback/withdraw path for a requirement that cannot be pinned.",
+        "The response cites at least one local reference and preserves the red-gate discipline for kind: test criteria."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Draft define.md for a Glue job change: AC3 \"o job processa a partição sem erro\" verified_by a pytest node, and AC4 \"o job processa a partição e loga o resultado\" verified_by the same test file. There is no NFR anywhere: no cost ceiling, no runtime bound, no data-volume envelope.",
+      "expected_output": "A review that flags the near-duplicate criteria and the absent non-functional layer with specific NFR candidates to negotiate.",
+      "files": [],
+      "expectations": [
+        "The response flags AC3 and AC4 as duplicates or overlapping proofs and asks whether they are one criterion or two observables.",
+        "The response names concrete NFR candidates (duration bound, DPU or bytes scanned ceiling, input volume envelope) each requiring a measurable source, not a guess.",
+        "The response treats the missing NFR layer as unresolved work to negotiate with the operator, not as something to fabricate.",
+        "The response ties each proposed NFR to a fact_id or measurement verb (funcval compare, benchmark) and keeps unsourced metrics out.",
+        "The response describes validation for each criterion and the rollback/withdraw path if the operator declines the NFRs."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "A define.md has REQ-4 \"a exportação grava em S3 em JSON\" and REQ-7 \"a exportação grava em S3 em Parquet\". Both are marked approved requirements. The operator wants both kept \"porque cada consumidor prefere um formato\".",
+      "expected_output": "The conflict is named explicitly and escalated; the response refuses to merge the two into one ambiguous requirement.",
+      "files": [],
+      "expectations": [
+        "The response names REQ-4 and REQ-7 as a conflicting pair instead of averaging them into \"grava num formato\".",
+        "The response asks the operator which requirement governs (or whether they are separate requirements with separate scopes and separate ACs) and blocks ready until resolved.",
+        "The response treats the contradiction as unresolved until the operator decides, citing any decision (DEC id) or fact_id that should settle it.",
+        "The response keeps the traceability chain intact: whichever requirement survives keeps its own ACs rather than inheriting both.",
+        "The response notes validation per surviving criterion and rollback/withdraw semantics for the rejected requirement."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "define.md declares success: SC1 metric \"40% menos custo por execução\" with no source field, and SC2 metric \"o job fica mais rápido\" sourced to \"estimativa do time\". The operator says the numbers can be filled later.",
+      "expected_output": "A refusal to carry unsourced metrics, with the exact evidence each metric needs.",
+      "files": [],
+      "expectations": [
+        "The response identifies SC1 as a metric without a source and SC2 as a metric whose source is an estimate, and states both fail the requirements quality bar even if the gate only catches one.",
+        "The response names the real measurement each metric needs (benchmark between two measured runs, dpu_seconds from a fact_id) instead of accepting a placeholder.",
+        "The response records the missing measurement as unresolved and names the verb that produces it rather than promising to fill it later.",
+        "The response does not convert the estimate into a source or relax the criterion just because the operator waived it.",
+        "The response explains validation of the metric at ship time and the rollback/abandoned outcome if the measurement never runs."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "A hypothesis block reads: claim \"o resumo ajuda o coordenador\", prediction \"o resumo será útil e bem recebido\", experiment \"vamos testar com o coordenador\". Nothing in it can be observed failing.",
+      "expected_output": "A rewritten falsifiable prediction with a measurable observation, or an explicit pushback to the operator.",
+      "files": [],
+      "expectations": [
+        "The response explains why the prediction is non-falsifiable (no stated observation that would prove the claim wrong) and requires a measurable, ship-checkable statement.",
+        "The response rewrites the prediction into a form whose failure is observable (what is seen when the claim is wrong) and keeps it measurable at ship time.",
+        "The response does not accept goodwill language (\"útil\", \"bem recebido\") as a metric and marks the unmeasurable parts as unresolved until a measure exists.",
+        "The response ties the experiment to a fact_id or concrete run that produces evidence, and keeps the hypothesis immutable once shipped.",
+        "The response notes validation of the prediction at ship and the rollback/abandoned outcome when the experiment cannot run."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Reviewing a define.md for a rule change you notice: AC5 reuses REQ-2's proof, REQ-6 has no AC at all, and REQ-9 was born from a decision the explore left pending. The operator asks to approve anyway and fix in build.",
+      "expected_output": "A structured review listing each traceability break, refusing ready status until the trail is repaired.",
+      "files": [],
+      "expectations": [
+        "The response detects all three breaks (duplicate proof, requirement without criterion, requirement from an unapproved decision) and names each by id.",
+        "The response explains that REQ-9 cannot become a criterion while its decision is pending or refused, and routes it back to the operator.",
+        "The response treats the traceability gap as unresolved work owned by this phase, not something the build will fix silently.",
+        "The response preserves anchors: which AC, REQ and DEC ids are involved and what evidence (fact_id, decision answer) would repair each break.",
+        "The response states validation (re-run sdd check after repair) and the withdraw/rollback path for requirements that cannot be repaired."
+      ]
     }
   ]
 }

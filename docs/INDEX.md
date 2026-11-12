@@ -29,12 +29,15 @@ _Task-oriented guides and workflows._
 
 ### ./
 
+- [Changelog](../CHANGELOG.md)
+- [Código de Conduta — Contributor Covenant 2.1](../CODE_OF_CONDUCT.md)
 - [Guia de Uso — SparkForge AWS](../GUIA_DE_USO.md)
 - [Payload Devin — SparkForge AWS](../PAYLOAD.md)
 - [Prompt Inicial Mestre — SparkForge AWS](../PROMPT_INICIAL_MESTRE.md)
 - [SparkForge AWS](../README.md)
 - [Política de segurança](../SECURITY.md)
 - [Fontes oficiais de referência](../SOURCES.md)
+- [Suporte](../SUPPORT.md)
 - [Guia Mestre: Arquitetura, Configuração e Operação de Agents e Subagents no Devin](../guia_devin_agents_subagents.md)
 
 ### .caveman/
@@ -68,8 +71,13 @@ _Task-oriented guides and workflows._
 - [Portable SparkForge AWS](guides/SPARKFORGE_AWS_PORTABLE.md)
 - [SparkForge AWS portátil](guides/SPARKFORGE_AWS_PORTABLE.pt-BR.md)
 
+### install/
+
+- [Distribution parity — SparkForge AWS](install/DISTRIBUTION_PARITY.md)
+
 ### installation/
 
+- [Account-scoped installation](installation/account-installation.md)
 - [spark-forge-aws + Claude Code](installation/claude-code.md)
 - [spark-forge-aws + Codex CLI](installation/codex-cli.md)
 - [spark-forge-aws + GitHub Copilot CLI](installation/copilot-cli.md)
@@ -103,6 +111,7 @@ _Task-oriented guides and workflows._
 - [Receita — explorar o Graph Studio](learn/recipes/graph-studio.md)
 - [Receita — instalar e começar](learn/recipes/instalar-e-comecar.md)
 - [Receita — investigar uma tabela Iceberg](learn/recipes/investigar-iceberg.md)
+- [Receita — portal web local](learn/recipes/portal.md)
 - [Receita — o que vale escanear neste repositório?](learn/recipes/scan-repo.md)
 - [Receita — avaliar um pipeline streaming](learn/recipes/streaming-eval.md)
 - [Receita — utilizar agents (coordenadores e executores)](learn/recipes/usar-agents.md)
@@ -239,6 +248,7 @@ _Command, contract, schema and tool references._
 - [Amazon S3 Vectors](../skills/aws-storage/references/s3-vectors-knowledge.md)
 - [Referências — benchmark-pyspark-job](../skills/benchmark-pyspark-job/references/README.md)
 - [Referências — compare-releases](../skills/compare-releases/references/README.md)
+- [Referências — delegate-specialists](../skills/delegate-specialists/references/README.md)
 - [Referências — design-data-architecture](../skills/design-data-architecture/references/README.md)
 - [Referências — design-incremental-processing](../skills/design-incremental-processing/references/README.md)
 - [Referências locais](../skills/design-realtime-data-architecture/references/README.md)
@@ -271,11 +281,17 @@ _Command, contract, schema and tool references._
 - [Referências — review-terraform-data-platform](../skills/review-terraform-data-platform/references/README.md)
 - [Referências — run-debate](../skills/run-debate/references/README.md)
 - [Referências — sdd-build](../skills/sdd-build/references/README.md)
+- [TestExecutionReceipt — a prova atrás do red e do green](../skills/sdd-build/references/execution-receipt.md)
 - [Referências — sdd-define](../skills/sdd-define/references/README.md)
+- [Requisitos — camada de exigência do define](../skills/sdd-define/references/requirements-quality.md)
 - [Referências — sdd-design](../skills/sdd-design/references/README.md)
+- [Revisão de desenho — os blocos além do manifesto](../skills/sdd-design/references/design-review.md)
 - [Referências — sdd-explore](../skills/sdd-explore/references/README.md)
+- [Árvore de decisões — `decisions.json`](../skills/sdd-explore/references/decision-tree.md)
 - [Referências — sdd-plan](../skills/sdd-plan/references/README.md)
+- [Grafo de tarefas e ergonomia do plano](../skills/sdd-plan/references/task-graph.md)
 - [Referências — sdd-ship](../skills/sdd-ship/references/README.md)
+- [Convergência semântica — a passada antes dos gates](../skills/sdd-ship/references/convergence.md)
 - [Referências — spark4-compatibility](../skills/spark4-compatibility/references/README.md)
 - [Referências — sparkforge-aws-diagnose](../skills/sparkforge-aws-diagnose/references/README.md)
 - [Referências — tool-specialist-routing](../skills/tool-specialist-routing/references/README.md)
@@ -467,6 +483,7 @@ _Agent instructions, skills and internal process._
 - [AWS Storage](../skills/aws-storage/SKILL.md)
 - [Benchmark PySpark Job](../skills/benchmark-pyspark-job/SKILL.md)
 - [Comparar releases de runtime](../skills/compare-releases/SKILL.md)
+- [Delegar a especialistas](../skills/delegate-specialists/SKILL.md)
 - [Arquitetura de Dados](../skills/design-data-architecture/SKILL.md)
 - [Design Incremental Processing](../skills/design-incremental-processing/SKILL.md)
 - [Design Realtime Data Architecture](../skills/design-realtime-data-architecture/SKILL.md)
@@ -515,6 +532,9 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 
 ### .github/
 
+- [bug_report](../.github/ISSUE_TEMPLATE/bug_report.md) `UNKNOWN`
+- [feature_request](../.github/ISSUE_TEMPLATE/feature_request.md) `UNKNOWN`
+- [PULL_REQUEST_TEMPLATE](../.github/PULL_REQUEST_TEMPLATE.md) `UNKNOWN`
 - [SparkForge AWS Copilot Instructions](../.github/copilot-instructions.md) `UNKNOWN`
 - [iceberg.instructions](../.github/instructions/iceberg.instructions.md) `UNKNOWN`
 - [pyspark.instructions](../.github/instructions/pyspark.instructions.md) `UNKNOWN`
@@ -556,6 +576,12 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [Runtime Convergence — Final Report](audit/RUNTIME-CONVERGENCE-FINAL-REPORT.md) `UNKNOWN`
 - [Runtime Convergence — Outcome Brief](audit/RUNTIME-CONVERGENCE-OUTCOME-BRIEF.md) `UNKNOWN`
 
+### audits/
+
+- [FORGE_CONTEXT_BASELINE — spark-forge-aws](audits/FORGE_CONTEXT_BASELINE.md) `UNKNOWN`
+- [FORGE_CONTEXT_FINAL_HOMOLOGATION — spark-forge-aws](audits/FORGE_CONTEXT_FINAL_HOMOLOGATION.md) `UNKNOWN`
+- [SDD Baseline — spark-forge-aws (Onda 0)](audits/sdd/BASELINE.md) `SDD_ARTIFACT`
+
 ### aws/
 
 - [Iceberg e a spec v3 no Glue 6.0](aws/glue/6.0/iceberg.md) `UNKNOWN`
@@ -588,6 +614,7 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [Change Proof](change-proof.md) `UNKNOWN`
 - [delivery-report](delivery-report.md) `UNKNOWN`
 - [Economia de tokens e contexto — Spark Forge AWS](economy.md) `UNKNOWN`
+- [Evals taxonomy — classificação §7.1 dos evals do SparkForge AWS](evals-taxonomy.md) `UNKNOWN`
 - [Execution Receipt](execution-receipt.md) `UNKNOWN`
 - [Forge Pack](forge-pack.md) `UNKNOWN`
 - [Gates por tipo de mudança](gates-por-mudanca.md) `UNKNOWN`
@@ -599,9 +626,17 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [Simulate](simulate.md) `UNKNOWN`
 - [Catalogo de Times do SparkForge AWS](teams-catalog.md) `UNKNOWN`
 
+### engineering-excellence/
+
+- [AWS Federation Readiness](engineering-excellence/federation-readiness.md) `UNKNOWN`
+
 ### evals/
 
 - [Suite agêntica `sdd`](../evals/agentic/sdd/README.md) `SDD_ARTIFACT`
+
+### evidence/
+
+- [Forge Lab live local — LAB-002 (revalidação final)](evidence/LIVE_LAB_002_2026-11-08.md) `TEST_EVIDENCE`
 
 ### experience/
 
@@ -611,6 +646,10 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [Interactive CLI](experience/interactive-cli.md) `UNKNOWN`
 - [Revisão semântica da documentação pública — FASE 1](experience/semantic-review.md) `UNKNOWN`
 - [Themes and visual identity](experience/themes.md) `UNKNOWN`
+
+### factory/
+
+- [+ gates por mudança em docs/gates-por-mudanca.md](../factory/specs/archive/2026/cyc9-04-scenarios-data-aws.md) `HISTORICAL`
 
 ### fixtures/
 
@@ -643,6 +682,10 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [FATURAMENTO — requisitos](../fixtures/sdd/tdd/docs/sdd/FATURAMENTO/define.md) `SDD_ARTIFACT`
 - [FATURAMENTO — desenho](../fixtures/sdd/tdd/docs/sdd/FATURAMENTO/design.md) `SDD_ARTIFACT`
 - [FATURAMENTO — plano](../fixtures/sdd/tdd/docs/sdd/FATURAMENTO/plan.md) `SDD_ARTIFACT`
+
+### golden-paths/
+
+- [Golden path: diagnóstico Spark](golden-paths/spark-diagnostic.md) `UNKNOWN`
 
 ### guia/
 
@@ -782,6 +825,10 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [Sessao no Devin CLI](../payloads/devin/SESSION_CLI.md) `UNKNOWN`
 - [Sessao no Devin Desktop](../payloads/devin/SESSION_DESKTOP.md) `UNKNOWN`
 
+### releasing/
+
+- [PyPI patch plan — sparkforge-aws](releasing/pypi-patch-plan.md) `UNKNOWN`
+
 ### reports/
 
 - [Forge Experience 3.0 — report](reports/experience-3.md) `RELEASE_REPORT`
@@ -872,6 +919,12 @@ _Historical, deprecated, generated and evidence docs (preserved, not entry point
 - [FORGE_LAB_PRODUCT — exploração](sdd/FORGE_LAB_PRODUCT/explore.md) `SDD_ARTIFACT`
 - [FORGE_LAB_PRODUCT — plano](sdd/FORGE_LAB_PRODUCT/plan.md) `SDD_ARTIFACT`
 - [FORGE_LAB_PRODUCT — entrega](sdd/FORGE_LAB_PRODUCT/ship.md) `SDD_ARTIFACT`
+- [FORGE_PORTAL — build report](sdd/FORGE_PORTAL/build_report.md) `SDD_ARTIFACT`
+- [FORGE_PORTAL — definição](sdd/FORGE_PORTAL/define.md) `SDD_ARTIFACT`
+- [FORGE_PORTAL — desenho](sdd/FORGE_PORTAL/design.md) `SDD_ARTIFACT`
+- [FORGE_PORTAL — exploração](sdd/FORGE_PORTAL/explore.md) `SDD_ARTIFACT`
+- [FORGE_PORTAL — plano](sdd/FORGE_PORTAL/plan.md) `SDD_ARTIFACT`
+- [FORGE_PORTAL — entrega](sdd/FORGE_PORTAL/ship.md) `SDD_ARTIFACT`
 - [GLUE_DQ_ADVANCED_GOVERNANCE_GAPS — relatório do build](sdd/GLUE_DQ_ADVANCED_GOVERNANCE_GAPS/build_report.md) `SDD_ARTIFACT`
 - [GLUE_DQ_ADVANCED_GOVERNANCE_GAPS — requisitos](sdd/GLUE_DQ_ADVANCED_GOVERNANCE_GAPS/define.md) `SDD_ARTIFACT`
 - [GLUE_DQ_ADVANCED_GOVERNANCE_GAPS — desenho](sdd/GLUE_DQ_ADVANCED_GOVERNANCE_GAPS/design.md) `SDD_ARTIFACT`

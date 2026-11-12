@@ -1,0 +1,56 @@
+{
+  "schema": "forge/DecisionTree/v1",
+  "feature": "EXEMPLO",
+  "decisions": [
+    {
+      "id": "DEC-1",
+      "question": "Onde mora o resumo que o coordenador lê?",
+      "type": "technical",
+      "depends_on": [],
+      "status": "decided",
+      "alternatives": [
+        {
+          "id": "A",
+          "label": "arquivo JSON ao lado do relatório",
+          "recommendation": true,
+          "rationale": "simples e sem dependência nova"
+        },
+        {
+          "id": "B",
+          "label": "verbo novo de CLI",
+          "recommendation": false,
+          "rationale": "move a superfície sem segundo consumidor"
+        }
+      ],
+      "evidence": ["docs/sdd/EXEMPLO/explore.md"],
+      "answer": "A",
+      "actor": "operador",
+      "impact": "o define pede o resumo em JSON",
+      "reopen_condition": "um segundo consumidor pedir o verbo"
+    },
+    {
+      "id": "DEC-2",
+      "question": "O resumo é gravado em toda execução ou sob demanda?",
+      "type": "human",
+      "depends_on": ["DEC-1"],
+      "status": "decided",
+      "alternatives": [
+        {
+          "id": "A",
+          "label": "toda execução",
+          "recommendation": true,
+          "rationale": "o coordenador sempre encontra o arquivo"
+        },
+        {
+          "id": "B",
+          "label": "sob demanda",
+          "recommendation": false,
+          "rationale": "economiza escrita mas falta quando a execução morre"
+        }
+      ],
+      "evidence": [],
+      "answer": "A",
+      "actor": "operador"
+    }
+  ]
+}

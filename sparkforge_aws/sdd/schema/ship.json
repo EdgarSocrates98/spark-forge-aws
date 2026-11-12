@@ -15,6 +15,30 @@
           "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
         }
       }
+    },
+    "convergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["divergences"],
+      "properties": {
+        "divergences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["class", "item", "path", "reason"],
+            "properties": {
+              "class": {
+                "enum": ["missing", "partial", "contradicts", "unrequested", "unverified", "stale"]
+              },
+              "item": {"type": "string"},
+              "path": {"type": "string"},
+              "reason": {"type": "string"},
+              "covered_by": {"type": ["string", "null"]}
+            }
+          }
+        }
+      }
     }
   }
 }

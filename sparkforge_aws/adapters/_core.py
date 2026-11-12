@@ -4244,6 +4244,32 @@ def sdd_stamp(repo: str, path: str, root_path: str = "docs/sdd") -> dict[str, An
         ) from exc
 
 
+def sdd_converge(
+    repo: str, root_path: str = "docs/sdd", feature: str | None = None
+) -> dict[str, Any]:
+    """A convergencia `forge/ConvergenceReport/v1`. So le; nunca reescreve.
+
+    Mesma regra de feature do `sdd_check`: pedida e nao descoberta e erro de
+    chamada, salvo quando uma lacuna ja explica a ausencia.
+    """
+    from sparkforge_aws.sdd.converge import converge
+
+    raiz = _raiz_do_repo_sdd(repo, "converge")
+    relatorio = converge(raiz, root_path, feature)
+    if feature is not None and feature not in relatorio["features"]:
+        explicada = any(
+            item["code"] == "root_missing" or item.get("feature") == feature
+            for item in relatorio["unresolved"]
+        )
+        if not explicada:
+            raise AdapterError(
+                f"feature {feature} nao existe em {root_path}. Rode `sparkforge-aws sdd status "
+                f"--repo {repo}` para listar as que existem.",
+                exit_code=2,
+            )
+    return relatorio
+
+
 def root_cause(
     facts_path: str | list[str] | None = None,
     facts: list[dict[str, Any]] | None = None,

@@ -49,8 +49,8 @@ def test_all_frontmatter_is_skill_creator_compatible() -> None:
 def test_offline_eval_runner_is_complete_and_has_no_provider_side_effect() -> None:
     report = run()
     assert report["skills"] == 61
-    assert report["cases"] == 122
-    assert report["passed"] == 122
+    assert report["cases"] == 161
+    assert report["passed"] == 161
     assert report["failed"] == 0
     assert report["provider_calls"] == 0
     assert report["aws_calls"] == 0

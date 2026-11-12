@@ -28,6 +28,90 @@
         "The response cites at least one local reference and preserves version or provenance constraints.",
         "The response does not claim a performance or cost gain without a same-case measurement."
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "A plan.md for a feature with AC1..AC4 has tasks T1-T5, but no task lists AC3 in covers. The author says AC3 is \"coberto de tabela\" by the code T2 writes.",
+      "expected_output": "The coverage gap is named and the plan gains a task (or an explicit covers entry) for AC3 before ready.",
+      "files": [],
+      "expectations": [
+        "The response names AC3 as uncovered and requires a task whose covers includes it — being covered by implication does not count.",
+        "The response distinguishes the gate's mechanical check (acceptance_uncovered) from judgment and treats the missing task as a defect of this phase.",
+        "The response anchors the new task to the criterion's verified_by (the test node id or proof ref) instead of inventing a free-floating task.",
+        "The response keeps the dependency order consistent: the new task lands after the tasks it depends_on, not at the end by default.",
+        "The response includes validation (re-run sdd check) and notes rollback/withdraw implications for a criterion nobody can deliver.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "plan.md orders: T1 \"registrar a skill no manifest e na tabela de despacho\", T2 \"escrever a skill e o teste dela\". T2's test imports the dispatch table that T1 updates. The author wants T1 last \"para não atrapalhar\".",
+      "expected_output": "The dependency is made explicit and the order corrected: registries travel with the task that creates them.",
+      "files": [],
+      "expectations": [
+        "The response identifies that T2 depends on T1's output (a test that reads the dispatch table cannot go red for the right reason before T1 runs).",
+        "The response reorders or merges so the registry moves with the task that creates the thing it registers, explaining that pushing registries to a final task is how one red crosses commits.",
+        "The response records the dependency in the task graph (depends_on in the task body) rather than only reordering silently.",
+        "The response cites the concrete evidence of the coupling (the test's import, the file path, the fact_id if measured) instead of asserting order by taste.",
+        "The response includes validation of the order and notes how a resumed build re-enters at the checkpoint safely.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "plan.md marks T3 and T4 parallel_safe: true. T3 edits `docs/gates-por-mudanca.md` sections and T4 regenerates `docs/reference/` pages which embed the same file. The operator wants them parallel \"para economizar tempo\".",
+      "expected_output": "The unsafe parallelism is refused: shared write scope or shared generated surface forces serial order.",
+      "files": [],
+      "expectations": [
+        "The response tests all four safe-parallelism conditions and identifies which fail (shared write scope or a shared generated surface one regenerates from the other).",
+        "The response explains that time saved by parallel writers on the same tree is paid back as conflict or drift, and serializes the pair.",
+        "The response does not weaken the parallel_safe criteria just because the operator asked; it treats the request as needing a technical justification.",
+        "The response cites the concrete collision (paths, generated output, the fact of shared scope) rather than a vague risk.",
+        "The response notes validation of the serialized order and rollback/resume behavior when one task lands before the other.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "plan.md task T3 runs `sparkforge-aws funcval comparar --plan p.json --out c.json` and `sparkforge-aws sdd verificar --feature F`. Neither command exists. The author copied them from memory.",
+      "expected_output": "Every cited command is verified against the real CLI before the plan goes to ready.",
+      "files": [],
+      "expectations": [
+        "The response verifies each cited verb against the live parser (help or code search) instead of trusting memory, and identifies both as nonexistent.",
+        "The response corrects to the real verbs (funcval compare, sdd check) or removes the task step, with the right flags.",
+        "The response treats an invented command as a plan defect the build would hit as BLOCKED, not as a typo to forgive.",
+        "The response cites the authoritative source (the parser, --help output) for the corrected command rather than asserting from knowledge.",
+        "The response describes validation (re-check every command in the plan) and notes that unresolved commands stay out of the task.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "plan.md task T5 declares `files: [docs/sdd/OUTRA_FEATURE/ship.md, src/jobs/refunds.py]` but the design's manifest only lists `src/jobs/refunds.py`, and the plan's write_scope for T5 covers the whole repo \"por via das dúvidas\".",
+      "expected_output": "The wrong write scope and the out-of-manifest file are caught: scope narrows to the manifest or the design is revisited first.",
+      "files": [],
+      "expectations": [
+        "The response flags the file outside the design manifest and requires either removing it or going back to design — the plan cannot invent paths the design did not list.",
+        "The response rejects a write_scope that covers the whole repo, explaining that scope is the executor's stop-line, not a formality.",
+        "The response distinguishes write_scope (what the task may write) from files (what the gate sees) and aligns both with the manifest.",
+        "The response cites the manifest and the scope as evidence for the defect, naming the path that violates it.",
+        "The response describes validation of the corrected scope and the rollback path if the design itself was incomplete.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "A plan.md is submitted with tasks T1-T3 but: T2 has no test and no proof, T3's code block ends with \"# resto igual ao padrão\", and the plan never says which decisions the build may hit that need the operator.",
+      "expected_output": "The plan is held at draft: missing test, placeholder content, and undeclared decisions are each named and repaired.",
+      "files": [],
+      "expectations": [
+        "The response detects all three incompleteness classes (task_without_test, placeholder content, missing decisions_needed) instead of only the one the gate names.",
+        "The response requires T2 to declare a test or proof in the allowed form, and T3's code block to carry its declared role (contract, interface, instruction) with a verifiable anchor.",
+        "The response requires decisions_needed to list open questions for the operator rather than letting the build decide silently.",
+        "The response cites each defect by task id and keeps the rest of the plan's evidence (verified commands, covers) intact.",
+        "The response describes validation after repair and notes that an incomplete plan pushed to ready converts ambiguity into build failures.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
     }
   ]
 }

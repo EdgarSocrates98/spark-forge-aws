@@ -39,6 +39,10 @@
           "acceptance": {"type": "array", "items": {"type": "string"}}
         }
       }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
     }
   }
 }

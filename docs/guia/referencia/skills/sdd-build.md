@@ -7,7 +7,7 @@ Use quando o plan.md da feature está ready e é hora de construir — \"executa
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-build/SKILL.md` |
-| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws code symbol']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/execution-receipt.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws code symbol']} |
 
 ## Procedimento (texto integral)
 
@@ -68,6 +68,26 @@ auxiliar, um fixture, um typo), o teste está quebrado, não vermelho.
    comando e do exit que o subagente relatou ter visto; o subagente não edita
    o relatório. Relato sem exit volta ao subagente.
 
+### O recibo de execução
+
+Cada `red`/`green` vale pelo recibo atrás dele — o TestExecutionReceipt
+(contrato em `references/execution-receipt.md`). O schema registra hoje
+`{command, exit}`; os demais campos moram no corpo da tarefa no relatório
+até o schema formalizá-los:
+
+- `baseline_sha` — o commit em que o comando rodou: prova de que o vermelho
+  é **deste** código, não de uma árvore anterior.
+- `argv` — o comando como foi invocado, argumento a argumento; não a
+  paráfrase.
+- `exit_code` — o que apareceu, não o esperado.
+- `executor` — quem rodou (o subagente, o modelo, a sessão).
+- `per_test` — o resultado por teste citado, quando a saída os distingue.
+- `artifact_sha256` — do log ou artefato gravado, quando houver.
+
+**Revalidação depois de mexer.** Código que mudou depois do `green`
+registrado invalida o recibo: roda de novo antes de fechar a tarefa —
+"passou antes da última edição" não é evidência.
+
 ### Um subagente por tarefa
 
 - **Novo a cada tarefa**, sem herdar o histórico da sessão. Você monta o
@@ -126,6 +146,46 @@ red {command, exit}, green {command, exit}, dúvidas.
    menor.
 
 Achado corrigido volta ao **mesmo** estágio. Revisor lista achados; não dá nota.
+
+### Checkpoint, retry e recovery
+
+- **Checkpoint é o commit da tarefa.** Interrupção retoma dele — nunca do
+  meio. Sessão nova lê o `build_report` e o `git log` para achar a próxima
+  tarefa; não pergunta de novo o que já está commitado.
+- **Reexecução idempotente.** Tarefa retomada lê o estado antes de
+  escrever: o teste existe? o diff está aplicado? Reescrever por cima do
+  próprio trabalho sem ler é como um checkpoint vira divergência.
+- **Retry seguro.** O mesmo comando falhando duas vezes pelo mesmo motivo
+  não se repete uma terceira: pare, diagnostique, e só retente depois de
+  uma mudança com motivo declarado. Loop de retry é falha disfarçada.
+- **Recovery.** Tarefa `blocked` sai com o motivo e a saída combinada com o
+  operador — reverter ao checkpoint, subdividir, ou voltar ao design.
+  Recovery destrutivo (`git reset --hard`, apagar arquivo, limpar sandbox,
+  checkout sobre mudança não commitada) **só com aprovação explícita do
+  operador para aquele passo**, nomeado.
+- **Conflict detection.** Antes de despachar, confira a premissa da tarefa
+  contra a árvore: arquivo do manifesto sumiu, teste mudou de nome, diff de
+  outra tarefa tocou o mesmo caminho. Divergência encontrada sobe ao
+  operador — não se resolve "no jeito".
+- **Concurrency control.** Um writer por árvore por vez — inclusive quando
+  o plano marca tarefas `parallel_safe` (elas governam *quais* tarefas
+  podem ir juntas; nunca duas na mesma working copy). O despacho é serial
+  por árvore, paralelo só entre árvores independentes (sandbox separado,
+  worktree separado).
+
+### Segurança da execução
+
+- **Red/green inventado é fraude, não atalho.** `red.exit` sem ter visto a
+  saída, `green` copiado do plano, "deve ter falhado" — o recibo inteiro da
+  tarefa morre junto, e a tarefa recomeça.
+- **Erro de sintaxe ou de ambiente não é vermelho de TDD** sem o contexto:
+  exit 2 de coleta conta só quando o que falta é a unidade sob teste;
+  `SyntaxError` no próprio teste, venv quebrado, AWS sem credencial são
+  ambiente — conserte e rode de novo, ou registre `blocked` com o motivo.
+- **A árvore do operador só muda pelo sandbox** — sem "ajuste rápido" fora
+  de `sparkforge-aws change sandbox`.
+- **Recovery destrutivo pede aprovação por nome** (item acima); a sessão
+  nunca repara um erro seu apagando trabalho alheio.
 
 ### Revisão final
 
@@ -242,6 +302,15 @@ Recusas desta fase: `red_not_declared`, `acceptance_never_red`, `claim_without_e
 - "Deve passar" no lugar da saída do comando.
 - Arquivo do operador editado fora do sandbox.
 - Claim sem `evidence_ref`, ou ganho de desempenho afirmado sem medida.
+- `red`/`green` sem `baseline_sha`, `argv` e `exit_code` no recibo — ou
+  citado "de memória".
+- `green` mantido depois de nova edição no código que ele provava.
+- Mesmo comando retentado pela terceira vez com a mesma falha e nenhum
+  diagnóstico entre tentativas.
+- Recovery que apaga estado (reset, sandbox limpo, arquivo removido) sem
+  aprovação nomeada do operador.
+- `blocked` sem motivo e sem saída combinada — "não foi" não é motivo.
+- Recibo de sha anterior apresentado como prova do código de hoje.
 
 
 ### Contrato de qualidade SparkForge (v1)

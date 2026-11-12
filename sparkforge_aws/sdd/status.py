@@ -7,6 +7,7 @@ from typing import Any
 
 from sparkforge_aws.sdd import DEFAULT_ROOT, PHASES
 from sparkforge_aws.sdd.checks import evaluate
+from sparkforge_aws.sdd.task_graph import topo_order
 
 
 def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
@@ -19,7 +20,7 @@ def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
         artefato = ctx.artefatos.get(atual)
         meta = artefato.meta if artefato is not None else {}
         posicao = PHASES.index(atual)
-        itens.append({
+        item: dict[str, Any] = {
             "feature": nome,
             "phase": atual,
             "status": meta.get("status"),
@@ -29,7 +30,13 @@ def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
             "unresolved": sorted(
                 {u["code"] for u in relatorio["unresolved"] if u["feature"] == nome}
             ),
-        })
+        }
+        plano = ctx.artefatos.get("plan")
+        if plano is not None and any(t.get("depends_on") for t in plano.meta["tasks"]):
+            # posicao no grafo e aditiva: so aparece quando o plano declara
+            # depends_on; a ordem e a topologica (ciclo no fim, nomeado pelo check)
+            item["graph"] = {"order": topo_order(plano.meta["tasks"])}
+        itens.append(item)
     # lacuna sem feature descoberta (pasta podada, arquivo na raiz, raiz ausente)
     # nao tem linha propria na lista; sobe para o topo para nao sumir
     orfas = [u for u in relatorio["unresolved"] if u["feature"] not in contextos]

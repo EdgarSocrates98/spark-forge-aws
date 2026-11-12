@@ -82,6 +82,8 @@ def test_templates_formam_feature_valida(tmp_path):
     destino.mkdir(parents=True)
     for fase in PHASES:
         (destino / f"{fase}.md").write_bytes((origem / f"{fase}.md").read_bytes())
+    for extra in ("decisions.json", "receipt-build.json", "receipt-build.out"):
+        (destino / extra).write_bytes((origem / extra).read_bytes())
     (tmp_path / "tests").mkdir()
     (tmp_path / "tests" / "test_exemplo.py").write_bytes(b"def test_exemplo():\n    pass\n")
     for fase in PHASES[1:]:

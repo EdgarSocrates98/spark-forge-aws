@@ -7,7 +7,7 @@ Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fi
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-define/SKILL.md` |
-| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd status', 'sparkforge-aws funcval compare']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/requirements-quality.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd status', 'sparkforge-aws funcval compare']} |
 
 ## Procedimento (texto integral)
 
@@ -26,6 +26,45 @@ se o requisito é bom. Isso é do operador.
    ponha `status: draft`.
 3. Sem `explore.md` na feature, apague o bloco `upstream` inteiro: define sem
    explore não declara upstream (o check recusa com `schema_invalid`).
+
+### Requisitos, antes dos critérios
+
+O `acceptance` prova o critério; a **exigência** que ele serve é declarada
+antes, no corpo do `define.md` (contrato em
+`references/requirements-quality.md`). O gate confere o frontmatter; a camada
+de requisitos é disciplina da fase até o schema formalizá-la:
+
+- **`stories`** — "Como <papel>, quero <capacidade>, para <resultado>". Quem
+  pede e o porquê, em uma frase cada; requisito sem story é solução procurando
+  problema.
+- **`requirements`** — `REQ-<n>` funcionais, `NFR-<n>` não funcionais, id
+  estável: nunca reciclado, e requisito cortado fica `withdrawn` com o motivo.
+  Cada um com `source` (quem pediu, que medida, que decisão do explore) e
+  `critical: true` quando toca correção de dado, segurança ou contrato
+  público — requisito crítico não sai do escopo sem aprovação explícita.
+- **`scenarios`** — um cenário de aceite por critério, no corpo:
+  dado/quando/então. Cenário que só repete o `statement` em outras palavras é
+  o mesmo critério não testável com roupagem nova.
+- **`constitution`** — as restrições invioláveis que a feature herda e não
+  renegocia (a árvore do operador não se escreve, desempenho só com medida,
+  spec fora de `docs/sdd/` não vale). Requisito que fere a constituição não se
+  "ajusta": sobe ao operador.
+- **`change_policy`** — como requisito muda depois do `ready`: feature nova,
+  ou reabertura declarada com o motivo e a cascata revisada. Nunca edição
+  muda no `ready`.
+- **`decision_refs`** — quais decisões do `decisions.json` do explore cada
+  requisito fecha. Requisito que nasce de decisão `pending`, recusada ou
+  inexistente volta ao operador antes de virar critério.
+- **Contradições** — dois requisitos que não podem valer juntos são nomeados
+  e resolvidos aqui, não amortecidos num texto que acomoda os dois.
+
+### A trilha
+
+`REQ-<n>`/`NFR-<n>` → `AC<n>` do `acceptance` → `D<n>` do design → `T<n>` do
+plan → evidência no `build_report` → desfecho no `ship`. A ligação para baixo
+já é conferida pelo gate (`covers`, `acceptance_uncovered`); a ligação para
+cima — cada `AC` servir a um requisito declarado — é revisão sua: critério
+sem requisito é escopo crescendo sozinho, e requisito sem critério é promessa.
 
 ### Campo por campo
 
@@ -84,6 +123,23 @@ abra `docs/gates-por-mudanca.md` e procure a seção que descreve a mudança.
 
 Critério sobre Glue, Spark ou Iceberg cita a fonte, com a versão:
 `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
+
+### A revisão de qualidade
+
+Antes do `ready`, releia cada requisito e cada critério contra a lista de
+`references/requirements-quality.md`. O gate pega a forma; estes defeitos
+são seus para pegar:
+
+| defeito | como aparece | onde resolve |
+|---|---|---|
+| critério não testável | `statement` sem observável, `verified_by` vago ("conferir", "manualmente") | reescreve ou corta |
+| métrica sem fonte | `success` sem `source`, ou fonte "estimativa" | o gate já recusa `success_without_source`; aqui vale para métrica no corpo também |
+| requisito conflitante | dois REQ/NFR que não podem valer juntos | nomeia o par, resolve com o operador |
+| requisito duplicado | dois REQ/AC com a mesma prova e o mesmo observável | funde ou referencia um pelo `id` |
+| escopo inconsistente | AC que prova coisa dentro do `out_of_scope`, ou fora de toda story | alinha escopo ou critério |
+| dependência desconhecida | depende de sistema, versão ou permissão sem verbo nem `U<n>` | `unknowns` com `unlock` |
+| decisão não aprovada | requisito nasce de decisão `pending`/recusada do explore | volta ao operador |
+| premissa não confirmada | "o job roda em Glue 5", "a tabela é particionada" sem medida nem case | vira `type: fact` investigado, ou `U<n>` |
 
 ### O laço
 
@@ -149,6 +205,13 @@ Recusas desta fase: `schema_invalid`, `success_without_source`, `case_missing`,
 - `change_kinds` inventado, ou vazio numa mudança que mexe em skill ou tool.
 - `case_id` copiado de outro case.
 - Afirmação sobre Glue ou Spark sem versão e sem fonte citada.
+- Requisito sem `source`, ou `source` "o pedido" sem origem nomeada.
+- `id` de requisito reciclado, ou requisito cortado que some em vez de ficar `withdrawn`.
+- AC duplicando outro AC com palavras diferentes e a mesma prova.
+- Trilha quebrada: `AC` sem `REQ`, `D` sem `AC`, `T` sem `AC`.
+- Requisito crítico rebaixado para sair da revisão, ou cortado sem aprovação.
+- Hipótese ajustada para a previsão virar verdade — é a regra 21 antecipada.
+- Cenário de aceite que só repete o `statement` sem observável novo.
 
 
 ### Contrato de qualidade SparkForge (v1)
