@@ -10,8 +10,13 @@ upstream:
 tasks:
   - id: T1
     files: [tests/test_exemplo.py, exemplo/resumo.py]
-    covers: [AC1]
+    covers: [AC1, REQ-1]
     test: {path: tests/test_exemplo.py, name: test_exemplo}
+    depends_on: []
+    parallel_safe: false
+    risk: low
+    write_scope: [tests/test_exemplo.py, exemplo/resumo.py]
+    blocking: true
 ---
 
 # EXEMPLO — plano
@@ -20,7 +25,12 @@ tasks:
 > feature e ponha `status: draft` ao copiar. Cada tarefa cabe em poucos
 > minutos, nomeia o teste que falha antes do código (`test_x` ou
 > `TestClasse::test_x`) e traz o código completo no corpo. Sem "TBD", sem
-> "igual a T1", sem "tratar os erros".
+> "igual a T1", sem "tratar os erros". `depends_on` fecha o grafo (DAG, na
+> ordem em que rodam), `parallel_safe` declara tarefa paralelizável — duas
+> `parallel_safe` não podem sobrepor `write_scope` —, `risk` é
+> `low|medium|high` e `blocking` marca o que segura a entrega. Todo
+> `REQ`/`NFR`/`US` do define aparece em algum `covers`, senão
+> `requirement_uncovered`.
 
 ## T1 — resumo
 

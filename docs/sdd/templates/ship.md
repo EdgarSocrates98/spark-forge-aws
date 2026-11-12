@@ -11,6 +11,8 @@ hypothesis_outcome: confirmed
 registries: [sync_skills, agents_parity]
 deviations:
   - "Nenhum desvio do plano."
+convergence:
+  divergences: []
 ---
 
 # EXEMPLO — entrega
@@ -21,7 +23,10 @@ deviations:
 > aqui `agent_or_skill` exige `sync_skills` e `agents_parity`, e cada um foi
 > rodado pela seção de `docs/gates-por-mudanca.md`. `hypothesis_outcome` fecha
 > a hipótese do define sem reescrevê-la (regra 21): `confirmed` só com a
-> previsão inteira medida.
+> previsão inteira medida. `convergence` registra o resultado de
+> `sparkforge-aws sdd converge --repo . --feature <F>` na hora do ship: sem a
+> seção, cada divergência viva vira código próprio; com ela gravada e batendo,
+> divergência aberta segue em `convergence_open` até o operador decidir.
 
 ## Hipótese
 

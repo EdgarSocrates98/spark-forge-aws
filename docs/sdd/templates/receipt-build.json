@@ -1,0 +1,15 @@
+{
+  "schema": "forge/TestExecutionReceipt/v1",
+  "executor": "sdd-build",
+  "command": ["python", "-m", "pytest", "tests/test_exemplo.py::test_exemplo", "-q"],
+  "exit_code": 0,
+  "baseline_sha": null,
+  "baseline_reason": "primeira execução do teste; o baseline desta prova é o vermelho registrado em red",
+  "started_at": "2026-01-01T00:00:00Z",
+  "finished_at": "2026-01-01T00:00:01Z",
+  "tests": [
+    {"name": "tests/test_exemplo.py::test_exemplo", "outcome": "passed"}
+  ],
+  "output_path": "docs/sdd/EXEMPLO/receipt-build.out",
+  "artifact_sha256": "414964d19f9b132f5f1dbc1e1544045dc2001efaf0f3c054dfb6d6f70b9810a5"
+}

@@ -549,6 +549,31 @@ coordenador), `parity.yaml`, `tests/test_adapters_mcp_compact.py` (contagens
 por transporte) e `tests/test_harness_authorization.py` (contagem de tools
 que declaram caminho).
 
+## Escrever tabela ou artefato persistente (Glue, Iceberg, Delta, Parquet)
+
+O `change_kinds` do define declara `data_persistence` quando o job grava
+tabela ou artefato persistente — e, no perfil `operator`, o gate também
+dispara quando `files` do design ou das tarefas do plan citam `glue`,
+`iceberg`, `delta` ou `parquet` (num repo de jobs de dados o nome é sinal de
+escrita; no `dev` o mesmo nome é código de ferramenta, e só a declaração
+conta).
+Aí `design` e `plan` respondem, no campo `persistence`, como a mudança trata
+cada item do checklist (`sparkforge_aws/sdd/change_kinds.yaml`): atomicidade,
+isolamento, consistência, idempotência, concorrência, versionamento, evolução
+de schema, chave de negócio, reprocessamento, retry, snapshot/commit/rollback,
+recuperação, atualização parcial, testes negativos e métricas de validação
+funcional. O design explica, no tratamento de `snapshot_commit_rollback` e de
+`partial_update`, como os invariantes se preservam quando a operação falha
+entre passos. Item sem tratamento vira `persistence_undeclared` — lacuna,
+não recusa, porque a forma correta é julgamento de domínio.
+
+```
+python -m pytest tests/test_sdd.py tests/test_sdd_ac_vermelho.py -q
+sparkforge-aws sdd check --repo . --feature <F>
+```
+
+`registry_unchecked` cobra `sdd_persistence_check` nos `registries` do ship.
+
 ## Quando nada acima serve
 
 Rode a suíte completa e acrescente a linha que faltava:

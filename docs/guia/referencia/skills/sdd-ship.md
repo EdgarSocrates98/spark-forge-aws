@@ -7,7 +7,7 @@ Use quando o build_report.md da feature está pronto e é hora de entregar — \
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-ship/SKILL.md` |
-| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws change propose']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/convergence.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws sdd stamp', 'sparkforge-aws change propose']} |
 
 ## Procedimento (texto integral)
 
@@ -27,6 +27,46 @@ disciplina desta skill.
    no corpo. Tarefa bloqueada sem saída combinada com o operador volta ao build.
 3. Copie `docs/sdd/templates/ship.md` para `docs/sdd/<FEATURE>/ship.md`, com
    `status: draft` e `upstream.path` no build_report da feature.
+
+### Convergência semântica
+
+Antes de derivar os gates, uma **passada somente de leitura** cruza a cadeia
+inteira — requisito ↔ design ↔ plano ↔ tarefa ↔ build_report ↔ código ↔
+teste ↔ evidência ↔ desfecho. O `sdd check` confere a estrutura; a
+convergência confere o **sentido**: o que o define prometeu é o que a árvore
+entrega (contrato e catálogo em `references/convergence.md`).
+
+Para cada REQ/NFR e cada AC: aponte o design que o cobre, a tarefa que o
+entrega, o teste que o prova, o `evidence_ref` que o sustenta e o desfecho
+que o fecha. Cada falha de sentido sai **classificada**:
+
+- **`missing`** — o elo não existe (AC sem tarefa, decisão sem registro).
+- **`partial`** — o elo existe mas cobre parte (teste cobre 2 de 4 cenários
+  do AC).
+- **`contradicts`** — os dois lados dizem coisas incompatíveis (define pede
+  retry, código faz fail-fast).
+- **`unrequested`** — código ou registro que nenhum requisito pediu
+  ("estava no caminho" não é justificativa).
+- **`unverified`** — o elo existe mas a prova não rodou (AC com
+  `verified_by` nunca executado, claim sem `evidence_ref`).
+- **`stale`** — a prova é de outra árvore (recibo de sha anterior, doc
+  citando versão velha, `report_sha256` que não confere mais).
+
+Divergência **volta à fase dona**: requisito faltando é define, teste
+faltando é plan, evidência velha é build. O ship **nunca reescreve
+requisito, hipótese ou design para fechar a cadeia** — aprovação do
+operador é o único caminho para mexer neles, e mexer derruba as fases de
+baixo para `upstream_stale`. O que o ship escreve é o diagnóstico
+classificado no corpo do `ship.md`.
+
+Checagens que esta passada inclui: **verificação de fonte** (cada claim do
+relatório aponta para `evidence_ref` que existe e confere), **cobertura de
+aceitação** (todo AC tem teste executado, não só declarado), **regressão**
+(a suíte e os gates rodam agora, não "rodaram"), **drift** (o que o
+define/design prometem vs. o que o plano/build entregaram), **frescor**
+(sha e hash da evidência contra a árvore de hoje) e **confirmação de
+decisões** (toda decisão aberta no design foi confirmada ou voltou ao
+operador — nenhuma ficou respondida "por omissão").
 
 ### Derivar os gates
 
@@ -102,6 +142,24 @@ O de `docs/sdd/README.md#o-laço-de-cada-fase`, fechado assim:
    - **manter a branch** como está, para depois;
    - **descartar** a branch — só com confirmação digitada pelo operador (ele
      escreve o nome da branch), nunca por um "sim" solto.
+
+### O recibo de entrega
+
+O corpo do `ship.md` fecha com `## Recibo`: o resumo verificável do que foi
+entregue — feature, shas de início e fim, gates rodados com exit, medidas
+que fecham a hipótese (com `evidence_ref`), divergências resolvidas ou
+aceitas pelo operador, e rollback da entrega. Recibo não é prosa de PR: é a
+lista que outra sessão confere sem perguntar. No perfil operator o recibo é
+o pacote do `change propose` mais a entrada `evidence` com `report_sha256`.
+
+### Feedback pós-entrega
+
+Depois do `done`, a feature continua produzindo evidência: a medida que
+ficou `abandoned` roda na feature seguinte, o `reopen_condition` de uma
+decisão dispara, o operador reporta o que a entrega quebrou. Esse retorno
+entra como entrada da próxima feature (`unresolved` ou decisão a reabrir),
+nunca como edição retroativa do `ship.md` desta — desfecho gravado não se
+reescreve.
 
 ### Lições
 
@@ -186,6 +244,15 @@ Recusas desta fase: `phase_out_of_order`, `hypothesis_open_at_ship`,
 - `check_vnext_claims.py --seed` para "limpar" divergências.
 - `git push` ou PR aberto sem a escolha do operador.
 - Afirmação de ganho sem medida nos dois lados.
+- Divergência de sentido "resolvida" editando o define ou o design no ship —
+  ela volta à fase dona ou sobe ao operador.
+- AC com teste declarado mas nunca executado tratado como coberto.
+- `evidence_ref` que aponta para artefato que não existe ou mudou.
+- Código entregue que nenhum requisito pediu (`unrequested`) passando
+  despercebido porque "funciona".
+- Recibo de sha antigo apresentado como prova da árvore de hoje (`stale`).
+- Decisão do design confirmada por omissão — ninguém perguntou ao operador.
+- Recibo de entrega sem shas, sem exits dos gates e sem `evidence_ref`.
 
 
 ### Contrato de qualidade SparkForge (v1)

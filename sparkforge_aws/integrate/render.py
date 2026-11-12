@@ -723,19 +723,43 @@ def _rewrite_outgoing_links(
 # Mencao textual `knowledge/<doc>.<ext>` — cobre inline code (`` `knowledge/x.md` ``)
 # e prosa, que o agente segue como caminho tanto quanto um link `](`...`)`.
 # A exigencia de extensao deixa de fora "knowledge/ directory" e afins.
-_KNOWLEDGE_MENTION = re.compile(
-    r"knowledge/([A-Za-z0-9_./-]+\.(?:md|yaml|yml|sql|json|csv))"
+_ASSET_ROOTS = ("knowledge", "rules", "evals")
+_ASSET_MENTION = re.compile(
+    r"(knowledge|rules|evals)/([A-Za-z0-9_./-]+\.(?:md|yaml|yml|sql|json|csv))"
 )
 
 
 def _rel_seguro(rel: str) -> bool:
-    """Um `knowledge/<rel>` citado num doc vira path em disco no install —
+    """Um `<root>/<rel>` citado num doc vira path em disco no install —
     `..`, absoluto, drive ou barra invertida escreveriam FORA da raiz
-    `knowledge/` (o `Path` nao normaliza `..` antes do syscall)."""
+    (o `Path` nao normaliza `..` antes do syscall)."""
     if not rel or "\\" in rel or ":" in rel or "%" in rel:
         return False
     partes = PurePosixPath(rel)
     return not partes.is_absolute() and ".." not in partes.parts
+
+
+def referenced_asset_paths(text: str, *, canonical_dir: str) -> set[tuple[str, str]]:
+    """Os caminhos `{knowledge,rules,evals}/<rel>` que `text` cita — por link
+    markdown resolvido contra `canonical_dir` E por mencao textual. Retorna
+    pares ``(root, rel)``; refs que escapam a raiz sao descartadas."""
+    base = PurePosixPath(canonical_dir)
+    refs: set[tuple[str, str]] = set()
+    for match in _MD_LINK.finditer(text):
+        target = match.group(2)
+        if target.startswith(("http://", "https://", "mailto:", "#", "/")):
+            continue
+        path_part = target.partition("#")[0]
+        resolved = PurePosixPath(posixpath.normpath(str(base / path_part)))
+        partes = resolved.parts
+        if partes and partes[0] in _ASSET_ROOTS and len(partes) > 1:
+            rel = resolved.relative_to(partes[0]).as_posix()
+            if _rel_seguro(rel):
+                refs.add((partes[0], rel))
+    refs.update(
+        (root, r) for root, r in _ASSET_MENTION.findall(text) if _rel_seguro(r)
+    )
+    return refs
 
 
 def referenced_knowledge_paths(text: str, *, canonical_dir: str) -> set[str]:
@@ -745,25 +769,11 @@ def referenced_knowledge_paths(text: str, *, canonical_dir: str) -> set[str]:
     caminho e o abre). Serve para o install emitir ponteiros exatamente nos
     docs referenciados, nao no knowledge inteiro. Refs que escapam a raiz
     (`..`, absoluto) sao descartadas — nunca viram path."""
-    base = PurePosixPath(canonical_dir)
-    refs: set[str] = set()
-    for match in _MD_LINK.finditer(text):
-        target = match.group(2)
-        if target.startswith(("http://", "https://", "mailto:", "#", "/")):
-            continue
-        path_part = target.partition("#")[0]
-        # The canonical document graph uses POSIX separators even when the
-        # installer is running on Windows.  ``os.path.normpath`` would turn
-        # the graph into a backslash-containing single path component and
-        # hide valid ``knowledge/...`` references from the pointer planner.
-        resolved = PurePosixPath(posixpath.normpath(str(base / path_part)))
-        partes = resolved.parts
-        if partes and partes[0] == "knowledge" and len(partes) > 1:
-            rel = resolved.relative_to("knowledge").as_posix()
-            if _rel_seguro(rel):
-                refs.add(rel)
-    refs.update(r for r in _KNOWLEDGE_MENTION.findall(text) if _rel_seguro(r))
-    return refs
+    return {
+        rel
+        for root, rel in referenced_asset_paths(text, canonical_dir=canonical_dir)
+        if root == "knowledge"
+    }
 
 
 _KNOWLEDGE_STUB = """\
@@ -814,6 +824,46 @@ Total referenciado nesta instalacao: {total} documento(s).
 def knowledge_index_stub(total: int) -> bytes:
     """`knowledge/README.md` do alvo: o indice dos ponteiros + os verbos."""
     return _KNOWLEDGE_INDEX.format(total=total).encode("utf-8")
+
+
+_ASSET_STUB = """\
+# Ponteiro de {kind} — sparkforge-aws
+
+Este arquivo e um PONTEIRO gerado na instalacao: os links `{kind}/<rel>`
+dos mirrors (.agents/skills, .claude/skills, ...) resolvem aqui, mas o
+CONTEUDO real mora no pacote `sparkforge-aws` instalado — fora de qualquer
+checkout, e propositalmente nao copiado para o workspace.
+
+Recupere o conteudo real pelos verbos nativos:
+
+    sparkforge-aws capabilities          # mapa completo ops -> verbos
+"""
+
+
+_ASSET_INDEX = """\
+# {kind}/ — ponteiros do sparkforge-aws
+
+Os arquivos neste diretorio sao PONTEIROS (um por documento `{kind}/`
+referenciado pelas skills/agents instalados). O conteudo real e versionado
+dentro do pacote e se recupera offline pelos verbos — `sparkforge-aws
+capabilities` lista o mapa completo.
+
+Total referenciado nesta instalacao: {total} documento(s).
+"""
+
+
+def asset_stub(kind: str, rel: str) -> bytes:
+    """O ponteiro `<alvo>/{kind}/<rel>` para roots sem stub dedicado."""
+    if kind == "knowledge":
+        return knowledge_stub(rel)
+    return _ASSET_STUB.format(kind=kind, rel=rel).encode("utf-8")
+
+
+def asset_index_stub(kind: str, total: int) -> bytes:
+    """`<root>/README.md` do alvo: indice dos ponteiros + os verbos."""
+    if kind == "knowledge":
+        return knowledge_index_stub(total)
+    return _ASSET_INDEX.format(kind=kind, total=total).encode("utf-8")
 
 
 def _newline_of(lines: list[str]) -> str:

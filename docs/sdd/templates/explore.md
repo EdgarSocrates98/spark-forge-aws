@@ -16,6 +16,7 @@ approaches:
       - "um contrato só para CLI e MCP"
       - "move a superfície e o surface lock"
 chosen: A
+decisions_ref: docs/sdd/EXEMPLO/decisions.json
 ---
 
 # EXEMPLO — exploração
@@ -25,6 +26,9 @@ chosen: A
 > `status: draft` enquanto a conversa não fecha. `chosen` é um dos
 > `approaches[].id`. `explore` é a única fase sem `upstream`, e é opcional:
 > quando ela existe, o `define` passa a declarar `upstream` apontando para ela.
+> `decisions_ref` é opcional: aponta a árvore `forge/DecisionTree/v1` da
+> feature (copie `docs/sdd/templates/decisions.json`); cada decisão aberta vira
+> `decision_open` até o operador responder.
 
 ## Perfil
 

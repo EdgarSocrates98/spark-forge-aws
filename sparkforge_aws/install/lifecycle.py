@@ -1118,6 +1118,7 @@ def _context_manifest(
         profile=profile,
         hosts=hosts,
         forge_json=forge_json,
+        kind="specialist",
         agentic=agentic,
         domains=_AWS_DOMAINS,
         skills=skills,

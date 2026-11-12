@@ -2009,13 +2009,14 @@ def build_parser() -> argparse.ArgumentParser:
         ("check", "Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0."),
         ("status", "Fase atual de cada feature e o que a impede de avancar."),
         ("stamp", "Grava upstream.sha256 do artefato. Escreve so a linha do hash."),
+        ("converge", "O que veio x o que foi pedido. So le; sai 1 com divergencia."),
     ):
         sdd_verbo_p = sdd_sub.add_parser(nome, help=ajuda)
         sdd_verbo_p.add_argument("--repo", required=True, help="Raiz do repositorio.")
         sdd_verbo_p.add_argument(
             "--root", default="docs/sdd", help="Pasta dos artefatos, relativa a --repo."
         )
-        if nome == "check":
+        if nome in ("check", "converge"):
             sdd_verbo_p.add_argument("--feature", help="Confere so esta feature.")
         if nome == "stamp":
             sdd_verbo_p.add_argument("path", help="Artefato, relativo a --repo.")
@@ -3978,6 +3979,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     verify_p.add_argument("--repo", required=True)
 
+    # obsidian — shared authorized-vault verbs (vendored engine, same
+    # contract as every sibling forge). Export stays gated behind --yes.
+    from sparkforge_aws._forge_obsidian.cli import obsidian_argparse
+
+    obsidian_argparse(sub, "spark-forge-aws")
+
     return parser
 
 
@@ -5274,6 +5281,12 @@ def _cmd_sdd_status(args: argparse.Namespace) -> int:
 def _cmd_sdd_stamp(args: argparse.Namespace) -> int:
     _print(_core.sdd_stamp(args.repo, args.path, args.root))
     return 0
+
+
+def _cmd_sdd_converge(args: argparse.Namespace) -> int:
+    relatorio = _core.sdd_converge(args.repo, args.root, args.feature)
+    _print(relatorio)
+    return 0 if relatorio["ok"] else 1
 
 
 def _cmd_fuse(args: argparse.Namespace) -> int:
@@ -6752,6 +6765,7 @@ _DISPATCH = {
     ("sdd", "check"): _cmd_sdd_check,
     ("sdd", "status"): _cmd_sdd_status,
     ("sdd", "stamp"): _cmd_sdd_stamp,
+    ("sdd", "converge"): _cmd_sdd_converge,
     ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("arbitrate", None): _cmd_arbitrate,
@@ -6881,6 +6895,8 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command in ('install', 'status', 'repair', 'update', 'uninstall', 'mcp'):
         from sparkforge_aws.install.cli import dispatch
         return dispatch(args)
+    if args.command == 'obsidian':
+        return args.func(args)
     if args.command == 'portal':
         from sparkforge_aws.portal_adapter import main as portal_main
         portal_argv: list[str] = []

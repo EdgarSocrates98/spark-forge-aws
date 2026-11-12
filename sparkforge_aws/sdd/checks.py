@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cache
@@ -25,7 +26,12 @@ from sparkforge_aws.facts.scan import (
 from sparkforge_aws.paths import resolve_within
 from sparkforge_aws.receipt._hash import text_sha256
 from sparkforge_aws.sdd import DEFAULT_ROOT, PHASES
+from sparkforge_aws.sdd.converge import _caminho_da_arvore, converge_artefatos
+from sparkforge_aws.sdd.decisions import load_decisions, validate_decisions
 from sparkforge_aws.sdd.load import FEATURE_RE, Artifact, discover, load_artifact
+from sparkforge_aws.sdd.receipts import load_receipt, validate_receipt
+from sparkforge_aws.sdd.requirements import validate_requirements
+from sparkforge_aws.sdd.task_graph import validate_tasks
 
 _AQUI = Path(__file__).resolve().parent
 
@@ -278,6 +284,70 @@ def _gate_change_kinds(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
             ctx.recusa("schema_invalid", artefato.path, f"change_kinds/{indice}",
                        f"'{chave}' nao existe em sparkforge_aws/sdd/change_kinds.yaml; use uma de: "
                        + ", ".join(sorted(conhecidos)))
+
+
+def _gate_decisions(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    ref = artefato.meta.get("decisions_ref")
+    if not ref:
+        return
+    alvo = resolve_within(ctx.repo, str(ref))
+    if alvo is None or not alvo.is_file():
+        ctx.lacuna("decisions_missing", artefato.path,
+                   f"{ref} nao existe; a entrevista grava a arvore em "
+                   f"{alvo or ref} (forge/DecisionTree/v1)")
+        return
+    arvore, erro = load_decisions(alvo)
+    if erro is not None or arvore is None:
+        ctx.recusa("decisions_invalid", alvo, None, f"{ref}: {erro}")
+        return
+    for achado in validate_decisions(arvore, ctx.feature):
+        campo = f"decisions/{achado.decision}" if achado.decision else None
+        if achado.kind == "invalid":
+            ctx.recusa("decisions_invalid", alvo, campo, achado.detail)
+        elif achado.kind == "dep_unknown":
+            ctx.recusa("decision_dep_unknown", alvo, campo, achado.detail)
+        elif achado.kind == "cycle":
+            ctx.recusa("decision_cycle", alvo, campo, achado.detail)
+        elif achado.kind == "contradicts":
+            ctx.recusa("decision_contradicts", alvo, campo, achado.detail)
+        elif achado.kind == "open":
+            ctx.lacuna("decision_open", alvo, achado.detail)
+
+
+def _arvore_da_feature(ctx: _Contexto) -> dict[str, Any] | None:
+    """A `decisions.json` da feature (do `decisions_ref` ou da pasta), ou None."""
+    alvo = _caminho_da_arvore(ctx.repo, ctx.caminhos, ctx.artefatos)
+    if alvo is None or not alvo.is_file():
+        return None
+    arvore, _ = load_decisions(alvo)
+    return arvore
+
+
+def _gate_requirements(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    requisitos = artefato.meta.get("requirements")
+    if not requisitos:
+        return
+    for achado in validate_requirements(
+        requisitos,
+        artefato.meta.get("unknowns") or [],
+        artefato.meta.get("out_of_scope") or [],
+        _arvore_da_feature(ctx),
+    ):
+        campo = f"requirements/{achado.item}" if achado.item else "requirements"
+        if achado.kind == "duplicate":
+            ctx.recusa("requirement_duplicate", artefato.path, campo, achado.detail)
+        elif achado.kind == "untestable":
+            ctx.lacuna("requirement_untestable", artefato.path, achado.detail)
+        elif achado.kind == "metric_no_source":
+            ctx.recusa("requirement_metric_without_source", artefato.path, campo, achado.detail)
+        elif achado.kind == "contradicts":
+            ctx.lacuna("requirement_contradicts", artefato.path, achado.detail)
+        elif achado.kind == "decision_unknown":
+            ctx.recusa("decision_ref_unknown", artefato.path, campo, achado.detail)
+        elif achado.kind == "decision_open":
+            ctx.lacuna("decision_open", artefato.path, achado.detail)
+        elif achado.kind == "blocked":
+            ctx.lacuna("requirement_blocked", artefato.path, achado.detail)
 
 
 def _conferir_funcval(
@@ -764,17 +834,172 @@ def _gate_evidence(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                            "do ship: leia-o de novo antes de regravar o hash")
 
 
+def _gate_task_graph(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    tarefas = artefato.meta["tasks"]
+    define = ctx.artefatos.get("define")
+    requisitos = [
+        r["id"] for r in (define.meta.get("requirements") or [])
+    ] if define is not None else []
+    criterios = [
+        item["id"] for item in define.meta["acceptance"]
+    ] if define is not None else []
+    novo = any(
+        tarefa.get("depends_on") or tarefa.get("parallel_safe") or tarefa.get("write_scope")
+        for tarefa in tarefas
+    )
+    if define is None and not novo:
+        return  # sem define nem campos de grafo, nao ha o que o grafo julgue
+    for achado in validate_tasks(tarefas, requisitos, criterios):
+        if achado.kind == "dep_unknown":
+            ctx.recusa("task_dep_unknown", artefato.path, "tasks", achado.detail)
+        elif achado.kind == "cycle":
+            ctx.recusa("task_dep_cycle", artefato.path, "tasks", achado.detail)
+        elif achado.kind == "order":
+            ctx.recusa("task_dep_order", artefato.path, "tasks", achado.detail)
+        elif achado.kind == "req_uncovered":
+            ctx.lacuna("requirement_uncovered", artefato.path, achado.detail)
+        elif achado.kind == "covers_nothing":
+            ctx.lacuna("task_covers_nothing", artefato.path, achado.detail)
+        elif achado.kind == "write_overlap":
+            ctx.lacuna("parallel_write_overlap", artefato.path, achado.detail)
+
+
+_PERSISTENCIA_RE = re.compile(r"glue|iceberg|delta|parquet", re.IGNORECASE)
+
+
+def _gate_persistence(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    """Checklist de persistencia do `change_kinds.yaml` (Onda 4, §4.9).
+
+    Dispara por declaracao (um `change_kind` do define com `persistence`) ou,
+    so no perfil `operator`, por deteccao: `files` citando
+    glue/iceberg/delta/parquet num repo de jobs de dados e sinal de escrita
+    persistente; no `dev` os mesmos nomes sao codigo de ferramenta, e so a
+    declaracao conta. Nesse caso a checklist canonica e a uniao de todas as
+    `persistence` do mapa. Item sem tratamento no `persistence` da fase e
+    lacuna, porque a forma correta e julgamento de dominio, nao erro de
+    contrato.
+    """
+    define = ctx.artefatos.get("define")
+    if define is None:
+        return
+    conhecidos = change_kinds()
+    itens = {
+        item
+        for chave in define.meta["change_kinds"]
+        for item in (conhecidos.get(chave) or {}).get("persistence") or []
+    }
+    if not itens and artefato.meta["profile"] == "operator":
+        if fase == "design":
+            caminhos = [f["path"] for f in artefato.meta["files"]]
+        else:
+            caminhos = [
+                caminho
+                for tarefa in artefato.meta["tasks"]
+                for caminho in (tarefa.get("files") or [])
+            ]
+        if any(_PERSISTENCIA_RE.search(caminho) for caminho in caminhos):
+            itens = {
+                item
+                for valor in conhecidos.values()
+                for item in valor.get("persistence") or []
+            }
+    if not itens:
+        return
+    declarado = artefato.meta.get("persistence") or {}
+    for item in sorted(itens):
+        if not str(declarado.get(item) or "").strip():
+            ctx.lacuna("persistence_undeclared", artefato.path,
+                       f"declare persistence.{item}: como a mudanca trata {item} na "
+                       "escrita de dados (feature com persistencia detectada)")
+
+
+def _gate_receipts(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, ref in enumerate(artefato.meta.get("receipts") or []):
+        campo = f"receipts/{indice}"
+        alvo = resolve_within(ctx.repo, str(ref))
+        if alvo is None or not alvo.is_file():
+            ctx.recusa("receipt_missing", artefato.path, campo,
+                       f"o recibo {ref} nao existe; gere a execucao real e grave "
+                       "o forge/TestExecutionReceipt/v1")
+            continue
+        recibo, erro = load_receipt(alvo)
+        if erro is not None or recibo is None:
+            ctx.recusa("schema_invalid", artefato.path, campo, f"{ref}: {erro}")
+            continue
+        for achado in validate_receipt(recibo, ctx.repo):
+            if achado.kind == "invalid":
+                ctx.recusa("schema_invalid", artefato.path, campo, achado.detail)
+            elif achado.kind == "failed":
+                ctx.recusa("receipt_failed", artefato.path, campo, achado.detail)
+            elif achado.kind == "inconclusive":
+                ctx.lacuna("receipt_inconclusive", artefato.path, achado.detail)
+            elif achado.kind == "output_missing":
+                ctx.lacuna("receipt_output_missing", artefato.path, achado.detail)
+            elif achado.kind == "stale":
+                ctx.recusa("receipt_stale", artefato.path, campo, achado.detail)
+
+
+def _gate_convergence(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    """O ship so vai `ready` quando o que veio casa com o que foi pedido.
+
+    Sem secao `convergence`, cada divergencia viva vira codigo (`unrequested`
+    e informacao e nunca dispara; item `covered_by` sai pelo gate dono). Com a
+    secao gravada, ela precisa bater com o `sdd converge` de agora -- divergir
+    e `convergence_stale`, e divergencias registradas seguem em
+    `convergence_open` ate o operador decidir. Ship `done` e historia e nao
+    e conferido.
+    """
+    if artefato.meta["status"] == "done":
+        return
+    vivas = converge_artefatos(ctx.repo, ctx.caminhos, ctx.artefatos, ctx.rel)
+    declarado = artefato.meta.get("convergence")
+    if declarado is None:
+        for item in vivas:
+            if item["class"] == "unrequested" or item.get("covered_by"):
+                continue
+            detalhe = f"{item['class']} em {item['item']}: {item['reason']}"
+            if item["class"] in ("partial", "unverified"):
+                ctx.lacuna("convergence_unverified", artefato.path, detalhe)
+            else:
+                ctx.recusa("convergence_diverged", artefato.path, None, detalhe)
+        return
+    gravadas = {
+        (i["class"], i["item"], i["path"], i["reason"])
+        for i in declarado["divergences"]
+    }
+    atuais = {(i["class"], i["item"], i["path"], i["reason"]) for i in vivas}
+    if gravadas != atuais:
+        ctx.recusa("convergence_stale", artefato.path, "convergence",
+                   "a secao convergence nao bate com `sparkforge-aws sdd converge` "
+                   "agora; rode o verbo e regrave a secao")
+    elif gravadas:
+        ctx.lacuna("convergence_open", artefato.path,
+                   "divergencias registradas seguem abertas; o ship precisa da "
+                   "decisao do operador sobre cada item")
+
+
 _GATES: dict[str, tuple[Gate, ...]] = {
-    "explore": (_gate_upstream,),
+    "explore": (_gate_upstream, _gate_decisions),
     "define": (
-        _gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by, _gate_case,
+        _gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by,
+        _gate_case, _gate_requirements,
     ),
-    "design": (_gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura),
-    "plan": (_gate_order, _gate_upstream, _gate_cobertura, _gate_task_test),
+    "design": (
+        _gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura,
+        _gate_persistence,
+    ),
+    "plan": (
+        _gate_order, _gate_upstream, _gate_cobertura, _gate_task_test, _gate_persistence,
+        _gate_task_graph,
+    ),
     "build_report": (
-        _gate_order, _gate_upstream, _gate_red, _gate_acceptance_red, _gate_claims, _gate_change,
+        _gate_order, _gate_upstream, _gate_red, _gate_acceptance_red, _gate_claims,
+        _gate_change, _gate_receipts,
     ),
-    "ship": (_gate_order, _gate_upstream, _gate_hypothesis, _gate_registries, _gate_evidence),
+    "ship": (
+        _gate_order, _gate_upstream, _gate_hypothesis, _gate_registries, _gate_evidence,
+        _gate_convergence,
+    ),
 }
 
 

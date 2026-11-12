@@ -277,7 +277,7 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
                            help="Aprovacao explicita: sem ela, --dry-run.")
     install_p.add_argument("--components", default=None,
                            help="Componentes opcionais csv: "
-                                "skills,agents,mcp,tui,graph-studio.")
+                                "skills,agents,mcp,knowledge,rules,evals,tui,graph-studio.")
     install_p.add_argument("--dry-run", action="store_true")
     install_sub = install_p.add_subparsers(dest="install_action")
     doctor_p = install_sub.add_parser(

@@ -6,6 +6,7 @@ metadata:
   evals: evals/evals.json
   references:
   - references/README.md
+  - references/decision-tree.md
   - ../_shared/references/evidence-first.md
   - ../_shared/references/evaluation-contract.md
   - ../_shared/references/operational-safety.md
@@ -50,23 +51,66 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 
 ## O laço
 
-1. **Uma pergunta por mensagem.** Múltipla escolha quando der. O foco é
-   propósito, restrição, critério de sucesso e o que fica de fora.
-2. **Fato vem de verbo, não de memória** (regra em
+A conversa roda sobre uma **árvore de decisões** gravada em
+`docs/sdd/<FEATURE>/decisions.json` (contrato em
+`references/decision-tree.md`). O gate só lê `explore.md`; a árvore é o
+registro da entrevista — o que permite retomar, auditar e responder "por que
+isto" sem depender do histórico da sessão.
+
+1. **Monte a árvore antes de perguntar.** Liste o que o pedido deixa em
+   aberto. Cada item vira `type: fact` — respondido por verbo, medida ou
+   leitura (`code search`, `runtime detect`, o case), nunca por pergunta — ou
+   `type: decision`, que só o operador decide. Decisão que depende de fato
+   ganha `depends_on` apontando para ele: o fato é investigado antes, e a
+   pergunta chega ao operador já com a resposta dele.
+2. **Escolha o modo** e grave no topo da árvore:
+   - `sequencial` — **uma pergunta por mensagem**, o default. Continua sempre
+     disponível, em qualquer modo, quando uma decisão pede foco.
+   - `rodada` — um bloco de perguntas por mensagem, agrupadas por tema; só
+     entre decisões sem `depends_on` entre si.
+   - `adaptativo` — a ordem muda a cada resposta ou evidência nova: a árvore
+     diz quais decisões continuam `pending`, quais abriram e quais caíram.
+   - `fronteiras` — agrupa por fronteira (módulo, conta, runtime) **somente
+     decisões independentes** que a política da entrevista autorizar;
+     decisão dependente sai do grupo e volta ao sequencial.
+3. **Fato vem de verbo, não de memória** (regra em
    `docs/sdd/README.md#conhecimento-citado-nunca-memória`). Regra do catálogo
-   por área: `sparkforge-aws rules lookup --category <área>`.
-3. **Duas ou três abordagens**, cada uma com trade-offs, a recomendada primeiro
+   por área: `sparkforge-aws rules lookup --category <área>`. Resposta de fato
+   entra em `evidence`, não em `answer`.
+4. **Recomendação por decisão.** Cada `alternatives[]` tem a recomendada
+   marcada e a `rationale`; a recomendação é sua, o `answer` é do operador —
+   ele pode recusar, e a árvore registra a recusa, não a "correção" dele.
+5. **Contradição e reversibilidade.** Resposta que contradiz uma decisão
+   `status: answered` marca as duas e sobe ao operador na hora — contradição
+   não se acumula para o define. Decisão cara de reverter ganha `impact`
+   com o custo e `reopen_condition` dizendo o que permite reabri-la sem
+   recomeçar a entrevista; mudança no meio usa a condição, nunca edição muda.
+6. **Duas ou três abordagens**, cada uma com trade-offs, a recomendada primeiro
    e o porquê. Corte o que ninguém pediu (YAGNI).
-4. **O operador escolhe.** Apresente, pergunte, espere. Se ele recusar todas,
+7. **O operador escolhe.** Apresente, pergunte, espere. Se ele recusar todas,
    volte ao passo 1.
-5. **Grave** `docs/sdd/<FEATURE>/explore.md` a partir de
+8. **Confirmação final.** Antes de fechar, releia a árvore com o operador:
+   toda decisão com `answer`, toda contradição resolvida, a abordagem
+   escolhida e as rejeitadas. A confirmação é um portão — sem ela, o
+   `explore.md` continua `draft`.
+9. **Grave** `docs/sdd/<FEATURE>/explore.md` a partir de
    `docs/sdd/templates/explore.md`, com `status: draft` enquanto a conversa não
-   fecha.
-6. **Confira** com `sparkforge-aws sdd check --repo . --feature <FEATURE>`, pelo
-   laço de `docs/sdd/README.md#o-laço-de-cada-fase`. O explore é a primeira
-   fase e não leva `upstream`, então não há stamp aqui.
-7. **Próximo passo:** `sdd-define`. Com `explore.md` presente, o define passa a
-   declarar `upstream` apontando para ele.
+   fecha. As perguntas e respostas vivem no corpo e na árvore; o histórico da
+   entrevista não mora só na sessão.
+10. **Confira** com `sparkforge-aws sdd check --repo . --feature <FEATURE>`, pelo
+    laço de `docs/sdd/README.md#o-laço-de-cada-fase`. O explore é a primeira
+    fase e não leva `upstream`, então não há stamp aqui.
+11. **Próximo passo:** `sdd-define`. Com `explore.md` presente, o define passa a
+    declarar `upstream` apontando para ele, e pode citar as decisões da
+    árvore pelo `id`.
+
+## Retomada
+
+Sessão nova continua de `decisions.json`: decisões `answered` ficam como
+estão (reabrir só por `reopen_condition`), `pending` e `blocked` voltam à
+fila do modo escolhido. Árvore ausente numa feature em andamento é sinal de
+entrevista que viveu só na sessão — reconstrua com o operador antes de
+seguir, ou declare o risco.
 
 ## O que o artefato guarda
 
@@ -75,6 +119,8 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 - `chosen`: o `id` que o operador aprovou — igual a um dos `approaches[].id`,
   letra por letra.
 - O corpo: as perguntas feitas, as respostas, e por que a escolhida venceu.
+- `decisions.json` ao lado: a árvore inteira da entrevista — decisões,
+  dependências, evidências, respostas, contradições e reaberturas.
 
 Nenhuma nota de clareza, nenhum "confiança 0,9". Número que o próprio agente
 atribui é T5 na escala de autoridade e não sustenta decisão sozinho.
@@ -120,7 +166,14 @@ Visão geral do ciclo: `docs/sdd/README.md`.
 
 ## Red flags
 
-- Duas ou mais perguntas na mesma mensagem.
+- Pergunta sobre fato que um verbo responde — `type: fact` não vira pergunta.
+- Decisões dependentes agrupadas no modo `rodada` ou `fronteiras`.
+- `answer` editado em silêncio, sem `reopen_condition` e sem avisar que reabriu.
+- Contradição entre respostas empurrada para o define em vez de resolvida aqui.
+- Recomendação apresentada como resposta: `answer` é do operador, sempre.
+- Retomada que ignora o `decisions.json` e refaz perguntas já respondidas.
+- Fechamento sem a confirmação final sobre a árvore inteira.
+- Duas ou mais perguntas na mesma mensagem fora do modo que as agrupa.
 - Uma abordagem só, ou três que são a mesma com nomes diferentes.
 - Código, arquivo fora de `docs/sdd/<FEATURE>/` ou skill de implementação antes
   da aprovação.

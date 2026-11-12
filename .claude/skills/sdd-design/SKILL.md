@@ -6,6 +6,7 @@ metadata:
   evals: evals/evals.json
   references:
   - references/README.md
+  - references/design-review.md
   - ../_shared/references/evidence-first.md
   - ../_shared/references/evaluation-contract.md
   - ../_shared/references/operational-safety.md
@@ -77,6 +78,50 @@ Cada item liga uma `part` do desenho aos `acceptance` do define que ela
 entrega. Todo `AC` aparece em pelo menos um `covers`; o que faltar sai
 `acceptance_uncovered`, nomeando o critério.
 
+## O desenho além do manifesto
+
+A profundidade acompanha o risco da mudança — uma linha de log e um formato
+de tabela persistido não desenham igual. Cada bloco entra **quando se
+justifica**, no corpo do `design.md` (o detalhe vive em
+`references/design-review.md`):
+
+- **ADR** — decisão cara de reverter ou que atravessa fronteira (contrato
+  público, formato persistido, runtime de terceiro) ganha registro expandido:
+  contexto, alternativas, consequências. `D<n>` continua sendo o campo do
+  schema; o ADR é o corpo que o justifica.
+- **Threat model** — obrigatório quando a mudança toca fronteira de
+  confiança: entradas não confiadas, segredos, exfiltração, permissão
+  cross-account, Lake Formation, IAM.
+- **Contratos de integração** — quem consome o que a mudança publica:
+  schema de entrada/saída, erros, versionamento. Consumidor descoberto no
+  build é desenho que não olhou.
+- **Data model** — entidade, chave de negócio, dono, retenção.
+- **Research** — o spike ou a leitura que sustenta o desenho, com a
+  evidência citada (o documento, o fact, a versão). "Pesquisei e vi que"
+  sem ref é memória com outro nome.
+- **Quickstart de validação** — como o revisor confere o desenho em
+  minutos: o comando, o arquivo, o teste que já existe.
+- **Impact e compatibility analysis** — quem quebra (`code symbol`,
+  `code path`, os consumidores do manifesto) e o que muda entre runtimes.
+  **Comportamento de um runtime não vale para outro**: Glue 4.x/5.x e
+  versões futuras verificadas, EMR, Spark SQL, Athena e Athena UNLOAD,
+  Iceberg, Delta Lake, Parquet, Streaming — cada afirmação com a versão em
+  que foi verificada.
+- **Durabilidade de escrita** — quando a feature persiste ou atualiza
+  dado (Glue Catalog, S3, Iceberg, Delta, Parquet, UNLOAD, Step
+  Functions): schema evolution, concorrência, idempotência, recovery,
+  consistência e os limites de transação. O desenho mostra como o
+  invariante sobrevive a uma operação que falha entre etapas — snapshot
+  isolado não cobre falha de múltiplas operações.
+
+## Foco AWS
+
+Quando aplicável, o desenho diz por serviço o que muda, com fonte e versão:
+Glue e Glue jobs, Glue Catalog, Athena e UNLOAD, Lake Formation,
+cross-account, IAM, S3, EMR, Step Functions, Iceberg, Delta Lake, Parquet,
+Spark SQL, Terraform e Streaming. A afirmação sem versão citada entra como
+`unresolved` do desenho, não como premissa.
+
 ## O laço
 
 O de `docs/sdd/README.md#o-laço-de-cada-fase`, com a cascata. Aqui o desenho
@@ -129,6 +174,15 @@ Template: `docs/sdd/templates/design.md`.
 - Design carimbado de novo sem ler o que mudou no define.
 - Arquivo do operador no manifesto com caminho de escrita direta, sem
   `change plan`.
+- Comportamento assumido de um runtime para outro — Glue 4 vale para Glue 5,
+  EMR vale para Glue — sem a versão verificada citada.
+- Contrato de integração descoberto no build: consumidor que o manifesto e o
+  `code symbol` teriam mostrado.
+- Escrita de dado sem as perguntas de durabilidade respondidas (concorrência,
+  idempotência, recovery, limites de transação).
+- Threat model pulado numa mudança que toca segredo, IAM ou cross-account.
+- Rollback que só cobre o caminho feliz — sem o que faz quando a escrita
+  falha entre etapas.
 
 
 ## Contrato de qualidade SparkForge (v1)

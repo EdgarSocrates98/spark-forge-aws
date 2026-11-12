@@ -1,7 +1,7 @@
 # Duplicate content report
 Forge: `spark-forge-aws`
 Real exact-duplicate groups (>=2 non-generated copies): 0
-Canonical+mirror groups (intentional host renders): 242
+Canonical+mirror groups (intentional host renders): 250
 
 No exact duplicates found.
 

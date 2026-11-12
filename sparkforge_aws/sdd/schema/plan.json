@@ -29,9 +29,21 @@
               "kind": {"enum": ["funcval", "fact", "finding"]},
               "ref": {"type": "string", "minLength": 1}
             }
-          }
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^T[0-9]+$"}
+          },
+          "parallel_safe": {"type": "boolean"},
+          "risk": {"enum": ["low", "medium", "high"]},
+          "write_scope": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "blocking": {"type": "boolean"}
         }
       }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
     }
   }
 }

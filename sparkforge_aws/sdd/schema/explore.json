@@ -15,6 +15,7 @@
         }
       }
     },
-    "chosen": {"type": "string", "minLength": 1}
+    "chosen": {"type": "string", "minLength": 1},
+    "decisions_ref": {"type": "string", "minLength": 1}
   }
 }

@@ -28,6 +28,86 @@
         "The response cites at least one local reference and preserves version or provenance constraints.",
         "The response does not claim a performance or cost gain without a same-case measurement."
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "A user opens with: \"melhora o job aí, tá lento e caro\". No define, design or code exists yet, and the request mixes symptom, cost and an unstated goal. Run the sdd-explore interview.",
+      "expected_output": "An interview plan that decomposes the vague request into investigable facts and human decisions before any approach is proposed.",
+      "files": [],
+      "expectations": [
+        "The response separates what a verb or measurement can answer (runtime, partition layout, last run facts, fact_id sources) from what only the operator can decide (goal, budget ceiling, scope).",
+        "The response does not propose an approach, pick a configuration value, or write code before the operator answers the profile and goal questions.",
+        "The response asks about dev-vs-operator profile and names which facts (case, runtime detect, event log) would be collected before the first decision is asked.",
+        "The response records unresolved items explicitly instead of assuming job runtime, data volume or the meaning of \"caro\".",
+        "The response keeps rollback and validation framing for later phases rather than promising a fix now."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "During sdd-explore, the decision \"which storage format\" (DEC-4) depends on the fact \"current table format\" (DEC-2, type fact, pending) and on the fact \"who reads the table\" (DEC-3, type fact, pending). The user also asks to batch all remaining questions in one message to save time.",
+      "expected_output": "The interview orders fact collection before the dependent decision and refuses to batch dependent decisions together.",
+      "files": [],
+      "expectations": [
+        "The response requires DEC-2 and DEC-3 to be answered by verbs or measurements (each with a fact_id or artifact citation) before DEC-4 is asked.",
+        "The response refuses to group DEC-4 with unrelated decisions in a single round, because a decision with depends_on is not independent; independent decisions may still be batched.",
+        "The response keeps one-question-per-message available for the dependent decision.",
+        "The response records unresolved facts with the exact verb or artifact that unlocks them instead of guessing the table format.",
+        "The response includes a validation and rollback note on the recommended alternative without claiming a measured gain."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "The operator is asking \"uso Iceberg ou continuo em Parquet particionado?\". Facts already collected show: Glue 5 runtime detected, table is append-only, consumers read latest partition only. No measurement of compaction cost exists yet.",
+      "expected_output": "Two or three grounded alternatives with a recommendation, open unresolved items, and a choice left to the operator.",
+      "files": [],
+      "expectations": [
+        "The response grounds each alternative in the collected facts (fact_id, runtime detection, read pattern) rather than in general claims about Iceberg or Parquet.",
+        "The response marks exactly one alternative as recommended with a rationale tied to the observed facts, and keeps the other as a registered rejection with tradeoffs.",
+        "The response lists the compaction-cost question as unresolved and names the measurement that would resolve it, instead of estimating from memory.",
+        "The response leaves the final answer field for the operator and does not treat its own recommendation as the decision.",
+        "The response includes validation and rollback notes per alternative and cites at least one local reference."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "sdd-explore recommended approach A (JSON summary file) over approach B (new CLI verb). The operator reads both and says: \"prefiro B mesmo\". The session believes A is objectively better.",
+      "expected_output": "The refusal is recorded as the operator's answer; the tree records B chosen and A rejected with its rationale.",
+      "files": [],
+      "expectations": [
+        "The response records the operator's choice as the answer and never relabels the recommendation as the decision.",
+        "The response keeps approach A visible as a rejected alternative with its tradeoffs rather than deleting it.",
+        "The response re-checks which decisions depended on A and marks them for review or reopening instead of silently carrying their answers.",
+        "The response does not reopen the question without a reopen_condition, and does not argue the operator out of a recorded answer.",
+        "The response updates the artifact, re-runs the phase validation path, and preserves rollback framing for the chosen approach.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Mid-interview in sdd-explore: after answering DEC-5 \"escopo: só o job de billing\", the operator says \"na verdade inclui o job de refunds também\". DEC-5 was answered and two later decisions referenced its scope.",
+      "expected_output": "A controlled reopen of DEC-5 with the downstream decisions marked, not a silent edit of the answer.",
+      "files": [],
+      "expectations": [
+        "The response reopens DEC-5 through its reopen_condition, keeps the previous answer in the history, and records the new answer as a change the operator confirmed.",
+        "The response marks every decision whose answer depended on the old scope for re-answer instead of leaving stale answers in place.",
+        "The response surfaces any contradiction between the old and new answers explicitly rather than averaging them.",
+        "The response re-collects facts whose evidence depended on the narrower scope, citing the fact_id or artifact that must be re-measured.",
+        "The response keeps the interview resumable (status fields updated) and notes validation and rollback implications of the wider scope.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "The operator answers two questions in sdd-explore: DEC-7 \"pode rodar em horário qualquer\" (answer: yes) and DEC-9 \"a janela de manutenção é só das 02h às 04h\". Both were marked answered before the conflict was noticed.",
+      "expected_output": "The contradiction is surfaced to the operator immediately; the two decisions are marked instead of silently averaged.",
+      "files": [],
+      "expectations": [
+        "The response flags DEC-7 and DEC-9 as contradicting each other and asks the operator to resolve the pair before continuing the interview.",
+        "The response does not merge the two answers into a plausible middle ground or pick one silently.",
+        "The response records the contradiction in the decision tree with both statuses visible and the earlier answers preserved.",
+        "The response lists what stays unresolved until the operator confirms the schedule constraint, and names the fact_id or artifact supporting each side if evidence exists.",
+        "The response states the downstream validation and rollback impact of the unresolved pair on later phases."
+      ]
     }
   ]
 }

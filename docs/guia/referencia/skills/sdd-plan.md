@@ -7,7 +7,7 @@ Use quando o design.md da feature está ready e falta quebrar a construção em 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sdd-plan/SKILL.md` |
-| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws code search', 'sparkforge-aws sdd stamp']} |
+| `metadata` | {'sparkforge_aws_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/task-graph.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../docs/sdd/README.md', '../../docs/sdd/CONTRATO.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge-aws sdd check', 'sparkforge-aws code search', 'sparkforge-aws sdd stamp']} |
 
 ## Procedimento (texto integral)
 
@@ -70,6 +70,64 @@ Nada disto entra no plano:
 - Comando que ninguém rodou: confirme com `sparkforge-aws <verbo> --help` ou
   `sparkforge-aws code search`.
 
+### O grafo de tarefas
+
+O plano também é um grafo. Além de `id`, `files`, `covers` e `test`/`proof`,
+cada tarefa registra **na seção `## T<n>` do corpo** — campo novo no
+frontmatter sai `schema_invalid` hoje; o schema formaliza depois (contrato
+em `references/task-graph.md`):
+
+- **`depends_on`** — as tarefas que precisam terminar antes. A ordem do
+  plano já expressa o essencial; `depends_on` registra o que ela não diz
+  (T5 depende de T2 mesmo vindo depois de T4).
+- **`parallel_safe`** — `true` só com `write_scope` disjunto, teste que não
+  compartilha estado e nenhuma dependência entre as tarefas.
+- **`risk`** — `low|medium|high`. Caminho crítico, formato persistido ou
+  contrato público é `high`, e `high` não vai para modelo barato.
+- **`write_scope`** — os caminhos que a tarefa pode escrever; fora dele,
+  para. O `files` do schema continua sendo a lista que o gate vê; o escopo
+  é o limite que o executor respeita.
+- **`blocking`** — `true` quando outra tarefa ou gate depende dela: entra
+  cedo, não no fim.
+- **`decisions_needed`** — perguntas que voltam ao define/design; plano não
+  absorve decisão, ele a lista.
+- **dependências externas** — permissão AWS, quota, serviço de terceiro:
+  nomeadas, com o `unlock` que as resolve.
+- **checkpoint** — o commit da tarefa é o ponto de retomada; tarefa
+  reexecutada lê o estado (o teste, o diff) antes de escrever, não de novo.
+- **esforço/custo** — só com evidência (medida, execução anterior
+  comparável); estimativa de corredor não entra.
+
+Paralelismo seguro é exigência, não conveniência: `parallel_safe` das duas
+tarefas, `write_scope` disjunto, nenhuma dependência entre elas, nenhum
+registro manual compartilhado. Na dúvida, serial — dois writers na mesma
+árvore é defeito do build, não do plano.
+
+Priorização: `blocking` primeiro, depois `risk` alto, depois o caminho
+crítico. Tarefa de registro manual viaja com a tarefa que a cria — já diz a
+regra da dependência.
+
+### Ergonomia do código na tarefa
+
+"Código inteiro" é meio, não fim — o fim é o subagente executar **sem
+contexto** e sem inventar. Cada bloco declara o papel (tabela completa em
+`references/task-graph.md`):
+
+| papel | quando | o que mantém verificável |
+|---|---|---|
+| contrato | o código **é** o contrato (schema, envelope, assinatura pública) | literal e completo, sempre |
+| interface | a fronteira entre módulos | assinatura exata; corpo só quando muda |
+| pseudocódigo | a lógica é algorítmica e o teste a prende | o teste executável continua completo |
+| exemplo | ilustra uso | marcado `exemplo`, nunca conta como spec |
+| instrução | mecânica sem ambiguidade | arquivo + símbolo + gate vizinho que o prova |
+| teste executável | sempre | completo, com o node id |
+
+Toda flexibilização preserva verificabilidade: instrução vale porque o
+arquivo, o símbolo e o teste a prendem; "verifique o óbvio" e "ajuste o que
+precisar" são placeholder com outro nome e não entram. Repetição cara entre
+tarefas (o mesmo boilerplate colado quatro vezes) vira referência por id de
+símbolo, nunca "igual a T2".
+
 ### Cobertura
 
 Todo `AC` do define aparece no `covers` de alguma tarefa. O que faltar sai
@@ -80,10 +138,17 @@ Todo `AC` do define aparece no `covers` de alguma tarefa. O que faltar sai
 Antes de pedir revisão ao operador, releia o plano contra o define e o design:
 
 1. **Cobertura** — cada critério e cada item do manifesto têm tarefa?
-2. **Placeholder** — alguma frase da lista acima escapou?
+2. **Placeholder** — alguma frase da lista acima escapou, ou um bloco de
+   código perdeu o papel declarado (contrato, interface, instrução...)?
 3. **Consistência de nomes** — a função chamada em T4 é a que T2 definiu?
 4. **Comandos reais** — todo `sparkforge-aws <verbo>` citado aceita os argumentos
    escritos?
+5. **O grafo fecha** — `depends_on` aponta para tarefas que existem e vêm
+   antes; nenhuma tarefa `parallel_safe` divide `write_scope` ou teste com
+   outra; `decisions_needed` não tem resposta embutida (decisão respondida
+   no plano é decisão roubada do operador)?
+6. **Escopo** — `files` dentro do `write_scope` declarado e nenhum caminho
+   fora do manifesto do design?
 
 Corrija no lugar. Isso é checagem sua, não nota.
 
@@ -137,11 +202,20 @@ Template: `docs/sdd/templates/plan.md`.
 ### Red flags
 
 - Tarefa com "e depois ajustar o que precisar".
-- Bloco de código com `...` no lugar do corpo.
+- Bloco de código com `...` no lugar do corpo, ou sem o papel declarado.
 - Teste descrito em prosa em vez de escrito.
 - Tarefa de uma hora que devia ser três.
 - Registros manuais empurrados para a última tarefa.
 - Plano carimbado com o design em `upstream_stale`.
+- `parallel_safe` declarado onde duas tarefas escrevem o mesmo arquivo ou
+  dividem o mesmo teste.
+- `depends_on` inventado no frontmatter (o schema ainda não o aceita) ou
+  apontando para tarefa que vem depois.
+- Esforço ou custo estimado sem medida nem execução anterior comparável.
+- Decisão respondida dentro do plano em vez de listada em
+  `decisions_needed` e levada ao operador.
+- Dependência externa (permissão, quota, serviço) absorvida sem `unlock`.
+- Instrução sem arquivo, símbolo e gate — "instrução" que é placeholder.
 
 
 ### Contrato de qualidade SparkForge (v1)

@@ -862,6 +862,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: compare what shipped with what the SDD asked, read-only
+    tools: []
+    cli: [sdd converge]
+    knowledge: [docs/sdd/CONTRATO.md]
+    platforms:
+      claude_code: [cli, files]
+      devin_desktop: [cli, files]
+      devin_cli: [cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: correlate facts from multiple extractors before judging
     tools: [sparkforge_aws_fuse]
     cli: [fuse]

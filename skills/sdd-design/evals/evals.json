@@ -28,6 +28,87 @@
         "The response cites at least one local reference and preserves version or provenance constraints.",
         "The response does not claim a performance or cost gain without a same-case measurement."
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "A design.md manifest lists `{path: sparkforge_aws/sdd/interview.py, action: modify, reason: \"estende a entrevista\"}` but that file does not exist in the repository. The author says \"ele vai existir depois desta feature\".",
+      "expected_output": "The manifest entry is corrected to create or removed, and the difference between modify-on-missing and create is enforced.",
+      "files": [],
+      "expectations": [
+        "The response checks the path with a search verb (code search or equivalent) instead of trusting the manifest, and cites the fact of its absence.",
+        "The response requires the action to be create (or the entry removed), explaining that modify on a missing path is a manifest defect the gate names.",
+        "The response does not accept \"vai existir depois\" as justification for modify, and marks any uncertain path as unresolved until searched.",
+        "The response keeps the traceability intact: the part and covers fields are updated together with the manifest fix.",
+        "The response includes validation (re-run sdd check) and the rollback implication of the corrected manifest entry.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A design.md decision D2 chooses \"muda o envelope de saída do relatório\" but a downstream consumer (a case coordinator in another repo) reads the current envelope. The design has no integration-contract section and the rollback is \"reverter se precisar\".",
+      "expected_output": "The contract change is surfaced as an integration concern with versioned compatibility, and the decision gets a real rejected-alternative and rollback.",
+      "files": [],
+      "expectations": [
+        "The response identifies the missing integration-contract analysis: who consumes the envelope, and whether the change is additive or breaking for them.",
+        "The response requires a real rejected alternative (e.g., additive field, versioned envelope) rather than a form-filling entry, and a rollback that names the mechanism.",
+        "The response treats the downstream consumer's compatibility as unresolved until verified — citing the fact_id, symbol or artifact that proves the consumer's read path.",
+        "The response flags the invalid rollback (\"reverter se precisar\" names no mechanism) and asks what the revert actually restores.",
+        "The response includes validation of the contract (quickstart or check command) and notes the rollback path for the consumer-facing change."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "A design.md decision D4 says \"usa Iceberg\" with choice filled and rollback present, but rejected is empty — the author explains \"óbvio que Iceberg é melhor\". No evidence about the table's write pattern exists in the design.",
+      "expected_output": "A real rejected alternative grounded in evidence, or the decision is escalated back as unjustified.",
+      "files": [],
+      "expectations": [
+        "The response refuses an unjustified decision: at least one real alternative with the reason it loses, not a strawman.",
+        "The response asks for the evidence the choice rests on (write pattern, update vs append, consumer reads, fact_id or measured run) instead of accepting \"óbvio\".",
+        "The response records the missing evidence as unresolved and names the verb or artifact that would supply it (facts, analyze iceberg, event log).",
+        "The response keeps the rollback requirement explicit and checks whether the rollback actually undoes a format migration.",
+        "The response includes validation criteria for the format claim and notes the rollback cost of a table-format conversion."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "design.md modifies `sparkforge_aws/sdd/checks.py` to add a refusal code, but `docs/sdd/CONTRATO.md`, the schema json and the tests that lock the code list are absent from the manifest. A code symbol query would have shown them.",
+      "expected_output": "The dependent artifacts are added to the manifest with the impact analysis the skipped lookups would have shown.",
+      "files": [],
+      "expectations": [
+        "The response runs or names the impact analysis (code search, code symbol) for the modified path and adds every dependent artifact to the manifest.",
+        "The response treats an incomplete manifest as a design defect: records and registries that a change moves belong in files, not discovered during build.",
+        "The response cites the dependency evidence (who calls, which doc locks the code list) instead of guessing which files are coupled.",
+        "The response lists any consumer or lock it could not verify as unresolved with the lookup that would confirm it.",
+        "The response describes validation per new manifest entry and the rollback implication of touching a contract-locked surface.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "A design.md for a Spark job states \"com AQE o shuffle é barato, então mantemos o join\" and carries the claim into a runtime the case reports as Glue 3 (Spark 3.3), citing no version-specific source. The author says \"vale para qualquer Spark 3\".",
+      "expected_output": "The cross-runtime assumption is rejected or made conditional, with the version-cited source required.",
+      "files": [],
+      "expectations": [
+        "The response rejects \"vale para qualquer Spark 3\" — one runtime's behavior is not evidence for another version, and the claim needs a version-cited source.",
+        "The response names the real sources for the claim (rules lookup, knowledge doc with target version, runtime detect output) instead of memory.",
+        "The response marks the unverified claim as unresolved in the design rather than letting it become a premise.",
+        "The response requires the decision to state which runtime it was verified on, and keeps rollback honest for a join-strategy choice.",
+        "The response includes validation (the version-specific check or benchmark) and notes what it costs to be wrong.",
+        "The response anchors each claim to a fact_id, path or artifact, keeps what it cannot prove as unresolved, and names the validation and rollback for the recommended step."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Reviewing a design.md you notice decision D5's rollback says \"rollback.patch do pacote\" but the change drops a Glue Catalog partition column — the patch cannot restore data. The feature also writes to S3 concurrently with an existing job.",
+      "expected_output": "The invalid rollback is replaced with a real recovery plan and the durability questions are answered before ready.",
+      "files": [],
+      "expectations": [
+        "The response identifies that a rollback.patch cannot restore deleted partition data and demands a recovery plan that covers destructive data change.",
+        "The response asks the durability questions for the concurrent S3 write (isolation, commit boundary, who wins on conflict) instead of ignoring them.",
+        "The response cites facts or catalog rules (fact_id, rule_id, version) for the concurrency claim rather than asserting safety.",
+        "The response records what stays unresolved (concurrent writer behavior, recovery window) with the measurement or test that would settle it.",
+        "The response includes validation for the recovery path itself and states which steps need operator approval before running."
+      ]
     }
   ]
 }

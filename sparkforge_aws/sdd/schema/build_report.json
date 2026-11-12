@@ -40,7 +40,8 @@
         }
       }
     },
-    "change_id": {"type": ["string", "null"]}
+    "change_id": {"type": ["string", "null"]},
+    "receipts": {"type": "array", "items": {"type": "string", "minLength": 1}}
   },
   "$defs": {
     "run": {

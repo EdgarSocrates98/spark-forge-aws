@@ -130,6 +130,26 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mesma capacidade que 'resume'; escreve markdown em disco, sem uso "
             "para um cliente MCP."
         ),
+        # `obsidian *` sao verbs host-side do motor vendored `_forge_obsidian`:
+        # scan/preview/sync-plan leem o vault local, export/export-note ESCREVEM
+        # nele e history le recibos locais. Um cliente MCP nao tem por que
+        # disparar escrita de filesystem no vault do operador via provider --
+        # sao operacoes de workspace do host, nao capacidade remota. A mesma
+        # classe dos verbs CLI-only acima.
+        "obsidian status": ("estado do vault local; configuracao do host, "
+                            "nao capacidade remota."),
+        "obsidian scan": ("lista arquivos do vault local; leitura de filesystem "
+                          "do host, nao capacidade remota."),
+        "obsidian preview": ("projecao de nota local; leitura de filesystem "
+                             "do host, nao capacidade remota."),
+        "obsidian sync-plan": ("dry-run de escrita no vault local; planejamento "
+                               "host-side, nao capacidade remota."),
+        "obsidian export": ("escreve no vault do operador; mutacao de filesystem "
+                            "host-side, nunca via MCP."),
+        "obsidian export-note": ("escreve nota no vault; mutacao de filesystem "
+                                 "host-side, nunca via MCP."),
+        "obsidian history": ("le recibos locais de sync; filesystem do host, "
+                             "nao capacidade remota."),
         # `journal verify` e auditoria da cadeia do `.sparkforge_aws/journal.jsonl`.
         # O estado que o cliente MCP precisa (o que ficou sem `finished`, a
         # cadeia intacta ou quebrada) ja chega pelo bloco `journal` de
@@ -298,6 +318,14 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "MCP leem o indice por `sparkforge_aws_graph_status`/`graph_view`."
         ),
         "graph ui": "abre browser no host; projecao coberta por sparkforge_aws_graph_view.",
+        # Onda 4 do SDD: `sdd converge` e leitura-only, mas o que ele ve ja
+        # chega ao cliente MCP por outra porta -- cada divergencia vira codigo
+        # em `sparkforge_aws_sdd_check` (convergence_*), e o relatorio inteiro
+        # e rederivavel dos artefatos que o host ja tem em disco.
+        "sdd converge": (
+            "leitura cruzada dos artefatos da feature; a divergencia chega ao "
+            "cliente MCP pelos codigos convergence_* de sparkforge_aws_sdd_check."
+        ),
         # `portal` sobe um servidor web local (127.0.0.1) na maquina do
         # chamador: o efeito colateral e o processo/janela, nao um payload.
         # Tudo o que ele renderiza ja chega por tools e recibos estruturados.
