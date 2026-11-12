@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
+## [0.7.7] - 2026-11-12
+
+SDD consolidation release: `federated-schemas` CI job consumes canonical
+schemas from the-forge via `FORGE_SDD_SCHEMA_DIR`, closing the wave-5
+federation loop on the AWS provider.
+
 ## [0.7.6] - 2026-11-12
 
 Cycle 2.7 patch release: federated SDD contracts and adapters, forge-context kind taxonomy, universal Obsidian export verbs, portal and install UX improvements, provider context-registry wiring, CI hardening and generated-artifact refresh.
