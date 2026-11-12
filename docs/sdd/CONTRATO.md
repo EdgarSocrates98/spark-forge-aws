@@ -190,6 +190,7 @@ gravada a partir da saída do `sdd converge`).
 | `requirement_contradicts` | dois requisitos divergem por negação sobre a mesma base, ou requisito cobre quase o mesmo que um `out_of_scope` | define |
 | `requirement_blocked` | requisito `critical` segue bloqueado por um `unknowns` | define |
 | `requirement_uncovered` | `REQ`/`NFR`/`US` do define fora de todo `covers` de tarefa | plan |
+| `task_covers_nothing` | tarefa com `covers` vazio, ou cobrindo só ids que o define não tem (nenhum `AC`/`REQ`/`NFR`/`US` real); cobrir ao menos um id conhecido já não dispara | plan |
 | `parallel_write_overlap` | duas tarefas `parallel_safe` com `write_scope` sobreposto | plan |
 | `persistence_undeclared` | item do checklist `persistence` sem tratamento no `persistence` da fase: o checklist vem do `change_kinds` declarado, ou — só no perfil `operator` — de `files` citando `glue`/`iceberg`/`delta`/`parquet` (a união de todas as `persistence` do mapa) | design, plan |
 | `receipt_inconclusive` | recibo sem teste `passed` contado, ou `exit_code` ≠ 0 sem falha contada — ambiente/coleção quebrada não é TDD | build_report |

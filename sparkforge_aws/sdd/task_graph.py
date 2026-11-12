@@ -3,10 +3,11 @@
 Campos opcionais da tarefa que o gate deste modulo confere: `depends_on`
 (ids de tarefa), `parallel_safe`, `risk`, `write_scope` (caminhos) e
 `blocking`. O grafo precisa ser DAG, a ordem declarada respeita as
-dependencias, todo requisito do define tem ao menos uma tarefa e duas tarefas
+dependencias, todo requisito do define tem ao menos uma tarefa, toda tarefa
+cobre ao menos um criterio ou requisito do define, e duas tarefas
 declaradas seguras para paralelo nao escrevem no mesmo lugar. Tudo
 deterministico vira recusa; o que pede julgamento (cobertura de requisito,
-sobreposicao de escrita) vira lacuna.
+tarefa sem criterio, sobreposicao de escrita) vira lacuna.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from typing import Any
 class Finding:
     """Um problema do grafo; `kind` vira o codigo do contrato no gate."""
 
-    kind: str  # dep_unknown | cycle | order | req_uncovered | write_overlap
+    kind: str  # dep_unknown | cycle | order | req_uncovered | covers_nothing | write_overlap
     item: str | None
     detail: str
 
@@ -81,12 +82,20 @@ def topo_order(tasks: list[dict[str, Any]]) -> list[str]:
 
 
 def validate_tasks(
-    tasks: list[dict[str, Any]], requirement_ids: list[str]
+    tasks: list[dict[str, Any]],
+    requirement_ids: list[str],
+    acceptance_ids: list[str] | None = None,
 ) -> list[Finding]:
     """Os problemas do grafo de tarefas.
 
     `requirement_ids` sao os ids de `requirements` do define (REQ/NFR/US); a
-    cobertura dos `AC` segue com `acceptance_uncovered`, que ja existe.
+    cobertura dos `AC` na direcao criterio->tarefa segue com
+    `acceptance_uncovered`, que ja existe. `acceptance_ids` sao os ids de
+    `acceptance` do define, que junto dos requisitos formam os ids que um
+    `covers` pode nomear: na direcao tarefa->criterio, `covers` vazio sempre
+    vira `covers_nothing`, e `covers` so com ids desconhecidos vira quando ha
+    define para julgar (sem define a lista vem vazia e so o covers vazio
+    dispara).
     """
     achados: list[Finding] = []
     por_id = {t["id"]: t for t in tasks if isinstance(t, dict) and t.get("id")}
@@ -119,6 +128,24 @@ def validate_tasks(
                 "req_uncovered", ident,
                 f"{ident} do define nao aparece em nenhum covers de tarefa; "
                 "cubra-o ou explique por que ele nao precisa de tarefa",
+            ))
+    conhecidos = {*requirement_ids, *(acceptance_ids or ())}
+    for tarefa in tasks:
+        ident = tarefa["id"]
+        alvos = tarefa.get("covers") or []
+        if not alvos:
+            achados.append(Finding(
+                "covers_nothing", ident,
+                f"{ident} tem covers vazio: a tarefa nao cobre criterio nem "
+                "requisito do define; ligue-a a um id real ou explique por "
+                "que ela existe",
+            ))
+        elif conhecidos and not any(alvo in conhecidos for alvo in alvos):
+            achados.append(Finding(
+                "covers_nothing", ident,
+                f"{ident} cobre so ids que o define nao tem "
+                f"({', '.join(sorted(set(alvos) - conhecidos))}); corrija o "
+                "covers ou crie o criterio",
             ))
     for i, tarefa in enumerate(tasks):
         if not tarefa.get("parallel_safe"):

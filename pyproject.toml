@@ -230,7 +230,7 @@ target-version = "py310"
 # lintar codigo de amostra ruim de proposito e ruido, nao sinal.
 # vendor/ e codigo de terceiro pinado byte a byte por vendor/MANIFEST.sha256:
 # corrigir lint ali quebraria o gate e mentiria sobre a procedencia.
-exclude = ["fixtures", "vendor"]
+exclude = ["fixtures", "vendor", "sparkforge_aws/_forge_obsidian"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S"]
@@ -255,4 +255,5 @@ ignore = [
 # Vendored portal server (canonical: forge-portal/portal_core) — byte-identical
 # to the shared source, linted in the canonical repo.
 "sparkforge_aws/_forge_portal.py" = ["ALL"]
+"sparkforge_aws/_forge_obsidian/*" = ["ALL"]
 "sparkforge_aws/_portal_telemetry.py" = ["ALL"]

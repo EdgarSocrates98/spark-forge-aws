@@ -34,14 +34,15 @@ def project_host(name: str, root: Path) -> Host:
             fonte=FONTES["claude"],
         )
     if name == "devin":
-        # Devin le `.devin/` e `.agents/` nativamente no repositorio.
+        # `.agents/` e a superficie unica que o Devin le nativamente — skills
+        # e agents gravam uma vez so; `.devin/` fica para confs host-specific.
         return Host(
             name="devin",
-            agents_dir=root / ".devin" / "agents",
+            agents_dir=root / ".agents" / "agents",
             agent_pattern="{stem}.md",
             agent_platform="devin",
             executors=True,
-            skills_dir=root / ".devin" / "skills",
+            skills_dir=root / ".agents" / "skills",
             skill_platform="devin",
             mcp_config=mcp,
             mcp_format="json",
@@ -76,11 +77,10 @@ def project_host(name: str, root: Path) -> Host:
     )
 
 
-# `.agents/` e a superficie compartilhada que Devin le nativamente (e Codex,
-# nas skills): o espelho `devin` do repositorio, o mesmo que `.agents/` leva.
-SHARED_AGENT_HOSTS = {
-    "devin": (".agents/agents", ".agents/skills"),
-}
+# `.agents/` e a superficie compartilhada. O host `devin` ja grava direto
+# nela (ver project_host), entao nao precisa de copia extra — o mapa fica
+# para hosts cujo dir primario difere da superficie compartilhada.
+SHARED_AGENT_HOSTS: dict[str, tuple[str, str]] = {}
 
 
 def project_plan(

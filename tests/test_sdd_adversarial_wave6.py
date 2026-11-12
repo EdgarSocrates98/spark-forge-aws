@@ -265,27 +265,37 @@ def test_h_criterio_sem_task_e_recusa_nomeada(tmp_path):
     )
 
 
-@pytest.mark.skip(
-    reason="o motor nao tem codigo para task→criterio: tarefa do plan com "
-    "covers: [] ou covers de ACs inexistentes passa todas as gates em "
-    "silencio; faltaria um finding novo (ex.: task_covers_nothing) em "
-    "validate_tasks + linha em docs/sdd/CONTRATO.md — mudanca de contrato, "
-    "nao de teste"
-)
 def test_h_task_sem_criterio_nao_e_considerada_rastreavel(tmp_path):
-    """H (task sem criterio): hoje nenhuma gate nomeia a tarefa que nao cobre
-    criterio nenhum — ver o motivo do skip acima. Cobertura real existe so na
-    direcao criterio→task (`acceptance_uncovered`)."""
+    """H (task sem criterio): `task_covers_nothing` nomeia a tarefa que nao
+    cobre criterio nenhum nos dois formatos — `covers` vazio (T1) e `covers`
+    so com ids que o define nao tem (T2 cobre AC9, inexistente). Lacuna como
+    `requirement_uncovered`: julgamento de cobertura e advisory, nao recusa;
+    e quem cobre ao menos um id real nao dispara."""
     caminhos = _feature(tmp_path)
     plano = _meta(caminhos["plan"])
     plano["tasks"][0]["covers"] = []
     plano["tasks"].append(_tarefa("T2", covers=["AC9"]))
     _reescreve(caminhos["plan"], tasks=plano["tasks"])
     _restampa(tmp_path)
-    recusas, lacunas = _codigos(check(tmp_path))
-    raise AssertionError(
-        f"sem nome para a tarefa orfa hoje: {recusas=} {lacunas=}"
-    )
+    relatorio = check(tmp_path)
+    recusas, lacunas = _codigos(relatorio)
+    assert "task_covers_nothing" not in recusas
+    assert lacunas.count("task_covers_nothing") == 2
+    itens = [
+        u for u in relatorio["unresolved"] if u["code"] == "task_covers_nothing"
+    ]
+    assert all(u["path"].endswith("plan.md") for u in itens)
+    detalhes = " ".join(u["unlock"] for u in itens)
+    assert "T1" in detalhes and "T2" in detalhes and "AC9" in detalhes
+
+    # tarefa com ao menos um id real nao dispara: so T1 segue nomeada
+    plano["tasks"][1]["covers"] = ["AC1"]
+    _reescreve(caminhos["plan"], tasks=plano["tasks"])
+    _restampa(tmp_path)
+    [item] = [
+        u for u in check(tmp_path)["unresolved"] if u["code"] == "task_covers_nothing"
+    ]
+    assert "T1" in item["unlock"]
 
 
 # -- I. requisito sem task ---------------------------------------------------------

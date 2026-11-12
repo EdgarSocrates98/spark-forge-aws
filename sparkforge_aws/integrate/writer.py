@@ -461,7 +461,7 @@ def plan_files(
     agents_src = sources.agents_dir(root)
     skills_root = sources.skills_dir(root)
     plano: list[tuple[Path, bytes]] = []
-    knowledge_refs: set[str] = set()
+    asset_refs: set[tuple[str, str]] = set()
 
     def _agent_bytes(src: Path, canonical_dir: str) -> bytes:
         return render.render_agent_file(
@@ -476,14 +476,14 @@ def plan_files(
 
     for src in sources.agent_files(root):
         destino = h.agents_dir / h.agent_pattern.format(stem=src.stem)
-        knowledge_refs |= render.referenced_knowledge_paths(
+        asset_refs |= render.referenced_asset_paths(
             src.read_bytes().decode("utf-8"), canonical_dir="agents"
         )
         plano.append((destino, _agent_bytes(src, "agents")))
     if h.executors:
         for src in sources.executor_files(root):
             destino = h.agents_dir / "executors" / src.name
-            knowledge_refs |= render.referenced_knowledge_paths(
+            asset_refs |= render.referenced_asset_paths(
                 src.read_bytes().decode("utf-8"), canonical_dir="agents/executors"
             )
             plano.append((destino, _agent_bytes(src, "agents/executors")))
@@ -491,7 +491,7 @@ def plan_files(
         rel = src.relative_to(skills_root)
         destino = h.skills_dir / rel
         if src.suffix == ".md":
-            knowledge_refs |= render.referenced_knowledge_paths(
+            asset_refs |= render.referenced_asset_paths(
                 src.read_bytes().decode("utf-8"),
                 canonical_dir="skills/" + "/".join(rel.parts[:-1]),
             )
@@ -506,18 +506,22 @@ def plan_files(
             target_root=target_root,
         )
         plano.append((destino, dados))
-    if target_root is not None and knowledge_refs:
-        knowledge_root = Path(target_root) / "knowledge"
-        for rel in sorted(knowledge_refs):
-            # Defesa em profundidade: `rel` vem de texto de documento — um
-            # `..` residiria fora de `knowledge_root` no syscall e viraria
-            # chave de manifesto com `..` (unlink fora da raiz no detach).
-            if not chave_segura(rel):
-                continue
-            plano.append((knowledge_root / rel, render.knowledge_stub(rel)))
-        plano.append(
-            (knowledge_root / "README.md", render.knowledge_index_stub(len(knowledge_refs)))
-        )
+    if target_root is not None and asset_refs:
+        por_root: dict[str, set[str]] = {}
+        for root_kind, rel in asset_refs:
+            por_root.setdefault(root_kind, set()).add(rel)
+        for root_kind, rels in sorted(por_root.items()):
+            asset_root = Path(target_root) / root_kind
+            for rel in sorted(rels):
+                # Defesa em profundidade: `rel` vem de texto de documento —
+                # um `..` residiria fora da raiz no syscall e viraria chave
+                # de manifesto com `..` (unlink fora da raiz no detach).
+                if not chave_segura(rel):
+                    continue
+                plano.append((asset_root / rel, render.asset_stub(root_kind, rel)))
+            plano.append(
+                (asset_root / "README.md", render.asset_index_stub(root_kind, len(rels)))
+            )
     return plano
 
 

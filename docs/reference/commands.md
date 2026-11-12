@@ -2,7 +2,7 @@
 
 Generated from the real CLI parser by `doc_inventory.py` + `doc_reference.py`. Do not hand-edit generated sections — write between `keep:start`/`keep:end` markers. `por que`/`quando` lines come from the curated `command-rationale.json` — edit rationale there, never here. Status vocabulary: `available` unless marked otherwise.
 
-Rationale coverage: **66/67** first-level groups curated in `command-rationale.json`.
+Rationale coverage: **67/71** first-level groups curated in `command-rationale.json`.
 
 ## Groups
 
@@ -16,39 +16,43 @@ Rationale coverage: **66/67** first-level groups curated in `command-rationale.j
 - [`benchmark`](#benchmark) — 1 command(s)
 - [`blackboard`](#blackboard) — 3 command(s)
 - [`budget`](#budget) — 2 command(s)
+- [`capabilities`](#capabilities) — 1 command(s)
 - [`capacity`](#capacity) — 1 command(s)
 - [`case`](#case) — 4 command(s)
 - [`change`](#change) — 4 command(s)
 - [`code`](#code) — 14 command(s)
 - [`collect`](#collect) — 20 command(s)
-- [`context`](#context) — 5 command(s)
+- [`context`](#context) — 6 command(s)
 - [`controlm`](#controlm) — 2 command(s)
 - [`debate`](#debate) — 5 command(s)
 - [`decision`](#decision) — 7 command(s)
 - [`decisions`](#decisions) — 3 command(s)
+- [`delegate`](#delegate) — 5 command(s)
 - [`detach`](#detach) — 1 command(s)
 - [`distribution`](#distribution) — 5 command(s)
 - [`doctor`](#doctor) — 2 command(s)
 - [`dq-ai`](#dq-ai) — 2 command(s)
 - [`economy`](#economy) — 3 command(s)
+- [`evals`](#evals) — 5 command(s)
 - [`finops`](#finops) — 1 command(s)
 - [`funcval`](#funcval) — 3 command(s)
 - [`fuse`](#fuse) — 1 command(s)
 - [`gain`](#gain) — 1 command(s)
 - [`glue`](#glue) — 2 command(s)
-- [`graph`](#graph) — 4 command(s)
+- [`graph`](#graph) — 5 command(s)
 - [`handoff`](#handoff) — 1 command(s)
 - [`iceberg`](#iceberg) — 2 command(s)
 - [`install`](#install) — 2 command(s)
 - [`integrate`](#integrate) — 1 command(s)
 - [`journal`](#journal) — 2 command(s)
 - [`judge`](#judge) — 1 command(s)
-- [`knowledge`](#knowledge) — 3 command(s)
+- [`knowledge`](#knowledge) — 5 command(s)
 - [`lab`](#lab) — 17 command(s)
 - [`lakeformation`](#lakeformation) — 4 command(s)
-- [`mcp`](#mcp) — 2 command(s)
+- [`mcp`](#mcp) — 3 command(s)
 - [`migrate`](#migrate) — 4 command(s)
 - [`next-step`](#next-step) — 1 command(s)
+- [`obsidian`](#obsidian) — 8 command(s)
 - [`pack`](#pack) — 3 command(s)
 - [`playbook`](#playbook) — 1 command(s)
 - [`policy`](#policy) — 4 command(s)
@@ -63,7 +67,7 @@ Rationale coverage: **66/67** first-level groups curated in `command-rationale.j
 - [`rules`](#rules) — 2 command(s)
 - [`runtime`](#runtime) — 2 command(s)
 - [`scan`](#scan) — 1 command(s)
-- [`sdd`](#sdd) — 4 command(s)
+- [`sdd`](#sdd) — 5 command(s)
 - [`simulate`](#simulate) — 1 command(s)
 - [`status`](#status) — 1 command(s)
 - [`telemetry`](#telemetry) — 2 command(s)
@@ -293,6 +297,9 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 ### `ai`
 
 **para que:** Abre o host de IA no repositorio: detecta o binario, le a versao, confere autenticacao pelo subcomando oficial de status e o estado da integracao. Com `--launch` e TTY, executa o CLI do host no diretorio; sem eles, o recibo traz `launch_command` para o operador. Host deslogado nao e lancado — `login_hint` aponta o login oficial.
+
+- **por que:** abre o host de IA no repositório — detecta o binário, lê a versão, confere autenticação e o estado da integração de agents/skills
+- **quando usar:** trabalhar com Claude/Codex/Devin/Copilot dentro do repo após instalar; sem `--launch` só mede e devolve `launch_command` no recibo
 
 **Syntax**
 
@@ -1945,6 +1952,26 @@ sparkforge-aws budget show [help] [repo] [template]
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+## capabilities
+
+### `capabilities`
+
+**para que:** capabilities.list + protocol.describe (install-2.0 §6.2): o que este forge instalado consegue fazer — contagens reais, dominios, protocolos e o mapa ops->verbos que o manifesto forge/context/v1 publica. Offline.
+
+**Syntax**
+
+```text
+sparkforge-aws capabilities [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ## capacity
 
 ### `capacity`
@@ -2931,7 +2958,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws collect parquet-footer [help] <repo> <prefix> [max_files] <now>
+sparkforge-aws collect parquet-footer [help] <repo> <prefix> [max_files] [aws_profile] [aws_region] <now>
 ```
 
 | argument/flag | required | default | description |
@@ -2940,6 +2967,8 @@ sparkforge-aws collect parquet-footer [help] <repo> <prefix> [max_files] <now>
 | `repo` | yes | — | — |
 | `prefix` | yes | — | Diretorio local com .parquet, ou s3://bucket/prefixo/. |
 | `max_files` | no | — | Quantos arquivos ler, os primeiros pelo nome (padrao do coletor: 20; teto 500). |
+| `aws_profile` | no | — | Perfil AWS nomeado para prefixos s3://; credenciais nunca entram no artefato. |
+| `aws_region` | no | — | Regiao AWS para o filesystem S3 (ex.: us-east-1). |
 | `now` | yes | — | Timestamp ISO 8601. |
 
 <!-- keep:start -->
@@ -3121,6 +3150,31 @@ sparkforge-aws context inspect [help] <input> [observed_provider_tokens]
 | `help` | no | — | show this help message and exit |
 | `input` | yes | — | JSON com itens e refs de evidencia. |
 | `observed_provider_tokens` | no | — | Tokens observados no transcript do host; omitido permanece unresolved. |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `context pack`
+
+**para que:** context.build (install-2.0 §6.2): Context Pack limitado por dominio — regras aplicaveis + knowledge + protocolos + hash.
+
+- **por que:** descobre capabilities e empacota contexto sob limite explícito
+- **quando usar:** montar contexto determinístico para um agente/host
+
+**Syntax**
+
+```text
+sparkforge-aws context pack [help] <domain> [limit] [knowledge_docs] [as_of]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `domain` | yes | — | Dominio pelo prefixo nativo: glue cobre glue-*/glue-infra, spark cobre spark/* e spark-plan, ... (`capabilities` lista os dominios conhecidos desta instalacao). |
+| `limit` | no | — | Teto de regras na pagina do pack (default 20). |
+| `knowledge_docs` | no | — | Teto de documentos de knowledge listados no pack (default 5). |
+| `as_of` | no | — | Dia de referencia declarado no pack (AAAA-MM-DD). |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_
@@ -3589,6 +3643,119 @@ sparkforge-aws decisions list [help] [repo]
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+## delegate
+
+### `delegate`
+
+**para que:** Descobre, planeja e executa delegação governada a especialistas opcionais (data-sentinel, forge-doctor-data).
+
+**Syntax**
+
+```text
+sparkforge-aws delegate [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `delegate discover`
+
+**para que:** Descobre especialistas declarados: PATH, pacote, handshake, manifesto de capabilities.
+
+**Syntax**
+
+```text
+sparkforge-aws delegate discover [help] [provider] [no_probe] [repo]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `provider` | no | — | — |
+| `no_probe` | no | — | — |
+| `repo` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `delegate handoffs`
+
+**para que:** Lista EvidenceHandoffs persistidos em .sparkforge_aws/delegation/handoffs/.
+
+**Syntax**
+
+```text
+sparkforge-aws delegate handoffs [help] [repo]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `repo` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `delegate plan`
+
+**para que:** Planeja a delegação para uma intenção — determinístico, sem executar.
+
+**Syntax**
+
+```text
+sparkforge-aws delegate plan [help] <intent> [authorize] [no_probe] [repo]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `intent` | yes | — | Intenção em texto livre. |
+| `authorize` | no | — | Concede autorização a um nível de risco (pode repetir). |
+| `no_probe` | no | — | — |
+| `repo` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `delegate run`
+
+**para que:** Executa uma capability declarada de um especialista sob governança.
+
+**Syntax**
+
+```text
+sparkforge-aws delegate run [help] <provider> <capability> [target] [job] [run_id] [profile] [region] [platform] [check] [timeout] [no_persist] [authorize] [repo]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `provider` | yes | — | — |
+| `capability` | yes | — | Id da capability declarada. |
+| `target` | no | — | Arquivo/diretório alvo. |
+| `job` | no | — | Nome do Glue job (sentinel). |
+| `run_id` | no | — | Job run id (sentinel). |
+| `profile` | no | — | AWS profile (sentinel cloud). |
+| `region` | no | — | AWS region (sentinel cloud). |
+| `platform` | no | — | Plataforma (sentinel analyze). |
+| `check` | no | — | Check único (doctor scan). |
+| `timeout` | no | — | Timeout em segundos. |
+| `no_persist` | no | — | — |
+| `authorize` | no | — | Concede autorização a um nível de risco (pode repetir). Capabilities EXTERNAL_READ/COST_BEARING (glue diagnose, glue runs, etc.) não executam sem este grant. |
+| `repo` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ## detach
 
 ### `detach`
@@ -3897,6 +4064,102 @@ sparkforge-aws economy report [help] <run_id> [host_transcript] [out]
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+## evals
+
+### `evals`
+
+**para que:** Inventario classificado e execucao das suites de avaliacao (§7.1/§7.2): developer, runtime-decision, output-verification, host-conformance. Gabaritos selados nunca sao emitidos.
+
+**Syntax**
+
+```text
+sparkforge-aws evals [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `evals describe`
+
+**para que:** evals.describe (§7.2): categoria, ambiente, selagem e sha256 da suite.
+
+**Syntax**
+
+```text
+sparkforge-aws evals describe [help] <suite>
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `suite` | yes | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `evals list`
+
+**para que:** evals.list (§7.2): suites classificadas por categoria.
+
+**Syntax**
+
+```text
+sparkforge-aws evals list [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `evals result`
+
+**para que:** evals.result (§7.2): scorecard de uma execucao de host gravada.
+
+**Syntax**
+
+```text
+sparkforge-aws evals result [help] <suite> <run>
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `suite` | yes | — | — |
+| `run` | yes | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `evals run`
+
+**para que:** evals.run (§7.2): executa o runner deterministico da suite; suites de host recusam EVALS-REQUIRES-HOST.
+
+**Syntax**
+
+```text
+sparkforge-aws evals run [help] <suite>
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `suite` | yes | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ## finops
 
 ### `finops`
@@ -4126,6 +4389,29 @@ sparkforge-aws graph [help]
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+### `graph build`
+
+**para que:** Constroi ou atualiza indice SQLite que alimenta o grafo. Alias semantico de code init.
+
+- **por que:** grafo do índice de código: ForgeGraphView + Graph Studio local
+- **quando usar:** navegar dependências do código indexado
+
+**Syntax**
+
+```text
+sparkforge-aws graph build [help] [root] [db]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `root` | no | — | — |
+| `db` | no | — | Arquivo do indice. Default: `.sparkforge_aws/local/codeintel/graph.sqlite3` sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora dali e escolha de quem chama, e o arquivo passa a ser candidato a commit. |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ### `graph status`
 
 **para que:** Estado do grafo: contagens e origem do indice.
@@ -4294,7 +4580,7 @@ sparkforge-aws install [help] [scope] [host] [profile] [gateway_profile] [root] 
 | `gateway_profile` | no | — | — |
 | `root` | no | — | Raiz do alvo (default: raiz do VCS ou cwd). |
 | `yes` | no | — | Aprovacao explicita: sem ela, --dry-run. |
-| `components` | no | — | Componentes opcionais csv: skills,agents,mcp,tui,graph-studio. |
+| `components` | no | — | Componentes opcionais csv: skills,agents,mcp,knowledge,rules,evals,tui,graph-studio. |
 | `dry_run` | no | — | — |
 
 <!-- keep:start -->
@@ -4482,6 +4768,27 @@ sparkforge-aws knowledge drift [help] [source] [as_of]
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+### `knowledge list`
+
+**para que:** Enumera os documentos de knowledge (e dos packs ativos).
+
+- **por que:** localiza arquivos de conhecimento versionado
+- **quando usar:** achar a fonte canônica de regras/playbooks
+
+**Syntax**
+
+```text
+sparkforge-aws knowledge list [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ### `knowledge path`
 
 **para que:** Imprime a raiz de knowledge e, com --file, um arquivo dentro dela.
@@ -4501,6 +4808,31 @@ sparkforge-aws knowledge path [help] [file] [source_freshness] [as_of]
 | `file` | no | — | — |
 | `source_freshness` | no | — | Acrescenta o estado das fontes citadas (fixed, unverified, stale, aging, fresh), calculado sobre knowledge/sources.lock.json. Depende do lock e do dia. |
 | `as_of` | no | — | Dia de referencia do estado das fontes (AAAA-MM-DD). |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `knowledge search`
+
+**para que:** Busca textual offline sobre os documentos de knowledge.
+
+- **por que:** localiza arquivos de conhecimento versionado
+- **quando usar:** achar a fonte canônica de regras/playbooks
+
+**Syntax**
+
+```text
+sparkforge-aws knowledge search [help] <term> [limit] [domain] [cursor]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `term` | yes | — | — |
+| `limit` | no | — | — |
+| `domain` | no | — | So documentos cujo primeiro segmento de caminho (ou nome na raiz) e este dominio ou um sub-dominio `<dominio>-`: glue, spark, emr, ... |
+| `cursor` | no | — | Offset da pagina anterior (`next_cursor` da resposta). |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_
@@ -5041,6 +5373,31 @@ sparkforge-aws mcp [help]
 _free notes — errors, examples, next steps (hand-written, preserved)_
 <!-- keep:end -->
 
+### `mcp serve`
+
+**para que:** Sobe servidor MCP no transporte selecionado (default: stdio).
+
+- **por que:** operações do servidor MCP
+- **quando usar:** servir a forja via MCP ou inspecionar o catálogo
+
+**Syntax**
+
+```text
+sparkforge-aws mcp serve [help] [transport] [mode] [host] [port]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `transport` | no | — | — |
+| `mode` | no | — | — |
+| `host` | no | — | — |
+| `port` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
 ### `mcp verify`
 
 **para que:** Handshake JSON-RPC real: initialize + tools/list contra o server.
@@ -5181,6 +5538,172 @@ sparkforge-aws next-step [help] <repo> [findings]
 | `help` | no | — | show this help message and exit |
 | `repo` | yes | — | — |
 | `findings` | no | — | Arquivo de findings (JSON) usado para casar condicoes. |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+## obsidian
+
+### `obsidian`
+
+**para que:** Authorized Obsidian vault operations
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian export`
+
+**para que:** Apply a reviewed sync plan.
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian export [help] <path> <file> [baseline_hash] [classification] [yes] [moc]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `path` | yes | — | — |
+| `file` | yes | — | — |
+| `baseline_hash` | no | — | — |
+| `classification` | no | — | — |
+| `yes` | no | — | Confirm the reviewed plan |
+| `moc` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian export-note`
+
+**para que:** Export FILE as forges/<forge-id>/<name>.md
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian export-note [help] <name> <file> [baseline_hash] [classification] [yes] [moc]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `name` | yes | — | — |
+| `file` | yes | — | — |
+| `baseline_hash` | no | — | — |
+| `classification` | no | — | — |
+| `yes` | no | — | — |
+| `moc` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian history`
+
+**para que:** List Forge sync receipts (body-free).
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian history [help] [limit]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `limit` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian preview`
+
+**para que:** Metadata + projection, never the body.
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian preview [help] <path>
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `path` | yes | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian scan`
+
+**para que:** List Markdown paths without reading bodies.
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian scan [help] [prefix] [limit]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `prefix` | no | — | — |
+| `limit` | no | — | — |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian status`
+
+**para que:** Report configured/detected vault state.
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian status [help]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `obsidian sync-plan`
+
+**para que:** Dry-run a sync of FILE into PATH.
+
+**Syntax**
+
+```text
+sparkforge-aws obsidian sync-plan [help] <path> <file> [baseline_hash] [classification]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `path` | yes | — | — |
+| `file` | yes | — | — |
+| `baseline_hash` | no | — | — |
+| `classification` | no | — | — |
 
 <!-- keep:start -->
 _free notes — errors, examples, next steps (hand-written, preserved)_
@@ -5591,7 +6114,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws repair [help] [scope] [root] [dry_run]
+sparkforge-aws repair [help] [scope] [root] [yes] [dry_run]
 ```
 
 | argument/flag | required | default | description |
@@ -5599,6 +6122,7 @@ sparkforge-aws repair [help] [scope] [root] [dry_run]
 | `help` | no | — | show this help message and exit |
 | `scope` | no | — | — |
 | `root` | no | — | — |
+| `yes` | no | — | Aprovacao explicita; sem ela, --dry-run. |
 | `dry_run` | no | — | — |
 
 <!-- keep:start -->
@@ -5797,7 +6321,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws rules lookup [help] [id] [category] [limit] [cursor] [severity] [runtime] [index] [source_freshness] [as_of]
+sparkforge-aws rules lookup [help] [id] [category] [query] [limit] [cursor] [severity] [runtime] [index] [source_freshness] [as_of]
 ```
 
 | argument/flag | required | default | description |
@@ -5805,6 +6329,7 @@ sparkforge-aws rules lookup [help] [id] [category] [limit] [cursor] [severity] [
 | `help` | no | — | show this help message and exit |
 | `id` | no | — | — |
 | `category` | no | — | — |
+| `query` | no | — | Busca por palavra-chave (§6.3): substring sem case sobre id, title, category e explanation da regra. |
 | `limit` | no | — | — |
 | `cursor` | no | — | — |
 | `severity` | no | — | Filtra por severity_default. |
@@ -5939,6 +6464,30 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 
 ```text
 sparkforge-aws sdd check [help] <repo> [root] [feature]
+```
+
+| argument/flag | required | default | description |
+|---|---|---|---|
+| `help` | no | — | show this help message and exit |
+| `repo` | yes | — | Raiz do repositorio. |
+| `root` | no | — | Pasta dos artefatos, relativa a --repo. |
+| `feature` | no | — | Confere so esta feature. |
+
+<!-- keep:start -->
+_free notes — errors, examples, next steps (hand-written, preserved)_
+<!-- keep:end -->
+
+### `sdd converge`
+
+**para que:** O que veio x o que foi pedido. So le; sai 1 com divergencia.
+
+- **por que:** confere a cadeia de artefatos de spec em docs/sdd/<FEATURE>/<fase>.md
+- **quando usar:** gate de spec-driven development antes de build/ship
+
+**Syntax**
+
+```text
+sparkforge-aws sdd converge [help] <repo> [root] [feature]
 ```
 
 | argument/flag | required | default | description |
@@ -6143,7 +6692,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws uninstall [help] [scope] [host] [root] [purge] [dry_run]
+sparkforge-aws uninstall [help] [scope] [host] [root] [purge] [yes] [dry_run]
 ```
 
 | argument/flag | required | default | description |
@@ -6153,6 +6702,7 @@ sparkforge-aws uninstall [help] [scope] [host] [root] [purge] [dry_run]
 | `host` | no | — | — |
 | `root` | no | — | — |
 | `purge` | no | — | Apaga tambem o state dir .sparkforge_aws/install. |
+| `yes` | no | — | Aprovacao explicita; sem ela, --dry-run. |
 | `dry_run` | no | — | — |
 
 <!-- keep:start -->
@@ -6171,7 +6721,7 @@ _free notes — errors, examples, next steps (hand-written, preserved)_
 **Syntax**
 
 ```text
-sparkforge-aws update [help] [to] [repo] [dry_run]
+sparkforge-aws update [help] [to] [repo] [yes] [dry_run]
 ```
 
 | argument/flag | required | default | description |
@@ -6179,6 +6729,7 @@ sparkforge-aws update [help] [to] [repo] [dry_run]
 | `help` | no | — | show this help message and exit |
 | `to` | no | — | Versao pinned (nunca 'latest'). |
 | `repo` | no | — | Checkout para instalar/atualizar. |
+| `yes` | no | — | Aprovacao explicita; sem ela, --dry-run. |
 | `dry_run` | no | — | — |
 
 <!-- keep:start -->

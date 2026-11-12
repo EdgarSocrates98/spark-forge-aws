@@ -231,6 +231,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp_e = sp_sub.add_parser("analyze-eventlog", help="Analyze spark eventlog")
     sp_e.add_argument("path", help="Spark eventlog .jsonl file")
 
+    # forge obsidian — shared authorized-vault verbs (vendored engine)
+    from sparkforge_aws._forge_obsidian.cli import obsidian_argparse
+
+    obsidian_argparse(sub, "spark-forge-aws")
+
     return parser
 
 
@@ -262,6 +267,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_terraform_plan(args)
     elif args.command == "spark" and args.subcommand == "analyze-eventlog":
         return cmd_spark_eventlog(args)
+    elif args.command == "obsidian":
+        return args.func(args)
     return 0
 
 

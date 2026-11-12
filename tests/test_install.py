@@ -79,7 +79,7 @@ def test_install_project_devin_escreve_mirrors_e_mcp(projeto):
     assert out["status"] == "completed"
     assert out["verification"]["status"] == "PASS"
     paths = {f["path"] for f in out["managed_files"]}
-    assert any(p.startswith(".devin/skills/") for p in paths)
+    assert any(p.startswith(".agents/skills/") for p in paths)
     assert any(p.startswith(".agents/skills/") for p in paths)
     mcp = json.loads((projeto / ".mcp.json").read_text(encoding="utf-8"))
     assert "sparkforge-aws" in mcp["mcpServers"]
@@ -102,23 +102,23 @@ def test_install_profile_full_inclui_agents(projeto):
     out = lifecycle.install("devin", scope="project", root=projeto,
                             profile="full", yes=True)
     paths = {f["path"] for f in out["managed_files"]}
-    assert any(p.startswith(".devin/agents/") for p in paths)
+    assert any(p.startswith(".agents/agents/") for p in paths)
 
 
 def test_install_profile_recommended_inclui_agents(projeto):
     out = lifecycle.install("devin", scope="project", root=projeto,
                             profile="recommended", yes=True)
     paths = {f["path"] for f in out["managed_files"]}
-    assert any(p.startswith(".devin/skills/") for p in paths)
-    assert any(p.startswith(".devin/agents/") for p in paths)
+    assert any(p.startswith(".agents/skills/") for p in paths)
+    assert any(p.startswith(".agents/agents/") for p in paths)
 
 
 def test_install_components_control_asset_kinds(projeto):
     out = lifecycle.install("devin", scope="project", root=projeto,
                             components=("skills",), yes=True)
     paths = {f["path"] for f in out["managed_files"]}
-    assert any(p.startswith(".devin/skills/") for p in paths)
-    assert not any(p.startswith(".devin/agents/") for p in paths)
+    assert any(p.startswith(".agents/skills/") for p in paths)
+    assert not any(p.startswith(".agents/agents/") for p in paths)
     assert not (projeto / ".mcp.json").exists()
 
 
@@ -208,7 +208,7 @@ def test_install_nao_sobrescreve_arquivo_do_usuario(projeto):
     plano = lifecycle.install("devin", scope="project", root=projeto,
                               dry_run=True)
     primeiro = next(f["path"] for f in plano["managed_files"]
-                    if f["path"].startswith(".devin/skills/")
+                    if f["path"].startswith(".agents/skills/")
                     and f["path"].endswith("SKILL.md"))
     alvo = projeto / primeiro
     alvo.parent.mkdir(parents=True, exist_ok=True)

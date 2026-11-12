@@ -840,13 +840,16 @@ def _gate_task_graph(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     requisitos = [
         r["id"] for r in (define.meta.get("requirements") or [])
     ] if define is not None else []
+    criterios = [
+        item["id"] for item in define.meta["acceptance"]
+    ] if define is not None else []
     novo = any(
         tarefa.get("depends_on") or tarefa.get("parallel_safe") or tarefa.get("write_scope")
         for tarefa in tarefas
     )
-    if not novo and not requisitos:
-        return
-    for achado in validate_tasks(tarefas, requisitos):
+    if define is None and not novo:
+        return  # sem define nem campos de grafo, nao ha o que o grafo julgue
+    for achado in validate_tasks(tarefas, requisitos, criterios):
         if achado.kind == "dep_unknown":
             ctx.recusa("task_dep_unknown", artefato.path, "tasks", achado.detail)
         elif achado.kind == "cycle":
@@ -855,6 +858,8 @@ def _gate_task_graph(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
             ctx.recusa("task_dep_order", artefato.path, "tasks", achado.detail)
         elif achado.kind == "req_uncovered":
             ctx.lacuna("requirement_uncovered", artefato.path, achado.detail)
+        elif achado.kind == "covers_nothing":
+            ctx.lacuna("task_covers_nothing", artefato.path, achado.detail)
         elif achado.kind == "write_overlap":
             ctx.lacuna("parallel_write_overlap", artefato.path, achado.detail)
 

@@ -76,7 +76,8 @@ def test_criterio_sem_vermelho_ligado_e_recusado(tmp_path):
     ]
     _reescreve(caminhos["build_report"], tasks=build["tasks"])
     _restampa(tmp_path)
-    assert _codigos(check(tmp_path)) == (["acceptance_never_red"], [])
+    # a recusa do criterio segue, e o covers vazio de T2 sai nomeado como lacuna
+    assert _codigos(check(tmp_path)) == (["acceptance_never_red"], ["task_covers_nothing"])
 
 
 def test_arquivo_conta_com_exit_2_e_nao_com_exit_1(tmp_path):

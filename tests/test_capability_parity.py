@@ -298,6 +298,14 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "MCP leem o indice por `sparkforge_aws_graph_status`/`graph_view`."
         ),
         "graph ui": "abre browser no host; projecao coberta por sparkforge_aws_graph_view.",
+        # Onda 4 do SDD: `sdd converge` e leitura-only, mas o que ele ve ja
+        # chega ao cliente MCP por outra porta -- cada divergencia vira codigo
+        # em `sparkforge_aws_sdd_check` (convergence_*), e o relatorio inteiro
+        # e rederivavel dos artefatos que o host ja tem em disco.
+        "sdd converge": (
+            "leitura cruzada dos artefatos da feature; a divergencia chega ao "
+            "cliente MCP pelos codigos convergence_* de sparkforge_aws_sdd_check."
+        ),
         # `portal` sobe um servidor web local (127.0.0.1) na maquina do
         # chamador: o efeito colateral e o processo/janela, nao um payload.
         # Tudo o que ele renderiza ja chega por tools e recibos estruturados.

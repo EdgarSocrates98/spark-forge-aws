@@ -2,9 +2,9 @@
   "schema": "forge/CommandInventory/v1",
   "forge_id": "spark-forge-aws",
   "cli": "sparkforge-aws",
-  "generated_at": "2026-10-11T03:26:35Z",
+  "generated_at": "2026-11-12T03:16:13Z",
   "generated_by": "doc_inventory.py/1",
-  "command_count": 248,
+  "command_count": 273,
   "commands": [
     {
       "path": "lab",
@@ -6836,6 +6836,342 @@
       ]
     },
     {
+      "path": "delegate",
+      "help": "Descobre, planeja e executa delegação governada a especialistas opcionais (data-sentinel, forge-doctor-data).",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ],
+      "group": true
+    },
+    {
+      "path": "delegate discover",
+      "help": "Descobre especialistas declarados: PATH, pacote, handshake, manifesto de capabilities.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "provider",
+          "flags": [
+            "--provider"
+          ],
+          "required": false,
+          "default": null,
+          "choices": [
+            "data-sentinel-forge",
+            "forge-doctor-data"
+          ],
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "no_probe",
+          "flags": [
+            "--no-probe"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "repo",
+          "flags": [
+            "--repo"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "delegate plan",
+      "help": "Planeja a delegação para uma intenção — determinístico, sem executar.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "intent",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": "Intenção em texto livre."
+        },
+        {
+          "name": "authorize",
+          "flags": [
+            "--authorize"
+          ],
+          "required": false,
+          "default": "[]",
+          "choices": [
+            "LOCAL_READ",
+            "LOCAL_WRITE",
+            "EXTERNAL_READ",
+            "EXTERNAL_WRITE",
+            "DESTRUCTIVE",
+            "COST_BEARING"
+          ],
+          "positional": false,
+          "help": "Concede autorização a um nível de risco (pode repetir)."
+        },
+        {
+          "name": "no_probe",
+          "flags": [
+            "--no-probe"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "repo",
+          "flags": [
+            "--repo"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "delegate run",
+      "help": "Executa uma capability declarada de um especialista sob governança.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "provider",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": [
+            "data-sentinel-forge",
+            "forge-doctor-data"
+          ],
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "capability",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": "Id da capability declarada."
+        },
+        {
+          "name": "target",
+          "flags": [
+            "--target"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Arquivo/diretório alvo."
+        },
+        {
+          "name": "job",
+          "flags": [
+            "--job"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Nome do Glue job (sentinel)."
+        },
+        {
+          "name": "run_id",
+          "flags": [
+            "--run-id"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Job run id (sentinel)."
+        },
+        {
+          "name": "profile",
+          "flags": [
+            "--profile"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "AWS profile (sentinel cloud)."
+        },
+        {
+          "name": "region",
+          "flags": [
+            "--region"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "AWS region (sentinel cloud)."
+        },
+        {
+          "name": "platform",
+          "flags": [
+            "--platform"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Plataforma (sentinel analyze)."
+        },
+        {
+          "name": "check",
+          "flags": [
+            "--check"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Check único (doctor scan)."
+        },
+        {
+          "name": "timeout",
+          "flags": [
+            "--timeout"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Timeout em segundos."
+        },
+        {
+          "name": "no_persist",
+          "flags": [
+            "--no-persist"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "authorize",
+          "flags": [
+            "--authorize"
+          ],
+          "required": false,
+          "default": "[]",
+          "choices": [
+            "LOCAL_READ",
+            "LOCAL_WRITE",
+            "EXTERNAL_READ",
+            "EXTERNAL_WRITE",
+            "DESTRUCTIVE",
+            "COST_BEARING"
+          ],
+          "positional": false,
+          "help": "Concede autorização a um nível de risco (pode repetir). Capabilities EXTERNAL_READ/COST_BEARING (glue diagnose, glue runs, etc.) não executam sem este grant."
+        },
+        {
+          "name": "repo",
+          "flags": [
+            "--repo"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "delegate handoffs",
+      "help": "Lista EvidenceHandoffs persistidos em .sparkforge_aws/delegation/handoffs/.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "repo",
+          "flags": [
+            "--repo"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
       "path": "context",
       "help": "Descobre capabilities e empacota contexto deterministico sob limite explicito.",
       "arguments": [
@@ -7122,6 +7458,68 @@
           "choices": null,
           "positional": false,
           "help": "Tokens observados no transcript do host; omitido permanece unresolved."
+        }
+      ]
+    },
+    {
+      "path": "context pack",
+      "help": "context.build (install-2.0 §6.2): Context Pack limitado por dominio — regras aplicaveis + knowledge + protocolos + hash.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "domain",
+          "flags": [
+            "--domain"
+          ],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Dominio pelo prefixo nativo: glue cobre glue-*/glue-infra, spark cobre spark/* e spark-plan, ... (`capabilities` lista os dominios conhecidos desta instalacao)."
+        },
+        {
+          "name": "limit",
+          "flags": [
+            "--limit"
+          ],
+          "required": false,
+          "default": "20",
+          "choices": null,
+          "positional": false,
+          "help": "Teto de regras na pagina do pack (default 20)."
+        },
+        {
+          "name": "knowledge_docs",
+          "flags": [
+            "--knowledge-docs"
+          ],
+          "required": false,
+          "default": "5",
+          "choices": null,
+          "positional": false,
+          "help": "Teto de documentos de knowledge listados no pack (default 5)."
+        },
+        {
+          "name": "as_of",
+          "flags": [
+            "--as-of"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Dia de referencia declarado no pack (AAAA-MM-DD)."
         }
       ]
     },
@@ -8516,6 +8914,57 @@
           "choices": null,
           "positional": true,
           "help": "Artefato, relativo a --repo."
+        }
+      ]
+    },
+    {
+      "path": "sdd converge",
+      "help": "O que veio x o que foi pedido. So le; sai 1 com divergencia.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "repo",
+          "flags": [
+            "--repo"
+          ],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Raiz do repositorio."
+        },
+        {
+          "name": "root",
+          "flags": [
+            "--root"
+          ],
+          "required": false,
+          "default": "docs/sdd",
+          "choices": null,
+          "positional": false,
+          "help": "Pasta dos artefatos, relativa a --repo."
+        },
+        {
+          "name": "feature",
+          "flags": [
+            "--feature"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Confere so esta feature."
         }
       ]
     },
@@ -10631,6 +11080,46 @@
       "group": true
     },
     {
+      "path": "graph build",
+      "help": "Constroi ou atualiza indice SQLite que alimenta o grafo. Alias semantico de code init.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "root",
+          "flags": [
+            "--root"
+          ],
+          "required": false,
+          "default": ".",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "db",
+          "flags": [
+            "--db"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Arquivo do indice. Default: `.sparkforge_aws/local/codeintel/graph.sqlite3` sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora dali e escolha de quem chama, e o arquivo passa a ser candidato a commit."
+        }
+      ]
+    },
+    {
       "path": "graph status",
       "help": "Estado do grafo: contagens e origem do indice.",
       "arguments": [
@@ -10826,6 +11315,159 @@
       ]
     },
     {
+      "path": "capabilities",
+      "help": "capabilities.list + protocol.describe (install-2.0 §6.2): o que este forge instalado consegue fazer — contagens reais, dominios, protocolos e o mapa ops->verbos que o manifesto forge/context/v1 publica. Offline.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ]
+    },
+    {
+      "path": "evals",
+      "help": "Inventario classificado e execucao das suites de avaliacao (§7.1/§7.2): developer, runtime-decision, output-verification, host-conformance. Gabaritos selados nunca sao emitidos.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ],
+      "group": true
+    },
+    {
+      "path": "evals list",
+      "help": "evals.list (§7.2): suites classificadas por categoria.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ]
+    },
+    {
+      "path": "evals describe",
+      "help": "evals.describe (§7.2): categoria, ambiente, selagem e sha256 da suite.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "suite",
+          "flags": [
+            "--suite"
+          ],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "evals run",
+      "help": "evals.run (§7.2): executa o runner deterministico da suite; suites de host recusam EVALS-REQUIRES-HOST.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "suite",
+          "flags": [
+            "--suite"
+          ],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "evals result",
+      "help": "evals.result (§7.2): scorecard de uma execucao de host gravada.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "suite",
+          "flags": [
+            "--suite"
+          ],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "run",
+          "flags": [
+            "--run"
+          ],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
       "path": "knowledge",
       "help": "Localiza os arquivos de conhecimento versionado.",
       "arguments": [
@@ -10932,6 +11574,84 @@
           "choices": null,
           "positional": false,
           "help": "Dia de referencia do estado das fontes (AAAA-MM-DD)."
+        }
+      ]
+    },
+    {
+      "path": "knowledge list",
+      "help": "Enumera os documentos de knowledge (e dos packs ativos).",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ]
+    },
+    {
+      "path": "knowledge search",
+      "help": "Busca textual offline sobre os documentos de knowledge.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "term",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "limit",
+          "flags": [
+            "--limit"
+          ],
+          "required": false,
+          "default": "20",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "domain",
+          "flags": [
+            "--domain"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "So documentos cujo primeiro segmento de caminho (ou nome na raiz) e este dominio ou um sub-dominio `<dominio>-`: glue, spark, emr, ..."
+        },
+        {
+          "name": "cursor",
+          "flags": [
+            "--cursor"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Offset da pagina anterior (`next_cursor` da resposta)."
         }
       ]
     },
@@ -11583,6 +12303,17 @@
           "choices": null,
           "positional": false,
           "help": null
+        },
+        {
+          "name": "query",
+          "flags": [
+            "--query"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Busca por palavra-chave (§6.3): substring sem case sobre id, title, category e explanation da regra."
         },
         {
           "name": "limit",
@@ -13034,7 +13765,7 @@
           "default": null,
           "choices": null,
           "positional": false,
-          "help": "Componentes opcionais csv: skills,agents,mcp,tui,graph-studio."
+          "help": "Componentes opcionais csv: skills,agents,mcp,knowledge,rules,evals,tui,graph-studio."
         },
         {
           "name": "dry_run",
@@ -13181,6 +13912,18 @@
           "help": null
         },
         {
+          "name": "yes",
+          "flags": [
+            "--yes",
+            "-y"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": "Aprovacao explicita; sem ela, --dry-run."
+        },
+        {
           "name": "dry_run",
           "flags": [
             "--dry-run"
@@ -13230,6 +13973,18 @@
           "choices": null,
           "positional": false,
           "help": "Checkout para instalar/atualizar."
+        },
+        {
+          "name": "yes",
+          "flags": [
+            "--yes",
+            "-y"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": "Aprovacao explicita; sem ela, --dry-run."
         },
         {
           "name": "dry_run",
@@ -13315,6 +14070,18 @@
           "help": "Apaga tambem o state dir .sparkforge_aws/install."
         },
         {
+          "name": "yes",
+          "flags": [
+            "--yes",
+            "-y"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": "Aprovacao explicita; sem ela, --dry-run."
+        },
+        {
           "name": "dry_run",
           "flags": [
             "--dry-run"
@@ -13361,6 +14128,74 @@
           "choices": null,
           "positional": false,
           "help": "show this help message and exit"
+        }
+      ]
+    },
+    {
+      "path": "mcp serve",
+      "help": "Sobe servidor MCP no transporte selecionado (default: stdio).",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "transport",
+          "flags": [
+            "--transport"
+          ],
+          "required": false,
+          "default": "stdio",
+          "choices": [
+            "stdio",
+            "http"
+          ],
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "mode",
+          "flags": [
+            "--mode"
+          ],
+          "required": false,
+          "default": "full",
+          "choices": [
+            "full",
+            "compact"
+          ],
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "host",
+          "flags": [
+            "--host"
+          ],
+          "required": false,
+          "default": "127.0.0.1",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "port",
+          "flags": [
+            "--port"
+          ],
+          "required": false,
+          "default": "8765",
+          "choices": null,
+          "positional": false,
+          "help": null
         }
       ]
     },
@@ -14551,6 +15386,28 @@
           "help": "Quantos arquivos ler, os primeiros pelo nome (padrao do coletor: 20; teto 500)."
         },
         {
+          "name": "aws_profile",
+          "flags": [
+            "--profile"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Perfil AWS nomeado para prefixos s3://; credenciais nunca entram no artefato."
+        },
+        {
+          "name": "aws_region",
+          "flags": [
+            "--region"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "Regiao AWS para o filesystem S3 (ex.: us-east-1)."
+        },
+        {
           "name": "now",
           "flags": [
             "--now"
@@ -15225,6 +16082,357 @@
           ],
           "required": true,
           "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "obsidian",
+      "help": "Authorized Obsidian vault operations",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ],
+      "group": true
+    },
+    {
+      "path": "obsidian status",
+      "help": "Report configured/detected vault state.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        }
+      ]
+    },
+    {
+      "path": "obsidian scan",
+      "help": "List Markdown paths without reading bodies.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "prefix",
+          "flags": [
+            "--prefix"
+          ],
+          "required": false,
+          "default": "",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "limit",
+          "flags": [
+            "--limit"
+          ],
+          "required": false,
+          "default": "200",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "obsidian preview",
+      "help": "Metadata + projection, never the body.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "path",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "obsidian sync-plan",
+      "help": "Dry-run a sync of FILE into PATH.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "path",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "file",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "baseline_hash",
+          "flags": [
+            "--baseline-hash"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "classification",
+          "flags": [
+            "--classification"
+          ],
+          "required": false,
+          "default": "internal",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "obsidian export",
+      "help": "Apply a reviewed sync plan.",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "path",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "file",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "baseline_hash",
+          "flags": [
+            "--baseline-hash"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "classification",
+          "flags": [
+            "--classification"
+          ],
+          "required": false,
+          "default": "internal",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "yes",
+          "flags": [
+            "--yes"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": "Confirm the reviewed plan"
+        },
+        {
+          "name": "moc",
+          "flags": [
+            "--no-moc"
+          ],
+          "required": false,
+          "default": "True",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "obsidian export-note",
+      "help": "Export FILE as forges/<forge-id>/<name>.md",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "name",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "file",
+          "flags": [],
+          "required": true,
+          "default": null,
+          "choices": null,
+          "positional": true,
+          "help": null
+        },
+        {
+          "name": "baseline_hash",
+          "flags": [
+            "--baseline-hash"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "classification",
+          "flags": [
+            "--classification"
+          ],
+          "required": false,
+          "default": "internal",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "yes",
+          "flags": [
+            "--yes"
+          ],
+          "required": false,
+          "default": "False",
+          "choices": null,
+          "positional": false,
+          "help": null
+        },
+        {
+          "name": "moc",
+          "flags": [
+            "--no-moc"
+          ],
+          "required": false,
+          "default": "True",
+          "choices": null,
+          "positional": false,
+          "help": null
+        }
+      ]
+    },
+    {
+      "path": "obsidian history",
+      "help": "List Forge sync receipts (body-free).",
+      "arguments": [
+        {
+          "name": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "required": false,
+          "default": null,
+          "choices": null,
+          "positional": false,
+          "help": "show this help message and exit"
+        },
+        {
+          "name": "limit",
+          "flags": [
+            "--limit"
+          ],
+          "required": false,
+          "default": "50",
           "choices": null,
           "positional": false,
           "help": null
