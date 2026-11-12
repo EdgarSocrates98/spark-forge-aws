@@ -1,0 +1,9 @@
+{
+  "cycle": "2.7-patch",
+  "repository": "spark-forge-aws",
+  "version": "0.7.6",
+  "tag": "v0.7.6",
+  "source_commit": "ef5f32b205a6ca760078586221c1e8e51d95b347",
+  "version_source": "pyproject.toml",
+  "verified_at": "2026-11-12"
+}
