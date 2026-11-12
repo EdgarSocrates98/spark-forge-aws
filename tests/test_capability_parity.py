@@ -130,6 +130,26 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mesma capacidade que 'resume'; escreve markdown em disco, sem uso "
             "para um cliente MCP."
         ),
+        # `obsidian *` sao verbs host-side do motor vendored `_forge_obsidian`:
+        # scan/preview/sync-plan leem o vault local, export/export-note ESCREVEM
+        # nele e history le recibos locais. Um cliente MCP nao tem por que
+        # disparar escrita de filesystem no vault do operador via provider --
+        # sao operacoes de workspace do host, nao capacidade remota. A mesma
+        # classe dos verbs CLI-only acima.
+        "obsidian status": ("estado do vault local; configuracao do host, "
+                            "nao capacidade remota."),
+        "obsidian scan": ("lista arquivos do vault local; leitura de filesystem "
+                          "do host, nao capacidade remota."),
+        "obsidian preview": ("projecao de nota local; leitura de filesystem "
+                             "do host, nao capacidade remota."),
+        "obsidian sync-plan": ("dry-run de escrita no vault local; planejamento "
+                               "host-side, nao capacidade remota."),
+        "obsidian export": ("escreve no vault do operador; mutacao de filesystem "
+                            "host-side, nunca via MCP."),
+        "obsidian export-note": ("escreve nota no vault; mutacao de filesystem "
+                                 "host-side, nunca via MCP."),
+        "obsidian history": ("le recibos locais de sync; filesystem do host, "
+                             "nao capacidade remota."),
         # `journal verify` e auditoria da cadeia do `.sparkforge_aws/journal.jsonl`.
         # O estado que o cliente MCP precisa (o que ficou sem `finished`, a
         # cadeia intacta ou quebrada) ja chega pelo bloco `journal` de
