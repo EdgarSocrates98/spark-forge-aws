@@ -125,6 +125,18 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "runtime e os arquivos `.crc`/vazios sao descartados antes da analise, "
         "nunca uma arvore de cliente"
     ),
+    "_forge_obsidian/obsidian.py": (
+        "motor de interop Obsidian vendored (theforge/obsidian, stampado): "
+        "lista `*.json` do ledger de receipts do proprio vault declarado -- "
+        "dir de estado que o modulo escreveu, guardado por recusa de "
+        "symlink/reparse no proprio call site; nunca arvore de cliente"
+    ),
+    "sdd/federated.py": (
+        "lista `*.json` de `.sdd/<feature>/receipts/` -- dir de receipts que "
+        "o proprio engine SDD escreve dentro do feature dir passado pelo "
+        "chamador; conjunto fechado de estado do produto, nunca arvore de "
+        "cliente"
+    ),
 }
 
 

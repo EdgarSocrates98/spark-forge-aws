@@ -39,6 +39,10 @@
     "why": "estado do budget do case",
     "when": "conferir quanto de contexto/custo o case já consumiu"
   },
+  "capabilities": {
+    "why": "inventaria o que esta instalação declara — capabilities.list + protocol.describe do contrato install-2.0",
+    "when": "conferir o que o install anuncia antes de rotear trabalho ou delegar a um especialista"
+  },
   "capacity": {
     "why": "escolhe a capacidade mais barata que cumpre o SLA — entre capacidades que o job JÁ rodou",
     "when": "dimensionar DPU/worker com evidência, nunca extrapolação"
@@ -79,6 +83,10 @@
     "why": "lista e explica decisões registradas",
     "when": "auditar o histórico de decisões do case"
   },
+  "delegate": {
+    "why": "descobre, planeja e executa delegação governada a especialistas declarados (data-sentinel-forge, forge-doctor-data) com EvidenceHandoff persistido",
+    "when": "quando o caso pede diagnóstico de runtime ou scan independente além dos extratores nativos — especialista ausente degrada para native-analysis, nunca para execução simulada"
+  },
   "detach": {
     "why": "remove a integração de usuário do host — só o que o manifesto declara",
     "when": "desinstalar limpo sem órfãos nos hosts"
@@ -98,6 +106,10 @@
   "economy": {
     "why": "o que a execução põe na janela de contexto — byte medido",
     "when": "quantificar contexto antes de reclamar de custo"
+  },
+  "evals": {
+    "why": "inventário classificado e execução das suites de avaliação versionadas",
+    "when": "listar, descrever, rodar ou ler resultado de evals com recibo persistido"
   },
   "finops": {
     "why": "relatório financeiro: custo, troca recurso-tempo, alavanca de capacidade",
@@ -171,6 +183,10 @@
     "why": "rota determinística via routing.yaml — nunca julgamento do agente",
     "when": "o próximo passo correto a partir dos findings do case"
   },
+  "obsidian": {
+    "why": "operações autorizadas no vault Obsidian — status, scan, preview, sync-plan, export, export-note e history com recibo",
+    "when": "exportar artefatos SDD/casos para o vault ou inspecionar o estado de sync — nunca escreve fora do vault declarado"
+  },
   "pack": {
     "why": "Forge Packs: regras, knowledge e fixtures de terceiro",
     "when": "estender a forja com packs versionados externos"
@@ -182,6 +198,10 @@
   "policy": {
     "why": "política de segurança do repo (.sparkforge_aws/policy.yaml)",
     "when": "validar/explicar regras de política aplicadas"
+  },
+  "portal": {
+    "why": "portal web local (127.0.0.1) com sessão por token — dashboard de instalação, hosts, MCP, skills, agents, tarefas, grafo e docs sobre os MESMOS serviços e receipts do CLI",
+    "when": "explorar a forja visualmente após instalar; opcional — CLI/TUI/MCP funcionam sem ele"
   },
   "proof": {
     "why": "obrigações de prova de recomendações APLICADAS",
@@ -262,9 +282,5 @@
   "workspace": {
     "why": "workspace virtual declarado e descoberta limitada",
     "when": "trabalhar multi-projeto dentro de um workspace declarado"
-  },
-  "portal": {
-    "why": "portal web local (127.0.0.1) com sessão por token — dashboard de instalação, hosts, MCP, skills, agents, tarefas, grafo e docs sobre os MESMOS serviços e receipts do CLI",
-    "when": "explorar a forja visualmente após instalar; opcional — CLI/TUI/MCP funcionam sem ele"
   }
 }
