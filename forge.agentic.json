@@ -68,6 +68,7 @@
     "mcp",
     "serve"
   ],
+  "mcp_verify_tool": "sparkforge_aws_runtime_detect",
   "host_adapters": [
     "claude",
     "devin",
