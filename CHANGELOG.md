@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+## [0.7.8] — 2026-11-13
+
+### Changed
+
+- Unified platform release: version bump + VERSION_DUMP.unified-release.json.
+
 ## [Unreleased]
 
 ## [0.7.7] - 2026-11-12
