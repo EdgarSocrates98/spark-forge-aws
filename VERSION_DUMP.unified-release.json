@@ -1,0 +1,9 @@
+{
+  "cycle": "unified-release",
+  "repository": "spark-forge-aws",
+  "version": "0.7.8",
+  "tag": "v0.7.8",
+  "source_commit": "3698be5a2f7f8abc305a4aeab4b4ed9022f86e7b",
+  "version_source": "pyproject.toml|package.json|__init__",
+  "verified_at": "2026-11-12"
+}
