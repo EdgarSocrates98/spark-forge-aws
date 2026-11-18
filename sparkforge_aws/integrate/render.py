@@ -846,27 +846,33 @@ def knowledge_index_stub(total: int) -> bytes:
     return _KNOWLEDGE_INDEX.format(total=total).encode("utf-8")
 
 
+# A raiz `{kind}/` e COMPARTILHADA entre forges num workspace federado:
+# o texto do ponteiro nao pode nomear este forge nem os verbos nativos
+# dele — dois forges emitem o MESMO path (ex.: `evals/evals.json`), e
+# bytes diferentes viram `preserved_foreign` no segundo install. O
+# leitor acha o dono e os verbos no registro da federacao.
 _ASSET_STUB = """\
-# Ponteiro de {kind} — sparkforge-aws
+# Ponteiro de {kind}
 
 Este arquivo e um PONTEIRO gerado na instalacao: os links `{kind}/<rel>`
 dos mirrors (.agents/skills, .claude/skills, ...) resolvem aqui, mas o
-CONTEUDO real mora no pacote `sparkforge-aws` instalado — fora de qualquer
+CONTEUDO real mora no pacote do forge que o publica — fora de qualquer
 checkout, e propositalmente nao copiado para o workspace.
 
-Recupere o conteudo real pelos verbos nativos:
-
-    sparkforge-aws capabilities          # mapa completo ops -> verbos
+Este path e compartilhado entre forges: consulte `.forge/installations/`
+e `.forge/context/registry.json` para o forge dono e os verbos nativos
+dele.
 """
 
 
 _ASSET_INDEX = """\
-# {kind}/ — ponteiros do sparkforge-aws
+# {kind}/ — ponteiros
 
 Os arquivos neste diretorio sao PONTEIROS (um por documento `{kind}/`
 referenciado pelas skills/agents instalados). O conteudo real e versionado
-dentro do pacote e se recupera offline pelos verbos — `sparkforge-aws
-capabilities` lista o mapa completo.
+dentro do pacote do forge que o publica e se recupera offline pelos
+verbos nativos dele — consulte `.forge/installations/` e
+`.forge/context/registry.json` para o forge dono.
 
 Total referenciado nesta instalacao: {total} documento(s).
 """
