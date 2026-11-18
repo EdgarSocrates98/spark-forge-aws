@@ -58,13 +58,47 @@ def _content_root() -> Path:
     return sources.content_root()
 
 
-def _profile_kinds(profile: str) -> tuple[bool, bool]:
-    """(skills?, agents?) — component profile, independent from gateway."""
-    return {
-        "minimal": (False, False),
-        "recommended": (True, True),
-        "full": (True, True),
-    }[profile]
+# --------------------------------------------------------------------------
+# Matriz de profiles (install-2.1)
+#
+# `--profile` seleciona CONJUNTOS DE COMPONENTES — e nada mais. Nao ha
+# diferenca de conteudo dentro de um kind nem de "profundidade": hoje
+# `recommended` e `full` instalam o MESMO conjunto de arquivos; `full` e o
+# slot reservado a defaults mais pesados (componentes opcionais como
+# `tui`/`graph-studio`) quando entrarem no pacote — declarar diferenca de
+# disco entre eles seria inventar. `--components` sobrescreve por kind.
+#
+# `--gateway-profile` e uma dimensao ORTOGONAL (perfil do Context Gateway
+# embutido no argv do MCP, `hosts.mcp_command`): `economy`/`balanced`
+# ligam `--mode compact` (7 operacoes), `deep`/ausente deixa o modo full
+# (148 tools). Nao mexe em nenhum arquivo de asset.
+#
+# `mcp` figura em todo profile porque a entrada do servidor MCP e config,
+# nao asset de conteudo — `minimal` e "config + mcp + docs", sem mirrors.
+# --------------------------------------------------------------------------
+
+# Os kinds de asset (`kit.COMPONENT_KINDS`) que cada `--profile` habilita.
+PROFILE_COMPONENTS: dict[str, tuple[str, ...]] = {
+    "minimal": ("mcp",),
+    "recommended": ("mcp", "skill", "agent", "knowledge", "rules", "evals"),
+    "full": ("mcp", "skill", "agent", "knowledge", "rules", "evals"),
+}
+
+
+def _kind_of(destino: Path, target: Path) -> str:
+    """O kind de asset de um destino sob `target`: `skill` sob `*/skills/`,
+    `knowledge`/`rules`/`evals` sob a raiz homonima, o resto e `agent`.
+    Destino fora de `target` nunca e filtrado ("config")."""
+    try:
+        rel = destino.resolve().relative_to(target.resolve()).as_posix()
+    except ValueError:
+        return "config"
+    if "/skills/" in f"/{rel}" or destino.name == "SKILL.md":
+        return "skill"
+    topo = rel.split("/")[0]
+    if topo in ("knowledge", "rules", "evals"):
+        return topo
+    return "agent"
 
 
 # --------------------------------------------------------------------------
@@ -141,13 +175,10 @@ def install(
     content = _content_root()
     opts = kit.component_options(profile, components)
     if components is None:
-        skills, agents = _profile_kinds(profile)
-        mcp_enabled = True
+        enabled_kinds = set(PROFILE_COMPONENTS[profile])
     else:
-        selected_kinds = set(opts.get("asset_kinds", ()))
-        skills = "skill" in selected_kinds
-        agents = "agent" in selected_kinds
-        mcp_enabled = "mcp" in selected_kinds
+        enabled_kinds = set(opts.get("asset_kinds", ()))
+    mcp_enabled = "mcp" in enabled_kinds
 
     nomes = _hosts_for(alvo)
     disco = writer.Disco(target, dry_run=dry_run)
@@ -172,7 +203,8 @@ def install(
         for nome in nomes:
             h = project_host(nome, target)
             plano = project_plan(h, content, target)
-            filtrado = [(d, b) for d, b in plano if _want_file(d, target, skills, agents)]
+            filtrado = [(d, b) for d, b in plano
+                        if _want_file(d, target, enabled_kinds)]
             plano_total += [{"path": disco.chave(d), "bytes": len(b)} for d, b in filtrado]
             rel = writer.apply_files(
                 nome, filtrado, disco=disco, manifesto=manifesto, version=__version__
@@ -279,13 +311,11 @@ def install(
     return receipt
 
 
-def _want_file(destino: Path, target: Path, skills: bool, agents: bool) -> bool:
-    try:
-        rel = destino.resolve().relative_to(target.resolve()).as_posix()
-    except ValueError:
-        return True
-    is_skill = "/skills/" in f"/{rel}" or destino.name == "SKILL.md"
-    return skills if is_skill else agents
+def _want_file(destino: Path, target: Path, enabled_kinds: set[str]) -> bool:
+    """`destino` entra no plano quando o kind dele esta em `enabled_kinds`;
+    fora de `target` (kind `config`) nunca e filtrado."""
+    return _kind_of(destino, target) in enabled_kinds or \
+        _kind_of(destino, target) == "config"
 
 
 def _install_user(

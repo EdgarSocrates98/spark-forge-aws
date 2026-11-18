@@ -122,6 +122,37 @@ def test_install_components_control_asset_kinds(projeto):
     assert not (projeto / ".mcp.json").exists()
 
 
+def test_install_components_knowledge_seleciona_ponteiros(projeto):
+    """`--components knowledge` e granular de verdade: instala os ponteiros
+    namespacados e nada de skill/agent — antes todo knowledge caia no
+    balaio `agents` e a flag declarada nao tinha efeito proprio."""
+    out = lifecycle.install("devin", scope="project", root=projeto,
+                            components=("knowledge",), yes=True)
+    paths = {f["path"] for f in out["managed_files"]}
+    assert paths
+    assert all(p.startswith("knowledge/sparkforge-aws/") for p in paths)
+    assert not (projeto / ".mcp.json").exists()
+
+
+def test_install_matriz_de_profile_e_explicita_e_honesta(projeto):
+    """A matriz `--profile` e dado, nao dispersa: `minimal` = config+mcp;
+    `recommended` == `full` no conjunto de assets (full e o slot para
+    defaults mais pesados — nao ha diferenca de disco hoje)."""
+    assert set(lifecycle.PROFILE_COMPONENTS) == set(lifecycle.PROFILES)
+    todos = set(kit.COMPONENT_KINDS.values())
+    assert set(lifecycle.PROFILE_COMPONENTS["minimal"]) == {"mcp"}
+    assert set(lifecycle.PROFILE_COMPONENTS["recommended"]) == todos
+    assert lifecycle.PROFILE_COMPONENTS["recommended"] == \
+        lifecycle.PROFILE_COMPONENTS["full"]
+
+    recomendado = lifecycle.install("devin", scope="project", root=projeto,
+                                    profile="recommended", yes=True)
+    cheio = lifecycle.install("devin", scope="project", root=projeto,
+                              profile="full", yes=True)
+    assert {f["path"] for f in recomendado["managed_files"]} == \
+        {f["path"] for f in cheio["managed_files"]}
+
+
 def test_install_host_all_mcp_compartilhado_sem_recusa(projeto):
     out = lifecycle.install("all", scope="project", root=projeto, yes=True)
     assert out["status"] == "completed"
