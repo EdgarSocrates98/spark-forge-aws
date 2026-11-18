@@ -12,6 +12,6 @@ expected evidence-first answer and include assertions for:
 
 `python scripts/check_skill_evals.py` validates coverage and path safety.
 `python scripts/run_skill_evals.py --offline` runs deterministic contract checks
-only: it does not call a provider, AWS, or an MCP server. A provider benchmark
-needs a separately recorded transcript, baseline, and grader; no performance or
-token gain is inferred from this offline gate.
+only: it does not call a provider, a cloud API, or an MCP server. A provider
+benchmark needs a separately recorded transcript, baseline, and grader; no
+performance or token gain is inferred from this offline gate.
