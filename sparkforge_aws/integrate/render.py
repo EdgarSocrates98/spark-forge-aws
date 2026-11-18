@@ -856,12 +856,16 @@ _ASSET_STUB = """\
 
 Este arquivo e um PONTEIRO gerado na instalacao: os links `{kind}/<rel>`
 dos mirrors (.agents/skills, .claude/skills, ...) resolvem aqui, mas o
-CONTEUDO real mora no pacote do forge que o publica — fora de qualquer
+CONTEUDO real mora no pacote do forge instalado — fora de qualquer
 checkout, e propositalmente nao copiado para o workspace.
 
-Este path e compartilhado entre forges: consulte `.forge/installations/`
-e `.forge/context/registry.json` para o forge dono e os verbos nativos
-dele.
+Num workspace federado a raiz `{kind}/` e compartilhada entre forges: o
+forge dono deste ponteiro e os seus verbos nativos constam no registry
+`.forge/context/registry.json` (workspace) e em
+`~/.forge/installations/` (conta). O manifesto `forge/context/v1` em
+`.forge/context/capabilities/<forge>.json` lista os comandos de
+descoberta do forge — em geral `<cli> capabilities` devolve o mapa
+completo ops -> verbos.
 """
 
 
