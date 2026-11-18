@@ -1005,7 +1005,9 @@ def _declared_install_fields() -> dict[str, Any]:
     - ``install``: a superficie declarada (operations/flags/hosts/scopes/
       profiles/approval) — o argv builder do orquestrador so envia o que
       esta declarado; ausente, o manifesto fica no default v1.
-    - ``depends_on``: forge_ids que devem instalar antes.
+    - ``depends_on``: forge_ids que devem instalar antes — declarado
+      mesmo quando vazio (``[]``): o plano consolidado le a presenca da
+      chave como declaracao explicita, nao como ausencia de dado.
     """
     cfg = _bundled_json("forge.json")
     if not cfg:
@@ -1022,7 +1024,7 @@ def _declared_install_fields() -> dict[str, Any]:
         doc["installation_kind"] = kind
     if cfg.get("install"):
         doc["install"] = dict(cfg["install"])
-    if cfg.get("depends_on"):
+    if "depends_on" in cfg:
         doc["depends_on"] = [str(d) for d in cfg["depends_on"]]
     return doc
 

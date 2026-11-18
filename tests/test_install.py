@@ -589,9 +589,10 @@ def test_install_registra_superficie_install_2_1(projeto):
         "uninstall", "auto", "mcp-verify",
     }
     assert "auto" not in surface["operations"]
-    # `depends_on` vazio no forge.json fica omitido — mesma regra do
-    # passo `register` do bootstrap (declarado-vazio == nao declarado).
-    assert registrado.get("depends_on") in (None, [])
+    # `depends_on` e declarado mesmo vazio: o plano consolidado le a
+    # presenca da chave como declaracao explicita ("este forge nao depende
+    # de ninguem"), nao como ausencia de dado.
+    assert registrado["depends_on"] == []
 
 
 def test_install_context_idempotente_byte_a_byte(projeto):
