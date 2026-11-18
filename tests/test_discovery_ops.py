@@ -243,12 +243,12 @@ class TestPonteirosDeKnowledge:
             if d.is_relative_to(target / "knowledge")
         }
         assert len(stubs) > 5, "os docs referenciados geram ponteiros"
-        indice = stubs["knowledge/README.md"]
+        indice = stubs["knowledge/sparkforge-aws/README.md"]
         assert b"sparkforge-aws knowledge path" in indice
         for rel, dados in stubs.items():
-            if rel == "knowledge/README.md":
+            if rel == "knowledge/sparkforge-aws/README.md":
                 continue
-            doc = rel.removeprefix("knowledge/")
+            doc = rel.removeprefix("knowledge/sparkforge-aws/")
             assert f"knowledge path --file {doc}".encode() in dados
 
     def test_plano_sem_target_root_nao_emite_ponteiros(self, tmp_path):
@@ -261,7 +261,10 @@ class TestPonteirosDeKnowledge:
     def test_todos_os_hosts_do_projeto_recebem_ponteiros(self, tmp_path):
         for nome in HOSTS:
             _, plano = self._plano(tmp_path / nome, host=nome)
-            assert any("knowledge/README.md" in d.as_posix() for d in plano), nome
+            assert any(
+                "knowledge/sparkforge-aws/README.md" in d.as_posix()
+                for d in plano
+            ), nome
 
 
 class TestOffline:
