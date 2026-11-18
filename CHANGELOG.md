@@ -10,6 +10,25 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+
+- install-2.1 wave-02 (cycle-16): `forge.json` declara
+  `installation_kind: content`, a superficie `install`
+  (operations/flags/hosts/scopes/profiles/`--yes`) e `depends_on: []` —
+  copiados verbatim ao manifesto registrado
+  (`forge/InstallationManifest/v1`), incluindo `depends_on` vazio.
+- Ponteiros de knowledge gerados pelo install agora vivem em
+  `knowledge/sparkforge-aws/<rel>` (subdir proprio do forge), nao mais na
+  raiz generica `knowledge/` — evita colisao entre forges na mesma arvore.
+  Migracao honesta: stubs antigos gerenciados saem do disco e do
+  manifesto; arquivo editado pelo usuario fica com recusa nomeada;
+  arquivo de outra forge nunca e tocado.
+- `--profile` vira matriz explicita (`PROFILE_COMPONENTS`): `minimal` =
+  config+MCP+docs; `recommended` e `full` instalam o mesmo conjunto de
+  assets hoje. `_want_file` filtra por kind, entao `--components
+  knowledge|rules|evals` passa a ter efeito proprio.
+- Re-vendor installkit 1.0.6 + forge bootstrap/UI do the-forge.
+
 ## [0.7.7] - 2026-11-12
 
 SDD consolidation release: `federated-schemas` CI job consumes canonical

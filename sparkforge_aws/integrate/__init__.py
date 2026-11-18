@@ -95,8 +95,9 @@ def _planejar(
             codex_home=disco.codex_home,
         )
         # target_root=HOME: os ponteiros `knowledge/<rel>` resolvem em
-        # `~/knowledge/` — o mesmo nivel que os espelhos `~/.agents/skills`
-        # esperam quando um link sai da arvore da skill.
+        # `~/knowledge/sparkforge-aws/` — o subdir proprio deste forge no
+        # mesmo nivel que os espelhos `~/.agents/skills` esperam quando um
+        # link sai da arvore da skill.
         plano = writer.plan_files(h, raiz, target_root=disco.home)
         if nome == "claude":
             # `content` e o material do PLUGIN para o sha da versao — os

@@ -40,8 +40,10 @@ continuam locais, determinísticas e sem provider no core.
 
 `sparkforge-aws install` não instala só uma CLI — instala uma **equipe de
 engenharia de dados** dentro do seu AI host. O perfil padrão `recommended`
-instala as skills e o servidor MCP; a equipe de coordenadores e executores
-entra com `--profile full`. Depois do install, abrir o Claude Code, o Codex, o
+instala skills, agents, ponteiros de knowledge e o servidor MCP;
+`--profile minimal` fica só em config+MCP+docs e `--profile full` instala
+hoje o mesmo conjunto do `recommended` (matriz honesta:
+[docs/installation/portable-installation.md](https://github.com/EdgarSocrates98/spark-forge-aws/blob/v0.5.0/docs/installation/portable-installation.md)). Depois do install, abrir o Claude Code, o Codex, o
 Devin ou o Copilot CLI neste projeto (ou no escopo `workspace`/`user`) dá
 acesso a:
 

@@ -208,7 +208,20 @@ def test_o_gravado_por_integrate_e_o_espelho_do_repo(tmp_path):
         assert integrate(nome, home=home, windows=False)["refused"] == []
 
     espelho = _conteudo(ROOT / ".agents" / "skills")
-    assert _conteudo(home / ".agents" / "skills") == espelho
+    instalado = _conteudo(home / ".agents" / "skills")
+    # install-2.1: mesmo conjunto de arquivos — e o byte so pode divergir onde
+    # o link `knowledge/<rel>` ganhou o namespace `knowledge/sparkforge-aws/`
+    # (ponteiro no install; doc real no espelho do repo).
+    assert set(instalado) == set(espelho)
+    divergiram = []
+    for nome, gravado in instalado.items():
+        esperado = espelho[nome]
+        if gravado != esperado:
+            divergiram.append(nome)
+            assert gravado.replace(
+                b"/knowledge/sparkforge-aws/", b"/knowledge/"
+            ) == esperado, nome
+    assert divergiram
     assert _conteudo(home / ".config" / "devin" / "agents") == _conteudo(
         ROOT / ".agents" / "agents"
     )
@@ -301,16 +314,21 @@ def _agents_renderizados(plataforma: str, padrao: str, executores: bool) -> dict
     return esperado
 
 
-def _skills_do_devin() -> dict[str, bytes]:
-    """`~/.agents/skills` recebe o que o espelho `.agents/skills` do repo recebe."""
-    from scripts import sync_skills
+def _skills_do_devin(home: Path) -> dict[str, bytes]:
+    """O que `integrate("devin", home=home)` grava em `~/.agents/skills`: o plano
+    de `writer.plan_files` para o host devin — o mesmo render do espelho
+    `.agents/skills` do repo, mas com `target_root=home`, entao os links
+    `knowledge/<rel>` apontam para `knowledge/sparkforge-aws/<rel>` (ponteiro),
+    nao para `knowledge/<rel>` (doc real, so no repo)."""
+    from sparkforge_aws.integrate import writer
+    from sparkforge_aws.integrate.hosts import host as _host
 
-    base = ROOT / ".agents" / "skills"
+    h = _host("devin", home=home, windows=False)
+    base = home / ".agents" / "skills"
     return {
-        src.relative_to(ROOT / "skills").as_posix(): sync_skills.rendered_skill_bytes(
-            src, base / src.relative_to(ROOT / "skills")
-        )
-        for src in sources.skill_files(ROOT)
+        dest.relative_to(base).as_posix(): dados
+        for dest, dados in writer.plan_files(h, ROOT, target_root=home)
+        if dest.is_relative_to(base)
     }
 
 
@@ -334,7 +352,7 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     assert _conteudo(home / ".config" / "devin" / "agents") == _agents_renderizados(
         "devin", "{stem}.md", executores=True
     )
-    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
+    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin(home)
     dados = json.loads(config.read_text(encoding="utf-8"))
     assert dados["mcpServers"]["outro"] == outro
     assert dados["mcpServers"]["sparkforge-aws"] == {
@@ -396,7 +414,7 @@ def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
     assert _conteudo(home / ".copilot" / "agents") == _agents_renderizados(
         "github", "{stem}.agent.md", executores=True
     )
-    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
+    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin(home)
     dados = json.loads(config.read_text(encoding="utf-8"))
     assert dados["mcpServers"]["outro"] == outro
     assert dados["mcpServers"]["sparkforge-aws"] == {
@@ -432,7 +450,7 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
         for src in sources.agent_files(ROOT)
     }
     assert _conteudo(home / ".codex" / "agents") == esperado
-    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
+    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin(home)
 
     texto = config.read_text(encoding="utf-8")
     assert texto.startswith(CONFIG_CODEX), "o que o usuario tinha foi reescrito"
@@ -2243,3 +2261,105 @@ def test_knowledge_refs_descartam_traversal(tmp_path):
     refs = render.referenced_knowledge_paths(texto, canonical_dir="skills/x")
     assert refs == {"glue/workers.md", "sub/dir/x.yaml"}
     assert all(".." not in r for r in refs)
+
+
+def _skill_com_ref_knowledge(nome: str) -> str:
+    return (
+        f"---\nname: {nome}\ndescription: skill de teste\n---\n"
+        "corpo — veja [doc](../../knowledge/glue/x.md) e `knowledge/dq/y.md`\n"
+    )
+
+
+def test_ponteiros_knowledge_vivem_no_subdir_do_forge(tmp_path):
+    """install-2.1: os stubs de knowledge sao namespacados —
+    `knowledge/sparkforge-aws/<rel>` + o README indice no mesmo subdir —
+    porque a raiz `knowledge/` e compartilhada entre forges e duas forjas
+    nao podem ser donas do mesmo `knowledge/<rel>`."""
+    home = tmp_path / "home"
+    raiz = _raiz_falsa(tmp_path / "raiz", {
+        "skills/sdd-plan/SKILL.md": _skill_com_ref_knowledge("sdd-plan"),
+    })
+    assert integrate("devin", home=home, windows=False, root=raiz)["refused"] == []
+    ns = home / "knowledge" / "sparkforge-aws"
+    assert (ns / "glue" / "x.md").is_file()
+    assert (ns / "dq" / "y.md").is_file()
+    assert (ns / "README.md").is_file()
+    # Nada solto na raiz generica: o unico conteudo de `knowledge/` e o
+    # subdir deste forge.
+    assert not (home / "knowledge" / "glue").exists()
+    assert not (home / "knowledge" / "README.md").exists()
+    assert [p.name for p in (home / "knowledge").iterdir()] == ["sparkforge-aws"]
+    # O link renderizado aponta para dentro do subdir do forge; a mencao
+    # textual segue canonica (o que `knowledge path --file` aceita).
+    espelho = (home / ".agents" / "skills" / "sdd-plan" / "SKILL.md").read_text(
+        encoding="utf-8")
+    assert "../../../knowledge/sparkforge-aws/glue/x.md" in espelho
+    assert "`knowledge/dq/y.md`" in espelho
+
+
+def test_integrate_migra_ponteiros_knowledge_da_raiz_generica(tmp_path):
+    """Installs antigos gravaram stubs em `knowledge/<rel>` +
+    `knowledge/README.md`. A reinstalacao MIGRA pelo caminho de orfaos:
+    arquivo com o sha gravado sai do disco e do manifesto (era nosso),
+    o editado pelo usuario fica com recusa nomeada, e o que nunca foi
+    nosso (outra forja) nao e tocado."""
+    home = tmp_path / "home"
+    raiz = _raiz_falsa(tmp_path / "raiz", {
+        "skills/sdd-plan/SKILL.md": _skill_com_ref_knowledge("sdd-plan"),
+    })
+    # Estado da instalacao antiga: stubs na raiz generica, sha registrado.
+    velho_stub = b"ponteiro antigo\n"
+    velho_index = b"indice antigo\n"
+    estrangeiro = home / "knowledge" / "apiforge" / "x.md"
+    estrangeiro.parent.mkdir(parents=True)
+    estrangeiro.write_bytes(b"de outra forja\n")
+    editado = home / "knowledge" / "editado.md"
+    (home / "knowledge" / "glue").mkdir(parents=True)
+    (home / "knowledge" / "glue" / "x.md").write_bytes(velho_stub)
+    (home / "knowledge" / "README.md").write_bytes(velho_index)
+    editado.write_bytes(b"o usuario editou\n")
+    manifesto_antigo = {
+        "schema": 2,
+        "files": {
+            "knowledge/glue/x.md": {
+                "sha256": hashlib.sha256(velho_stub).hexdigest(),
+                "owners": ["devin"],
+            },
+            "knowledge/README.md": {
+                "sha256": hashlib.sha256(velho_index).hexdigest(),
+                "owners": ["devin"],
+            },
+            "knowledge/editado.md": {
+                "sha256": hashlib.sha256(b"o original\n").hexdigest(),
+                "owners": ["devin"],
+            },
+        },
+        "hosts": {"devin": {"package_version": "0.7.7", "config": []}},
+        "dirs": ["knowledge", "knowledge/glue"],
+    }
+    caminho = home / ".sparkforge_aws" / "integrations.json"
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    caminho.write_text(json.dumps(manifesto_antigo), encoding="utf-8")
+
+    out = integrate("devin", home=home, windows=False, root=raiz)
+    rel = out["hosts"][0]
+    # Migrado: os stubs nossos da raiz generica sairam do disco E do manifesto.
+    assert not (home / "knowledge" / "glue" / "x.md").exists()
+    assert not (home / "knowledge" / "README.md").exists()
+    assert "knowledge/glue/x.md" in rel["removed"]
+    assert "knowledge/README.md" in rel["removed"]
+    manifesto = _manifesto(home)
+    assert not [k for k in manifesto["files"] if k.startswith("knowledge/")
+                and not k.startswith("knowledge/sparkforge-aws/")]
+    # O editado pelo usuario fica, com recusa nomeada — nunca apagado.
+    assert editado.read_bytes() == b"o usuario editou\n"
+    assert {
+        "host": "devin",
+        "reason": "editado_pelo_usuario",
+        "path": "knowledge/editado.md",
+    } in out["refused"]
+    # O que nunca foi nosso nao e tocado — a outra forja segue dona.
+    assert estrangeiro.read_bytes() == b"de outra forja\n"
+    # E o novo layout esta no lugar.
+    assert (home / "knowledge" / "sparkforge-aws" / "glue" / "x.md").is_file()
+    assert (home / "knowledge" / "sparkforge-aws" / "README.md").is_file()

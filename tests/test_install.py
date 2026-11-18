@@ -122,6 +122,37 @@ def test_install_components_control_asset_kinds(projeto):
     assert not (projeto / ".mcp.json").exists()
 
 
+def test_install_components_knowledge_seleciona_ponteiros(projeto):
+    """`--components knowledge` e granular de verdade: instala os ponteiros
+    namespacados e nada de skill/agent — antes todo knowledge caia no
+    balaio `agents` e a flag declarada nao tinha efeito proprio."""
+    out = lifecycle.install("devin", scope="project", root=projeto,
+                            components=("knowledge",), yes=True)
+    paths = {f["path"] for f in out["managed_files"]}
+    assert paths
+    assert all(p.startswith("knowledge/sparkforge-aws/") for p in paths)
+    assert not (projeto / ".mcp.json").exists()
+
+
+def test_install_matriz_de_profile_e_explicita_e_honesta(projeto):
+    """A matriz `--profile` e dado, nao dispersa: `minimal` = config+mcp;
+    `recommended` == `full` no conjunto de assets (full e o slot para
+    defaults mais pesados — nao ha diferenca de disco hoje)."""
+    assert set(lifecycle.PROFILE_COMPONENTS) == set(lifecycle.PROFILES)
+    todos = set(kit.COMPONENT_KINDS.values())
+    assert set(lifecycle.PROFILE_COMPONENTS["minimal"]) == {"mcp"}
+    assert set(lifecycle.PROFILE_COMPONENTS["recommended"]) == todos
+    assert lifecycle.PROFILE_COMPONENTS["recommended"] == \
+        lifecycle.PROFILE_COMPONENTS["full"]
+
+    recomendado = lifecycle.install("devin", scope="project", root=projeto,
+                                    profile="recommended", yes=True)
+    cheio = lifecycle.install("devin", scope="project", root=projeto,
+                              profile="full", yes=True)
+    assert {f["path"] for f in recomendado["managed_files"]} == \
+        {f["path"] for f in cheio["managed_files"]}
+
+
 def test_install_host_all_mcp_compartilhado_sem_recusa(projeto):
     out = lifecycle.install("all", scope="project", root=projeto, yes=True)
     assert out["status"] == "completed"
@@ -559,6 +590,40 @@ def test_install_escreve_forge_context(projeto):
     routing = (ctx / "ROUTING.md").read_text(encoding="utf-8")
     assert "spark-forge-aws" in routing
     assert "aws-glue" in routing
+
+
+def test_install_registra_superficie_install_2_1(projeto):
+    """install-2.1: o manifesto registrado em `~/.forge/installations/` leva
+    `installation_kind`, a superficie `install` declarada e `depends_on` —
+    copiados do `forge.json` (mesmo lugar de onde o bootstrap os copia)."""
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    assert out["status"] == "completed"
+
+    registrado = json.loads(
+        (kit.installations_dir() / "spark-forge-aws.json").read_text("utf-8")
+    )
+    assert registrado["installation_kind"] == "content"
+    surface = registrado["install"]
+    assert surface["approval"] == "--yes"
+    assert surface["hosts"] == ["claude", "devin", "codex", "copilot"]
+    assert surface["scopes"] == ["project", "workspace", "user"]
+    assert surface["profiles"] == ["minimal", "recommended", "full"]
+    for flag in (
+        "--scope", "--root", "--host", "--profile",
+        "--components", "--gateway-profile", "--yes", "--dry-run",
+    ):
+        assert flag in surface["flags"]
+    # Vocabulario fechado de forge/WorkspaceInstallation/v2 — `auto` nao
+    # entra: nao ha verbo `auto` neste CLI (e operacao do orquestrador).
+    assert set(surface["operations"]) <= {
+        "plan", "apply", "status", "doctor", "repair", "update",
+        "uninstall", "auto", "mcp-verify",
+    }
+    assert "auto" not in surface["operations"]
+    # `depends_on` e declarado mesmo vazio: o plano consolidado le a
+    # presenca da chave como declaracao explicita ("este forge nao depende
+    # de ninguem"), nao como ausencia de dado.
+    assert registrado["depends_on"] == []
 
 
 def test_install_context_idempotente_byte_a_byte(projeto):
