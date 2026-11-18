@@ -453,10 +453,14 @@ def plan_files(
 
     Com `target_root` (a raiz do workspace/HOME onde o host e gravado) os links
     que escapam de `skills/`/`agents/` sao re-relativizados ate ela — e cada
-    `knowledge/<rel>` citado ganha um PONTEIRO em `target_root/knowledge/<rel>`
-    (mais um `README.md` indice), para que `../../../knowledge/x.md` nos
+    `knowledge/<rel>` citado ganha um PONTEIRO em
+    `target_root/knowledge/sparkforge-aws/<rel>` (mais um `README.md` indice
+    no mesmo subdir), para que `../../../knowledge/sparkforge-aws/x.md` nos
     espelhos nunca termine em arquivo morto: resolve num ponteiro que ensina
-    `sparkforge-aws knowledge path --file <rel>`.
+    `sparkforge-aws knowledge path --file <rel>`. O subdir com o nome do
+    forge (install-2.1, `render.KNOWLEDGE_NAMESPACE`) e o que impede duas
+    forjas de colidirem na raiz `knowledge/` compartilhada — e o que faz o
+    espaco `rules/`/`evals/` continuar sem namespace por ora.
     """
     agents_src = sources.agents_dir(root)
     skills_root = sources.skills_dir(root)
@@ -511,7 +515,11 @@ def plan_files(
         for root_kind, rel in asset_refs:
             por_root.setdefault(root_kind, set()).add(rel)
         for root_kind, rels in sorted(por_root.items()):
-            asset_root = Path(target_root) / root_kind
+            asset_root = (
+                Path(target_root) / root_kind / render.KNOWLEDGE_NAMESPACE
+                if root_kind == "knowledge"
+                else Path(target_root) / root_kind
+            )
             for rel in sorted(rels):
                 # Defesa em profundidade: `rel` vem de texto de documento —
                 # um `..` residiria fora da raiz no syscall e viraria chave

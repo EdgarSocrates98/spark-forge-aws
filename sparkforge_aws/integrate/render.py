@@ -663,11 +663,12 @@ def _rewrite_outgoing_links(
     - `P` dentro de `skills/` -> a mesma arvore espelhada em `skills_mirror`;
     - `P` dentro de `agents/` -> `agents_mirror` (nome de perfil de topo
       mapeado por `agent_pattern`; `executors/` preserva o nome);
-    - qualquer outro `P` (`knowledge/`, `rules/`...) -> `target_root/P`:
-      `../../knowledge/x.md` canonico vira `../../../knowledge/x.md` em
-      `.claude/skills/<name>/` e `../../../../knowledge/x.md` em
-      `.claude/skills/<name>/references/` — sempre resolvendo onde o install
-      grava os ponteiros de knowledge.
+    - `P` dentro de `knowledge/` -> `target_root/knowledge/sparkforge-aws/P'`
+      (install-2.1: o subdir com o nome do forge — ver `KNOWLEDGE_NAMESPACE`);
+    - qualquer outro `P` (`rules/`, `evals/`...) -> `target_root/P`:
+      `../../knowledge/x.md` canonico vira
+      `../../../knowledge/sparkforge-aws/x.md` em `.claude/skills/<name>/` —
+      sempre resolvendo onde o install grava os ponteiros de knowledge.
 
     Alvos que saem do repo ficam como estao -- link quebrado no canonico e
     achado do inventario, nao algo que o renderizador invente. A preservacao
@@ -706,11 +707,19 @@ def _rewrite_outgoing_links(
             else:
                 destino = agents_mirror_p.joinpath(*partes[1:])
         else:
-            destino = (
-                _posix(target_root) / resolved
-                if target_root is not None
-                else resolved
-            )
+            destino = resolved
+            if target_root is not None:
+                if partes[0] == "knowledge":
+                    # install-2.1: os ponteiros DESTE forge moram em
+                    # `knowledge/sparkforge-aws/` — o subdir proprio dentro
+                    # da raiz compartilhada elimina a colisao entre forges
+                    # (duas forjas nao podem ser donas de `knowledge/<rel>`).
+                    destino = (
+                        PurePosixPath("knowledge")
+                        / KNOWLEDGE_NAMESPACE
+                        / resolved.relative_to("knowledge")
+                    )
+                destino = _posix(target_root) / destino
         new_target = (
             posixpath.relpath(str(destino), str(espelho_dir))
             + ("#" + frag if frag else "")
@@ -724,6 +733,13 @@ def _rewrite_outgoing_links(
 # e prosa, que o agente segue como caminho tanto quanto um link `](`...`)`.
 # A exigencia de extensao deixa de fora "knowledge/ directory" e afins.
 _ASSET_ROOTS = ("knowledge", "rules", "evals")
+
+# Subdir proprio dentro da raiz `knowledge/` do alvo (install-2.1): os
+# ponteiros deste forge vivem em `knowledge/sparkforge-aws/<rel>`, nunca
+# direto em `knowledge/<rel>` — a raiz e compartilhada e duas forjas na
+# mesma arvore nao podem ser donas do mesmo `<rel>`. O conteudo dos links
+# (`knowledge/x.md`) segue canonico; so o DESTINO escrito e namespacado.
+KNOWLEDGE_NAMESPACE = "sparkforge-aws"
 _ASSET_MENTION = re.compile(
     r"(knowledge|rules|evals)/([A-Za-z0-9_./-]+\.(?:md|yaml|yml|sql|json|csv))"
 )
@@ -781,8 +797,10 @@ _KNOWLEDGE_STUB = """\
 
 Este arquivo e um PONTEIRO gerado na instalacao: os links
 `knowledge/<rel>` dos mirrors (.claude/skills, .agents/skills, ...) resolvem
-aqui, mas o CONTEUDO real mora no pacote `sparkforge-aws` instalado —
-fora de qualquer checkout, e propositalmente nao copiado para o workspace.
+aqui, no subdir proprio `knowledge/sparkforge-aws/` (a raiz `knowledge/` e
+compartilhada entre forges), mas o CONTEUDO real mora no pacote
+`sparkforge-aws` instalado — fora de qualquer checkout, e propositalmente
+nao copiado para o workspace.
 
 Recupere o documento real com os verbos nativos (offline, deterministicos):
 
@@ -797,15 +815,16 @@ documentos disponiveis: `sparkforge-aws knowledge list`.
 
 
 def knowledge_stub(rel: str) -> bytes:
-    """O conteudo do ponteiro `<alvo>/knowledge/<rel>` — responde ao link do
-    espelho com o caminho de retrieval, nao com uma copia do documento."""
+    """O conteudo do ponteiro `<alvo>/knowledge/sparkforge-aws/<rel>` —
+    responde ao link do espelho com o caminho de retrieval, nao com uma
+    copia do documento."""
     partes = rel.split("/")
     dominio = partes[0] if len(partes) > 1 else Path(rel).stem
     return _KNOWLEDGE_STUB.format(rel=rel, dominio=dominio).encode("utf-8")
 
 
 _KNOWLEDGE_INDEX = """\
-# knowledge/ — ponteiros do sparkforge-aws
+# knowledge/sparkforge-aws/ — ponteiros do sparkforge-aws
 
 Os arquivos neste diretorio sao PONTEIROS (um por documento referenciado
 pelas skills/agents instalados). O knowledge real e versionado dentro do
@@ -822,7 +841,8 @@ Total referenciado nesta instalacao: {total} documento(s).
 
 
 def knowledge_index_stub(total: int) -> bytes:
-    """`knowledge/README.md` do alvo: o indice dos ponteiros + os verbos."""
+    """`knowledge/sparkforge-aws/README.md` do alvo: o indice dos ponteiros
+    + os verbos."""
     return _KNOWLEDGE_INDEX.format(total=total).encode("utf-8")
 
 

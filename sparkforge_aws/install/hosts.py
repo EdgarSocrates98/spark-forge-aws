@@ -90,8 +90,8 @@ def project_plan(
 
     `target_root` e a raiz onde `knowledge/` resolve: os links dos espelhos
     sao re-relativizados ate ela e cada `knowledge/<rel>` citado vira um
-    ponteiro em `<target_root>/knowledge/<rel>` (escopo `project`; ver
-    `writer.plan_files`)."""
+    ponteiro em `<target_root>/knowledge/sparkforge-aws/<rel>` (escopo
+    `project`; ver `writer.plan_files` e `render.KNOWLEDGE_NAMESPACE`)."""
     from sparkforge_aws.integrate import writer
 
     # Dedup por destino: o host primario e a copia `.agents/` emitem os MESMOS
