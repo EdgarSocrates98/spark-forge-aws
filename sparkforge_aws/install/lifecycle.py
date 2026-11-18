@@ -991,7 +991,40 @@ def _register(target: Path) -> None:
             "verified": False,
         },
     )
+    doc.update(_declared_install_fields())
     kit.register_installation(doc)
+
+
+def _declared_install_fields() -> dict[str, Any]:
+    """As declaracoes install-2.1 do `forge.json` deste forge — copiadas
+    verbatim para o manifesto registrado, nunca fabricadas (espelha o
+    passo `register` do `forge_bootstrap`):
+
+    - ``installation_kind``: ``content``|``service``|``control-tool`` —
+      a classe que o plano consolidado usa na ordenacao estavel.
+    - ``install``: a superficie declarada (operations/flags/hosts/scopes/
+      profiles/approval) — o argv builder do orquestrador so envia o que
+      esta declarado; ausente, o manifesto fica no default v1.
+    - ``depends_on``: forge_ids que devem instalar antes.
+    """
+    cfg = _bundled_json("forge.json")
+    if not cfg:
+        return {}
+    doc: dict[str, Any] = {}
+    if cfg.get("installation_kind"):
+        kind = str(cfg["installation_kind"])
+        if kind not in kit.INSTALLATION_KINDS:
+            raise kit.InstallError(
+                kit.E_UNSUPPORTED,
+                f"forge.json installation_kind {kind!r} — expected "
+                f"{kit.INSTALLATION_KINDS}",
+            )
+        doc["installation_kind"] = kind
+    if cfg.get("install"):
+        doc["install"] = dict(cfg["install"])
+    if cfg.get("depends_on"):
+        doc["depends_on"] = [str(d) for d in cfg["depends_on"]]
+    return doc
 
 
 # --------------------------------------------------------------------------
@@ -1030,26 +1063,28 @@ def _mds(base: Path) -> list[str]:
     return sorted(p.stem for p in base.glob("*.md"))
 
 
+def _bundled_json(name: str) -> dict[str, Any] | None:
+    """Manifesto JSON do pacote/checkout — ordem: junto do pacote (layout
+    antigo do wheel), na raiz do repo (checkout/editable), e em `forge/`
+    (destino do force-include — a raiz do pacote partiria o bloco contiguo
+    dela no zip)."""
+    for cand in (
+        _PKG_DIR / name,
+        _REPO_DIR / name,
+        _PKG_DIR / "forge" / name,
+    ):
+        data = kit._load_json(cand, None)
+        if isinstance(data, dict):
+            return data
+    return None
+
+
 def _context_manifest(
     *, scope: str, profile: str, hosts: list[str], components: dict[str, Any] | None
 ) -> dict[str, Any]:
     """Manifesto forge/context/v1 montado das fontes reais: `forge.json` +
     `forge.agentic.json` + `manifest.json` no checkout (quando presente) e
     as raizes bundled de skills/agents/rules/knowledge que o install usou."""
-    def _bundled_json(name: str) -> dict[str, Any] | None:
-        # Ordem: junto do pacote (layout antigo do wheel), na raiz do repo
-        # (checkout/editable), e em `forge/` (destino do force-include —
-        # a raiz do pacote partiria o bloco contiguo dela no zip).
-        for cand in (
-            _PKG_DIR / name,
-            _REPO_DIR / name,
-            _PKG_DIR / "forge" / name,
-        ):
-            data = kit._load_json(cand, None)
-            if isinstance(data, dict):
-                return data
-        return None
-
     forge_json = _bundled_json("forge.json")
     agentic = _bundled_json("forge.agentic.json")
 

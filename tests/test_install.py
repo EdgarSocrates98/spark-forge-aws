@@ -561,6 +561,39 @@ def test_install_escreve_forge_context(projeto):
     assert "aws-glue" in routing
 
 
+def test_install_registra_superficie_install_2_1(projeto):
+    """install-2.1: o manifesto registrado em `~/.forge/installations/` leva
+    `installation_kind`, a superficie `install` declarada e `depends_on` —
+    copiados do `forge.json` (mesmo lugar de onde o bootstrap os copia)."""
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    assert out["status"] == "completed"
+
+    registrado = json.loads(
+        (kit.installations_dir() / "spark-forge-aws.json").read_text("utf-8")
+    )
+    assert registrado["installation_kind"] == "content"
+    surface = registrado["install"]
+    assert surface["approval"] == "--yes"
+    assert surface["hosts"] == ["claude", "devin", "codex", "copilot"]
+    assert surface["scopes"] == ["project", "workspace", "user"]
+    assert surface["profiles"] == ["minimal", "recommended", "full"]
+    for flag in (
+        "--scope", "--root", "--host", "--profile",
+        "--components", "--gateway-profile", "--yes", "--dry-run",
+    ):
+        assert flag in surface["flags"]
+    # Vocabulario fechado de forge/WorkspaceInstallation/v2 — `auto` nao
+    # entra: nao ha verbo `auto` neste CLI (e operacao do orquestrador).
+    assert set(surface["operations"]) <= {
+        "plan", "apply", "status", "doctor", "repair", "update",
+        "uninstall", "auto", "mcp-verify",
+    }
+    assert "auto" not in surface["operations"]
+    # `depends_on` vazio no forge.json fica omitido — mesma regra do
+    # passo `register` do bootstrap (declarado-vazio == nao declarado).
+    assert registrado.get("depends_on") in (None, [])
+
+
 def test_install_context_idempotente_byte_a_byte(projeto):
     lifecycle.install("devin", scope="project", root=projeto, yes=True)
     ctx = projeto / ".forge" / "context"

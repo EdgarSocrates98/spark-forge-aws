@@ -10,6 +10,51 @@
     "mcp",
     "serve"
   ],
+  "mcp_verify_tool": "sparkforge_aws_runtime_detect",
+  "installation_kind": "content",
+  "install": {
+    "operations": [
+      "plan",
+      "apply",
+      "status",
+      "doctor",
+      "repair",
+      "update",
+      "uninstall",
+      "mcp-verify"
+    ],
+    "flags": [
+      "--scope",
+      "--root",
+      "--host",
+      "--profile",
+      "--components",
+      "--gateway-profile",
+      "--yes",
+      "--dry-run",
+      "--purge",
+      "--to",
+      "--repo"
+    ],
+    "hosts": [
+      "claude",
+      "devin",
+      "codex",
+      "copilot"
+    ],
+    "scopes": [
+      "project",
+      "workspace",
+      "user"
+    ],
+    "profiles": [
+      "minimal",
+      "recommended",
+      "full"
+    ],
+    "approval": "--yes"
+  },
+  "depends_on": [],
   "extras": [
     "mcp"
   ],
