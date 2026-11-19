@@ -31,7 +31,7 @@ Os dois arquivos ao lado já fazem o resto:
 | `mcp_config.json` | expõe as **148 tools** por stdio (recontado em 2026-10-16). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **62 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
+As **61 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
