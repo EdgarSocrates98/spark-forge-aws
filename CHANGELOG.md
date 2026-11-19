@@ -62,6 +62,23 @@ All notable changes to this project are documented here. Format follows
   knowledge|rules|evals` passa a ter efeito proprio.
 - Re-vendor installkit 1.0.6 + forge bootstrap/UI do the-forge.
 
+### Fixed
+
+- install wave-03 (cycle-16.1.1): `python -m sparkforge_aws` agora
+  propaga o exit code do CLI (`raise SystemExit(main())`). Antes o
+  retorno de `main()` era descartado — recusas governadas e erros de
+  argparse saíam com `rc=0`, escondendo falhas de hosts que lançam o
+  pacote via `-m`. Comportamento verificado: verbo inválido sai `rc=2`.
+- `sparkforge_aws/ui/kit.py` re-vendorizado a partir do canônico
+  `the-forge` — restaura paridade byte-a-byte exigida por
+  `test_kit_byte_parity_per_repo` (estavam ausentes os estados de
+  lifecycle `VERIFIED`/`CERTIFIED`/`APPLIED`/`PARTIALLY_APPLIED` e a
+  linha `lifecycle` da saída legível).
+- `setup.sh`: probe de python tolera todos-ausentes (`|| true`) —
+  sob `set -euo pipefail` a substituição não-guardada saía `rc=1` em
+  silêncio antes de `FORGE-PYTHON-NOT-FOUND` (mesmo defect vendored
+  corrigido no canônico the-forge e no api-sentinel).
+
 ## [0.7.7] - 2026-11-12
 
 SDD consolidation release: `federated-schemas` CI job consumes canonical
