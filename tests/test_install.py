@@ -366,6 +366,185 @@ def test_uninstall_sem_instalacao_e_idempotente(projeto):
 
 
 # --------------------------------------------------------------------------
+# forge/InstallLifecycle/v1 (cycle 16.1 onda 03)
+# --------------------------------------------------------------------------
+
+_LIFECYCLE_STATES = {
+    "planned", "blocked", "failed", "applied", "partially_applied",
+    "verified", "unverified", "ready", "certified",
+}
+_RECEIPT_STATUS = {"planned", "completed", "failed", "rolled-back"}
+_MANAGED_ACTIONS = {"created", "updated", "adopted", "unchanged", "removed", "restored"}
+
+
+def test_install_receipt_carrega_lifecycle_verified(projeto):
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    lc = out["lifecycle"]
+    assert lc["schema"] == "forge/InstallLifecycle/v1"
+    assert lc["state"] == "verified"
+    assert lc["state"] in _LIFECYCLE_STATES
+
+
+def test_install_dry_run_lifecycle_planned(projeto):
+    out = lifecycle.install("devin", scope="project", root=projeto, dry_run=True)
+    assert out["status"] == "planned"
+    assert out["lifecycle"]["state"] == "planned"
+
+
+def test_install_recusado_lifecycle_failed(projeto):
+    (projeto / ".mcp.json").write_text(
+        json.dumps({"mcpServers": {"sparkforge-aws": {
+            "command": "outro", "args": []}}}),
+        encoding="utf-8")
+    out = lifecycle.install("claude", scope="project", root=projeto, yes=True)
+    assert out["status"] == "failed"
+    assert out["lifecycle"]["state"] == "failed"
+
+
+def test_status_lifecycle_ready_unverified_degraded(projeto):
+    st = lifecycle.status(scope="project", root=projeto)
+    assert st["status"] == "unverified"
+    assert st["lifecycle"]["schema"] == "forge/InstallLifecycle/v1"
+    assert st["lifecycle"]["state"] == "unverified"
+
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    st = lifecycle.status(scope="project", root=projeto)
+    assert st["status"] == "healthy"
+    assert st["lifecycle"]["state"] == "ready"
+
+    alvo = projeto / st["hosts"]["devin"][0]
+    alvo.write_text("edicao manual", encoding="utf-8")
+    st = lifecycle.status(scope="project", root=projeto)
+    assert st["status"] == "degraded"
+    assert st["lifecycle"]["state"] == "partially_applied"
+
+
+def test_doctor_lifecycle_states(projeto):
+    health = lifecycle.doctor(scope="project", root=projeto)
+    assert health["lifecycle"]["state"] in _LIFECYCLE_STATES
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    health = lifecycle.doctor(scope="project", root=projeto)
+    assert health["lifecycle"]["state"] in ("ready", "partially_applied")
+
+
+def test_dry_run_repair_uninstall_dizem_planned_nao_completed(projeto):
+    """Dry-run nao executou: reportar `completed` era mentira — o
+    vocabulario `forge/InstallLifecycle/v1` expoe isso como `verified`.
+    `planned` e o unico estado honesto."""
+    lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    rep = lifecycle.repair(scope="project", root=projeto, dry_run=True)
+    assert rep["status"] == "planned"
+    assert rep["dry_run"] is True
+    assert rep["lifecycle"]["state"] == "planned"
+    un = lifecycle.uninstall(scope="project", root=projeto, dry_run=True)
+    assert un["status"] == "planned"
+    assert un["dry_run"] is True
+    assert un["lifecycle"]["state"] == "planned"
+
+
+def test_receipt_status_dentro_do_enum_do_contrato(projeto):
+    """`declined` e afins ficam fora: InstallReceipt/v1 so conhece
+    planned/completed/failed/rolled-back."""
+    for out in (
+        lifecycle.install("devin", scope="project", root=projeto, dry_run=True),
+        lifecycle.install("devin", scope="project", root=projeto, yes=True),
+        lifecycle.repair(scope="project", root=projeto),
+        lifecycle.uninstall(scope="project", root=projeto, dry_run=True),
+        lifecycle.update(to="latest"),
+    ):
+        assert out["status"] in _RECEIPT_STATUS, out["status"]
+        assert out["lifecycle"]["schema"] == "forge/InstallLifecycle/v1"
+        assert out["lifecycle"]["state"] in _LIFECYCLE_STATES
+
+
+def test_managed_files_acao_real_e_sha256(projeto):
+    """`action: "written"` para todos era plano repetido como fato: o
+    recibo agora diz o que aconteceu — created na 1a, unchanged na 2a."""
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    acoes = {f["action"] for f in out["managed_files"]}
+    assert acoes <= _MANAGED_ACTIONS
+    assert acoes == {"created"}
+    assert out["counts"]["created"] == len(out["managed_files"])
+    assert out["counts"]["written"] == out["counts"]["created"]
+    assert out["counts"]["written_bytes"] > 0
+    for f in out["managed_files"]:
+        assert len(f["sha256"]) == 64
+        int(f["sha256"], 16)
+    out2 = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    assert {f["action"] for f in out2["managed_files"]} == {"unchanged"}
+    assert out2["counts"]["written"] == 0
+    assert out2["counts"]["unchanged"] == len(out2["managed_files"])
+
+
+def test_reinstall_idempotente_hashes_inalterados(projeto):
+    """§7.4: a segunda instalação nao reescreve asset inalterado. Hash de
+    todo arquivo antes e depois — so a pasta de receipts pode mudar
+    (cada operacao grava um recibo novo)."""
+    import hashlib
+
+    lifecycle.install("all", scope="project", root=projeto, yes=True)
+    antes = {
+        p.relative_to(projeto).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in projeto.rglob("*")
+        if p.is_file()
+        and "__pycache__" not in p.parts
+        and ".sparkforge_aws/receipts/" not in p.as_posix()
+    }
+    out = lifecycle.install("all", scope="project", root=projeto, yes=True)
+    depois = {
+        p.relative_to(projeto).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in projeto.rglob("*")
+        if p.is_file()
+        and "__pycache__" not in p.parts
+        and ".sparkforge_aws/receipts/" not in p.as_posix()
+    }
+    assert antes == depois
+    assert out["counts"]["written"] == 0
+    assert not out.get("refused")
+
+
+def test_receipt_context_e_mcp_medidos(projeto):
+    """`context` traz bytes MEDIDOS por kind (nunca tokens) e `mcp` as
+    entradas gerenciadas — §8.5: medida, nao estimativa."""
+    out = lifecycle.install("devin", scope="project", root=projeto, yes=True)
+    ctx = out["context"]
+    soma = sum(
+        ctx[k] or 0
+        for k in ("skills_bytes", "agents_bytes", "knowledge_bytes",
+                  "rules_bytes", "evals_bytes")
+    )
+    assert ctx["managed_bytes"] == soma > 0
+    assert ctx["profile"] == "recommended"
+    assert ctx["mcp_entries"] == 1
+    assert out["mcp"][0]["server"] == "sparkforge-aws"
+    assert out["mcp"][0]["action"] == "created"
+    for token_key in ("tokens", "token_estimate", "tokens_saved"):
+        assert token_key not in ctx
+
+
+def test_scope_user_docs_ganham_status_e_lifecycle(tmp_path):
+    """Os docs do integrate/detach nao sao forge/* mas respondem a mesma
+    pergunta — `status` derivado + lifecycle explicito (antes o CLI saía
+    1 mesmo com tudo aplicado)."""
+    out = lifecycle.install("devin", scope="user", dry_run=True)
+    assert out["status"] == "planned"
+    assert out["lifecycle"]["state"] == "planned"
+
+    st = lifecycle.status(scope="user")
+    assert st["status"] == "unverified"
+    assert st["lifecycle"]["state"] == "unverified"
+
+    doc = lifecycle.doctor(scope="user")
+    assert doc["schema"] == "forge/InstallationHealth/v1"
+    assert doc["status"] == "unverified"
+    assert doc["lifecycle"]["state"] == "unverified"
+
+    un = lifecycle.uninstall(scope="user", host="all", dry_run=True)
+    assert un["status"] == "planned"
+    assert un["lifecycle"]["state"] == "planned"
+
+
+# --------------------------------------------------------------------------
 # update / mcp verify / CLI
 # --------------------------------------------------------------------------
 
@@ -429,6 +608,48 @@ def test_cli_dispatch_status(projeto, capsys, monkeypatch):
     assert code in (0, 1)
     doc = json.loads(capsys.readouterr().out)
     assert doc["forge_id"] == "spark-forge-aws"
+
+
+def test_cli_status_exit_0_quando_healthy(projeto, capsys, monkeypatch):
+    """O lifecycle e quem decide o exit: `status` healthy saia 1 porque o
+    fallback so conhecia completed/planned — ready/verified/unverified sao
+    sucesso ou honestidade, nao falha."""
+    from sparkforge_aws.adapters import cli
+
+    monkeypatch.chdir(projeto)
+    assert cli.main(["install", "--host", "devin", "--yes"]) == 0
+    capsys.readouterr()
+    assert cli.main(["status", "--root", str(projeto)]) == 0
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["status"] == "healthy"
+    assert doc["lifecycle"]["state"] == "ready"
+
+
+def test_cli_docs_sempre_carregam_lifecycle(projeto, capsys, monkeypatch):
+    monkeypatch.chdir(projeto)
+    from sparkforge_aws.adapters import cli
+
+    for args in (
+        ["install", "--host", "devin", "--dry-run"],
+        ["status"],
+        ["install", "doctor"],
+        ["uninstall", "--dry-run"],
+    ):
+        assert cli.main(args) == 0
+        doc = json.loads(capsys.readouterr().out)
+        assert doc["lifecycle"]["schema"] == "forge/InstallLifecycle/v1"
+        assert doc["lifecycle"]["state"] in _LIFECYCLE_STATES
+
+
+def test_cli_recusa_aprovacao_lifecycle_blocked(projeto, capsys, monkeypatch):
+    monkeypatch.chdir(projeto)
+    from sparkforge_aws.adapters import cli
+
+    code = cli.main(["repair", "--root", str(projeto)])
+    assert code == 1
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["status"] == "failed"
+    assert doc["lifecycle"]["state"] == "blocked"
 
 
 def test_cli_erro_estruturado_sem_traceback(projeto, capsys, monkeypatch):

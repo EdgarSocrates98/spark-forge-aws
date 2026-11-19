@@ -87,9 +87,14 @@ def _install(args: argparse.Namespace) -> dict[str, Any]:
         except ImportError:
             approved = False
         if not approved:
+            # `declined` nao e status de `forge/InstallReceipt/v1` — o enum
+            # e planned/completed/failed/rolled-back. Gate refusal e
+            # `failed` + check BLOCKED: o lifecycle deriva `blocked`.
             return {"schema": kit.SCHEMA_RECEIPT, "forge_id": "spark-forge-aws",
-                    "operation": "install", "status": "declined",
-                    "checks": [], "managed_files": [],
+                    "operation": "install", "status": "failed",
+                    "checks": [{"id": "approval", "status": "BLOCKED",
+                                "detail": "declined — nothing written"}],
+                    "managed_files": [],
                     "verification": {"status": "UNVERIFIED"},
                     "error": {"kind": "SF-INSTALL-DECLINED",
                               "detail": "declined — nothing written"}}
@@ -212,7 +217,14 @@ def _wrap(fn) -> Any:
         try:
             return fn(args)
         except kit.InstallError as exc:
-            return exc.document("spark-forge-aws")
+            out = exc.document("spark-forge-aws")
+            if exc.kind == kit.E_NOTAPPROVED:
+                # Recusa de aprovacao e gate (§5.3): check BLOCKED faz o
+                # lifecycle derivar `blocked` em vez de `failed`.
+                out.setdefault("checks", []).append(
+                    {"id": "approval", "status": "BLOCKED",
+                     "detail": exc.detail})
+            return out
         except Exception as exc:  # boundary: structured refusal, not traceback
             return {"schema": kit.SCHEMA_RECEIPT, "forge_id": "spark-forge-aws",
                     "status": "failed", "checks": [],
@@ -250,11 +262,26 @@ def dispatch(args: argparse.Namespace) -> int:
     if args.command in {"repair", "update", "uninstall"}:
         if not _approve_mutation(args, args.command):
             out = _approval_refusal(args.command)
+            # Recusa de aprovacao e gate, nao erro de execucao: check
+            # BLOCKED faz o lifecycle derivar `blocked` (§5.3) e nao
+            # `failed` — o `status` continua `failed` pelo enum do recibo.
+            out.setdefault("checks", []).append(
+                {"id": "approval", "status": "BLOCKED",
+                 "detail": f"{args.command} requires --yes or --dry-run"})
+            lifecycle.with_lifecycle(out)
             _print(out)
             return 1
     out = _wrap(fn)(args)
+    # forge/InstallLifecycle/v1: todo doc forge/* sai com o estado derivado
+    # — o CLI nunca declara, so anexa o que o recibo/health ja provou.
+    lifecycle.with_lifecycle(out)
     _print(out)
-    return 0 if out.get("status") in ("completed", "planned") else 1
+    lc = (out.get("lifecycle") or {}).get("state")
+    if lc:
+        return 0 if lc in lifecycle.LIFECYCLE_OK else 1
+    # "PASS" cobre docs de check fora do schema de recibo (mcp verify):
+    # handshake bem-sucedido nao e erro.
+    return 0 if out.get("status") in ("completed", "planned", "PASS") else 1
 
 
 def add_parsers(sub: argparse._SubParsersAction) -> None:

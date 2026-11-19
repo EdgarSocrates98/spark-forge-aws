@@ -183,6 +183,11 @@ def install(
     nomes = _hosts_for(alvo)
     disco = writer.Disco(target, dry_run=dry_run)
     manifesto = writer.load_manifest(target)
+    # Snapshot do ledger para o recibo: `apply_files` muta o manifesto, e o
+    # sha registrado de um arquivo REMOVIDO so existe nesta copia.
+    ledger_antes = {
+        rel: reg.get("sha256") for rel, reg in (manifesto.get("files") or {}).items()
+    }
 
     if not yes and not dry_run:
         raise kit.InstallError(
@@ -200,12 +205,33 @@ def install(
         # (command/args): valida para os quatro hosts; os campos extras do
         # copilot ficam para o mcp-config.json de usuario dele.
         mcp_escritos: set[str] = set()
+        mcp_entries: list[dict[str, Any]] = []
         for nome in nomes:
             h = project_host(nome, target)
             plano = project_plan(h, content, target)
             filtrado = [(d, b) for d, b in plano
                         if _want_file(d, target, enabled_kinds)]
-            plano_total += [{"path": disco.chave(d), "bytes": len(b)} for d, b in filtrado]
+            # Instalacao incremental (§7.4): o estado ANTERIOR e capturado
+            # antes do apply para o recibo dizer o que mudou de verdade —
+            # `created` so quando o arquivo nao existia, `adopted` so quando
+            # o conteudo identico nao estava no ledger.
+            for d, b in filtrado:
+                rel_path = disco.chave(d)
+                em_disco = disco.ler(d)
+                plano_total.append(
+                    {
+                        "path": rel_path,
+                        "bytes": len(b),
+                        "sha256": writer.sha256_bytes(b),
+                        "kind": _kind_of(d, target),
+                        "_antes": (
+                            writer.sha256_bytes(em_disco)
+                            if em_disco is not None
+                            else None
+                        ),
+                        "_registrado": rel_path in (manifesto.get("files") or {}),
+                    }
+                )
             rel = writer.apply_files(
                 nome, filtrado, disco=disco, manifesto=manifesto, version=__version__
             )
@@ -215,14 +241,27 @@ def install(
                 if mcp_enabled and chave_mcp not in mcp_escritos:
                     mcp_escritos.add(chave_mcp)
                     dono = next((n for n in nomes if n != "copilot"), nome)
-                    configs.append(
-                        writer.apply_json_config(
-                            nome,
-                            h.mcp_config,
-                            mcp_entry(dono, python or sys.executable, profile=gateway_profile),
-                            disco=disco,
-                            manifesto=manifesto,
-                        )
+                    mcp_antes = disco.ler(h.mcp_config) is not None
+                    cfg_out = writer.apply_json_config(
+                        nome,
+                        h.mcp_config,
+                        mcp_entry(dono, python or sys.executable, profile=gateway_profile),
+                        disco=disco,
+                        manifesto=manifesto,
+                    )
+                    configs.append(cfg_out)
+                    mcp_entries.append(
+                        {
+                            "server": "sparkforge-aws",
+                            "file": chave_mcp,
+                            "action": (
+                                "created"
+                                if cfg_out["status"] == "written" and not mcp_antes
+                                else "set"
+                                if cfg_out["status"] == "written"
+                                else cfg_out["status"]
+                            ),
+                        }
                     )
             rel["config"] = configs
             relatorios.append(rel)
@@ -236,8 +275,10 @@ def install(
         for doc_name in _CONSUMER_DOCS:
             manifesto["files"].pop(disco.chave(target / doc_name), None)
 
+        managed, counts = _managed_files(plano_total, relatorios, ledger_antes, target)
         escritos = sum(len(r.get("written") or []) for r in relatorios)
         removidos = sum(len(r.get("removed") or []) for r in relatorios)
+        inalterados = sum(len(r.get("unchanged") or []) for r in relatorios)
         notas: list[dict[str, Any]] = []
         if "codex" in nomes:
             # Observado no Codex 0.160.0: `mcp list` ignora `.mcp.json` de
@@ -266,20 +307,19 @@ def install(
         scope,
         target,
         profile,
-        managed=[
-            {
-                "path": f["path"],
-                "sha256": "",
-                "kind": "skill" if "skills" in f["path"] else "agent",
-                "action": "written",
-            }
-            for f in plano_total
-        ],
+        managed=managed,
         markers=[
             {"file": d, "marker": f"forge:{FORGE_ID}"} for d in _CONSUMER_DOCS
         ],
         checks=[
-            {"id": "files", "status": "PASS", "detail": f"{escritos} written, {removidos} removed"},
+            {
+                "id": "files",
+                "status": "PASS",
+                "detail": (
+                    f"{escritos} written, {inalterados} unchanged, "
+                    f"{removidos} removed"
+                ),
+            },
             {
                 "id": "refusals",
                 "status": "PASS" if not recusas else "FAIL",
@@ -291,6 +331,27 @@ def install(
         dry_run=dry_run,
         status="planned" if dry_run else ("completed" if not recusas else "failed"),
     )
+    # Mesmos blocos de medida do recibo canonico (installkit apply):
+    # `counts` por acao real, `context` com bytes MEDIDOS por kind
+    # (nunca tokens — §8.5), `mcp` com as entradas gerenciadas.
+    receipt["counts"] = counts
+    kind_bytes: dict[str, int] = {}
+    managed_bytes = 0
+    for f in plano_total:
+        kind_bytes[f["kind"]] = kind_bytes.get(f["kind"], 0) + f["bytes"]
+        managed_bytes += f["bytes"]
+    receipt["context"] = {
+        "profile": profile,
+        "skills_bytes": kind_bytes.get("skill") or None,
+        "agents_bytes": kind_bytes.get("agent") or None,
+        "knowledge_bytes": kind_bytes.get("knowledge") or None,
+        "rules_bytes": kind_bytes.get("rules") or None,
+        "evals_bytes": kind_bytes.get("evals") or None,
+        "managed_bytes": managed_bytes or None,
+        "mcp_entries": len(mcp_entries) or None,
+    }
+    if mcp_entries:
+        receipt["mcp"] = mcp_entries
     if opts:
         receipt["components"] = opts
     if not dry_run:
@@ -305,6 +366,10 @@ def install(
             hosts=nomes,
             components=opts or None,
         )
+        # `_register_context` pode acrescentar checks e rebaixar `status`
+        # (contexto e componente mandatorio): o lifecycle e rederivado do
+        # recibo FINAL, nunca declarado pelo escritor.
+        receipt["lifecycle"] = receipt_block(receipt)
         _write_receipt(state, receipt)
         _write_workspace_doc(scope, target, receipt)
         _register(target)
@@ -316,6 +381,81 @@ def _want_file(destino: Path, target: Path, enabled_kinds: set[str]) -> bool:
     fora de `target` (kind `config`) nunca e filtrado."""
     return _kind_of(destino, target) in enabled_kinds or \
         _kind_of(destino, target) == "config"
+
+
+def _managed_files(
+    plano_total: list[dict[str, Any]],
+    relatorios: list[dict[str, Any]],
+    ledger_antes: dict[str, Any],
+    target: Path,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """`managed_files` do recibo com a ACAO REAL por arquivo + `counts`.
+
+    O plano carrega `path`/`sha256`/`kind`/`_antes`/`_registrado` por
+    arquivo (o mesmo path pode entrar no plano de mais de um host — o
+    primeiro aplica, os demais veem `unchanged`). A acao final por path e a
+    mais forte entre os relatorios: escrita vence (`created`/`updated`
+    conforme o arquivo existia), sem escrita cai em `unchanged`/`adopted`
+    conforme o ledger anterior; orfaos removidos pelo apply saem `removed`
+    com o sha que o ledger tinha. Recusas ficam `unchanged` + `note` —
+    nada foi escrito nelas. Vocabulario: o enum `action` de
+    `forge/InstallReceipt/v1` — `written` nunca e acao, e consequencia.
+    """
+    por_path: dict[str, dict[str, Any]] = {}
+    for f in plano_total:
+        por_path.setdefault(f["path"], f)
+    finais: dict[str, str] = {}
+    for rel in relatorios:
+        for p in rel.get("removed") or []:
+            finais.setdefault(p, "removed")
+        for p in rel.get("unchanged") or []:
+            finais.setdefault(p, "unchanged")
+        for e in rel.get("preexisting") or []:
+            finais.setdefault(e["path"], "preexisting")
+        for rec in rel.get("refused") or []:
+            finais.setdefault(rec["path"], f"refused:{rec.get('reason') or 'refused'}")
+        for p in rel.get("written") or []:
+            finais[p] = "written"  # escrita e o veredito mais forte
+    managed: list[dict[str, Any]] = []
+    counts: dict[str, int] = {"written": 0, "written_bytes": 0}
+    for path in sorted(por_path):
+        f = por_path[path]
+        st = finais.get(path)
+        entrada: dict[str, Any] = {
+            "path": path,
+            "sha256": f["sha256"],
+            "kind": f["kind"],
+            "action": "unchanged",
+        }
+        if st == "written":
+            entrada["action"] = "updated" if f["_antes"] else "created"
+        elif st == "unchanged":
+            entrada["action"] = "unchanged" if f["_registrado"] else "adopted"
+        elif st == "preexisting":
+            entrada["note"] = "preexistente_desatualizado — user-owned, not managed"
+        elif st and st.startswith("refused:"):
+            entrada["note"] = f"{st.split(':', 1)[1]} — not managed"
+        elif st is None:
+            entrada["note"] = "not reported by host apply"
+        managed.append(entrada)
+        counts[entrada["action"]] = counts.get(entrada["action"], 0) + 1
+        if st == "written":
+            counts["written"] += 1
+            counts["written_bytes"] += f["bytes"]
+    for rel in relatorios:
+        for p in rel.get("removed") or []:
+            if p in por_path:
+                continue  # removido e re-escrito no mesmo install: conta a escrita
+            managed.append(
+                {
+                    "path": p,
+                    "sha256": ledger_antes.get(p) or "",
+                    "kind": _kind_of(target / p, target),
+                    "action": "removed",
+                }
+            )
+            counts["removed"] = counts.get("removed", 0) + 1
+    return managed, counts
 
 
 def _install_user(
@@ -342,7 +482,143 @@ def _install_user(
     )
     out["profile"] = profile
     out["scope"] = "user"
+    # O doc do `integrate` e de outra familia ({dry_run, manifest, hosts,
+    # refused}) — sem schema forge/* e sem `status`: o CLI saia 1 mesmo com
+    # tudo aplicado. O resumo aqui e derivado, nunca declarado: `planned`
+    # no dry-run, `failed` com qualquer recusa, `applied` no resto — o
+    # integrate nao emite `verification`, entao `verified` nao cabe.
+    out["status"] = (
+        "planned" if dry_run else "failed" if out.get("refused") else "completed"
+    )
+    out["lifecycle"] = receipt_block(out)
     return out
+
+
+# --------------------------------------------------------------------------
+# forge/InstallLifecycle/v1 (cycle 16.1, onda 03 — mesmo contrato do
+# the-forge `install/lifecycle.py`): o `status` do recibo e o veredito bruto
+# da operacao (`completed` = o escritor terminou, nunca "pronto"); o estado
+# de lifecycle e a posicao fina e honesta da instalacao, DERIVADA do
+# recibo/health — nunca declarada pelo escritor.
+#
+# Vocabulario fechado: `planned` (dry-run, nada escrito), `blocked` (um gate
+# recusou: aprovacao, superficie, lock), `failed` (rodou e errou),
+# `applied` (escreveu; verificacao ausente/pendente), `partially_applied`
+# (subconjunto aplicado — drift parcial), `verified` (aplicado + receipt
+# verification PASS), `unverified` (sem prova em nenhum sentido), `ready`
+# (verificado + health verde), `certified` (ready + evidencia externa
+# vinculada a SHA testado). So `verified|ready|certified` sustentam
+# afirmacao de sucesso.
+# --------------------------------------------------------------------------
+
+LIFECYCLE_SCHEMA = "forge/InstallLifecycle/v1"
+
+LIFECYCLE_STATES: tuple[str, ...] = (
+    "planned",
+    "blocked",
+    "failed",
+    "applied",
+    "partially_applied",
+    "verified",
+    "unverified",
+    "ready",
+    "certified",
+)
+
+LIFECYCLE_OK: frozenset[str] = frozenset(
+    {"verified", "ready", "certified", "planned", "unverified", "applied"}
+)
+"""Estados com exit 0 no CLI — `applied` mantem compatibilidade com
+`completed`, mas NAO e prova de prontidao (mesmo mapeamento do
+`cli/commands.py` do the-forge)."""
+
+_BLOCKED_STATUSES = frozenset({"blocked", "refused", "unsupported", "declined"})
+
+
+def receipt_state(doc: dict[str, Any]) -> tuple[str, str]:
+    """Deriva o estado `forge/InstallLifecycle/v1` de um recibo
+    `forge/InstallReceipt/v1` — `status` + `verification` + checks."""
+    status = str(doc.get("status") or "")
+    verification = str((doc.get("verification") or {}).get("status") or "")
+    if status == "planned":
+        return "planned", "plan emitted — nothing written"
+    if status in _BLOCKED_STATUSES:
+        return "blocked", f"gate refusal: {status}"
+    if status == "completed":
+        if verification == "PASS":
+            return "verified", "writes executed and receipt checks pass"
+        if verification == "FAIL":
+            return "failed", "writes executed but verification failed"
+        return "applied", f"writes executed; verification {verification or 'absent'}"
+    if status == "failed":
+        # Um lote que nunca rodou porque todo passo bateu num gate
+        # (aprovacao, superficie) e `blocked`, nao `failed` — a distincao
+        # que o vocabulario binario apagava.
+        checks = [c for c in doc.get("checks") or [] if isinstance(c, dict)]
+        if checks and all(
+            c.get("status") in ("BLOCKED", "UNVERIFIED", "NOT_APPLICABLE")
+            for c in checks
+        ):
+            return "blocked", "every check gated — nothing applied"
+        return "failed", "operation errored"
+    if status in ("unverified", "") or not status:
+        return "unverified", "no operation evidence"
+    return "unverified", f"status {status!r} outside the known receipt vocabulary"
+
+
+def health_state(doc: dict[str, Any]) -> tuple[str, str]:
+    """Deriva o estado `forge/InstallLifecycle/v1` de um doc
+    `forge/InstallationHealth/v1` (`status`/`doctor`)."""
+    status = str(doc.get("status") or "")
+    table: dict[str, tuple[str, str]] = {
+        "healthy": ("ready", "ledger intact — every managed path verified on disk"),
+        "degraded": (
+            "partially_applied",
+            "drift on part of the managed set — repairable",
+        ),
+        "broken": ("failed", "managed state unrecoverable by repair"),
+        "unverified": ("unverified", "no installation evidence at this scope"),
+    }
+    return table.get(status, ("unverified", f"health status {status!r} unknown"))
+
+
+def lifecycle_block(state: str, detail: str) -> dict[str, Any]:
+    """O envelope `forge/InstallLifecycle/v1` anexado a recibos e health
+    docs — aditivo, parsers antigos continuam lendo."""
+    return {"schema": LIFECYCLE_SCHEMA, "state": state, "detail": detail}
+
+
+def receipt_block(doc: dict[str, Any]) -> dict[str, Any]:
+    state, detail = receipt_state(doc)
+    return lifecycle_block(state, detail)
+
+
+def health_block(doc: dict[str, Any]) -> dict[str, Any]:
+    state, detail = health_state(doc)
+    return lifecycle_block(state, detail)
+
+
+def with_lifecycle(doc: dict[str, Any]) -> dict[str, Any]:
+    """Anexa o bloco `lifecycle` quando o doc declara um schema `forge/*`
+    de recibo ou de health e ainda nao tem um. Docs de outra familia
+    (integrate/detach do escopo `user`, errors de fronteira) ficam como
+    estao — schema ausente nunca ganha lifecycle inventado."""
+    if doc.get("lifecycle"):
+        return doc
+    schema = doc.get("schema")
+    if schema == kit.SCHEMA_RECEIPT:
+        doc["lifecycle"] = receipt_block(doc)
+    elif schema == kit.SCHEMA_HEALTH:
+        doc["lifecycle"] = health_block(doc)
+    return doc
+
+
+def _verification_of(checks: list[dict[str, Any]]) -> str:
+    return (
+        "PASS"
+        if all(c["status"] in ("PASS", "NOT_APPLICABLE", "UNVERIFIED") for c in checks)
+        else "FAIL"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -358,7 +634,17 @@ def status(
     if scope == "user":
         from sparkforge_aws.integrate import status as _status
 
-        return _status(home=Path.home())
+        out = _status(home=Path.home())
+        # Doc de outra familia ({manifest, duplicated}), sem schema forge/*:
+        # o drift do ledger do HOME nao e medido por este verbo, entao o
+        # estado honesto e `unverified` — nunca "healthy" sem prova.
+        out["status"] = "unverified"
+        out["lifecycle"] = lifecycle_block(
+            "unverified",
+            "user-scope ledger drift is not measured by this verb — "
+            "use `integrate`/`detach` reports as evidence",
+        )
+        return out
     target = kit.resolve_scope(spec, scope, cwd, root)
     manifesto = writer.load_manifest(target)
     files = manifesto.get("files") or {}
@@ -416,7 +702,7 @@ def status(
                 )
     ok = sum(1 for d in drift if d["status"] == "ok")
     bad = [d for d in drift if d["status"] != "ok"]
-    return {
+    doc = {
         "schema": kit.SCHEMA_HEALTH,
         "forge_id": FORGE_ID,
         "scope": scope,
@@ -444,12 +730,37 @@ def status(
         ),
         "checked_at": kit._utc_now(),
     }
+    doc["lifecycle"] = health_block(doc)
+    return doc
 
 
 def doctor(
     *, scope: str = "project", root: Path | None = None, cwd: Path | None = None
 ) -> dict[str, Any]:
     st = status(scope=scope, root=root, cwd=cwd)
+    if scope == "user":
+        # O escopo `user` e o `integrate`/`detach` no HOME: o doc que
+        # `status` devolve e `{manifest, duplicated}`, nao um health doc —
+        # e o `st["drift"]` abaixo nem existe nele (KeyError virava
+        # SF-INSTALL-INTERNAL). O estado honesto e `unverified`.
+        doc = {
+            "schema": kit.SCHEMA_HEALTH,
+            "forge_id": FORGE_ID,
+            "status": "unverified",
+            "checks": [
+                {
+                    "id": "user-scope-ledger",
+                    "status": "UNVERIFIED",
+                    "detail": "drift do escopo user nao e medido por doctor; "
+                    "use `status --scope user` para o ledger do HOME",
+                }
+            ],
+            "scope": scope,
+            "checked_at": kit._utc_now(),
+            "repair_hint": None,
+        }
+        doc["lifecycle"] = health_block(doc)
+        return doc
     checks: list[dict[str, Any]] = [
         {
             "id": "install-state",
@@ -501,7 +812,7 @@ def doctor(
     overall = st["status"]
     if any(c["status"] == "FAIL" for c in checks):
         overall = "degraded" if st["ledger_entries"] else "broken"
-    return {
+    doc = {
         "schema": kit.SCHEMA_HEALTH,
         "forge_id": FORGE_ID,
         "status": overall,
@@ -513,6 +824,8 @@ def doctor(
         if any(c.get("repairable") for c in checks)
         else None,
     }
+    doc["lifecycle"] = health_block(doc)
+    return doc
 
 
 def repair(
@@ -655,7 +968,12 @@ def repair(
         checks=checks,
         repaired=fixed,
         skipped=skipped,
-        status="completed" if not skipped else "failed",
+        dry_run=dry_run,
+        # dry-run nunca diz "completed": o plano e `planned`, a execucao
+        # real e `completed`/`failed` — mesma regra do install.
+        status=(
+            "planned" if dry_run else "completed" if not skipped else "failed"
+        ),
     )
 
 
@@ -671,7 +989,23 @@ def uninstall(
     if scope == "user":
         from sparkforge_aws.integrate import detach as _detach
 
-        return _detach(host, home=Path.home(), dry_run=dry_run)
+        out = _detach(host, home=Path.home(), dry_run=dry_run)
+        # Mesmo resumo honesto do `_install_user`: doc de outra familia,
+        # status derivado — `cli_pendente`/`config_pendente` contam como
+        # recusa (o host ficou pendente de proposito, nao "completed").
+        pendente = any(
+            isinstance(h, dict) and h.get("status") in ("cli_pendente", "config_pendente")
+            for h in out.get("hosts") or []
+        )
+        out["status"] = (
+            "planned"
+            if dry_run
+            else "failed"
+            if out.get("refused") or pendente
+            else "completed"
+        )
+        out["lifecycle"] = receipt_block(out)
+        return out
     spec = _spec()
     cwd = Path(cwd or Path.cwd())
     target = kit.resolve_scope(spec, scope, cwd, root)
@@ -724,8 +1058,11 @@ def uninstall(
         + context_checks,
         removed=removed,
         kept=kept,
+        dry_run=dry_run,
         status=(
-            "failed"
+            "planned"
+            if dry_run
+            else "failed"
             if any(c.get("status") == "BLOCKED" for c in context_checks)
             else "completed"
         ),
@@ -915,11 +1252,6 @@ def _receipt(
     dry_run: bool = False,
     status: str = "completed",
 ) -> dict[str, Any]:
-    verification = (
-        "PASS"
-        if all(c["status"] in ("PASS", "NOT_APPLICABLE", "UNVERIFIED") for c in checks)
-        else "FAIL"
-    )
     seed = json.dumps(
         {"o": operation, "t": str(target), "ts": kit._utc_now()}, sort_keys=True
     ).encode()
@@ -935,7 +1267,7 @@ def _receipt(
         "managed_files": managed,
         "managed_markers": markers or [],
         "checks": checks,
-        "verification": {"status": verification},
+        "verification": {"status": _verification_of(checks)},
         "status": status,
         "created_at": kit._utc_now(),
         "created_by": f"{DIST}/{__version__}",
@@ -949,6 +1281,7 @@ def _receipt(
     ):
         if v is not None:
             doc[k] = v
+    doc["lifecycle"] = receipt_block(doc)
     return doc
 
 
@@ -1375,8 +1708,13 @@ def _register_context(
             {"id": "context-registry", "status": "BLOCKED", "detail": f"{exc.kind}: {exc.detail}"}
         )
         # BLOCKED num componente mandatório não sai exit 0 — os assets
-        # foram escritos mas o contrato install-2.0 falhou.
+        # foram escritos mas o contrato install-2.0 falhou. O veredito
+        # agregado e rederivado dos checks finais: `status=failed` com
+        # `verification=PASS` seria mentir nos dois campos.
         receipt["status"] = "failed"
+        receipt.setdefault("verification", {})["status"] = _verification_of(
+            receipt["checks"]
+        )
 
 
 def _unregister_context(target: Path) -> list[dict[str, Any]]:
@@ -1439,11 +1777,20 @@ __all__ = [
     "HOSTS",
     "PROFILES",
     "GATEWAY_PROFILES",
+    "LIFECYCLE_SCHEMA",
+    "LIFECYCLE_STATES",
+    "LIFECYCLE_OK",
     "doctor",
+    "health_block",
+    "health_state",
     "install",
+    "lifecycle_block",
     "mcp_verify",
+    "receipt_block",
+    "receipt_state",
     "repair",
     "status",
     "uninstall",
     "update",
+    "with_lifecycle",
 ]
