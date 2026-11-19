@@ -12,6 +12,39 @@ All notable changes to this project are documented here. Format follows
 
 ### Changed
 
+- install wave-03 (cycle-16.1): recibos e health docs agora carregam o
+  bloco `lifecycle` (`forge/InstallLifecycle/v1`) derivado de
+  `status`+`verification`+checks — `planned|blocked|failed|applied|
+  partially_applied|verified|unverified|ready|certified`. O `status`
+  grosso do recibo segue inalterado (enum do InstallReceipt/v1).
+- `managed_files` do recibo de install reporta a acao real por arquivo
+  (`created|updated|unchanged|adopted|removed`) + `counts` agregados —
+  antes todo arquivo saia como `written` (o plano repetido como fato).
+- Reinstall e explicitamente idempotente: a segunda execucao marca
+  managed_files como `unchanged`, `counts.written: 0` e nao reescreve
+  bytes (coberto por teste de hash antes/depois).
+- Docs do escopo `user` (integrate/detach/status/doctor) ganham `status`
+  + `lifecycle` derivados — `status --scope user` reporta `unverified`
+  honesto (drift do ledger do HOME nao e medido por esse verbo).
+- CLI: o exit code vem do `lifecycle.state` — `status` healthy e
+  `install --scope user` bem-sucedidos saem 0 (saíam 1); recusas de
+  aprovacao saem 1 com estado `blocked`; `declined` (fora do enum do
+  recibo) virou `failed` + check BLOCKED; `mcp verify` com handshake PASS
+  sai 0 (saía 1 — doc de check nao usa o vocabulario `completed`).
+- `repair --dry-run` e `uninstall --dry-run` reportam `status: planned`
+  + `lifecycle: planned` — antes diziam `completed`/`verified` sem ter
+  escrito nada.
+- Health docs (`status`, `install doctor`) carregam o mesmo bloco
+  `lifecycle` — healthy→ready, degraded→partially_applied,
+  broken→failed, unverified→unverified.
+- UI: a saida legivel mostra a linha `lifecycle` e colore
+  `applied`/`partially_applied` como alerta.
+- Docs: quickstart documenta a tabela de estados do lifecycle;
+  update-and-repair/uninstall/troubleshooting alinhados; mcp.md
+  corrigido (`install --update` nao existe — reinstall idempotente);
+  quickstart usava `sparkforge-aws doctor` (verbo agêntico) onde queria
+  `install doctor` (health da instalação).
+
 - install-2.1 wave-02 (cycle-16): `forge.json` declara
   `installation_kind: content`, a superficie `install`
   (operations/flags/hosts/scopes/profiles/`--yes`) e `depends_on: []` —

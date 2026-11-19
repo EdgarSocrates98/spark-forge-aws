@@ -15,6 +15,15 @@ O que acontece: assets gerenciados vão para `.agents/`, `.claude/`,
 entrada gerenciada; `AGENTS.md`/`CLAUDE.md`/`AGENT_PROTOCOL.md` recebem o
 bloco `forge:spark-forge-aws` — conteúdo seu nunca é sobrescrito.
 
+O recibo (`forge/InstallReceipt/v1`) diz por arquivo o que aconteceu de
+verdade em `managed_files[*].action` (`created|updated|unchanged|adopted|
+removed`) mais os totais em `counts` — reinstalar sem mudança sai
+`unchanged` com `counts.written: 0`, sem reescrever bytes. O bloco
+`lifecycle` (`forge/InstallLifecycle/v1`) traduz o estado fino:
+`--dry-run` → `planned`, escrito+verificado → `verified`, `status`
+healthy → `ready`; a tabela completa está em
+[quickstart.md](quickstart.md#verificar).
+
 ## Perfis (`--profile`)
 
 `--profile` seleciona **conjuntos de componentes** — e nada mais. Não há

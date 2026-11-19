@@ -31,7 +31,7 @@ Os dois arquivos ao lado já fazem o resto:
 | `mcp_config.json` | expõe as **148 tools** por stdio (recontado em 2026-10-16). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **60 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
+As **61 skills** e os perfis de coordenador o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
@@ -227,8 +227,8 @@ Se você atualizar um número, conte.
 | [`../GUIA_DE_USO.md`](../GUIA_DE_USO.md) | uso ponta a ponta; a §3.4 é a de MCP no Devin |
 | [`../docs/superpowers/STATUS.md`](../docs/superpowers/STATUS.md) | **a fonte da verdade sobre onde o projeto está.** Specs e plans são registro histórico: descrevem o que se pretendia numa data, não o repositório de hoje. Quando um número divergir, este arquivo ganha |
 | [`../docs/gates-por-mudanca.md`](../docs/gates-por-mudanca.md) | qual gate cada tipo de mudança toca |
-| [`../knowledge/`](../knowledge/) | o conhecimento com fonte: **338** URLs vigiadas em `sources.lock.json` |
-| [`../rules/catalog/`](../rules/catalog/) | as **212** regras, cada uma com fonte, validação e rollback |
+| [`../knowledge/`](../knowledge/) | o conhecimento com fonte: **341** URLs vigiadas em `sources.lock.json` |
+| [`../rules/catalog/`](../rules/catalog/) | as **221** regras, cada uma com fonte, validação e rollback |
 | [`../knowledge/devin/agents-and-subagents.md`](../knowledge/devin/agents-and-subagents.md) | o que este repositório **mediu** sobre o próprio Devin, com dez veredictos e um bloco de vetos |
 
 ## O que este diretório deliberadamente não tem
