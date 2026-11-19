@@ -453,8 +453,6 @@ _GOOD = {
     "INSTALLED",
     "DETECTED",
     "READY",
-    "VERIFIED",
-    "CERTIFIED",
     "ACTIVE_NOW",
     "DONE",
     "SUPPORTED",
@@ -472,8 +470,6 @@ _WARN = {
     "DEGRADED",
     "UNVERIFIED",
     "PLANNED",
-    "APPLIED",
-    "PARTIALLY_APPLIED",
     "SKIPPED",
     "VENDORED",
     "NOT_INSTALLED",
@@ -561,15 +557,6 @@ def format_status_doc(doc: dict[str, Any], *, ctx: UIContext | None = None) -> s
     for line in meta:
         if line:
             out.append(line)
-
-    # forge/InstallLifecycle/v1 — estado fino derivado do doc; `status`
-    # bruto (`completed`) nunca vira "ready" sozinho.
-    lc_state = (doc.get("lifecycle") or {}).get("state")
-    if lc_state:
-        out.append(
-            "  lifecycle    "
-            + state_color(ctx, str(lc_state), str(lc_state).upper())
-        )
 
     checks = doc.get("checks") or []
     if checks:
