@@ -57,7 +57,7 @@ acesso a:
 - 5 executores — `sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`,
   `sf-synthesizer` — a linha de montagem que os coordenadores disparam:
   inventário → extração de facts → julgamento → verificação → síntese.
-- 61 skills — os procedimentos versionados que disparam pela descrição do
+- 62 skills — os procedimentos versionados que disparam pela descrição do
   pedido: "meu job Glue tá lento" ativa `sparkforge-aws-diagnose` antes de
   qualquer análise; "dá pra subir pra Glue 6?" ativa `migrate-glue-6`; "por que
   a escrita falha no Lake Formation" ativa `diagnose-lakeformation-access`.

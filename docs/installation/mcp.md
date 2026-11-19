@@ -16,8 +16,9 @@ A instalação registra uma entrada gerenciada em `.mcp.json`:
 ```
 
 `command` aponta para o Python do ambiente onde o SparkForge está
-instalado — recriar o venv pede `sparkforge-aws install --update` para
-regravar o caminho. A entrada é a forma universal `command`/`args`: um só
+instalado — recriar o venv pede rodar `sparkforge-aws install` de novo
+(a instalação é idempotente e regrava a entrada gerenciada com o novo
+caminho). A entrada é a forma universal `command`/`args`: um só
 `.mcp.json` serve todos os hosts que o leem. O arquivo fica visível no
 drift do `status`: apagado ou editado fora do install degrada o estado
 até `repair` restaurar.
@@ -48,5 +49,5 @@ Em `--scope user` o registro vai para o config do usuário de cada host
 arquivo compartilhado.
 
 Handshake real, observado neste repositório: o server sobe por stdio,
-responde `tools/list` com as 146 tools e invoca
+responde `tools/list` com as 148 tools e invoca
 `sparkforge_aws_runtime_detect` com saída estruturada.
