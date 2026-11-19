@@ -74,6 +74,10 @@ All notable changes to this project are documented here. Format follows
   `test_kit_byte_parity_per_repo` (estavam ausentes os estados de
   lifecycle `VERIFIED`/`CERTIFIED`/`APPLIED`/`PARTIALLY_APPLIED` e a
   linha `lifecycle` da saída legível).
+- `setup.sh`: probe de python tolera todos-ausentes (`|| true`) —
+  sob `set -euo pipefail` a substituição não-guardada saía `rc=1` em
+  silêncio antes de `FORGE-PYTHON-NOT-FOUND` (mesmo defect vendored
+  corrigido no canônico the-forge e no api-sentinel).
 
 ## [0.7.7] - 2026-11-12
 
